@@ -1,0 +1,13 @@
+id,chrom,pos,ref,alt,consequence,transition
+ENSVATH10471543,Chr4,269090,G,A,missense_variant,TRUE
+tmp_4_269116_G_A,Chr4,269116,G,A,missense_variant,TRUE
+ENSVATH06406114,Chr4,269162,C,T,missense_variant,TRUE
+ENSVATH06406116,Chr4,269200,A,G,missense_variant,TRUE
+tmp_4_269202_A_G,Chr4,269202,A,G,missense_variant,TRUE
+ENSVATH06406118,Chr4,269237,C,T,missense_variant,TRUE
+ENSVATH00804641,Chr4,269245,C,T,missense_variant,TRUE
+ENSVATH10471563,Chr4,269350,C,T,missense_variant,TRUE
+ENSVATH10471564,Chr4,269375,G,A,missense_variant,TRUE
+ENSVATH02604836,Chr4,269469,A,G,missense_variant,TRUE
+tmp_4_269666_G_A,Chr4,269666,G,A,missense_variant,TRUE
+tmp_4_269675_C_T,Chr4,269675,C,T,missense_variant,TRUE

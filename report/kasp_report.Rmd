@@ -1,0 +1,150 @@
+---
+title: "KASP-маркеры для гена арабидопсиса"
+subtitle: "Дизайн и QC ассея — воспроизводимый пример на чистом R"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.height = 4)
+suppressPackageStartupMessages({ library(tidyverse); library(here); library(Biostrings) })
+source(here::here("R", "kasp_functions.R"))
+source(here::here("R", "kasp_plots.R"))
+```
+
+```{r load}
+rds <- here::here("results", "kasp_assay.rds")
+if (file.exists(rds)) {
+  assay <- readRDS(rds)
+} else {
+  message("results/kasp_assay.rds not found - run R/run_kasp.R first.")
+  knitr::knit_exit()
+}
+```
+
+## Мишень
+
+Ген `r assay$snp$chrom`:`r assay$snp$pos`, замена **`r assay$snp$ref` > `r assay$snp$alt`**.
+
+```{r target}
+assay$snp |> knitr::kable(caption = "Целевой SNP (референс — из TAIR10, альтернатива — из 1001 Genomes)")
+```
+
+## Ассей
+
+```{r assay}
+assay$assay |>
+  select(rank, AS_ref = as_ref, AS_alt = as_alt, COM = com,
+         discrimination, GC_AS = as_gc, amplicon, n_var, as_n_var) |>
+  knitr::kable(digits = 3, caption = "Лучшие KASP-ассей (SNP = 3'-конец AS-праймеров)")
+```
+
+Праймеры для синтеза (5'→3', с универсальными хвостами):
+
+```{r tails}
+assay$tails |> as.list() |> as_tibble() |> pivot_longer(everything()) |> knitr::kable()
+```
+
+## Аллельная дискриминация
+
+Предсказанная эффективность ПЦР (`DECIPHER::CalculateEfficiencyPCR`) каждого
+AS-праймера на «своём» и «чужом» аллеле. Модель учитывает гибридизацию **и**
+эффективность достройки Taq от 3'-конца — то, на чём и держится KASP.
+
+```{r eff}
+assay$efficiency |>
+  knitr::kable(digits = 3,
+    caption = "ref_on / ref_off — AS-ref на своём/чужом аллеле; alt_on / alt_off — аналогично")
+```
+
+Дискриминация = (ref_on − ref_off + alt_on − alt_off) / 2.
+
+```{r disc, fig.height=5}
+assay$as_candidates |>
+  slice_max(discrimination, n = 15) |>
+  mutate(label = paste0("strand ", strand, " / len ", as_length,
+                        " / mm ", stab_at, " / ", stab_base)) |>
+  ggplot(aes(discrimination, reorder(label, discrimination))) +
+  geom_col(fill = "darkorange") +
+  labs(x = "дискриминация", y = NULL, title = "Кандидаты AS-праймеров") +
+  theme_minimal()
+```
+
+## Термодинамика и вторичная структура
+
+```{r thermo}
+assay$thermo |>
+  select(primer, len, tm, gc, hairpin_dg) |>
+  knitr::kable(digits = 2, caption = "Tm (TmCalculator), GC, шпилька (folding dG, OligoArrayAux)")
+```
+
+Димеры — это реальная термодинамика дуплексов (OligoArrayAux `hybrid-min`, ДНК):
+
+```{r dimers}
+assay$complementarity |> knitr::kable(digits = 2,
+  caption = "dG37 дуплексов, ккал/моль (чем отрицательнее — тем сильнее димер; диагональ — гомодимер)")
+```
+
+Пара `AS-ref`/`AS-alt` ожидаемо сильнее прочих: праймеры почти идентичны и
+конкурируют за один сайт — это норма KASP.
+
+## Специфичность
+
+3'-«сид» (последние 15 нт) по всему геному (обе цепи, до 1 мисматча):
+
+```{r spec}
+assay$specificity |> knitr::kable(caption = "Число вхождений 3'-сида (1 = уникально)")
+```
+
+```{r blast, eval=!is.null(assay$blast)}
+assay$blast |> arrange(evalue) |> head(15) |>
+  knitr::kable(digits = 2, caption = "BLAST-хиты (blastn-short) по геному TAIR10")
+```
+
+## Визуализации (панели рисуют библиотеки)
+
+Каждый график делается специализированной библиотекой, без ручных геомов:
+
+- выравнивание ДНК и логотип — `ggmsa` (Bioconductor);
+- карта праймеров и модель гена с вариантами — `gggenes` (+ `ggrepel`);
+- самокомплементарность (шпильки) — `ggmsa` (праймер против своего обратного
+  комплемента; только ДНК, без РНК-инструментов);
+- кросс-комплементарность — симметричная матрица энергий дуплексов
+  (`geom_tile`, OligoArrayAux).
+
+```{r viz, out.width="100%"}
+knitr::include_graphics(c(
+  here::here("results", "plot_primers.png"),
+  here::here("results", "plot_variants.png"),
+  here::here("results", "plot_alignment.png"),
+  here::here("results", "plot_dimers.png")))
+```
+
+## Заказ праймеров (IDT / LGC)
+
+Tidy-таблица и файлы заказа пишутся в `results/` функцией `export_primers()`:
+`*_idt.csv` (bulk-ввод IDT), `*_lgc.csv` (заказ KASP-ассeя), `*_tidy.csv`.
+
+```{r order}
+kasp_primer_table(assay, list(symbol = "FRI", chrom = assay$snp$chrom)) |>
+  knitr::kable(digits = 1)
+```
+
+## Выводы
+
+* SNP — терминальное 3'-основание обоих AS-праймеров; общий праймер подобран
+  сканом с библиотечными метриками (Tm по `TmCalculator`).
+* Ориентация ассея выбрана перебором обеих цепей (`strands = c("+", "-")`);
+  победила цепь **`r assay$strand`**.
+* Дискриминация лучшего кандидата — `r round(max(assay$as_candidates$discrimination), 2)`.
+* Шпильки/димеры: см. таблицы выше (отбраковываем сильные 3'-димеры).
+* Специфичность: 3'-сид уникален (`r all(assay$specificity$hits == 1)`).
+
+Следующий шаг — заказать праймеры с хвостами FAM/HEX, прогнать на трёх
+контролях (REF/ALT/HET) + NTC и кластеризовать образцы по конечной
+флуоресценции.
