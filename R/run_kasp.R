@@ -51,6 +51,9 @@ snp <- pick_target_snp(variants, genome, gene)
 #   snp <- pick_target_snp(variants, genome, gene, variant_id = "tmp_4_269194_A_T")
 print(snp)
 
+cat("\nEasyKASP direction hint (GC of each flank):\n")
+print(strand_gc_hint(genome, snp$chrom, snp$pos))
+
 # --- 3. design + QC ----------------------------------------------------------
 # Two designer knobs are exposed as real arguments:
 #   strands  : search the allele-specific primer on the "+" and "-" strands

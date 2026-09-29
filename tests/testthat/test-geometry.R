@@ -34,3 +34,11 @@ test_that("count_variants_in counts points and drops the excluded SNP", {
   expect_equal(count_variants_in(iv, c(996L, 998L, 1000L, 1005L), exclude = 1000L), 2L)
   expect_equal(count_variants_in(iv, NULL), NA_integer_)
 })
+
+test_that("strand_gc_hint reports the GC of each flank", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 25L), "T", strrep("G", 25L))))
+  h <- strand_gc_hint(genome, "chr1", 26L, flank = 25L)
+  expect_equal(h$gc, c(0, 1))
+  expect_lt(h$distance_to_45[h$side == "upstream"],
+            h$distance_to_45[h$side == "downstream"])
+})

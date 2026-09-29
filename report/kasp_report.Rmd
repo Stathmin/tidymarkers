@@ -1,6 +1,6 @@
 ---
 title: "KASP-маркеры для гена арабидопсиса"
-subtitle: "Дизайн и QC ассея — воспроизводимый пример на чистом R"
+subtitle: "Дизайн и контроль качества теста — воспроизводимый пример на чистом R"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   html_document:
@@ -35,13 +35,13 @@ if (file.exists(rds)) {
 assay$snp |> knitr::kable(caption = "Целевой SNP (референс — из TAIR10, альтернатива — из 1001 Genomes)")
 ```
 
-## Ассей
+## Тест
 
 ```{r assay}
 assay$assay |>
   select(rank, AS_ref = as_ref, AS_alt = as_alt, COM = com,
          discrimination, GC_AS = as_gc, amplicon, n_var, as_n_var) |>
-  knitr::kable(digits = 3, caption = "Лучшие KASP-ассей (SNP = 3'-конец AS-праймеров)")
+  knitr::kable(digits = 3, caption = "Лучшие варианты KASP-теста (SNP = 3'-конец AS-праймеров)")
 ```
 
 Праймеры для синтеза (5'→3', с универсальными хвостами):
@@ -132,7 +132,7 @@ knitr::include_graphics(c(
 ## Заказ праймеров (IDT / LGC)
 
 Tidy-таблица и файлы заказа пишутся в `results/` функцией `export_primers()`:
-`*_idt.csv` (bulk-ввод IDT), `*_lgc.csv` (заказ KASP-ассeя), `*_tidy.csv`.
+`*_idt.csv` (bulk-ввод IDT), `*_lgc.csv` (заказ KASP-теста), `*_tidy.csv`.
 
 ```{r order}
 kasp_primer_table(assay, list(symbol = "FRI", chrom = assay$snp$chrom)) |>
@@ -143,7 +143,7 @@ kasp_primer_table(assay, list(symbol = "FRI", chrom = assay$snp$chrom)) |>
 
 * SNP — терминальное 3'-основание обоих AS-праймеров; общий праймер подобран
   сканом с библиотечными метриками (Tm по `TmCalculator`).
-* Ориентация ассея выбрана перебором обеих цепей (`strands = c("+", "-")`);
+* Ориентация теста выбрана перебором обеих цепей (`strands = c("+", "-")`);
   победила цепь **`r assay$strand`**.
 * Дискриминация лучшего кандидата — `r round(max(assay$as_candidates$discrimination), 2)`.
 * Шпильки/димеры: см. таблицы выше (отбраковываем сильные 3'-димеры).

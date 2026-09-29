@@ -108,8 +108,8 @@ ATH_CHROM_MAP <- c("1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
                    "5" = "Chr5", "Mt" = "ChrM", "Pt" = "ChrC")
 
 # Design targets / thresholds (named, so they are not magic numbers)
-AS_TM_TARGET    <- 62    # preferred AS-primer Tm (C)
-COM_TM_TARGET   <- 60    # preferred common-primer Tm (C)
+AS_TM_TARGET    <- 58    # preferred AS-primer Tm (C); kept below the common primer
+COM_TM_TARGET   <- 60    # preferred common-primer Tm (C); KASP wants COM Tm >= AS Tm
 HAIRPIN_DG_WARN <- -3    # flag hairpins with dG37 below this (kcal/mol)
 SEED_K          <- 15L   # 3'-seed length for the fast specificity screen
 SEED_MISMATCH   <- 1L
@@ -122,7 +122,7 @@ SO_RANK_OTHER <- 5L
 KASP_LIMITS <- list(
   amplicon     = c(50, 100),    # bp  (EasyKASP: products < 100 bp)
   as_tm        = c(55, 65),     # C
-  com_tm       = c(57, 62),     # C
+  com_tm       = c(58, 63),     # C  (EasyKASP aims ~59.9-62.9)
   gc           = c(0.40, 0.60), # fraction
   max_run      = 4L,            # longest homopolymer tolerated is max_run - 1
   hairpin_dg   = -3,            # dG37 (kcal/mol); must be >= this
@@ -333,6 +333,18 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
   list(seq = seq, snp_i = as.integer(flank) + 1L)
 }
 
+#' GC fraction of the flanks on each side of the SNP (EasyKASP direction hint)
+#'
+#' EasyKASP chooses the read direction by flank GC: it prefers the side whose
+#' +/-`flank` bases sit closest to 45%.  Returned here as a diagnostic.
+#' @export
+strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
+  up <- as.character(get_region(genome, chrom, max(1L, pos - flank), pos - 1L))
+  dn <- as.character(get_region(genome, chrom, pos + 1L, pos + flank))
+  tibble::tibble(side = c("upstream", "downstream"), gc = c(gc_frac(up), gc_frac(dn))) |>
+    dplyr::mutate(distance_to_45 = abs(.data$gc - 0.45))
+}
+
 #' Map Ensembl consequence strings to a design priority (lower = preferred)
 #'
 #' Uses the `SO_TERM_RANK` constant so the vocabulary lives in one place.
@@ -401,8 +413,31 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' GC fraction and homopolymer-run test
 #' @keywords internal
 #' @noRd
-gc_frac  <- function(seq) Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1]
+gc_frac  <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
 has_run  <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
+
+#' Tandem repeats (simple sequence repeats) in a sequence
+#'
+#' EasyKASP screens candidate primers for SSR repeat units, not just
+#' homopolymers.  Returns, for each input, the repeated units of length `units`
+#' occurring at least `min_copies` times in tandem.
+#' @export
+find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
+  purrr::map(seq, function(s) {
+    hits <- character(0)
+    for (u in units) {
+      pat <- glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
+      m   <- stringr::str_match_all(s, pat)[[1L]]
+      if (nrow(m)) hits <- c(hits, m[, 2L])
+    }
+    unique(hits)
+  })
+}
+
+#' Does a sequence contain an SSR? (see [find_repeats()])
+#' @export
+has_repeat <- function(seq, units = 2:4, min_copies = 3L)
+  lengths(find_repeats(seq, units, min_copies)) > 0L
 
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)
 #'
@@ -483,8 +518,9 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
     purrr::list_rbind() |>
     dplyr::mutate(com_gc = gc_frac(.data$com),
                   com_tm = primer_tm(.data$com),
-                  run    = has_run(.data$com)) |>
-    dplyr::filter(!.data$run,
+                  run    = has_run(.data$com),
+                  ssr    = has_repeat(.data$com)) |>
+    dplyr::filter(!.data$run, !.data$ssr,
                   dplyr::between(.data$com_gc, min_gc, max_gc),
                   dplyr::between(.data$com_tm, tm_range[1], tm_range[2])) |>
     dplyr::arrange(abs(.data$com_tm - target_tm))
@@ -628,11 +664,11 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
 primer_thermo <- function(primer) {
   s <- as.character(primer)
   tibble::tibble(
-    primer     = s,
-    len        = nchar(s),
-    tm         = primer_tm(s),
-    gc         = gc_frac(s),
-    hairpin_dg = oligo_dg(s))          # hybrid-ss-min, kcal/mol
+    primer       = s,
+    len          = nchar(s),
+    tm           = primer_tm(s),
+    gc           = gc_frac(s),
+    hairpin_dg   = oligo_dg(s))        # hybrid-ss-min, kcal/mol
 }
 
 #' Duplex (dimer) free energy for every primer pair (OligoArrayAux, DNA)
@@ -676,6 +712,50 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
   }
   tibble::tibble(primer = names(primers), seed = seeds,
                  hits = as.integer(purrr::map_int(seeds, count_one)))
+}
+
+#' In-silico PCR: every product a primer pair would amplify
+#'
+#' Uses `Biostrings::matchProbePair` (the library's own virtual PCR) to find
+#' each product the forward/reverse pair generates, chromosome by chromosome.
+#' A KASP test must amplify exactly one product per allele.
+#'
+#' @param F_primer forward primer (5'->3'), binds the plus strand.
+#' @param R_primer reverse primer (5'->3').
+#' @param genome DNAStringSet.
+#' @param max_mismatch mismatches tolerated in the primer match.
+#' @return tibble `chrom`, `start`, `end`, `width` (one row per product).
+#' @export
+in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L) {
+  Fp <- Biostrings::DNAString(F_primer)
+  Rp <- Biostrings::DNAString(R_primer)
+  purrr::imap(genome, function(chr, nm) {
+    pr <- Biostrings::matchProbePair(Fp, Rp, chr, max.mismatch = max_mismatch, verbose = FALSE)
+    if (is.null(pr) || length(pr) == 0L) return(NULL)
+    tibble::tibble(chrom = nm, start = IRanges::start(pr), end = IRanges::end(pr),
+                   width = IRanges::width(pr))
+  }) |>
+    purrr::list_rbind()
+}
+
+#' Products predicted for each allele-specific primer against the common one
+#'
+#' On the reference genome the REF primer must give exactly one product; the
+#' ALT primer (the other base / the indel) should give none.  Uses the
+#' template-matched primers (no deliberate stabiliser), like [specificity_seed()].
+#' @export
+assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
+  aa  <- assay$assay[1L, ]
+  seed <- c(AS_ref = make_as_primer(assay$template$seq, assay$template$snp_i,
+                                    aa$as_len, assay$snp$ref, strand = aa$strand),
+            AS_alt = make_as_primer(assay$template$seq, assay$template$snp_i,
+                                    aa$as_len, assay$snp$alt, strand = aa$strand))
+  purrr::imap_dfr(seed, function(as_p, nm) {
+    fr <- if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
+    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome, max_mismatch = max_mismatch)
+    tibble::tibble(primer = nm, n_products = nrow(prods),
+                   width = if (nrow(prods)) max(prods$width) else NA_integer_)
+  })
 }
 
 #' BLAST every primer against a local genome database (rBLAST, optional)
@@ -739,7 +819,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
                                strands = strands) |>
     dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
-                  dplyr::between(.data$tm, tm_range[1], tm_range[2])) |>
+                  dplyr::between(.data$tm, tm_range[1], tm_range[2]),
+                  !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
     dplyr::mutate(
       n_3p  = purrr::map_int(.data$strand, function(st)
                 count_variants_in(win3p_iv(st), vpos, snp$pos)),
@@ -822,6 +903,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     AS_alt = make_as_primer(tmpl$seq, tmpl$snp_i, best$as_len, snp$alt, strand = best$strand),
     COM    = best$com)
 
+  # in-silico PCR: the REF primer must give one product, the ALT primer none
+  amplicons <- tryCatch(
+    assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome),
+    error = function(e) { rlang::warn(glue::glue("in-silico PCR failed: {conditionMessage(e)}")); NULL })
+
   blast <- NULL
   if (isTRUE(run_blast)) {
     db <- tryCatch(build_blast_db(genome), error = function(e) {
@@ -837,6 +923,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       purrr::list_rbind(),
     complementarity = dimer_thermo(primers),
     specificity = specificity_seed(seed_primers, genome),
+    amplicons = amplicons,
     blast = blast,
     tails = c(AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
               AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
@@ -880,14 +967,23 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
   homo  <- min(d$dg[d$a == d$b])          # worst self-dimer
   run   <- max(longest_run(aa$as_ref), longest_run(aa$com))
 
+  # in-silico PCR (only if computed): REF primer -> 1 product, ALT primer -> 0
+  amp        <- assay$amplicons
+  amp_obs    <- if (is.null(amp)) NA_real_ else max(amp$n_products)
+  amp_pass   <- if (is.null(amp)) FALSE else {
+    ref <- amp$n_products[amp$primer == "AS_ref"]; alt <- amp$n_products[amp$primer == "AS_alt"]
+    length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
+  }
+
   tibble::tibble(
     criterion = c("amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
                   "COM Tm >= AS Tm", "AS GC", "COM GC",
-                  "longest homopolymer (bp)", "worst hairpin dG37",
+                  "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)", "worst hairpin dG37",
                   "worst cross-dimer dG37", "worst homodimer dG37",
-                  "discrimination"),
+                  "discrimination", "in-silico PCR (REF 1 / ALT 0)"),
     observed  = c(aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
-                  run, hair, cross, homo, disc),
+                  run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
+                  hair, cross, homo, disc, amp_obs),
     limit     = c(glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
                   glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
                   glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
@@ -895,10 +991,12 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
                   glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
                   glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
                   glue::glue("< {limits$max_run}"),
+                  "0",
                   glue::glue(">= {limits$hairpin_dg}"),
                   glue::glue(">= {limits$duplex_dg}"),
                   glue::glue(">= {limits$homodimer_dg}"),
-                  glue::glue(">= {limits$discrimination}")),
+                  glue::glue(">= {limits$discrimination}"),
+                  "REF=1, ALT=0"),
     pass      = c(dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
                   dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
                   dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
@@ -906,9 +1004,11 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
                   dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
                   dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
                   run < limits$max_run,
+                  !has_repeat(aa$as_ref) && !has_repeat(aa$com),
                   hair >= limits$hairpin_dg,
                   cross >= limits$duplex_dg,
                   homo >= limits$homodimer_dg,
-                  disc >= limits$discrimination)
+                  disc >= limits$discrimination,
+                  amp_pass)
   )
 }

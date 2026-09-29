@@ -2,9 +2,9 @@
 # Synthetic assay objects keep this pure (no genome, no network, no DECIPHER).
 
 good_assay <- function() {
-  p <- c(AS_ref = "ACGTACGTACGTACGTACGT",
-         AS_alt = "ACGTACGTACGTACGTACGA",
-         COM    = "TTGGCCTTGGCCAATTGGCC")
+  p <- c(AS_ref = "TGACTGCAAGTCCGATCAGTA",
+         AS_alt = "TGACTGCAAGTCCGATCAGTT",
+         COM    = "GCTTAGCCATGGTCAATGCTA")
   list(
     assay = tibble::tibble(
       amplicon = 90L, as_ref = p[["AS_ref"]], as_alt = p[["AS_alt"]], com = p[["COM"]],
@@ -14,6 +14,8 @@ good_assay <- function() {
     complementarity = tibble::tibble(
       a  = rep(names(p), each = 3), b = rep(names(p), times = 3),
       dg = c(-2, -3, -4,  -3, -2, -4,  -4, -4, -3)),
+    amplicons  = tibble::tibble(primer = c("AS_ref", "AS_alt"),
+                                n_products = c(1L, 0L), width = c(90L, NA_integer_)),
     efficiency = tibble::tibble(discrimination = 0.9)
   )
 }
@@ -32,7 +34,9 @@ test_that("each broken criterion flips the verdict to fail", {
     function(a) { a$thermo$hairpin_dg <- c(-1, -1, -6); a },
     function(a) { a$complementarity$dg[3] <- -15; a },
     function(a) { a$complementarity$dg[1] <- -15; a },
-    function(a) { a$efficiency$discrimination <- 0.1; a })
+    function(a) { a$efficiency$discrimination <- 0.1; a },
+    function(a) { a$amplicons$n_products <- c(2L, 0L); a },
+    function(a) { a$amplicons$n_products <- c(1L, 1L); a })
   for (m in mutators) {
     expect_false(all(kasp_design_checks(m(good_assay()))$pass))
   }
