@@ -698,10 +698,11 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                                                 .data$strand, .data$as_length, role = "AS"))
     ) |>
     dplyr::ungroup() |>
-    dplyr::mutate(gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer)) |>
+    dplyr::mutate(gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer),
+                  dg_3p = terminal_dg(.data$ref_primer)) |>
     dplyr::select("strand","as_length","stab_at","stab_base","ref_primer","alt_primer",
                   "ref_on","ref_off","alt_on","alt_off","discrimination","tm","gc",
-                  "tmpl_start","tmpl_end") |>
+                  "dg_3p","tmpl_start","tmpl_end") |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
 }
 
@@ -814,7 +815,36 @@ primer_thermo <- function(primer) {
     len          = nchar(s),
     tm           = primer_tm(s),
     gc           = gc_frac(s),
-    hairpin_dg   = oligo_dg(s))        # hybrid-ss-min, kcal/mol
+    hairpin_dg   = oligo_dg(s),        # hybrid-ss-min, kcal/mol
+    terminal_dg  = terminal_dg(s))     # 3'-terminal n-mer duplex, kcal/mol
+}
+
+#' Duplex free energy of a primer's 3'-terminal n-mer (3'-end stability)
+#'
+#' The last `n` bases are annealed to their reverse complement and scored with
+#' OligoArrayAux (kcal/mol, 37 C); more negative = a more stable 3' anchor, the
+#' "GC clamp" a polymerase needs to initiate.  Used as a design diagnostic.
+#' @export
+terminal_dg <- function(primer, n = 5L) {
+  vapply(as.character(primer), function(s) {
+    if (nchar(s) < n) return(NA_real_)
+    mer <- substr(s, nchar(s) - n + 1L, nchar(s))
+    oligo_dg(mer, as.character(Biostrings::reverseComplement(Biostrings::DNAString(mer))))
+  }, numeric(1), USE.NAMES = FALSE)
+}
+
+#' Is the 3'-terminal allelic mismatch a weak "wobble" pair (G:T / A:C)?
+#'
+#' `on_allele`/`off_allele` are the plus-strand alleles.  The primer carries the
+#' "on" base and faces the complement of the "off" base, so the mismatch set is
+#' `{on, complement(off)}`; G:T and A:C are the least destabilising and give the
+#' poorest allelic discrimination (LGC/KBioscience note).  Reported as a flag.
+#' @export
+wobble_mismatch <- function(on_allele, off_allele) {
+  faced <- as.character(Biostrings::complement(Biostrings::DNAStringSet(toupper(off_allele))))
+  pair  <- purrr::map2_chr(toupper(on_allele), faced,
+                           ~ paste(sort(c(.x, .y)), collapse = ""))
+  pair %in% c("GT", "AC")
 }
 
 #' Duplex (dimer) free energy for every primer pair (OligoArrayAux, DNA)
@@ -845,19 +875,41 @@ dimer_thermo <- function(primers) {
 
 #' Count genome-wide near-matches of each primer's 3'-terminal k-mer
 #'
-#' Uses `Biostrings::vcountPattern` (vectorised over the genome sequences),
-#' summing over both strands for each primer.
+#' For the exact case (`max_mismatch = 0`) counts come from `Biostrings::PDict`
+#' (`vcountPDict`), which is the precomputed-dictionary fast path for many
+#' primers; with mismatches it falls back to `vcountPattern`.  Results are summed
+#' over both strands and over all genome sequences.  Pass a `BiocParallel`
+#' `BPPARAM` (e.g. `MulticoreParam()`) to parallelise the mismatch scan.
 #' @export
-specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH) {
+specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
+                             BPPARAM = NULL) {
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
-  count_one <- function(s) {
-    s  <- Biostrings::DNAString(s)
-    rc <- Biostrings::reverseComplement(s)
-    sum(Biostrings::vcountPattern(s,  genome, max.mismatch = max_mismatch)) +
-      sum(Biostrings::vcountPattern(rc, genome, max.mismatch = max_mismatch))
+  if (max_mismatch == 0L) {
+    hits <- exact_seed_counts(seeds, genome)
+  } else {
+    count_one <- function(s) {
+      s  <- Biostrings::DNAString(s)
+      rc <- Biostrings::reverseComplement(s)
+      sum(Biostrings::vcountPattern(s,  genome, max.mismatch = max_mismatch)) +
+        sum(Biostrings::vcountPattern(rc, genome, max.mismatch = max_mismatch))
+    }
+    hits <- if (is.null(BPPARAM)) vapply(seeds, count_one, numeric(1), USE.NAMES = FALSE)
+            else unlist(BiocParallel::bplapply(seeds, count_one, BPPARAM = BPPARAM))
   }
-  tibble::tibble(primer = names(primers), seed = seeds,
-                 hits = as.integer(purrr::map_int(seeds, count_one)))
+  tibble::tibble(primer = names(primers), seed = seeds, hits = as.integer(hits))
+}
+
+#' Exact both-strand occurrence counts of seeds via a `PDict` dictionary
+#' @keywords internal
+#' @noRd
+exact_seed_counts <- function(seeds, genome) {
+  rc   <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(seeds)))
+  pats <- c(seeds, rc)
+  keep <- !duplicated(pats)
+  # vcountPDict returns one row per dictionary element, in the given order
+  m    <- Biostrings::vcountPDict(Biostrings::PDict(pats[keep]), genome)
+  cnt  <- stats::setNames(as.integer(rowSums(m)), pats[keep])
+  as.integer(cnt[seeds] + cnt[rc])
 }
 
 #' In-silico PCR: every product a primer pair would amplify
@@ -982,7 +1034,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       dplyr::mutate(as_start     = .data$tmpl_start + off,
                     as_end       = .data$tmpl_end   + off,
                     as_alt_start = .data$as_start,
-                    as_alt_end   = .data$as_end)
+                    as_alt_end   = .data$as_end,
+                    wobble       = wobble_mismatch(snp$ref, snp$alt))
   } else {
     ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
                                    strands = strands) |>
@@ -1011,6 +1064,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         alt_on       = .data$on_eff_alt,  alt_off  = .data$off_eff_alt,
         discrimination = (.data$discrimination_ref + .data$discrimination_alt) / 2,
         tm = .data$tm_ref, gc = .data$gc_ref,
+        dg_3p = terminal_dg(.data$primer_ref),
+        wobble = NA,                                   # undefined for length-changing alleles
         as_start     = .data$as_start_ref + off,
         as_end       = .data$as_end_ref   + off,
         as_alt_start = alt_to_ref(.data$as_start_alt) + off,
@@ -1032,7 +1087,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # discrimination, then Tm closest to the AS target
   best_as <- as_cand |>
     dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-                   abs(.data$tm - AS_TM_TARGET), .data$as_length) |>
+                   .data$wobble, abs(.data$tm - AS_TM_TARGET), .data$dg_3p, .data$as_length) |>
     dplyr::slice_head(n = 1L)
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
@@ -1154,50 +1209,58 @@ variant_type <- function(ref, alt) {
 #' @param genome DNAStringSet.
 #' @param loci tibble of loci (`chrom`, `pos`, `ref`, `alt`).
 #' @param variants variant table for footprint accounting; defaults to `loci`.
+#' @param BPPARAM optional `BiocParallel` backend; when given, loci are processed
+#'   in parallel (a forked backend avoids copying the genome).
 #' @param ... passed on to [assemble_kasp_assay()].
 #' @return tidy tibble, one row per locus.
 #' @export
-design_kasp_markers <- function(genome, loci, variants = loci, ...) {
+design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, ...) {
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(loci))
   if (length(missing)) {
     rlang::abort(glue::glue("`loci` is missing column(s): {paste(missing, collapse = ', ')}"))
   }
-  purrr::pmap_dfr(
-    list(loci$chrom, loci$pos, loci$ref, loci$alt),
-    function(ch, pos, ref, alt) {
-      snp  <- tibble::tibble(chrom = as.character(ch), pos = as.integer(pos),
-                             ref = as.character(ref), alt = as.character(alt))
-      type <- variant_type(snp$ref, snp$alt)
-      warns <- character(0)
-      res <- withCallingHandlers(
-        tryCatch({
-          a   <- assemble_kasp_assay(genome, snp, variants = variants, ...)
-          chk <- kasp_design_checks(a)
-          tibble::tibble(
-            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
-            strand = a$strand, amplicon = a$assay$amplicon[1],
-            discrimination = a$efficiency$discrimination[1],
-            n_fail = sum(!chk$pass),
-            verdict = if (all(chk$pass)) "pass" else "warn",
-            note = paste(chk$criterion[!chk$pass], collapse = "; "))
-        }, error = function(e) {
-          tibble::tibble(chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
-                         type = type, strand = NA_character_, amplicon = NA_integer_,
-                         discrimination = NA_real_, n_fail = NA_integer_,
-                         verdict = "fail", note = conditionMessage(e))
-        }),
-        warning = function(w) {
-          warns <<- c(warns, conditionMessage(w))
-          invokeRestart("muffleWarning")
-        })
-      # surface any assembly warnings on an otherwise built assay
-      if (res$verdict != "fail" && length(warns)) {
-        res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
-        res$note <- paste(c(res$note, warns), collapse = "; ")
-      }
-      res
-    })
+  one <- function(ch, pos, ref, alt) {
+    snp  <- tibble::tibble(chrom = as.character(ch), pos = as.integer(pos),
+                           ref = as.character(ref), alt = as.character(alt))
+    type <- variant_type(snp$ref, snp$alt)
+    warns <- character(0)
+    res <- withCallingHandlers(
+      tryCatch({
+        a   <- assemble_kasp_assay(genome, snp, variants = variants, ...)
+        chk <- kasp_design_checks(a)
+        tibble::tibble(
+          chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+          strand = a$strand, amplicon = a$assay$amplicon[1],
+          discrimination = a$efficiency$discrimination[1],
+          n_fail = sum(!chk$pass),
+          verdict = if (all(chk$pass)) "pass" else "warn",
+          note = paste(chk$criterion[!chk$pass], collapse = "; "))
+      }, error = function(e) {
+        tibble::tibble(chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
+                       type = type, strand = NA_character_, amplicon = NA_integer_,
+                       discrimination = NA_real_, n_fail = NA_integer_,
+                       verdict = "fail", note = conditionMessage(e))
+      }),
+      warning = function(w) {
+        warns <<- c(warns, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      })
+    # surface any assembly warnings on an otherwise built assay
+    if (res$verdict != "fail" && length(warns)) {
+      res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
+      res$note <- paste(c(res$note, warns), collapse = "; ")
+    }
+    res
+  }
+
+  if (is.null(BPPARAM)) {
+    purrr::pmap_dfr(list(loci$chrom, loci$pos, loci$ref, loci$alt), one)
+  } else {
+    res <- BiocParallel::bplapply(seq_len(nrow(loci)), function(i)
+      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i]), BPPARAM = BPPARAM)
+    purrr::list_rbind(res)
+  }
 }
 
 

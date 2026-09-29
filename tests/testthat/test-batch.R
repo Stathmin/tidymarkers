@@ -44,3 +44,17 @@ test_that("design_kasp_markers returns a tidy per-locus verdict without aborting
   expect_true(all(is.finite(res$discrimination[built])))
   expect_false(any(is.na(res$amplicon[built])))
 })
+
+test_that("a BiocParallel backend gives the same batch verdicts", {
+  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_not_installed("BiocParallel")
+  W <- Biostrings::DNAString(bseq(400, 4))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- as.character(Biostrings::subseq(W, 210L, 210L))
+  loci <- tibble::tibble(chrom = "Chr1", pos = 210L, ref = ref,
+                         alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
+  serial <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L))
+  par    <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L,
+                                                 BPPARAM = BiocParallel::SerialParam()))
+  expect_equal(par, serial)
+})

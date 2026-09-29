@@ -72,8 +72,8 @@ plot_discrimination(assay)
 
 ```{r thermo}
 assay$thermo |>
-  select(primer, len, tm, gc, hairpin_dg) |>
-  knitr::kable(digits = 2, caption = "Tm (TmCalculator), GC, шпилька (folding dG, OligoArrayAux)")
+  select(primer, len, tm, gc, hairpin_dg, terminal_dg) |>
+  knitr::kable(digits = 2, caption = "Tm (TmCalculator), GC, шпилька и 3'-концевая стабильность (folding/duplex dG, OligoArrayAux)")
 ```
 
 Димеры — это реальная термодинамика дуплексов (OligoArrayAux `hybrid-min`, ДНК):

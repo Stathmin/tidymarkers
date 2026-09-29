@@ -16,6 +16,7 @@ Imports:
     Biostrings,
     IRanges,
     S4Vectors,
+    BiocParallel,
     DECIPHER,
     TmCalculator,
     rBLAST,
