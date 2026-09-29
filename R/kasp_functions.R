@@ -689,12 +689,114 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       alt_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
                                   .data$as_length, alt, strand = .data$strand,
                                   if (is.na(.data$stab_at)) NULL else .data$stab_at,
-                                  if (is.na(.data$stab_base)) NULL else .data$stab_base)
+                                  if (is.na(.data$stab_base)) NULL else .data$stab_base),
+      # template-local footprint of the AS primer (genomic coords are added by
+      # the caller, which knows the window offset)
+      tmpl_start = IRanges::start(primer_interval(as_anchor(v_start, ref_len, .data$strand),
+                                                  .data$strand, .data$as_length, role = "AS")),
+      tmpl_end   = IRanges::end(primer_interval(as_anchor(v_start, ref_len, .data$strand),
+                                                .data$strand, .data$as_length, role = "AS"))
     ) |>
     dplyr::ungroup() |>
     dplyr::mutate(gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer)) |>
     dplyr::select("strand","as_length","stab_at","stab_base","ref_primer","alt_primer",
-                  "ref_on","ref_off","alt_on","alt_off","discrimination","tm","gc") |>
+                  "ref_on","ref_off","alt_on","alt_off","discrimination","tm","gc",
+                  "tmpl_start","tmpl_end") |>
+    dplyr::arrange(dplyr::desc(.data$discrimination))
+}
+
+
+# =============================================================================
+#  4b. Indels: allele templates + junction-scan allele-specific primers
+# =============================================================================
+
+#' Plus-strand REF and ALT allele templates for an indel
+#'
+#' Both templates share the left flank (up to `snp_i - 1`).  The REF template is
+#' the genomic window; the ALT template replaces the REF block with the ALT
+#' allele.  Coordinates left of the block are identical, and to the right they
+#' differ by `delta = nchar(alt) - nchar(ref)`.
+#' @export
+allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
+  ref_len <- nchar(ref)
+  left  <- if (snp_i > 1L)                  Biostrings::subseq(ref_tmpl, 1L, snp_i - 1L)               else Biostrings::DNAString("")
+  right <- if (snp_i + ref_len <= length(ref_tmpl)) Biostrings::subseq(ref_tmpl, snp_i + ref_len, length(ref_tmpl)) else Biostrings::DNAString("")
+  list(ref = ref_tmpl,
+       alt = Biostrings::xscat(left, Biostrings::DNAString(alt), right),
+       delta = nchar(alt) - ref_len,
+       block_ref = Biostrings::DNAString(ref),
+       block_alt = Biostrings::DNAString(alt))
+}
+
+#' Allele-specific primer candidates for an insertion/deletion (junction scan)
+#'
+#' For indels the two alleles differ in *length*, so a fixed-offset substitution
+#' no longer applies.  Instead each primer is built from its own allele template
+#' and slid along the junction: every candidate is a perfect match to its own
+#' allele, and its PCR efficiency against the OTHER allele is scored with
+#' DECIPHER (the same Taq-aware model used elsewhere).  The placement that
+#' actually discriminates is therefore chosen by the physics, not by a hand rule.
+#'
+#' @param ref_tmpl plus-strand template (small design window).
+#' @param snp_i template coordinate of the first REF base.
+#' @param ref,alt alleles as ACGT strings with `nchar(ref) != nchar(alt)`.
+#' @param lengths AS-primer lengths to try.
+#' @return tidy tibble of candidates: `allele` (`ref`/`alt`), `strand`,
+#'   `as_length`, `as_start`/`as_end` (this allele template's coords), `primer`,
+#'   `on_eff`, `off_eff`, `discrimination`, `tm`, `gc`.
+#' @export
+design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
+                                    strands = c("+", "-"), lengths = 20:27,
+                                    temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
+  ref_len <- nchar(ref); alt_len <- nchar(alt)
+  if (ref_len == alt_len) {
+    rlang::abort("design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution.")
+  }
+  at <- allele_templates(ref_tmpl, snp_i, ref, alt)
+
+  # The OTHER allele's version of a window on THIS template: the window's block
+  # overlap is replaced by the other allele, flanks kept.  Windows that miss the
+  # block are identical on both alleles (no discrimination).
+  substitute_block <- function(tmpl, other_block, block_len, s, e) {
+    block_end <- snp_i + block_len - 1L
+    if (s > block_end || e < snp_i) return(Biostrings::subseq(tmpl, s, e))
+    left  <- if (s < snp_i)     Biostrings::subseq(tmpl, s, snp_i - 1L)    else Biostrings::DNAString("")
+    right <- if (e > block_end) Biostrings::subseq(tmpl, block_end + 1L, e) else Biostrings::DNAString("")
+    Biostrings::xscat(left, other_block, right)
+  }
+
+  build <- function(allele, tmpl, other_block, block_len, strand, L, e) {
+    if (identical(strand, "+")) { s <- e - L + 1L; ee <- e } else { s <- e; ee <- e + L - 1L }
+    if (s < 1L || ee > length(tmpl)) return(NULL)
+    seg <- Biostrings::subseq(tmpl, s, ee)
+    primer <- if (identical(strand, "+")) as.character(seg)
+              else as.character(Biostrings::reverseComplement(seg))
+    off_seg <- substitute_block(tmpl, other_block, block_len, s, ee)
+    tibble::tibble(allele = allele, strand = strand, as_length = L,
+                   as_start = s, as_end = ee, primer = primer,
+                   on = as.character(as_target(seg, strand)),
+                   off = as.character(as_target(off_seg, strand)))
+  }
+
+  cand <- purrr::pmap_dfr(
+    tidyr::crossing(allele = c("ref", "alt"), strand = strands, as_length = lengths),
+    function(allele, strand, as_length) {
+      tmpl  <- if (allele == "ref") at$ref else at$alt
+      oblk  <- if (allele == "ref") at$block_alt else at$block_ref
+      blen  <- if (allele == "ref") ref_len else alt_len
+      # 3'-end placements: from one base before the block to one past its end
+      ends <- seq.int(max(1L, snp_i - 1L), min(length(tmpl), snp_i + blen))
+      purrr::map_dfr(ends, function(e) build(allele, tmpl, oblk, blen, strand, as_length, e))
+    })
+  if (nrow(cand) == 0L) rlang::abort("No indel AS-primer placement fit inside the design window.")
+
+  cand$on_eff  <- pcr_efficiency(cand$primer, cand$on,  temp = temp, P = P, ions = ions)
+  cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions)
+  cand |>
+    dplyr::mutate(discrimination = .data$on_eff - .data$off_eff,
+                  tm = primer_tm(.data$primer), gc = gc_frac(.data$primer)) |>
+    dplyr::select("allele","strand","as_length","as_start","as_end","primer",
+                  "on_eff","off_eff","discrimination","tm","gc") |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
 }
 
@@ -858,26 +960,72 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   tmpl    <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos    <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   ref_len <- nchar(snp$ref)
-  vblock  <- seq.int(snp$pos, snp$pos + ref_len - 1L)   # the target's own bases
+  alt_len <- nchar(snp$alt)
+  is_indel <- ref_len != alt_len
+  off     <- snp$pos - flank           # template coordinate -> genomic coordinate
+  vblock  <- seq.int(snp$pos, snp$pos + max(ref_len, alt_len) - 1L)  # the target's own bases
 
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
-  # the AS primer's 3'-terminal base is the variant anchor for its strand
+  # the REF AS primer's 3'-terminal base is the variant anchor for its strand
   anchor_of <- function(strand) as_anchor(snp$pos, ref_len, strand)
-  as_iv    <- function(strand, L) primer_interval(anchor_of(strand), strand, L, role = "AS")
-  com_iv   <- function(strand, L, gap) primer_interval(anchor_of(strand), strand, L, gap = gap, role = "COM")
-  win3p_iv <- function(strand) as_3p_interval(anchor_of(strand), strand, clean_3p)
+  com_iv    <- function(strand, L, gap) primer_interval(anchor_of(strand), strand, L, gap = gap, role = "COM")
 
-  as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-                               strands = strands) |>
-    dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
-                  dplyr::between(.data$tm, tm_range[1], tm_range[2]),
-                  !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
+  # candidate AS primers, unified to one schema for either variant kind:
+  #   ref_primer/alt_primer, ref_on/ref_off/alt_on/alt_off, discrimination,
+  #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
+  if (!is_indel) {
+    as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
+                                 strands = strands) |>
+      dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
+                    dplyr::between(.data$tm, tm_range[1], tm_range[2]),
+                    !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
+      dplyr::mutate(as_start     = .data$tmpl_start + off,
+                    as_end       = .data$tmpl_end   + off,
+                    as_alt_start = .data$as_start,
+                    as_alt_end   = .data$as_end)
+  } else {
+    ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
+                                   strands = strands) |>
+      dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
+                    dplyr::between(.data$tm, tm_range[1], tm_range[2]),
+                    !has_run(.data$primer), !has_repeat(.data$primer))
+    if (nrow(ind) == 0L) rlang::abort("No indel AS primer passed the GC/Tm filter.")
+    # alt-template coordinate -> REF/genomic coordinate (block clamps to REF)
+    alt_to_ref <- function(x) dplyr::case_when(
+      x < tmpl$snp_i                    ~ x,
+      x <= tmpl$snp_i + alt_len - 1L    ~ pmin(x, tmpl$snp_i + ref_len - 1L),
+      TRUE                              ~ x - (alt_len - ref_len))
+    top <- function(a) ind |>
+      dplyr::filter(.data$allele == a) |>
+      dplyr::group_by(.data$strand) |>
+      dplyr::slice_max(.data$discrimination, n = 1L, with_ties = FALSE) |>
+      dplyr::ungroup()
+    ref_p <- top("ref"); alt_p <- top("alt")
+    as_cand <- dplyr::inner_join(ref_p, alt_p, by = "strand", suffix = c("_ref", "_alt")) |>
+      dplyr::transmute(
+        strand,
+        as_length    = .data$as_length_ref,
+        ref_primer   = .data$primer_ref,
+        alt_primer   = .data$primer_alt,
+        ref_on       = .data$on_eff_ref,  ref_off  = .data$off_eff_ref,
+        alt_on       = .data$on_eff_alt,  alt_off  = .data$off_eff_alt,
+        discrimination = (.data$discrimination_ref + .data$discrimination_alt) / 2,
+        tm = .data$tm_ref, gc = .data$gc_ref,
+        as_start     = .data$as_start_ref + off,
+        as_end       = .data$as_end_ref   + off,
+        as_alt_start = alt_to_ref(.data$as_start_alt) + off,
+        as_alt_end   = alt_to_ref(.data$as_end_alt)   + off)
+  }
+
+  # clean-3' window and footprint variant load come from the stored interval
+  as_cand <- as_cand |>
     dplyr::mutate(
-      n_3p  = purrr::map_int(.data$strand, function(st)
-                count_variants_in(win3p_iv(st), vpos, vblock)),
-      n_var = purrr::map2_int(.data$strand, .data$as_length, function(st, L)
-                count_variants_in(as_iv(st, L), vpos, vblock))
-    )
+      win3p_start = dplyr::if_else(.data$strand == "+", .data$as_end - clean_3p + 1L, .data$as_start + 1L),
+      win3p_end   = dplyr::if_else(.data$strand == "+", .data$as_end - 1L,           .data$as_start + clean_3p - 1L),
+      n_3p  = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b)
+                count_variants_in(IRanges::IRanges(a, b), vpos, vblock)),
+      n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b)
+                count_variants_in(IRanges::IRanges(a, b), vpos, vblock)))
   if (nrow(as_cand) == 0L) rlang::abort("No AS primer passed the GC/Tm filter.")
 
   # prioritise: clean 3' window, then minimal footprint variant load, then
@@ -917,25 +1065,22 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   assays <- common |>
     dplyr::mutate(
       strand = best_as$strand,
+      com_start = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
+                     function(st, L, g) IRanges::start(com_iv(st, L, g))),
+      com_end   = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
+                     function(st, L, g) IRanges::end(com_iv(st, L, g))),
       n_var  = purrr::map2_int(.data$gap, .data$len, function(g, L)
                 count_variants_in(com_iv(best_as$strand, L, g), vpos, vblock)),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
-      amplicon = .data$gap + .data$len + .data$as_len - 1L,
+      # worst-case product over both alleles (indels differ by delta)
+      amplicon = pmax(pmax(best_as$as_end, .data$com_end) - pmin(best_as$as_start, .data$com_start) + 1L,
+                      pmax(best_as$as_alt_end, .data$com_end) - pmin(best_as$as_alt_start, .data$com_start) + 1L),
       # store the geometry once, for the plots to read instead of recomputing
-      as_start   = purrr::map2_int(.data$strand, .data$as_len,
-                     function(st, L) IRanges::start(as_iv(st, L))),
-      as_end     = purrr::map2_int(.data$strand, .data$as_len,
-                     function(st, L) IRanges::end(as_iv(st, L))),
-      com_start  = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
-                     function(st, L, g) IRanges::start(com_iv(st, L, g))),
-      com_end    = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
-                     function(st, L, g) IRanges::end(com_iv(st, L, g))),
-      win3p_start = purrr::map_int(.data$strand,
-                      function(st) IRanges::start(win3p_iv(st))),
-      win3p_end   = purrr::map_int(.data$strand,
-                      function(st) IRanges::end(win3p_iv(st)))) |>
+      as_start    = best_as$as_start,     as_end     = best_as$as_end,
+      as_alt_start = best_as$as_alt_start, as_alt_end = best_as$as_alt_end,
+      win3p_start = best_as$win3p_start,  win3p_end  = best_as$win3p_end) |>
     # Robustness first: keep the amplicon <= 100 bp and the COM Tm >= AS Tm
     # (EasyKASP), then reject strong self-structure, then minimise footprint
     # variants, then get the COM Tm closest to target.  Logical terms sort
@@ -984,6 +1129,75 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
               AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
               COM    = best$com)
   )
+}
+
+
+# =============================================================================
+#  7b. Batch design over many loci
+# =============================================================================
+
+#' Classify a variant by its REF/ALT strings
+#' @export
+variant_type <- function(ref, alt) {
+  if (nchar(ref) == nchar(alt)) ifelse(nchar(ref) == 1L, "SNP", "MNP")
+  else ifelse(nchar(alt) > nchar(ref), "insertion", "deletion")
+}
+
+#' Design KASP markers for a table of loci, with a per-locus verdict
+#'
+#' Runs [assemble_kasp_assay()] independently over every row of `loci`, so one
+#' hard locus cannot abort the batch: errors are captured as `verdict = "fail"`,
+#' warnings or failing acceptance checks give `verdict = "warn"`, and a fully
+#' passing assay gives `verdict = "pass"`.  `loci` needs columns
+#' `chrom`, `pos`, `ref`, `alt` (as in [read_variants_vcf()]).
+#'
+#' @param genome DNAStringSet.
+#' @param loci tibble of loci (`chrom`, `pos`, `ref`, `alt`).
+#' @param variants variant table for footprint accounting; defaults to `loci`.
+#' @param ... passed on to [assemble_kasp_assay()].
+#' @return tidy tibble, one row per locus.
+#' @export
+design_kasp_markers <- function(genome, loci, variants = loci, ...) {
+  need <- c("chrom", "pos", "ref", "alt")
+  missing <- setdiff(need, names(loci))
+  if (length(missing)) {
+    rlang::abort(glue::glue("`loci` is missing column(s): {paste(missing, collapse = ', ')}"))
+  }
+  purrr::pmap_dfr(
+    list(loci$chrom, loci$pos, loci$ref, loci$alt),
+    function(ch, pos, ref, alt) {
+      snp  <- tibble::tibble(chrom = as.character(ch), pos = as.integer(pos),
+                             ref = as.character(ref), alt = as.character(alt))
+      type <- variant_type(snp$ref, snp$alt)
+      warns <- character(0)
+      res <- withCallingHandlers(
+        tryCatch({
+          a   <- assemble_kasp_assay(genome, snp, variants = variants, ...)
+          chk <- kasp_design_checks(a)
+          tibble::tibble(
+            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+            strand = a$strand, amplicon = a$assay$amplicon[1],
+            discrimination = a$efficiency$discrimination[1],
+            n_fail = sum(!chk$pass),
+            verdict = if (all(chk$pass)) "pass" else "warn",
+            note = paste(chk$criterion[!chk$pass], collapse = "; "))
+        }, error = function(e) {
+          tibble::tibble(chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
+                         type = type, strand = NA_character_, amplicon = NA_integer_,
+                         discrimination = NA_real_, n_fail = NA_integer_,
+                         verdict = "fail", note = conditionMessage(e))
+        }),
+        warning = function(w) {
+          warns <<- c(warns, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        })
+      # surface any assembly warnings on an otherwise built assay
+      if (res$verdict != "fail" && length(warns)) {
+        res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
+        res$note <- paste(c(res$note, warns), collapse = "; ")
+      }
+      res
+    })
 }
 
 

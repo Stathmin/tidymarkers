@@ -127,11 +127,14 @@ plot_primers <- function(assay, variants, snp) {
   strand <- aa$strand %||% "+"
   plus   <- identical(strand, "+")
 
-  # coordinates come straight from the assay (single source of truth)
+  # coordinates come straight from the assay (single source of truth); for an
+  # indel the ALT AS-primer sits at a shifted position, so it has its own span
+  as_alt_start <- aa$as_alt_start %||% aa$as_start
+  as_alt_end   <- aa$as_alt_end   %||% aa$as_end
   d <- tibble::tibble(
     primer  = factor(c("AS-ref", "AS-alt", "COM"), levels = c("COM", "AS-alt", "AS-ref")),
-    start   = c(aa$as_start, aa$as_start, aa$com_start),
-    end     = c(aa$as_end,   aa$as_end,   aa$com_end),
+    start   = c(aa$as_start, as_alt_start, aa$com_start),
+    end     = c(aa$as_end,   as_alt_end,   aa$com_end),
     forward = c(plus, plus, !plus))
 
   p_arrows <- ggplot2::ggplot(d, ggplot2::aes(xmin = .data$start, xmax = .data$end,
