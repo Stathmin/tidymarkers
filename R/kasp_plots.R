@@ -99,22 +99,16 @@ plot_self_complementarity <- function(assay, title = "Self-complementarity (DNA)
 #' side of the SNP the primers sit on.
 #' @export
 plot_primers <- function(assay, variants, snp) {
-  win  <- design_window(assay, snp)
-  p    <- assay_primers(assay)
-  aa   <- assay$assay[1, ]
+  win <- design_window(assay, snp)
+  aa  <- assay$assay[1, ]
   strand <- aa$strand %||% "+"
   plus   <- identical(strand, "+")
 
-  # plus-strand coordinates of each primer
-  as_start  <- if (plus) snp$pos - aa$as_len + 1L else snp$pos
-  as_end    <- if (plus) snp$pos                  else snp$pos + aa$as_len - 1L
-  com_start <- if (plus) snp$pos + aa$gap                       else snp$pos - aa$gap - aa$len + 1L
-  com_end   <- if (plus) snp$pos + aa$gap + aa$len - 1L         else snp$pos - aa$gap
-
+  # coordinates come straight from the assay (single source of truth)
   d <- tibble::tibble(
     primer  = factor(c("AS-ref", "AS-alt", "COM"), levels = c("COM", "AS-alt", "AS-ref")),
-    start   = c(as_start, as_start, com_start),
-    end     = c(as_end, as_end, com_end),
+    start   = c(aa$as_start, aa$as_start, aa$com_start),
+    end     = c(aa$as_end,   aa$as_end,   aa$com_end),
     forward = c(plus, plus, !plus))
 
   p_arrows <- ggplot2::ggplot(d, ggplot2::aes(xmin = .data$start, xmax = .data$end,
@@ -127,9 +121,9 @@ plot_primers <- function(assay, variants, snp) {
     gggenes::theme_genes()
 
   vw <- variants_in_window(variants, snp$chrom, win)
-  reg3p    <- if (plus) c(snp$pos - 4L, snp$pos) else c(snp$pos, snp$pos + 4L)   # AS 3' 5 nt
-  as_span  <- c(as_start, as_end)
-  com_span <- c(com_start, com_end)
+  reg3p    <- c(aa$win3p_start, aa$win3p_end)
+  as_span  <- c(aa$as_start,   aa$as_end)
+  com_span <- c(aa$com_start,  aa$com_end)
   foot <- dplyr::filter(vw, (.data$pos >= as_span[1] & .data$pos <= as_span[2]) |
                               (.data$pos >= com_span[1] & .data$pos <= com_span[2]))
 
@@ -208,14 +202,13 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' panel of intramolecular folding (hairpin) free energies.
 #' @export
 plot_dimer_qc <- function(assay) {
-  d <- assay$complementarity
-  sym <- dplyr::bind_rows(d, tibble::tibble(a = d$b, b = d$a, dg = d$dg))
+  d <- assay$complementarity          # already a full symmetric matrix
 
-  heat <- ggplot2::ggplot(sym, ggplot2::aes(.data$a, .data$b, fill = .data$dg)) +
+  heat <- ggplot2::ggplot(d, ggplot2::aes(.data$a, .data$b, fill = .data$dg)) +
     ggplot2::geom_tile(colour = "white", linewidth = 1) +
     ggplot2::geom_text(ggplot2::aes(label = round(.data$dg, 1)), size = 4) +
     ggplot2::scale_fill_gradient(low = "firebrick", high = "white",
-                                 limits = c(min(sym$dg, na.rm = TRUE), 0),
+                                 limits = c(min(d$dg, na.rm = TRUE), 0),
                                  name = "dG37\n(kcal/mol)") +
     ggplot2::coord_equal() +
     ggplot2::labs(x = NULL, y = NULL, title = "Duplex dG37 (kcal/mol)") +

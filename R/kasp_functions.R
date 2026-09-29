@@ -85,6 +85,10 @@ NN_TABLE <- "DNA_NN_SantaLucia_2004"
 # PCR conditions (molar) for DECIPHER::CalculateEfficiencyPCR
 PCR_EFF  <- list(temp = 60, P = 4e-7, ions = 0.2)
 
+# Ensembl Plants FASTA defline -> TAIR chromosome name; the only sequences kept.
+ATH_CHROM_MAP <- c("1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
+                   "5" = "Chr5", "Mt" = "ChrM", "Pt" = "ChrC")
+
 # OligoArrayAux thermodynamics (the DNA engine DECIPHER already uses):
 #   hybrid-min    -> duplex (dimer) free energy of two strands
 #   hybrid-ss-min -> intramolecular folding (hairpin) free energy of one strand
@@ -99,7 +103,12 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   out <- suppressWarnings(system2(exe, args, stdout = TRUE, stderr = FALSE))
   out <- out[nzchar(trimws(out))]
   if (!length(out)) return(NA_real_)
-  suppressWarnings(as.numeric(utils::tail(out, 1L)))
+  dg <- suppressWarnings(as.numeric(utils::tail(out, 1L)))
+  if (length(dg) != 1L || !is.finite(dg)) {
+    rlang::warn(glue::glue("OligoArrayAux ('{bin}') returned no parsable dG."))
+    return(NA_real_)
+  }
+  dg
 }
 
 
@@ -109,9 +118,9 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
 #' @keywords internal
 #' @noRd
 ath_chrom <- function(x) {
-  x <- sub("^chromosome", "", x, ignore.case = TRUE)
-  x <- sub("^chr", "", x, ignore.case = TRUE)
-  paste0("Chr", x)
+  key <- sub("^(chromosome|chr)", "", x, ignore.case = TRUE)
+  out <- unname(ATH_CHROM_MAP[key])
+  ifelse(is.na(out), paste0("Chr", key), out)
 }
 
 #' Read one genomic region as a DNAString
@@ -119,6 +128,49 @@ ath_chrom <- function(x) {
 #' @noRd
 get_region <- function(genome, chrom, start, end) {
   Biostrings::subseq(genome[[chrom]], start = start, end = end)
+}
+
+
+# --- primer geometry (single source of truth) --------------------------------
+# All intervals are plus-strand, with `snp_pos` the SNP coordinate.  The SAME
+# helpers are reused by design (in template coordinates: pass `snp_i`), by the
+# assay assembly and by the plots, so the geometry cannot drift between them.
+
+#' Plus-strand interval occupied by a primer
+#'
+#' `role = "AS"` = allele-specific primer (3'-terminal base at the SNP);
+#' `role = "COM"` = the common primer, `gap` bases away on the other side.
+#' @export
+primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "COM")) {
+  role <- match.arg(role)
+  if (identical(role, "AS")) {
+    if (identical(strand, "+")) IRanges::IRanges(snp_pos - length + 1L, snp_pos)
+    else                        IRanges::IRanges(snp_pos, snp_pos + length - 1L)
+  } else {
+    if (identical(strand, "+")) IRanges::IRanges(snp_pos + gap, snp_pos + gap + length - 1L)
+    else                        IRanges::IRanges(snp_pos - gap - length + 1L, snp_pos - gap)
+  }
+}
+
+#' Plus-strand interval of the AS primer's N 3'-terminal bases, SNP excluded
+#'
+#' `window` counts the 3'-terminal bases including the SNP itself, so the
+#' returned interval has `window - 1` positions.
+#' @export
+as_3p_interval <- function(snp_pos, strand, window = 5L) {
+  if (identical(strand, "+")) IRanges::IRanges(snp_pos - window + 1L, snp_pos - 1L)
+  else                        IRanges::IRanges(snp_pos + 1L, snp_pos + window - 1L)
+}
+
+#' Count variant positions inside an interval (IRanges)
+#'
+#' `exclude` drops positions (typically the target SNP) from the count.
+#' @export
+count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
+  if (is.null(vpos)) return(NA_integer_)
+  v <- vpos[!is.na(vpos) & !(vpos %in% exclude)]
+  if (!length(v)) return(0L)
+  as.integer(length(IRanges::findOverlaps(IRanges::IRanges(v, v), interval)))
 }
 
 #' Download (once) and load the TAIR10 genome as a DNAStringSet
@@ -140,10 +192,22 @@ ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
   }
   g <- Biostrings::readDNAStringSet(fa)
   nm <- sub("\\s.*$", "", names(g))   # keep only the first token of the defline
-  nm[nm == "Mt"] <- "ChrM"; nm[nm == "Pt"] <- "ChrC"
-  nm[nm %in% as.character(1:5)] <- paste0("Chr", nm[nm %in% as.character(1:5)])
-  names(g) <- nm
-  g[intersect(c(paste0("Chr", 1:5), "ChrM", "ChrC"), names(g))]
+  dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
+  if (length(dropped)) {
+    rlang::inform(glue::glue(
+      "ath_genome(): dropping {length(dropped)} non-chromosome sequence(s) ",
+      "(e.g. {paste(utils::head(dropped, 3L), collapse = ', ')})."))
+  }
+  g <- g[nm %in% names(ATH_CHROM_MAP)]
+  names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
+  need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
+  missing <- setdiff(need, names(g))
+  if (length(missing)) {
+    rlang::abort(glue::glue(
+      "ath_genome(): TAIR10 FASTA is missing expected chromosome(s): ",
+      "{paste(missing, collapse = ', ')} - Ensembl deflines may have changed."))
+  }
+  g[need]
 }
 
 
@@ -168,6 +232,13 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
   j <- jsonlite::fromJSON(readr::read_file(path), simplifyDataFrame = FALSE)
+  need <- c("id", "seq_region_name", "start", "end", "strand")
+  missing <- setdiff(need, names(j))
+  if (length(missing)) {
+    rlang::abort(glue::glue(
+      "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')} ",
+      "- the Ensembl REST schema may have changed."))
+  }
   tibble::tibble(gene_id = j$id, symbol = j$display_name %||% j$id,
                  chrom = ath_chrom(j$seq_region_name),
                  start = as.integer(j$start), end = as.integer(j$end),
@@ -193,8 +264,16 @@ ensembl_variants <- function(chrom, start, end,
       httr2::req_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
-  jsonlite::fromJSON(readr::read_file(path)) |>
-    tibble::as_tibble() |>
+  df <- jsonlite::fromJSON(readr::read_file(path)) |> tibble::as_tibble()
+  need <- c("id", "seq_region_name", "start", "alleles")
+  missing <- setdiff(need, names(df))
+  if (length(missing)) {
+    rlang::abort(glue::glue(
+      "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')} ",
+      "- the Ensembl REST schema may have changed."))
+  }
+  if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
+  df |>
     dplyr::transmute(id = .data$id, chrom = ath_chrom(.data$seq_region_name),
                      pos = as.integer(.data$start), ref_genome = .data$alleles,
                      consequence = .data$consequence_type)
@@ -246,13 +325,12 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
         stringr::str_detect(.data$consequence, "UTR")        ~ 4L,
         TRUE                                                 ~ 5L
       ),
-      # best-case (either strand) count of other variants in the AS 3' window:
-      #   "+" orientation -> [p-clean_3p+1, p-1];  "-" orientation -> [p+1, p+clean_3p-1]
+      # best-case (either strand) count of other variants in the AS 3' window
       n_3p = pmin(
         vapply(.data$pos, function(p)
-          sum(allpos >= p - clean_3p + 1L & allpos <= p - 1L), integer(1)),
+          count_variants_in(as_3p_interval(p, "+", clean_3p), allpos, p), integer(1)),
         vapply(.data$pos, function(p)
-          sum(allpos >= p + 1L & allpos <= p + clean_3p - 1L), integer(1)))
+          count_variants_in(as_3p_interval(p, "-", clean_3p), allpos, p), integer(1)))
     ) |>
     dplyr::filter(!is.na(.data$alt)) |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos) |>
@@ -337,9 +415,8 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
 
   cand <- purrr::map_dfr(seq_len(nrow(grid)), function(i) {
     L <- grid$L[i]; gap <- grid$gap[i]
-    # plus-strand template interval of the common primer
-    if (plus) { start <- snp_i + gap;             end <- start + L - 1L }
-    else      { end   <- snp_i - gap;             start <- end - L + 1L }
+    iv <- primer_interval(snp_i, strand, L, gap = gap, role = "COM")  # template coords
+    start <- IRanges::start(iv); end <- IRanges::end(iv)
     if (start < 1L || end > wlen) return(NULL)
     seq_plus <- Biostrings::subseq(window, start, end)
     com <- if (plus) as.character(Biostrings::reverseComplement(seq_plus))
@@ -370,8 +447,8 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
 #' @keywords internal
 #' @noRd
 as_window <- function(window, snp_i, length, strand) {
-  if (identical(strand, "+")) Biostrings::subseq(window, snp_i - length + 1L, snp_i)
-  else                        Biostrings::subseq(window, snp_i, snp_i + length - 1L)
+  iv <- primer_interval(snp_i, strand, length, role = "AS")
+  Biostrings::subseq(window, IRanges::start(iv), IRanges::end(iv))
 }
 
 #' DECIPHER target (= strand bound by the primer) for a binding window
@@ -393,18 +470,15 @@ as_target <- function(seg, strand) {
 #' @noRd
 make_as_primer <- function(window, snp_i, length, allele, strand = "+",
                            stab_at = NULL, stab_base = NULL) {
-  seg <- as.character(as_window(window, snp_i, length, strand))
-  p   <- strsplit(seg, "")[[1]]
-  p[if (identical(strand, "+")) length(p) else 1L] <- allele
-  s <- paste0(p, collapse = "")
-  if (!identical(strand, "+"))
-    s <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(s)))
+  seg <- as_window(window, snp_i, length, strand)         # DNAString, contains the SNP
+  at  <- if (identical(strand, "+")) length else 1L      # SNP index inside `seg`
+  p   <- Biostrings::replaceAt(seg, IRanges::IRanges(at, at), allele)
+  if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
   if (!is.null(stab_at)) {
-    q <- strsplit(s, "")[[1]]
-    q[length(q) - stab_at + 1L] <- stab_base
-    s <- paste0(q, collapse = "")
+    i <- length - stab_at + 1L                            # 3'-relative -> 5'-index
+    p <- Biostrings::replaceAt(p, IRanges::IRanges(i, i), stab_base)
   }
-  s
+  as.character(p)
 }
 
 #' Grid-search allele-specific primers maximising Taq-based discrimination
@@ -445,18 +519,22 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
     k <- if (is.na(stab_at))   NULL else stab_at
     b <- if (is.na(stab_base)) NULL else stab_base
     # binding window on the plus strand, and the same window carrying the ALT allele
-    seg_ref <- as.character(as_window(window, snp_i, L, strand))
-    seg_alt <- seg_ref
+    seg_ref <- as_window(window, snp_i, L, strand)
     pos_in_seg <- if (identical(strand, "+")) L else 1L
-    substr(seg_alt, pos_in_seg, pos_in_seg) <- alt
+    seg_alt <- Biostrings::replaceAt(seg_ref, IRanges::IRanges(pos_in_seg, pos_in_seg), alt)
     ref_p <- make_as_primer(window, snp_i, L, ref, strand = strand, stab_at = k, stab_base = b)
     alt_p <- make_as_primer(window, snp_i, L, alt, strand = strand, stab_at = k, stab_base = b)
-    t_ref <- as.character(as_target(Biostrings::DNAString(seg_ref), strand))
-    t_alt <- as.character(as_target(Biostrings::DNAString(seg_alt), strand))
-    tibble::tibble(
-      strand = strand, as_length = L, stab_at = stab_at, stab_base = stab_base,
-      primer = c(ref_p, ref_p, alt_p, alt_p), which = c("ref_on","ref_off","alt_on","alt_off"),
-      target = c(t_ref, t_alt, t_alt, t_ref))
+    t_ref <- as.character(as_target(seg_ref, strand))
+    t_alt <- as.character(as_target(seg_alt, strand))
+    # explicit on/off pairing: the "on" target carries the primer's own allele,
+    # the "off" target carries the other one.  Written out (not c()-positional)
+    # so a swap cannot silently invert the discrimination metric.
+    specs <- tibble::tibble(
+      which  = c("ref_on", "ref_off", "alt_on", "alt_off"),
+      primer = c(ref_p,    ref_p,     alt_p,    alt_p),
+      target = c(t_ref,    t_alt,     t_alt,    t_ref))
+    dplyr::mutate(specs, strand = strand, as_length = L,
+                  stab_at = stab_at, stab_base = stab_base)
   })
   pairs$eff <- pcr_efficiency(pairs$primer, pairs$target, temp = temp, P = P, ions = ions)
 
@@ -505,15 +583,21 @@ primer_thermo <- function(primer) {
 #'
 #' `dg` is the hybridisation free energy of the two strands (kcal/mol, 37 C);
 #' more negative = stronger dimer.  The diagonal is the homodimer of each primer.
+#' Returns the FULL matrix (both orders); symmetry is imposed here, once.
 #' @export
 dimer_thermo <- function(primers) {
-  nm <- names(primers)
-  purrr::map_dfr(seq_along(nm), function(i) {
-    purrr::map_dfr(i:length(nm), function(j) {
-      tibble::tibble(a = nm[i], b = nm[j],
-                     dg = oligo_dg(primers[[i]], primers[[j]]))
-    })
-  })
+  nm <- names(primers); n <- length(nm)
+  m <- matrix(NA_real_, n, n, dimnames = list(nm, nm))
+  for (i in seq_len(n)) {
+    m[i, i] <- oligo_dg(primers[[i]], primers[[i]])          # homodimer
+    for (j in seq_len(i - 1L)) {                             # strictly lower triangle
+      v <- oligo_dg(primers[[i]], primers[[j]])
+      m[i, j] <- v; m[j, i] <- v
+    }
+  }
+  # column-major as.vector => `a` varies fastest, `b` slowest
+  tibble::tibble(a = rep(nm, times = n), b = rep(nm, each = n),
+                 dg = as.vector(m))
 }
 
 
@@ -522,18 +606,20 @@ dimer_thermo <- function(primers) {
 # =============================================================================
 
 #' Count genome-wide near-matches of each primer's 3'-terminal k-mer
+#'
+#' Uses `Biostrings::vcountPattern` (vectorised over the genome sequences),
+#' summing over both strands for each primer.
 #' @export
 specificity_seed <- function(primers, genome, k = 15L, max_mismatch = 1L) {
-  count_strand <- function(pat) {
-    m <- Biostrings::vmatchPattern(Biostrings::DNAString(pat), genome,
-                                   max.mismatch = max_mismatch, fixed = "subject")
-    sum(S4Vectors::elementNROWS(m))
+  seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
+  count_one <- function(s) {
+    s  <- Biostrings::DNAString(s)
+    rc <- Biostrings::reverseComplement(s)
+    sum(Biostrings::vcountPattern(s,  genome, max.mismatch = max_mismatch)) +
+      sum(Biostrings::vcountPattern(rc, genome, max.mismatch = max_mismatch))
   }
-  tibble::tibble(primer = names(primers),
-                 seed = substr(primers, nchar(primers) - k + 1L, nchar(primers))) |>
-    dplyr::mutate(hits = purrr::map_int(.data$seed, function(s)
-      count_strand(s) + count_strand(as.character(
-        Biostrings::reverseComplement(Biostrings::DNAString(s))))))
+  tibble::tibble(primer = names(primers), seed = seeds,
+                 hits = as.integer(purrr::map_int(seeds, count_one)))
 }
 
 #' BLAST every primer against a local genome database (rBLAST, optional)
@@ -589,31 +675,20 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   tmpl   <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos   <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
 
-  # number of *other* variants under a plus-strand genomic interval
-  n_var_between <- function(from, to) {
-    if (is.null(vpos)) return(NA_integer_)
-    sum(vpos >= from & vpos <= to & vpos != snp$pos)
-  }
-  # plus-strand interval covered by an AS primer of a given strand/length
-  as_footprint <- function(strand, L) {
-    if (identical(strand, "+")) c(snp$pos - L + 1L, snp$pos - 1L)
-    else                        c(snp$pos + 1L,     snp$pos + L - 1L)
-  }
-  # plus-strand interval of the AS 3'-terminal `clean_3p` bases
-  as_3p_window <- function(strand) {
-    if (identical(strand, "+")) c(snp$pos - clean_3p + 1L, snp$pos - 1L)
-    else                        c(snp$pos + 1L,           snp$pos + clean_3p - 1L)
-  }
+  # all primer geometry comes from the shared helpers (plus-strand coordinates)
+  as_iv    <- function(strand, L) primer_interval(snp$pos, strand, L, role = "AS")
+  com_iv   <- function(strand, L, gap) primer_interval(snp$pos, strand, L, gap = gap, role = "COM")
+  win3p_iv <- function(strand) as_3p_interval(snp$pos, strand, clean_3p)
 
   as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
                                strands = strands) |>
     dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
                   dplyr::between(.data$tm, tm_range[1], tm_range[2])) |>
     dplyr::mutate(
-      n_3p  = purrr::map_int(.data$strand, function(st) {
-        w <- as_3p_window(st); n_var_between(w[1], w[2]) }),
-      n_var = purrr::map2_int(.data$strand, .data$as_length, function(st, L) {
-        w <- as_footprint(st, L); n_var_between(w[1], w[2]) })
+      n_3p  = purrr::map_int(.data$strand, function(st)
+                count_variants_in(win3p_iv(st), vpos, snp$pos)),
+      n_var = purrr::map2_int(.data$strand, .data$as_length, function(st, L)
+                count_variants_in(as_iv(st, L), vpos, snp$pos))
     )
   if (nrow(as_cand) == 0L) rlang::abort("No AS primer passed the GC/Tm filter.")
 
@@ -644,20 +719,29 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # COM: design on the SAME strand as the winning AS primer so the amplicon closes
   common <- design_common_primers(tmpl$seq, tmpl$snp_i, strand = best_as$strand,
                                   tm_range = tm_range)
-  com_footprint <- function(gap, L) {
-    if (identical(best_as$strand, "+")) c(snp$pos + gap,             snp$pos + gap + L - 1L)
-    else                                c(snp$pos - gap - L + 1L,    snp$pos - gap)
-  }
 
   assays <- common |>
     dplyr::mutate(
       strand = best_as$strand,
-      n_var  = purrr::map2_int(.data$gap, .data$len, function(g, L) {
-        w <- com_footprint(g, L); n_var_between(w[1], w[2]) }),
+      n_var  = purrr::map2_int(.data$gap, .data$len, function(g, L)
+                count_variants_in(com_iv(best_as$strand, L, g), vpos, snp$pos)),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
-      amplicon = .data$gap + .data$len + .data$as_len - 1L) |>
+      amplicon = .data$gap + .data$len + .data$as_len - 1L,
+      # store the geometry once, for the plots to read instead of recomputing
+      as_start   = purrr::map2_int(.data$strand, .data$as_len,
+                     function(st, L) IRanges::start(as_iv(st, L))),
+      as_end     = purrr::map2_int(.data$strand, .data$as_len,
+                     function(st, L) IRanges::end(as_iv(st, L))),
+      com_start  = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
+                     function(st, L, g) IRanges::start(com_iv(st, L, g))),
+      com_end    = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
+                     function(st, L, g) IRanges::end(com_iv(st, L, g))),
+      win3p_start = purrr::map_int(.data$strand,
+                      function(st) IRanges::start(win3p_iv(st))),
+      win3p_end   = purrr::map_int(.data$strand,
+                      function(st) IRanges::end(win3p_iv(st)))) |>
     dplyr::arrange(.data$n_var, abs(.data$com_tm - 60))
 
   best    <- assays |> dplyr::slice_head(n = 1L)

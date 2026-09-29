@@ -5,14 +5,16 @@ Version: 0.1.0
 Authors@R: person("Lecture", "Demo", email = "demo@example.org", role = c("aut", "cre"))
 Description: An opinionated, reproducible pipeline for designing and quality
     controlling Kompetitive Allele-Specific PCR (KASP) genotyping assays for
-    Arabidopsis thaliana. Pulls the TAIR10 genome (BSgenome), 1001 Genomes
-    variation (Ensembl REST), picks candidate allele-specific and common
-    primers (primer3 via reticulate), and scores thermodynamics, allelic
-    discrimination and genome-wide specificity (BLAST via rBLAST).
+    Arabidopsis thaliana. Pulls the TAIR10 genome (Ensembl Plants FASTA), 1001
+    Genomes variation (Ensembl REST), designs allele-specific and common primers
+    on either strand, and scores thermodynamics (TmCalculator, OligoArrayAux),
+    Taq-aware allelic discrimination (DECIPHER) and genome-wide specificity
+    (Biostrings, optional rBLAST).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
     Biostrings,
+    IRanges,
     DECIPHER,
     TmCalculator,
     rBLAST,
@@ -36,5 +38,6 @@ Imports:
     glue
 Suggests:
     rmarkdown,
-    knitr
+    knitr,
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
