@@ -30,6 +30,26 @@ test_that("read_variants_vcf filters by region", {
   expect_setequal(read_variants_vcf(vcf, chrom = "Chr1", start = 20L, end = 60L)$pos, 50L)
 })
 
+test_that("normalise_allele folds IUPAC codes and case to ACGTN", {
+  expect_equal(normalise_allele(c("a", "g")), c("A", "G"))
+  expect_equal(normalise_allele(c("R", "y", "N")), c("N", "N", "N"))
+  expect_equal(normalise_allele("ACRT"), "ACNT")          # ambiguity inside a longer allele
+})
+
+test_that("read_variants_vcf normalises IUPAC/lowercase instead of dropping", {
+  skip_if_not_installed("vroom")
+  vcf <- tempfile(fileext = ".vcf")
+  writeLines(c(
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "4\t500\t.\tA\tR\t.\t.\t.",          # IUPAC ambiguity -> N
+    "4\t600\t.\ta\tg\t.\t.\t."           # lowercase -> uppercase
+  ), vcf)
+  v <- read_variants_vcf(vcf)
+  expect_equal(v$alt[v$pos == 500L], "N")
+  expect_equal(v$ref[v$pos == 600L], "A")
+  expect_equal(v$alt[v$pos == 600L], "G")
+})
+
 test_that("read_genome_fasta normalises and filters sequence names", {
   fa <- tempfile(fileext = ".fa")
   writeLines(c(">1 dna:chromosome chromosome:TAIR10:1:1:100:1 REF", "ACGTACGT",

@@ -59,9 +59,10 @@ plot_alignment <- function(assay) {
   tmpl <- assay$template$seq; snp_i <- assay$template$snp_i
   p <- assay_primers(assay); L <- nchar(p[["AS_ref"]])
   strand <- assay$strand %||% "+"
+  anchor <- as_anchor(snp_i, nchar(assay$snp$ref), strand)
   # template rows in the SAME 5'->3' orientation as the primers, one per allele
-  t_ref <- make_as_primer(tmpl, snp_i, L, assay$snp$ref, strand = strand)
-  t_alt <- make_as_primer(tmpl, snp_i, L, assay$snp$alt, strand = strand)
+  t_ref <- make_as_primer(tmpl, anchor, L, assay$snp$ref, strand = strand)
+  t_alt <- make_as_primer(tmpl, anchor, L, assay$snp$alt, strand = strand)
   msa <- Biostrings::DNAStringSet(c(template_ref = t_ref, template_alt = t_alt,
                                     AS_ref = p[["AS_ref"]], AS_alt = p[["AS_alt"]]))
   suppressWarnings(

@@ -204,6 +204,29 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
   else                        IRanges::IRanges(snp_pos + 1L, snp_pos + window - 1L)
 }
 
+#' Plus-strand coordinate of the AS primer's 3'-terminal base for a variant
+#'
+#' A variant is a substitution block `[v_start, v_start + ref_len - 1]` (a SNP is
+#' the `ref_len = 1` case).  On the plus strand the AS primer's 3' end sits on
+#' the block's last base; on the minus strand (where the primer is the reverse
+#' complement) it sits on the block's first base.  All primer geometry is then
+#' expressed through this single anchor, so SNP and MNP share one code path.
+#' @export
+as_anchor <- function(v_start, ref_len, strand) {
+  if (identical(strand, "+")) v_start + ref_len - 1L else v_start
+}
+
+#' Index range of the variant block inside an AS-primer binding window
+#'
+#' For `strand = "+"` the block is at the 3' end of the window; for `"-"`
+#' (reverse-complementary primer) it is at the 5' end.
+#' @keywords internal
+#' @noRd
+block_in_seg <- function(ref_len, primer_len, strand) {
+  if (identical(strand, "+")) IRanges::IRanges(primer_len - ref_len + 1L, primer_len)
+  else                        IRanges::IRanges(1L, ref_len)
+}
+
 #' Count variant positions inside an interval (IRanges)
 #'
 #' `exclude` drops positions (typically the target SNP) from the count.
@@ -357,49 +380,61 @@ so_rank <- function(consequence) {
   }, integer(1), USE.NAMES = FALSE)
 }
 
-#' Choose a designable target SNP from a variant table
+#' Choose a designable target variant from a variant table
+#'
+#' Keeps variants we can actually design on: a biallelic substitution block whose
+#' REF and ALT are ACGT-only strings of *equal* length (SNP or MNP).  Indels and
+#' multi-allelic records are left for a dedicated engine and are not silently
+#' forced into a substitution.
+#'
+#' @param clean_3p number of flanking bases of the AS primer that should be free
+#'   of *other* variants.  Because the AS primer may be placed on either strand,
+#'   the "clean" count is the best (smallest) of the two orientations: the chosen
+#'   variant just has to be clean in *at least one* direction.
 #' @export
-#' @param clean_3p number of 3'-terminal bases of the AS primer that should be
-#'   free of *other* variants.  Because the AS primer may be placed on either
-#'   strand, the "clean" count is the best (smallest) of the two orientations:
-#'   the chosen SNP just has to be clean in *at least one* direction.
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L) {
-  v <- variants |>
-    dplyr::filter(
-      purrr::map_lgl(.data$ref_genome, ~ length(.x) == 2L),
-      purrr::map_lgl(.data$ref_genome, ~ all(nchar(.x) == 1L)),
-      purrr::map_lgl(.data$ref_genome, ~ !any(.x %in% c("-", "")))
-    )
-  if (!is.null(variant_id)) v <- dplyr::filter(v, .data$id == variant_id)
-  if (nrow(v) == 0L) rlang::abort("No usable biallelic SNP left after filtering.")
+  if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
 
-  # every variant of the gene (incl. indels): used to penalise SNPs whose AS
+  # REF length comes from the VCF (its first allele); the reference bases are
+  # then read from the genome, which is the truth we design against.
+  v <- variants |>
+    dplyr::mutate(
+      ref_len = purrr::map_int(.data$ref_genome, ~ nchar(.x[1L])),
+      ref = purrr::pmap_chr(list(.data$chrom, .data$pos, .data$ref_len),
+                            function(ch, p, n) as.character(get_region(genome, ch, p, p + n - 1L))),
+      # exactly one non-reference allele of the SAME length, else NA (dropped
+      # below): a silent "first of several" choice would pick an arbitrary ALT,
+      # and unequal lengths are indels, handled separately.
+      alt = purrr::map2_chr(.data$ref_genome, .data$ref, function(alleles, ref) {
+        other <- setdiff(alleles, ref)
+        if (length(other) == 1L && nchar(other) == nchar(ref)) other else NA_character_
+      })
+    ) |>
+    dplyr::filter(!is.na(.data$alt),
+                  stringr::str_detect(.data$ref, "^[ACGT]+$"),
+                  stringr::str_detect(.data$alt, "^[ACGT]+$"))
+  if (nrow(v) == 0L) rlang::abort("No usable substitution variant (SNP/MNP) left after filtering.")
+
+  # every variant of the gene (incl. indels): used to penalise targets whose AS
   # 3' neighbourhood is itself variable (breaks allele specificity across lines)
   allpos <- variants$pos[variants$chrom == gene$chrom]
 
   v |>
     dplyr::mutate(
-      ref = purrr::map2_chr(.data$chrom, .data$pos,
-                            ~ as.character(get_region(genome, .x, .y, .y))),
-      # exactly one non-reference allele, else NA (dropped below): a silent
-      # "first of several" choice would pick an arbitrary ALT for multiallelics
-      alt = purrr::map2_chr(.data$ref_genome, .data$ref, function(alleles, ref) {
-        other <- setdiff(alleles, ref)
-        if (length(other) == 1L) other else NA_character_
-      }),
-      transition = paste0(.data$ref, .data$alt) %in% c("AG", "GA", "CT", "TC"),
+      transition = .data$ref_len == 1L &
+        paste0(.data$ref, .data$alt) %in% c("AG", "GA", "CT", "TC"),
       rank = so_rank(.data$consequence),
       # best-case (either strand) count of other variants in the AS 3' window,
-      # vectorised over the whole variant table (IRanges)
+      # vectorised over the whole variant table (IRanges).  The windows sit
+      # strictly outside the variant block, so the target cannot count itself.
       n_3p = pmin(
         IRanges::countOverlaps(
           IRanges::IRanges(.data$pos - clean_3p + 1L, .data$pos - 1L),
           IRanges::IRanges(allpos, allpos)),
         IRanges::countOverlaps(
-          IRanges::IRanges(.data$pos + 1L, .data$pos + clean_3p - 1L),
+          IRanges::IRanges(.data$pos + .data$ref_len, .data$pos + .data$ref_len + clean_3p - 2L),
           IRanges::IRanges(allpos, allpos)))
     ) |>
-    dplyr::filter(!is.na(.data$alt)) |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos) |>
     dplyr::slice(1L) |>
     dplyr::select(-"rank", -"ref_genome")
@@ -537,11 +572,11 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
 #  4. Allele-specific primers (the KASP-specific part)
 # =============================================================================
 
-#' Plus-strand binding window of an AS primer of a given strand/length
+#' Plus-strand binding window of an AS primer ending at `anchor`
 #' @keywords internal
 #' @noRd
-as_window <- function(window, snp_i, length, strand) {
-  iv <- primer_interval(snp_i, strand, length, role = "AS")
+as_window <- function(window, anchor, length, strand) {
+  iv <- primer_interval(anchor, strand, length, role = "AS")
   Biostrings::subseq(window, IRanges::start(iv), IRanges::end(iv))
 }
 
@@ -554,19 +589,21 @@ as_target <- function(seg, strand) {
 
 #' Build one allele-specific primer on a given strand
 #'
-#' The 3'-terminal base is the SNP allele.  If `stab_at` is given, the base
-#' `stab_at` positions from the 3' end is replaced by `stab_base` (the deliberate
-#' stabilising mismatch).
+#' `anchor` is the plus-strand coordinate of the primer's 3'-terminal base (see
+#' [as_anchor()]).  The allele's block (1 nt for a SNP, several nt for an MNP) is
+#' inserted at the 3' end of the binding window, so the primer ends on the
+#' variant.  If `stab_at` is given, the base `stab_at` positions from the 3' end
+#' is replaced by `stab_base` (the deliberate stabilising mismatch).
 #'
-#' `strand = "+"`: SNP is the 3'-terminal base, the primer extends upstream.
-#' `strand = "-"`: primer is the reverse complement (extends downstream).
+#' `strand = "+"`: primer matches the plus strand, 3' base at the anchor.
+#' `strand = "-"`: primer is the reverse complement, 3' base at the anchor.
 #' @keywords internal
 #' @noRd
-make_as_primer <- function(window, snp_i, length, allele, strand = "+",
+make_as_primer <- function(window, anchor, length, allele, strand = "+",
                            stab_at = NULL, stab_base = NULL) {
-  seg <- as_window(window, snp_i, length, strand)         # DNAString, contains the SNP
-  at  <- if (identical(strand, "+")) length else 1L      # SNP index inside `seg`
-  p   <- Biostrings::replaceAt(seg, IRanges::IRanges(at, at), allele)
+  seg <- as_window(window, anchor, length, strand)       # DNAString, contains the variant
+  blk <- block_in_seg(nchar(allele), length, strand)     # variant block inside `seg`
+  p   <- Biostrings::replaceAt(seg, blk, allele)
   if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
   if (!is.null(stab_at)) {
     i <- length - stab_at + 1L                            # 3'-relative -> 5'-index
@@ -578,21 +615,26 @@ make_as_primer <- function(window, snp_i, length, allele, strand = "+",
 #' Grid-search allele-specific primers maximising Taq-based discrimination
 #'
 #' For every strand, length, secondary-mismatch position and mismatch base we
-#' build the REF and ALT 3'-anchored primers and predict the PCR efficiency of
+#' build the REF and ALT allele-anchored primers and predict the PCR efficiency of
 #' each on both alleles (DECIPHER).  Discrimination = on-target minus off-target
-#' efficiency, averaged over the two primers.
+#' efficiency, averaged over the two primers.  `ref`/`alt` are strings, so the
+#' same engine handles SNP (`nchar == 1`) and substitution blocks / MNP (longer).
 #'
+#' @param v_start plus-strand start of the variant block (a single base for a SNP).
+#' @param ref,alt the two alleles as ACGT strings of equal length.
 #' @param strands which strands to consider for the AS primer; `"+"` = forward
-#'   primer with the SNP as its 3'-terminal base extending downstream, `"-"` =
+#'   primer with the variant as its 3'-terminal block extending downstream, `"-"` =
 #'   the mirror-image primer extending upstream.  Both are valid KASP layouts.
 #' @export
-design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
+design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = 20:27, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
+  ref_len <- nchar(ref)
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
   # the one the (perfectly matching) primer already carries there.
   mismatch_bases <- function(L, k, strand) {
-    base_p <- make_as_primer(window, snp_i, L, ref, strand = strand)
+    base_p <- make_as_primer(window, as_anchor(v_start, ref_len, strand), L, ref,
+                             strand = strand)
     cur    <- substr(base_p, L - k + 1L, L - k + 1L)
     setdiff(c("A", "C", "G", "T"), cur)
   }
@@ -609,12 +651,12 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
     L <- as_length
     k <- if (is.na(stab_at))   NULL else stab_at
     b <- if (is.na(stab_base)) NULL else stab_base
+    anchor <- as_anchor(v_start, ref_len, strand)
     # binding window on the plus strand, and the same window carrying the ALT allele
-    seg_ref <- as_window(window, snp_i, L, strand)
-    pos_in_seg <- if (identical(strand, "+")) L else 1L
-    seg_alt <- Biostrings::replaceAt(seg_ref, IRanges::IRanges(pos_in_seg, pos_in_seg), alt)
-    ref_p <- make_as_primer(window, snp_i, L, ref, strand = strand, stab_at = k, stab_base = b)
-    alt_p <- make_as_primer(window, snp_i, L, alt, strand = strand, stab_at = k, stab_base = b)
+    seg_ref <- as_window(window, anchor, L, strand)
+    seg_alt <- Biostrings::replaceAt(seg_ref, block_in_seg(ref_len, L, strand), alt)
+    ref_p <- make_as_primer(window, anchor, L, ref, strand = strand, stab_at = k, stab_base = b)
+    alt_p <- make_as_primer(window, anchor, L, alt, strand = strand, stab_at = k, stab_base = b)
     t_ref <- as.character(as_target(seg_ref, strand))
     t_alt <- as.character(as_target(seg_alt, strand))
     # explicit on/off pairing: the "on" target carries the primer's own allele,
@@ -640,10 +682,12 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
   wide |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      ref_primer = make_as_primer(window, snp_i, .data$as_length, ref, strand = .data$strand,
+      ref_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
+                                  .data$as_length, ref, strand = .data$strand,
                                   if (is.na(.data$stab_at)) NULL else .data$stab_at,
                                   if (is.na(.data$stab_base)) NULL else .data$stab_base),
-      alt_primer = make_as_primer(window, snp_i, .data$as_length, alt, strand = .data$strand,
+      alt_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
+                                  .data$as_length, alt, strand = .data$strand,
                                   if (is.na(.data$stab_at)) NULL else .data$stab_at,
                                   if (is.na(.data$stab_base)) NULL else .data$stab_base)
     ) |>
@@ -745,10 +789,13 @@ in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L) {
 #' template-matched primers (no deliberate stabiliser), like [specificity_seed()].
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
-  aa  <- assay$assay[1L, ]
-  seed <- c(AS_ref = make_as_primer(assay$template$seq, assay$template$snp_i,
+  aa      <- assay$assay[1L, ]
+  ref_len <- nchar(assay$snp$ref)
+  # template-local anchor (assay$template$seq is the small design window)
+  anchor  <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
+  seed <- c(AS_ref = make_as_primer(assay$template$seq, anchor,
                                     aa$as_len, assay$snp$ref, strand = aa$strand),
-            AS_alt = make_as_primer(assay$template$seq, assay$template$snp_i,
+            AS_alt = make_as_primer(assay$template$seq, anchor,
                                     aa$as_len, assay$snp$alt, strand = aa$strand))
   purrr::imap_dfr(seed, function(as_p, nm) {
     fr <- if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
@@ -808,13 +855,17 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 min_gc = 0.35, max_gc = 0.70,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 min_disc = 0.5, run_blast = FALSE) {
-  tmpl   <- snp_template(genome, snp$chrom, snp$pos, flank)
-  vpos   <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
+  tmpl    <- snp_template(genome, snp$chrom, snp$pos, flank)
+  vpos    <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
+  ref_len <- nchar(snp$ref)
+  vblock  <- seq.int(snp$pos, snp$pos + ref_len - 1L)   # the target's own bases
 
-  # all primer geometry comes from the shared helpers (plus-strand coordinates)
-  as_iv    <- function(strand, L) primer_interval(snp$pos, strand, L, role = "AS")
-  com_iv   <- function(strand, L, gap) primer_interval(snp$pos, strand, L, gap = gap, role = "COM")
-  win3p_iv <- function(strand) as_3p_interval(snp$pos, strand, clean_3p)
+  # all primer geometry comes from the shared helpers (plus-strand coordinates);
+  # the AS primer's 3'-terminal base is the variant anchor for its strand
+  anchor_of <- function(strand) as_anchor(snp$pos, ref_len, strand)
+  as_iv    <- function(strand, L) primer_interval(anchor_of(strand), strand, L, role = "AS")
+  com_iv   <- function(strand, L, gap) primer_interval(anchor_of(strand), strand, L, gap = gap, role = "COM")
+  win3p_iv <- function(strand) as_3p_interval(anchor_of(strand), strand, clean_3p)
 
   as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
                                strands = strands) |>
@@ -823,9 +874,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                   !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
     dplyr::mutate(
       n_3p  = purrr::map_int(.data$strand, function(st)
-                count_variants_in(win3p_iv(st), vpos, snp$pos)),
+                count_variants_in(win3p_iv(st), vpos, vblock)),
       n_var = purrr::map2_int(.data$strand, .data$as_length, function(st, L)
-                count_variants_in(as_iv(st, L), vpos, snp$pos))
+                count_variants_in(as_iv(st, L), vpos, vblock))
     )
   if (nrow(as_cand) == 0L) rlang::abort("No AS primer passed the GC/Tm filter.")
 
@@ -853,9 +904,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       "is below min_disc = {min_disc}; consider widening `strands` or `tm_range`."))
   }
 
-  # COM: design on the SAME strand as the winning AS primer so the amplicon closes
-  common <- design_common_primers(tmpl$seq, tmpl$snp_i, strand = best_as$strand,
-                                  tm_range = tm_range) |>
+  # COM: design on the SAME strand as the winning AS primer so the amplicon
+  # closes.  design_common_primers() works in TEMPLATE coordinates, so its
+  # anchor is the template-local variant anchor (not the genomic one).
+  common <- design_common_primers(tmpl$seq, as_anchor(tmpl$snp_i, ref_len, best_as$strand),
+                                  strand = best_as$strand, tm_range = tm_range) |>
     dplyr::mutate(com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
                   com_hairpin   = purrr::map_dbl(.data$com, ~ oligo_dg(.x)))
 
@@ -865,7 +918,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     dplyr::mutate(
       strand = best_as$strand,
       n_var  = purrr::map2_int(.data$gap, .data$len, function(g, L)
-                count_variants_in(com_iv(best_as$strand, L, g), vpos, snp$pos)),
+                count_variants_in(com_iv(best_as$strand, L, g), vpos, vblock)),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
@@ -898,9 +951,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # specificity uses the template-matched allele for the AS primers (no
   # deliberate mismatch): that answers "is the target site unique?".
+  # make_as_primer() works in TEMPLATE coordinates, hence the template anchor.
+  tmpl_anchor <- as_anchor(tmpl$snp_i, ref_len, best$strand)
   seed_primers <- c(
-    AS_ref = make_as_primer(tmpl$seq, tmpl$snp_i, best$as_len, snp$ref, strand = best$strand),
-    AS_alt = make_as_primer(tmpl$seq, tmpl$snp_i, best$as_len, snp$alt, strand = best$strand),
+    AS_ref = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$ref, strand = best$strand),
+    AS_alt = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$alt, strand = best$strand),
     COM    = best$com)
 
   # in-silico PCR: the REF primer must give one product, the ALT primer none
@@ -933,7 +988,79 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
 
 # =============================================================================
-#  8. Acceptance checks - "is this a good KASP?"
+#  8. Reaction recipe (output / ordering)
+# =============================================================================
+
+#' Tidy KASP primer-mix + reaction recipe
+#'
+#' Standard KBioscience/LGC KASP chemistry: the two allele-specific primers are
+#' used at half the concentration of the common primer, AS1:AS2:COM = 2:2:5 (the
+#' usual working mix is 12/12/30 uM).  This returns the recipe as tidy data:
+#'
+#' * `stage = "primer mix"` - how to build the working primer mix from the
+#'   orderable 100 uM oligo stocks;
+#' * `stage = "reaction"` - the per-reaction setup (2x master mix, assay mix,
+#'   DNA, water), scaled to `n_reactions` with a small `overfill` for pipetting.
+#'
+#' It is pure arithmetic, so it carries no chemistry assumptions beyond the
+#' published LGC recipe; change `as_uM`/`com_uM` for other chemistries.
+#'
+#' @param n_reactions number of wells to prepare for.
+#' @param mix_uL total volume of working primer mix to prepare.
+#' @param stock_uM oligo stock concentration as ordered (IDT default 100 uM).
+#' @param as_uM,com_uM working concentrations of each AS and the common primer.
+#' @param reaction_uL final reaction volume per well.
+#' @param master_mix_conc fold-concentrate of the supplied master mix.
+#' @param dna_uL template DNA volume per reaction.
+#' @param overfill fraction of extra volume to compensate pipetting loss.
+#' @return tibble `stage`, `component`, `stock_uM`, `final_uM`, `per_rxn_uL`,
+#'   `total_uL`.
+#' @export
+kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
+                            stock_uM = 100, as_uM = 12, com_uM = 30,
+                            reaction_uL = 10, master_mix_conc = 2,
+                            dna_uL = 1, overfill = 0.10) {
+  ratios      <- c(AS1_FAM = as_uM, AS2_HEX = as_uM, COM = com_uM)
+  stock_share <- ratios / stock_uM                       # fraction of the mix
+  water_share <- 1 - sum(stock_share)
+  if (water_share < 0) {
+    rlang::abort(glue::glue(
+      "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) needs more than ",
+      "100% of {stock_uM} uM stock; raise `stock_uM` or lower the targets."))
+  }
+
+  primer_mix <- tibble::tibble(
+    component = c(names(ratios), "nuclease-free water"),
+    stock_uM  = c(rep(stock_uM, length(ratios)), NA_real_),
+    final_uM  = c(unname(ratios), NA_real_),
+    per_rxn_uL = NA_real_,
+    total_uL  = c(unname(stock_share) * mix_uL, water_share * mix_uL),
+    stage     = "primer mix")
+
+  assay_per_rxn <- round(0.014 * reaction_uL, 3)
+  master_per_rxn <- reaction_uL / master_mix_conc
+  water_per_rxn  <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
+  if (water_per_rxn < 0) {
+    rlang::abort(glue::glue(
+      "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."))
+  }
+  total_rxn <- ceiling(n_reactions * (1 + overfill))
+
+  reaction <- tibble::tibble(
+    component  = c(glue::glue("{master_mix_conc}x KASP master mix"), "primer mix",
+                   "template DNA", "nuclease-free water"),
+    stock_uM   = NA_real_,
+    final_uM   = NA_real_,
+    per_rxn_uL = c(master_per_rxn, assay_per_rxn, dna_uL, water_per_rxn),
+    total_uL   = c(master_per_rxn, assay_per_rxn, dna_uL, water_per_rxn) * total_rxn,
+    stage      = "reaction")
+
+  dplyr::bind_rows(primer_mix, reaction)
+}
+
+
+# =============================================================================
+#  9. Acceptance checks - "is this a good KASP?"
 # =============================================================================
 
 #' Longest homopolymer run in a sequence

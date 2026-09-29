@@ -15,9 +15,24 @@
 #  symbolic alleles (`<DEL>`, `*`, `.`) are dropped.
 # =============================================================================
 
+#' Normalise an allele string to plain `ACGTN`
+#'
+#' Upper-cases the string and folds any IUPAC ambiguity code (R, Y, S, W, K,
+#' M, B, D, H, V) - or anything else non-ACGTN - to `N`, so downstream design
+#' can treat "unknown base" uniformly instead of dropping the whole record.
+#' @keywords internal
+#' @export
+normalise_allele <- function(x) {
+  x <- toupper(x)
+  x <- chartr("RYSWKMBDHV", "NNNNNNNNNN", x)   # IUPAC ambiguity -> N
+  gsub("[^ACGTN]", "N", x)
+}
+
 #' Read variants from a VCF/BCF file (streaming, memory-mapped)
 #'
-#' @param path VCF (optionally bgzipped) path.
+#' @param path VCF path; plain (`vcf`) or bgzipped (`vcf.gz`) are both read by
+#'   `vroom`, so no external decompression is needed (pair with `tabix` for a
+#'   random-access index on very large files).
 #' @param chrom,start,end optional region filter (chromosome is normalised with
 #'   [ath_chrom()], so `"4"` and `"Chr4"` both work).
 #' @export
@@ -44,8 +59,13 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
 
   v |>
     tidyr::separate_longer_delim("alt", delim = ",") |>          # multi-allelic -> rows
-    dplyr::filter(stringr::str_detect(.data$ref, "^[ACGTN]+$"),
-                  stringr::str_detect(.data$alt, "^[ACGTN]+$"))  # concrete alleles only
+    # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation,
+    # so they are not mangled into a fake `N` allele
+    dplyr::filter(!stringr::str_detect(.data$ref, "^<|[*.]"),
+                  !stringr::str_detect(.data$alt, "^<|[*.]")) |>
+    dplyr::mutate(ref = normalise_allele(.data$ref),
+                  alt = normalise_allele(.data$alt)) |>
+    dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
 }
 
 #' Read an arbitrary genome FASTA, optionally normalising sequence names
