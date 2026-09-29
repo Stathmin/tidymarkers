@@ -1,0 +1,22 @@
+# generated / heavy artefacts
+results/*
+!results/.gitkeep
+.venv/
+.tools/
+.deps/
+
+# curated demo data must be tracked, but not the download cache; this also
+# overrides the root `data/` ignore rule
+!data/
+!data/example_targets.csv
+data/cache/
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# rendered report
+report/*.html
+report/*.nb.html

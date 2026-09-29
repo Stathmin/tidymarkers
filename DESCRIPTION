@@ -1,0 +1,40 @@
+Package: kaspexample
+Type: Project
+Title: KASP Marker Design for Arabidopsis thaliana (TAIR10)
+Version: 0.1.0
+Authors@R: person("Lecture", "Demo", email = "demo@example.org", role = c("aut", "cre"))
+Description: An opinionated, reproducible pipeline for designing and quality
+    controlling Kompetitive Allele-Specific PCR (KASP) genotyping assays for
+    Arabidopsis thaliana. Pulls the TAIR10 genome (BSgenome), 1001 Genomes
+    variation (Ensembl REST), picks candidate allele-specific and common
+    primers (primer3 via reticulate), and scores thermodynamics, allelic
+    discrimination and genome-wide specificity (BLAST via rBLAST).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    Biostrings,
+    DECIPHER,
+    TmCalculator,
+    rBLAST,
+    tidyverse,
+    dplyr,
+    tidyr,
+    purrr,
+    readr,
+    stringr,
+    tibble,
+    ggplot2,
+    ggmsa,
+    gggenes,
+    ggrepel,
+    patchwork,
+    httr2,
+    jsonlite,
+    here,
+    fs,
+    rlang,
+    glue
+Suggests:
+    rmarkdown,
+    knitr
+Config/testthat/edition: 3
