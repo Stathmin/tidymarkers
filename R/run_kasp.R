@@ -16,10 +16,11 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(tidyverse)
   library(here)
+  library(dplyr)
+  library(ggplot2)
   library(Biostrings)
-  library(ggmsa)
+  library(ggmsa)               # geom_seqlogo needs it attached, not just namespaced
 })
 
 source(here::here("R", "kasp_functions.R"))
@@ -82,16 +83,15 @@ if (!is.null(assay$blast)) {
   print(utils::head(dplyr::arrange(assay$blast, .data$evalue), 10))
 }
 
-# --- 5. discrimination figure ------------------------------------------------
-p_disc <- assay$as_candidates |>
-  dplyr::slice_max(.data$discrimination, n = 15) |>
-  dplyr::mutate(label = paste0("strand ", .data$strand, " / len ", .data$as_length,
-                               " / mm ", .data$stab_at, " / ", .data$stab_base)) |>
-  ggplot(aes(x = discrimination, y = stats::reorder(label, discrimination))) +
-  geom_col(fill = "darkorange") +
-  labs(x = "discrimination (on- minus off-target efficiency)", y = NULL,
-       title = "Allele-specific discrimination of candidate AS primers") +
-  theme_minimal()
+cat("\nAcceptance checks (kasp_design_checks):\n")
+checks <- kasp_design_checks(assay)
+print(checks)
+if (!all(checks$pass)) {
+  rlang::warn(glue::glue("Assay fails {sum(!checks$pass)} acceptance criterion/criteria."))
+}
+
+# --- 5. discrimination figure (shared with the report) -----------------------
+p_disc <- plot_discrimination(assay)
 
 # --- 6. persist --------------------------------------------------------------
 fs::dir_create(here::here("results"))
@@ -108,7 +108,7 @@ ggsave(here::here("results", "kasp_discrimination.png"), p_disc, width = 7, heig
 
 # --- 7. library-driven views (see R/kasp_plots.R) ---------------------------
 # ggmsa emits internal warnings (aes_ deprecation + a manual-scale note) that are
-# not actionable here; silenciar only while rendering the ggmsa-based panels.
+# not actionable here; silence them only while rendering the ggmsa-based panels.
 ggsave(here::here("results", "plot_primers.png"),    plot_primers(assay, variants, snp),           width = 8,   height = 4.5)
 ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gene, variants, snp, assay), width = 8, height = 3.5)
 suppressWarnings(ggsave(here::here("results", "plot_alignment.png"), plot_alignment(assay),  width = 8, height = 3))

@@ -88,6 +88,28 @@ plot_self_complementarity <- function(assay, title = "Self-complementarity (DNA)
 
 
 # =============================================================================
+#  Candidate ranking
+# =============================================================================
+
+#' Candidate AS primers ranked by discrimination
+#'
+#' One bar chart, shared by the driver and the report so the two cannot drift.
+#' @export
+plot_discrimination <- function(assay, n = 15L) {
+  assay$as_candidates |>
+    dplyr::slice_max(.data$discrimination, n = n) |>
+    dplyr::mutate(label = paste0("strand ", .data$strand, " / len ", .data$as_length,
+                                 " / mm ", .data$stab_at, " / ", .data$stab_base)) |>
+    ggplot2::ggplot(ggplot2::aes(.data$discrimination,
+                                 stats::reorder(.data$label, .data$discrimination))) +
+    ggplot2::geom_col(fill = "darkorange") +
+    ggplot2::labs(x = "discrimination (on- minus off-target efficiency)", y = NULL,
+                  title = "Allele-specific discrimination of candidate AS primers") +
+    ggplot2::theme_minimal()
+}
+
+
+# =============================================================================
 #  Gene / primer maps (gggenes)
 # =============================================================================
 
@@ -217,7 +239,7 @@ plot_dimer_qc <- function(assay) {
   hair <- ggplot2::ggplot(assay$thermo,
                           ggplot2::aes(.data$hairpin_dg, stats::reorder(.data$name, .data$hairpin_dg))) +
     ggplot2::geom_col(fill = "steelblue") +
-    ggplot2::geom_vline(xintercept = -3, linetype = "dashed", colour = "firebrick") +
+    ggplot2::geom_vline(xintercept = HAIRPIN_DG_WARN, linetype = "dashed", colour = "firebrick") +
     ggplot2::labs(x = "hairpin dG37 (kcal/mol)", y = NULL,
                   title = "Hairpin dG37 (kcal/mol)") +
     ggplot2::theme_minimal()
@@ -236,24 +258,23 @@ plot_dimer_qc <- function(assay) {
 #' Tidy table of the assay oligos (with KASP tails)
 #' @export
 kasp_primer_table <- function(assay, gene) {
-  tails  <- unname(assay$tails)            # AS1/FAM, AS2/HEX, COM
-  idx    <- match(c("AS_ref", "AS_alt", "COM"), assay$thermo$name)
-  nm     <- glue::glue("{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}_{assay$snp$ref}to{assay$snp$alt}")
-  notail <- c(assay$assay$as_ref[1], assay$assay$as_alt[1], assay$assay$com[1])
-  tm     <- assay$thermo$tm[idx]
-  gc     <- round(assay$thermo$gc[idx], 2)
-
-  tibble::tibble(
-    assay       = nm,
+  nm <- glue::glue("{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}_{assay$snp$ref}to{assay$snp$alt}")
+  roles <- tibble::tibble(
+    name        = c("AS_ref", "AS_alt", "COM"),
     role        = c("AS-ref (FAM)", "AS-alt (HEX/VIC)", "common (reverse)"),
     oligo_id    = c("AS1_FAM", "AS2_HEX", "COM"),
-    sequence    = tails,                                  # with 5' tail
-    seq_no_tail = notail,
     tail        = c(KASP_TAIL_FAM, KASP_TAIL_HEX, ""),
-    tm          = tm,
-    gc          = gc,
-    length      = nchar(tails)
-  )
+    seq_no_tail = c(assay$assay$as_ref[1], assay$assay$as_alt[1], assay$assay$com[1]))
+
+  assay$thermo |>
+    dplyr::select("name", "tm", "gc") |>
+    dplyr::inner_join(roles, by = "name") |>               # join, not positional match()
+    dplyr::mutate(assay    = nm,
+                  sequence = paste0(.data$tail, .data$seq_no_tail),  # with 5' tail
+                  gc       = round(.data$gc, 2),
+                  length   = nchar(.data$sequence)) |>
+    dplyr::select("assay", "role", "oligo_id", "sequence", "seq_no_tail",
+                  "tail", "tm", "gc", "length")
 }
 
 #' Write IDT, LGC and tidy order sheets for the assay primers

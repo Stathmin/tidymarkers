@@ -65,14 +65,7 @@ assay$efficiency |>
 Дискриминация = (ref_on − ref_off + alt_on − alt_off) / 2.
 
 ```{r disc, fig.height=5}
-assay$as_candidates |>
-  slice_max(discrimination, n = 15) |>
-  mutate(label = paste0("strand ", strand, " / len ", as_length,
-                        " / mm ", stab_at, " / ", stab_base)) |>
-  ggplot(aes(discrimination, reorder(label, discrimination))) +
-  geom_col(fill = "darkorange") +
-  labs(x = "дискриминация", y = NULL, title = "Кандидаты AS-праймеров") +
-  theme_minimal()
+plot_discrimination(assay)
 ```
 
 ## Термодинамика и вторичная структура
@@ -104,6 +97,17 @@ assay$specificity |> knitr::kable(caption = "Число вхождений 3'-с
 ```{r blast, eval=!is.null(assay$blast)}
 assay$blast |> arrange(evalue) |> head(15) |>
   knitr::kable(digits = 2, caption = "BLAST-хиты (blastn-short) по геному TAIR10")
+```
+
+## Критерии приёмки: что такое «хороший KASP»
+
+Пороги заданы в `KASP_LIMITS`, проверка — `kasp_design_checks()`. Критерии
+следуют методичке LGC/KBioscience и свежей работе **EasyKASP** (Zhang, Yang &
+Wen, *BMC Bioinformatics* 2025, 26:292): ампликон < 100 bp, Tm COM-праймера
+**выше**, чем у AS-праймеров и т. д.
+
+```{r checks}
+kasp_design_checks(assay) |> knitr::kable(digits = 2)
 ```
 
 ## Визуализации (панели рисуют библиотеки)

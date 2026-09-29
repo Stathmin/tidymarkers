@@ -19,19 +19,28 @@
 #
 #  DESIGN MANUAL (condensed, as of 2026)
 #  ---------------------------------------------------------------------------
-#  Values below follow LGC/KBioscience guidance and the standard primer-design
-#  literature.  They are defaults, not dogma - validate in your lab.
+#  Follows LGC/KBioscience KASP guidance together with the peer-reviewed
+#  EasyKASP study (Zhang, Yang & Wen, BMC Bioinformatics 2025, 26:292,
+#  doi:10.1186/s12859-025-06322-x), which re-derived the optimal ranges from
+#  500 validated KASP assays.  Defaults, not dogma - validate in your lab.
+#  The machine-checkable form of this checklist is kasp_design_checks(), with
+#  thresholds in KASP_LIMITS, so prose and code cannot drift apart.
 #
 #  Amplicon
-#    * keep it short: 60-120 bp is the sweet spot (hard limits ~50-150 bp).
+#    * keep it short: 50-100 bp (EasyKASP: amplification products < 100 bp).
 #
 #  Common primer (COM)
-#    * length 18-25 nt, Tm 57-62 C, GC 40-60%; low 3'-end stability;
-#      no runs of >= 4 identical bases; no self/cross 3' dimers.
+#    * length 18-25 nt, GC 40-60%, no runs of >= 4 identical bases; low 3'-end
+#      stability; no self/cross 3' dimers.
+#    * its Tm should be HIGHER than the two allele-specific primers (EasyKASP:
+#      the common primer typically has lower GC but more length and higher Tm).
 #
 #  Allele-specific primers (AS1/AS2)
 #    * the SNP is the 3'-TERMINAL base - the whole point of the assay.
-#    * target-specific part 20-28 nt; Tm (matching allele) ~ 60-65 C.
+#    * target-specific part 20-28 nt, within 20-30 nt of the variant; Tm
+#      (matching allele) ~ 55-65 C, below the common primer's Tm.
+#    * prefer the strand whose +/-25 nt around the variant has GC ~ 45% and no
+#      repeats (EasyKASP step 1) - the both-strand search below does this.
 #    * add a DELIBERATE secondary mismatch 1-3 bases from the 3' end
 #      (usually -2 or -3): it destabilises the non-target allele more than the
 #      target one and is the main lever for discrimination.  We search for it
@@ -51,20 +60,29 @@
 #      between any primer pair (AS1-COM, AS2-COM, AS1-AS2, COM self).
 #
 #  Specificity
-#    * the complete assay must amplify ONE product genome-wide.  An off-target
-#      with an intact 3'-terminal match is a killer - drop it.
+#    * the complete assay must amplify ONE product genome-wide (primers must be
+#      single-copy; EasyKASP).  An off-target with an intact 3'-terminal match
+#      is a killer - drop it.
+#    * non-target variants in the flanking window matter; EasyKASP recommends
+#      Sanger-checking the variant and its flanks for critical markers.
 #
 #  Validation
 #    * always genotype three controls - homozygous REF, homozygous ALT and a
 #      heterozygote - plus a no-template control.
+#
+#  ACCEPTANCE CHECKLIST (what a "good" assay must satisfy; KASP_LIMITS/checks)
+#    * amplicon 50-100 bp; |AS Tm| in 55-65 C; COM Tm in 57-62 C and >= AS Tm
+#    * GC 0.40-0.60; no homopolymer run >= 4 nt; hairpin dG37 >= -3 kcal/mol
+#    * no cross-dimer or homodimer below -9 kcal/mol (37 C)
+#    * Taq discrimination >= 0.5; the 3'-seed is unique genome-wide
 #
 #  ---------------------------------------------------------------------------
 #  WHICH PACKAGE DOES WHAT (all R)
 #    - DECIPHER       : PCR efficiency incl. Taq 3'-mismatch bias (the KASP
 #                       discrimination metric).  Needs OligoArrayAux (`hybrid-min`).
 #    - TmCalculator   : nearest-neighbour Tm with salt/DMSO correction (SantaLucia 2004 et al.)
-#    - Biostrings     : sequence ops, GC, palindromes (hairpins), local
-#                       alignments (dimers), vmatchPattern (specificity), PDict
+#    - Biostrings     : sequence ops, GC (letterFrequency), local alignments
+#                       (dimers), vcountPattern (specificity)
 #    - rBLAST         : optional genome-wide BLAST (needs NCBI BLAST+ in PATH)
 #    - httr2/jsonlite : Ensembl Plants REST (variation, gene lookup)
 #  We hand-write only the KASP-specific bit (3'-anchored AS primers and the
@@ -88,6 +106,30 @@ PCR_EFF  <- list(temp = 60, P = 4e-7, ions = 0.2)
 # Ensembl Plants FASTA defline -> TAIR chromosome name; the only sequences kept.
 ATH_CHROM_MAP <- c("1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
                    "5" = "Chr5", "Mt" = "ChrM", "Pt" = "ChrC")
+
+# Design targets / thresholds (named, so they are not magic numbers)
+AS_TM_TARGET    <- 62    # preferred AS-primer Tm (C)
+COM_TM_TARGET   <- 60    # preferred common-primer Tm (C)
+HAIRPIN_DG_WARN <- -3    # flag hairpins with dG37 below this (kcal/mol)
+SEED_K          <- 15L   # 3'-seed length for the fast specificity screen
+SEED_MISMATCH   <- 1L
+
+# Ensembl consequence wording -> design priority (lower = preferred)
+SO_TERM_RANK  <- c(missense = 1L, splice = 2L, synonymous = 3L, UTR = 4L)
+SO_RANK_OTHER <- 5L
+
+# KASP acceptance thresholds (consensus + EasyKASP 2025; the manual mirrors this)
+KASP_LIMITS <- list(
+  amplicon     = c(50, 100),    # bp  (EasyKASP: products < 100 bp)
+  as_tm        = c(55, 65),     # C
+  com_tm       = c(57, 62),     # C
+  gc           = c(0.40, 0.60), # fraction
+  max_run      = 4L,            # longest homopolymer tolerated is max_run - 1
+  hairpin_dg   = -3,            # dG37 (kcal/mol); must be >= this
+  duplex_dg    = -9,            # cross-dimer dG37; must be >= this
+  homodimer_dg = -9,            # self-dimer dG37; must be >= this
+  discrimination = 0.5          # Taq on- minus off-target efficiency
+)
 
 # OligoArrayAux thermodynamics (the DNA engine DECIPHER already uses):
 #   hybrid-min    -> duplex (dimer) free energy of two strands
@@ -291,6 +333,18 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
   list(seq = seq, snp_i = as.integer(flank) + 1L)
 }
 
+#' Map Ensembl consequence strings to a design priority (lower = preferred)
+#'
+#' Uses the `SO_TERM_RANK` constant so the vocabulary lives in one place.
+#' @keywords internal
+#' @noRd
+so_rank <- function(consequence) {
+  vapply(consequence, function(x) {
+    hit <- names(SO_TERM_RANK)[stringr::str_detect(x, names(SO_TERM_RANK))]
+    if (length(hit)) unname(SO_TERM_RANK[[hit[1L]]]) else SO_RANK_OTHER
+  }, integer(1), USE.NAMES = FALSE)
+}
+
 #' Choose a designable target SNP from a variant table
 #' @export
 #' @param clean_3p number of 3'-terminal bases of the AS primer that should be
@@ -315,22 +369,23 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     dplyr::mutate(
       ref = purrr::map2_chr(.data$chrom, .data$pos,
                             ~ as.character(get_region(genome, .x, .y, .y))),
-      alt = purrr::map2_chr(.data$ref_genome, .data$ref,
-                            ~ setdiff(.x, .y)[1] %||% NA_character_),
+      # exactly one non-reference allele, else NA (dropped below): a silent
+      # "first of several" choice would pick an arbitrary ALT for multiallelics
+      alt = purrr::map2_chr(.data$ref_genome, .data$ref, function(alleles, ref) {
+        other <- setdiff(alleles, ref)
+        if (length(other) == 1L) other else NA_character_
+      }),
       transition = paste0(.data$ref, .data$alt) %in% c("AG", "GA", "CT", "TC"),
-      rank = dplyr::case_when(
-        stringr::str_detect(.data$consequence, "missense")   ~ 1L,
-        stringr::str_detect(.data$consequence, "splice")     ~ 2L,
-        stringr::str_detect(.data$consequence, "synonymous") ~ 3L,
-        stringr::str_detect(.data$consequence, "UTR")        ~ 4L,
-        TRUE                                                 ~ 5L
-      ),
-      # best-case (either strand) count of other variants in the AS 3' window
+      rank = so_rank(.data$consequence),
+      # best-case (either strand) count of other variants in the AS 3' window,
+      # vectorised over the whole variant table (IRanges)
       n_3p = pmin(
-        vapply(.data$pos, function(p)
-          count_variants_in(as_3p_interval(p, "+", clean_3p), allpos, p), integer(1)),
-        vapply(.data$pos, function(p)
-          count_variants_in(as_3p_interval(p, "-", clean_3p), allpos, p), integer(1)))
+        IRanges::countOverlaps(
+          IRanges::IRanges(.data$pos - clean_3p + 1L, .data$pos - 1L),
+          IRanges::IRanges(allpos, allpos)),
+        IRanges::countOverlaps(
+          IRanges::IRanges(.data$pos + 1L, .data$pos + clean_3p - 1L),
+          IRanges::IRanges(allpos, allpos)))
     ) |>
     dplyr::filter(!is.na(.data$alt)) |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos) |>
@@ -347,16 +402,19 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' @keywords internal
 #' @noRd
 gc_frac  <- function(seq) Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1]
-has_run  <- function(seq, n = 4L) stringr::str_detect(seq, sprintf("([ACGT])\\1{%d,}", n - 1L))
+has_run  <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
 
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)
+#'
+#' `res$gr` uses TmCalculator's `$` accessor for the result GRanges; `Tm` is a
+#' metadata column on it.
 #' @export
 primer_tm <- function(seq) {
   gr  <- TmCalculator::to_genomic_ranges(as.character(seq))
   res <- TmCalculator::tm_calculate(gr, method = "tm_nn", nn_table = NN_TABLE,
                                     Na = PCR_COND$Na, Mg = PCR_COND$Mg,
                                     dNTPs = PCR_COND$dNTPs)
-  as.numeric(res$gr$Tm)
+  as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }
 
 #' OligoArrayAux availability (needed by DECIPHER for thermodynamics)
@@ -406,15 +464,14 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
 #' is ours.
 #' @export
 design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
-                                  gaps = 18:80, target_tm = 60,
+                                  gaps = 18:80, target_tm = COM_TM_TARGET,
                                   min_gc = 0.40, max_gc = 0.60,
                                   tm_range = c(57, 64), n = 5L) {
   wlen <- length(window)
-  grid <- expand.grid(L = lengths, gap = gaps, KEEP.OUT.ATTRS = FALSE)
   plus <- identical(strand, "+")
+  grid <- tidyr::crossing(L = lengths, gap = gaps)
 
-  cand <- purrr::map_dfr(seq_len(nrow(grid)), function(i) {
-    L <- grid$L[i]; gap <- grid$gap[i]
+  cand <- purrr::pmap(grid, function(L, gap) {
     iv <- primer_interval(snp_i, strand, L, gap = gap, role = "COM")  # template coords
     start <- IRanges::start(iv); end <- IRanges::end(iv)
     if (start < 1L || end > wlen) return(NULL)
@@ -423,6 +480,7 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
            else      as.character(seq_plus)
     tibble::tibble(com = com, len = L, gap = gap, start = start, end = end)
   }) |>
+    purrr::list_rbind() |>
     dplyr::mutate(com_gc = gc_frac(.data$com),
                   com_tm = primer_tm(.data$com),
                   run    = has_run(.data$com)) |>
@@ -504,17 +562,14 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
   }
 
   # enumerate configurations (strand x length x mismatch position x mismatch base)
-  cfgs <- purrr::map_dfr(strands, function(st) {
-    purrr::map_dfr(lengths, function(L) {
-      purrr::map_dfr(stab_ats, function(k) {
-        bases <- if (is.na(k)) NA_character_ else mismatch_bases(L, k, st)
-        tibble::tibble(as_length = L, stab_at = k, stab_base = bases, strand = st)
-      })
-    })
-  })
+  cfgs <- tidyr::crossing(strand = strands, as_length = lengths, stab_at = stab_ats) |>
+    dplyr::mutate(stab_base = purrr::pmap(
+      list(.data$as_length, .data$stab_at, .data$strand),
+      function(L, k, st) if (is.na(k)) NA_character_ else mismatch_bases(L, k, st))) |>
+    tidyr::unnest_longer("stab_base")
 
   # build all primer/target pairs and score them in ONE batched DECIPHER call
-  pairs <- purrr::pmap_dfr(cfgs, function(as_length, stab_at, stab_base, strand) {
+  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base) {
     L <- as_length
     k <- if (is.na(stab_at))   NULL else stab_at
     b <- if (is.na(stab_base)) NULL else stab_base
@@ -535,7 +590,8 @@ design_as_primers <- function(window, snp_i, ref, alt, strands = c("+", "-"),
       target = c(t_ref,    t_alt,     t_alt,    t_ref))
     dplyr::mutate(specs, strand = strand, as_length = L,
                   stab_at = stab_at, stab_base = stab_base)
-  })
+  }) |>
+    purrr::list_rbind()
   pairs$eff <- pcr_efficiency(pairs$primer, pairs$target, temp = temp, P = P, ions = ions)
 
   wide <- pairs |>
@@ -595,9 +651,9 @@ dimer_thermo <- function(primers) {
       m[i, j] <- v; m[j, i] <- v
     }
   }
-  # column-major as.vector => `a` varies fastest, `b` slowest
-  tibble::tibble(a = rep(nm, times = n), b = rep(nm, each = n),
-                 dg = as.vector(m))
+  d <- as.data.frame(as.table(m), stringsAsFactors = FALSE)
+  tibble::tibble(a = as.character(d$Var1), b = as.character(d$Var2),
+                 dg = as.numeric(d$Freq))
 }
 
 
@@ -610,7 +666,7 @@ dimer_thermo <- function(primers) {
 #' Uses `Biostrings::vcountPattern` (vectorised over the genome sequences),
 #' summing over both strands for each primer.
 #' @export
-specificity_seed <- function(primers, genome, k = 15L, max_mismatch = 1L) {
+specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH) {
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   count_one <- function(s) {
     s  <- Biostrings::DNAString(s)
@@ -693,10 +749,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (nrow(as_cand) == 0L) rlang::abort("No AS primer passed the GC/Tm filter.")
 
   # prioritise: clean 3' window, then minimal footprint variant load, then
-  # discrimination, then Tm closest to 62 C
+  # discrimination, then Tm closest to the AS target
   best_as <- as_cand |>
     dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-                   abs(.data$tm - 62), .data$as_length) |>
+                   abs(.data$tm - AS_TM_TARGET), .data$as_length) |>
     dplyr::slice_head(n = 1L)
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
@@ -718,7 +774,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # COM: design on the SAME strand as the winning AS primer so the amplicon closes
   common <- design_common_primers(tmpl$seq, tmpl$snp_i, strand = best_as$strand,
-                                  tm_range = tm_range)
+                                  tm_range = tm_range) |>
+    dplyr::mutate(com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
+                  com_hairpin   = purrr::map_dbl(.data$com, ~ oligo_dg(.x)))
+
+  as_tm_mean <- mean(best_as$tm)
 
   assays <- common |>
     dplyr::mutate(
@@ -742,7 +802,15 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                       function(st) IRanges::start(win3p_iv(st))),
       win3p_end   = purrr::map_int(.data$strand,
                       function(st) IRanges::end(win3p_iv(st)))) |>
-    dplyr::arrange(.data$n_var, abs(.data$com_tm - 60))
+    # Robustness first: keep the amplicon <= 100 bp and the COM Tm >= AS Tm
+    # (EasyKASP), then reject strong self-structure, then minimise footprint
+    # variants, then get the COM Tm closest to target.  Logical terms sort
+    # FALSE (= criterion met) before TRUE.
+    dplyr::arrange(.data$amplicon > KASP_LIMITS$amplicon[2],
+                   .data$com_tm < as_tm_mean,
+                   .data$com_homodimer < KASP_LIMITS$homodimer_dg,
+                   .data$com_hairpin   < KASP_LIMITS$hairpin_dg,
+                   .data$n_var, abs(.data$com_tm - COM_TM_TARGET))
 
   best    <- assays |> dplyr::slice_head(n = 1L)
   primers <- c(AS_ref = best$as_ref, AS_alt = best$as_alt, COM = best$com)
@@ -765,12 +833,82 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on","ref_off","alt_on","alt_off","discrimination"),
-    thermo = purrr::imap_dfr(primers, ~ dplyr::mutate(primer_thermo(.x), name = .y)),
+    thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x), name = .y)) |>
+      purrr::list_rbind(),
     complementarity = dimer_thermo(primers),
     specificity = specificity_seed(seed_primers, genome),
     blast = blast,
     tails = c(AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
               AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
               COM    = best$com)
+  )
+}
+
+
+# =============================================================================
+#  8. Acceptance checks - "is this a good KASP?"
+# =============================================================================
+
+#' Longest homopolymer run in a sequence
+#' @keywords internal
+#' @noRd
+longest_run <- function(seq) {
+  max(nchar(stringr::str_extract_all(seq, "([ACGT])\\1*")[[1L]]))
+}
+
+#' Check an assembled assay against the KASP acceptance criteria
+#'
+#' Turns the prose design manual into a tidy pass/fail table so "good" and
+#' "bad" assays are graded the same way every time (thresholds: `KASP_LIMITS`).
+#' Reads only the assay object produced by [assemble_kasp_assay()], so it is
+#' pure and cheap to test.
+#'
+#' @param assay result of [assemble_kasp_assay()].
+#' @param limits list of thresholds; defaults to [KASP_LIMITS].
+#' @return tibble with `criterion`, `observed`, `limit` and `pass`.
+#' @export
+kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
+  aa    <- assay$assay[1L, ]
+  th    <- assay$thermo
+  d     <- assay$complementarity
+  disc  <- assay$efficiency$discrimination[1L]
+
+  as_tm <- mean(th$tm[th$name %in% c("AS_ref", "AS_alt")])
+  com_tm <- aa$com_tm
+  hair  <- min(th$hairpin_dg)
+  cross <- min(d$dg[d$a != d$b])          # worst hetero-dimer
+  homo  <- min(d$dg[d$a == d$b])          # worst self-dimer
+  run   <- max(longest_run(aa$as_ref), longest_run(aa$com))
+
+  tibble::tibble(
+    criterion = c("amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
+                  "COM Tm >= AS Tm", "AS GC", "COM GC",
+                  "longest homopolymer (bp)", "worst hairpin dG37",
+                  "worst cross-dimer dG37", "worst homodimer dG37",
+                  "discrimination"),
+    observed  = c(aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
+                  run, hair, cross, homo, disc),
+    limit     = c(glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
+                  glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
+                  glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
+                  ">= 0",
+                  glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
+                  glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
+                  glue::glue("< {limits$max_run}"),
+                  glue::glue(">= {limits$hairpin_dg}"),
+                  glue::glue(">= {limits$duplex_dg}"),
+                  glue::glue(">= {limits$homodimer_dg}"),
+                  glue::glue(">= {limits$discrimination}")),
+    pass      = c(dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
+                  dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
+                  dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
+                  com_tm >= as_tm,
+                  dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
+                  dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
+                  run < limits$max_run,
+                  hair >= limits$hairpin_dg,
+                  cross >= limits$duplex_dg,
+                  homo >= limits$homodimer_dg,
+                  disc >= limits$discrimination)
   )
 }
