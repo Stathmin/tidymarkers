@@ -23,6 +23,7 @@ suppressPackageStartupMessages({
   library(ggmsa)               # geom_seqlogo needs it attached, not just namespaced
 })
 
+source(here::here("R", "kasp_io.R"))
 source(here::here("R", "kasp_functions.R"))
 source(here::here("R", "kasp_plots.R"))
 

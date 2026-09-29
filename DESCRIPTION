@@ -24,6 +24,7 @@ Imports:
     tidyr,
     purrr,
     readr,
+    vroom,
     stringr,
     tibble,
     ggplot2,
