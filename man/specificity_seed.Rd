@@ -21,20 +21,27 @@ specificity_seed(
 
 \item{max_mismatch}{mismatches allowed in the seed.}
 
-\item{BPPARAM}{optional \code{BiocParallel} backend for the mismatch scan.}
+\item{BPPARAM}{optional \code{BiocParallel} backend; the mismatch scan is split by
+genome sequence, so \code{MulticoreParam()} uses one worker per chromosome.}
 }
 \description{
 For the exact case (\code{max_mismatch = 0}) counts come from \code{Biostrings::PDict}
-(\code{vcountPDict}), which is the precomputed-dictionary fast path for many
-primers; with mismatches it falls back to \code{vcountPattern}.  Results are summed
-over both strands and over all genome sequences.  Pass a \code{BiocParallel}
-\code{BPPARAM} (e.g. \code{MulticoreParam()}) to parallelise the mismatch scan.
+(\code{vcountPDict}) - the precomputed-dictionary fast path, one call for all
+primers.  With mismatches Biostrings has no counting index (\code{PDict()} builds an
+\code{MTB_PDict}, but \code{vcountPDict()} does not support it), so the scan is done with
+\code{vcountPattern} \strong{parallelised over the genome's sequences} (and, per
+sequence, once for all seeds), which is how this scales to large genomes.
+Results are summed over both strands and over all genome sequences.
 }
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
-\code{\link[=in_silico_pcr]{in_silico_pcr()}}
+\code{\link[=has_blast]{has_blast()}},
+\code{\link[=in_silico_pcr]{in_silico_pcr()}},
+\code{\link[=kasp_blast_index]{kasp_blast_index()}},
+\code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_of]{specificity_of()}}
 }
 \concept{KASP specificity}

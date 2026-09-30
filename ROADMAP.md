@@ -56,9 +56,12 @@
 
 ## G. Специфичность
 - [x] `specificity_seed()` — 3'-сид по обеим цепям (`d8e3e27`)
-- [x] Быстрый точный путь `PDict`/`vcountPDict`; мисматч-скан + `BiocParallel`-хук (`bb5cea5`)
+- [x] Быстрый точный путь `PDict`/`vcountPDict`; мисматч-скан — параллель по
+      хромосомам (`BiocParallel`); `in_silico_pcr` тоже параллелен (см. O)
 - [x] `in_silico_pcr()` через `matchProbePair`: REF → 1 продукт, ALT → 0 (`b93aab8`)
 - [x] Опциональный BLAST (`rBLAST`, `blastn-short`) (`0eda4f2`)
+- [x] Индексный скан генома: `kasp_genome()` + `specificity_blast()` + диспетчер
+      `specificity_of()` (BLAST-индекс); регионный доступ без ДНК в RAM (см. O)
 - [x] `strand_gc_hint()` — направление по GC флангов (EasyKASP) (`b93aab8`)
 
 ## H. Отбор мишени и приёмка
@@ -204,6 +207,72 @@
       тяжёлый. `pick_target_snp()` использует `impact`, если он есть в таблице.
 - [x] Тесты: канонические термы, comma-списки, fallback на неизвестном терме,
       приоритет impact и выбор более тяжёлого варианта в `pick_target_snp()`.
+
+## O. Масштаб на большие геномы (индексы, параллель, память)
+
+Ориентир: не «забить/округлить зону», а правильно использовать ресурсы.
+
+- [x] **Индекс точного поиска**: `PDict`/`vcountPDict` — один вызов на все сиды.
+- [x] **Приблизительный (мисматч) поиск**: проверено, что `PDict(max.mismatch=)` даёт
+      `MTB_PDict`, но `vcountPDict` его **не поддерживает** → вместо индекса
+      параллель **по хромосомам** (`BiocParallel::bplapply`); `BPPARAM` прокинут в
+      `specificity_seed`, `in_silico_pcr`, `assay_amplicons`, `assemble_kasp_assay`,
+      `pick_target_snp` (тесты serial == Multicore).
+- [x] **Сид-скан выбора мишени**: один вызов `specificity_seed` на все сиды обеих цепей
+      всего шортлиста (вместо 2 × N сканов).
+- [x] **VCF**: region-стриминг `ScanVcfParam(which=)` для `VariantAnnotation`
+      (контиги заголовка сопоставляются через `ath_chrom()`).
+- [x] **FASTA**: `fasta_index()` — доступ к регионам без загрузки всего генома.
+- [x] **Геном как `FaFile`-источник**: `kasp_genome()` + `genome_seq()`/
+      `genome_chroms()`/`genome_length()`. Функции дизайна (`snp_template()`,
+      `strand_gc_hint()`, поиск референса в `pick_target_snp()`) читают только нужный
+      регион; `in_silico_pcr()` идёт по хромосомам по одной. Оба представления
+      (индекс и `DNAStringSet`) взаимозаменяемы — через `genome_seq()`.
+- [x] **Индексный скан генома**: `kasp_blast_index()` (NCBI BLAST+ строит свой индекс)
+      + `specificity_blast()`; диспетчер `specificity_of()` сам выбирает путь
+      (в памяти → `specificity_seed`, индекс → BLAST). `Rsubread`/`gmapR` — опция.
+- [x] **Батч/параллель `OligoArrayAux`**: `dimer_thermo(BPPARAM=)` параллелит
+      n(n+1)/2 пар (тесты serial == Multicore).
+
+## P. Экосистема R для KASP — что ещё взять  [очередь/оценка]
+
+Уже взято: `Biostrings`, `IRanges`/`GenomicRanges`/`GenomeInfoDb`, `Rsamtools`,
+`VariantAnnotation`, `TmCalculator`, `DECIPHER`, OligoArrayAux, `rBLAST`,
+`BiocParallel`, `vroom`, `httr2`/`jsonlite`, `ggmsa`/`gggenes`/`ggrepel`/`patchwork`,
+`renv`, `testthat`, `cli`/`withr`.
+
+Кандидаты (с оценкой):
+
+- [ ] **Структурированные последствия**: `GenomicFeatures`/`txdbmaker` +
+      `VariantAnnotation::predictCoding()`/`locateVariants()` с TxDb Arabidopsis
+      (`TxDb.Athaliana.BioMart.plantsmart28`) — заменит словарь `so_rank()` настоящей
+      аннотацией (полное закрытие N4). Цена: annotation-пакет + сеть.
+- [ ] **`ensembldb`** — EnsDb для Arabidopsis (если есть сборка): consequences/features
+      из одного источника.
+- [ ] **`biomaRt`** — канонический R-интерфейс к Ensembl для генов/аннотаций, но он
+      **не** даёт variation-overlap (наш REST `overlap/region` biomaRt не умеет) →
+      `httr2`/`jsonlite` остаются оправданными.
+- [ ] **`BSgenome`-аннотации** (`BSgenome.Athaliana.TAIR.TAIR9`) — геном как
+      Bioconductor-объект вместо скачивания FASTA; альтернативный источник для
+      `kasp_genome()` (и `getSeq()` из `Biostrings`).
+- [ ] **FM-индекс**: `Rsubread::buildindex()`+`align()` или `gmapR` — альтернатива
+      BLAST-индексу для сквозного скана (тяжёлая сборка).
+- [ ] **`rprimer`** (Bioc, qPCR) — дизайн/штрафы праймеров как **валидатор** нашего
+      AS/COM-скоринга.
+- [ ] **`oligo`** (Bioc) — Tm/дуплексы олиго: кандидат заменить наш системный вызов
+      OligoArrayAux для dG (проверить, даёт ли дуплекс/шпильку на ДНК).
+- [ ] **`targets`** — воспроизводимый инкрементальный пайплайн вместо скрипта
+      (тысячи локусов через `design_kasp_markers()`).
+- [ ] **`Biostrings::findPalindromes()`** — инвертированные повторы/шпильки как
+      библиотечный QC-скрин (дополняет SSR/гомополимеры).
+- [ ] **`pwalign`** (`pairwiseAlignment`) — если понадобится настоящее выравнивание
+      аллелей; сейчас `allele_templates()` — ручная склейка, что для SNP/MNP/InDel
+      корректно и достаточно.
+
+Оценено и **не подходит**: `DECIPHER::DesignPrimers` (нужны `tiles`/группы, см. N2).
+Готового R-пакета под KASP нет (`primeR` снят, `openPrimeR` требует
+MAFFT/ViennaRNA/MELTING) — значит наш слой дизайна и порогов оправдан, а брать надо
+вокруг: аннотации, индексы, оркестровка.
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

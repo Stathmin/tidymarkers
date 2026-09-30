@@ -15,6 +15,21 @@ test_that("specificity_seed returns zero hits for an absent seed", {
   expect_equal(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)$hits, 0L)
 })
 
+test_that("the mismatch scan is invariant to the parallel backend", {
+  skip_if_not_installed("BiocParallel")
+  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
+                                        chr2 = "GGGTTTAAACCC"))
+  primers <- c(P = "TTTTTTAAACCCGGG", Q = "TTTTTTGGGAAACCC")
+  serial  <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L)
+  par     <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L,
+                              BPPARAM = BiocParallel::SerialParam())
+  expect_equal(par$hits, serial$hits)
+  skip_on_os("windows")
+  mc <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L,
+                         BPPARAM = BiocParallel::MulticoreParam(2L))
+  expect_equal(mc$hits, serial$hits)
+})
+
 test_that("the exact PDict path matches a manual both-strand count", {
   genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
                                         chr2 = "GGGAAACCC"))

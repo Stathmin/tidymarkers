@@ -87,6 +87,21 @@ test_that("the VariantAnnotation backend filters by region too", {
   expect_true(all(v$chrom == "Chr1"))
 })
 
+test_that("the VariantAnnotation backend streams a region like filtering", {
+  skip_if_not_installed("VariantAnnotation")
+  vcf <- tempfile(fileext = ".vcf")
+  writeLines(c("##fileformat=VCFv4.2",
+               "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+               "1\t10\t.\tA\tG\t.\t.\t.",
+               "1\t50\t.\tA\tC\t.\t.\t.",
+               "1\t90\t.\tA\tT\t.\t.\t."), vcf)
+  reg <- suppressWarnings(read_variants_vcf(vcf, chrom = "Chr1", start = 20L, end = 60L,
+                                            backend = "VariantAnnotation"))
+  all <- suppressWarnings(read_variants_vcf(vcf, backend = "VariantAnnotation"))
+  ref <- dplyr::filter(all, .data$chrom == "Chr1", .data$pos >= 20L, .data$pos <= 60L)
+  expect_equal(reg, ref)
+})
+
 test_that("read_genome_fasta normalises and filters sequence names", {
   fa <- tempfile(fileext = ".fa")
   writeLines(c(">1 dna:chromosome chromosome:TAIR10:1:1:100:1 REF", "ACGTACGT",

@@ -40,7 +40,9 @@ normalise_allele <- function(x) {
 #' @param backend `"vroom"` (default) streams the four columns we need and is
 #'   best for large files; `"VariantAnnotation"` parses with the Bioconductor
 #'   canonical reader (`readVcf`) and is the safer choice for complex records
-#'   (INFO/GT, phased, breakends, missing ALT).  Both return the same tibble.
+#'   (INFO/GT, phased, breakends, missing ALT).  When a region and a bgzipped +
+#'   tabix-indexed file are given, `readVcf` streams just that region
+#'   (`ScanVcfParam(which=)`); both backends return the same tibble.
 #' @family KASP input
 #' @export
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
@@ -50,7 +52,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
-    VariantAnnotation = read_variants_vcf_va(path))
+    VariantAnnotation = read_variants_vcf_va(path, chrom, start, end))
 
   if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
@@ -86,11 +88,26 @@ read_variants_vcf_vroom <- function(path) {
 }
 
 #' Canonical VCF reader (`VariantAnnotation::readVcf`)
+#'
+#' With a region and an indexed (bgzip+tabix) file, only that region is read
+#' (`ScanVcfParam(which=)`); the header's contig names are matched to `chrom` with
+#' the same `ath_chrom()` normalisation used everywhere else.
 #' @keywords internal
 #' @noRd
-read_variants_vcf_va <- function(path) {
+read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
   rlang::check_installed("VariantAnnotation", reason = "for the readVcf backend")
-  vcf <- VariantAnnotation::readVcf(path)
+  param <- VariantAnnotation::ScanVcfParam()
+  if (!is.null(chrom) && !is.null(start) && !is.null(end)) {
+    seqs <- tryCatch(
+      as.character(GenomeInfoDb::seqnames(VariantAnnotation::scanVcfHeader(path))),
+      error = function(e) character(0))
+    hit <- seqs[ath_chrom(seqs) == ath_chrom(chrom)][1L]
+    if (length(hit) && !is.na(hit)) {
+      param <- VariantAnnotation::ScanVcfParam(
+        which = GenomicRanges::GRanges(hit, IRanges::IRanges(start, end)))
+    }
+  }
+  vcf <- VariantAnnotation::readVcf(path, param = param)
   rng <- SummarizedExperiment::rowRanges(vcf)
   tibble::tibble(
     chrom = ath_chrom(as.character(GenomicRanges::seqnames(rng))),

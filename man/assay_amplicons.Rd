@@ -4,7 +4,7 @@
 \alias{assay_amplicons}
 \title{Products predicted for each allele-specific primer against the common one}
 \usage{
-assay_amplicons(assay, genome, max_mismatch = 0L)
+assay_amplicons(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
 }
 \arguments{
 \item{assay}{assembled assay (from \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}).}
@@ -12,6 +12,8 @@ assay_amplicons(assay, genome, max_mismatch = 0L)
 \item{genome}{DNAStringSet.}
 
 \item{max_mismatch}{mismatches tolerated in the primer match.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend (see \code{\link[=in_silico_pcr]{in_silico_pcr()}}).}
 }
 \description{
 On the reference genome the REF primer must give exactly one product; the
@@ -22,7 +24,11 @@ template-matched primers (no deliberate stabiliser), like \code{\link[=specifici
 Other KASP specificity:
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
+\code{\link[=has_blast]{has_blast()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
+\code{\link[=kasp_blast_index]{kasp_blast_index()}},
+\code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_of]{specificity_of()}},
 \code{\link[=specificity_seed]{specificity_seed()}}
 }
 \concept{KASP specificity}

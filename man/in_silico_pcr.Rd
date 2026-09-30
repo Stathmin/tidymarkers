@@ -4,7 +4,7 @@
 \alias{in_silico_pcr}
 \title{In-silico PCR: every product a primer pair would amplify}
 \usage{
-in_silico_pcr(F_primer, R_primer, genome, max_mismatch = 0L)
+in_silico_pcr(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM = NULL)
 }
 \arguments{
 \item{F_primer}{forward primer (5'->3'), binds the plus strand.}
@@ -14,6 +14,9 @@ in_silico_pcr(F_primer, R_primer, genome, max_mismatch = 0L)
 \item{genome}{DNAStringSet.}
 
 \item{max_mismatch}{mismatches tolerated in the primer match.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend; the virtual PCR is split by
+genome sequence (one worker per chromosome with \code{MulticoreParam()}).}
 }
 \value{
 tibble \code{chrom}, \code{start}, \code{end}, \code{width} (one row per product).
@@ -28,6 +31,10 @@ Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
+\code{\link[=has_blast]{has_blast()}},
+\code{\link[=kasp_blast_index]{kasp_blast_index()}},
+\code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_of]{specificity_of()}},
 \code{\link[=specificity_seed]{specificity_seed()}}
 }
 \concept{KASP specificity}

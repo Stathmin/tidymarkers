@@ -85,6 +85,27 @@ test_that("pick_target_snp prefers the locus with a unique 3'-seed", {
   expect_equal(tgt$seed_hits, 1L)
 })
 
+test_that("pick_target_snp is invariant to the seed-scan backend", {
+  rep30 <- "ACGTTGCAAGTCCTAGGCATCGATTCGGAT"
+  set.seed(1)
+  uniq  <- paste(sample(c("A", "C", "G", "T"), 80L, TRUE), collapse = "")
+  genome <- Biostrings::DNAStringSet(c(Chr1 = paste0(strrep("GC", 10L), rep30, rep30, uniq)))
+  transition <- c(A = "G", G = "A", C = "T", T = "C")
+  refs <- vapply(c(45L, 85L), function(p) as.character(Biostrings::subseq(genome[["Chr1"]], p, p)), character(1))
+  variants <- tibble::tibble(
+    id = c("x", "y"), chrom = "Chr1", pos = c(45L, 85L),
+    ref_genome = list(c(refs[1], unname(transition[[refs[1]]])),
+                      c(refs[2], unname(transition[[refs[2]]]))),
+    consequence = "missense_variant")
+  gene <- list(chrom = "Chr1", symbol = "X", start = 1L, end = 200L, strand = 1L)
+  a <- pick_target_snp(variants, genome, gene)
+  b <- pick_target_snp(variants, genome, gene, specificity_candidates = 0L)
+  expect_equal(a$id, b$id)                       # skip vs scan agree on the winner here
+  skip_if_not_installed("BiocParallel")
+  d <- pick_target_snp(variants, genome, gene, BPPARAM = BiocParallel::SerialParam())
+  expect_equal(d, a)
+})
+
 test_that("pick_target_snp prefers the higher VEP impact", {
   seq <- strrep("A", 40L)
   genome <- Biostrings::DNAStringSet(c(Chr1 = seq))

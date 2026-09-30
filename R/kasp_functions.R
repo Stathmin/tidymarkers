@@ -218,9 +218,7 @@ ath_chrom <- function(x) {
 #' Read one genomic region as a DNAString
 #' @keywords internal
 #' @noRd
-get_region <- function(genome, chrom, start, end) {
-  Biostrings::subseq(genome[[chrom]], start = start, end = end)
-}
+get_region <- function(genome, chrom, start, end) genome_seq(genome, chrom, start, end)
 
 
 # --- primer geometry (single source of truth) --------------------------------
@@ -485,6 +483,22 @@ so_rank <- function(consequence, impact = NULL) {
   dplyr::coalesce(impact_rank, term_rank)
 }
 
+#' 3'-seed sequence of a would-be AS primer anchored at a variant
+#'
+#' `NA` if the seed would run off the sequence.
+#' @keywords internal
+#' @noRd
+seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
+  n <- genome_length(genome, chrom)
+  anchor <- as_anchor(pos, ref_len, strand)
+  lo <- if (identical(strand, "+")) anchor - k + 1L else anchor
+  hi <- if (identical(strand, "+")) anchor else anchor + k - 1L
+  if (lo < 1L || hi > n) return(NA_character_)
+  seg <- get_region(genome, chrom, lo, hi)
+  if (identical(strand, "+")) as.character(seg)
+  else as.character(Biostrings::reverseComplement(seg))
+}
+
 #' 3'-seed specificity of a would-be AS primer anchored at a variant
 #'
 #' The seed is the `k` 3'-terminal bases of the AS primer: `[anchor-k+1, anchor]`
@@ -494,16 +508,11 @@ so_rank <- function(consequence, impact = NULL) {
 #' @keywords internal
 #' @noRd
 seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
-                         k = SEED_K, max_mismatch = SEED_MISMATCH) {
-  n <- length(genome[[chrom]])
-  anchor <- as_anchor(pos, ref_len, strand)
-  lo <- if (identical(strand, "+")) anchor - k + 1L else anchor
-  hi <- if (identical(strand, "+")) anchor else anchor + k - 1L
-  if (lo < 1L || hi > n) return(NA_integer_)
-  seg  <- get_region(genome, chrom, lo, hi)
-  seed <- if (identical(strand, "+")) seg else Biostrings::reverseComplement(seg)
-  specificity_seed(c(seed = as.character(seed)), genome, k = k,
-                   max_mismatch = max_mismatch)$hits
+                         k = SEED_K, max_mismatch = SEED_MISMATCH, BPPARAM = NULL) {
+  s <- seed_seq(genome, chrom, pos, ref_len, strand, k)
+  if (is.na(s)) return(NA_integer_)
+  specificity_of(c(seed = s), genome, k = k, max_mismatch = max_mismatch,
+                 BPPARAM = BPPARAM)$hits
 }
 
 #' Choose a designable target variant from a variant table
@@ -536,12 +545,14 @@ seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
 #' @param specificity_candidates how many top-ranked loci to check for 3'-seed
 #'   specificity.  The seed scan is genome-wide, so only this many of the best
 #'   candidates (by the other criteria) are checked; set `0` to skip it.
+#' @param BPPARAM optional `BiocParallel` backend for the seed scan (split by
+#'   chromosome, see [specificity_seed()]).
 #' @return a one-row tibble for the chosen variant (`id`, `chrom`, `pos`,
 #'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`).
 #' @family KASP design
 #' @export
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
-                            specificity_candidates = 10L) {
+                            specificity_candidates = 10L, BPPARAM = NULL) {
   if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
 
   # REF length comes from the VCF (its first allele); the reference bases are
@@ -601,24 +612,37 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   }
 
   # among the best candidates, prefer the most specific AS 3'-seed (best of the
-  # two strands); the genome-wide seed scan is why we only do the top few
-  short <- ranked |>
-    dplyr::slice_head(n = specificity_candidates) |>
-    dplyr::mutate(seed_hits = purrr::pmap_int(
-      list(.data$chrom, .data$pos, .data$ref_len),
-      function(ch, p, rl) {
-        h <- c(seed_hits_at(genome, ch, p, rl, "+"),
-               seed_hits_at(genome, ch, p, rl, "-"))
-        if (all(is.na(h))) NA_integer_ else min(h, na.rm = TRUE)
-      }))
-
+  # two strands).  The genome-wide scan is one [specificity_seed()] call over
+  # both strands' seeds of the whole shortlist, so it can fan out by chromosome.
+  short <- dplyr::slice_head(ranked, n = specificity_candidates) |>
+    dplyr::mutate(candidate = dplyr::row_number())
+  # one seed per candidate per strand; a stable key carries it through the scan
+  seed_tbl <- tidyr::crossing(candidate = short$candidate, strand = c("+", "-")) |>
+    dplyr::mutate(
+      seed = purrr::pmap_chr(list(short$chrom[.data$candidate], short$pos[.data$candidate],
+                                  short$ref_len[.data$candidate], .data$strand),
+                             function(ch, p, rl, st) seed_seq(genome, ch, p, rl, st)),
+      key = paste0(.data$candidate, .data$strand)) |>
+    dplyr::filter(!is.na(.data$seed))
+  if (nrow(seed_tbl) > 0L) {
+    seed_tbl <- specificity_of(stats::setNames(seed_tbl$seed, seed_tbl$key), genome,
+                               BPPARAM = BPPARAM) |>
+      dplyr::select(key = "primer", "hits") |>
+      dplyr::right_join(seed_tbl, by = "key")
+  } else {
+    seed_tbl$hits <- integer()
+  }
   # seed specificity breaks ties among otherwise comparable loci (it does not
-  # outrank the biological/chemical preferences above)
+  # outrank the biological/chemical preferences above); best of the two strands
+  short <- seed_tbl |>
+    dplyr::summarise(seed_hits = min(.data$hits), .by = "candidate") |>
+    dplyr::right_join(short, by = "candidate")
+
   short |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition),
                    .data$seed_hits, .data$pos) |>
     dplyr::slice(1L) |>
-    dplyr::select(-"rank", -"ref_genome")
+    dplyr::select(-"rank", -"ref_genome", -"candidate")
 }
 
 
@@ -1101,23 +1125,26 @@ wobble_mismatch <- function(on_allele, off_allele) {
 #'
 #' `dg` is the hybridisation free energy of the two strands (kcal/mol, 37 C);
 #' more negative = stronger dimer.  The diagonal is the homodimer of each primer.
-#' Returns the FULL matrix (both orders); symmetry is imposed here, once.
+#' Returns the FULL matrix (both orders); symmetry is imposed here, once.  Each
+#' pair is one OligoArrayAux subprocess, so for large primer sets pass a
+#' `BPPARAM` to run the n(n+1)/2 pairs in parallel.
 #' @param primers named character vector of oligos.
+#' @param BPPARAM optional `BiocParallel` backend; pairs are split across workers.
 #' @family KASP thermodynamics
 #' @export
-dimer_thermo <- function(primers) {
-  nm <- names(primers); n <- length(nm)
-  m <- matrix(NA_real_, n, n, dimnames = list(nm, nm))
-  for (i in seq_len(n)) {
-    m[i, i] <- oligo_dg(primers[[i]], primers[[i]])          # homodimer
-    for (j in seq_len(i - 1L)) {                             # strictly lower triangle
-      v <- oligo_dg(primers[[i]], primers[[j]])
-      m[i, j] <- v; m[j, i] <- v
-    }
-  }
-  d <- as.data.frame(as.table(m), stringsAsFactors = FALSE)
-  tibble::tibble(a = as.character(d$Var1), b = as.character(d$Var2),
-                 dg = as.numeric(d$Freq))
+dimer_thermo <- function(primers, BPPARAM = NULL) {
+  nm <- names(primers)
+  # upper triangle (i <= j) is all DISTINCT pairs; the full grid is then a join
+  grid <- tidyr::crossing(a = nm, b = nm) |>
+    dplyr::mutate(lo = pmin(match(.data$a, nm), match(.data$b, nm)),
+                  hi = pmax(match(.data$a, nm), match(.data$b, nm)))
+  keys <- dplyr::distinct(grid, .data$lo, .data$hi)
+  one  <- function(k) oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]])
+  keys$dg <- if (is.null(BPPARAM)) purrr::map_dbl(seq_len(nrow(keys)), one)
+             else unlist(BiocParallel::bplapply(seq_len(nrow(keys)), one, BPPARAM = BPPARAM))
+  grid |>
+    dplyr::left_join(keys, by = c("lo", "hi")) |>
+    dplyr::transmute(a = .data$a, b = .data$b, dg = .data$dg)
 }
 
 
@@ -1128,31 +1155,45 @@ dimer_thermo <- function(primers) {
 #' Count genome-wide near-matches of each primer's 3'-terminal k-mer
 #'
 #' For the exact case (`max_mismatch = 0`) counts come from `Biostrings::PDict`
-#' (`vcountPDict`), which is the precomputed-dictionary fast path for many
-#' primers; with mismatches it falls back to `vcountPattern`.  Results are summed
-#' over both strands and over all genome sequences.  Pass a `BiocParallel`
-#' `BPPARAM` (e.g. `MulticoreParam()`) to parallelise the mismatch scan.
+#' (`vcountPDict`) - the precomputed-dictionary fast path, one call for all
+#' primers.  With mismatches Biostrings has no counting index (`PDict()` builds an
+#' `MTB_PDict`, but `vcountPDict()` does not support it), so the scan is done with
+#' `vcountPattern` **parallelised over the genome's sequences** (and, per
+#' sequence, once for all seeds), which is how this scales to large genomes.
+#' Results are summed over both strands and over all genome sequences.
 #' @param primers named character vector of oligos.
 #' @param genome DNAStringSet.
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed in the seed.
-#' @param BPPARAM optional `BiocParallel` backend for the mismatch scan.
+#' @param BPPARAM optional `BiocParallel` backend; the mismatch scan is split by
+#'   genome sequence, so `MulticoreParam()` uses one worker per chromosome.
 #' @family KASP specificity
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
+  if (inherits(genome, "kasp_genome")) {
+    rlang::abort(c("specificity_seed() needs an in-memory DNAStringSet.",
+                   i = "For an indexed genome use specificity_of()/specificity_blast()."))
+  }
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (max_mismatch == 0L) {
     hits <- exact_seed_counts(seeds, genome)
   } else {
-    count_one <- function(s) {
-      s  <- Biostrings::DNAString(s)
-      rc <- Biostrings::reverseComplement(s)
-      sum(Biostrings::vcountPattern(s,  genome, max.mismatch = max_mismatch)) +
-        sum(Biostrings::vcountPattern(rc, genome, max.mismatch = max_mismatch))
+    # vcountPattern takes a single pattern, so loop over seeds *per chromosome*;
+    # parallelism is over the genome's sequences (one worker per chromosome)
+    fwd <- Biostrings::DNAStringSet(seeds)
+    rev <- Biostrings::reverseComplement(fwd)
+    count_chr <- function(i) {
+      chr <- genome[[i]]
+      cf <- vapply(seq_along(fwd), function(j)
+        Biostrings::countPattern(fwd[[j]], chr, max.mismatch = max_mismatch), numeric(1))
+      cr <- vapply(seq_along(rev), function(j)
+        Biostrings::countPattern(rev[[j]], chr, max.mismatch = max_mismatch), numeric(1))
+      cf + cr
     }
-    hits <- if (is.null(BPPARAM)) vapply(seeds, count_one, numeric(1), USE.NAMES = FALSE)
-            else unlist(BiocParallel::bplapply(seeds, count_one, BPPARAM = BPPARAM))
+    per_chr <- if (is.null(BPPARAM)) lapply(seq_along(genome), count_chr)
+               else BiocParallel::bplapply(seq_along(genome), count_chr, BPPARAM = BPPARAM)
+    hits <- Reduce(`+`, per_chr)
   }
   tibble::tibble(primer = names(primers), seed = seeds, hits = as.integer(hits))
 }
@@ -1180,19 +1221,27 @@ exact_seed_counts <- function(seeds, genome) {
 #' @param R_primer reverse primer (5'->3').
 #' @param genome DNAStringSet.
 #' @param max_mismatch mismatches tolerated in the primer match.
+#' @param BPPARAM optional `BiocParallel` backend; the virtual PCR is split by
+#'   genome sequence (one worker per chromosome with `MulticoreParam()`).
 #' @return tibble `chrom`, `start`, `end`, `width` (one row per product).
 #' @family KASP specificity
 #' @export
-in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L) {
+in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM = NULL) {
   Fp <- Biostrings::DNAString(F_primer)
   Rp <- Biostrings::DNAString(R_primer)
-  purrr::imap(genome, function(chr, nm) {
-    pr <- Biostrings::matchProbePair(Fp, Rp, chr, max.mismatch = max_mismatch, verbose = FALSE)
+  chroms <- genome_chroms(genome)
+  scan_one <- function(nm) {
+    # genome_seq() reads one sequence at a time, so an indexed `kasp_genome` stays
+    # out of RAM; a DNAStringSet is simply subscripted
+    pr <- Biostrings::matchProbePair(Fp, Rp, genome_seq(genome, nm),
+                                     max.mismatch = max_mismatch, verbose = FALSE)
     if (is.null(pr) || length(pr) == 0L) return(NULL)
     tibble::tibble(chrom = nm, start = IRanges::start(pr), end = IRanges::end(pr),
                    width = IRanges::width(pr))
-  }) |>
-    purrr::list_rbind()
+  }
+  res <- if (is.null(BPPARAM)) lapply(chroms, scan_one)
+         else BiocParallel::bplapply(chroms, scan_one, BPPARAM = BPPARAM)
+  purrr::list_rbind(res)
 }
 
 #' Products predicted for each allele-specific primer against the common one
@@ -1203,9 +1252,10 @@ in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L) {
 #' @param assay assembled assay (from [assemble_kasp_assay()]).
 #' @param genome DNAStringSet.
 #' @param max_mismatch mismatches tolerated in the primer match.
+#' @param BPPARAM optional `BiocParallel` backend (see [in_silico_pcr()]).
 #' @family KASP specificity
 #' @export
-assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
+assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
   aa      <- assay$assay[1L, ]
   ref_len <- nchar(assay$snp$ref)
   # template-local anchor (assay$template$seq is the small design window)
@@ -1216,7 +1266,8 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
                                     aa$as_len, assay$snp$alt, strand = aa$strand))
   purrr::imap_dfr(seed, function(as_p, nm) {
     fr <- if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
-    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome, max_mismatch = max_mismatch)
+    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome, max_mismatch = max_mismatch,
+                           BPPARAM = BPPARAM)
     tibble::tibble(primer = nm, n_products = nrow(prods),
                    width = if (nrow(prods)) max(prods$width) else NA_integer_)
   })
@@ -1281,6 +1332,8 @@ build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa
 #'   positions in your own template if you need the literal `N`s.
 #' @param min_disc minimum discrimination (on- minus off-target efficiency).
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
+#' @param BPPARAM optional `BiocParallel` backend for the genome-wide steps
+#'   (seed specificity and in-silico PCR; split by chromosome).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -1301,7 +1354,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 min_gc = 0.35, max_gc = 0.70,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 max_footprint_variants = Inf,
-                                min_disc = 0.5, run_blast = FALSE) {
+                                min_disc = 0.5, run_blast = FALSE, BPPARAM = NULL) {
   tmpl    <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos    <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   ref_len <- nchar(snp$ref)
@@ -1462,7 +1515,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # in-silico PCR: the REF primer must give one product, the ALT primer none
   amplicons <- tryCatch(
-    assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome),
+    assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
     error = function(e) { rlang::warn(glue::glue("in-silico PCR failed: {conditionMessage(e)}")); NULL })
 
   blast <- NULL
@@ -1479,7 +1532,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x), name = .y)) |>
       purrr::list_rbind(),
     complementarity = dimer_thermo(primers),
-    specificity = specificity_seed(seed_primers, genome),
+    specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
     blast = blast,
     tails = c(AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),

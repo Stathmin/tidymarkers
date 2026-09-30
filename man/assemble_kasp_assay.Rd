@@ -16,7 +16,8 @@ assemble_kasp_assay(
   clean_3p = 5L,
   max_footprint_variants = Inf,
   min_disc = 0.5,
-  run_blast = FALSE
+  run_blast = FALSE,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -44,6 +45,9 @@ positions in your own template if you need the literal \code{N}s.}
 \item{min_disc}{minimum discrimination (on- minus off-target efficiency).}
 
 \item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend for the genome-wide steps
+(seed specificity and in-silico PCR; split by chromosome).}
 }
 \description{
 When \code{variants} is supplied the selection is \emph{variant-aware}: among primers

@@ -10,7 +10,8 @@ pick_target_snp(
   gene,
   variant_id = NULL,
   clean_3p = 5L,
-  specificity_candidates = 10L
+  specificity_candidates = 10L,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ variant just has to be clean in \emph{at least one} direction.}
 \item{specificity_candidates}{how many top-ranked loci to check for 3'-seed
 specificity.  The seed scan is genome-wide, so only this many of the best
 candidates (by the other criteria) are checked; set \code{0} to skip it.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend for the seed scan (split by
+chromosome, see \code{\link[=specificity_seed]{specificity_seed()}}).}
 }
 \value{
 a one-row tibble for the chosen variant (\code{id}, \code{chrom}, \code{pos},

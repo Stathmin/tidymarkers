@@ -16,6 +16,7 @@ Imports:
     IRanges,
     S4Vectors,
     GenomicRanges,
+    GenomeInfoDb,
     Rsamtools,
     BiocParallel,
     DECIPHER,

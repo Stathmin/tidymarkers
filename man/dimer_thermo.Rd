@@ -4,15 +4,19 @@
 \alias{dimer_thermo}
 \title{Duplex (dimer) free energy for every primer pair (OligoArrayAux, DNA)}
 \usage{
-dimer_thermo(primers)
+dimer_thermo(primers, BPPARAM = NULL)
 }
 \arguments{
 \item{primers}{named character vector of oligos.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend; pairs are split across workers.}
 }
 \description{
 \code{dg} is the hybridisation free energy of the two strands (kcal/mol, 37 C);
 more negative = stronger dimer.  The diagonal is the homodimer of each primer.
-Returns the FULL matrix (both orders); symmetry is imposed here, once.
+Returns the FULL matrix (both orders); symmetry is imposed here, once.  Each
+pair is one OligoArrayAux subprocess, so for large primer sets pass a
+\code{BPPARAM} to run the n(n+1)/2 pairs in parallel.
 }
 \seealso{
 Other KASP thermodynamics:

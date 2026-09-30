@@ -25,9 +25,11 @@
   (пер-аллельный 3'-футпринт, ампликон — худший из двух аллелей).
 
 ### Специфичность
-- `specificity_seed()`: точный путь `PDict`/`vcountPDict`, мисматч-скан с
-  `BiocParallel`-хуком (`BPPARAM=`).
+- `specificity_seed()`: точный путь `PDict`/`vcountPDict`, мисматч-скан — параллель
+  по хромосомам (`BPPARAM=`); `in_silico_pcr`/`assay_amplicons`/`assemble_kasp_assay`
+  принимают `BPPARAM`.
 - Батч: `design_kasp_markers()` с вердиктом на локус и параллелью по локусам.
+- VCF-регион стримится через `VariantAnnotation::ScanVcfParam(which=)`.
 
 ### Термодинамика / QC
 - `terminal_dg()` — 3'-концевая стабильность (GC-clamp, `OligoArrayAux`).
@@ -39,6 +41,15 @@
   `VariantAnnotation::readVcf` для сложных VCF (INFO/GT, phased, breakends).
 - `normalise_allele()` — IUPAC-коды сворачиваются к `ACGTN`, а не отбрасываются.
 - `kasp_mix_recipe()` — tidy-рецепт смеси (AS:AS:COM = 2:2:5) и реакции.
+
+### Масштаб / большие геномы
+- `kasp_genome()` — индексированный источник (`Rsamtools`): регионы читаются по
+  запросу, без всей ДНК в памяти; `genome_seq()`/`genome_chroms()`/`genome_length()`
+  совместимы с `DNAStringSet`. `snp_template()`, `strand_gc_hint()`, `in_silico_pcr()`
+  работают с обоими представлениями.
+- `kasp_blast_index()` + `specificity_blast()` — индексный (BLAST/FM-подобный) скан
+  генома; `specificity_of()` выбирает путь сам. `dimer_thermo(BPPARAM=)` — параллель.
+- `kasp_genome()` берёт имена/длины из индекса (`seqinfo()`), без ручного разбора `.fai`.
 
 ## 0.2.0
 - `kasp_design_checks()` и `KASP_LIMITS`; пороги LGC/EasyKASP.

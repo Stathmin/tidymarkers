@@ -23,7 +23,9 @@ random-access index on very large files).}
 \item{backend}{\code{"vroom"} (default) streams the four columns we need and is
 best for large files; \code{"VariantAnnotation"} parses with the Bioconductor
 canonical reader (\code{readVcf}) and is the safer choice for complex records
-(INFO/GT, phased, breakends, missing ALT).  Both return the same tibble.}
+(INFO/GT, phased, breakends, missing ALT).  When a region and a bgzipped +
+tabix-indexed file are given, \code{readVcf} streams just that region
+(\code{ScanVcfParam(which=)}); both backends return the same tibble.}
 }
 \description{
 Read variants from a VCF/BCF file (streaming, memory-mapped)
@@ -34,9 +36,14 @@ Other KASP input:
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
 \code{\link[=fasta_index]{fasta_index()}},
+\code{\link[=genome_chroms]{genome_chroms()}},
+\code{\link[=genome_length]{genome_length()}},
+\code{\link[=genome_seq]{genome_seq()}},
 \code{\link[=kasp_example]{kasp_example()}},
+\code{\link[=kasp_genome]{kasp_genome()}},
 \code{\link[=mask_positions]{mask_positions()}},
 \code{\link[=normalise_allele]{normalise_allele()}},
+\code{\link[=print.kasp_genome]{print.kasp_genome()}},
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
 \code{\link[=snp_template]{snp_template()}}
 }
