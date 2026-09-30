@@ -94,21 +94,10 @@ if (!all(checks$pass)) {
   rlang::warn(glue::glue("Assay fails {sum(!checks$pass)} acceptance criterion/criteria."))
 }
 
-# --- 5. discrimination figure (shared with the report) -----------------------
-p_disc <- plot_discrimination(assay)
-
-# --- 6. persist --------------------------------------------------------------
+# --- 5-6. persist (consolidated: design / primer QC / dimers + order subsets) -
 fs::dir_create(here::here("results"))
-readr::write_csv(assay$assay,          here::here("results", "kasp_assay.csv"))
-readr::write_csv(assay$as_candidates,  here::here("results", "kasp_as_candidates.csv"))
-readr::write_csv(assay$thermo,         here::here("results", "kasp_thermo.csv"))
-readr::write_csv(assay$specificity,    here::here("results", "kasp_specificity.csv"))
-readr::write_csv(assay$complementarity, here::here("results", "kasp_complementarity.csv"))
-if (!is.null(assay$blast)) {
-  readr::write_csv(assay$blast, here::here("results", "kasp_blast_hits.csv"))
-}
 saveRDS(assay, here::here("results", "kasp_assay.rds"))
-ggsave(here::here("results", "kasp_discrimination.png"), p_disc, width = 7, height = 4)
+write_kasp_results(assay, gene)   # kasp_design.csv, kasp_primer_qc.csv, kasp_dimer_dg.csv, order subsets
 
 # --- 7. library-driven views (see R/kasp_plots.R) ---------------------------
 # ggmsa emits internal warnings (aes_ deprecation + a manual-scale note) that are
@@ -118,8 +107,8 @@ ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gen
 suppressWarnings(ggsave(here::here("results", "plot_alignment.png"), plot_alignment(assay),  width = 8, height = 3))
 suppressWarnings(ggsave(here::here("results", "plot_dimers.png"),    plot_dimer_qc(assay),  width = 9, height = 7))
 
-# --- 8. oligo ordering sheets (IDT / LGC) -----------------------------------
-primers <- export_primers(assay, gene)
+# --- 8. oligo ordering sheet (the IDT/LGC files are column subsets of it) ----
+primers <- kasp_primer_table(assay, gene)
 cat("\nOrder sheet:\n"); print(primers)
 
 message("\nDone. See results/ and knit report/kasp_report.Rmd for the narrative.")

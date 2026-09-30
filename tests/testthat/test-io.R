@@ -54,8 +54,27 @@ test_that("read_genome_fasta normalises and filters sequence names", {
   fa <- tempfile(fileext = ".fa")
   writeLines(c(">1 dna:chromosome chromosome:TAIR10:1:1:100:1 REF", "ACGTACGT",
                ">Mt dna:chromosome", "ACGT", ">scaffold_9 x", "TTTT"), fa)
-  g <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP)
+  g <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, use_index = FALSE)
   expect_setequal(names(g), c("Chr1", "ChrM"))     # scaffold dropped
   expect_equal(as.character(g[["Chr1"]]), "ACGTACGT")
-  expect_setequal(names(read_genome_fasta(fa, seqids = "1")), "1")
+  expect_setequal(names(read_genome_fasta(fa, seqids = "1", use_index = FALSE)), "1")
+})
+
+test_that("read_genome_fasta reads only requested ids via the FASTA index", {
+  skip_if_not_installed("Rsamtools")
+  fa <- tempfile(fileext = ".fa")
+  writeLines(c(">chr1", "ACGTACGTACGT", ">chr2", "TTTTGGGGCCCC", ">chr3", "GGGGCCCCAAAA"), fa)
+  g <- read_genome_fasta(fa, seqids = c("chr2", "chr3"))
+  expect_setequal(names(g), c("chr2", "chr3"))     # chr1 not read
+  expect_equal(as.character(g[["chr2"]]), "TTTTGGGGCCCC")
+  expect_true(file.exists(paste0(fa, ".fai")))       # index created
+})
+
+test_that("read_genome_fasta map+index keeps only mapped, requested chroms", {
+  skip_if_not_installed("Rsamtools")
+  fa <- tempfile(fileext = ".fa")
+  writeLines(c(">1 desc", "ACGTACGT", ">2 desc", "TTTTGGGG"), fa)
+  g <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, seqids = "Chr2")
+  expect_equal(names(g), "Chr2")
+  expect_equal(as.character(g[["Chr2"]]), "TTTTGGGG")
 })

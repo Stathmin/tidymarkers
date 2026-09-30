@@ -21,6 +21,7 @@
 #' M, B, D, H, V) - or anything else non-ACGTN - to `N`, so downstream design
 #' can treat "unknown base" uniformly instead of dropping the whole record.
 #' @keywords internal
+#' @family KASP input
 #' @export
 normalise_allele <- function(x) {
   x <- toupper(x)
@@ -35,6 +36,7 @@ normalise_allele <- function(x) {
 #'   random-access index on very large files).
 #' @param chrom,start,end optional region filter (chromosome is normalised with
 #'   [ath_chrom()], so `"4"` and `"Chr4"` both work).
+#' @family KASP input
 #' @export
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
   rlang::check_installed("vroom", reason = "to read large VCF files")
@@ -68,6 +70,41 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
     dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
 }
 
+#' Ensure a FASTA has a `.fai` index, decompressing `.gz` once if needed
+#'
+#' `Rsamtools::indexFa()` needs a plain (or bgzipped) FASTA, so a `.gz` file is
+#' first materialised next to it (once, cached) before indexing.  Returns the
+#' path to the plain, indexed FASTA.
+#' @family KASP input
+#' @export
+fasta_index <- function(path) {
+  rlang::check_installed("Rsamtools", reason = "for indexed FASTA random access")
+  if (!fs::file_exists(path)) rlang::abort(glue::glue("FASTA not found: {path}"))
+  plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
+  if (!fs::file_exists(plain)) {
+    rlang::inform(glue::glue("Decompressing {fs::path_file(path)} for indexing (once)."))
+    Biostrings::writeXStringSet(Biostrings::readDNAStringSet(path), plain)
+  }
+  fai <- paste0(plain, ".fai")
+  if (!fs::file_exists(fai)) Rsamtools::indexFa(plain)
+  plain
+}
+
+#' Mask positions in a DNA sequence by replacing them with `N`
+#'
+#' Used to blank out *other* variants flanking a target so no ambiguous base
+#' leaks into a designed or exported primer.  Positions outside the sequence are
+#' ignored.
+#' @family KASP input
+#' @export
+mask_positions <- function(seq, positions) {
+  s <- Biostrings::DNAString(as.character(seq))
+  positions <- as.integer(positions)
+  positions <- positions[!is.na(positions) & positions >= 1L & positions <= length(s)]
+  if (!length(positions)) return(s)
+  Biostrings::replaceAt(s, IRanges::IRanges(positions, positions), "N")
+}
+
 #' Read an arbitrary genome FASTA, optionally normalising sequence names
 #'
 #' @param path FASTA path (gzipped is fine).
@@ -75,18 +112,39 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #'   (e.g. `ATH_CHROM_MAP`); when given, only mapped sequences are kept.
 #' @param seqids optional character vector of sequence names to keep after
 #'   reading (a cheap subset when only a few chromosomes are needed).
+#' @param use_index when `TRUE` and `seqids` is given, read only those sequences
+#'   through the `Rsamtools` FASTA index (random access, no whole-genome load);
+#'   otherwise the whole file is read with `Biostrings`.
+#' @family KASP input
 #' @export
-read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL) {
+read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
   if (!fs::file_exists(path)) rlang::abort(glue::glue("FASTA not found: {path}"))
-  g <- Biostrings::readDNAStringSet(path)
-  nm <- sub("\\s.*$", "", names(g))
-  if (!is.null(chrom_map)) {
-    keep <- nm %in% names(chrom_map)
-    g <- g[keep]
-    names(g) <- unname(chrom_map[nm[keep]])
-  } else {
-    names(g) <- nm
+
+  normalise <- function(g) {
+    nm <- sub("\\s.*$", "", names(g))
+    if (!is.null(chrom_map)) {
+      keep <- nm %in% names(chrom_map)
+      g <- g[keep]
+      names(g) <- unname(chrom_map[nm[keep]])
+    } else {
+      names(g) <- nm
+    }
+    if (!is.null(seqids)) g <- g[intersect(seqids, names(g))]
+    g
   }
-  if (!is.null(seqids)) g <- g[intersect(seqids, names(g))]
-  g
+
+  if (isTRUE(use_index) && !is.null(seqids)) {
+    plain <- fasta_index(path)
+    fai   <- readr::read_tsv(paste0(plain, ".fai"), show_col_types = FALSE,
+      col_names = c("name", "length", "offset", "linebases", "linebytes"))
+    tok    <- sub("\\s.*$", "", fai$name)
+    mapped <- if (!is.null(chrom_map)) unname(chrom_map[tok]) else tok
+    keep   <- (tok %in% seqids) | (!is.na(mapped) & mapped %in% seqids)
+    sel    <- fai[keep, , drop = FALSE]
+    if (nrow(sel) == 0L) return(Biostrings::DNAStringSet())
+    gr <- GenomicRanges::GRanges(sel$name, IRanges::IRanges(1L, sel$length))
+    g  <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    return(normalise(g))
+  }
+  normalise(Biostrings::readDNAStringSet(path))
 }

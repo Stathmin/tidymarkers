@@ -2,5 +2,5 @@
 # The design functions are sourced directly instead of building a package.
 library(testthat)
 library(here)
-for (f in c("kasp_functions.R", "kasp_io.R")) source(here::here("R", f))
+for (f in c("kasp_functions.R", "kasp_io.R", "kasp_plots.R")) source(here::here("R", f))
 test_dir(here::here("tests", "testthat"))

@@ -16,6 +16,8 @@ Imports:
     Biostrings,
     IRanges,
     S4Vectors,
+    GenomicRanges,
+    Rsamtools,
     BiocParallel,
     DECIPHER,
     TmCalculator,
