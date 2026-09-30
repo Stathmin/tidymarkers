@@ -18,7 +18,11 @@ ensembl_variants(
 \item{species, cache}{as in \code{\link[=ensembl_gene]{ensembl_gene()}}.}
 }
 \description{
-Natural variants overlapping a region, from Ensembl Plants (1001 Genomes)
+Returns \code{id}, \code{chrom}, \code{pos}, \code{ref_genome} (the allele vector) and
+\code{consequence} — the Ensembl/Sequence-Ontology term(s).  The \code{overlap/region}
+endpoint does \strong{not} provide a VEP \code{impact} column, so \code{\link[=pick_target_snp]{pick_target_snp()}}
+ranks on the SO terms; a table you build yourself with an \code{impact} column is
+also accepted.
 }
 \seealso{
 Other KASP input:

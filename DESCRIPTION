@@ -38,6 +38,7 @@ Imports:
     jsonlite,
     here,
     fs,
+    processx,
     cli,
     withr,
     rlang,
@@ -45,6 +46,8 @@ Imports:
 Suggests:
     rmarkdown,
     knitr,
+    VariantAnnotation,
+    SummarizedExperiment,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

@@ -17,6 +17,8 @@
 ### Дизайн
 - Движок InDel: аллельные шаблоны и скан стыка (`design_as_primers_indel()`,
   `allele_templates()`); размещение выбирает физика (`DECIPHER`), не ручное правило.
+- `pick_target_snp()` учитывает специфичность 3'-сида (`seed_hits`) и пропускает
+  комплементарные пары (A/T, C/G); тяжесть последствия — по VEP `impact` или SO-термам.
 - Substitution-блоки / MNP: вариант — строка REF/ALT, единая геометрия через
   `as_anchor()` / `block_in_seg()`.
 - `design_as_primers_indel()` и SNP-путь унифицированы в `assemble_kasp_assay()`
@@ -30,8 +32,11 @@
 ### Термодинамика / QC
 - `terminal_dg()` — 3'-концевая стабильность (GC-clamp, `OligoArrayAux`).
 - `wobble_mismatch()` — флаг слабого G:T / A:C неспаривания (симметрично по REF/ALT).
+- `oligo_dg()` идёт через `processx` с явной диагностикой вместо тихого `NA`.
 
 ### Ввод / вывод
+- `read_variants_vcf(backend = )`: потоковый `vroom` (дефолт) или канонический
+  `VariantAnnotation::readVcf` для сложных VCF (INFO/GT, phased, breakends).
 - `normalise_allele()` — IUPAC-коды сворачиваются к `ACGTN`, а не отбрасываются.
 - `kasp_mix_recipe()` — tidy-рецепт смеси (AS:AS:COM = 2:2:5) и реакции.
 

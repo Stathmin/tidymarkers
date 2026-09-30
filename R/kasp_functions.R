@@ -115,8 +115,34 @@ SEED_K          <- 15L   # 3'-seed length for the fast specificity screen
 SEED_MISMATCH   <- 1L
 
 # Ensembl consequence wording -> design priority (lower = preferred)
-SO_TERM_RANK  <- c(missense = 1L, splice = 2L, synonymous = 3L, UTR = 4L)
-SO_RANK_OTHER <- 5L
+# Sequence-Ontology term -> design priority (lower = preferred).  These are the
+# canonical SO terms exactly as Ensembl/VEP spell them, so matching is by full
+# token (not substring).  `SO_RANK_OTHER` sits one below the worst known term.
+SO_TERM_RANK <- c(
+  stop_gained              = 1L,
+  stop_lost                = 1L,
+  start_lost               = 1L,
+  frameshift_variant       = 1L,
+  splice_acceptor_variant  = 2L,
+  splice_donor_variant     = 2L,
+  missense_variant         = 3L,
+  inframe_insertion        = 3L,
+  inframe_deletion         = 3L,
+  splice_region_variant    = 4L,
+  synonymous_variant       = 5L,
+  stop_retained_variant    = 5L,
+  `5_prime_UTR_variant`    = 6L,
+  `3_prime_UTR_variant`    = 6L,
+  intron_variant           = 7L,
+  upstream_gene_variant    = 8L,
+  downstream_gene_variant  = 8L,
+  intergenic_variant       = 9L
+)
+SO_RANK_OTHER <- max(SO_TERM_RANK) + 1L
+
+# Ensembl VEP IMPACT ladder, used only when the variant table carries an `impact`
+# column (the Ensembl `overlap/region` REST endpoint does not provide it).
+IMPACT_RANK <- c(HIGH = 1L, MODERATE = 2L, LOW = 3L, MODIFIER = 4L)
 
 # KASP acceptance thresholds (consensus + EasyKASP 2025; the manual mirrors this)
 KASP_LIMITS <- list(
@@ -135,7 +161,9 @@ KASP_LIMITS <- list(
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or
 #' `hybrid-ss-min` (intramolecular folding of one strand).  Returns dG in kcal/mol
-#' (more negative = more stable); `NA` if OligoArrayAux is not on `PATH`.
+#' (more negative = more stable); `NA` if OligoArrayAux is not on `PATH`.  A
+#' non-zero exit or an unparsable result is reported as a warning (not a silent
+#' `NA`), and the run goes through `processx` so failures are explicit.
 #'
 #' @param seq1,seq2 oligos 5'->3'; with `seq2 = NULL` the hairpin (folding) dG of
 #'   `seq1` alone is returned.
@@ -146,16 +174,30 @@ KASP_LIMITS <- list(
 oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   bin <- if (is.null(seq2)) "hybrid-ss-min" else "hybrid-min"
   exe <- Sys.which(bin)
-  if (!nzchar(exe)) return(NA_real_)
+  if (!nzchar(exe)) {
+    rlang::warn(glue::glue("OligoArrayAux ('{bin}') is not on the PATH."))
+    return(NA_real_)
+  }
   args <- c("-n", "DNA", "-t", as.character(temp), "-T", as.character(temp),
             "-N", as.character(na), "-E", "-q")
   args <- if (is.null(seq2)) c(args, seq1) else c(args, seq1, seq2)
-  out <- suppressWarnings(system2(exe, args, stdout = TRUE, stderr = FALSE))
-  out <- out[nzchar(trimws(out))]
-  if (!length(out)) return(NA_real_)
-  dg <- suppressWarnings(as.numeric(utils::tail(out, 1L)))
+  # -q makes UNAFold print a single number; run via processx so a non-zero exit
+  # or an unparsable result is an explicit failure, not a silent NA.
+  run <- tryCatch(processx::run(exe, args, error_on_status = FALSE),
+                  error = function(e) e)
+  if (inherits(run, "error")) {
+    rlang::warn(glue::glue("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"))
+    return(NA_real_)
+  }
+  if (run$status != 0L) {
+    rlang::warn(glue::glue("OligoArrayAux ('{bin}') exited with status {run$status}: ",
+                           "{trimws(run$stderr)}"))
+    return(NA_real_)
+  }
+  tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
+  dg  <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
-    rlang::warn(glue::glue("OligoArrayAux ('{bin}') returned no parsable dG."))
+    rlang::warn(glue::glue("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
     return(NA_real_)
   }
   dg
@@ -347,6 +389,12 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
 }
 
 #' Natural variants overlapping a region, from Ensembl Plants (1001 Genomes)
+#'
+#' Returns `id`, `chrom`, `pos`, `ref_genome` (the allele vector) and
+#' `consequence` — the Ensembl/Sequence-Ontology term(s).  The `overlap/region`
+#' endpoint does **not** provide a VEP `impact` column, so [pick_target_snp()]
+#' ranks on the SO terms; a table you build yourself with an `impact` column is
+#' also accepted.
 #' @param chrom,start,end region to fetch (chromosome is normalised).
 #' @param species,cache as in [ensembl_gene()].
 #' @family KASP input
@@ -416,16 +464,46 @@ strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
     dplyr::mutate(distance_to_45 = abs(.data$gc - 0.45))
 }
 
-#' Map Ensembl consequence strings to a design priority (lower = preferred)
+#' Map Ensembl consequence/impact to a design priority (lower = preferred)
 #'
-#' Uses the `SO_TERM_RANK` constant so the vocabulary lives in one place.
+#' If an Ensembl VEP `impact` is available it wins (the standard HIGH/MODERATE/
+#' LOW/MODIFIER severity ladder in `IMPACT_RANK`).  Otherwise the consequence
+#' string is split on commas and matched against the canonical SO terms in
+#' `SO_TERM_RANK` by *full token* (not substring), taking the most severe; terms
+#' with no known rank (and `NA`s) fall back to `SO_RANK_OTHER`.
 #' @keywords internal
 #' @noRd
-so_rank <- function(consequence) {
-  vapply(consequence, function(x) {
-    hit <- names(SO_TERM_RANK)[stringr::str_detect(x, names(SO_TERM_RANK))]
-    if (length(hit)) unname(SO_TERM_RANK[[hit[1L]]]) else SO_RANK_OTHER
-  }, integer(1), USE.NAMES = FALSE)
+so_rank <- function(consequence, impact = NULL) {
+  term_rank <- purrr::map_int(consequence, function(x) {
+    toks <- stringr::str_trim(stringr::str_split(x, ",")[[1L]])
+    r    <- SO_TERM_RANK[toks]
+    r    <- r[!is.na(r)]
+    if (length(r)) min(unname(r)) else SO_RANK_OTHER
+  })
+  if (is.null(impact)) return(term_rank)
+  impact_rank <- unname(IMPACT_RANK[match(toupper(impact), names(IMPACT_RANK))])
+  dplyr::coalesce(impact_rank, term_rank)
+}
+
+#' 3'-seed specificity of a would-be AS primer anchored at a variant
+#'
+#' The seed is the `k` 3'-terminal bases of the AS primer: `[anchor-k+1, anchor]`
+#' on the plus strand, or the reverse complement of `[anchor, anchor+k-1]` on the
+#' minus strand (see [as_anchor()]).  Counted over the whole genome, both
+#' strands, like [specificity_seed()].  `NA` if the seed runs off the sequence.
+#' @keywords internal
+#' @noRd
+seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
+                         k = SEED_K, max_mismatch = SEED_MISMATCH) {
+  n <- length(genome[[chrom]])
+  anchor <- as_anchor(pos, ref_len, strand)
+  lo <- if (identical(strand, "+")) anchor - k + 1L else anchor
+  hi <- if (identical(strand, "+")) anchor else anchor + k - 1L
+  if (lo < 1L || hi > n) return(NA_integer_)
+  seg  <- get_region(genome, chrom, lo, hi)
+  seed <- if (identical(strand, "+")) seg else Biostrings::reverseComplement(seg)
+  specificity_seed(c(seed = as.character(seed)), genome, k = k,
+                   max_mismatch = max_mismatch)$hits
 }
 
 #' Choose a designable target variant from a variant table
@@ -435,17 +513,35 @@ so_rank <- function(consequence) {
 #' multi-allelic records are left for a dedicated engine and are not silently
 #' forced into a substitution.
 #'
-#' @param clean_3p number of flanking bases of the AS primer that should be free
-#'   of *other* variants.  Because the AS primer may be placed on either strand,
-#'   the "clean" count is the best (smallest) of the two orientations: the chosen
-#'   variant just has to be clean in *at least one* direction.
+#' @section Selection policy:
+#' Among the designable substitutions the best one is picked by, in order:
+#' 1. the cleanest AS 3' window (`n_3p`, best of the two orientations);
+#' 2. consequence severity — the Ensembl VEP `impact` column if the table has it,
+#'    otherwise the canonical SO terms in `SO_TERM_RANK` (`missense_variant`, ...);
+#' 3. a transition (A>G / C>T) over a transversion;
+#' 4. 3'-seed specificity (`seed_hits`, best of the two strands);
+#' 5. the leftmost position.
+#' SNPs with complementary alleles (A/T, C/G) are skipped — a 3'-terminal base
+#' cannot tell them apart.  The genome-wide seed scan runs only on the best
+#' `specificity_candidates` loci.
+#'
 #' @param variants variant table (Ensembl REST shape).
 #' @param genome DNAStringSet.
 #' @param gene one-row gene record.
 #' @param variant_id force a specific variant by id.
+#' @param clean_3p number of flanking bases of the AS primer that should be free
+#'   of *other* variants.  Because the AS primer may be placed on either strand,
+#'   the "clean" count is the best (smallest) of the two orientations: the chosen
+#'   variant just has to be clean in *at least one* direction.
+#' @param specificity_candidates how many top-ranked loci to check for 3'-seed
+#'   specificity.  The seed scan is genome-wide, so only this many of the best
+#'   candidates (by the other criteria) are checked; set `0` to skip it.
+#' @return a one-row tibble for the chosen variant (`id`, `chrom`, `pos`,
+#'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`).
 #' @family KASP design
 #' @export
-pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L) {
+pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
+                            specificity_candidates = 10L) {
   if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
 
   # REF length comes from the VCF (its first allele); the reference bases are
@@ -465,18 +561,28 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     ) |>
     dplyr::filter(!is.na(.data$alt),
                   stringr::str_detect(.data$ref, "^[ACGT]+$"),
-                  stringr::str_detect(.data$alt, "^[ACGT]+$"))
+                  stringr::str_detect(.data$alt, "^[ACGT]+$"),
+                  # a SNP whose alleles are complementary (A/T, C/G) cannot be told
+                  # apart by a 3'-terminal base (one allele's primer pairs the other
+                  # allele's template), so KASP discrimination collapses - skip them
+                  !(.data$ref_len == 1L &
+                      paste0(pmin(.data$ref, .data$alt), pmax(.data$ref, .data$alt)) %in% c("AT", "CG")))
   if (nrow(v) == 0L) rlang::abort("No usable substitution variant (SNP/MNP) left after filtering.")
 
   # every variant of the gene (incl. indels): used to penalise targets whose AS
   # 3' neighbourhood is itself variable (breaks allele specificity across lines)
   allpos <- variants$pos[variants$chrom == gene$chrom]
 
-  v |>
+  # Ensembl VEP IMPACT, when the table carries it, is the library-defined
+  # severity ladder; otherwise so_rank() falls back to the SO terms.  (`v[[..]]`
+  # is NULL when the column is absent.)
+  impact <- v[["impact"]]
+
+  ranked <- v |>
     dplyr::mutate(
       transition = .data$ref_len == 1L &
         paste0(.data$ref, .data$alt) %in% c("AG", "GA", "CT", "TC"),
-      rank = so_rank(.data$consequence),
+      rank = so_rank(.data$consequence, impact),
       # best-case (either strand) count of other variants in the AS 3' window,
       # vectorised over the whole variant table (IRanges).  The windows sit
       # strictly outside the variant block, so the target cannot count itself.
@@ -488,7 +594,29 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
           IRanges::IRanges(.data$pos + .data$ref_len, .data$pos + .data$ref_len + clean_3p - 2L),
           IRanges::IRanges(allpos, allpos)))
     ) |>
-    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos) |>
+    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos)
+
+  if (specificity_candidates <= 0L) {
+    return(ranked |> dplyr::slice(1L) |> dplyr::select(-"rank", -"ref_genome"))
+  }
+
+  # among the best candidates, prefer the most specific AS 3'-seed (best of the
+  # two strands); the genome-wide seed scan is why we only do the top few
+  short <- ranked |>
+    dplyr::slice_head(n = specificity_candidates) |>
+    dplyr::mutate(seed_hits = purrr::pmap_int(
+      list(.data$chrom, .data$pos, .data$ref_len),
+      function(ch, p, rl) {
+        h <- c(seed_hits_at(genome, ch, p, rl, "+"),
+               seed_hits_at(genome, ch, p, rl, "-"))
+        if (all(is.na(h))) NA_integer_ else min(h, na.rm = TRUE)
+      }))
+
+  # seed specificity breaks ties among otherwise comparable loci (it does not
+  # outrank the biological/chemical preferences above)
+  short |>
+    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition),
+                   .data$seed_hits, .data$pos) |>
     dplyr::slice(1L) |>
     dplyr::select(-"rank", -"ref_genome")
 }

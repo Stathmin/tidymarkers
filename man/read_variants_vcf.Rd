@@ -4,7 +4,13 @@
 \alias{read_variants_vcf}
 \title{Read variants from a VCF/BCF file (streaming, memory-mapped)}
 \usage{
-read_variants_vcf(path, chrom = NULL, start = NULL, end = NULL)
+read_variants_vcf(
+  path,
+  chrom = NULL,
+  start = NULL,
+  end = NULL,
+  backend = c("vroom", "VariantAnnotation")
+)
 }
 \arguments{
 \item{path}{VCF path; plain (\code{vcf}) or bgzipped (\code{vcf.gz}) are both read by
@@ -13,6 +19,11 @@ random-access index on very large files).}
 
 \item{chrom, start, end}{optional region filter (chromosome is normalised with
 \code{ath_chrom()}, so \code{"4"} and \code{"Chr4"} both work).}
+
+\item{backend}{\code{"vroom"} (default) streams the four columns we need and is
+best for large files; \code{"VariantAnnotation"} parses with the Bioconductor
+canonical reader (\code{readVcf}) and is the safer choice for complex records
+(INFO/GT, phased, breakends, missing ALT).  Both return the same tibble.}
 }
 \description{
 Read variants from a VCF/BCF file (streaming, memory-mapped)

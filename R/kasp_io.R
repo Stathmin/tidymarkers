@@ -37,31 +37,26 @@ normalise_allele <- function(x) {
 #'   random-access index on very large files).
 #' @param chrom,start,end optional region filter (chromosome is normalised with
 #'   `ath_chrom()`, so `"4"` and `"Chr4"` both work).
+#' @param backend `"vroom"` (default) streams the four columns we need and is
+#'   best for large files; `"VariantAnnotation"` parses with the Bioconductor
+#'   canonical reader (`readVcf`) and is the safer choice for complex records
+#'   (INFO/GT, phased, breakends, missing ALT).  Both return the same tibble.
 #' @family KASP input
 #' @export
-read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
-  rlang::check_installed("vroom", reason = "to read large VCF files")
+read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
+                              backend = c("vroom", "VariantAnnotation")) {
+  backend <- match.arg(backend)
   if (!fs::file_exists(path)) rlang::abort(glue::glue("VCF not found: {path}"))
 
-  hdr <- readr::read_lines(path, n_max = 1000L)
-  hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
-  if (is.na(hdr)) rlang::abort(glue::glue("{path} has no '#CHROM' header line."))
-  nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
+  v <- switch(backend,
+    vroom = read_variants_vcf_vroom(path),
+    VariantAnnotation = read_variants_vcf_va(path))
 
-  ct <- vroom::cols(.default = vroom::col_skip(),
-                    CHROM = "c", POS = "i", REF = "c", ALT = "c")
-  v <- vroom::vroom(path, comment = "#", col_names = nms, col_types = ct,
-                    col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE)
-
-  v <- v |>
-    dplyr::transmute(chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
-                     ref = .data$REF, alt = .data$ALT)
   if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
   if (!is.null(end))   v <- dplyr::filter(v, .data$pos <= end)
 
   v |>
-    tidyr::separate_longer_delim("alt", delim = ",") |>          # multi-allelic -> rows
     # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation,
     # so they are not mangled into a fake `N` allele
     dplyr::filter(!stringr::str_detect(.data$ref, "^<|[*.]"),
@@ -69,6 +64,40 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
     dplyr::mutate(ref = normalise_allele(.data$ref),
                   alt = normalise_allele(.data$alt)) |>
     dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
+}
+
+#' Streaming VCF reader (`vroom`): CHROM/POS/REF/ALT, multi-allelic split
+#' @keywords internal
+#' @noRd
+read_variants_vcf_vroom <- function(path) {
+  rlang::check_installed("vroom", reason = "to read large VCF files")
+  hdr <- readr::read_lines(path, n_max = 1000L)
+  hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
+  if (is.na(hdr)) rlang::abort(glue::glue("{path} has no '#CHROM' header line."))
+  nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
+
+  ct <- vroom::cols(.default = vroom::col_skip(),
+                    CHROM = "c", POS = "i", REF = "c", ALT = "c")
+  vroom::vroom(path, comment = "#", col_names = nms, col_types = ct,
+               col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE) |>
+    dplyr::transmute(chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
+                     ref = .data$REF, alt = .data$ALT) |>
+    tidyr::separate_longer_delim("alt", delim = ",")          # multi-allelic -> rows
+}
+
+#' Canonical VCF reader (`VariantAnnotation::readVcf`)
+#' @keywords internal
+#' @noRd
+read_variants_vcf_va <- function(path) {
+  rlang::check_installed("VariantAnnotation", reason = "for the readVcf backend")
+  vcf <- VariantAnnotation::readVcf(path)
+  rng <- SummarizedExperiment::rowRanges(vcf)
+  tibble::tibble(
+    chrom = ath_chrom(as.character(GenomicRanges::seqnames(rng))),
+    pos   = as.integer(GenomicRanges::start(rng)),
+    ref   = as.character(VariantAnnotation::ref(vcf)),
+    alt   = purrr::map(VariantAnnotation::alt(vcf), as.character)) |>
+    tidyr::unnest_longer("alt")                                 # multi-allelic -> rows
 }
 
 #' Ensure a FASTA has a `.fai` index, decompressing `.gz` once if needed

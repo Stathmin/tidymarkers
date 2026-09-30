@@ -4,7 +4,14 @@
 \alias{pick_target_snp}
 \title{Choose a designable target variant from a variant table}
 \usage{
-pick_target_snp(variants, genome, gene, variant_id = NULL, clean_3p = 5L)
+pick_target_snp(
+  variants,
+  genome,
+  gene,
+  variant_id = NULL,
+  clean_3p = 5L,
+  specificity_candidates = 10L
+)
 }
 \arguments{
 \item{variants}{variant table (Ensembl REST shape).}
@@ -19,6 +26,14 @@ pick_target_snp(variants, genome, gene, variant_id = NULL, clean_3p = 5L)
 of \emph{other} variants.  Because the AS primer may be placed on either strand,
 the "clean" count is the best (smallest) of the two orientations: the chosen
 variant just has to be clean in \emph{at least one} direction.}
+
+\item{specificity_candidates}{how many top-ranked loci to check for 3'-seed
+specificity.  The seed scan is genome-wide, so only this many of the best
+candidates (by the other criteria) are checked; set \code{0} to skip it.}
+}
+\value{
+a one-row tibble for the chosen variant (\code{id}, \code{chrom}, \code{pos},
+\code{consequence}, \code{ref}, \code{alt}, \code{ref_len}, \code{transition}, \code{n_3p}, \code{seed_hits}).
 }
 \description{
 Keeps variants we can actually design on: a biallelic substitution block whose
@@ -26,6 +41,22 @@ REF and ALT are ACGT-only strings of \emph{equal} length (SNP or MNP).  Indels a
 multi-allelic records are left for a dedicated engine and are not silently
 forced into a substitution.
 }
+\section{Selection policy}{
+
+Among the designable substitutions the best one is picked by, in order:
+\enumerate{
+\item the cleanest AS 3' window (\code{n_3p}, best of the two orientations);
+\item consequence severity — the Ensembl VEP \code{impact} column if the table has it,
+otherwise the canonical SO terms in \code{SO_TERM_RANK} (\code{missense_variant}, ...);
+\item a transition (A>G / C>T) over a transversion;
+\item 3'-seed specificity (\code{seed_hits}, best of the two strands);
+\item the leftmost position.
+SNPs with complementary alleles (A/T, C/G) are skipped — a 3'-terminal base
+cannot tell them apart.  The genome-wide seed scan runs only on the best
+\code{specificity_candidates} loci.
+}
+}
+
 \seealso{
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},

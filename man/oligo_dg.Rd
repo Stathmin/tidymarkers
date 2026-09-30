@@ -17,7 +17,9 @@ oligo_dg(seq1, seq2 = NULL, na = 0.05, temp = 37)
 \description{
 The DNA engine DECIPHER already uses: \code{hybrid-min} (duplex of two strands) or
 \code{hybrid-ss-min} (intramolecular folding of one strand).  Returns dG in kcal/mol
-(more negative = more stable); \code{NA} if OligoArrayAux is not on \code{PATH}.
+(more negative = more stable); \code{NA} if OligoArrayAux is not on \code{PATH}.  A
+non-zero exit or an unparsable result is reported as a warning (not a silent
+\code{NA}), and the run goes through \code{processx} so failures are explicit.
 }
 \seealso{
 Other KASP thermodynamics:

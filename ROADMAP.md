@@ -62,7 +62,12 @@
 - [x] `strand_gc_hint()` — направление по GC флангов (EasyKASP) (`b93aab8`)
 
 ## H. Отбор мишени и приёмка
-- [x] `pick_target_snp()`: референс из генома, missense > splice > synonymous > UTR, транзиции, чистая 3'-зона (`0eda4f2`, `ca75edb`, `c59957e`)
+- [x] `pick_target_snp()`: референс из генома; приоритет — чистая 3'-зона → тяжесть
+      последствия (VEP `impact` или канонические SO-термы) → транзиция (`0eda4f2`,
+      `ca75edb`, `c59957e`, `d52a253`)
+- [x] Специфичность 3'-сида учтена при выборе мишени: `seed_hits` (лучшая из двух
+      цепей) как критерий среди топ-`specificity_candidates`; комплементарные пары
+      (A/T, C/G) пропускаются — их 3'-основание не различает (`d52a253`+)
 - [x] `KASP_LIMITS` + `kasp_design_checks()` — tidy `criterion/observed/limit/pass`, пороги LGC/EasyKASP (`ee63dfa`)
 - [x] Отказ от чужой эмпирической формулы Tm (EasyKASP) в пользу NN-термодинамики (`b93aab8`)
 
@@ -87,11 +92,11 @@
 
 ## L. Гигиена
 - [x] Идиоматический tidyverse-стайл: `list_rbind`/`crossing`/`.data` вместо `*_dfr`/`expand.grid` (`ca75edb`)
-- [x] Тесты на всё новое; 144 проверки; ретро-чистка пустых ассертов (`011acd1`)
+- [x] Тесты на всё новое; 170 проверок; ретро-чистка пустых ассертов (`011acd1`)
 
 ---
 
-## M. Пакет и UX — «душевность» в духе tidyverse  [очередь]
+## M. Пакет и UX — «душевность» в духе tidyverse  [сделано]
 
 Цель: превратить набор скриптов в настоящий R-пакет с приятным опытом — виньетки,
 описания функций, хелперы, примеры, подсказки. Основа уже положена (roxygen-заголовки,
@@ -131,6 +136,74 @@
 ### M5. Уроки для лекции
 - [x] Скелет-слайды «какая библиотека за что отвечает» (`inst/slides/library-map.md`)
 - [x] Живой пример: `inst/scripts/quickstart.R` (один SNP → тест → вердикт, на кэше)
+
+## N. Честный аудит: библиотеки vs самописное  [местами очередь]
+
+Где мы **делегируем** науку пакетам (хорошо):
+
+| Задача | Библиотека |
+|--------|------------|
+| Tm (nearest-neighbour) | `TmCalculator` |
+| Аллельная дискриминация (гибридизация + Taq) | `DECIPHER::CalculateEfficiencyPCR` |
+| Шпильки/димеры (dG) | OligoArrayAux (движок, что и у DECIPHER) |
+| Специфичность | `Biostrings` (`PDict`, `vcountPattern`, `matchProbePair`), `rBLAST` |
+| Последовательности/интервалы | `Biostrings`, `IRanges`, `GenomicRanges` |
+| Ввод | `vroom` (VCF), `Rsamtools` (индекс FASTA), `httr2`/`jsonlite` (REST) |
+| Графика | `ggmsa`, `gggenes`, `ggrepel`, `patchwork`, `ggplot2` |
+| Инфра | `renv`, `testthat`, `BiocParallel`, `cli`, `styler`/`lintr` |
+
+Где **не хватило хороших либ** — есть библиотечный канон, который мы не взяли:
+
+- [x] *(закрыто, N1)* **VCF-парсинг**: теперь есть второй бэкенд —
+      `read_variants_vcf(backend = "VariantAnnotation")` через `readVcf` (INFO/GT,
+      phased, breakends, missing ALT); `vroom` остаётся дефолтом для больших файлов.
+- [x] *(оценено, N2)* **COM-праймер**: `DECIPHER::DesignPrimers()` изучен — требует
+      `tiles` (наборы групп последовательностей) и целится в пары праймеров
+      под покрытие, а не в reverse-праймер напротив SNP; для KASP не подходит.
+      Остаётся своя сетка + библиотечный скоринг `DECIPHER`. См. N2.
+- [x] *(закрыто, N3)* **dG олиго**: `oligo_dg()` теперь идёт через `processx`
+      с явной проверкой статуса и ошибкой вместо тихого `NA` (см. N3).
+- [x] *(закрыто, N4)* **Consequence**: `so_rank()` теперь принимает Ensembl VEP
+      `impact` (лестница HIGH/MODERATE/LOW/MODIFIER) либо мапит канонические SO-термы
+      по полному токену (не подстрокой), включая comma-списки. См. N4.
+
+Где самописное — **оправдано** (KASP-специфика или тонкая клейка, либы нет):
+
+- [x] `design_as_primers()`/`design_as_primers_indel()` — сетка + вовлечение физики
+      `DECIPHER`; `openPrimeR`/`primeR` сняты, готового KASP-пакета нет — это наш слой.
+- [x] `KASP_LIMITS`/`kasp_design_checks()` — пороги LGC/EasyKASP, специфика KASP.
+- [x] `primer_interval()`/`as_anchor()` — арифметика интервалов на `IRanges`.
+- [x] `find_repeats()`/`has_run()` — SSR/гомополимеры регулярками (в нашем стеке
+      библиотечного аналога нет).
+- [x] `wobble_mismatch()`, `terminal_dg()`, `kasp_mix_recipe()`, `write_kasp_results()` —
+      мелкая логика/арифметика/укладка таблиц.
+
+### N1. Опциональный бэкенд `VariantAnnotation::readVcf`  [сделано]
+- [x] `read_variants_vcf(backend = c("vroom", "VariantAnnotation"))`: `vroom` по
+      умолчанию, `readVcf` для сложных VCF; оба возвращают одинаковый tidy-tibble.
+- [x] `VariantAnnotation`/`SummarizedExperiment` добавлены в `Suggests` и в `renv.lock`
+      (`snapshot.type = "all"`); тест на эквивалентность двух бэкендов на маленьком VCF.
+
+### N2. `DECIPHER::DesignPrimers` как библиотечная альтернатива COM  [оценено, не принято]
+- [x] Изучен API и назначение: работает с `tiles` (`TileSeqs` по базе
+      последовательностей) и проектирует пары праймеров по региону для дискриминации
+      групп; неприменим к окну одного референса и к reverse-праймеру напротив SNP.
+- [x] Решение: **не адаптируем**. Физику COM уже даёт `DECIPHER`
+      (`CalculateEfficiencyPCR` для дискриминации) и `TmCalculator` (Tm); наша
+      переборная сетка — только перечисление кандидатов и KASP-специфичные фильтры.
+
+### N3. Надёжный dG вместо парсинга stdout  [сделано]
+- [x] `oligo_dg()` идёт через `processx::run(error_on_status = FALSE)`: явная ошибка
+      при ненулевом статусе и при непарсимом выводе (вместо тихого `NA`).
+- [x] `processx` в `Imports`; задокументировано поведение (warning + `NA`).
+
+### N4. Структурированный consequence  [сделано]
+- [x] `so_rank(consequence, impact = NULL)`: если есть колонка `impact` (Ensembl VEP),
+      берётся стандартная лестница `IMPACT_RANK`; иначе consequence режется по запятым
+      и мапится по **полному** каноническому SO-терму (`SO_TERM_RANK`), бepётся самый
+      тяжёлый. `pick_target_snp()` использует `impact`, если он есть в таблице.
+- [x] Тесты: канонические термы, comma-списки, fallback на неизвестном терме,
+      приоритет impact и выбор более тяжёлого варианта в `pick_target_snp()`.
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

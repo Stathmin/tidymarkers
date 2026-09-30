@@ -50,6 +50,43 @@ test_that("read_variants_vcf normalises IUPAC/lowercase instead of dropping", {
   expect_equal(v$alt[v$pos == 600L], "G")
 })
 
+test_that("the vroom and VariantAnnotation backends agree", {
+  skip_if_not_installed("vroom")
+  # VariantAnnotation's namespace load emits a benign import-replacement warning
+  if (!suppressWarnings(suppressMessages(requireNamespace("VariantAnnotation", quietly = TRUE)))) {
+    testthat::skip("VariantAnnotation not installed")
+  }
+  vcf <- tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "4\t100\t.\tA\tG\t.\t.\t.",
+    "4\t200\t.\tAT\tA\t.\t.\t.",          # deletion
+    "4\t300\t.\tA\tG,T\t.\t.\t.",          # multi-allelic
+    "4\t400\t.\tA\t<DEL>\t.\t.\t."         # symbolic -> dropped
+  ), vcf)
+  a <- read_variants_vcf(vcf, backend = "vroom")
+  b <- suppressWarnings(read_variants_vcf(vcf, backend = "VariantAnnotation"))
+  key <- function(x) sort(paste(x$chrom, x$pos, x$ref, x$alt))
+  expect_equal(key(a), key(b))
+  expect_setequal(a$pos, c(100L, 200L, 300L, 300L))
+})
+
+test_that("the VariantAnnotation backend filters by region too", {
+  skip_if_not_installed("VariantAnnotation")
+  vcf <- tempfile(fileext = ".vcf")
+  writeLines(c("##fileformat=VCFv4.2",
+               "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+               "1\t10\t.\tA\tG\t.\t.\t.",
+               "1\t50\t.\tA\tC\t.\t.\t.",
+               "1\t90\t.\tA\tT\t.\t.\t."), vcf)
+  v <- suppressWarnings(
+    read_variants_vcf(vcf, chrom = "Chr1", start = 20L, end = 60L,
+                      backend = "VariantAnnotation"))
+  expect_setequal(v$pos, 50L)
+  expect_true(all(v$chrom == "Chr1"))
+})
+
 test_that("read_genome_fasta normalises and filters sequence names", {
   fa <- tempfile(fileext = ".fa")
   writeLines(c(">1 dna:chromosome chromosome:TAIR10:1:1:100:1 REF", "ACGTACGT",
