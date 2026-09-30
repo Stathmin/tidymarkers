@@ -21,6 +21,7 @@
 #' M, B, D, H, V) - or anything else non-ACGTN - to `N`, so downstream design
 #' can treat "unknown base" uniformly instead of dropping the whole record.
 #' @keywords internal
+#' @param x character vector of allele strings.
 #' @family KASP input
 #' @export
 normalise_allele <- function(x) {
@@ -35,7 +36,7 @@ normalise_allele <- function(x) {
 #'   `vroom`, so no external decompression is needed (pair with `tabix` for a
 #'   random-access index on very large files).
 #' @param chrom,start,end optional region filter (chromosome is normalised with
-#'   [ath_chrom()], so `"4"` and `"Chr4"` both work).
+#'   `ath_chrom()`, so `"4"` and `"Chr4"` both work).
 #' @family KASP input
 #' @export
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
@@ -75,6 +76,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' `Rsamtools::indexFa()` needs a plain (or bgzipped) FASTA, so a `.gz` file is
 #' first materialised next to it (once, cached) before indexing.  Returns the
 #' path to the plain, indexed FASTA.
+#' @param path FASTA path (gzipped is decompressed once).
 #' @family KASP input
 #' @export
 fasta_index <- function(path) {
@@ -82,7 +84,7 @@ fasta_index <- function(path) {
   if (!fs::file_exists(path)) rlang::abort(glue::glue("FASTA not found: {path}"))
   plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
   if (!fs::file_exists(plain)) {
-    rlang::inform(glue::glue("Decompressing {fs::path_file(path)} for indexing (once)."))
+    cli::cli_alert_info("Decompressing {.file {fs::path_file(path)}} for indexing (one-off).")
     Biostrings::writeXStringSet(Biostrings::readDNAStringSet(path), plain)
   }
   fai <- paste0(plain, ".fai")
@@ -95,6 +97,8 @@ fasta_index <- function(path) {
 #' Used to blank out *other* variants flanking a target so no ambiguous base
 #' leaks into a designed or exported primer.  Positions outside the sequence are
 #' ignored.
+#' @param seq a DNAString (or string).
+#' @param positions 1-based positions to mask.
 #' @family KASP input
 #' @export
 mask_positions <- function(seq, positions) {
@@ -103,6 +107,22 @@ mask_positions <- function(seq, positions) {
   positions <- positions[!is.na(positions) & positions >= 1L & positions <= length(s)]
   if (!length(positions)) return(s)
   Biostrings::replaceAt(s, IRanges::IRanges(positions, positions), "N")
+}
+
+#' Bundled example target variants (FRI / AT4G00650)
+#'
+#' A small table of real 1001-Genomes variants in *FRIGIDA*, handy for the
+#' `variant_id` argument of [pick_target_snp()] and for trying the pipeline
+#' without pulling data from Ensembl.
+#'
+#' @return tibble with `id`, `chrom`, `pos`, `ref`, `alt`, `consequence`,
+#'   `transition`.
+#' @family KASP input
+#' @export
+kasp_example <- function() {
+  f <- system.file("extdata", "example_targets.csv", package = "kaspexample")
+  if (!nzchar(f)) rlang::abort("Bundled example data not found.")
+  readr::read_csv(f, show_col_types = FALSE)
 }
 
 #' Read an arbitrary genome FASTA, optionally normalising sequence names

@@ -1,0 +1,40 @@
+url: ~
+template:
+  bootstrap: 5
+
+reference:
+  - title: "Input: genomes & variants"
+    desc: "Read FASTA/VCF, pull Ensembl records, normalise alleles"
+    contents:
+      - has_concept("KASP input")
+  - title: "Geometry"
+    desc: "The single source of truth for primer coordinates"
+    contents:
+      - has_concept("KASP geometry")
+  - title: "Design"
+    desc: "Allele-specific and common primers, assay assembly, batch design"
+    contents:
+      - has_concept("KASP design")
+  - title: "Thermodynamics & structure"
+    desc: "Tm, duplex/hairpin dG, wobble typing, 3'-stability"
+    contents:
+      - has_concept("KASP thermodynamics")
+  - title: "Specificity"
+    desc: "Seed scan, in-silico PCR, BLAST"
+    contents:
+      - has_concept("KASP specificity")
+  - title: "QC & acceptance"
+    desc: "Grade an assay against the KASP criteria"
+    contents:
+      - has_concept("KASP checks")
+  - title: "Plots"
+    desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
+    contents:
+      - has_concept("KASP plots")
+  - title: "Output & ordering"
+    desc: "Consolidated results and IDT/LGC order sheets"
+    contents:
+      - has_concept("KASP output")
+  - title: "Utilities"
+    contents:
+      - has_concept("KASP utilities")

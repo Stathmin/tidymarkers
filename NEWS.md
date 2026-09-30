@@ -6,6 +6,14 @@
 
 ## 0.3.0
 
+### Пакет и UX
+- Проект собирается как настоящий пакет: `NAMESPACE` и `man/` из roxygen
+  (все аргументы документированы, `@family` для «See also», `@examples`).
+- Объект теста получил класс `kasp_assay` и `print()`-метод; хелперы
+  `is_kasp_assay()`, `passes_all()`, `kasp_example()`.
+- Виньетка `kasp-intro`; `NEWS.md`.
+- Внешний доступ к FASTA по индексу (`Rsamtools::indexFa`).
+
 ### Дизайн
 - Движок InDel: аллельные шаблоны и скан стыка (`design_as_primers_indel()`,
   `allele_templates()`); размещение выбирает физика (`DECIPHER`), не ручное правило.

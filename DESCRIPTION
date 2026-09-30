@@ -1,7 +1,6 @@
 Package: kaspexample
-Type: Project
 Title: KASP Marker Design for Arabidopsis thaliana (TAIR10)
-Version: 0.1.0
+Version: 0.3.0
 Authors@R: person("Lecture", "Demo", email = "demo@example.org", role = c("aut", "cre"))
 Description: An opinionated, reproducible pipeline for designing and quality
     controlling Kompetitive Allele-Specific PCR (KASP) genotyping assays for
@@ -22,7 +21,6 @@ Imports:
     DECIPHER,
     TmCalculator,
     rBLAST,
-    tidyverse,
     dplyr,
     tidyr,
     purrr,
@@ -34,15 +32,21 @@ Imports:
     ggmsa,
     gggenes,
     ggrepel,
+    forcats,
     patchwork,
     httr2,
     jsonlite,
     here,
     fs,
+    cli,
+    withr,
     rlang,
     glue
 Suggests:
     rmarkdown,
     knitr,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

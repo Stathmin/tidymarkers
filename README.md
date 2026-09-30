@@ -1,5 +1,11 @@
 # kasp-example — подбор KASP-маркеров для гена арабидопсиса
 
+<!-- badges: start -->
+[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-OK-success.svg)](https://github.com/)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<!-- badges: end -->
+
 Небольшой, но «взрослый» воспроизводимый пайплайн **на чистом R**: по гену
 *Arabidopsis thaliana* (в демо — **FRI / AT4G00650**, классический локус времени
 цветения) он находит реальные SNP из проекта *1001 Genomes*, проектирует
@@ -55,20 +61,26 @@ sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreet
 Rscript -e 'if (!requireNamespace("renv")) install.packages("renv")'
 Rscript -e 'renv::restore(prompt = FALSE)'
 
-# 3. прогон
-Rscript R/run_kasp.R
+# 3. установить сам пакет
+R CMD INSTALL .              # или: Rscript -e 'pkgload::load_all()' для разработки
+# когда пакет вынесен в свой репозиторий:
+#   remotes::install_github("<user>/kaspexample")
 
-# 4. отчёт
+# 4. прогон демо-пайплайна
+Rscript inst/scripts/run_kasp.R
+
+# 5. отчёт
 Rscript -e 'rmarkdown::render("report/kasp_report.Rmd")'
 
-# 5. тесты (инварианты ядра дизайна)
-Rscript tests/testthat.R
+# 6. тесты (инварианты ядра дизайна)
+Rscript -e 'testthat::test_local()'    # грузит пакет из исходников (pkgload)
 ```
 
-Результаты в `results/`: `kasp_assay.csv`, `kasp_as_candidates.csv` (ландшафт
-дискриминации), `kasp_thermo.csv`, `kasp_complementarity.csv`,
-`kasp_specificity.csv`, `kasp_blast_hits.csv` (если BLAST включён), `kasp_assay.rds`,
-панели `plot_*.png` и **файлы заказа** `kasp_<gen>_<chr>_<pos>_{idt,lgc,tidy}.csv`.
+Результаты в `results/` (консолидировано): `kasp_design.csv` (кандидаты-тесты),
+`kasp_primer_qc.csv` (на праймер: Tm/GC/шпилька/3'-стабильность + сид-специфичность
++ продукты in-silico PCR), `kasp_dimer_dg.csv` (dG дуплексов), `kasp_assay.rds`,
+панели `plot_*.png` и **файлы заказа** `kasp_<ген>_<chr>_<pos>_{idt,lgc,tidy}.csv`
+(последние — подмножества колонок одной таблицы заказа).
 
 > Панели рисуют библиотеки, а не ручные геомы: выравнивание и логотип — `ggmsa`
 > (только ДНК, `Chemistry_NT`; РНК-инструменты вроде R4RNA/`geom_helix` не
@@ -88,8 +100,9 @@ Rscript tests/testthat.R
 > чем менять рабочий каталог:
 > `UNAFOLDDAT=/path/to/share/oligoarrayaux Rscript R/run_kasp.R`.
 
-Другой ген — поменяйте `gene_id` в `R/run_kasp.R` (например `AT5G10140` для
+Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.
+Начните с виньетки: `vignette("kasp-intro")`.
 
 ---
 
@@ -233,7 +246,7 @@ kasp-example/
 ├── report/kasp_report.Rmd   # нарративный отчёт
 ├── tests/testthat.R         # раннер (функции сорсятся, без сборки пакета)
 ├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика oligo_dg
-├── data/example_targets.csv # реальные SNP-мишени FRI (для variant_id)
+├── inst/extdata/example_targets.csv # реальные SNP-мишени FRI (для variant_id)
 ├── data/cache/              # кэш Ensembl + BLAST (в .gitignore)
 └── results/                 # вывод (в .gitignore)
 ```

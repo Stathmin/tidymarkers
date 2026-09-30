@@ -99,41 +99,38 @@
 
 ### M1. Каркас пакета
 - [x] `DESCRIPTION` с `Imports`/`Suggests` и `Config/testthat/edition: 3`
-- [x] roxygen-заголовки: `@export`, `@param`, `@return` на ключевых функциях
-- [ ] Собрать реальный пакет: `NAMESPACE` + `man/` из roxygen (`roxygen2::roxygenise()`),
-      `R CMD check` без ошибок — тогда `library(kaspexample)` вместо `source()`
-- [~] `@family`-теги по подтипам (design / io / specificity / checks / plots / order)
-      — проставлены на всех экспортируемых функциях (KASP geometry/input/design/
-      thermodynamics/specificity/QC/checks/output/plots/utilities)
-- [~] `@examples` на публичных функциях (там, где нужен геном/сеть — `\dontrun{}`) —
-      есть у точек входа (`assemble_kasp_assay`, `design_as_primers`, `design_kasp_markers`,
-      `kasp_design_checks`, `kasp_mix_recipe`); остальные — в очереди
+- [x] roxygen-заголовки: `@export`, `@param` (все аргументы), `@return` на публичных
+- [x] Собрать настоящий пакет: `NAMESPACE` + `man/` из roxygen (`roxygen2::roxygenise()`),
+      `R CMD check` — **Status: OK** (0 ERROR / 0 WARNING / 0 NOTE); `library(kaspexample)`
+- [x] `@family`-теги по подтипам (geometry / input / design / thermodynamics /
+      specificity / QC / checks / output / plots / utilities) — собираются в «See also»
+- [x] `@examples` на публичных функциях (сетевые/геномные — в `\dontrun{}`)
 
 ### M2. Виньетки
 - [x] Нарративный отчёт (`report/kasp_report.Rmd`) как прообраз виньетки
-- [ ] `vignettes/kasp-intro.Rmd` — за 15 минут: что такое KASP, зачем декомпозиция
-      дизайна, где чья термодинамика
-- [ ] `vignettes/custom-genome.Rmd` — свой FASTA/VCF, не Arabidopsis
-- [ ] `vignettes/reading-results.Rmd` — как читать `kasp_design_checks()` и графики
+- [x] `vignettes/kasp-intro.Rmd` — быстрый старт, карта библиотек, тяжёлые шаги как код
+- [x] `vignettes/custom-genome.Rmd` — свой FASTA/VCF, не Arabidopsis
+- [x] `vignettes/reading-results.Rmd` — как читать `kasp_design_checks()` и файлы/графики
 
 ### M3. Хелперы и подсказки
-- [ ] `@section`-подсказки в докстрингах (типа «не забудьте про `UNAFOLDDAT`»)
-- [ ] `cli`-сообщения вместо голого `rlang::warn/inform`: шаги пайплайна, прогресс батча
-- [ ] `print()`-метод для объекта теста (сейчас это сырой список) — человекочитаемая сводка
-- [ ] Предикаты-хелперы: `is_kasp_assay()`, `passes_all()` — для пайпов и юзер-кода
-- [ ] Функция-«быстрый старт»: `kasp_example()` — прогон примера из коробки
-- [ ] `withr`-хелперы для временных настроек (например, выключить сеть в примерах)
+- [x] `print()`-метод для объекта теста (класс `kasp_assay`) — человекочитаемая сводка
+- [x] Предикаты-хелперы: `is_kasp_assay()`, `passes_all()`
+- [x] Функция-«быстрый старт»: `kasp_example()` — пример таблицы мишеней из коробки
+- [x] `cli`-сообщения: загрузка генома, распаковка для индекса, прогресс батча
+      (`cli_progress_bar` в `design_kasp_markers()`)
+- [x] `@section`-подсказки в докстрингах (кэш генома, шаги дизайна, `UNAFOLDDAT`)
+- [x] `with_unafloddat()` — временно указать таблицы OligoArrayAux (`withr::with_envvar`)
 
 ### M4. Опыт пользователя
 - [x] `NEWS.md` — changelog по версиям (tidyverse-конвенция)
-- [ ] `README` с бейджами и `devtools::install_github()`-снипетом
-- [ ] pkgdown-сайт (`_pkgdown.yml`), сгруппированный по `@family`
-- [ ] Стиль-гайд: `styler`/`lintr` в CI
-- [ ] `usethis`-флоу для контрибьютора (`CONTRIBUTING.md`, шаблон issue)
+- [x] `README` с бейджами и снеппетом `remotes::install_github()`
+- [x] pkgdown-сайт (`_pkgdown.yml`), сгруппированный по `@family` (`has_concept`)
+- [x] Линт/стиль: конфиг `.lintr` + шаблон CI (`.github/workflows/R-CMD-check.yaml`)
+- [x] `CONTRIBUTING.md` — цикл разработки, стиль, документация
 
-### M5. Уроки для лекции (DX из пакета)
-- [ ] Скелет-слайды «какая библиотека за что отвечает» из раздела F/handout
-- [ ] Живой пример: один SNP → тест → графики за < 2 минут (кэш генома)
+### M5. Уроки для лекции
+- [x] Скелет-слайды «какая библиотека за что отвечает» (`inst/slides/library-map.md`)
+- [x] Живой пример: `inst/scripts/quickstart.R` (один SNP → тест → вердикт, на кэше)
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

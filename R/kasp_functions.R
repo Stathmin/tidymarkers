@@ -190,6 +190,11 @@ get_region <- function(genome, chrom, start, end) {
 #'
 #' `role = "AS"` = allele-specific primer (3'-terminal base at the SNP);
 #' `role = "COM"` = the common primer, `gap` bases away on the other side.
+#' @param snp_pos plus-strand coordinate of the primer's 3'-terminal base.
+#' @param strand binding strand, `"+"` or `"-"`.
+#' @param length primer length in nt.
+#' @param gap distance from `snp_pos` to the near edge of a common primer.
+#' @param role `"AS"` (allele-specific) or `"COM"` (common).
 #' @family KASP geometry
 #' @export
 primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "COM")) {
@@ -207,6 +212,9 @@ primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "C
 #'
 #' `window` counts the 3'-terminal bases including the SNP itself, so the
 #' returned interval has `window - 1` positions.
+#' @param snp_pos coordinate of the variant's anchored base.
+#' @param strand binding strand.
+#' @param window number of 3'-terminal bases counted (includes the variant).
 #' @family KASP geometry
 #' @export
 as_3p_interval <- function(snp_pos, strand, window = 5L) {
@@ -221,6 +229,9 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
 #' the block's last base; on the minus strand (where the primer is the reverse
 #' complement) it sits on the block's first base.  All primer geometry is then
 #' expressed through this single anchor, so SNP and MNP share one code path.
+#' @param v_start plus-strand start of the variant block.
+#' @param ref_len length of the REF allele (block size; 1 for a SNP).
+#' @param strand binding strand.
 #' @family KASP geometry
 #' @export
 as_anchor <- function(v_start, ref_len, strand) {
@@ -241,6 +252,9 @@ block_in_seg <- function(ref_len, primer_len, strand) {
 #' Count variant positions inside an interval (IRanges)
 #'
 #' `exclude` drops positions (typically the target SNP) from the count.
+#' @param interval an `IRanges` interval.
+#' @param vpos integer vector of variant positions (or `NULL`).
+#' @param exclude positions to drop (typically the target variant).
 #' @family KASP geometry
 #' @export
 count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
@@ -255,6 +269,11 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
 #' The FASTA comes from Ensembl Plants and is cached under `data/cache/`.
 #' Sequence names are normalised to Chr1..Chr5 / ChrM / ChrC (scaffolds
 #' dropped), so they line up with the Ensembl gene records used elsewhere.
+#' @param cache cache directory for the downloaded FASTA.
+#' @param release Ensembl Plants release number.
+#' @section Caching:
+#' The download (~35 MB) happens once and is reused; delete
+#' `data/cache/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz` to refresh.
 #' @family KASP input
 #' @export
 ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
@@ -265,16 +284,15 @@ ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
       "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-%d/fasta/",
       "arabidopsis_thaliana/dna/",
       "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"), release)
-    message("Downloading TAIR10 genome (~35 MB) from Ensembl Plants ...")
+    cli::cli_alert_info("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ...")
     utils::download.file(url, fa, mode = "wb", quiet = TRUE)
   }
   g <- Biostrings::readDNAStringSet(fa)
   nm <- sub("\\s.*$", "", names(g))   # keep only the first token of the defline
   dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
   if (length(dropped)) {
-    rlang::inform(glue::glue(
-      "ath_genome(): dropping {length(dropped)} non-chromosome sequence(s) ",
-      "(e.g. {paste(utils::head(dropped, 3L), collapse = ', ')})."))
+    cli::cli_alert_info(
+      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}.")
   }
   g <- g[nm %in% names(ATH_CHROM_MAP)]
   names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
@@ -294,6 +312,9 @@ ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
 # =============================================================================
 
 #' Fetch a gene record from Ensembl Plants REST (cached on disk)
+#' @param gene_id Ensembl gene id (e.g. `"AT4G00650"`).
+#' @param species Ensembl species name.
+#' @param cache cache directory.
 #' @family KASP input
 #' @export
 ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
@@ -326,6 +347,8 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
 }
 
 #' Natural variants overlapping a region, from Ensembl Plants (1001 Genomes)
+#' @param chrom,start,end region to fetch (chromosome is normalised).
+#' @param species,cache as in [ensembl_gene()].
 #' @family KASP input
 #' @export
 ensembl_variants <- function(chrom, start, end,
@@ -364,6 +387,10 @@ ensembl_variants <- function(chrom, start, end,
 #' The window is copied into a standalone `DNAString`: `subseq()` of a
 #' `DNAStringSet` keeps a reference to the genome-wide shared pool, which would
 #' otherwise bloat anything we serialise (e.g. the saved assay).
+#' @param genome DNAStringSet.
+#' @param chrom chromosome name.
+#' @param pos variant position.
+#' @param flank window half-width (bp).
 #' @family KASP input
 #' @export
 snp_template <- function(genome, chrom, pos, flank = 150L) {
@@ -376,6 +403,10 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
 #'
 #' EasyKASP chooses the read direction by flank GC: it prefers the side whose
 #' +/-`flank` bases sit closest to 45%.  Returned here as a diagnostic.
+#' @param genome DNAStringSet.
+#' @param chrom chromosome name.
+#' @param pos variant position.
+#' @param flank bases to look at on each side.
 #' @family KASP design
 #' @export
 strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
@@ -408,6 +439,10 @@ so_rank <- function(consequence) {
 #'   of *other* variants.  Because the AS primer may be placed on either strand,
 #'   the "clean" count is the best (smallest) of the two orientations: the chosen
 #'   variant just has to be clean in *at least one* direction.
+#' @param variants variant table (Ensembl REST shape).
+#' @param genome DNAStringSet.
+#' @param gene one-row gene record.
+#' @param variant_id force a specific variant by id.
 #' @family KASP design
 #' @export
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L) {
@@ -474,6 +509,9 @@ has_run  <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\
 #' EasyKASP screens candidate primers for SSR repeat units, not just
 #' homopolymers.  Returns, for each input, the repeated units of length `units`
 #' occurring at least `min_copies` times in tandem.
+#' @param seq character vector of DNA sequences.
+#' @param units repeat-unit lengths to test.
+#' @param min_copies tandem copies required for a hit.
 #' @family KASP QC
 #' @export
 find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
@@ -489,6 +527,9 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 }
 
 #' Does a sequence contain an SSR? (see [find_repeats()])
+#' @param seq character vector of DNA sequences.
+#' @param units repeat-unit lengths to test.
+#' @param min_copies tandem copies required for a hit.
 #' @family KASP QC
 #' @export
 has_repeat <- function(seq, units = 2:4, min_copies = 3L)
@@ -498,6 +539,7 @@ has_repeat <- function(seq, units = 2:4, min_copies = 3L)
 #'
 #' `res$gr` uses TmCalculator's `$` accessor for the result GRanges; `Tm` is a
 #' metadata column on it.
+#' @param seq oligo(s) 5'->3'.
 #' @family KASP thermodynamics
 #' @export
 primer_tm <- function(seq) {
@@ -508,10 +550,28 @@ primer_tm <- function(seq) {
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }
 
-#' OligoArrayAux availability (needed by DECIPHER for thermodynamics)
+#' Is OligoArrayAux (`hybrid-min`) available on the PATH?
+#'
+#' DECIPHER's thermodynamics runs through OligoArrayAux.
+#'
 #' @family KASP utilities
 #' @export
 has_oligoarrayaux <- function() nzchar(Sys.which("hybrid-min"))
+
+#' Point OligoArrayAux at its data tables for the duration of `code`
+#'
+#' The thermodynamics engine (DECIPHER via OligoArrayAux) needs `UNAFOLDDAT` to
+#' find its parameter tables.  This temporarily sets it, so you need not fiddle
+#' with the environment by hand.
+#'
+#' @param path directory with the OligoArrayAux data tables.
+#' @param code expression to evaluate (e.g. `assemble_kasp_assay(...)`).
+#' @family KASP utilities
+#' @export
+with_unafloddat <- function(path, code) {
+  if (!fs::dir_exists(path)) rlang::abort(glue::glue("Directory not found: {path}"))
+  withr::with_envvar(c(UNAFOLDDAT = path), code)
+}
 
 #' PCR amplification efficiency of primer/target pairs (DECIPHER)
 #'
@@ -521,6 +581,9 @@ has_oligoarrayaux <- function() nzchar(Sys.which("hybrid-min"))
 #' @param primers character vector, 5'->3'.
 #' @param targets character vector (same length) with the reverse-complement of
 #'   the binding site (as in `?DECIPHER::CalculateEfficiencyPCR`).
+#' @param temp annealing temperature (C).
+#' @param P primer concentration (M).
+#' @param ions monovalent + divalent salt (M).
 #' @family KASP thermodynamics
 #' @export
 pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
@@ -555,6 +618,15 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
 #'
 #' Metrics come from packages (TmCalculator, Biostrings); enumeration/filtering
 #' is ours.
+#' @param window plus-strand template window (from [snp_template()]).
+#' @param snp_i template coordinate of the variant anchor.
+#' @param strand assay orientation.
+#' @param lengths candidate primer lengths.
+#' @param gaps distance from the anchor to the common primer.
+#' @param target_tm preferred common-primer Tm.
+#' @param min_gc,max_gc GC bounds.
+#' @param tm_range accepted Tm window (C).
+#' @param n number of candidates to return.
 #' @family KASP design
 #' @export
 design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
@@ -654,6 +726,11 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' \dontrun{
 #' design_as_primers(W, 40L, ref = "T", alt = "A", lengths = 20:22)
 #' }
+#' @param window plus-strand template window.
+#' @param lengths AS-primer lengths to try.
+#' @param stab_ats positions (from the 3' end) for the stabilising mismatch;
+#'   `NA` = none.
+#' @param temp,P,ions as in [pcr_efficiency()].
 #' @family KASP design
 #' @export
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
@@ -747,6 +824,9 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 #' the genomic window; the ALT template replaces the REF block with the ALT
 #' allele.  Coordinates left of the block are identical, and to the right they
 #' differ by `delta = nchar(alt) - nchar(ref)`.
+#' @param ref_tmpl plus-strand REF template.
+#' @param snp_i template coordinate of the first REF base.
+#' @param ref,alt alleles as ACGT strings.
 #' @family KASP design
 #' @export
 allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
@@ -776,6 +856,8 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #' @return tidy tibble of candidates: `allele` (`ref`/`alt`), `strand`,
 #'   `as_length`, `as_start`/`as_end` (this allele template's coords), `primer`,
 #'   `on_eff`, `off_eff`, `discrimination`, `tm`, `gc`.
+#' @param strands strands to scan.
+#' @param temp,P,ions as in [pcr_efficiency()].
 #' @family KASP design
 #' @export
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
@@ -839,6 +921,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
 # =============================================================================
 
 #' Full structural profile of one primer
+#' @param primer oligo(s) 5'->3'.
 #' @family KASP thermodynamics
 #' @export
 primer_thermo <- function(primer) {
@@ -857,6 +940,8 @@ primer_thermo <- function(primer) {
 #' The last `n` bases are annealed to their reverse complement and scored with
 #' OligoArrayAux (kcal/mol, 37 C); more negative = a more stable 3' anchor, the
 #' "GC clamp" a polymerase needs to initiate.  Used as a design diagnostic.
+#' @param primer oligo(s) 5'->3'.
+#' @param n terminal window length.
 #' @family KASP thermodynamics
 #' @export
 terminal_dg <- function(primer, n = 5L) {
@@ -873,6 +958,8 @@ terminal_dg <- function(primer, n = 5L) {
 #' "on" base and faces the complement of the "off" base, so the mismatch set is
 #' `{on, complement(off)}`; G:T and A:C are the least destabilising and give the
 #' poorest allelic discrimination (LGC/KBioscience note).  Reported as a flag.
+#' @param on_allele,off_allele plus-strand alleles (the primer carries `on`, the
+#'   other allele is `off`).
 #' @family KASP thermodynamics
 #' @export
 wobble_mismatch <- function(on_allele, off_allele) {
@@ -887,6 +974,7 @@ wobble_mismatch <- function(on_allele, off_allele) {
 #' `dg` is the hybridisation free energy of the two strands (kcal/mol, 37 C);
 #' more negative = stronger dimer.  The diagonal is the homodimer of each primer.
 #' Returns the FULL matrix (both orders); symmetry is imposed here, once.
+#' @param primers named character vector of oligos.
 #' @family KASP thermodynamics
 #' @export
 dimer_thermo <- function(primers) {
@@ -916,6 +1004,11 @@ dimer_thermo <- function(primers) {
 #' primers; with mismatches it falls back to `vcountPattern`.  Results are summed
 #' over both strands and over all genome sequences.  Pass a `BiocParallel`
 #' `BPPARAM` (e.g. `MulticoreParam()`) to parallelise the mismatch scan.
+#' @param primers named character vector of oligos.
+#' @param genome DNAStringSet.
+#' @param k 3'-seed length.
+#' @param max_mismatch mismatches allowed in the seed.
+#' @param BPPARAM optional `BiocParallel` backend for the mismatch scan.
 #' @family KASP specificity
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
@@ -979,6 +1072,9 @@ in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L) {
 #' On the reference genome the REF primer must give exactly one product; the
 #' ALT primer (the other base / the indel) should give none.  Uses the
 #' template-matched primers (no deliberate stabiliser), like [specificity_seed()].
+#' @param assay assembled assay (from [assemble_kasp_assay()]).
+#' @param genome DNAStringSet.
+#' @param max_mismatch mismatches tolerated in the primer match.
 #' @family KASP specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
@@ -999,6 +1095,8 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L) {
 }
 
 #' BLAST every primer against a local genome database (rBLAST, optional)
+#' @param primers named character vector of oligos.
+#' @param db_path BLAST database path.
 #' @family KASP specificity
 #' @export
 blast_primers <- function(primers, db_path) {
@@ -1015,6 +1113,8 @@ blast_primers <- function(primers, db_path) {
 }
 
 #' Build (once) a BLAST nucleotide database from the TAIR10 genome
+#' @param genome DNAStringSet.
+#' @param path FASTA path to write (and index).
 #' @family KASP specificity
 #' @export
 build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa")) {
@@ -1036,6 +1136,11 @@ build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa
 #' variants falling under the primer footprint (the 3'-terminal 5 nt are handled
 #' earlier by [pick_target_snp()]), then maximise discrimination.
 #'
+#' @section KASP design pipeline:
+#' Typical use is `ath_genome()` -> `ensembl_gene()`/`ensembl_variants()` ->
+#' `pick_target_snp()` -> `assemble_kasp_assay()` -> `kasp_design_checks()`.
+#' See `vignette("kasp-intro")`.
+#'
 #' @param genome DNAStringSet (from [ath_genome()]).
 #' @param snp    one-row tibble (chrom, pos, ref, alt) from [pick_target_snp()].
 #' @param variants variant table (for the same chromosome) to count overlaps.
@@ -1055,6 +1160,12 @@ build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa
 #' snp <- pick_target_snp(v, genome, ensembl_gene("AT4G00650"))
 #' assemble_kasp_assay(genome, snp)
 #' }
+#' @section External tool:
+#' The thermodynamics engine (DECIPHER via OligoArrayAux) needs `hybrid-min` on
+#' the `PATH`; if the data tables are not found automatically, point them out:
+#' `with_unafloddat("/path/to/share/oligoarrayaux", assemble_kasp_assay(...))`.
+#' @param flank template half-width (bp).
+#' @param min_gc,max_gc accepted AS GC window.
 #' @family KASP design
 #' @export
 assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
@@ -1110,7 +1221,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     ref_p <- top("ref"); alt_p <- top("alt")
     as_cand <- dplyr::inner_join(ref_p, alt_p, by = "strand", suffix = c("_ref", "_alt")) |>
       dplyr::transmute(
-        strand,
+        strand = .data$strand,
         as_length    = .data$as_length_ref,
         ref_primer   = .data$primer_ref,
         alt_primer   = .data$primer_alt,
@@ -1246,7 +1357,45 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     tails = c(AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
               AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
               COM    = best$com)
-  )
+  ) |> structure(class = "kasp_assay")
+}
+
+#' Is `x` a KASP assay object?
+#'
+#' @param x object to test.
+#' @family KASP utilities
+#' @export
+is_kasp_assay <- function(x) inherits(x, "kasp_assay")
+
+#' Do all acceptance checks pass?
+#'
+#' @param assay assembled assay.
+#' @param limits thresholds; see [kasp_design_checks()].
+#' @family KASP checks
+#' @export
+passes_all <- function(assay, limits = KASP_LIMITS) {
+  all(kasp_design_checks(assay, limits)$pass)
+}
+
+#' Print a KASP assay
+#'
+#' Compact one-screen summary: target, the three oligos, amplicon size and
+#' discrimination.
+#'
+#' @param x a [assemble_kasp_assay()] result.
+#' @param ... unused.
+#' @method print kasp_assay
+#' @family KASP utilities
+#' @export
+print.kasp_assay <- function(x, ...) {
+  a <- x$assay[1L, ]
+  cat("<kasp_assay>",
+      glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (strand {x$strand})"), "\n")
+  cat("  AS-ref ", a$as_ref, "\n")
+  cat("  AS-alt ", a$as_alt, "\n")
+  cat("  COM    ", a$com, "\n")
+  cat(" ", glue::glue("amplicon {a$amplicon} bp | discrimination {round(x$efficiency$discrimination[1L], 3)}"), "\n")
+  invisible(x)
 }
 
 
@@ -1255,6 +1404,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 # =============================================================================
 
 #' Classify a variant by its REF/ALT strings
+#' @param ref,alt allele strings.
 #' @family KASP design
 #' @export
 variant_type <- function(ref, alt) {
@@ -1326,7 +1476,14 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   }
 
   if (is.null(BPPARAM)) {
-    purrr::pmap_dfr(list(loci$chrom, loci$pos, loci$ref, loci$alt), one)
+    n  <- nrow(loci)
+    id <- cli::cli_progress_bar("Designing KASP markers", total = n)
+    res <- purrr::imap_dfr(seq_len(n), function(i, ...) {
+      cli::cli_progress_update(id = id)
+      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i])
+    })
+    cli::cli_progress_done(id = id)
+    res
   } else {
     res <- BiocParallel::bplapply(seq_len(nrow(loci)), function(i)
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i]), BPPARAM = BPPARAM)
@@ -1429,7 +1586,7 @@ longest_run <- function(seq) {
 #' pure and cheap to test.
 #'
 #' @param assay result of [assemble_kasp_assay()].
-#' @param limits list of thresholds; defaults to [KASP_LIMITS].
+#' @param limits list of thresholds; defaults to `KASP_LIMITS`.
 #' @return tibble with `criterion`, `observed`, `limit` and `pass`.
 #' @examples
 #' \dontrun{

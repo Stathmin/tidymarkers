@@ -54,6 +54,7 @@ variants_in_window <- function(variants, chrom, win) {
 #' deliberate stabilising mismatch); the two AS rows are the real primers, so a
 #' column that differs between a template row and its AS row is the injected
 #' secondary mismatch.  Works for either assay orientation.
+#' @param assay assembled assay (from [assemble_kasp_assay()]).
 #' @family KASP plots
 #' @export
 plot_alignment <- function(assay) {
@@ -74,6 +75,8 @@ plot_alignment <- function(assay) {
 #' Self-complementarity of each primer (DNA): primer vs its reverse complement
 #'
 #' Columns that match are self-complementary (hairpin-prone stems).
+#' @param assay assembled assay.
+#' @param title panel title (or `NULL`).
 #' @family KASP plots
 #' @export
 plot_self_complementarity <- function(assay, title = "Self-complementarity (DNA): matching columns = hairpin-prone stems") {
@@ -97,6 +100,8 @@ plot_self_complementarity <- function(assay, title = "Self-complementarity (DNA)
 #' Candidate AS primers ranked by discrimination
 #'
 #' One bar chart, shared by the driver and the report so the two cannot drift.
+#' @param assay assembled assay.
+#' @param n number of candidates to show.
 #' @family KASP plots
 #' @export
 plot_discrimination <- function(assay, n = 15L) {
@@ -123,6 +128,9 @@ plot_discrimination <- function(assay, n = 15L) {
 #' the direction of extension.  Bottom: the variants that fall inside that
 #' window, on the same x axis.  The assay orientation (`+`/`-`) decides which
 #' side of the SNP the primers sit on.
+#' @param assay assembled assay.
+#' @param variants variant table.
+#' @param snp target variant (one row).
 #' @family KASP plots
 #' @export
 plot_primers <- function(assay, variants, snp) {
@@ -180,6 +188,10 @@ plot_primers <- function(assay, variants, snp) {
 }
 
 #' Gene model with the 1001-Genomes variant track + inset of the target region
+#' @param gene gene record.
+#' @param variants variant table.
+#' @param snp target variant (one row).
+#' @param assay assembled assay.
 #' @family KASP plots
 #' @export
 plot_variant_landscape <- function(gene, variants, snp, assay) {
@@ -231,6 +243,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' Readable replacement for a 3-node network: a symmetric matrix of duplex
 #' free energies (kcal/mol, 37 C; more negative = stronger dimer) plus a bar
 #' panel of intramolecular folding (hairpin) free energies.
+#' @param assay assembled assay.
 #' @family KASP plots
 #' @export
 plot_dimer_qc <- function(assay) {
@@ -278,6 +291,9 @@ plot_dimer_qc <- function(assay) {
 #'   IDT / LGC column subsets (see [export_primers()]).
 #'
 #' @return character vector of the written paths (invisibly).
+#' @param assay assembled assay.
+#' @param gene gene record (used for the file base name).
+#' @param dir output directory.
 #' @family KASP output
 #' @export
 write_kasp_results <- function(assay, gene, dir = here::here("results")) {
@@ -316,6 +332,8 @@ write_kasp_results <- function(assay, gene, dir = here::here("results")) {
 }
 
 #' Tidy table of the assay oligos (with KASP tails)
+#' @param assay assembled assay.
+#' @param gene gene record.
 #' @family KASP output
 #' @export
 kasp_primer_table <- function(assay, gene) {
@@ -343,6 +361,9 @@ kasp_primer_table <- function(assay, gene) {
 #' - `*_idt.csv`  : IDT bulk oligo input (Name, Sequence, Scale, Purification)
 #' - `*_lgc.csv`  : LGC/KASP assay order (one row per assay, wide)
 #' - `*_tidy.csv` : the long tidy table
+#' @param assay assembled assay.
+#' @param gene gene record.
+#' @param dir output directory.
 #' @family KASP output
 #' @export
 export_primers <- function(assay, gene, dir = here::here("results")) {

@@ -1,0 +1,75 @@
+---
+title: "Как читать результаты"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Как читать результаты}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r}
+library(kaspexample)
+library(knitr)
+```
+
+## Три вопроса к тесту
+
+1. **Специфичен ли он?** — `kasp_design_checks()` (таблица «критерий / факт / порог / pass»).
+2. **Насколько хорошо он различает аллели?** — `discrimination` (эффективность DECIPHER).
+3. **Не мешает ли структура?** — димеры/шпильки и 3'-стабильность.
+
+## Вердикт по критериям
+
+`kasp_design_checks()` возвращает tidy-таблицу; «хороший» тест проходит **все**
+строки. Пороги живут в `KASP_LIMITS` — их видно и можно переопределить.
+
+```{r, eval = FALSE}
+chk <- kasp_design_checks(assay)
+chk
+chk[!chk$pass, ]                 # что именно не прошло
+passes_all(assay)                # TRUE / FALSE одной строкой
+```
+
+Критерии: размер ампликона, Tm AS/COM (и `COM Tm >= AS Tm`), GC, гомополимеры,
+SSR, шпилька/кросс- и гомодимер, дискриминация, in-silico PCR (REF=1, ALT=0).
+
+## Сводка на экран
+
+Объект теста печатает себя компактно:
+
+```{r, eval = FALSE}
+assay
+# <kasp_assay> Chr4:269090 G>A (strand -)
+#   AS-ref  ...
+#   AS-alt  ...
+#   COM     ...
+#   amplicon 93 bp | discrimination 0.966
+```
+
+## Файлы результатов
+
+`write_kasp_results()` пишет консолидированные файлы:
+
+- `kasp_design.csv` — кандидаты-тесты (столбец `discrimination` — по нему ранжируем);
+- `kasp_primer_qc.csv` — на праймер: `tm`, `gc`, `hairpin_dg`, `terminal_dg`,
+  `hits` (3'-сид) и `n_products` (in-silico PCR);
+- `kasp_dimer_dg.csv` — dG дуплексов для всех пар (диагональ — гомодимер).
+
+```{r, eval = FALSE}
+qc <- read.csv("results/kasp_primer_qc.csv")
+qc[qc$name != "COM" && !is.na(qc$name), ]   # AS-праймеры
+```
+
+## Графики
+
+- `plot_alignment()` — ДНК-выравнивание REF/ALT и AS-праймеров (`ggmsa`);
+- `plot_primers()` — стрелки праймеров на дорожке вариантов (`gggenes`);
+- `plot_variant_landscape()` — модель гена + врезка региона дизайна;
+- `plot_dimer_qc()` — матрица dG дуплексов + шпильки;
+- `plot_discrimination()` — ландшафт дискриминации кандидатов.
+
+См. также `?kasp_design_checks`, `?write_kasp_results`, `?plot_dimer_qc`.

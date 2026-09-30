@@ -1,14 +1,15 @@
 # =============================================================================
 #  run_kasp.R  --  end-to-end KASP assay design for an Arabidopsis gene
 # =============================================================================
-#  Run from the project root:   Rscript R/run_kasp.R
+#  Demo script (kept out of the package namespace, hence under inst/scripts).
+#  Run from the project root:   Rscript inst/scripts/run_kasp.R
 #
 #  Pipeline:
 #    1. load the TAIR10 genome (Ensembl Plants FASTA) and the FRI gene model
 #    2. pull real 1001-Genomes SNPs and pick a target variant
 #    3. design AS + common primers, score thermodynamics (TmCalculator),
 #       Taq-based discrimination (DECIPHER) and specificity (Biostrings/BLAST)
-#    4. write results/ (csv, rds, png) for the report to consume
+#    4. write results/ (consolidated csv, rds, png) for the report to consume
 #
 #  External tool required: OligoArrayAux (`hybrid-min`) for DECIPHER, e.g.
 #     conda install -c bioconda oligoarrayaux
@@ -16,16 +17,13 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
+  library(kaspexample)
   library(here)
   library(dplyr)
   library(ggplot2)
   library(Biostrings)
   library(ggmsa)               # geom_seqlogo needs it attached, not just namespaced
 })
-
-source(here::here("R", "kasp_io.R"))
-source(here::here("R", "kasp_functions.R"))
-source(here::here("R", "kasp_plots.R"))
 
 # Toggle the (slow) genome-wide BLAST step; the fast seed screen always runs.
 RUN_BLAST <- FALSE

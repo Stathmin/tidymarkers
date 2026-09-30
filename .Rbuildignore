@@ -1,0 +1,11 @@
+^\.tools$
+^renv$
+^renv\.lock$
+^results$
+^data/cache$
+^report$
+^\.github$
+^_pkgdown\.yml$
+^\.lintr$
+^.*\.Rcheck$
+^.*\.tar\.gz$

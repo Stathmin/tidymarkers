@@ -5,10 +5,8 @@ results/*
 .tools/
 .deps/
 
-# curated demo data must be tracked, but not the download cache; this also
-# overrides the root `data/` ignore rule
-!data/
-!data/example_targets.csv
+# curated demo data must be tracked, but not the download cache
+!inst/
 data/cache/
 
 # R
@@ -20,3 +18,7 @@ data/cache/
 # rendered report
 report/*.html
 report/*.nb.html
+
+# R CMD check / build artefacts
+*.Rcheck/
+*.tar.gz

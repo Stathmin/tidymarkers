@@ -1,6 +1,7 @@
-# Test runner for the (non-package) demo:  Rscript tests/testthat.R
-# The design functions are sourced directly instead of building a package.
+# Test runner for the package:  Rscript tests/testthat.R
+# The package must be installed (R CMD INSTALL) so test_check() can load it;
+# testthat runs the tests in an environment that inherits the package namespace,
+# so internal (non-exported) helpers are reachable without `:::`.
 library(testthat)
-library(here)
-for (f in c("kasp_functions.R", "kasp_io.R", "kasp_plots.R")) source(here::here("R", f))
-test_dir(here::here("tests", "testthat"))
+library(kaspexample)
+test_check("kaspexample")

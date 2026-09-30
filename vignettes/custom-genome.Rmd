@@ -1,0 +1,67 @@
+---
+title: "Свой геном и свой VCF"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Свой геном и свой VCF}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r}
+library(kaspexample)
+```
+
+Пакет не привязан к Arabidopsis: любые FASTA и VCF подходят. Тяжёлые шаги
+(чтение файлов, дизайн) здесь показаны как код и не выполняются при сборке
+документа.
+
+## Произвольный геном
+
+```{r, eval = FALSE}
+# индекс Rsamtools (.fai создаётся один раз) — читаем только нужные хромосомы
+genome <- read_genome_fasta("my_assembly.fa", seqids = c("chr1", "chr2"))
+
+# или сопоставить «сырые» имена с удобными
+read_genome_fasta("my_assembly.fa",
+                  chrom_map = c("1" = "chr1", "2" = "chr2"))
+```
+
+## Свой VCF
+
+`read_variants_vcf()` читает потоково (`vroom`), поддерживает `.vcf.gz` и
+разворачивает мультиаллельные ALT в строки; IUPAC-коды сворачиваются к `N`,
+символические аллели (`<DEL>`, `*`, `.`) отбрасываются.
+
+```{r, eval = FALSE}
+variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1",
+                              start = 100000, end = 200000)
+head(variants)                       # chrom, pos, ref, alt (строки)
+```
+
+## Мишень, маскировка и дизайн
+
+Свой вариант задаётся таблицей `chrom/pos/ref/alt` (SNP, MNP и InDel — строки):
+
+```{r, eval = FALSE}
+snp <- tibble::tibble(chrom = "chr1", pos = 150001L, ref = "G", alt = "A")
+
+# замаскировать прочие варианты под праймером, чтобы не тащить их в олиго
+genome[["chr1"]] <- mask_positions(genome[["chr1"]], variants$pos - 1L)
+
+assay <- assemble_kasp_assay(genome, snp, variants = variants,
+                             max_footprint_variants = 0)   # N-маскировка как ограничение
+assay
+```
+
+## Пакетно
+
+```{r, eval = FALSE}
+loci <- variants[order(variants$pos), ][1:200, c("chrom", "pos", "ref", "alt")]
+design_kasp_markers(genome, loci, BPPARAM = BiocParallel::MulticoreParam(4))
+```
+
+См. также `vignettes/kasp-intro.Rmd` и `?read_variants_vcf`, `?assemble_kasp_assay`.
