@@ -33,7 +33,9 @@ Other KASP specificity:
 \code{\link[=build_blast_db]{build_blast_db()}},
 \code{\link[=has_blast]{has_blast()}},
 \code{\link[=kasp_blast_index]{kasp_blast_index()}},
+\code{\link[=kasp_fm_index]{kasp_fm_index()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_fm]{specificity_fm()}},
 \code{\link[=specificity_of]{specificity_of()}},
 \code{\link[=specificity_seed]{specificity_seed()}}
 }

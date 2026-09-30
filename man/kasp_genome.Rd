@@ -4,16 +4,29 @@
 \alias{kasp_genome}
 \title{Indexed genome source backed by an Rsamtools FASTA index}
 \usage{
-kasp_genome(path, chrom_map = NULL, blast_db = NULL)
+kasp_genome(
+  path = NULL,
+  chrom_map = NULL,
+  blast_db = NULL,
+  bsgenome = NULL,
+  fm_index = NULL
+)
 }
 \arguments{
-\item{path}{FASTA path (gzipped is decompressed once, see \code{\link[=fasta_index]{fasta_index()}}).}
+\item{path}{FASTA path (gzipped is decompressed once, see \code{\link[=fasta_index]{fasta_index()}}).
+Ignored when \code{bsgenome} is given.}
 
 \item{chrom_map}{optional named character vector \code{defline -> name}
 (e.g. \code{ATH_CHROM_MAP}); when given, only mapped sequences are kept.}
 
 \item{blast_db}{optional prebuilt BLAST database path for the indexed
 genome-wide scan (see \code{\link[=kasp_blast_index]{kasp_blast_index()}} / \code{\link[=specificity_blast]{specificity_blast()}}).}
+
+\item{bsgenome}{a \code{BSgenome} object (or a package name) to read from instead
+of a FASTA (e.g. \code{"BSgenome.Athaliana.TAIR.TAIR9"}); \code{path} is then unused.}
+
+\item{fm_index}{optional prebuilt FM-index basename for the indexed
+genome-wide scan (see \code{\link[=kasp_fm_index]{kasp_fm_index()}} / \code{\link[=specificity_fm]{specificity_fm()}}).}
 }
 \value{
 a \code{kasp_genome} object.
@@ -24,6 +37,11 @@ Wraps an (optionally compressed) FASTA so regions can be read on demand with
 in memory.  The accessors \code{\link[=genome_chroms]{genome_chroms()}}, \code{\link[=genome_length]{genome_length()}} and
 \code{\link[=genome_seq]{genome_seq()}} accept both a \code{kasp_genome} and a plain \code{DNAStringSet}, so the
 design code does not care which one it is given.
+}
+\details{
+A \code{kasp_genome} can also be built from a Bioconductor \code{BSgenome} object
+(\verb{bsgenome =}), in which case regions are read with \code{\link[BSgenome:getSeq]{BSgenome::getSeq()}} and no
+FASTA needs to live on disk.
 }
 \seealso{
 Other KASP input:

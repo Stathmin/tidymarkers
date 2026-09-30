@@ -2,8 +2,8 @@
 # Synthetic assay objects keep this pure (no genome, no network, no DECIPHER).
 
 good_assay <- function() {
-  p <- c(AS_ref = "TGACTGCAAGTCCGATCAGTA",
-         AS_alt = "TGACTGCAAGTCCGATCAGTT",
+  p <- c(AS_ref = "CATGGACCTAGCATTGACGTA",
+         AS_alt = "CATGGACCTAGCATTGACGTT",
          COM    = "GCTTAGCCATGGTCAATGCTA")
   list(
     assay = tibble::tibble(
@@ -36,7 +36,8 @@ test_that("each broken criterion flips the verdict to fail", {
     function(a) { a$complementarity$dg[1] <- -15; a },
     function(a) { a$efficiency$discrimination <- 0.1; a },
     function(a) { a$amplicons$n_products <- c(2L, 0L); a },
-    function(a) { a$amplicons$n_products <- c(1L, 1L); a })
+    function(a) { a$amplicons$n_products <- c(1L, 1L); a },
+    function(a) { a$assay$com <- "ACGTACGTACGTACGT"; a })
   for (m in mutators) {
     expect_false(all(kasp_design_checks(m(good_assay()))$pass))
   }
@@ -46,4 +47,12 @@ test_that("COM Tm must not fall below the AS primers (EasyKASP)", {
   a <- good_assay(); a$thermo$tm <- c(62, 62, 60); a$assay$com_tm <- 60
   ch <- kasp_design_checks(a)
   expect_false(ch$pass[ch$criterion == "COM Tm >= AS Tm"])
+})
+
+test_that("the inverted-repeat screen fails a self-symmetric primer", {
+  ch <- kasp_design_checks(good_assay())
+  expect_true("inverted repeat (arms>=4, loop<=6)" %in% ch$criterion)
+  a <- good_assay(); a$assay$com <- "ACGTACGTACGTACGT"
+  bad <- kasp_design_checks(a)
+  expect_false(bad$pass[bad$criterion == "inverted repeat (arms>=4, loop<=6)"])
 })

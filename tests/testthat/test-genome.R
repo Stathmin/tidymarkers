@@ -42,3 +42,13 @@ test_that("in_silico_pcr works through an indexed kasp_genome", {
   expect_equal(nrow(pr), 1L)
   expect_equal(pr$width, 20L)
 })
+
+test_that("a kasp_genome can be backed by a BSgenome (getSeq)", {
+  skip_if_not_installed("BSgenome.Athaliana.TAIR.TAIR9")
+  gs <- kasp_genome(bsgenome = "BSgenome.Athaliana.TAIR.TAIR9")
+  expect_s3_class(gs, "kasp_genome")
+  expect_true("Chr4" %in% genome_chroms(gs))
+  expect_equal(genome_length(gs, "Chr4"), 18585056L)
+  # the FRI stop variant at Chr4:269745 is a G on TAIR9
+  expect_equal(as.character(genome_seq(gs, "Chr4", 269745L, 269745L)), "G")
+})

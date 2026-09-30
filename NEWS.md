@@ -50,6 +50,22 @@
 - `kasp_blast_index()` + `specificity_blast()` — индексный (BLAST/FM-подобный) скан
   генома; `specificity_of()` выбирает путь сам. `dimer_thermo(BPPARAM=)` — параллель.
 - `kasp_genome()` берёт имена/длины из индекса (`seqinfo()`), без ручного разбора `.fai`.
+- `kasp_genome(bsgenome = )` — источник из Bioconductor-объекта (`BSgenome::getSeq()`),
+  без FASTA на диске.
+
+### Аннотация и экосистема (2026)
+- `annotate_variants()` — настоящая аннотация из TxDb (`VariantAnnotation::locateVariants()`,
+  `predictCoding()` при `seqsource`); словарь `so_rank()` перестал быть единственным
+  источником. `kasp_txdb()`/`kasp_bsgenome()` грузят пакеты по умолчанию (в `Suggests`).
+- `find_palindromes()`/`has_palindrome()` — библиотечный скрин инвертированных повторов
+  (`Biostrings::findPalindromes()`), 14-й критерий приёмки.
+- **FM-индекс** (`Rsubread`): `kasp_fm_index()`/`specificity_fm()` — индексный
+  (без BLAST) сквозной скан целых праймеров; `kasp_genome(fm_index = )`,
+  `assemble_kasp_assay(run_blast = TRUE)` использует индекс при наличии.
+- `kasp_ensdb()` — EnsDb из GTF Ensembl Plants (актуальная модель); consequence-аннотация
+  остаётся на TxDb (у ensembldb нет `locateVariants`, мост к TxDb теряет CDS).
+- Экосистема проверена и задокументирована (см. ROADMAP P): `oligo` — микрочипы, не
+  подходит; `rprimer`/`pwalign`/`targets`/`biomaRt` — оценены.
 
 ## 0.2.0
 - `kasp_design_checks()` и `KASP_LIMITS`; пороги LGC/EasyKASP.

@@ -20,6 +20,8 @@ occurring at least \code{min_copies} times in tandem.
 }
 \seealso{
 Other KASP QC:
+\code{\link[=find_palindromes]{find_palindromes()}},
+\code{\link[=has_palindrome]{has_palindrome()}},
 \code{\link[=has_repeat]{has_repeat()}}
 }
 \concept{KASP QC}

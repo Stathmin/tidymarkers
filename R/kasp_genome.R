@@ -21,15 +21,26 @@
 #' [genome_seq()] accept both a `kasp_genome` and a plain `DNAStringSet`, so the
 #' design code does not care which one it is given.
 #'
+#' A `kasp_genome` can also be built from a Bioconductor `BSgenome` object
+#' (`bsgenome =`), in which case regions are read with [BSgenome::getSeq()] and no
+#' FASTA needs to live on disk.
+#'
 #' @param path FASTA path (gzipped is decompressed once, see [fasta_index()]).
+#'   Ignored when `bsgenome` is given.
 #' @param chrom_map optional named character vector `defline -> name`
 #'   (e.g. `ATH_CHROM_MAP`); when given, only mapped sequences are kept.
 #' @param blast_db optional prebuilt BLAST database path for the indexed
 #'   genome-wide scan (see [kasp_blast_index()] / [specificity_blast()]).
+#' @param fm_index optional prebuilt FM-index basename for the indexed
+#'   genome-wide scan (see [kasp_fm_index()] / [specificity_fm()]).
+#' @param bsgenome a `BSgenome` object (or a package name) to read from instead
+#'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`); `path` is then unused.
 #' @return a `kasp_genome` object.
 #' @family KASP input
 #' @export
-kasp_genome <- function(path, chrom_map = NULL, blast_db = NULL) {
+kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
+                        bsgenome = NULL, fm_index = NULL) {
+  if (!is.null(bsgenome)) return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index))
   plain <- fasta_index(path)
   fa    <- Rsamtools::FaFile(plain)
   si    <- GenomeInfoDb::seqinfo(fa)                 # names + lengths from the .fai
@@ -40,7 +51,31 @@ kasp_genome <- function(path, chrom_map = NULL, blast_db = NULL) {
   seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
   structure(list(path = plain, fa = fa, seqnames = seqnames,
                  lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
-                 blast_db = blast_db),
+                 blast_db = blast_db, fm_index = fm_index),
+            class = "kasp_genome")
+}
+
+#' Build a `kasp_genome` from a `BSgenome` object
+#'
+#' `getSeq()` on a `BSgenome` is the Bioconductor-native way to read reference
+#' sequence, so a `kasp_genome` can be backed by one instead of a FASTA file.
+#' @keywords internal
+#' @noRd
+bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL) {
+  rlang::check_installed("BSgenome", reason = "for a BSgenome genome source")
+  if (is.character(bsgenome)) {
+    rlang::check_installed(bsgenome, reason = "for the BSgenome genome source")
+    bsgenome <- getExportedValue(bsgenome, bsgenome)
+  }
+  si   <- GenomeInfoDb::seqinfo(bsgenome)              # names + lengths, no DNA
+  raw  <- as.character(GenomeInfoDb::seqnames(si))
+  len  <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
+  norm <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
+  keep <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
+  seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
+  structure(list(path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
+                 lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
+                 blast_db = blast_db, fm_index = fm_index),
             class = "kasp_genome")
 }
 
@@ -54,10 +89,12 @@ kasp_genome <- function(path, chrom_map = NULL, blast_db = NULL) {
 #' @family KASP input
 #' @export
 print.kasp_genome <- function(x, ...) {
-  cat("<kasp_genome>", fs::path_file(x$path), "\n")
+  source <- if (!is.null(x$bsgenome)) paste0("<BSgenome> ", class(x$bsgenome)[1L]) else fs::path_file(x$path)
+  cat("<kasp_genome>", source, "\n")
   cat("  sequences:", length(x$seqnames),
       paste0("(", paste(utils::head(names(x$seqnames), 6L), collapse = ", "), ")"), "\n")
   cat("  BLAST db:", if (is.null(x$blast_db)) "none (see kasp_blast_index())" else x$blast_db, "\n")
+  cat("  FM index:", if (is.null(x$fm_index)) "none (see kasp_fm_index())" else x$fm_index, "\n")
   invisible(x)
 }
 
@@ -98,5 +135,6 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
   raw <- genome$seqnames[[chrom]]
   if (is.null(raw)) rlang::abort(glue::glue("Unknown sequence: {chrom}"))
   gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
+  if (!is.null(genome$bsgenome)) return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])
   Rsamtools::scanFa(genome$fa, gr)[[1L]]
 }

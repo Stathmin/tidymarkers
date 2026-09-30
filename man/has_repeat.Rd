@@ -18,6 +18,8 @@ Does a sequence contain an SSR? (see \code{\link[=find_repeats]{find_repeats()}}
 }
 \seealso{
 Other KASP QC:
-\code{\link[=find_repeats]{find_repeats()}}
+\code{\link[=find_palindromes]{find_palindromes()}},
+\code{\link[=find_repeats]{find_repeats()}},
+\code{\link[=has_palindrome]{has_palindrome()}}
 }
 \concept{KASP QC}

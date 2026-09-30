@@ -23,10 +23,15 @@ reference:
     desc: "Seed scan, in-silico PCR, BLAST"
     contents:
       - has_concept("KASP specificity")
+  - title: "Annotation"
+    desc: "Structured consequences from a TxDb / BSgenome"
+    contents:
+      - has_concept("KASP annotation")
   - title: "QC & acceptance"
     desc: "Grade an assay against the KASP criteria"
     contents:
       - has_concept("KASP checks")
+      - has_concept("KASP QC")
   - title: "Plots"
     desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
     contents:

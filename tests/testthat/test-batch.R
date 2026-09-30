@@ -57,4 +57,9 @@ test_that("a BiocParallel backend gives the same batch verdicts", {
   par    <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L,
                                                  BPPARAM = BiocParallel::SerialParam()))
   expect_equal(par, serial)
+  skip_on_os("windows")
+  bp <- BiocParallel::SnowParam(2L, type = "SOCK")
+  on.exit(BiocParallel::bpstop(bp), add = TRUE)
+  sock <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L, BPPARAM = bp))
+  expect_equal(sock, serial)
 })

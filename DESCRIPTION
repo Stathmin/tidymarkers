@@ -49,6 +49,11 @@ Suggests:
     knitr,
     VariantAnnotation,
     SummarizedExperiment,
+    GenomicFeatures,
+    BSgenome,
+    TxDb.Athaliana.BioMart.plantsmart28,
+    Rsubread,
+    ensembldb,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

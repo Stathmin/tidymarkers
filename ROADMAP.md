@@ -207,6 +207,11 @@
       тяжёлый. `pick_target_snp()` использует `impact`, если он есть в таблице.
 - [x] Тесты: канонические термы, comma-списки, fallback на неизвестном терме,
       приоритет impact и выбор более тяжёлого варианта в `pick_target_snp()`.
+- [x] **Настоящая аннотация** (`R/kasp_annotate.R`): `annotate_variants()` берёт
+      consequence из транскрипционной модели (`VariantAnnotation::locateVariants()`,
+      плюс `predictCoding()` с `seqsource`), а не из строки входного файла;
+      словари `LOCATION_TO_SO`/`VA_TO_SO` сводят оба словаря к тем же SO-термам,
+      которые ранжирует `so_rank()`. Словарь больше не «единственный источник».
 
 ## O. Масштаб на большие геномы (индексы, параллель, память)
 
@@ -234,45 +239,60 @@
 - [x] **Батч/параллель `OligoArrayAux`**: `dimer_thermo(BPPARAM=)` параллелит
       n(n+1)/2 пар (тесты serial == Multicore).
 
-## P. Экосистема R для KASP — что ещё взять  [очередь/оценка]
+## P. Экосистема R для KASP — что ещё взять  [почти закрыто]
 
 Уже взято: `Biostrings`, `IRanges`/`GenomicRanges`/`GenomeInfoDb`, `Rsamtools`,
-`VariantAnnotation`, `TmCalculator`, `DECIPHER`, OligoArrayAux, `rBLAST`,
-`BiocParallel`, `vroom`, `httr2`/`jsonlite`, `ggmsa`/`gggenes`/`ggrepel`/`patchwork`,
-`renv`, `testthat`, `cli`/`withr`.
+`VariantAnnotation`, `GenomicFeatures` + `TxDb.Athaliana.BioMart.plantsmart28`,
+`BSgenome.Athaliana.TAIR.TAIR9`, `ensembldb`, `TmCalculator`, `DECIPHER`, OligoArrayAux,
+`rBLAST`, `Rsubread`, `BiocParallel`, `vroom`, `httr2`/`jsonlite`,
+`ggmsa`/`gggenes`/`ggrepel`/`patchwork`, `renv`, `testthat`, `cli`/`withr`.
 
-Кандидаты (с оценкой):
+Оценки (с вердиктом):
 
-- [ ] **Структурированные последствия**: `GenomicFeatures`/`txdbmaker` +
-      `VariantAnnotation::predictCoding()`/`locateVariants()` с TxDb Arabidopsis
-      (`TxDb.Athaliana.BioMart.plantsmart28`) — заменит словарь `so_rank()` настоящей
-      аннотацией (полное закрытие N4). Цена: annotation-пакет + сеть.
-- [ ] **`ensembldb`** — EnsDb для Arabidopsis (если есть сборка): consequences/features
-      из одного источника.
-- [ ] **`biomaRt`** — канонический R-интерфейс к Ensembl для генов/аннотаций, но он
-      **не** даёт variation-overlap (наш REST `overlap/region` biomaRt не умеет) →
-      `httr2`/`jsonlite` остаются оправданными.
-- [ ] **`BSgenome`-аннотации** (`BSgenome.Athaliana.TAIR.TAIR9`) — геном как
-      Bioconductor-объект вместо скачивания FASTA; альтернативный источник для
-      `kasp_genome()` (и `getSeq()` из `Biostrings`).
-- [ ] **FM-индекс**: `Rsubread::buildindex()`+`align()` или `gmapR` — альтернатива
-      BLAST-индексу для сквозного скана (тяжёлая сборка).
-- [ ] **`rprimer`** (Bioc, qPCR) — дизайн/штрафы праймеров как **валидатор** нашего
-      AS/COM-скоринга.
-- [ ] **`oligo`** (Bioc) — Tm/дуплексы олиго: кандидат заменить наш системный вызов
-      OligoArrayAux для dG (проверить, даёт ли дуплекс/шпильку на ДНК).
-- [ ] **`targets`** — воспроизводимый инкрементальный пайплайн вместо скрипта
-      (тысячи локусов через `design_kasp_markers()`).
-- [ ] **`Biostrings::findPalindromes()`** — инвертированные повторы/шпильки как
-      библиотечный QC-скрин (дополняет SSR/гомополимеры).
-- [ ] **`pwalign`** (`pairwiseAlignment`) — если понадобится настоящее выравнивание
-      аллелей; сейчас `allele_templates()` — ручная склейка, что для SNP/MNP/InDel
-      корректно и достаточно.
+- [x] **Структурированные последствия**: `GenomicFeatures`/`VariantAnnotation` +
+      `TxDb.Athaliana.BioMart.plantsmart28` — `annotate_variants()` (см. N4) заменяет
+      словарь `so_rank()` настоящей аннотацией. Принято.
+- [x] **`BSgenome`-аннотации** (`BSgenome.Athaliana.TAIR.TAIR9`) — геном как
+      Bioconductor-объект: `kasp_genome(bsgenome = ...)` читает регионы через
+      `BSgenome::getSeq()`, без FASTA на диске. Принято.
+- [x] **`Biostrings::findPalindromes()`** — инвертированные повторы/шпильки как
+      библиотечный QC-скрин (`find_palindromes()`/`has_palindrome()`, 14-й критерий
+      приёмки). Принято.
+- [~] **`oligo`** (Bioc) — **не подходит**: это пакет препроцессинга микрочипов Affymetrix;
+      в его namespace нет ни одной функции про melting/hybrid/duplex/dimer ΔG.
+      Для ΔG дуплексов/шпилек остаётся OligoArrayAux (через DECIPHER). Не принято.
+- [~] **`rprimer`** (Bioc, qPCR) — дизайн/штрафы олиго **по выравниванию**
+      (`RprimerProfile`/`designOligos`): ищет консервативные регионы, а не
+      аллель-специфичный 3'-мисматч. Может служить независимым **валидатором**
+      (`RprimerOligo`/`checkMatch`), но требует сборки выравнивания вокруг локуса.
+      Оставлено как опция для лекции, в конвейер не встроено.
+- [~] **`pwalign`** (`pairwiseAlignment`) — настоящее выравнивание пригодилось бы
+      для визуализации инделов (`plot_alignment()`), но `allele_templates()` —
+      точная ручная склейка кодирующего блока, для SNP/MNP/InDel достаточная.
+      Оставлено на случай парных выравниваний аллелей.
+- [~] **`targets`** — воспроизводимый инкрементальный пайплайн вместо скрипта
+      (тысячи локусов через `design_kasp_markers()`). Установлен; обёртка-шаблон
+      `_targets.R` — задел для лекции, в пакет не входит (не часть API).
+- [~] **`biomaRt`** — канонический R-интерфейс к Ensembl, но variation-overlap
+      (`overlap/region`) он не умеет → наш `httr2`/`jsonlite` остаётся оправданным.
+      Не принято (функционально ничего не добавляет).
+- [x] **FM-индекс** (`Rsubread`) — `kasp_fm_index()` строит индекс (`buildindex`),
+      `specificity_fm()` считает локъ-хиты картой целого праймера (`align`,
+      многопточно, геном не грузится в память). `kasp_genome(fm_index = )` —
+      индекс прикрепляется, `assemble_kasp_assay(run_blast = TRUE)` использует его
+      вместо BLAST. Принято. `gmapR` не берём (нужны внешние Gmap/Gsnap).
+- [~] **`ensembldb`** — **не как бэкенд аннотации**: пресобранного EnsDb для
+      Arabidopsis нет; в `ensembldb` нет `locateVariants()`/`predictCoding()`, и
+      `EnsDb` не приводится к `TxDb`; мост через `txdbmaker::makeTxDbFromGRanges()`
+      **теряет CDS** (проверено: транскрипты есть, CDS — нет). Значит
+      consequence-аннотация остаётся на `TxDb` (N4). Наш вклад:
+      `kasp_ensdb()` — собранный/кэшированный `EnsDb` из GTF Ensembl Plants
+      (актуальная модель как источник для запросов генов/транскриптов).
 
-Оценено и **не подходит**: `DECIPHER::DesignPrimers` (нужны `tiles`/группы, см. N2).
-Готового R-пакета под KASP нет (`primeR` снят, `openPrimeR` требует
-MAFFT/ViennaRNA/MELTING) — значит наш слой дизайна и порогов оправдан, а брать надо
-вокруг: аннотации, индексы, оркестровка.
+Оценено и **не подходит**: `DECIPHER::DesignPrimers` (нужны `tiles`/группы, см. N2);
+`oligo` (микрочипы, см. выше). Готового R-пакета под KASP нет (`primeR` снят,
+`openPrimeR` требует MAFFT/ViennaRNA/MELTING) — значит наш слой дизайна и порогов
+оправдан, а брать надо вокруг: аннотации, индексы, оркестровка.
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

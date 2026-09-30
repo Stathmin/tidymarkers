@@ -656,6 +656,19 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 gc_frac  <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
 has_run  <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
 
+#' Make a parallel worker able to dispatch on Biostrings objects
+#'
+#' A `SnowParam`/SOCK worker is a fresh R process.  It resolves the package's
+#' closures, but unless `Biostrings` is loaded there, S4 dispatch on a serialized
+#' `DNAStringSet` (e.g. `genome[[i]]`, `subseq()`) falls back to base and fails
+#' with "this S4 class is not subsettable".  Loading the namespace in the worker
+#' fixes the dispatch; fork-based backends ([BiocParallel::MulticoreParam()])
+#' inherit loaded namespaces and are unaffected.  Called at the top of every
+#' worker closure that touches the genome.
+#' @keywords internal
+#' @noRd
+worker_biostrings <- function() requireNamespace("Biostrings", quietly = TRUE)
+
 #' Tandem repeats (simple sequence repeats) in a sequence
 #'
 #' EasyKASP screens candidate primers for SSR repeat units, not just
@@ -686,6 +699,47 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 #' @export
 has_repeat <- function(seq, units = 2:4, min_copies = 3L)
   lengths(find_repeats(seq, units, min_copies)) > 0L
+
+#' Inverted repeats / palindromes in a primer (library screen)
+#'
+#' `Biostrings::findPalindromes()` finds reverse-complementary arms - the
+#' structural signature of a hairpin.  This complements the thermodynamic
+#' hairpin screen in [primer_thermo()] with a sequence-level flag that does not
+#' need OligoArrayAux.  The defaults are deliberately strict (arms >= 4 bp, loop
+#' <= 6 bp, no mismatches): a well-designed primer returns no hits, whereas a
+#' repetitive or self-symmetric one returns several.
+#'
+#' @param seq character vector of DNA sequences.
+#' @param min_armlength minimum arm length of a palindromic hit.
+#' @param max_looplength maximum loop (spacer) length.
+#' @param max_mismatch mismatches allowed in the arms.
+#' @return a list, one tibble per input, with `start`, `end`, `width` of each
+#'   palindromic view (empty tibble when none).
+#' @family KASP QC
+#' @export
+find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
+  nm <- names(seq)
+  hits <- purrr::map(as.character(seq), function(s) {
+    h <- Biostrings::findPalindromes(Biostrings::DNAString(s),
+                                     min.armlength = min_armlength,
+                                     max.looplength = max_looplength,
+                                     max.mismatch  = max_mismatch)
+    tibble::tibble(start = as.integer(IRanges::start(h)),
+                   end   = as.integer(IRanges::end(h)),
+                   width = as.integer(IRanges::width(h)))
+  })
+  stats::setNames(hits, nm)
+}
+
+#' Does a primer contain an inverted repeat? (see [find_palindromes()])
+#' @param seq character vector of DNA sequences.
+#' @param min_armlength minimum arm length of a palindromic hit.
+#' @param max_looplength maximum loop (spacer) length.
+#' @param max_mismatch mismatches allowed in the arms.
+#' @family KASP QC
+#' @export
+has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L)
+  purrr::map_int(find_palindromes(seq, min_armlength, max_looplength, max_mismatch), nrow) > 0L
 
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)
 #'
@@ -1184,6 +1238,7 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
     fwd <- Biostrings::DNAStringSet(seeds)
     rev <- Biostrings::reverseComplement(fwd)
     count_chr <- function(i) {
+      worker_biostrings()
       chr <- genome[[i]]
       cf <- vapply(seq_along(fwd), function(j)
         Biostrings::countPattern(fwd[[j]], chr, max.mismatch = max_mismatch), numeric(1))
@@ -1231,6 +1286,7 @@ in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM
   Rp <- Biostrings::DNAString(R_primer)
   chroms <- genome_chroms(genome)
   scan_one <- function(nm) {
+    worker_biostrings()
     # genome_seq() reads one sequence at a time, so an indexed `kasp_genome` stays
     # out of RAM; a DNAStringSet is simply subscripted
     pr <- Biostrings::matchProbePair(Fp, Rp, genome_seq(genome, nm),
@@ -1518,11 +1574,18 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
     error = function(e) { rlang::warn(glue::glue("in-silico PCR failed: {conditionMessage(e)}")); NULL })
 
+  # whole-primer genome scan (only when requested): an attached FM-index is
+  # queried first (index-based, multithreaded), otherwise the BLAST database
   blast <- NULL
   if (isTRUE(run_blast)) {
-    db <- tryCatch(build_blast_db(genome), error = function(e) {
-      rlang::warn(glue::glue("BLAST db unavailable: {conditionMessage(e)}")); NULL })
-    blast <- blast_primers(primers, db)
+    blast <- if (inherits(genome, "kasp_genome") && !is.null(genome$fm_index)) {
+      tryCatch(specificity_fm(primers, genome$fm_index),
+               error = function(e) { rlang::warn(glue::glue("FM scan failed: {conditionMessage(e)}")); NULL })
+    } else {
+      db <- tryCatch(build_blast_db(genome), error = function(e) {
+        rlang::warn(glue::glue("BLAST db unavailable: {conditionMessage(e)}")); NULL })
+      blast_primers(primers, db)
+    }
   }
 
   list(
@@ -1666,8 +1729,10 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     cli::cli_progress_done(id = id)
     res
   } else {
-    res <- BiocParallel::bplapply(seq_len(nrow(loci)), function(i)
-      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i]), BPPARAM = BPPARAM)
+    res <- BiocParallel::bplapply(seq_len(nrow(loci)), function(i) {
+      worker_biostrings()
+      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i])
+    }, BPPARAM = BPPARAM)
     purrr::list_rbind(res)
   }
 }
@@ -1800,11 +1865,13 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
   tibble::tibble(
     criterion = c("amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
                   "COM Tm >= AS Tm", "AS GC", "COM GC",
-                  "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)", "worst hairpin dG37",
+                  "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
+                  "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
                   "worst cross-dimer dG37", "worst homodimer dG37",
                   "discrimination", "in-silico PCR (REF 1 / ALT 0)"),
     observed  = c(aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
                   run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
+                  sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
                   hair, cross, homo, disc, amp_obs),
     limit     = c(glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
                   glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
@@ -1813,6 +1880,7 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
                   glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
                   glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
                   glue::glue("< {limits$max_run}"),
+                  "0",
                   "0",
                   glue::glue(">= {limits$hairpin_dg}"),
                   glue::glue(">= {limits$duplex_dg}"),
@@ -1827,6 +1895,7 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
                   dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
                   run < limits$max_run,
                   !has_repeat(aa$as_ref) && !has_repeat(aa$com),
+                  !any(has_palindrome(c(aa$as_ref, aa$as_alt, aa$com))),
                   hair >= limits$hairpin_dg,
                   cross >= limits$duplex_dg,
                   homo >= limits$homodimer_dg,
