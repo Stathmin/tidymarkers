@@ -13,11 +13,14 @@ plot_alignment(assay)
 a \code{ggmsa} alignment plot (a \code{ggplot} object).
 }
 \description{
-A DNA MSA rendered by ggmsa, with a sequence logo on top.  The two template
-rows are the primer-binding sequences carrying the REF/ALT allele (without the
-deliberate stabilising mismatch); the two AS rows are the real primers, so a
-column that differs between a template row and its AS row is the injected
-secondary mismatch.  Works for either assay orientation.
+A DNA MSA rendered by ggmsa.  The two template rows are the primer-binding
+sequences carrying the REF/ALT allele (without the deliberate stabilising
+mismatch); the two AS rows are the real primers, so a column that differs
+between a template row and its AS row is the injected secondary mismatch.
+The AS 3'-terminal column - exactly where REF and ALT disagree - is
+highlighted (\code{position_highlight}).  Works for either assay orientation.
+(ggmsa's add-on geoms are deliberately not used: \code{geom_seqlogo()} only works
+when ggmsa is attached, and \code{geom_GC()} fails to build.)
 }
 \examples{
 \dontrun{
@@ -27,9 +30,9 @@ plot_alignment(assay)
 \seealso{
 Other KASP plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
+\code{\link[=plot_checks]{plot_checks()}},
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
 \code{\link[=plot_dimer_qc]{plot_dimer_qc()}},
-\code{\link[=plot_discrimination]{plot_discrimination()}},
 \code{\link[=plot_primers]{plot_primers()}},
 \code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},

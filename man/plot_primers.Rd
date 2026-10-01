@@ -2,7 +2,7 @@
 % Please edit documentation in R/kasp_plots.R
 \name{plot_primers}
 \alias{plot_primers}
-\title{Primer annealing on the amplicon + local 1001-Genomes variant track}
+\title{Local assay map: styled primers, Tm, and the acceptance checks}
 \usage{
 plot_primers(assay, variants, snp)
 }
@@ -14,14 +14,18 @@ plot_primers(assay, variants, snp)
 \item{snp}{target variant (one row).}
 }
 \value{
-a \code{patchwork} object: the primer arrows above the local variant
-track, sharing an x axis.
+a \code{patchwork} object: the local map (primers over the variant track,
+sharing an x axis) beside the tumbler list from \code{\link[=plot_checks]{plot_checks()}}.
 }
 \description{
-Top: gggenes arrows on the design window (genomic coordinates), pointing in
-the direction of extension.  Bottom: the variants that fall inside that
-window, on the same x axis.  The assay orientation (\code{+}/\code{-}) decides which
-side of the SNP the primers sit on.
+The local view of the assay on the design window (genomic coordinates).  Each
+primer is drawn as its sequence of letters: neutral black by default, \strong{bold}
+over the 3' GC-clamp window, and \strong{bright red} on the bases of an SSR or a
+hairpin stem; a ring marks an injected mismatch / the 3' discriminating base.
+The Tm sits just past the 3' end, with its deviation from the target as a
+green/red tumbler.  Below: the local variant track (same x axis).  Right: a
+thin column of per-criterion tumblers - the \emph{feature} level (one oligo) and
+the \emph{alignment} level (how the primers sit together on the template).
 }
 \examples{
 \dontrun{
@@ -32,9 +36,9 @@ plot_primers(assay, variants, snp)
 Other KASP plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
+\code{\link[=plot_checks]{plot_checks()}},
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
 \code{\link[=plot_dimer_qc]{plot_dimer_qc()}},
-\code{\link[=plot_discrimination]{plot_discrimination()}},
 \code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
 \code{\link[=render_design_search]{render_design_search()}}

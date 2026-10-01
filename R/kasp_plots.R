@@ -46,16 +46,150 @@ variants_in_window <- function(variants, chrom, win) {
 
 
 # =============================================================================
+#  One vocabulary: an assay is judged at TWO levels
+# =============================================================================
+#  * feature level  - one oligo on its own (sequence + structure): Tm, GC, the
+#    3' GC-clamp, homopolymer runs, SSRs, hairpins, dimers.  Drawn *on* the
+#    primer arrow (a sub-gene span for the clamp, a pin for the mismatch).
+#  * alignment level - how the two allele-specific primers and the common primer
+#    sit together on the template: amplicon size, COM Tm >= AS Tm, the
+#    discrimination the placement buys, the in-silico PCR products.  Drawn on the
+#    template and on the REF-vs-ALT ggmsa alignment.
+#  Both levels are coloured the same way: ok (green) vs broken (red).
+
+KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
+
+#' Feature-level acceptance criteria (everything else is alignment-level)
+#' @keywords internal
+#' @noRd
+check_level <- function(criterion) {
+  feature <- c(
+    "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
+    "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
+    "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
+    "worst cross-dimer dG37", "worst homodimer dG37"
+  )
+  ifelse(criterion %in% feature, "feature", "alignment")
+}
+
+#' The 3' terminal window of a primer span (plus-strand coordinates)
+#' @keywords internal
+#' @noRd
+clamp_window <- function(start, end, forward, n = 5L) {
+  if (forward) c(max(start, end - n + 1L), end) else c(start, min(end, start + n - 1L))
+}
+
+#' Feature-level track of the assay primers (arrows + 3' clamp + 3' pin)
+#'
+#' Pure geometry/sequence work, so the plot stays a plot.  `status` is whether the
+#' oligo on its own passes its Tm/GC/run/SSR/palindrome tests; `clamp_ok` is
+#' whether the 3'-terminal base is a G/C (the "GC clamp" a polymerase needs).
+#' @keywords internal
+#' @noRd
+primer_features <- function(assay, limits = KASP_LIMITS) {
+  aa <- assay$assay[1L, ]
+  th <- assay$thermo
+  plus <- identical(aa$strand %||% "+", "+")
+  p <- assay_primers(assay)
+  # AS Tm lives in the per-primer thermo table (the assay row only carries COM's)
+  as_tm <- mean(th$tm[th$name %in% c("AS_ref", "AS_alt")])
+  d <- tibble::tibble(
+    role = factor(c("AS-ref", "AS-alt", "COM"), levels = c("COM", "AS-alt", "AS-ref")),
+    start = c(aa$as_start, aa$as_alt_start %||% aa$as_start, aa$com_start),
+    end = c(aa$as_end, aa$as_alt_end %||% aa$as_end, aa$com_end),
+    forward = c(plus, plus, !plus),
+    seq = c(p[["AS_ref"]], p[["AS_alt"]], p[["COM"]]),
+    tm = c(as_tm, as_tm, aa$com_tm),
+    gc = c(aa$as_gc, aa$as_gc, aa$com_gc)
+  )
+  tm_ok <- c(
+    dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
+    dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
+    dplyr::between(aa$com_tm, limits$com_tm[1], limits$com_tm[2])
+  )
+  clean <- !vapply(d$seq, has_run, logical(1)) &
+    !vapply(d$seq, has_repeat, logical(1)) &
+    !vapply(d$seq, has_palindrome, logical(1))
+  d$status <- ifelse(tm_ok & dplyr::between(d$gc, limits$gc[1], limits$gc[2]) & clean, "ok", "broken")
+  win <- Map(clamp_window, d$start, d$end, d$forward)
+  d$cstart <- vapply(win, `[`, numeric(1), 1L)
+  d$cend <- vapply(win, `[`, numeric(1), 2L)
+  last <- ifelse(d$forward, nchar(d$seq), 1L)
+  d$three_x <- ifelse(d$forward, d$end, d$start)
+  d$clamp <- ifelse(substr(d$seq, last, last) %in% c("G", "C"), "ok", "broken")
+  d$label <- glue::glue("{d$role} \u00b7 {round(d$tm)}C {round(100 * d$gc)}%")
+  # the injected destabilising mismatch is not in the assay row; recover it from
+  # the AS candidates (the chosen primer's own row)
+  d$stab <- NA_integer_
+  ac <- assay$as_candidates
+  if (!is.null(ac) && all(c("stab_at", "ref_primer") %in% names(ac))) {
+    hit <- ac$stab_at[!is.na(ac$stab_at) & ac$ref_primer == p[["AS_ref"]]]
+    if (length(hit)) d$stab[1:2] <- hit[[1L]]
+  }
+  d
+}
+
+#' SSR spans (start, end) within one sequence
+#' @keywords internal
+#' @noRd
+repeat_spans <- function(s, units = 2:4, min_copies = 3L) {
+  spans <- matrix(integer(0), ncol = 2L)
+  for (u in units) {
+    pat <- glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
+    m <- stringr::str_locate_all(s, pat)[[1L]]
+    if (nrow(m)) spans <- rbind(spans, m)
+  }
+  spans
+}
+
+#' Per-base letters of the assay primers, styled for KASP
+#'
+#' The primer sequence as one row of letters at genomic coordinates: neutral
+#' black by default, **bold** over the 3' GC-clamp window, and bright red on the
+#' bases of an SSR or a hairpin stem.  Coordinates follow the strand, so a
+#' minus-strand primer reads right-to-left.
+#' @keywords internal
+#' @noRd
+primer_letters <- function(assay, clamp_n = 5L) {
+  d <- primer_features(assay)
+  rows <- lapply(seq_len(nrow(d)), function(i) {
+    s <- d$seq[i]
+    L <- nchar(s)
+    xs <- if (d$forward[i]) seq.int(d$start[i], length.out = L) else seq.int(d$end[i], by = -1L, length.out = L)
+    face <- rep("plain", L)
+    colour <- rep("black", L)
+    clamp <- if (d$forward[i]) (L - clamp_n + 1L):L else seq_len(clamp_n)
+    face[clamp[clamp >= 1L & clamp <= L]] <- "bold"
+    sp <- repeat_spans(s)
+    pal <- find_palindromes(s)[[1L]]
+    if (nrow(pal)) sp <- rbind(sp, as.matrix(pal[, c("start", "end")]))
+    if (nrow(sp)) {
+      idx <- unique(unlist(lapply(seq_len(nrow(sp)), function(j) sp[j, 1L]:sp[j, 2L])))
+      colour[idx[idx >= 1L & idx <= L]] <- "#d7191c"
+    }
+    tibble::tibble(
+      role = d$role[i], x = xs, letter = strsplit(s, "")[[1L]],
+      face = face, colour = colour
+    )
+  })
+  dplyr::bind_rows(rows)
+}
+
+
+# =============================================================================
 #  Alignments (ggmsa)
 # =============================================================================
 
 #' AS primers aligned against the template; SNP + mismatches visible
 #'
-#' A DNA MSA rendered by ggmsa, with a sequence logo on top.  The two template
-#' rows are the primer-binding sequences carrying the REF/ALT allele (without the
-#' deliberate stabilising mismatch); the two AS rows are the real primers, so a
-#' column that differs between a template row and its AS row is the injected
-#' secondary mismatch.  Works for either assay orientation.
+#' A DNA MSA rendered by ggmsa.  The two template rows are the primer-binding
+#' sequences carrying the REF/ALT allele (without the deliberate stabilising
+#' mismatch); the two AS rows are the real primers, so a column that differs
+#' between a template row and its AS row is the injected secondary mismatch.
+#' The AS 3'-terminal column - exactly where REF and ALT disagree - is
+#' highlighted (`position_highlight`).  Works for either assay orientation.
+#' (ggmsa's add-on geoms are deliberately not used: `geom_seqlogo()` only works
+#' when ggmsa is attached, and `geom_GC()` fails to build.)
 #' @param assay assembled assay (from [assemble_kasp_assay()]).
 #' @return a `ggmsa` alignment plot (a `ggplot` object).
 #' @examples
@@ -78,9 +212,14 @@ plot_alignment <- function(assay) {
     template_ref = t_ref, template_alt = t_alt,
     AS_ref = p[["AS_ref"]], AS_alt = p[["AS_alt"]]
   ))
+  # The AS primer is anchored on the variant, so its 3'-terminal column (column
+  # L in this orientation) is exactly where template_ref and template_alt differ:
+  # highlight that whole column - it is the base KASP discrimination rests on.
   suppressWarnings(
-    ggmsa::ggmsa(msa, 1, L, color = "Chemistry_NT", seq_name = TRUE, char_width = 0.6) +
-      ggmsa::geom_seqlogo(color = "Chemistry_NT")
+    ggmsa::ggmsa(msa, 1, L,
+      color = "Chemistry_NT", seq_name = TRUE, char_width = 0.6,
+      position_highlight = L
+    )
   )
 }
 
@@ -118,85 +257,24 @@ plot_self_complementarity <- function(
 
 
 # =============================================================================
-#  Candidate ranking
-# =============================================================================
-
-#' Candidate AS primers ranked by discrimination
-#'
-#' One horizontal bar chart, shared by the driver and the report so the two
-#' cannot drift.  The placement actually chosen by [assemble_kasp_assay()] is
-#' highlighted and the acceptance threshold is drawn, so a candidate that only
-#' *looks* good is obvious at a glance.
-#'
-#' @param assay assembled assay.
-#' @param n number of candidates to show.
-#' @return a `ggplot` bar chart of the top `n` candidates by discrimination.
-#' @examples
-#' \dontrun{
-#' plot_discrimination(assay)
-#' }
-#' @family KASP plots
-#' @export
-plot_discrimination <- function(assay, n = 15L) {
-  aa <- assay$assay[1L, ]
-  d <- assay$as_candidates |>
-    dplyr::slice_max(.data$discrimination, n = n) |>
-    dplyr::mutate(
-      chosen = .data$ref_primer == aa$as_ref,
-      mm = dplyr::if_else(is.na(.data$stab_at), "no mismatch",
-        glue::glue("mismatch {.data$stab_base} at -{.data$stab_at}")
-      ),
-      label = glue::glue("{.data$strand} strand \u00b7 {.data$as_length} nt \u00b7 {.data$mm}"),
-      label = forcats::fct_reorder(.data$label, .data$discrimination)
-    )
-
-  ggplot2::ggplot(d, ggplot2::aes(.data$discrimination, .data$label)) +
-    ggplot2::geom_col(ggplot2::aes(fill = .data$chosen), width = 0.72) +
-    ggplot2::geom_vline(
-      xintercept = KASP_LIMITS$discrimination,
-      linetype = "dashed", colour = "grey35"
-    ) +
-    ggplot2::geom_text(ggplot2::aes(label = format(round(.data$discrimination, 2), nsmall = 2)),
-      hjust = -0.15, size = 3.1, colour = "grey25"
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(`TRUE` = "firebrick", `FALSE` = "grey86"),
-      labels = c(`TRUE` = "chosen", `FALSE` = "candidate"),
-      name = NULL
-    ) +
-    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(0, 0.15))) +
-    ggplot2::labs(
-      x = "discrimination (on- minus off-target efficiency)", y = NULL,
-      title = "Allele-specific discrimination of candidate primers",
-      subtitle = glue::glue(
-        "top {n} placements on both strands; ",
-        "dashed line = acceptance threshold ({KASP_LIMITS$discrimination})"
-      ),
-      caption = "DECIPHER, Taq-aware hybridisation"
-    ) +
-    ggplot2::theme_minimal(base_size = 11) +
-    ggplot2::theme(
-      panel.grid.major.y = ggplot2::element_blank(),
-      legend.position = "top"
-    )
-}
-
-
-# =============================================================================
 #  Gene / primer maps (gggenes)
 # =============================================================================
 
-#' Primer annealing on the amplicon + local 1001-Genomes variant track
+#' Local assay map: styled primers, Tm, and the acceptance checks
 #'
-#' Top: gggenes arrows on the design window (genomic coordinates), pointing in
-#' the direction of extension.  Bottom: the variants that fall inside that
-#' window, on the same x axis.  The assay orientation (`+`/`-`) decides which
-#' side of the SNP the primers sit on.
+#' The local view of the assay on the design window (genomic coordinates).  Each
+#' primer is drawn as its sequence of letters: neutral black by default, **bold**
+#' over the 3' GC-clamp window, and **bright red** on the bases of an SSR or a
+#' hairpin stem; a ring marks an injected mismatch / the 3' discriminating base.
+#' The Tm sits just past the 3' end, with its deviation from the target as a
+#' green/red tumbler.  Below: the local variant track (same x axis).  Right: a
+#' thin column of per-criterion tumblers - the *feature* level (one oligo) and
+#' the *alignment* level (how the primers sit together on the template).
 #' @param assay assembled assay.
 #' @param variants variant table.
 #' @param snp target variant (one row).
-#' @return a `patchwork` object: the primer arrows above the local variant
-#'   track, sharing an x axis.
+#' @return a `patchwork` object: the local map (primers over the variant track,
+#'   sharing an x axis) beside the tumbler list from [plot_checks()].
 #' @examples
 #' \dontrun{
 #' plot_primers(assay, variants, snp)
@@ -208,27 +286,80 @@ plot_primers <- function(assay, variants, snp) {
   aa <- assay$assay[1, ]
   strand <- aa$strand %||% "+"
   plus <- identical(strand, "+")
+  d <- primer_features(assay)
+  letters <- primer_letters(assay)
 
-  # coordinates come straight from the assay (single source of truth); for an
-  # indel the ALT AS-primer sits at a shifted position, so it has its own span
-  as_alt_start <- aa$as_alt_start %||% aa$as_start
-  as_alt_end <- aa$as_alt_end %||% aa$as_end
-  d <- tibble::tibble(
-    primer  = factor(c("AS-ref", "AS-alt", "COM"), levels = c("COM", "AS-alt", "AS-ref")),
-    start   = c(aa$as_start, as_alt_start, aa$com_start),
-    end     = c(aa$as_end, as_alt_end, aa$com_end),
-    forward = c(plus, plus, !plus)
+  # alignment-level arrow: the amplicon the placement buys, on its own row
+  amp <- tibble::tibble(
+    role = factor("amplicon", levels = c(levels(d$role), "amplicon")),
+    start = min(d$start), end = max(d$end), forward = plus,
+    status = ifelse(dplyr::between(aa$amplicon, KASP_LIMITS$amplicon[1], KASP_LIMITS$amplicon[2]), "ok", "broken")
   )
 
-  p_arrows <- ggplot2::ggplot(d, ggplot2::aes(
-    xmin = .data$start, xmax = .data$end,
-    y = .data$primer, forward = .data$forward,
-    fill = .data$primer
-  )) +
-    gggenes::geom_gene_arrow() +
-    ggplot2::geom_vline(xintercept = snp$pos, linetype = "dashed", colour = "firebrick") +
-    ggplot2::scale_fill_brewer(palette = "Set2", guide = "none") +
-    ggplot2::labs(x = NULL, y = NULL) +
+  # the Tm as a small number just past the 3' end, and its deviation from the
+  # target as a green/red tumbler next to it
+  lab <- d
+  lab$target <- ifelse(lab$role == "COM", COM_TM_TARGET, AS_TM_TARGET)
+  lab$dtm <- lab$tm - lab$target
+  lab$meas_x <- ifelse(lab$forward, lab$end + 2, lab$start - 2)
+  lab$hj <- ifelse(lab$forward, 0, 1)
+  lab$dtm_x <- ifelse(lab$forward, lab$meas_x + 6, lab$meas_x - 6)
+  lab$dtm_status <- ifelse(abs(lab$dtm) <= 3, "ok", "broken")
+
+  # pins: the 3' discriminating base of every oligo, and the injected
+  # destabilising mismatch of the AS primers (if the placement carries one)
+  pins <- tibble::tibble(role = d$role, x = d$three_x)
+  asx <- d[!is.na(d$stab), ]
+  if (nrow(asx)) {
+    pins <- dplyr::bind_rows(pins, tibble::tibble(
+      role = asx$role,
+      x = ifelse(asx$forward, asx$end - (asx$stab - 1L), asx$start + (asx$stab - 1L))
+    ))
+  }
+
+  span <- range(c(d$start, d$end, lab$meas_x, lab$dtm_x, amp$start, amp$end))
+
+  p_map <- ggplot2::ggplot() +
+    gggenes::geom_gene_arrow(
+      data = amp,
+      ggplot2::aes(xmin = .data$start, xmax = .data$end, y = .data$role, forward = .data$forward),
+      fill = "grey94", colour = "grey55"
+    ) +
+    gggenes::geom_gene_arrow(
+      data = d,
+      ggplot2::aes(xmin = .data$start, xmax = .data$end, y = .data$role, forward = .data$forward),
+      fill = "grey98", colour = "grey75"
+    ) +
+    ggplot2::geom_text(
+      data = letters,
+      ggplot2::aes(x = .data$x, y = .data$role, label = .data$letter, fontface = .data$face, colour = .data$colour),
+      family = "mono", size = 3.0
+    ) +
+    ggplot2::scale_colour_identity() +
+    ggplot2::geom_point(
+      data = pins, ggplot2::aes(x = .data$x, y = .data$role),
+      shape = 1, size = 3.4, colour = "grey35"
+    ) +
+    ggplot2::geom_text(
+      data = lab,
+      ggplot2::aes(x = .data$meas_x, y = .data$role, label = glue::glue("{round(.data$tm)}\u00b0C"), hjust = .data$hj),
+      size = 2.7, colour = "grey30"
+    ) +
+    ggplot2::geom_point(
+      data = lab, ggplot2::aes(x = .data$dtm_x, y = .data$role, fill = .data$dtm_status),
+      shape = 21, size = 2.8, colour = "grey40"
+    ) +
+    ggplot2::geom_vline(xintercept = snp$pos, linetype = "dashed", colour = "grey45") +
+    ggplot2::scale_fill_manual(values = KASP_STATUS, guide = "none") +
+    ggplot2::scale_y_discrete(limits = c("amplicon", "COM", "AS-alt", "AS-ref")) +
+    ggplot2::coord_cartesian(xlim = span) +
+    ggplot2::labs(
+      x = NULL, y = NULL,
+      caption = paste(
+        "bold = 3' GC-clamp \u00b7 red = SSR / hairpin base",
+        "\u00b7 ring = mismatch \u00b7 dot = Tm vs target"
+      )
+    ) +
     gggenes::theme_genes()
 
   vw <- variants_in_window(variants, snp$chrom, win)
@@ -242,33 +373,67 @@ plot_primers <- function(assay, variants, snp) {
   p_var <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
     ggplot2::annotate("rect",
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
-      ymin = 0.4, ymax = 1.6, fill = "firebrick", alpha = 0.12
+      ymin = 0.4, ymax = 1.6, fill = "firebrick", alpha = 0.10
     ) +
     ggplot2::geom_point(ggplot2::aes(colour = .data$consequence), size = 1.7) +
-    ggplot2::geom_point(
-      data = foot, ggplot2::aes(.data$pos, 1),
-      shape = 1, colour = "black", size = 2.6
-    ) +
+    ggplot2::geom_point(data = foot, ggplot2::aes(.data$pos, 1), shape = 1, colour = "black", size = 2.6) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 1),
       shape = 21, fill = "firebrick", colour = "white", size = 3
     ) +
     ggplot2::scale_colour_brewer(palette = "Dark2", name = "consequence") +
     ggplot2::scale_y_continuous(breaks = 1, labels = "variants") +
-    ggplot2::labs(
-      x = glue::glue("design window, {snp$chrom} position (bp)"), y = NULL,
-      caption = "shaded band = AS 3' 5 nt; ringed = other variants under AS/COM"
-    ) +
-    ggplot2::theme_minimal()
+    ggplot2::labs(x = glue::glue("{snp$chrom} position (bp)"), y = NULL) +
+    ggplot2::coord_cartesian(xlim = span) +
+    ggplot2::theme_minimal(base_size = 10) +
+    ggplot2::theme(legend.position = "bottom")
 
-  patchwork::wrap_plots(p_arrows, p_var, ncol = 1, heights = c(2, 1)) +
+  map <- patchwork::wrap_plots(p_map, p_var, ncol = 1, heights = c(2.4, 1))
+  patchwork::wrap_plots(map, plot_checks(assay), widths = c(1, 0.2)) +
     patchwork::plot_annotation(
-      title = "KASP primers + local variants (1001 Genomes)",
+      title = "KASP assay: local map + acceptance checks",
       subtitle = glue::glue(
-        "target {snp$chrom}:{snp$pos} ({snp$ref}>{snp$alt}) on strand ",
-        "{strand}; other variants: AS 3'={aa$as_n_3p %||% NA}, ",
-        "AS footprint={aa$as_n_var}, COM={aa$n_var}"
+        "target {snp$chrom}:{snp$pos} ({snp$ref}>{snp$alt}) on strand {strand}"
       )
+    )
+}
+
+#' Acceptance checks as a thin list of tumblers (feature vs alignment)
+#'
+#' Runs [kasp_design_checks()] and shows one named tumbler per criterion - a
+#' small green (ok) / red (broken) marker with its observed value and limit - in
+#' a single narrow column, faceted by the level judged: the *feature* level is
+#' one oligo on its own, the *alignment* level is how the primers sit together on
+#' the template.  Sits as a thin strip beside [plot_primers()].
+#' @param assay assembled assay.
+#' @param limits thresholds (see [KASP_LIMITS]).
+#' @return a `ggplot` tumbler list.
+#' @examples
+#' \dontrun{
+#' plot_checks(assay)
+#' }
+#' @family KASP plots
+#' @export
+plot_checks <- function(assay, limits = KASP_LIMITS) {
+  chk <- kasp_design_checks(assay, limits) |>
+    dplyr::mutate(
+      level = factor(check_level(.data$criterion), levels = c("feature", "alignment")),
+      status = ifelse(.data$pass, "ok", "broken"),
+      value = glue::glue("{signif(.data$observed, 3)}  [{.data$limit}]")
+    )
+  ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$criterion))) +
+    ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.6) +
+    ggplot2::geom_text(ggplot2::aes(label = .data$value), x = 0.75, hjust = 0, size = 2.3, colour = "grey35") +
+    ggplot2::facet_grid(level ~ ., scales = "free_y", space = "free_y") +
+    ggplot2::scale_fill_manual(values = KASP_STATUS, guide = "none") +
+    ggplot2::scale_x_continuous(limits = c(0, 4), breaks = NULL) +
+    ggplot2::labs(x = NULL, y = NULL, title = "checks") +
+    ggplot2::theme_minimal(base_size = 8) +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_blank(),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 7),
+      plot.title = ggplot2::element_text(size = 9, hjust = 0)
     )
 }
 

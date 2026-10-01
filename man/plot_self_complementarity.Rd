@@ -30,9 +30,9 @@ plot_self_complementarity(assay)
 Other KASP plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
+\code{\link[=plot_checks]{plot_checks()}},
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
 \code{\link[=plot_dimer_qc]{plot_dimer_qc()}},
-\code{\link[=plot_discrimination]{plot_discrimination()}},
 \code{\link[=plot_primers]{plot_primers()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
 \code{\link[=render_design_search]{render_design_search()}}

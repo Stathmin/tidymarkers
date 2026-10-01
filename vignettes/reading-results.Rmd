@@ -70,6 +70,6 @@ qc[qc$name != "COM" && !is.na(qc$name), ]   # AS-праймеры
 - `plot_primers()` — стрелки праймеров на дорожке вариантов (`gggenes`);
 - `plot_variant_landscape()` — модель гена + врезка региона дизайна;
 - `plot_dimer_qc()` — матрица dG дуплексов + шпильки;
-- `plot_discrimination()` — ландшафт дискриминации кандидатов.
+
 
 См. также `?kasp_design_checks`, `?write_kasp_results`, `?plot_dimer_qc`.
