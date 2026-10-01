@@ -81,14 +81,23 @@ test_that("the assay plots render and carry the two-level vocabulary", {
 
   # an optional pop_freq weights the footprint load and sizes the markers
   expect_true("w_var" %in% names(m$assay$assay))
+  # the ideogram inputs and the selection outcome are carried on the object, so
+  # plotting only reads it (no genome rescan, no re-running the selection)
+  expect_true(!is.null(m$assay$ideogram))
+  expect_true(all(c("relaxed", "violated") %in% names(m$assay$selection)))
 })
 
 # the genome-wide ideogram (exact primer hits + in-silico PCR products)
 test_that("assay_ideogram marks primer hits and in-silico products", {
   skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
   m <- make_plot_assay()
-  expect_null(assay_ideogram(m$assay, m$snp, NULL))
+  # the inputs are computed once and stored on the assay, so plotting needs no genome
+  expect_s3_class(assay_ideogram(m$assay, m$snp), "ggplot")
   expect_s3_class(assay_ideogram(m$assay, m$snp, m$genome), "ggplot")
+  # without stored data and without a genome there is nothing to draw
+  bare <- m$assay
+  bare$ideogram <- NULL
+  expect_null(assay_ideogram(bare, m$snp, NULL))
 
   hits <- primer_hits(assay_primers(m$assay), m$genome)
   expect_setequal(names(hits), c("primer", "chrom", "pos"))

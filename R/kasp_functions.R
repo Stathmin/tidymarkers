@@ -669,12 +669,16 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   # severity ladder; otherwise so_rank() falls back to the SO terms.  (`v[[..]]`
   # is NULL when the column is absent.)
   impact <- v[["impact"]]
+  # optional population frequency: prefer the more informative (higher-MAF) locus
+  # as a tie-break; absent, `maf` is all `NA` and changes nothing
+  pf <- v[["pop_freq"]]
 
   ranked <- v |>
     dplyr::mutate(
       transition = .data$ref_len == 1L &
         paste0(.data$ref, .data$alt) %in% c("AG", "GA", "CT", "TC"),
       rank = so_rank(.data$consequence, impact),
+      maf = if (is.null(pf)) NA_real_ else pmin(pf, 1 - pf),
       # best-case (either strand) count of other variants in the AS 3' window,
       # vectorised over the whole variant table (IRanges).  The windows sit
       # strictly outside the variant block, so the target cannot count itself.
@@ -689,10 +693,10 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
         )
       )
     ) |>
-    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos)
+    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), dplyr::desc(.data$maf), .data$pos)
 
   if (specificity_candidates <= 0L) {
-    return(ranked |> dplyr::slice(1L) |> dplyr::select(-"rank", -"ref_genome"))
+    return(ranked |> dplyr::slice(1L) |> dplyr::select(-"rank", -"ref_genome", -"maf"))
   }
 
   # among the best candidates, prefer the most specific AS 3'-seed (best of the
@@ -731,10 +735,10 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   short |>
     dplyr::arrange(
       .data$n_3p, .data$rank, dplyr::desc(.data$transition),
-      .data$seed_hits, .data$pos
+      dplyr::desc(.data$maf), .data$seed_hits, .data$pos
     ) |>
     dplyr::slice(1L) |>
-    dplyr::select(-"rank", -"ref_genome", -"candidate")
+    dplyr::select(-"rank", -"ref_genome", -"maf", -"candidate")
 }
 
 
@@ -1869,38 +1873,38 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     )))
   }
 
-  # prioritise: clean 3' window, then minimal footprint variant load, then
-  # discrimination, then a quieter 3'-seed (genome-wide), then the tie-breakers.
-  # Only the leading placements are seed-screened (like pick_target_snp()), so the
-  # scan stays a tie-break and does not dominate the cost; an indexed genome
-  # (no in-memory DNAStringSet) skips it.
-  ordered <- as_cand |>
-    dplyr::arrange(
-      .data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-      .data$wobble, abs(.data$tm - AS_TM_TARGET), .data$dg_3p, .data$as_length
-    ) |>
-    dplyr::mutate(.as_row = dplyr::row_number())
-  ordered$seed_hits <- NA_integer_
+  # prioritise with the shared grader: gate the grave sins (a wobble mismatch, a
+  # variant in the 3' window or the footprint), then rank lexicographically on the
+  # margins.  The genome-wide 3'-seed screen is only a tie-break, so only the
+  # leading placements are screened; an indexed genome (no in-memory DNAStringSet)
+  # skips it.
+  graded_as <- grade_as_candidates(as_cand, KASP_LIMITS, min_disc)
+  graded_as$data$seed_hits <- NA_integer_
   if (specificity_candidates > 0L && !inherits(genome, "kasp_genome")) {
-    short <- dplyr::slice_head(ordered, n = specificity_candidates)
+    short <- rank_candidates(graded_as$data, graded_as$tiers, setdiff(graded_as$ties, "seed_hits")) |>
+      dplyr::slice_head(n = specificity_candidates)
     seeds <- stats::setNames(
       substr(short$ref_primer, nchar(short$ref_primer) - SEED_K + 1L, nchar(short$ref_primer)),
-      short$.as_row
+      short$as_row
     )
     hits <- specificity_seed(seeds, genome,
       k = SEED_K, max_mismatch = SEED_MISMATCH,
       BPPARAM = BPPARAM
     )$hits
-    ordered$seed_hits[short$.as_row] <- hits
+    graded_as$data$seed_hits[short$as_row] <- hits
   }
-  best_as <- ordered |>
-    dplyr::arrange(
-      .data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-      .data$wobble, .data$seed_hits, abs(.data$tm - AS_TM_TARGET),
-      .data$dg_3p, .data$as_length
-    ) |>
-    dplyr::slice_head(n = 1L)
-  as_cand <- dplyr::select(ordered, -".as_row")
+  pick_as <- select_with_ladder(
+    graded_as$data, graded_as$gates, KASP_RELAX_AS,
+    graded_as$tiers, graded_as$ties, graded_as$gate_margin
+  )
+  if (is.null(pick_as$best)) {
+    rlang::abort(gettext("No AS primer survived even the relaxed constraints."))
+  }
+  best_as <- pick_as$best
+  # the ranked candidate table for inspection, minus the grader's helper columns
+  as_cand <- rank_candidates(graded_as$data, graded_as$tiers, graded_as$ties)
+  drop <- grep("^\\.neg_|^m_|^gate_|^tier|^as_row$", names(as_cand), value = TRUE)
+  as_cand <- as_cand[, setdiff(names(as_cand), drop), drop = FALSE]
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
     rlang::warn(c(
@@ -1972,7 +1976,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # choose among the pairings: gate the grave sins, then rank lexicographically
   # on tier margins, relaxing gates one at a time only when nothing clears them
   graded <- grade_assay_pairs(assays, KASP_LIMITS, as_tm_mean)
-  pick <- select_with_ladder(graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties)
+  pick <- select_with_ladder(graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties, graded$gate_margin)
   if (is.null(pick$best)) {
     rlang::abort(gettext("No candidate assay survived even the relaxed constraints."))
   }
@@ -2019,7 +2023,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
   }
 
-  list(
+  out <- list(
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
@@ -2028,15 +2032,23 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     complementarity = dimer_thermo(primers),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
-    selection = list(relaxed = pick$relaxed, violated = pick$violated),
+    selection = list(relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated),
     blast = blast,
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
       AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
       COM = best$com
     )
-  ) |>
-    structure(class = "kasp_assay")
+  )
+  # precompute the whole-genome ideogram inputs once, so plotting only reads the
+  # object instead of rescanning the genome
+  out$ideogram <- tryCatch(assay_ideogram_data(out, genome),
+    error = function(e) {
+      rlang::warn(glue::glue(gettext("genome ideogram failed: {conditionMessage(e)}")))
+      NULL
+    }
+  )
+  structure(out, class = "kasp_assay")
 }
 
 #' Is `x` a KASP assay object?

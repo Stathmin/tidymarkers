@@ -102,14 +102,20 @@ check_short <- function(criterion) {
 #' every variant is a small neutral dot.
 #' @keywords internal
 #' @noRd
-variant_points <- function(variants) {
+variant_points <- function(variants, y) {
   if ("pop_freq" %in% names(variants)) {
     list(
-      ggplot2::geom_point(ggplot2::aes(colour = .data$consequence, size = .data$pop_freq)),
+      ggplot2::geom_point(
+        data = variants,
+        ggplot2::aes(x = .data$pos, y = y, colour = .data$consequence, size = .data$pop_freq)
+      ),
       ggplot2::scale_size_continuous(range = c(0.9, 2.6), guide = "none")
     )
   } else {
-    ggplot2::geom_point(ggplot2::aes(colour = .data$consequence), size = 1.3)
+    ggplot2::geom_point(
+      data = variants,
+      ggplot2::aes(x = .data$pos, y = y, colour = .data$consequence), size = 1.3
+    )
   }
 }
 
@@ -223,6 +229,30 @@ primer_letters <- function(assay, clamp_n = 5L) {
   dplyr::bind_rows(rows)
 }
 
+#' Ideogram inputs: chromosome bars + exact primer hits + in-silico PCR products
+#'
+#' Computed once (at design time) and carried on the assay (`assay$ideogram`), so
+#' plotting reads the object instead of rescanning the genome.
+#' @keywords internal
+#' @noRd
+assay_ideogram_data <- function(assay, genome) {
+  if (is.null(genome)) {
+    return(NULL)
+  }
+  chroms <- genome_chroms(genome)
+  bars <- tibble::tibble(
+    chrom = chroms,
+    length = vapply(chroms, function(ch) genome_length(genome, ch), numeric(1))
+  )
+  roles <- c(AS_ref = "AS-ref", AS_alt = "AS-alt", COM = "COM")
+  hits <- primer_hits(assay_primers(assay), genome)
+  if (nrow(hits)) hits$signal <- roles[hits$primer]
+  prods <- purrr::imap_dfr(as_pcr_pairs(assay), function(fr, nm) {
+    in_silico_pcr(fr[["F"]], fr[["R"]], genome) |> dplyr::mutate(signal = roles[[nm]])
+  })
+  list(bars = bars, hits = hits, products = prods)
+}
+
 #' Where every primer matches the genome (positions), for the ideogram
 #' @keywords internal
 #' @noRd
@@ -251,31 +281,27 @@ primer_hits <- function(primers, genome) {
 #' signals are overlaid - where each assay primer matches exactly
 #' (`primer_hits()`) and where the designed allele-specific pairs actually
 #' amplify ([in_silico_pcr()], the same pairings as [assay_amplicons()]).  The
-#' target locus is marked.  Returns `NULL` when no genome is supplied, so
-#' [plot_primers()] simply drops the panel.
+#' target locus is marked.
+#'
+#' The underlying data are computed once at design time and carried on the assay
+#' (`assay$ideogram`), so plotting only reads the object; when it is absent (an
+#' older assay) and a `genome` is supplied they are recomputed.  Returns `NULL`
+#' when neither is available, so [plot_primers()] simply drops the panel.
 #' @keywords internal
 #' @noRd
-assay_ideogram <- function(assay, snp, genome) {
-  if (is.null(genome)) {
+assay_ideogram <- function(assay, snp, genome = NULL) {
+  dat <- assay$ideogram %||% assay_ideogram_data(assay, genome)
+  if (is.null(dat)) {
     return(NULL)
   }
-  chroms <- genome_chroms(genome)
-  bars <- tibble::tibble(
-    chrom = chroms,
-    length = vapply(chroms, function(ch) genome_length(genome, ch), numeric(1))
-  )
-  roles <- c(AS_ref = "AS-ref", AS_alt = "AS-alt", COM = "COM")
+  bars <- dat$bars
+  hits <- dat$hits
+  prods <- dat$products
   sig_cols <- c("AS-ref" = "#4477aa", "AS-alt" = "#66c2a5", "COM" = "#8da0cb")
   # adaptive axis unit: Mb for real genomes, kb/bp for small ones
   span <- max(bars$length)
   div <- if (span >= 1e6) 1e6 else if (span >= 1e3) 1e3 else 1
   suf <- if (span >= 1e6) " Mb" else if (span >= 1e3) " kb" else " bp"
-
-  hits <- primer_hits(assay_primers(assay), genome)
-  if (nrow(hits)) hits$signal <- roles[hits$primer]
-  prods <- purrr::imap_dfr(as_pcr_pairs(assay), function(fr, nm) {
-    in_silico_pcr(fr[["F"]], fr[["R"]], genome) |> dplyr::mutate(signal = roles[[nm]])
-  })
 
   p <- ggplot2::ggplot() +
     ggplot2::geom_segment(
@@ -597,7 +623,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
       ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[win_status]], alpha = 0.22
     ) +
-    variant_points(vw) +
+    variant_points(vw, 1) +
     ggplot2::geom_point(data = foot, ggplot2::aes(.data$pos, 1), shape = 1, colour = "black", size = 2.1) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 1),
@@ -723,7 +749,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
       ggplot2::aes(xmin = .data$start, xmax = .data$end, y = 1, forward = .data$strand > 0),
       fill = "grey80"
     ) +
-    variant_points(v) +
+    variant_points(v, 2) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 2),
       shape = 21, fill = "firebrick", colour = "white", size = 3
@@ -746,7 +772,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
   win <- design_window(assay, snp)
   vw <- variants_in_window(variants, snp$chrom, win)
   inset <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
-    variant_points(vw) +
+    variant_points(vw, 1) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 1),
       shape = 21, fill = "firebrick", colour = "white", size = 2

@@ -63,6 +63,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
         limits$amplicon[2L] - .data$amplicon
       ),
       m_footprint = -foot,
+      m_window = -as.numeric(.data$as_n_3p),
       gate_discrimination = .data$discrimination >= limits$discrimination,
       gate_structure = .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,
@@ -84,8 +85,72 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
     ),
     tiers = c("tier1", "tier2", "tier3", "tier4", "tier5"),
     # tie-breakers, ascending (smaller is better)
-    ties = c("run", "ssr", "com_start")
+    ties = c("run", "ssr", "com_start"),
+    # the margin that measures each gate, so a relaxed gate can be minimised first
+    gate_margin = c(
+      gate_discrimination = "m_disc", gate_structure = "m_structure",
+      gate_tm = "m_tm_com", gate_amplicon = "m_amplicon",
+      gate_com_footprint = "m_footprint", gate_as_window = "m_window"
+    )
   )
+}
+
+# AS-candidate gates, given up least-grave first (a wobble mismatch is milder
+# than an allele-specific site lost to another variant)
+KASP_RELAX_AS <- c("gate_wobble", "gate_discrimination", "gate_as_footprint", "gate_as_window")
+
+#' Grade candidate AS primers: hard gates + tiered margins
+#'
+#' The AS-side twin of [grade_assay_pairs()]: the same vocabulary (gates for the
+#' grave sins, margins ranked lexicographically) applied to one oligo on its own.
+#' @param as_cand one row per AS placement.
+#' @param limits thresholds (see `KASP_LIMITS`).
+#' @param min_disc discrimination floor.
+#' @return a list with `data` (graded tibble, carrying `as_row`), `gates`, `tiers`,
+#'   `ties`.
+#' @keywords internal
+#' @noRd
+grade_as_candidates <- function(as_cand, limits, min_disc) {
+  d <- as_cand |>
+    dplyr::mutate(
+      as_row = dplyr::row_number(),
+      m_disc = .data$discrimination - min_disc,
+      m_tm = -abs(.data$tm - AS_TM_TARGET),
+      m_stability = -as.numeric(.data$dg_3p),
+      m_footprint = -as.numeric(.data$w_var),
+      m_window = -as.numeric(.data$n_3p),
+      m_wobble = -as.numeric(.data$wobble),
+      gate_discrimination = .data$discrimination >= min_disc,
+      gate_wobble = is.na(.data$wobble) | !.data$wobble,
+      gate_as_footprint = .data$n_var == 0L,
+      gate_as_window = .data$n_3p == 0L,
+      tier1 = .data$m_disc,
+      tier2 = .data$m_tm,
+      tier3 = .data$m_stability,
+      tier4 = .data$m_footprint
+    )
+  list(
+    data = d,
+    gates = c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window"),
+    tiers = c("tier1", "tier2", "tier3", "tier4"),
+    ties = c("seed_hits", "as_length", "as_start"),
+    gate_margin = c(
+      gate_wobble = "m_wobble", gate_discrimination = "m_disc",
+      gate_as_footprint = "m_footprint", gate_as_window = "m_window"
+    )
+  )
+}
+
+#' Sort candidates lexicographically on tiers then ties (no gating)
+#'
+#' Used to build shortlists (e.g. which placements to seed-screen) with the same
+#' ordering the final selection uses.
+#' @keywords internal
+#' @noRd
+rank_candidates <- function(data, tiers, ties) {
+  d <- data
+  for (t in tiers) d[[paste0(".neg_", t)]] <- -d[[t]]
+  dplyr::arrange(d, !!!rlang::syms(paste0(".neg_", tiers)), !!!rlang::syms(intersect(ties, names(d))))
 }
 
 #' Pick the best candidate, relaxing gates only as far as necessary
@@ -102,7 +167,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
 #' @return list with `best` (one row, or `NULL`), `relaxed` and `violated`.
 #' @keywords internal
 #' @noRd
-select_with_ladder <- function(data, gates, relax_order, tiers, ties) {
+select_with_ladder <- function(data, gates, relax_order, tiers, ties, gate_margin = NULL) {
   active <- gates
   relaxed <- character(0)
   repeat {
@@ -114,10 +179,18 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties) {
     ok[is.na(ok)] <- FALSE
     if (nrow(data) && any(ok)) {
       surv <- data[ok, , drop = FALSE]
-      for (t in tiers) surv[[paste0(".neg_", t)]] <- -surv[[t]]
+      # a relaxed gate is the compromise we accepted: minimise it first (gravest
+      # first), so the "least-bad" candidate is the least compromised one
+      extra <- if (length(relaxed) && !is.null(gate_margin)) {
+        unname(gate_margin[intersect(rev(relaxed), names(gate_margin))])
+      } else {
+        character(0)
+      }
+      ranked <- c(extra, tiers)
+      for (t in ranked) surv[[paste0(".neg_", t)]] <- -surv[[t]]
       ord <- dplyr::arrange(
         surv,
-        !!!rlang::syms(paste0(".neg_", tiers)),
+        !!!rlang::syms(paste0(".neg_", ranked)),
         !!!rlang::syms(intersect(ties, names(surv)))
       )
       best <- ord[1L, , drop = FALSE]
