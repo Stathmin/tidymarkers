@@ -612,13 +612,18 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   in_foot <- dplyr::between(vw$pos, as_span[1], as_span[2]) |
     dplyr::between(vw$pos, com_span[1], com_span[2])
   foot <- vw[in_foot, ]
-  # the AS 3'-terminal window (the ref/alt side): green when no other known
-  # variant sits there - a clean 3' end is what buys allele specificity - red
-  # when one does
+  # the AS 3'-terminal window and the COM footprint: the two zones a variant
+  # must not sit in.  Same colour logic - green when clean, red when a known
+  # variant is there (the pair's own two grave sins, drawn where they bite)
   win_status <- if (isTRUE(aa$as_n_3p == 0L)) "ok" else "broken"
+  com_status <- if (isTRUE(aa$n_var == 0L)) "ok" else "broken"
 
   # the local variants: a thin strip on the same x axis
   p_var <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
+    ggplot2::annotate("rect",
+      xmin = com_span[1] - 0.5, xmax = com_span[2] + 0.5,
+      ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[com_status]], alpha = 0.22
+    ) +
     ggplot2::annotate("rect",
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
       ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[win_status]], alpha = 0.22
