@@ -3,7 +3,7 @@
 test_that("kasp_fm_index + specificity_fm count genome loci", {
   skip_if_not_installed("Rsubread")
   skip_if_not_installed("Rsamtools")
-  set.seed(1)
+  withr::local_seed(1)
   motif <- paste(sample(c("A", "C", "G", "T"), 30L, TRUE), collapse = "")
   spacer <- paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = "")
   uniq <- paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = "")
@@ -16,7 +16,7 @@ test_that("kasp_fm_index + specificity_fm count genome loci", {
 })
 
 test_that("a kasp_genome carries an attached FM index", {
-  fa <- tempfile(fileext = ".fa")
+  fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">1", "ACGTACGTACGTACGTACGT"), fa)
   gs <- kasp_genome(fa, fm_index = "/tmp/some/index")
   expect_equal(gs$fm_index, "/tmp/some/index")

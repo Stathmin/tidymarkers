@@ -30,8 +30,7 @@ test_that("write_kasp_results writes grouped files and order subsets", {
     ),
     blast = NULL
   )
-  dir <- tempfile("res")
-  dir.create(dir)
+  dir <- withr::local_tempdir(pattern = "res")
   paths <- write_kasp_results(assay, list(symbol = "FRI"), dir = dir)
   for (f in c(
     "kasp_design.csv", "kasp_primer_qc.csv", "kasp_dimer_dg.csv",

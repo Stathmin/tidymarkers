@@ -21,7 +21,7 @@ KASP_TAIL_FAM <- "GAAGGTGACCAAGTTCATGCT" # "FAM" channel
 KASP_TAIL_HEX <- "GAAGGTCGGAGTCAACGGATT" # "HEX/VIC" channel
 
 # Tm conditions (mM) for TmCalculator
-PCR_COND <- list(Na = 50, Mg = 1.5, dNTPs = 0.6)
+PCR_COND <- list(Na = 50, Mg = 1.5, dNTPs = 0.6, DMSO = 0)
 NN_TABLE <- "DNA_NN_SantaLucia_2004"
 # PCR conditions (molar) for DECIPHER::CalculateEfficiencyPCR
 PCR_EFF <- list(temp = 60, P = 4e-7, ions = 0.2)
@@ -316,6 +316,20 @@ ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
 #  1. Sequence retrieval
 # =============================================================================
 
+#' Perform an Ensembl REST request (JSON, retry, throttle, user agent)
+#'
+#' Ensembl asks for a descriptive `User-Agent` and enforces roughly 15 requests
+#' per second, so requests are throttled and retried with backoff.
+#' @noRd
+ensembl_perform <- function(req) {
+  req |>
+    httr2::req_headers(`Content-Type` = "application/json") |>
+    httr2::req_user_agent("tidykasp") |>
+    httr2::req_throttle(rate = 15) |>
+    httr2::req_retry(max_tries = 5L, backoff = ~3) |>
+    httr2::req_perform()
+}
+
 #' Fetch a gene record from Ensembl Plants REST (cached on disk)
 #' @param gene_id Ensembl gene id (e.g. `"AT4G00650"`).
 #' @param species Ensembl species name.
@@ -330,10 +344,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
     resp <- httr2::request("https://rest.ensembl.org") |>
       httr2::req_url_path_append("lookup", "id", gene_id) |>
       httr2::req_url_query(expand = 1) |>
-      httr2::req_headers(`Content-Type` = "application/json") |>
-      httr2::req_user_agent("tidykasp") |>
-      httr2::req_retry(max_tries = 5L, backoff = ~3) |>
-      httr2::req_perform()
+      ensembl_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
   j <- jsonlite::fromJSON(readr::read_file(path), simplifyDataFrame = FALSE)
@@ -377,10 +388,7 @@ ensembl_variants <- function(chrom, start, end,
     resp <- httr2::request("https://rest.ensembl.org") |>
       httr2::req_url_path_append("overlap", "region", species, region) |>
       httr2::req_url_query(feature = "variation") |>
-      httr2::req_headers(`Content-Type` = "application/json") |>
-      httr2::req_user_agent("tidykasp") |>
-      httr2::req_retry(max_tries = 5L, backoff = ~3) |>
-      httr2::req_perform()
+      ensembl_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
   df <- jsonlite::fromJSON(readr::read_file(path)) |> tibble::as_tibble()
@@ -751,14 +759,14 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' `res$gr` uses TmCalculator's `$` accessor for the result GRanges; `Tm` is a
 #' metadata column on it.
 #' @param seq oligo(s) 5'->3'.
+#' @param DMSO DMSO concentration (%), as in a KASP master mix; it lowers Tm.
 #' @family KASP thermodynamics
 #' @export
-primer_tm <- function(seq) {
+primer_tm <- function(seq, DMSO = PCR_COND$DMSO) {
   gr <- TmCalculator::to_genomic_ranges(as.character(seq))
   res <- TmCalculator::tm_calculate(gr,
     method = "tm_nn", nn_table = NN_TABLE,
-    Na = PCR_COND$Na, Mg = PCR_COND$Mg,
-    dNTPs = PCR_COND$dNTPs
+    Na = PCR_COND$Na, Mg = PCR_COND$Mg, dNTPs = PCR_COND$dNTPs, DMSO = DMSO
   )
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }

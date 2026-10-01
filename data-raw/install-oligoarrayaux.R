@@ -44,7 +44,7 @@ smoke <- function() {
       "-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q",
       "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"
     ),
-    env = sprintf("UNAFOLDDAT=%s", dat), stdout = TRUE, stderr = FALSE
+    env = sprintf("UNAFOLDDAT=%s", shQuote(dat)), stdout = TRUE, stderr = FALSE
   ))
   length(out) == 1L && is.finite(suppressWarnings(as.numeric(out)))
 }
@@ -62,15 +62,25 @@ with_dir <- function(dir, code) {
   force(code)
 }
 
+# Try the usual sha256 tools: sha256sum (coreutils), shasum (macOS),
+# openssl dgst -sha256 (fallback).  Returns NA when none is available.
 sha256_of <- function(path) {
-  out <- suppressWarnings(tryCatch(
-    system2("sha256sum", shQuote(path), stdout = TRUE, stderr = FALSE),
-    error = function(e) character()
-  ))
-  if (!length(out)) {
-    return(NA_character_)
+  probes <- list(
+    c("sha256sum", shQuote(path)),
+    c("shasum", "-a", "256", shQuote(path)),
+    c("openssl", "dgst", "-sha256", shQuote(path))
+  )
+  for (probe in probes) {
+    if (!nzchar(Sys.which(probe[[1L]]))) next
+    out <- suppressWarnings(tryCatch(
+      system2(probe[[1L]], probe[-1L], stdout = TRUE, stderr = FALSE),
+      error = function(e) character()
+    ))
+    # sha256sum/shasum print "<hex>  path"; openssl prints "SHA2-256(path)= <hex>"
+    tok <- unlist(regmatches(out, gregexpr("[0-9a-f]{64}", out)))
+    if (length(tok)) return(tok[[1L]])
   }
-  strsplit(out[[1L]], "[[:space:]]+")[[1L]][[1L]]
+  NA_character_
 }
 
 main <- function() {
@@ -79,10 +89,11 @@ main <- function() {
     return(invisible())
   }
 
-  for (tool in c("make", "cc")) {
-    if (!nzchar(Sys.which(tool))) {
-      stop(sprintf("build tool '%s' not found on PATH", tool), call. = FALSE)
-    }
+  if (!nzchar(Sys.which("make"))) {
+    stop("'make' not found on PATH (Windows: install Rtools)", call. = FALSE)
+  }
+  if (!any(nzchar(Sys.which(c("cc", "gcc", "clang"))))) {
+    stop("no C compiler (cc/gcc/clang) found on PATH (Windows: install Rtools)", call. = FALSE)
   }
 
   dir.create(tools, showWarnings = FALSE, recursive = TRUE)

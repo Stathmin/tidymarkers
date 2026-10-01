@@ -148,7 +148,7 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] `NEWS.md` — changelog по версиям (tidyverse-конвенция)
 - [x] `README` с бейджами и снеппетом `remotes::install_github()`
 - [x] pkgdown-сайт (`_pkgdown.yml`), сгруппированный по `@family` (`has_concept`)
-- [x] Линт/стиль: конфиг `.lintr` + шаблон CI (`.github/workflows/R-CMD-check.yaml`)
+- [x] Линт/стиль: конфиг `.lintr` (CI в репозиторий не входит — см. `CONTRIBUTING` и T)
 - [x] `CONTRIBUTING.md` — цикл разработки, стиль, документация
 
 ### M5. Уроки для лекции
@@ -367,15 +367,19 @@ A–P — реализовано или оценено; **Q** — локализ
       теперь воспроизводим
 - [x] Шаг орфографии вынесен за флаг `--spelling` (`dev/check.R`): проза русская,
       англ. словарь помечает каждое слово; `inst/WORDLIST` при этом не нужен
-- [ ] Вернуть `object_usage_linter` (сейчас `NULL` в `.lintr`): `codetools` ловит
-      неопределённые глобалы/опечатки и мёртвые присваивания
-- [ ] `primer_tm()`: прокинуть `DMSO`/`formamide` в `TmCalculator::tm_calculate()`
-      (F заявляет DMSO-коррекцию; код передаёт только `Na`/`Mg`/`dNTPs`)
-- [ ] `dev/bench.R`: сохранять базовую таблицу (медианы + аллокации) и сравнивать с
-      ней; задействовать `profmem`/`lobstr` вместо самописного `Rprofmem`
-- [ ] testthat 3e: `expect_snapshot()` для сообщений (стабильность i18n) и
-      `withr::local_tempdir()` вместо ручных `on.exit(unlink)`
-- [ ] `httr2`: `req_throttle()`/`req_cache()` для Ensembl REST (лимит ~15 req/s)
+- [x] `object_usage_linter` возвращён в `.lintr` (`codetools`: неопределённые
+      глобалы/опечатки и мёртвые присваивания) — 0 линтов
+- [x] `primer_tm()`: `DMSO` прокинут в `TmCalculator::tm_calculate()` (аргумент +
+      `PCR_COND$DMSO`) — F больше не расходится с кодом
+- [x] `dev/bench.R` переписан на `bench` (медиана + `mem_alloc`) и `lobstr` (размеры
+      объектов) вместо самописного `Rprofmem`/`system.time`
+- [ ] `dev/bench.R`: сохранять базовую таблицу и сравнивать с ней (регрессия)
+- [x] Тесты — на `withr`-идиомах: `with_seed`/`local_seed`, `local_tempfile`/
+      `local_tempdir`, `local_envvar(LANGUAGE = "en")` вместо `set.seed`/`tempfile`/
+      ручных `on.exit(unlink)`
+- [ ] testthat 3e: `expect_snapshot()` для сообщений (стабильность i18n)
+- [x] `httr2`: общий `ensembl_perform()` с `req_throttle(15)`/`req_retry`/
+      `req_user_agent` вместо копипасты (дисковый кэш остаётся свой; `req_cache()` — опция)
 - [ ] `cli`: `cli_abort()`/`cli_warn()`/`cli_inform()` с bullet-ами (`i`/`x`) и
       плюрализацией для пользовательских ошибок (сейчас `rlang`-строки)
 - [ ] `BiocParallel`: прокинуть `RNGseed`/`progressbar` в `bplapply`
@@ -386,16 +390,15 @@ A–P — реализовано или оценено; **Q** — локализ
       хорошо (PDict/`vcountPDict`, `matchProbePair`, `findPalindromes`, `scanFa`)
 
 ## S. Переносимость (Windows/macOS)
-- [ ] **GIF-сборка:** на Windows `convert` — диспетчер диска (`System32\convert.exe`),
-      ImageMagick 7 — `magick`. Брать путь из `Sys.which` (`magick` в приоритете),
-      `System32\convert.exe` считать отсутствующим (`kasp_search_anim.R`, `data-raw/logo.R`)
-- [ ] **OligoArrayAux:** `./configure`/`make`/`cc` под Windows → Rtools (MSYS2/UCRT64)
-      и запуск через `bash -lc`; бинарь `hybrid-min.exe`, а `helper-oligoarrayaux.R`
-      должен видеть `.exe`, иначе термотесты молча скипаются
-- [ ] **`sha256sum` и пробелы в путях:** фолбэк на `digest`/`tools::md5sum`; кавычить
-      `UNAFOLDDAT`/`--prefix`
-- [ ] **`.gitattributes`:** `* text=auto eol=lf`, а `*.mo`/`*.rds`/`*.png` — бинарные
-      (Git-for-Windows с `autocrlf=true` иначе портит `.po`/данные)
+- [x] **GIF-сборка:** `image_tool()` берёт `magick convert …` (ImageMagick 7) либо IM6
+      `convert`, а `System32\convert.exe` отвергает; тот же разбор — в `data-raw/logo.R`
+- [x] **OligoArrayAux, `.exe`:** `helper-oligoarrayaux.R` видит и `hybrid-min.exe`,
+      так что термотесты на Windows не скипаются молча
+- [ ] **OligoArrayAux, сборка:** `./configure`/`make` под Windows требуют Rtools
+      (MSYS2/UCRT64) и запуска через `bash -lc` — задокументировать
+- [x] **sha256 и пробелы:** `sha256_of()` пробует `sha256sum`/`shasum`/`openssl`;
+      `UNAFOLDDAT`/`--prefix` кавычатся; компилятор ищется как `cc`/`gcc`/`clang`
+- [x] **`.gitattributes`:** `* text=auto eol=lf`, `*.mo`/`*.rds`/`*.png`/`*.gif` — бинарные
 - [ ] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
       Windows/macOS, `sh` только из Git-Bash/Rtools; `apt-get`-хинты (напр.
       `R/kasp_scan.R`) дополнить кроссплатформенными

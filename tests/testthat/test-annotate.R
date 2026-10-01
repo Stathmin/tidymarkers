@@ -69,7 +69,7 @@ test_that("kasp_ensdb builds an EnsDb from a GTF", {
   skip_if_not_installed("ensembldb")
   skip_if_not_installed("GenomicFeatures")
   skip_if_not_installed("processx")
-  gtf <- tempfile(fileext = ".gtf")
+  gtf <- withr::local_tempfile(fileext = ".gtf")
   row <- function(feature, start, end, frame, extra) {
     paste("1", "src", feature, start, end, ".", "+", frame, extra, sep = "\t")
   }
@@ -80,9 +80,10 @@ test_that("kasp_ensdb builds an EnsDb from a GTF", {
   ), gtf)
   # Build in a subprocess: ensDbFromGtf() leaves an RSQLite connection that
   # otherwise leaks a benign "call dbDisconnect()" note at this session's exit.
+  cache <- withr::local_tempfile()
   code <- sprintf(
     'edb <- tidykasp::kasp_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
-    gtf, tempfile()
+    gtf, cache
   )
   res <- processx::run(file.path(R.home("bin"), "Rscript"), c("-e", code),
     error_on_status = FALSE

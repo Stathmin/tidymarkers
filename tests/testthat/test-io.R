@@ -2,7 +2,7 @@
 
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   skip_if_not_installed("vroom")
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
@@ -20,7 +20,7 @@ test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
 
 test_that("read_variants_vcf filters by region", {
   skip_if_not_installed("vroom")
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
     "1\t10\t.\tA\tG\t.\t.\t.",
@@ -38,7 +38,7 @@ test_that("normalise_allele folds IUPAC codes and case to ACGTN", {
 
 test_that("read_variants_vcf normalises IUPAC/lowercase instead of dropping", {
   skip_if_not_installed("vroom")
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
     "4\t500\t.\tA\tR\t.\t.\t.", # IUPAC ambiguity -> N
@@ -56,7 +56,7 @@ test_that("the vroom and VariantAnnotation backends agree", {
   if (!suppressWarnings(suppressMessages(requireNamespace("VariantAnnotation", quietly = TRUE)))) {
     testthat::skip("VariantAnnotation not installed")
   }
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
@@ -74,7 +74,7 @@ test_that("the vroom and VariantAnnotation backends agree", {
 
 test_that("the VariantAnnotation backend filters by region too", {
   skip_if_not_installed("VariantAnnotation")
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
@@ -94,7 +94,7 @@ test_that("the VariantAnnotation backend filters by region too", {
 
 test_that("the VariantAnnotation backend streams a region like filtering", {
   skip_if_not_installed("VariantAnnotation")
-  vcf <- tempfile(fileext = ".vcf")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
@@ -112,7 +112,7 @@ test_that("the VariantAnnotation backend streams a region like filtering", {
 })
 
 test_that("read_genome_fasta normalises and filters sequence names", {
-  fa <- tempfile(fileext = ".fa")
+  fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(
     ">1 dna:chromosome chromosome:TAIR10:1:1:100:1 REF", "ACGTACGT",
     ">Mt dna:chromosome", "ACGT", ">scaffold_9 x", "TTTT"
@@ -125,7 +125,7 @@ test_that("read_genome_fasta normalises and filters sequence names", {
 
 test_that("read_genome_fasta reads only requested ids via the FASTA index", {
   skip_if_not_installed("Rsamtools")
-  fa <- tempfile(fileext = ".fa")
+  fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">chr1", "ACGTACGTACGT", ">chr2", "TTTTGGGGCCCC", ">chr3", "GGGGCCCCAAAA"), fa)
   g <- read_genome_fasta(fa, seqids = c("chr2", "chr3"))
   expect_setequal(names(g), c("chr2", "chr3")) # chr1 not read
@@ -135,7 +135,7 @@ test_that("read_genome_fasta reads only requested ids via the FASTA index", {
 
 test_that("read_genome_fasta map+index keeps only mapped, requested chroms", {
   skip_if_not_installed("Rsamtools")
-  fa <- tempfile(fileext = ".fa")
+  fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">1 desc", "ACGTACGT", ">2 desc", "TTTTGGGG"), fa)
   g <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, seqids = "Chr2")
   expect_equal(names(g), "Chr2")

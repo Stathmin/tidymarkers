@@ -5,7 +5,8 @@
 local({
   find_tools <- function(dir) {
     repeat {
-      if (file.exists(file.path(dir, ".tools", "bin", "hybrid-min"))) {
+      bin <- file.path(dir, ".tools", "bin")
+      if (file.exists(file.path(bin, "hybrid-min")) || file.exists(file.path(bin, "hybrid-min.exe"))) {
         return(file.path(dir, ".tools"))
       }
       parent <- dirname(dir)

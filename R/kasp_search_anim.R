@@ -276,6 +276,24 @@ render_design_search <- function(assay, variants, snp,
   invisible(path)
 }
 
+#' Locate an ImageMagick CLI, accounting for version and platform
+#'
+#' ImageMagick 7 renamed the CLI to `magick` (invoked as `magick convert ...`);
+#' on Windows a bare `convert` resolves to the System32 disk tool, which must
+#' never be used.  Returns `list(exe, args)` or `NULL`.
+#' @noRd
+image_tool <- function() {
+  convert <- Sys.which("convert")
+  if (nzchar(convert) && !grepl("system32[/\\\\]convert\\.exe$", convert, ignore.case = TRUE)) {
+    return(list(exe = unname(convert), args = character()))
+  }
+  magick <- Sys.which("magick")
+  if (nzchar(magick)) {
+    return(list(exe = unname(magick), args = "convert"))
+  }
+  NULL
+}
+
 #' Stitch PNG frames into a GIF with the ImageMagick CLI
 #'
 #' Kept to an external call so nothing heavy is added to the dependency graph
@@ -283,13 +301,15 @@ render_design_search <- function(assay, variants, snp,
 #' @keywords internal
 #' @noRd
 assemble_gif <- function(pngs, path, delay_cs = 25L) {
-  if (!nzchar(Sys.which("convert"))) {
-    rlang::abort(c(gettext("No GIF assembler available (ImageMagick `convert` not found)."),
+  tool <- image_tool()
+  if (is.null(tool)) {
+    rlang::abort(c(
+      gettext("No GIF assembler available (ImageMagick not found)."),
       i = gettext("Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski).")
     ))
   }
-  res <- processx::run("convert", c(
-    "-delay", as.character(delay_cs), "-loop", "0",
+  res <- processx::run(tool$exe, c(
+    tool$args, "-delay", as.character(delay_cs), "-loop", "0",
     "-layers", "Optimize", pngs, path
   ),
   error_on_status = FALSE

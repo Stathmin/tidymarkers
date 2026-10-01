@@ -56,6 +56,8 @@
 - VCF-регион стримится через `VariantAnnotation::ScanVcfParam(which=)`.
 
 ### Термодинамика / QC
+- `primer_tm()` принимает `DMSO` (%), прокинутый в `TmCalculator::tm_calculate()`;
+  Ensembl REST-запросы идут через общий `ensembl_perform()` с `req_throttle(15)` и retry.
 - `terminal_dg()` — 3'-концевая стабильность (GC-clamp, `OligoArrayAux`).
 - `wobble_mismatch()` — флаг слабого G:T / A:C неспаривания (симметрично по REF/ALT).
 - `oligo_dg()` идёт через `processx` с явной диагностикой вместо тихого `NA`.
@@ -102,6 +104,12 @@
   (`.Rbuildignore`), `ragg`/`pkgdown` объявлены в `Suggests`.
 - Аудит (ROADMAP R–T): недоиспользованные возможности, переносимость Windows/macOS и
   соответствие CRAN/tidyverse.
+- Тесты переведены на `withr`-идиомы (`with_seed`/`local_seed`, `local_tempfile`,
+  `local_envvar(LANGUAGE = "en")`); `dev/bench.R` — на `bench`/`lobstr`;
+  `object_usage_linter` снова включён.
+- Переносимость: `image_tool()` различает ImageMagick 6/7 и отвергает
+  `System32\convert.exe`; добавлен `.gitattributes` (`eol=lf`); `sha256_of()` умеет
+  `sha256sum`/`shasum`/`openssl`.
 
 ### Локализация и внешние инструменты
 - Все пользовательские сообщения (`stop`/`warning`/`cli`/прогресс) переведены через

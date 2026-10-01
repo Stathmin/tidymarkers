@@ -42,8 +42,8 @@ test_that("passes_all reflects the acceptance checks", {
 })
 
 test_that("with_unafloddat sets and restores UNAFOLDDAT", {
-  d <- tempfile("dat")
-  dir.create(d)
+  withr::local_envvar(LANGUAGE = "en")
+  d <- withr::local_tempdir(pattern = "dat")
   old <- Sys.getenv("UNAFOLDDAT", unset = NA)
   seen <- with_unafloddat(d, Sys.getenv("UNAFOLDDAT"))
   expect_equal(seen, d)
@@ -77,8 +77,7 @@ test_that("seed_hits_at counts a repeated seed, and is NA off the start", {
 test_that("pick_target_snp prefers the locus with a unique 3'-seed", {
   rep30 <- "ACGTTGCAAGTCCTAGGCATCGATTCGGAT"
   pad <- "GCGCGCGCGCGCGCGCGCGC"
-  set.seed(1)
-  uniq <- paste(sample(c("A", "C", "G", "T"), 80L, TRUE), collapse = "")
+  uniq <- withr::with_seed(1, paste(sample(c("A", "C", "G", "T"), 80L, TRUE), collapse = ""))
   genome <- Biostrings::DNAStringSet(c(Chr1 = paste0(pad, rep30, rep30, rep30, uniq)))
   transition <- c(A = "G", G = "A", C = "T", T = "C")
   a_pos <- 20L + 60L # end of the 2nd repeat: both strands' seeds repeat
@@ -99,8 +98,7 @@ test_that("pick_target_snp prefers the locus with a unique 3'-seed", {
 
 test_that("pick_target_snp is invariant to the seed-scan backend", {
   rep30 <- "ACGTTGCAAGTCCTAGGCATCGATTCGGAT"
-  set.seed(1)
-  uniq <- paste(sample(c("A", "C", "G", "T"), 80L, TRUE), collapse = "")
+  uniq <- withr::with_seed(1, paste(sample(c("A", "C", "G", "T"), 80L, TRUE), collapse = ""))
   genome <- Biostrings::DNAStringSet(c(Chr1 = paste0(strrep("GC", 10L), rep30, rep30, uniq)))
   transition <- c(A = "G", G = "A", C = "T", T = "C")
   refs <- vapply(c(45L, 85L), function(p) as.character(Biostrings::subseq(genome[["Chr1"]], p, p)), character(1))

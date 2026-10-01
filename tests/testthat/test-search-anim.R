@@ -4,8 +4,7 @@
 # genomes occasionally yield no GC/Tm-passing window, so try a few seeds.
 make_search_assay <- function(seed = 4L, n = 500L, pos = 250L, variants = NULL) {
   for (s in seed:(seed + 19L)) {
-    set.seed(s)
-    W <- paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+    W <- withr::with_seed(s, paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = ""))
     genome <- Biostrings::DNAStringSet(c(Chr1 = W))
     ref <- as.character(Biostrings::subseq(genome[["Chr1"]], pos, pos))
     snp <- tibble::tibble(

@@ -7,9 +7,9 @@ test_that("mask_positions blanks the requested bases and ignores out-of-range", 
 })
 
 test_that("max_footprint_variants enforces N-masking as a hard constraint", {
+  withr::local_envvar(LANGUAGE = "en")
   skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
-  set.seed(4)
-  W <- Biostrings::DNAString(paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = ""))
+  W <- withr::with_seed(4, Biostrings::DNAString(paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = "")))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   clean <- seq(160L, 240L)
   clean <- clean[vapply(clean, function(p) {

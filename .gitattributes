@@ -1,0 +1,9 @@
+# Normalize line endings on checkout (Git for Windows defaults to autocrlf=true,
+# which would rewrite .po and data files to CRLF).
+* text=auto eol=lf
+
+# Binary artifacts
+*.mo binary
+*.rds binary
+*.png binary
+*.gif binary

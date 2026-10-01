@@ -1,7 +1,6 @@
 # Indexed genome source: regions on demand, same results as an in-memory set.
 
-make_fa <- function() {
-  fa <- tempfile(fileext = ".fa")
+make_fa <- function(fa) {
   writeLines(c(
     ">1 desc", "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT",
     ">2 desc", "TTTTGGGGCCCCAAAATTTT"
@@ -11,7 +10,7 @@ make_fa <- function() {
 
 test_that("a kasp_genome reads the same regions as an in-memory DNAStringSet", {
   skip_if_not_installed("Rsamtools")
-  fa <- make_fa()
+  fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
   gs <- kasp_genome(fa, chrom_map = ATH_CHROM_MAP)
   expect_s3_class(gs, "kasp_genome")
   expect_setequal(genome_chroms(gs), c("Chr1", "Chr2"))
@@ -28,7 +27,7 @@ test_that("a kasp_genome reads the same regions as an in-memory DNAStringSet", {
 
 test_that("design helpers accept a kasp_genome (no whole genome in RAM)", {
   skip_if_not_installed("Rsamtools")
-  fa <- make_fa()
+  fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
   gs <- kasp_genome(fa, chrom_map = ATH_CHROM_MAP)
   tmpl <- snp_template(gs, "Chr1", 20L, flank = 10L)
   expect_equal(length(tmpl$seq), 21L)
@@ -39,7 +38,7 @@ test_that("design helpers accept a kasp_genome (no whole genome in RAM)", {
 
 test_that("in_silico_pcr works through an indexed kasp_genome", {
   skip_if_not_installed("Rsamtools")
-  fa <- tempfile(fileext = ".fa")
+  fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">chr1", paste0(strrep("A", 30L), "ACGTACGTACGTACGTACGT", strrep("T", 30L))), fa)
   gs <- kasp_genome(fa)
   pr <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", gs)

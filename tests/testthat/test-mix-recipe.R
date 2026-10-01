@@ -23,5 +23,6 @@ test_that("the reaction volumes add up to the requested total", {
 })
 
 test_that("a too-concentrated working mix is rejected", {
+  withr::local_envvar(LANGUAGE = "en")
   expect_error(kasp_mix_recipe(stock_uM = 40, as_uM = 12, com_uM = 30), "stock")
 })

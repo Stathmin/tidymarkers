@@ -52,6 +52,7 @@ test_that("pick_target_snp accepts an MNP and keeps REF/ALT strings", {
 })
 
 test_that("pick_target_snp skips indels and ambiguous alleles", {
+  withr::local_envvar(LANGUAGE = "en")
   seq <- "ACGTACGTACGTACGTACGTACGTACGT"
   genome <- Biostrings::DNAStringSet(c(Chr1 = seq))
   gene <- list(chrom = "Chr1", symbol = "X", start = 1L, end = nchar(seq), strand = 1L)

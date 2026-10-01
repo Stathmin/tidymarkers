@@ -4,10 +4,12 @@
 \alias{primer_tm}
 \title{Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)}
 \usage{
-primer_tm(seq)
+primer_tm(seq, DMSO = PCR_COND$DMSO)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
+
+\item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.}
 }
 \description{
 \code{res$gr} uses TmCalculator's \code{$} accessor for the result GRanges; \code{Tm} is a

@@ -58,7 +58,18 @@ writeLines(svg, out_svg)
 message("wrote ", out_svg)
 
 ## optional raster (ImageMagick) ---------------------------------------------
-if (nzchar(Sys.which("convert"))) {
-  st <- system2("convert", c("-background", "none", "-density", "300", out_svg, out_png))
-  if (st == 0L) message("wrote ", out_png) else message("PNG raster skipped (convert failed)")
+# ImageMagick 7 renamed the CLI to `magick` (`magick convert ...`); on Windows a
+# bare `convert` is the System32 disk tool, which must never be used.
+img_tool <- function() {
+  convert <- Sys.which("convert")
+  if (nzchar(convert) && !grepl("system32[/\\\\]convert\\.exe$", convert, ignore.case = TRUE)) {
+    return(list(exe = unname(convert), args = character()))
+  }
+  magick <- Sys.which("magick")
+  if (nzchar(magick)) list(exe = unname(magick), args = "convert") else NULL
+}
+tool <- img_tool()
+if (!is.null(tool)) {
+  st <- system2(tool$exe, c(tool$args, "-background", "none", "-density", "300", out_svg, out_png))
+  if (st == 0L) message("wrote ", out_png) else message("PNG raster skipped (ImageMagick failed)")
 }

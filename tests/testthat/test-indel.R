@@ -1,8 +1,7 @@
 # Indel engine: allele templates, the junction scan, and end-to-end assembly.
 
 rand_seq <- function(n, seed) {
-  set.seed(seed)
-  paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+  withr::with_seed(seed, paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = ""))
 }
 
 test_that("allele_templates keeps the left flank and shifts the right one", {
@@ -43,6 +42,7 @@ test_that("the junction scan proposes discriminating primers for a deletion", {
 })
 
 test_that("design_as_primers_indel refuses equal-length alleles", {
+  withr::local_envvar(LANGUAGE = "en")
   W <- Biostrings::DNAString(rand_seq(160, 17))
   expect_error(design_as_primers_indel(W, 80L, "A", "G"), "unequal")
 })
