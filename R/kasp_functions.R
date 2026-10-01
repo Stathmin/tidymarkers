@@ -98,7 +98,7 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   bin <- if (is.null(seq2)) "hybrid-ss-min" else "hybrid-min"
   exe <- Sys.which(bin)
   if (!nzchar(exe)) {
-    rlang::warn(glue::glue("OligoArrayAux ('{bin}') is not on the PATH."))
+    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') is not on the PATH.")))
     return(NA_real_)
   }
   args <- c("-n", "DNA", "-t", as.character(temp), "-T", as.character(temp),
@@ -109,18 +109,18 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   run <- tryCatch(processx::run(exe, args, error_on_status = FALSE),
                   error = function(e) e)
   if (inherits(run, "error")) {
-    rlang::warn(glue::glue("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"))
+    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}")))
     return(NA_real_)
   }
   if (run$status != 0L) {
-    rlang::warn(glue::glue("OligoArrayAux ('{bin}') exited with status {run$status}: ",
-                           "{trimws(run$stderr)}"))
+    rlang::warn(glue::glue(gettext(
+      "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}")))
     return(NA_real_)
   }
   tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
   dg  <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
-    rlang::warn(glue::glue("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
+    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}').")))
     return(NA_real_)
   }
   dg
@@ -262,24 +262,23 @@ ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
       "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-%d/fasta/",
       "arabidopsis_thaliana/dna/",
       "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"), release)
-    cli::cli_alert_info("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ...")
+    cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ..."))
     utils::download.file(url, fa, mode = "wb", quiet = TRUE)
   }
   g <- Biostrings::readDNAStringSet(fa)
   nm <- sub("\\s.*$", "", names(g))   # keep only the first token of the defline
   dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
   if (length(dropped)) {
-    cli::cli_alert_info(
-      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}.")
+    cli::cli_alert_info(gettext(
+      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."))
   }
   g <- g[nm %in% names(ATH_CHROM_MAP)]
   names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
   need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   missing <- setdiff(need, names(g))
   if (length(missing)) {
-    rlang::abort(glue::glue(
-      "ath_genome(): TAIR10 FASTA is missing expected chromosome(s): ",
-      "{paste(missing, collapse = ', ')} - Ensembl deflines may have changed."))
+    rlang::abort(glue::glue(gettext(
+      "ath_genome(): TAIR10 FASTA is missing expected chromosome(s): {paste(missing, collapse = ', ')} - Ensembl deflines may have changed.")))
   }
   g[need]
 }
@@ -313,9 +312,8 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   need <- c("id", "seq_region_name", "start", "end", "strand")
   missing <- setdiff(need, names(j))
   if (length(missing)) {
-    rlang::abort(glue::glue(
-      "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')} ",
-      "- the Ensembl REST schema may have changed."))
+    rlang::abort(glue::glue(gettext(
+      "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')} - the Ensembl REST schema may have changed.")))
   }
   tibble::tibble(gene_id = j$id, symbol = j$display_name %||% j$id,
                  chrom = ath_chrom(j$seq_region_name),
@@ -355,9 +353,8 @@ ensembl_variants <- function(chrom, start, end,
   need <- c("id", "seq_region_name", "start", "alleles")
   missing <- setdiff(need, names(df))
   if (length(missing)) {
-    rlang::abort(glue::glue(
-      "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')} ",
-      "- the Ensembl REST schema may have changed."))
+    rlang::abort(glue::glue(gettext(
+      "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')} - the Ensembl REST schema may have changed.")))
   }
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
   df |>
@@ -516,7 +513,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
                   # allele's template), so KASP discrimination collapses - skip them
                   !(.data$ref_len == 1L &
                       paste0(pmin(.data$ref, .data$alt), pmax(.data$ref, .data$alt)) %in% c("AT", "CG")))
-  if (nrow(v) == 0L) rlang::abort("No usable substitution variant (SNP/MNP) left after filtering.")
+  if (nrow(v) == 0L) rlang::abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
 
   # every variant of the gene (incl. indels): used to penalise targets whose AS
   # 3' neighbourhood is itself variable (breaks allele specificity across lines)
@@ -713,7 +710,7 @@ has_oligoarrayaux <- function() nzchar(Sys.which("hybrid-min"))
 #' @family KASP utilities
 #' @export
 with_unafloddat <- function(path, code) {
-  if (!fs::dir_exists(path)) rlang::abort(glue::glue("Directory not found: {path}"))
+  if (!fs::dir_exists(path)) rlang::abort(glue::glue(gettext("Directory not found: {path}")))
   withr::with_envvar(c(UNAFOLDDAT = path), code)
 }
 
@@ -734,8 +731,8 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
                            P = PCR_EFF$P, ions = PCR_EFF$ions) {
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
-    rlang::abort(c("OligoArrayAux ('hybrid-min') is required for PCR efficiencies.",
-                   i = "conda install -c bioconda oligoarrayaux"))
+    rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
+                   i = gettext("conda install -c bioconda oligoarrayaux")))
   }
   as.numeric(DECIPHER::CalculateEfficiencyPCR(
     primer = Biostrings::DNAStringSet(as.character(primers)),
@@ -801,8 +798,8 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
     dplyr::arrange(abs(.data$com_tm - target_tm))
 
   if (nrow(cand) == 0L) {
-    rlang::abort(c("No common primer passed the filters.",
-                   i = "Widen `tm_range`/GC or increase `flank` in snp_template()."))
+    rlang::abort(c(gettext("No common primer passed the filters."),
+                   i = gettext("Widen `tm_range`/GC or increase `flank` in snp_template().")))
   }
   cand |> dplyr::slice_head(n = n) |> dplyr::mutate(rank = dplyr::row_number())
 }
@@ -1009,7 +1006,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
   ref_len <- nchar(ref); alt_len <- nchar(alt)
   if (ref_len == alt_len) {
-    rlang::abort("design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution.")
+    rlang::abort(gettext("design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."))
   }
   at <- allele_templates(ref_tmpl, snp_i, ref, alt)
 
@@ -1047,7 +1044,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
       ends <- seq.int(max(1L, snp_i - 1L), min(length(tmpl), snp_i + blen))
       purrr::map_dfr(ends, function(e) build(allele, tmpl, oblk, blen, strand, as_length, e))
     })
-  if (nrow(cand) == 0L) rlang::abort("No indel AS-primer placement fit inside the design window.")
+  if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
 
   cand$on_eff  <- pcr_efficiency(cand$primer, cand$on,  temp = temp, P = P, ions = ions)
   cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions)
@@ -1164,8 +1161,8 @@ dimer_thermo <- function(primers, BPPARAM = NULL) {
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
   if (inherits(genome, "kasp_genome")) {
-    rlang::abort(c("specificity_seed() needs an in-memory DNAStringSet.",
-                   i = "For an indexed genome use specificity_of()/specificity_blast()."))
+    rlang::abort(c(gettext("specificity_seed() needs an in-memory DNAStringSet."),
+                   i = gettext("For an indexed genome use specificity_of()/specificity_blast().")))
   }
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (max_mismatch == 0L) {
@@ -1280,7 +1277,7 @@ blast_primers <- function(primers, db_path) {
     bl <- rBLAST::blast(db_path, type = "blastn")
     stats::predict(bl, newdata = query,
                    BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no"))
-  }, error = function(e) { rlang::warn(glue::glue("BLAST failed: {conditionMessage(e)}")); NULL })
+  }, error = function(e) { rlang::warn(glue::glue(gettext("BLAST failed: {conditionMessage(e)}"))); NULL })
   if (is.null(out) || nrow(out) == 0L) return(out)
   tibble::as_tibble(out)
 }
@@ -1399,7 +1396,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
                     dplyr::between(.data$tm, tm_range[1], tm_range[2]),
                     !has_run(.data$primer), !has_repeat(.data$primer))
-    if (nrow(ind) == 0L) rlang::abort("No indel AS primer passed the GC/Tm filter.")
+    if (nrow(ind) == 0L) rlang::abort(gettext("No indel AS primer passed the GC/Tm filter."))
     # alt-template coordinate -> REF/genomic coordinate (block clamps to REF)
     alt_to_ref <- function(x) dplyr::case_when(
       x < tmpl$snp_i                    ~ x,
@@ -1445,8 +1442,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     as_cand <- dplyr::filter(as_cand, .data$n_var <= max_footprint_variants)
   }
   if (nrow(as_cand) == 0L) {
-    rlang::abort(glue::glue(
-      "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants})."))
+    rlang::abort(glue::glue(gettext(
+      "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants}).")))
   }
 
   # prioritise: clean 3' window, then minimal footprint variant load, then
@@ -1476,20 +1473,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   as_cand <- dplyr::select(ordered, - ".as_row")
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
-    rlang::warn(glue::glue(
-      "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the ",
-      "AS 3'-terminal {clean_3p} nt (on strand {best_as$strand}) - allele specificity ",
-      "may not hold across accessions."))
+    rlang::warn(glue::glue(gettext(
+      "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt (on strand {best_as$strand}) - allele specificity may not hold across accessions.")))
   }
   if (!is.na(best_as$n_var) && best_as$n_var > 0L) {
-    rlang::warn(glue::glue(
-      "AS primer overlaps {best_as$n_var} other variant(s) in its footprint ",
-      "(no candidate with fewer passed GC/Tm/discrimination filters)."))
+    rlang::warn(glue::glue(gettext(
+      "AS primer overlaps {best_as$n_var} other variant(s) in its footprint (no candidate with fewer passed GC/Tm/discrimination filters).")))
   }
   if (best_as$discrimination < min_disc) {
-    rlang::warn(glue::glue(
-      "Best AS primer discrimination = {round(best_as$discrimination, 2)} ",
-      "is below min_disc = {min_disc}; consider widening `strands` or `tm_range`."))
+    rlang::warn(glue::glue(gettext(
+      "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}; consider widening `strands` or `tm_range`.")))
   }
 
   # COM: design on the SAME strand as the winning AS primer so the amplicon
@@ -1546,7 +1539,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # in-silico PCR: the REF primer must give one product, the ALT primer none
   amplicons <- tryCatch(
     assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
-    error = function(e) { rlang::warn(glue::glue("in-silico PCR failed: {conditionMessage(e)}")); NULL })
+    error = function(e) { rlang::warn(glue::glue(gettext("in-silico PCR failed: {conditionMessage(e)}"))); NULL })
 
   # whole-primer genome scan (only when requested): an attached FM-index is
   # queried first (index-based, multithreaded), otherwise the BLAST database
@@ -1554,10 +1547,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (isTRUE(run_blast)) {
     blast <- if (inherits(genome, "kasp_genome") && !is.null(genome$fm_index)) {
       tryCatch(specificity_fm(primers, genome$fm_index),
-               error = function(e) { rlang::warn(glue::glue("FM scan failed: {conditionMessage(e)}")); NULL })
+               error = function(e) { rlang::warn(glue::glue(gettext("FM scan failed: {conditionMessage(e)}"))); NULL })
     } else {
       db <- tryCatch(build_blast_db(genome), error = function(e) {
-        rlang::warn(glue::glue("BLAST db unavailable: {conditionMessage(e)}")); NULL })
+        rlang::warn(glue::glue(gettext("BLAST db unavailable: {conditionMessage(e)}"))); NULL })
       blast_primers(primers, db)
     }
   }
@@ -1657,7 +1650,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(loci))
   if (length(missing)) {
-    rlang::abort(glue::glue("`loci` is missing column(s): {paste(missing, collapse = ', ')}"))
+    rlang::abort(glue::glue(gettext("`loci` is missing column(s): {paste(missing, collapse = ', ')}")))
   }
   one <- function(ch, pos, ref, alt) {
     snp  <- tibble::tibble(chrom = as.character(ch), pos = as.integer(pos),
@@ -1695,7 +1688,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
 
   if (is.null(BPPARAM)) {
     n  <- nrow(loci)
-    id <- cli::cli_progress_bar("Designing KASP markers", total = n)
+    id <- cli::cli_progress_bar(gettext("Designing KASP markers"), total = n)
     res <- purrr::imap_dfr(seq_len(n), function(i, ...) {
       cli::cli_progress_update(id = id)
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i])
@@ -1752,9 +1745,8 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   stock_share <- ratios / stock_uM                       # fraction of the mix
   water_share <- 1 - sum(stock_share)
   if (water_share < 0) {
-    rlang::abort(glue::glue(
-      "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) needs more than ",
-      "100% of {stock_uM} uM stock; raise `stock_uM` or lower the targets."))
+    rlang::abort(glue::glue(gettext(
+      "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the available {stock_uM} uM stock; raise `stock_uM` or lower the targets.")))
   }
 
   primer_mix <- tibble::tibble(
@@ -1769,8 +1761,8 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   master_per_rxn <- reaction_uL / master_mix_conc
   water_per_rxn  <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
   if (water_per_rxn < 0) {
-    rlang::abort(glue::glue(
-      "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."))
+    rlang::abort(glue::glue(gettext(
+      "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`.")))
   }
   total_rxn <- ceiling(n_reactions * (1 + overfill))
 

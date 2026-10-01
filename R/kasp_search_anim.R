@@ -201,7 +201,7 @@ render_design_search <- function(assay, variants, snp,
   }
   fs::dir_create(fs::path_dir(path))
   assemble_gif(pngs, as.character(path), delay_cs = round(100 / fps))
-  cli::cli_alert_success("Design-search animation written to {.path {path}} ({length(pngs)} frames).")
+  cli::cli_alert_success(gettext("Design-search animation written to {.path {path}} ({length(pngs)} frames)."))
   invisible(path)
 }
 
@@ -213,13 +213,13 @@ render_design_search <- function(assay, variants, snp,
 #' @noRd
 assemble_gif <- function(pngs, path, delay_cs = 25L) {
   if (!nzchar(Sys.which("convert"))) {
-    rlang::abort(c("No GIF assembler available (ImageMagick `convert` not found).",
-                   i = "Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski)."))
+    rlang::abort(c(gettext("No GIF assembler available (ImageMagick `convert` not found)."),
+                   i = gettext("Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski).")))
   }
   res <- processx::run("convert", c("-delay", as.character(delay_cs), "-loop", "0",
                                     "-layers", "Optimize", pngs, path),
                        error_on_status = FALSE)
   if (res$status != 0L)
-    rlang::abort(glue::glue("ImageMagick failed: {res$stderr}"))
+    rlang::abort(glue::glue(gettext("ImageMagick failed: {res$stderr}")))
   path
 }

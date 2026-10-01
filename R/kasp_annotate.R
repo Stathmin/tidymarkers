@@ -25,7 +25,7 @@
 #' @family KASP annotation
 #' @export
 kasp_txdb <- function(package = "TxDb.Athaliana.BioMart.plantsmart28") {
-  load_namespace_quietly(package, reason = "for structured variant annotation")
+  load_namespace_quietly(package, reason = gettext("for structured variant annotation"))
   getExportedValue(package, package)
 }
 
@@ -58,7 +58,7 @@ load_namespace_quietly <- function(pkg, reason = NULL) {
 #' @family KASP annotation
 #' @export
 kasp_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
-  load_namespace_quietly(package, reason = "for codon-level annotation")
+  load_namespace_quietly(package, reason = gettext("for codon-level annotation"))
   getExportedValue(package, package)
 }
 
@@ -84,7 +84,7 @@ kasp_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
 #' @family KASP annotation
 #' @export
 kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
-  rlang::check_installed("ensembldb", reason = "for an EnsDb gene model")
+  rlang::check_installed("ensembldb", reason = gettext("for an EnsDb gene model"))
   fs::dir_create(cache)
   if (is.null(gtf)) {
     gtf <- fs::path(cache, glue::glue("Arabidopsis_thaliana.TAIR10.{release}.gtf.gz"))
@@ -92,13 +92,13 @@ kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
       url <- glue::glue(
         "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-{release}/gtf/",
         "arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.{release}.gtf.gz")
-      cli::cli_alert_info("Downloading the Ensembl Plants GTF into {.path {cache}}.")
+      cli::cli_alert_info(gettext("Downloading the Ensembl Plants GTF into {.path {cache}}."))
       utils::download.file(url, gtf, mode = "wb", quiet = TRUE)
     }
   }
   out <- fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite")
   if (!fs::file_exists(out)) {
-    cli::cli_alert_info("Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}.")
+    cli::cli_alert_info(gettext("Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."))
     ensembldb::ensDbFromGtf(gtf = as.character(gtf), outfile = as.character(out),
                             organism = "Arabidopsis_thaliana",
                             genomeVersion = "TAIR10", version = release)

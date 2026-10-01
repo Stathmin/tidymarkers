@@ -30,10 +30,10 @@ has_blast <- function() nzchar(Sys.which("blastn")) && nzchar(Sys.which("makebla
 #' @family KASP specificity
 #' @export
 kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_genome.fa")) {
-  rlang::check_installed("rBLAST", reason = "for the indexed genome scan")
+  rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    rlang::abort(c("NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH.",
-                   i = "install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`)."))
+    rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH."),
+                   i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`).")))
   }
   fasta <- if (inherits(genome, "kasp_genome")) genome$path else {
     fs::dir_create(fs::path_dir(path))
@@ -60,10 +60,11 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
 #' @family KASP specificity
 #' @export
 specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL) {
-  rlang::check_installed("rBLAST", reason = "for the indexed genome scan")
+  rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    rlang::abort(c("No NCBI BLAST+ on PATH (has_blast() is FALSE).",
-                   i = "Install BLAST+, or use specificity_seed() on an in-memory genome."))
+    rlang::abort(c(
+      gettext("No NCBI BLAST+ on PATH (has_blast() is FALSE)."),
+      i = gettext("Install BLAST+, or use specificity_seed() on an in-memory genome.")))
   }
   seeds <- if (is.na(k)) as.character(primers)
            else unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
@@ -74,7 +75,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   bl <- rlang::try_fetch(
     rBLAST::blast(db_path, type = "blastn"),
     error = function(e) rlang::abort(
-      glue::glue("Could not open a BLAST database at {db_path} (build it with kasp_blast_index())."),
+      glue::glue(gettext(
+        "Could not open a BLAST database at {db_path} (build it with kasp_blast_index()).")),
       parent = e))
   run <- function(q) {
     # a SOCK worker is a fresh process: load rBLAST so predict.BLAST() dispatches
@@ -115,8 +117,9 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
   }
   db <- genome$blast_db
   if (is.null(db)) {
-    rlang::abort(c("This indexed genome has no BLAST database attached.",
-                   i = "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."))
+    rlang::abort(c(
+      gettext("This indexed genome has no BLAST database attached."),
+      i = gettext("Build one with kasp_blast_index(genome) and pass it as `blast_db=`.")))
   }
   specificity_blast(primers, db, k = k, BPPARAM = BPPARAM)
 }

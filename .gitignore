@@ -4,6 +4,7 @@ results/*
 .venv/
 .tools/
 .deps/
+.i18n-lib/
 
 # curated demo data must be tracked
 !inst/

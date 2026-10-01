@@ -62,9 +62,9 @@ kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
 #' @keywords internal
 #' @noRd
 bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL) {
-  rlang::check_installed("BSgenome", reason = "for a BSgenome genome source")
+  rlang::check_installed("BSgenome", reason = gettext("for a BSgenome genome source"))
   if (is.character(bsgenome)) {
-    rlang::check_installed(bsgenome, reason = "for the BSgenome genome source")
+    rlang::check_installed(bsgenome, reason = gettext("for the BSgenome genome source"))
     bsgenome <- getExportedValue(bsgenome, bsgenome)
   }
   si   <- GenomeInfoDb::seqinfo(bsgenome)              # names + lengths, no DNA
@@ -114,7 +114,7 @@ genome_chroms <- function(genome) {
 genome_length <- function(genome, chrom) {
   if (!inherits(genome, "kasp_genome")) return(length(genome[[chrom]]))
   len <- genome$lengths[[chrom]]
-  if (is.null(len)) rlang::abort(glue::glue("Unknown sequence: {chrom}"))
+  if (is.null(len)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
   len
 }
 
@@ -133,7 +133,7 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
     return(Biostrings::subseq(genome[[chrom]], start = start, end = end))
   }
   raw <- genome$seqnames[[chrom]]
-  if (is.null(raw)) rlang::abort(glue::glue("Unknown sequence: {chrom}"))
+  if (is.null(raw)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
   gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
   if (!is.null(genome$bsgenome)) return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])
   Rsamtools::scanFa(genome$fa, gr)[[1L]]

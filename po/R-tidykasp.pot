@@ -1,0 +1,295 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tidykasp 0.3.0\n"
+"POT-Creation-Date: 2026-10-01 15:26+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: kasp_annotate.R:28
+msgid "for structured variant annotation"
+msgstr ""
+
+#: kasp_annotate.R:61
+msgid "for codon-level annotation"
+msgstr ""
+
+#: kasp_annotate.R:87
+msgid "for an EnsDb gene model"
+msgstr ""
+
+#: kasp_annotate.R:95
+msgid "Downloading the Ensembl Plants GTF into {.path {cache}}."
+msgstr ""
+
+#: kasp_annotate.R:101
+msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
+msgstr ""
+
+#: kasp_fm.R:31 kasp_fm.R:66
+msgid "for the FM-index genome scan"
+msgstr ""
+
+#: kasp_fm.R:34
+msgid "Reusing the existing FM-index at {.path {basename}}."
+msgstr ""
+
+#: kasp_fm.R:43
+msgid "Building a Subread FM-index at {.path {basename}} (one-off)."
+msgstr ""
+
+#: kasp_fm.R:67
+msgid "to read the alignments"
+msgstr ""
+
+#: kasp_functions.R:101
+msgid "OligoArrayAux ('{bin}') is not on the PATH."
+msgstr ""
+
+#: kasp_functions.R:112
+msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+msgstr ""
+
+#: kasp_functions.R:117
+msgid ""
+"OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+msgstr ""
+
+#: kasp_functions.R:123
+msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
+msgstr ""
+
+#: kasp_functions.R:265
+msgid ""
+"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
+"{cache}} ..."
+msgstr ""
+
+#: kasp_functions.R:273
+msgid ""
+"Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::"
+"head(dropped, 3L)}}."
+msgstr ""
+
+#: kasp_functions.R:281
+msgid ""
+"ath_genome(): TAIR10 FASTA is missing expected chromosome(s): "
+"{paste(missing, collapse = ', ')} - Ensembl deflines may have changed."
+msgstr ""
+
+#: kasp_functions.R:316
+msgid ""
+"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', "
+"')} - the Ensembl REST schema may have changed."
+msgstr ""
+
+#: kasp_functions.R:357
+msgid ""
+"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
+"', ')} - the Ensembl REST schema may have changed."
+msgstr ""
+
+#: kasp_functions.R:516
+msgid "No usable substitution variant (SNP/MNP) left after filtering."
+msgstr ""
+
+#: kasp_functions.R:713
+msgid "Directory not found: {path}"
+msgstr ""
+
+#: kasp_functions.R:734
+msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
+msgstr ""
+
+#: kasp_functions.R:735
+msgid "conda install -c bioconda oligoarrayaux"
+msgstr ""
+
+#: kasp_functions.R:801
+msgid "No common primer passed the filters."
+msgstr ""
+
+#: kasp_functions.R:802
+msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
+msgstr ""
+
+#: kasp_functions.R:1009
+msgid ""
+"design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
+"a substitution."
+msgstr ""
+
+#: kasp_functions.R:1047
+msgid "No indel AS-primer placement fit inside the design window."
+msgstr ""
+
+#: kasp_functions.R:1164
+msgid "specificity_seed() needs an in-memory DNAStringSet."
+msgstr ""
+
+#: kasp_functions.R:1165
+msgid "For an indexed genome use specificity_of()/specificity_blast()."
+msgstr ""
+
+#: kasp_functions.R:1280
+msgid "BLAST failed: {conditionMessage(e)}"
+msgstr ""
+
+#: kasp_functions.R:1399
+msgid "No indel AS primer passed the GC/Tm filter."
+msgstr ""
+
+#: kasp_functions.R:1446
+msgid ""
+"No AS primer passed the GC/Tm filter (max_footprint_variants = "
+"{max_footprint_variants})."
+msgstr ""
+
+#: kasp_functions.R:1477
+msgid ""
+"Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
+"AS 3'-terminal {clean_3p} nt (on strand {best_as$strand}) - allele "
+"specificity may not hold across accessions."
+msgstr ""
+
+#: kasp_functions.R:1481
+msgid ""
+"AS primer overlaps {best_as$n_var} other variant(s) in its footprint (no "
+"candidate with fewer passed GC/Tm/discrimination filters)."
+msgstr ""
+
+#: kasp_functions.R:1485
+msgid ""
+"Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
+"min_disc = {min_disc}; consider widening `strands` or `tm_range`."
+msgstr ""
+
+#: kasp_functions.R:1542
+msgid "in-silico PCR failed: {conditionMessage(e)}"
+msgstr ""
+
+#: kasp_functions.R:1550
+msgid "FM scan failed: {conditionMessage(e)}"
+msgstr ""
+
+#: kasp_functions.R:1553
+msgid "BLAST db unavailable: {conditionMessage(e)}"
+msgstr ""
+
+#: kasp_functions.R:1653
+msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+msgstr ""
+
+#: kasp_functions.R:1691
+msgid "Designing KASP markers"
+msgstr ""
+
+#: kasp_functions.R:1749
+msgid ""
+"Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the available "
+"{stock_uM} uM stock; raise `stock_uM` or lower the targets."
+msgstr ""
+
+#: kasp_functions.R:1765
+msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
+msgstr ""
+
+#: kasp_genome.R:65
+msgid "for a BSgenome genome source"
+msgstr ""
+
+#: kasp_genome.R:67
+msgid "for the BSgenome genome source"
+msgstr ""
+
+#: kasp_genome.R:117 kasp_genome.R:136
+msgid "Unknown sequence: {chrom}"
+msgstr ""
+
+#: kasp_io.R:51
+msgid "VCF not found: {path}"
+msgstr ""
+
+#: kasp_io.R:75
+msgid "to read large VCF files"
+msgstr ""
+
+#: kasp_io.R:78
+msgid "{path} has no '#CHROM' header line."
+msgstr ""
+
+#: kasp_io.R:98
+msgid "for the readVcf backend"
+msgstr ""
+
+#: kasp_io.R:129
+msgid "for indexed FASTA random access"
+msgstr ""
+
+#: kasp_io.R:130 kasp_io.R:187
+msgid "FASTA not found: {path}"
+msgstr ""
+
+#: kasp_io.R:133
+msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
+msgstr ""
+
+#: kasp_io.R:170
+msgid "Bundled example data not found."
+msgstr ""
+
+#: kasp_scan.R:33 kasp_scan.R:63
+msgid "for the indexed genome scan"
+msgstr ""
+
+#: kasp_scan.R:35
+msgid "NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH."
+msgstr ""
+
+#: kasp_scan.R:36
+msgid "install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`)."
+msgstr ""
+
+#: kasp_scan.R:66
+msgid "No NCBI BLAST+ on PATH (has_blast() is FALSE)."
+msgstr ""
+
+#: kasp_scan.R:67
+msgid "Install BLAST+, or use specificity_seed() on an in-memory genome."
+msgstr ""
+
+#: kasp_scan.R:79
+msgid ""
+"Could not open a BLAST database at {db_path} (build it with "
+"kasp_blast_index())."
+msgstr ""
+
+#: kasp_scan.R:121
+msgid "This indexed genome has no BLAST database attached."
+msgstr ""
+
+#: kasp_scan.R:122
+msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
+msgstr ""
+
+#: kasp_search_anim.R:204
+msgid ""
+"Design-search animation written to {.path {path}} ({length(pngs)} frames)."
+msgstr ""
+
+#: kasp_search_anim.R:216
+msgid "No GIF assembler available (ImageMagick `convert` not found)."
+msgstr ""
+
+#: kasp_search_anim.R:217
+msgid ""
+"Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski)."
+msgstr ""
+
+#: kasp_search_anim.R:223
+msgid "ImageMagick failed: {res$stderr}"
+msgstr ""

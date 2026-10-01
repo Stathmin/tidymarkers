@@ -48,7 +48,7 @@ normalise_allele <- function(x) {
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
   backend <- match.arg(backend)
-  if (!fs::file_exists(path)) rlang::abort(glue::glue("VCF not found: {path}"))
+  if (!fs::file_exists(path)) rlang::abort(glue::glue(gettext("VCF not found: {path}")))
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
@@ -72,10 +72,10 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #' @keywords internal
 #' @noRd
 read_variants_vcf_vroom <- function(path) {
-  rlang::check_installed("vroom", reason = "to read large VCF files")
+  rlang::check_installed("vroom", reason = gettext("to read large VCF files"))
   hdr <- readr::read_lines(path, n_max = 1000L)
   hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
-  if (is.na(hdr)) rlang::abort(glue::glue("{path} has no '#CHROM' header line."))
+  if (is.na(hdr)) rlang::abort(glue::glue(gettext("{path} has no '#CHROM' header line.")))
   nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
 
   ct <- vroom::cols(.default = vroom::col_skip(),
@@ -95,7 +95,7 @@ read_variants_vcf_vroom <- function(path) {
 #' @keywords internal
 #' @noRd
 read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
-  rlang::check_installed("VariantAnnotation", reason = "for the readVcf backend")
+  rlang::check_installed("VariantAnnotation", reason = gettext("for the readVcf backend"))
   param <- VariantAnnotation::ScanVcfParam()
   if (!is.null(chrom) && !is.null(start) && !is.null(end)) {
     seqs <- tryCatch(
@@ -126,11 +126,11 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' @family KASP input
 #' @export
 fasta_index <- function(path) {
-  rlang::check_installed("Rsamtools", reason = "for indexed FASTA random access")
-  if (!fs::file_exists(path)) rlang::abort(glue::glue("FASTA not found: {path}"))
+  rlang::check_installed("Rsamtools", reason = gettext("for indexed FASTA random access"))
+  if (!fs::file_exists(path)) rlang::abort(glue::glue(gettext("FASTA not found: {path}")))
   plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
   if (!fs::file_exists(plain)) {
-    cli::cli_alert_info("Decompressing {.file {fs::path_file(path)}} for indexing (one-off).")
+    cli::cli_alert_info(gettext("Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."))
     Biostrings::writeXStringSet(Biostrings::readDNAStringSet(path), plain)
   }
   fai <- paste0(plain, ".fai")
@@ -167,7 +167,7 @@ mask_positions <- function(seq, positions) {
 #' @export
 kasp_example <- function() {
   f <- system.file("extdata", "example_targets.csv", package = "tidykasp")
-  if (!nzchar(f)) rlang::abort("Bundled example data not found.")
+  if (!nzchar(f)) rlang::abort(gettext("Bundled example data not found."))
   readr::read_csv(f, show_col_types = FALSE)
 }
 
@@ -184,7 +184,7 @@ kasp_example <- function() {
 #' @family KASP input
 #' @export
 read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
-  if (!fs::file_exists(path)) rlang::abort(glue::glue("FASTA not found: {path}"))
+  if (!fs::file_exists(path)) rlang::abort(glue::glue(gettext("FASTA not found: {path}")))
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))

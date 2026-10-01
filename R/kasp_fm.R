@@ -28,10 +28,10 @@ FM_MISMATCH <- 2L
 #' @family KASP specificity
 #' @export
 kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm")) {
-  rlang::check_installed("Rsubread", reason = "for the FM-index genome scan")
+  rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
   basename <- as.character(basename)          # Rsubread wants a plain string
   if (fs::file_exists(paste0(basename, ".files"))) {
-    cli::cli_alert_info("Reusing the existing FM-index at {.path {basename}}.")
+    cli::cli_alert_info(gettext("Reusing the existing FM-index at {.path {basename}}."))
     return(basename)
   }
   fasta <- if (inherits(genome, "kasp_genome")) genome$path else {
@@ -40,7 +40,7 @@ kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm"
     Biostrings::writeXStringSet(genome, p)
     p
   }
-  cli::cli_alert_info("Building a Subread FM-index at {.path {basename}} (one-off).")
+  cli::cli_alert_info(gettext("Building a Subread FM-index at {.path {basename}} (one-off)."))
   # buildindex reports progress on stdout with no quiet switch
   invisible(utils::capture.output(Rsubread::buildindex(basename = basename, reference = fasta)))
   basename
@@ -63,8 +63,8 @@ kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm"
 #' @family KASP specificity
 #' @export
 specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L) {
-  rlang::check_installed("Rsubread", reason = "for the FM-index genome scan")
-  rlang::check_installed("Rsamtools", reason = "to read the alignments")
+  rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
+  rlang::check_installed("Rsamtools", reason = gettext("to read the alignments"))
   index <- as.character(index)                # Rsubread wants a plain string
   td    <- as.character(withr::local_tempdir())
   reads <- file.path(td, "reads.fa")
