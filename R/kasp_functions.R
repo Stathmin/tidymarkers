@@ -17,25 +17,27 @@
 # --- constants ---------------------------------------------------------------
 
 # Standard KASP 5' universal tails (added at synthesis; not used in Tm).
-KASP_TAIL_FAM <- "GAAGGTGACCAAGTTCATGCT"  # "FAM" channel
-KASP_TAIL_HEX <- "GAAGGTCGGAGTCAACGGATT"  # "HEX/VIC" channel
+KASP_TAIL_FAM <- "GAAGGTGACCAAGTTCATGCT" # "FAM" channel
+KASP_TAIL_HEX <- "GAAGGTCGGAGTCAACGGATT" # "HEX/VIC" channel
 
 # Tm conditions (mM) for TmCalculator
 PCR_COND <- list(Na = 50, Mg = 1.5, dNTPs = 0.6)
 NN_TABLE <- "DNA_NN_SantaLucia_2004"
 # PCR conditions (molar) for DECIPHER::CalculateEfficiencyPCR
-PCR_EFF  <- list(temp = 60, P = 4e-7, ions = 0.2)
+PCR_EFF <- list(temp = 60, P = 4e-7, ions = 0.2)
 
 # Ensembl Plants FASTA defline -> TAIR chromosome name; the only sequences kept.
-ATH_CHROM_MAP <- c("1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
-                   "5" = "Chr5", "Mt" = "ChrM", "Pt" = "ChrC")
+ATH_CHROM_MAP <- c(
+  "1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
+  "5" = "Chr5", "Mt" = "ChrM", "Pt" = "ChrC"
+)
 
 # Design targets / thresholds (named, so they are not magic numbers)
-AS_TM_TARGET    <- 58    # preferred AS-primer Tm (C); kept below the common primer
-COM_TM_TARGET   <- 60    # preferred common-primer Tm (C); KASP wants COM Tm >= AS Tm
-HAIRPIN_DG_WARN <- -3    # flag hairpins with dG37 below this (kcal/mol)
-SEED_K          <- 15L   # 3'-seed length for the fast specificity screen
-SEED_MISMATCH   <- 1L
+AS_TM_TARGET <- 58 # preferred AS-primer Tm (C); kept below the common primer
+COM_TM_TARGET <- 60 # preferred common-primer Tm (C); KASP wants COM Tm >= AS Tm
+HAIRPIN_DG_WARN <- -3 # flag hairpins with dG37 below this (kcal/mol)
+SEED_K <- 15L # 3'-seed length for the fast specificity screen
+SEED_MISMATCH <- 1L
 
 # Ensembl consequence wording -> design priority (lower = preferred)
 # Sequence-Ontology term -> design priority (lower = preferred).  These are the
@@ -69,15 +71,15 @@ IMPACT_RANK <- c(HIGH = 1L, MODERATE = 2L, LOW = 3L, MODIFIER = 4L)
 
 # KASP acceptance thresholds (consensus + EasyKASP 2025; the manual mirrors this)
 KASP_LIMITS <- list(
-  amplicon     = c(50, 100),    # bp  (EasyKASP: products < 100 bp)
-  as_tm        = c(55, 65),     # C
-  com_tm       = c(58, 63),     # C  (EasyKASP aims ~59.9-62.9)
-  gc           = c(0.40, 0.60), # fraction
-  max_run      = 4L,            # longest homopolymer tolerated is max_run - 1
-  hairpin_dg   = -3,            # dG37 (kcal/mol); must be >= this
-  duplex_dg    = -9,            # cross-dimer dG37; must be >= this
-  homodimer_dg = -9,            # self-dimer dG37; must be >= this
-  discrimination = 0.5          # Taq on- minus off-target efficiency
+  amplicon = c(50, 100), # bp  (EasyKASP: products < 100 bp)
+  as_tm = c(55, 65), # C
+  com_tm = c(58, 63), # C  (EasyKASP aims ~59.9-62.9)
+  gc = c(0.40, 0.60), # fraction
+  max_run = 4L, # longest homopolymer tolerated is max_run - 1
+  hairpin_dg = -3, # dG37 (kcal/mol); must be >= this
+  duplex_dg = -9, # cross-dimer dG37; must be >= this
+  homodimer_dg = -9, # self-dimer dG37; must be >= this
+  discrimination = 0.5 # Taq on- minus off-target efficiency
 )
 
 #' OligoArrayAux duplex / hairpin free energy
@@ -101,24 +103,28 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') is not on the PATH.")))
     return(NA_real_)
   }
-  args <- c("-n", "DNA", "-t", as.character(temp), "-T", as.character(temp),
-            "-N", as.character(na), "-E", "-q")
+  args <- c(
+    "-n", "DNA", "-t", as.character(temp), "-T", as.character(temp),
+    "-N", as.character(na), "-E", "-q"
+  )
   args <- if (is.null(seq2)) c(args, seq1) else c(args, seq1, seq2)
   # -q makes UNAFold print a single number; run via processx so a non-zero exit
   # or an unparsable result is an explicit failure, not a silent NA.
   run <- tryCatch(processx::run(exe, args, error_on_status = FALSE),
-                  error = function(e) e)
+    error = function(e) e
+  )
   if (inherits(run, "error")) {
     rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}")))
     return(NA_real_)
   }
   if (run$status != 0L) {
     rlang::warn(glue::glue(gettext(
-      "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}")))
+      "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+    )))
     return(NA_real_)
   }
   tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
-  dg  <- suppressWarnings(as.numeric(tok))
+  dg <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
     rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}').")))
     return(NA_real_)
@@ -163,11 +169,17 @@ get_region <- function(genome, chrom, start, end) genome_seq(genome, chrom, star
 primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "COM")) {
   role <- match.arg(role)
   if (identical(role, "AS")) {
-    if (identical(strand, "+")) IRanges::IRanges(snp_pos - length + 1L, snp_pos)
-    else                        IRanges::IRanges(snp_pos, snp_pos + length - 1L)
+    if (identical(strand, "+")) {
+      IRanges::IRanges(snp_pos - length + 1L, snp_pos)
+    } else {
+      IRanges::IRanges(snp_pos, snp_pos + length - 1L)
+    }
   } else {
-    if (identical(strand, "+")) IRanges::IRanges(snp_pos + gap, snp_pos + gap + length - 1L)
-    else                        IRanges::IRanges(snp_pos - gap - length + 1L, snp_pos - gap)
+    if (identical(strand, "+")) {
+      IRanges::IRanges(snp_pos + gap, snp_pos + gap + length - 1L)
+    } else {
+      IRanges::IRanges(snp_pos - gap - length + 1L, snp_pos - gap)
+    }
   }
 }
 
@@ -181,8 +193,11 @@ primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "C
 #' @family KASP geometry
 #' @export
 as_3p_interval <- function(snp_pos, strand, window = 5L) {
-  if (identical(strand, "+")) IRanges::IRanges(snp_pos - window + 1L, snp_pos - 1L)
-  else                        IRanges::IRanges(snp_pos + 1L, snp_pos + window - 1L)
+  if (identical(strand, "+")) {
+    IRanges::IRanges(snp_pos - window + 1L, snp_pos - 1L)
+  } else {
+    IRanges::IRanges(snp_pos + 1L, snp_pos + window - 1L)
+  }
 }
 
 #' Plus-strand coordinate of the AS primer's 3'-terminal base for a variant
@@ -208,8 +223,11 @@ as_anchor <- function(v_start, ref_len, strand) {
 #' @keywords internal
 #' @noRd
 block_in_seg <- function(ref_len, primer_len, strand) {
-  if (identical(strand, "+")) IRanges::IRanges(primer_len - ref_len + 1L, primer_len)
-  else                        IRanges::IRanges(1L, ref_len)
+  if (identical(strand, "+")) {
+    IRanges::IRanges(primer_len - ref_len + 1L, primer_len)
+  } else {
+    IRanges::IRanges(1L, ref_len)
+  }
 }
 
 #' Count variant positions inside an interval (IRanges)
@@ -221,9 +239,13 @@ block_in_seg <- function(ref_len, primer_len, strand) {
 #' @family KASP geometry
 #' @export
 count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
-  if (is.null(vpos)) return(NA_integer_)
+  if (is.null(vpos)) {
+    return(NA_integer_)
+  }
   v <- vpos[!is.na(vpos) & !(vpos %in% exclude)]
-  if (!length(v)) return(0L)
+  if (!length(v)) {
+    return(0L)
+  }
   as.integer(length(IRanges::findOverlaps(IRanges::IRanges(v, v), interval)))
 }
 
@@ -261,24 +283,30 @@ ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
     url <- sprintf(paste0(
       "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-%d/fasta/",
       "arabidopsis_thaliana/dna/",
-      "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"), release)
+      "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"
+    ), release)
     cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ..."))
     utils::download.file(url, fa, mode = "wb", quiet = TRUE)
   }
   g <- Biostrings::readDNAStringSet(fa)
-  nm <- sub("\\s.*$", "", names(g))   # keep only the first token of the defline
+  nm <- sub("\\s.*$", "", names(g)) # keep only the first token of the defline
   dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
   if (length(dropped)) {
     cli::cli_alert_info(gettext(
-      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."))
+      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."
+    ))
   }
   g <- g[nm %in% names(ATH_CHROM_MAP)]
   names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
   need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   missing <- setdiff(need, names(g))
   if (length(missing)) {
-    rlang::abort(glue::glue(gettext(
-      "ath_genome(): TAIR10 FASTA is missing expected chromosome(s): {paste(missing, collapse = ', ')} - Ensembl deflines may have changed.")))
+    rlang::abort(c(
+      glue::glue(gettext(
+        "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}."
+      )),
+      i = gettext("Ensembl deflines may have changed.")
+    ))
   }
   g[need]
 }
@@ -304,7 +332,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
       httr2::req_url_query(expand = 1) |>
       httr2::req_headers(`Content-Type` = "application/json") |>
       httr2::req_user_agent("tidykasp") |>
-      httr2::req_retry(max_tries = 5L, backoff = ~ 3) |>
+      httr2::req_retry(max_tries = 5L, backoff = ~3) |>
       httr2::req_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
@@ -312,14 +340,20 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   need <- c("id", "seq_region_name", "start", "end", "strand")
   missing <- setdiff(need, names(j))
   if (length(missing)) {
-    rlang::abort(glue::glue(gettext(
-      "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')} - the Ensembl REST schema may have changed.")))
+    rlang::abort(c(
+      glue::glue(gettext(
+        "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
+      )),
+      i = gettext("The Ensembl REST schema may have changed.")
+    ))
   }
-  tibble::tibble(gene_id = j$id, symbol = j$display_name %||% j$id,
-                 chrom = ath_chrom(j$seq_region_name),
-                 start = as.integer(j$start), end = as.integer(j$end),
-                 strand = as.integer(j$strand),
-                 description = j$description %||% NA_character_)
+  tibble::tibble(
+    gene_id = j$id, symbol = j$display_name %||% j$id,
+    chrom = ath_chrom(j$seq_region_name),
+    start = as.integer(j$start), end = as.integer(j$end),
+    strand = as.integer(j$strand),
+    description = j$description %||% NA_character_
+  )
 }
 
 #' Natural variants overlapping a region, from Ensembl Plants (1001 Genomes)
@@ -345,7 +379,7 @@ ensembl_variants <- function(chrom, start, end,
       httr2::req_url_query(feature = "variation") |>
       httr2::req_headers(`Content-Type` = "application/json") |>
       httr2::req_user_agent("tidykasp") |>
-      httr2::req_retry(max_tries = 5L, backoff = ~ 3) |>
+      httr2::req_retry(max_tries = 5L, backoff = ~3) |>
       httr2::req_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
@@ -353,14 +387,20 @@ ensembl_variants <- function(chrom, start, end,
   need <- c("id", "seq_region_name", "start", "alleles")
   missing <- setdiff(need, names(df))
   if (length(missing)) {
-    rlang::abort(glue::glue(gettext(
-      "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')} - the Ensembl REST schema may have changed.")))
+    rlang::abort(c(
+      glue::glue(gettext(
+        "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}."
+      )),
+      i = gettext("The Ensembl REST schema may have changed.")
+    ))
   }
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
   df |>
-    dplyr::transmute(id = .data$id, chrom = ath_chrom(.data$seq_region_name),
-                     pos = as.integer(.data$start), ref_genome = .data$alleles,
-                     consequence = .data$consequence_type)
+    dplyr::transmute(
+      id = .data$id, chrom = ath_chrom(.data$seq_region_name),
+      pos = as.integer(.data$start), ref_genome = .data$alleles,
+      consequence = .data$consequence_type
+    )
 }
 
 #' Extract a DNA window centred on a SNP as a DNAString
@@ -409,11 +449,13 @@ strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
 so_rank <- function(consequence, impact = NULL) {
   term_rank <- purrr::map_int(consequence, function(x) {
     toks <- stringr::str_trim(stringr::str_split(x, ",")[[1L]])
-    r    <- SO_TERM_RANK[toks]
-    r    <- r[!is.na(r)]
+    r <- SO_TERM_RANK[toks]
+    r <- r[!is.na(r)]
     if (length(r)) min(unname(r)) else SO_RANK_OTHER
   })
-  if (is.null(impact)) return(term_rank)
+  if (is.null(impact)) {
+    return(term_rank)
+  }
   impact_rank <- unname(IMPACT_RANK[match(toupper(impact), names(IMPACT_RANK))])
   dplyr::coalesce(impact_rank, term_rank)
 }
@@ -428,10 +470,15 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
   anchor <- as_anchor(pos, ref_len, strand)
   lo <- if (identical(strand, "+")) anchor - k + 1L else anchor
   hi <- if (identical(strand, "+")) anchor else anchor + k - 1L
-  if (lo < 1L || hi > n) return(NA_character_)
+  if (lo < 1L || hi > n) {
+    return(NA_character_)
+  }
   seg <- get_region(genome, chrom, lo, hi)
-  if (identical(strand, "+")) as.character(seg)
-  else as.character(Biostrings::reverseComplement(seg))
+  if (identical(strand, "+")) {
+    as.character(seg)
+  } else {
+    as.character(Biostrings::reverseComplement(seg))
+  }
 }
 
 #' 3'-seed specificity of a would-be AS primer anchored at a variant
@@ -445,9 +492,13 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
                          k = SEED_K, max_mismatch = SEED_MISMATCH, BPPARAM = NULL) {
   s <- seed_seq(genome, chrom, pos, ref_len, strand, k)
-  if (is.na(s)) return(NA_integer_)
-  specificity_of(c(seed = s), genome, k = k, max_mismatch = max_mismatch,
-                 BPPARAM = BPPARAM)$hits
+  if (is.na(s)) {
+    return(NA_integer_)
+  }
+  specificity_of(c(seed = s), genome,
+    k = k, max_mismatch = max_mismatch,
+    BPPARAM = BPPARAM
+  )$hits
 }
 
 #' Choose a designable target variant from a variant table
@@ -495,8 +546,10 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   v <- variants |>
     dplyr::mutate(
       ref_len = purrr::map_int(.data$ref_genome, ~ nchar(.x[1L])),
-      ref = purrr::pmap_chr(list(.data$chrom, .data$pos, .data$ref_len),
-                            function(ch, p, n) as.character(get_region(genome, ch, p, p + n - 1L))),
+      ref = purrr::pmap_chr(
+        list(.data$chrom, .data$pos, .data$ref_len),
+        function(ch, p, n) as.character(get_region(genome, ch, p, p + n - 1L))
+      ),
       # exactly one non-reference allele of the SAME length, else NA (dropped
       # below): a silent "first of several" choice would pick an arbitrary ALT,
       # and unequal lengths are indels, handled separately.
@@ -505,14 +558,15 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
         if (length(other) == 1L && nchar(other) == nchar(ref)) other else NA_character_
       })
     ) |>
-    dplyr::filter(!is.na(.data$alt),
-                  stringr::str_detect(.data$ref, "^[ACGT]+$"),
-                  stringr::str_detect(.data$alt, "^[ACGT]+$"),
-                  # a SNP whose alleles are complementary (A/T, C/G) cannot be told
-                  # apart by a 3'-terminal base (one allele's primer pairs the other
-                  # allele's template), so KASP discrimination collapses - skip them
-                  !(.data$ref_len == 1L &
-                      paste0(pmin(.data$ref, .data$alt), pmax(.data$ref, .data$alt)) %in% c("AT", "CG")))
+    dplyr::filter(
+      !is.na(.data$alt),
+      stringr::str_detect(.data$ref, "^[ACGT]+$"),
+      stringr::str_detect(.data$alt, "^[ACGT]+$"),
+      # a SNP whose alleles are complementary (A/T, C/G) cannot be told
+      # apart by a 3'-terminal base (one allele's primer pairs the other
+      # allele's template), so KASP discrimination collapses - skip them
+      !(.data$ref_len == 1L & paste0(pmin(.data$ref, .data$alt), pmax(.data$ref, .data$alt)) %in% c("AT", "CG"))
+    )
   if (nrow(v) == 0L) rlang::abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
 
   # every variant of the gene (incl. indels): used to penalise targets whose AS
@@ -535,10 +589,13 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
       n_3p = pmin(
         IRanges::countOverlaps(
           IRanges::IRanges(.data$pos - clean_3p + 1L, .data$pos - 1L),
-          IRanges::IRanges(allpos, allpos)),
+          IRanges::IRanges(allpos, allpos)
+        ),
         IRanges::countOverlaps(
           IRanges::IRanges(.data$pos + .data$ref_len, .data$pos + .data$ref_len + clean_3p - 2L),
-          IRanges::IRanges(allpos, allpos)))
+          IRanges::IRanges(allpos, allpos)
+        )
+      )
     ) |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), .data$pos)
 
@@ -554,14 +611,20 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   # one seed per candidate per strand; a stable key carries it through the scan
   seed_tbl <- tidyr::crossing(candidate = short$candidate, strand = c("+", "-")) |>
     dplyr::mutate(
-      seed = purrr::pmap_chr(list(short$chrom[.data$candidate], short$pos[.data$candidate],
-                                  short$ref_len[.data$candidate], .data$strand),
-                             function(ch, p, rl, st) seed_seq(genome, ch, p, rl, st)),
-      key = paste0(.data$candidate, .data$strand)) |>
+      seed = purrr::pmap_chr(
+        list(
+          short$chrom[.data$candidate], short$pos[.data$candidate],
+          short$ref_len[.data$candidate], .data$strand
+        ),
+        function(ch, p, rl, st) seed_seq(genome, ch, p, rl, st)
+      ),
+      key = paste0(.data$candidate, .data$strand)
+    ) |>
     dplyr::filter(!is.na(.data$seed))
   if (nrow(seed_tbl) > 0L) {
     seed_tbl <- specificity_of(stats::setNames(seed_tbl$seed, seed_tbl$key), genome,
-                               BPPARAM = BPPARAM) |>
+      BPPARAM = BPPARAM
+    ) |>
       dplyr::select(key = "primer", "hits") |>
       dplyr::right_join(seed_tbl, by = "key")
   } else {
@@ -574,8 +637,10 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     dplyr::right_join(short, by = "candidate")
 
   short |>
-    dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition),
-                   .data$seed_hits, .data$pos) |>
+    dplyr::arrange(
+      .data$n_3p, .data$rank, dplyr::desc(.data$transition),
+      .data$seed_hits, .data$pos
+    ) |>
     dplyr::slice(1L) |>
     dplyr::select(-"rank", -"ref_genome", -"candidate")
 }
@@ -588,8 +653,8 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' GC fraction and homopolymer-run test
 #' @keywords internal
 #' @noRd
-gc_frac  <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
-has_run  <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
+gc_frac <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
+has_run <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
 
 #' Make a parallel worker able to dispatch on Biostrings objects
 #'
@@ -619,7 +684,7 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
     hits <- character(0)
     for (u in units) {
       pat <- glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
-      m   <- stringr::str_match_all(s, pat)[[1L]]
+      m <- stringr::str_match_all(s, pat)[[1L]]
       if (nrow(m)) hits <- c(hits, m[, 2L])
     }
     unique(hits)
@@ -632,8 +697,9 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 #' @param min_copies tandem copies required for a hit.
 #' @family KASP QC
 #' @export
-has_repeat <- function(seq, units = 2:4, min_copies = 3L)
+has_repeat <- function(seq, units = 2:4, min_copies = 3L) {
   lengths(find_repeats(seq, units, min_copies)) > 0L
+}
 
 #' Inverted repeats / palindromes in a primer (library screen)
 #'
@@ -656,12 +722,15 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
   nm <- names(seq)
   hits <- purrr::map(as.character(seq), function(s) {
     h <- Biostrings::findPalindromes(Biostrings::DNAString(s),
-                                     min.armlength = min_armlength,
-                                     max.looplength = max_looplength,
-                                     max.mismatch  = max_mismatch)
-    tibble::tibble(start = as.integer(IRanges::start(h)),
-                   end   = as.integer(IRanges::end(h)),
-                   width = as.integer(IRanges::width(h)))
+      min.armlength = min_armlength,
+      max.looplength = max_looplength,
+      max.mismatch = max_mismatch
+    )
+    tibble::tibble(
+      start = as.integer(IRanges::start(h)),
+      end = as.integer(IRanges::end(h)),
+      width = as.integer(IRanges::width(h))
+    )
   })
   stats::setNames(hits, nm)
 }
@@ -673,8 +742,9 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 #' @param max_mismatch mismatches allowed in the arms.
 #' @family KASP QC
 #' @export
-has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L)
+has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
   purrr::map_int(find_palindromes(seq, min_armlength, max_looplength, max_mismatch), nrow) > 0L
+}
 
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)
 #'
@@ -684,10 +754,12 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' @family KASP thermodynamics
 #' @export
 primer_tm <- function(seq) {
-  gr  <- TmCalculator::to_genomic_ranges(as.character(seq))
-  res <- TmCalculator::tm_calculate(gr, method = "tm_nn", nn_table = NN_TABLE,
-                                    Na = PCR_COND$Na, Mg = PCR_COND$Mg,
-                                    dNTPs = PCR_COND$dNTPs)
+  gr <- TmCalculator::to_genomic_ranges(as.character(seq))
+  res <- TmCalculator::tm_calculate(gr,
+    method = "tm_nn", nn_table = NN_TABLE,
+    Na = PCR_COND$Na, Mg = PCR_COND$Mg,
+    dNTPs = PCR_COND$dNTPs
+  )
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }
 
@@ -732,12 +804,14 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
     rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
-                   i = gettext("build it with data-raw/install-oligoarrayaux.R")))
+      i = gettext("build it with data-raw/install-oligoarrayaux.R")
+    ))
   }
   as.numeric(DECIPHER::CalculateEfficiencyPCR(
     primer = Biostrings::DNAStringSet(as.character(primers)),
     target = Biostrings::DNAStringSet(as.character(targets)),
-    temp = temp, P = P, ions = ions, taqEfficiency = TRUE))
+    temp = temp, P = P, ions = ions, taqEfficiency = TRUE
+  ))
 }
 
 
@@ -779,29 +853,42 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
   grid <- tidyr::crossing(L = lengths, gap = gaps)
 
   cand <- purrr::pmap(grid, function(L, gap) {
-    iv <- primer_interval(snp_i, strand, L, gap = gap, role = "COM")  # template coords
-    start <- IRanges::start(iv); end <- IRanges::end(iv)
-    if (start < 1L || end > wlen) return(NULL)
+    iv <- primer_interval(snp_i, strand, L, gap = gap, role = "COM") # template coords
+    start <- IRanges::start(iv)
+    end <- IRanges::end(iv)
+    if (start < 1L || end > wlen) {
+      return(NULL)
+    }
     seq_plus <- Biostrings::subseq(window, start, end)
-    com <- if (plus) as.character(Biostrings::reverseComplement(seq_plus))
-           else      as.character(seq_plus)
+    com <- if (plus) {
+      as.character(Biostrings::reverseComplement(seq_plus))
+    } else {
+      as.character(seq_plus)
+    }
     tibble::tibble(com = com, len = L, gap = gap, start = start, end = end)
   }) |>
     purrr::list_rbind() |>
-    dplyr::mutate(com_gc = gc_frac(.data$com),
-                  com_tm = primer_tm(.data$com),
-                  run    = has_run(.data$com),
-                  ssr    = has_repeat(.data$com)) |>
-    dplyr::filter(!.data$run, !.data$ssr,
-                  dplyr::between(.data$com_gc, min_gc, max_gc),
-                  dplyr::between(.data$com_tm, tm_range[1], tm_range[2])) |>
+    dplyr::mutate(
+      com_gc = gc_frac(.data$com),
+      com_tm = primer_tm(.data$com),
+      run = has_run(.data$com),
+      ssr = has_repeat(.data$com)
+    ) |>
+    dplyr::filter(
+      !.data$run, !.data$ssr,
+      dplyr::between(.data$com_gc, min_gc, max_gc),
+      dplyr::between(.data$com_tm, tm_range[1], tm_range[2])
+    ) |>
     dplyr::arrange(abs(.data$com_tm - target_tm))
 
   if (nrow(cand) == 0L) {
     rlang::abort(c(gettext("No common primer passed the filters."),
-                   i = gettext("Widen `tm_range`/GC or increase `flank` in snp_template().")))
+      i = gettext("Widen `tm_range`/GC or increase `flank` in snp_template().")
+    ))
   }
-  cand |> dplyr::slice_head(n = n) |> dplyr::mutate(rank = dplyr::row_number())
+  cand |>
+    dplyr::slice_head(n = n) |>
+    dplyr::mutate(rank = dplyr::row_number())
 }
 
 
@@ -838,12 +925,12 @@ as_target <- function(seg, strand) {
 #' @noRd
 make_as_primer <- function(window, anchor, length, allele, strand = "+",
                            stab_at = NULL, stab_base = NULL) {
-  seg <- as_window(window, anchor, length, strand)       # DNAString, contains the variant
-  blk <- block_in_seg(nchar(allele), length, strand)     # variant block inside `seg`
-  p   <- Biostrings::replaceAt(seg, blk, allele)
+  seg <- as_window(window, anchor, length, strand) # DNAString, contains the variant
+  blk <- block_in_seg(nchar(allele), length, strand) # variant block inside `seg`
+  p <- Biostrings::replaceAt(seg, blk, allele)
   if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
   if (!is.null(stab_at)) {
-    i <- length - stab_at + 1L                            # 3'-relative -> 5'-index
+    i <- length - stab_at + 1L # 3'-relative -> 5'-index
     p <- Biostrings::replaceAt(p, IRanges::IRanges(i, i), stab_base)
   }
   as.character(p)
@@ -882,8 +969,9 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   # the one the (perfectly matching) primer already carries there.
   mismatch_bases <- function(L, k, strand) {
     base_p <- make_as_primer(window, as_anchor(v_start, ref_len, strand), L, ref,
-                             strand = strand)
-    cur    <- substr(base_p, L - k + 1L, L - k + 1L)
+      strand = strand
+    )
+    cur <- substr(base_p, L - k + 1L, L - k + 1L)
     setdiff(c("A", "C", "G", "T"), cur)
   }
 
@@ -891,13 +979,14 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   cfgs <- tidyr::crossing(strand = strands, as_length = lengths, stab_at = stab_ats) |>
     dplyr::mutate(stab_base = purrr::pmap(
       list(.data$as_length, .data$stab_at, .data$strand),
-      function(L, k, st) if (is.na(k)) NA_character_ else mismatch_bases(L, k, st))) |>
+      function(L, k, st) if (is.na(k)) NA_character_ else mismatch_bases(L, k, st)
+    )) |>
     tidyr::unnest_longer("stab_base")
 
   # build all primer/target pairs and score them in ONE batched DECIPHER call
   pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base) {
     L <- as_length
-    k <- if (is.na(stab_at))   NULL else stab_at
+    k <- if (is.na(stab_at)) NULL else stab_at
     b <- if (is.na(stab_base)) NULL else stab_base
     anchor <- as_anchor(v_start, ref_len, strand)
     # binding window on the plus strand, and the same window carrying the ALT allele
@@ -912,45 +1001,59 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     # so a swap cannot silently invert the discrimination metric.
     specs <- tibble::tibble(
       which  = c("ref_on", "ref_off", "alt_on", "alt_off"),
-      primer = c(ref_p,    ref_p,     alt_p,    alt_p),
-      target = c(t_ref,    t_alt,     t_alt,    t_ref))
-    dplyr::mutate(specs, strand = strand, as_length = L,
-                  stab_at = stab_at, stab_base = stab_base)
+      primer = c(ref_p, ref_p, alt_p, alt_p),
+      target = c(t_ref, t_alt, t_alt, t_ref)
+    )
+    dplyr::mutate(specs,
+      strand = strand, as_length = L,
+      stab_at = stab_at, stab_base = stab_base
+    )
   }) |>
     purrr::list_rbind()
   pairs$eff <- pcr_efficiency(pairs$primer, pairs$target, temp = temp, P = P, ions = ions)
 
   wide <- pairs |>
-    dplyr::select("strand","as_length","stab_at","stab_base","which","eff") |>
+    dplyr::select("strand", "as_length", "stab_at", "stab_base", "which", "eff") |>
     tidyr::pivot_wider(names_from = "which", values_from = "eff") |>
-    dplyr::mutate(discrimination = ((.data$ref_on - .data$ref_off) +
-                                    (.data$alt_on - .data$alt_off)) / 2)
+    dplyr::mutate(discrimination = ((.data$ref_on - .data$ref_off) + (.data$alt_on - .data$alt_off)) / 2)
 
   # attach sequences/metrics for the surviving configurations
   wide |>
     dplyr::rowwise() |>
     dplyr::mutate(
       ref_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
-                                  .data$as_length, ref, strand = .data$strand,
-                                  if (is.na(.data$stab_at)) NULL else .data$stab_at,
-                                  if (is.na(.data$stab_base)) NULL else .data$stab_base),
+        .data$as_length, ref,
+        strand = .data$strand,
+        if (is.na(.data$stab_at)) NULL else .data$stab_at,
+        if (is.na(.data$stab_base)) NULL else .data$stab_base
+      ),
       alt_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
-                                  .data$as_length, alt, strand = .data$strand,
-                                  if (is.na(.data$stab_at)) NULL else .data$stab_at,
-                                  if (is.na(.data$stab_base)) NULL else .data$stab_base),
+        .data$as_length, alt,
+        strand = .data$strand,
+        if (is.na(.data$stab_at)) NULL else .data$stab_at,
+        if (is.na(.data$stab_base)) NULL else .data$stab_base
+      ),
       # template-local footprint of the AS primer (genomic coords are added by
       # the caller, which knows the window offset)
       tmpl_start = IRanges::start(primer_interval(as_anchor(v_start, ref_len, .data$strand),
-                                                  .data$strand, .data$as_length, role = "AS")),
-      tmpl_end   = IRanges::end(primer_interval(as_anchor(v_start, ref_len, .data$strand),
-                                                .data$strand, .data$as_length, role = "AS"))
+        .data$strand, .data$as_length,
+        role = "AS"
+      )),
+      tmpl_end = IRanges::end(primer_interval(as_anchor(v_start, ref_len, .data$strand),
+        .data$strand, .data$as_length,
+        role = "AS"
+      ))
     ) |>
     dplyr::ungroup() |>
-    dplyr::mutate(gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer),
-                  dg_3p = terminal_dg(.data$ref_primer)) |>
-    dplyr::select("strand","as_length","stab_at","stab_base","ref_primer","alt_primer",
-                  "ref_on","ref_off","alt_on","alt_off","discrimination","tm","gc",
-                  "dg_3p","tmpl_start","tmpl_end") |>
+    dplyr::mutate(
+      gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer),
+      dg_3p = terminal_dg(.data$ref_primer)
+    ) |>
+    dplyr::select(
+      "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
+      "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
+      "dg_3p", "tmpl_start", "tmpl_end"
+    ) |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
 }
 
@@ -972,13 +1075,19 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 #' @export
 allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
   ref_len <- nchar(ref)
-  left  <- if (snp_i > 1L)                  Biostrings::subseq(ref_tmpl, 1L, snp_i - 1L)               else Biostrings::DNAString("")
-  right <- if (snp_i + ref_len <= length(ref_tmpl)) Biostrings::subseq(ref_tmpl, snp_i + ref_len, length(ref_tmpl)) else Biostrings::DNAString("")
-  list(ref = ref_tmpl,
-       alt = Biostrings::xscat(left, Biostrings::DNAString(alt), right),
-       delta = nchar(alt) - ref_len,
-       block_ref = Biostrings::DNAString(ref),
-       block_alt = Biostrings::DNAString(alt))
+  left <- if (snp_i > 1L) Biostrings::subseq(ref_tmpl, 1L, snp_i - 1L) else Biostrings::DNAString("")
+  right <- if (snp_i + ref_len <= length(ref_tmpl)) {
+    Biostrings::subseq(ref_tmpl, snp_i + ref_len, length(ref_tmpl))
+  } else {
+    Biostrings::DNAString("")
+  }
+  list(
+    ref = ref_tmpl,
+    alt = Biostrings::xscat(left, Biostrings::DNAString(alt), right),
+    delta = nchar(alt) - ref_len,
+    block_ref = Biostrings::DNAString(ref),
+    block_alt = Biostrings::DNAString(alt)
+  )
 }
 
 #' Allele-specific primer candidates for an insertion/deletion (junction scan)
@@ -1004,9 +1113,12 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     strands = c("+", "-"), lengths = 20:27,
                                     temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
-  ref_len <- nchar(ref); alt_len <- nchar(alt)
+  ref_len <- nchar(ref)
+  alt_len <- nchar(alt)
   if (ref_len == alt_len) {
-    rlang::abort(gettext("design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."))
+    rlang::abort(gettext(
+      "design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."
+    ))
   }
   at <- allele_templates(ref_tmpl, snp_i, ref, alt)
 
@@ -1015,44 +1127,64 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
   # block are identical on both alleles (no discrimination).
   substitute_block <- function(tmpl, other_block, block_len, s, e) {
     block_end <- snp_i + block_len - 1L
-    if (s > block_end || e < snp_i) return(Biostrings::subseq(tmpl, s, e))
-    left  <- if (s < snp_i)     Biostrings::subseq(tmpl, s, snp_i - 1L)    else Biostrings::DNAString("")
+    if (s > block_end || e < snp_i) {
+      return(Biostrings::subseq(tmpl, s, e))
+    }
+    left <- if (s < snp_i) Biostrings::subseq(tmpl, s, snp_i - 1L) else Biostrings::DNAString("")
     right <- if (e > block_end) Biostrings::subseq(tmpl, block_end + 1L, e) else Biostrings::DNAString("")
     Biostrings::xscat(left, other_block, right)
   }
 
   build <- function(allele, tmpl, other_block, block_len, strand, L, e) {
-    if (identical(strand, "+")) { s <- e - L + 1L; ee <- e } else { s <- e; ee <- e + L - 1L }
-    if (s < 1L || ee > length(tmpl)) return(NULL)
+    if (identical(strand, "+")) {
+      s <- e - L + 1L
+      ee <- e
+    } else {
+      s <- e
+      ee <- e + L - 1L
+    }
+    if (s < 1L || ee > length(tmpl)) {
+      return(NULL)
+    }
     seg <- Biostrings::subseq(tmpl, s, ee)
-    primer <- if (identical(strand, "+")) as.character(seg)
-              else as.character(Biostrings::reverseComplement(seg))
+    primer <- if (identical(strand, "+")) {
+      as.character(seg)
+    } else {
+      as.character(Biostrings::reverseComplement(seg))
+    }
     off_seg <- substitute_block(tmpl, other_block, block_len, s, ee)
-    tibble::tibble(allele = allele, strand = strand, as_length = L,
-                   as_start = s, as_end = ee, primer = primer,
-                   on = as.character(as_target(seg, strand)),
-                   off = as.character(as_target(off_seg, strand)))
+    tibble::tibble(
+      allele = allele, strand = strand, as_length = L,
+      as_start = s, as_end = ee, primer = primer,
+      on = as.character(as_target(seg, strand)),
+      off = as.character(as_target(off_seg, strand))
+    )
   }
 
   cand <- purrr::pmap_dfr(
     tidyr::crossing(allele = c("ref", "alt"), strand = strands, as_length = lengths),
     function(allele, strand, as_length) {
-      tmpl  <- if (allele == "ref") at$ref else at$alt
-      oblk  <- if (allele == "ref") at$block_alt else at$block_ref
-      blen  <- if (allele == "ref") ref_len else alt_len
+      tmpl <- if (allele == "ref") at$ref else at$alt
+      oblk <- if (allele == "ref") at$block_alt else at$block_ref
+      blen <- if (allele == "ref") ref_len else alt_len
       # 3'-end placements: from one base before the block to one past its end
       ends <- seq.int(max(1L, snp_i - 1L), min(length(tmpl), snp_i + blen))
       purrr::map_dfr(ends, function(e) build(allele, tmpl, oblk, blen, strand, as_length, e))
-    })
+    }
+  )
   if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
 
-  cand$on_eff  <- pcr_efficiency(cand$primer, cand$on,  temp = temp, P = P, ions = ions)
+  cand$on_eff <- pcr_efficiency(cand$primer, cand$on, temp = temp, P = P, ions = ions)
   cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions)
   cand |>
-    dplyr::mutate(discrimination = .data$on_eff - .data$off_eff,
-                  tm = primer_tm(.data$primer), gc = gc_frac(.data$primer)) |>
-    dplyr::select("allele","strand","as_length","as_start","as_end","primer",
-                  "on_eff","off_eff","discrimination","tm","gc") |>
+    dplyr::mutate(
+      discrimination = .data$on_eff - .data$off_eff,
+      tm = primer_tm(.data$primer), gc = gc_frac(.data$primer)
+    ) |>
+    dplyr::select(
+      "allele", "strand", "as_length", "as_start", "as_end", "primer",
+      "on_eff", "off_eff", "discrimination", "tm", "gc"
+    ) |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
 }
 
@@ -1072,8 +1204,9 @@ primer_thermo <- function(primer) {
     len          = nchar(s),
     tm           = primer_tm(s),
     gc           = gc_frac(s),
-    hairpin_dg   = oligo_dg(s),        # hybrid-ss-min, kcal/mol
-    terminal_dg  = terminal_dg(s))     # 3'-terminal n-mer duplex, kcal/mol
+    hairpin_dg   = oligo_dg(s), # hybrid-ss-min, kcal/mol
+    terminal_dg  = terminal_dg(s)
+  ) # 3'-terminal n-mer duplex, kcal/mol
 }
 
 #' Duplex free energy of a primer's 3'-terminal n-mer (3'-end stability)
@@ -1087,7 +1220,9 @@ primer_thermo <- function(primer) {
 #' @export
 terminal_dg <- function(primer, n = 5L) {
   vapply(as.character(primer), function(s) {
-    if (nchar(s) < n) return(NA_real_)
+    if (nchar(s) < n) {
+      return(NA_real_)
+    }
     mer <- substr(s, nchar(s) - n + 1L, nchar(s))
     oligo_dg(mer, as.character(Biostrings::reverseComplement(Biostrings::DNAString(mer))))
   }, numeric(1), USE.NAMES = FALSE)
@@ -1105,8 +1240,10 @@ terminal_dg <- function(primer, n = 5L) {
 #' @export
 wobble_mismatch <- function(on_allele, off_allele) {
   faced <- as.character(Biostrings::complement(Biostrings::DNAStringSet(toupper(off_allele))))
-  pair  <- purrr::map2_chr(toupper(on_allele), faced,
-                           ~ paste(sort(c(.x, .y)), collapse = ""))
+  pair <- purrr::map2_chr(
+    toupper(on_allele), faced,
+    ~ paste(sort(c(.x, .y)), collapse = "")
+  )
   pair %in% c("GT", "AC")
 }
 
@@ -1125,12 +1262,17 @@ dimer_thermo <- function(primers, BPPARAM = NULL) {
   nm <- names(primers)
   # upper triangle (i <= j) is all DISTINCT pairs; the full grid is then a join
   grid <- tidyr::crossing(a = nm, b = nm) |>
-    dplyr::mutate(lo = pmin(match(.data$a, nm), match(.data$b, nm)),
-                  hi = pmax(match(.data$a, nm), match(.data$b, nm)))
+    dplyr::mutate(
+      lo = pmin(match(.data$a, nm), match(.data$b, nm)),
+      hi = pmax(match(.data$a, nm), match(.data$b, nm))
+    )
   keys <- dplyr::distinct(grid, .data$lo, .data$hi)
-  one  <- function(k) oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]])
-  keys$dg <- if (is.null(BPPARAM)) purrr::map_dbl(seq_len(nrow(keys)), one)
-             else unlist(BiocParallel::bplapply(seq_len(nrow(keys)), one, BPPARAM = BPPARAM))
+  one <- function(k) oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]])
+  keys$dg <- if (is.null(BPPARAM)) {
+    purrr::map_dbl(seq_len(nrow(keys)), one)
+  } else {
+    unlist(BiocParallel::bplapply(seq_len(nrow(keys)), one, BPPARAM = BPPARAM))
+  }
   grid |>
     dplyr::left_join(keys, by = c("lo", "hi")) |>
     dplyr::transmute(a = .data$a, b = .data$b, dg = .data$dg)
@@ -1162,7 +1304,8 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
                              BPPARAM = NULL) {
   if (inherits(genome, "kasp_genome")) {
     rlang::abort(c(gettext("specificity_seed() needs an in-memory DNAStringSet."),
-                   i = gettext("For an indexed genome use specificity_of()/specificity_blast().")))
+      i = gettext("For an indexed genome use specificity_of()/specificity_blast().")
+    ))
   }
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (max_mismatch == 0L) {
@@ -1175,14 +1318,19 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
     count_chr <- function(i) {
       worker_biostrings()
       chr <- genome[[i]]
-      cf <- vapply(seq_along(fwd), function(j)
-        Biostrings::countPattern(fwd[[j]], chr, max.mismatch = max_mismatch), numeric(1))
-      cr <- vapply(seq_along(rev), function(j)
-        Biostrings::countPattern(rev[[j]], chr, max.mismatch = max_mismatch), numeric(1))
+      cf <- vapply(seq_along(fwd), function(j) {
+        Biostrings::countPattern(fwd[[j]], chr, max.mismatch = max_mismatch)
+      }, numeric(1))
+      cr <- vapply(seq_along(rev), function(j) {
+        Biostrings::countPattern(rev[[j]], chr, max.mismatch = max_mismatch)
+      }, numeric(1))
       cf + cr
     }
-    per_chr <- if (is.null(BPPARAM)) lapply(seq_along(genome), count_chr)
-               else BiocParallel::bplapply(seq_along(genome), count_chr, BPPARAM = BPPARAM)
+    per_chr <- if (is.null(BPPARAM)) {
+      lapply(seq_along(genome), count_chr)
+    } else {
+      BiocParallel::bplapply(seq_along(genome), count_chr, BPPARAM = BPPARAM)
+    }
     hits <- Reduce(`+`, per_chr)
   }
   tibble::tibble(primer = names(primers), seed = seeds, hits = as.integer(hits))
@@ -1192,12 +1340,12 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
 #' @keywords internal
 #' @noRd
 exact_seed_counts <- function(seeds, genome) {
-  rc   <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(seeds)))
+  rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(seeds)))
   pats <- c(seeds, rc)
   keep <- !duplicated(pats)
   # vcountPDict returns one row per dictionary element, in the given order
-  m    <- Biostrings::vcountPDict(Biostrings::PDict(pats[keep]), genome)
-  cnt  <- stats::setNames(as.integer(rowSums(m)), pats[keep])
+  m <- Biostrings::vcountPDict(Biostrings::PDict(pats[keep]), genome)
+  cnt <- stats::setNames(as.integer(rowSums(m)), pats[keep])
   as.integer(cnt[seeds] + cnt[rc])
 }
 
@@ -1207,8 +1355,8 @@ exact_seed_counts <- function(seeds, genome) {
 #' each product the forward/reverse pair generates, chromosome by chromosome.
 #' A KASP test must amplify exactly one product per allele.
 #'
-#' @param F_primer forward primer (5'->3'), binds the plus strand.
-#' @param R_primer reverse primer (5'->3').
+#' @param f_primer forward primer (5'->3'), binds the plus strand.
+#' @param r_primer reverse primer (5'->3').
 #' @param genome DNAStringSet.
 #' @param max_mismatch mismatches tolerated in the primer match.
 #' @param BPPARAM optional `BiocParallel` backend; the virtual PCR is split by
@@ -1216,22 +1364,30 @@ exact_seed_counts <- function(seeds, genome) {
 #' @return tibble `chrom`, `start`, `end`, `width` (one row per product).
 #' @family KASP specificity
 #' @export
-in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM = NULL) {
-  Fp <- Biostrings::DNAString(F_primer)
-  Rp <- Biostrings::DNAString(R_primer)
+in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM = NULL) {
+  fwd <- Biostrings::DNAString(f_primer)
+  rev <- Biostrings::DNAString(r_primer)
   chroms <- genome_chroms(genome)
   scan_one <- function(nm) {
     worker_biostrings()
     # genome_seq() reads one sequence at a time, so an indexed `kasp_genome` stays
     # out of RAM; a DNAStringSet is simply subscripted
-    pr <- Biostrings::matchProbePair(Fp, Rp, genome_seq(genome, nm),
-                                     max.mismatch = max_mismatch, verbose = FALSE)
-    if (is.null(pr) || length(pr) == 0L) return(NULL)
-    tibble::tibble(chrom = nm, start = IRanges::start(pr), end = IRanges::end(pr),
-                   width = IRanges::width(pr))
+    pr <- Biostrings::matchProbePair(fwd, rev, genome_seq(genome, nm),
+      max.mismatch = max_mismatch, verbose = FALSE
+    )
+    if (is.null(pr) || length(pr) == 0L) {
+      return(NULL)
+    }
+    tibble::tibble(
+      chrom = nm, start = IRanges::start(pr), end = IRanges::end(pr),
+      width = IRanges::width(pr)
+    )
   }
-  res <- if (is.null(BPPARAM)) lapply(chroms, scan_one)
-         else BiocParallel::bplapply(chroms, scan_one, BPPARAM = BPPARAM)
+  res <- if (is.null(BPPARAM)) {
+    lapply(chroms, scan_one)
+  } else {
+    BiocParallel::bplapply(chroms, scan_one, BPPARAM = BPPARAM)
+  }
   purrr::list_rbind(res)
 }
 
@@ -1247,20 +1403,30 @@ in_silico_pcr <- function(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM
 #' @family KASP specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
-  aa      <- assay$assay[1L, ]
+  aa <- assay$assay[1L, ]
   ref_len <- nchar(assay$snp$ref)
   # template-local anchor (assay$template$seq is the small design window)
-  anchor  <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
-  seed <- c(AS_ref = make_as_primer(assay$template$seq, anchor,
-                                    aa$as_len, assay$snp$ref, strand = aa$strand),
-            AS_alt = make_as_primer(assay$template$seq, anchor,
-                                    aa$as_len, assay$snp$alt, strand = aa$strand))
+  anchor <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
+  seed <- c(
+    AS_ref = make_as_primer(assay$template$seq, anchor,
+      aa$as_len, assay$snp$ref,
+      strand = aa$strand
+    ),
+    AS_alt = make_as_primer(assay$template$seq, anchor,
+      aa$as_len, assay$snp$alt,
+      strand = aa$strand
+    )
+  )
   purrr::imap_dfr(seed, function(as_p, nm) {
     fr <- if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
-    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome, max_mismatch = max_mismatch,
-                           BPPARAM = BPPARAM)
-    tibble::tibble(primer = nm, n_products = nrow(prods),
-                   width = if (nrow(prods)) max(prods$width) else NA_integer_)
+    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome,
+      max_mismatch = max_mismatch,
+      BPPARAM = BPPARAM
+    )
+    tibble::tibble(
+      primer = nm, n_products = nrow(prods),
+      width = if (nrow(prods)) max(prods$width) else NA_integer_
+    )
   })
 }
 
@@ -1270,15 +1436,27 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
 #' @family KASP specificity
 #' @export
 blast_primers <- function(primers, db_path) {
-  if (is.null(db_path) || !fs::file_exists(db_path)) return(NULL)
+  if (is.null(db_path) || !fs::file_exists(db_path)) {
+    return(NULL)
+  }
   rlang::check_installed("rBLAST")
   query <- Biostrings::DNAStringSet(stats::setNames(primers, names(primers)))
-  out <- tryCatch({
-    bl <- rBLAST::blast(db_path, type = "blastn")
-    stats::predict(bl, newdata = query,
-                   BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no"))
-  }, error = function(e) { rlang::warn(glue::glue(gettext("BLAST failed: {conditionMessage(e)}"))); NULL })
-  if (is.null(out) || nrow(out) == 0L) return(out)
+  out <- tryCatch(
+    {
+      bl <- rBLAST::blast(db_path, type = "blastn")
+      stats::predict(bl,
+        newdata = query,
+        BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no")
+      )
+    },
+    error = function(e) {
+      rlang::warn(glue::glue(gettext("BLAST failed: {conditionMessage(e)}")))
+      NULL
+    }
+  )
+  if (is.null(out) || nrow(out) == 0L) {
+    return(out)
+  }
   tibble::as_tibble(out)
 }
 
@@ -1363,78 +1541,96 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
                                 run_blast = FALSE, BPPARAM = NULL) {
-  tmpl    <- snp_template(genome, snp$chrom, snp$pos, flank)
-  vpos    <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
+  tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
+  vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   ref_len <- nchar(snp$ref)
   alt_len <- nchar(snp$alt)
   is_indel <- ref_len != alt_len
-  off     <- snp$pos - flank           # template coordinate -> genomic coordinate
-  vblock  <- seq.int(snp$pos, snp$pos + max(ref_len, alt_len) - 1L)  # the target's own bases
+  off <- snp$pos - flank # template coordinate -> genomic coordinate
+  vblock <- seq.int(snp$pos, snp$pos + max(ref_len, alt_len) - 1L) # the target's own bases
 
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
   # the REF AS primer's 3'-terminal base is the variant anchor for its strand
   anchor_of <- function(strand) as_anchor(snp$pos, ref_len, strand)
-  com_iv    <- function(strand, L, gap) primer_interval(anchor_of(strand), strand, L, gap = gap, role = "COM")
+  com_iv <- function(strand, L, gap) primer_interval(anchor_of(strand), strand, L, gap = gap, role = "COM")
 
   # candidate AS primers, unified to one schema for either variant kind:
   #   ref_primer/alt_primer, ref_on/ref_off/alt_on/alt_off, discrimination,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
     as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-                                 strands = strands) |>
-      dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
-                    dplyr::between(.data$tm, tm_range[1], tm_range[2]),
-                    !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
-      dplyr::mutate(as_start     = .data$tmpl_start + off,
-                    as_end       = .data$tmpl_end   + off,
-                    as_alt_start = .data$as_start,
-                    as_alt_end   = .data$as_end,
-                    wobble       = wobble_mismatch(snp$ref, snp$alt))
+      strands = strands
+    ) |>
+      dplyr::filter(
+        dplyr::between(.data$gc, min_gc, max_gc),
+        dplyr::between(.data$tm, tm_range[1], tm_range[2]),
+        !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)
+      ) |>
+      dplyr::mutate(
+        as_start = .data$tmpl_start + off,
+        as_end = .data$tmpl_end + off,
+        as_alt_start = .data$as_start,
+        as_alt_end = .data$as_end,
+        wobble = wobble_mismatch(snp$ref, snp$alt)
+      )
   } else {
     ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-                                   strands = strands) |>
-      dplyr::filter(dplyr::between(.data$gc, min_gc, max_gc),
-                    dplyr::between(.data$tm, tm_range[1], tm_range[2]),
-                    !has_run(.data$primer), !has_repeat(.data$primer))
+      strands = strands
+    ) |>
+      dplyr::filter(
+        dplyr::between(.data$gc, min_gc, max_gc),
+        dplyr::between(.data$tm, tm_range[1], tm_range[2]),
+        !has_run(.data$primer), !has_repeat(.data$primer)
+      )
     if (nrow(ind) == 0L) rlang::abort(gettext("No indel AS primer passed the GC/Tm filter."))
     # alt-template coordinate -> REF/genomic coordinate (block clamps to REF)
-    alt_to_ref <- function(x) dplyr::case_when(
-      x < tmpl$snp_i                    ~ x,
-      x <= tmpl$snp_i + alt_len - 1L    ~ pmin(x, tmpl$snp_i + ref_len - 1L),
-      TRUE                              ~ x - (alt_len - ref_len))
-    top <- function(a) ind |>
-      dplyr::filter(.data$allele == a) |>
-      dplyr::group_by(.data$strand) |>
-      dplyr::slice_max(.data$discrimination, n = 1L, with_ties = FALSE) |>
-      dplyr::ungroup()
-    ref_p <- top("ref"); alt_p <- top("alt")
+    alt_to_ref <- function(x) {
+      dplyr::case_when(
+        x < tmpl$snp_i ~ x,
+        x <= tmpl$snp_i + alt_len - 1L ~ pmin(x, tmpl$snp_i + ref_len - 1L),
+        TRUE ~ x - (alt_len - ref_len)
+      )
+    }
+    top <- function(a) {
+      ind |>
+        dplyr::filter(.data$allele == a) |>
+        dplyr::group_by(.data$strand) |>
+        dplyr::slice_max(.data$discrimination, n = 1L, with_ties = FALSE) |>
+        dplyr::ungroup()
+    }
+    ref_p <- top("ref")
+    alt_p <- top("alt")
     as_cand <- dplyr::inner_join(ref_p, alt_p, by = "strand", suffix = c("_ref", "_alt")) |>
       dplyr::transmute(
         strand = .data$strand,
-        as_length    = .data$as_length_ref,
-        ref_primer   = .data$primer_ref,
-        alt_primer   = .data$primer_alt,
-        ref_on       = .data$on_eff_ref,  ref_off  = .data$off_eff_ref,
-        alt_on       = .data$on_eff_alt,  alt_off  = .data$off_eff_alt,
+        as_length = .data$as_length_ref,
+        ref_primer = .data$primer_ref,
+        alt_primer = .data$primer_alt,
+        ref_on = .data$on_eff_ref, ref_off = .data$off_eff_ref,
+        alt_on = .data$on_eff_alt, alt_off = .data$off_eff_alt,
         discrimination = (.data$discrimination_ref + .data$discrimination_alt) / 2,
         tm = .data$tm_ref, gc = .data$gc_ref,
         dg_3p = terminal_dg(.data$primer_ref),
-        wobble = NA,                                   # undefined for length-changing alleles
-        as_start     = .data$as_start_ref + off,
-        as_end       = .data$as_end_ref   + off,
+        wobble = NA, # undefined for length-changing alleles
+        as_start = .data$as_start_ref + off,
+        as_end = .data$as_end_ref + off,
         as_alt_start = alt_to_ref(.data$as_start_alt) + off,
-        as_alt_end   = alt_to_ref(.data$as_end_alt)   + off)
+        as_alt_end = alt_to_ref(.data$as_end_alt) + off
+      )
   }
 
   # clean-3' window and footprint variant load come from the stored interval
   as_cand <- as_cand |>
     dplyr::mutate(
       win3p_start = dplyr::if_else(.data$strand == "+", .data$as_end - clean_3p + 1L, .data$as_start + 1L),
-      win3p_end   = dplyr::if_else(.data$strand == "+", .data$as_end - 1L,           .data$as_start + clean_3p - 1L),
-      n_3p  = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b)
-                count_variants_in(IRanges::IRanges(a, b), vpos, vblock)),
-      n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b)
-                count_variants_in(IRanges::IRanges(a, b), vpos, vblock)))
+      win3p_end = dplyr::if_else(.data$strand == "+", .data$as_end - 1L, .data$as_start + clean_3p - 1L),
+      n_3p = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b) {
+        count_variants_in(IRanges::IRanges(a, b), vpos, vblock)
+      }),
+      n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b) {
+        count_variants_in(IRanges::IRanges(a, b), vpos, vblock)
+      })
+    )
 
   # "N-masking" as a hard constraint: optionally drop candidates sitting on
   # other catalogued variants (their footprint would be ambiguous)
@@ -1443,7 +1639,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   if (nrow(as_cand) == 0L) {
     rlang::abort(glue::glue(gettext(
-      "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants}).")))
+      "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants})."
+    )))
   }
 
   # prioritise: clean 3' window, then minimal footprint variant load, then
@@ -1452,79 +1649,109 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # scan stays a tie-break and does not dominate the cost; an indexed genome
   # (no in-memory DNAStringSet) skips it.
   ordered <- as_cand |>
-    dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-                   .data$wobble, abs(.data$tm - AS_TM_TARGET), .data$dg_3p, .data$as_length) |>
+    dplyr::arrange(
+      .data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
+      .data$wobble, abs(.data$tm - AS_TM_TARGET), .data$dg_3p, .data$as_length
+    ) |>
     dplyr::mutate(.as_row = dplyr::row_number())
   ordered$seed_hits <- NA_integer_
   if (specificity_candidates > 0L && !inherits(genome, "kasp_genome")) {
     short <- dplyr::slice_head(ordered, n = specificity_candidates)
     seeds <- stats::setNames(
       substr(short$ref_primer, nchar(short$ref_primer) - SEED_K + 1L, nchar(short$ref_primer)),
-      short$.as_row)
-    hits <- specificity_seed(seeds, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
-                             BPPARAM = BPPARAM)$hits
+      short$.as_row
+    )
+    hits <- specificity_seed(seeds, genome,
+      k = SEED_K, max_mismatch = SEED_MISMATCH,
+      BPPARAM = BPPARAM
+    )$hits
     ordered$seed_hits[short$.as_row] <- hits
   }
   best_as <- ordered |>
-    dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
-                   .data$wobble, .data$seed_hits, abs(.data$tm - AS_TM_TARGET),
-                   .data$dg_3p, .data$as_length) |>
+    dplyr::arrange(
+      .data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
+      .data$wobble, .data$seed_hits, abs(.data$tm - AS_TM_TARGET),
+      .data$dg_3p, .data$as_length
+    ) |>
     dplyr::slice_head(n = 1L)
-  as_cand <- dplyr::select(ordered, - ".as_row")
+  as_cand <- dplyr::select(ordered, -".as_row")
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
-    rlang::warn(glue::glue(gettext(
-      "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt (on strand {best_as$strand}) - allele specificity may not hold across accessions.")))
+    rlang::warn(c(
+      glue::glue(gettext(
+        "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt."
+      )),
+      i = glue::glue(gettext("Allele specificity on strand {best_as$strand} may not hold across accessions."))
+    ))
   }
   if (!is.na(best_as$n_var) && best_as$n_var > 0L) {
-    rlang::warn(glue::glue(gettext(
-      "AS primer overlaps {best_as$n_var} other variant(s) in its footprint (no candidate with fewer passed GC/Tm/discrimination filters).")))
+    rlang::warn(c(
+      glue::glue(gettext("AS primer overlaps {best_as$n_var} other variant(s) in its footprint.")),
+      i = gettext("No candidate with fewer passed the GC/Tm/discrimination filters.")
+    ))
   }
   if (best_as$discrimination < min_disc) {
-    rlang::warn(glue::glue(gettext(
-      "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}; consider widening `strands` or `tm_range`.")))
+    rlang::warn(c(
+      glue::glue(gettext(
+        "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}."
+      )),
+      i = gettext("Consider widening `strands` or `tm_range`.")
+    ))
   }
 
   # COM: design on the SAME strand as the winning AS primer so the amplicon
   # closes.  design_common_primers() works in TEMPLATE coordinates, so its
   # anchor is the template-local variant anchor (not the genomic one).
   common <- design_common_primers(tmpl$seq, as_anchor(tmpl$snp_i, ref_len, best_as$strand),
-                                  strand = best_as$strand, tm_range = tm_range) |>
-    dplyr::mutate(com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
-                  com_hairpin   = purrr::map_dbl(.data$com, ~ oligo_dg(.x)))
+    strand = best_as$strand, tm_range = tm_range
+  ) |>
+    dplyr::mutate(
+      com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
+      com_hairpin = purrr::map_dbl(.data$com, ~ oligo_dg(.x))
+    )
 
   as_tm_mean <- mean(best_as$tm)
 
   assays <- common |>
     dplyr::mutate(
       strand = best_as$strand,
-      com_start = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
-                     function(st, L, g) IRanges::start(com_iv(st, L, g))),
-      com_end   = purrr::pmap_int(list(.data$strand, .data$len, .data$gap),
-                     function(st, L, g) IRanges::end(com_iv(st, L, g))),
-      n_var  = purrr::map2_int(.data$gap, .data$len, function(g, L)
-                count_variants_in(com_iv(best_as$strand, L, g), vpos, vblock)),
+      com_start = purrr::pmap_int(
+        list(.data$strand, .data$len, .data$gap),
+        function(st, L, g) IRanges::start(com_iv(st, L, g))
+      ),
+      com_end = purrr::pmap_int(
+        list(.data$strand, .data$len, .data$gap),
+        function(st, L, g) IRanges::end(com_iv(st, L, g))
+      ),
+      n_var = purrr::map2_int(.data$gap, .data$len, function(g, L) {
+        count_variants_in(com_iv(best_as$strand, L, g), vpos, vblock)
+      }),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
       # worst-case product over both alleles (indels differ by delta)
-      amplicon = pmax(pmax(best_as$as_end, .data$com_end) - pmin(best_as$as_start, .data$com_start) + 1L,
-                      pmax(best_as$as_alt_end, .data$com_end) - pmin(best_as$as_alt_start, .data$com_start) + 1L),
+      amplicon = pmax(
+        pmax(best_as$as_end, .data$com_end) - pmin(best_as$as_start, .data$com_start) + 1L,
+        pmax(best_as$as_alt_end, .data$com_end) - pmin(best_as$as_alt_start, .data$com_start) + 1L
+      ),
       # store the geometry once, for the plots to read instead of recomputing
-      as_start    = best_as$as_start,     as_end     = best_as$as_end,
+      as_start = best_as$as_start, as_end = best_as$as_end,
       as_alt_start = best_as$as_alt_start, as_alt_end = best_as$as_alt_end,
-      win3p_start = best_as$win3p_start,  win3p_end  = best_as$win3p_end) |>
+      win3p_start = best_as$win3p_start, win3p_end = best_as$win3p_end
+    ) |>
     # Robustness first: keep the amplicon <= 100 bp and the COM Tm >= AS Tm
     # (EasyKASP), then reject strong self-structure, then minimise footprint
     # variants, then get the COM Tm closest to target.  Logical terms sort
     # FALSE (= criterion met) before TRUE.
-    dplyr::arrange(.data$amplicon > KASP_LIMITS$amplicon[2],
-                   .data$com_tm < as_tm_mean,
-                   .data$com_homodimer < KASP_LIMITS$homodimer_dg,
-                   .data$com_hairpin   < KASP_LIMITS$hairpin_dg,
-                   .data$n_var, abs(.data$com_tm - COM_TM_TARGET))
+    dplyr::arrange(
+      .data$amplicon > KASP_LIMITS$amplicon[2],
+      .data$com_tm < as_tm_mean,
+      .data$com_homodimer < KASP_LIMITS$homodimer_dg,
+      .data$com_hairpin < KASP_LIMITS$hairpin_dg,
+      .data$n_var, abs(.data$com_tm - COM_TM_TARGET)
+    )
 
-  best    <- assays |> dplyr::slice_head(n = 1L)
+  best <- assays |> dplyr::slice_head(n = 1L)
   primers <- c(AS_ref = best$as_ref, AS_alt = best$as_alt, COM = best$com)
 
   # specificity uses the template-matched allele for the AS primers (no
@@ -1534,12 +1761,17 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   seed_primers <- c(
     AS_ref = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$ref, strand = best$strand),
     AS_alt = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$alt, strand = best$strand),
-    COM    = best$com)
+    COM    = best$com
+  )
 
   # in-silico PCR: the REF primer must give one product, the ALT primer none
   amplicons <- tryCatch(
     assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
-    error = function(e) { rlang::warn(glue::glue(gettext("in-silico PCR failed: {conditionMessage(e)}"))); NULL })
+    error = function(e) {
+      rlang::warn(glue::glue(gettext("in-silico PCR failed: {conditionMessage(e)}")))
+      NULL
+    }
+  )
 
   # whole-primer genome scan (only when requested): an attached FM-index is
   # queried first (index-based, multithreaded), otherwise the BLAST database
@@ -1547,10 +1779,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (isTRUE(run_blast)) {
     blast <- if (inherits(genome, "kasp_genome") && !is.null(genome$fm_index)) {
       tryCatch(specificity_fm(primers, genome$fm_index),
-               error = function(e) { rlang::warn(glue::glue(gettext("FM scan failed: {conditionMessage(e)}"))); NULL })
+        error = function(e) {
+          rlang::warn(glue::glue(gettext("FM scan failed: {conditionMessage(e)}")))
+          NULL
+        }
+      )
     } else {
       db <- tryCatch(build_blast_db(genome), error = function(e) {
-        rlang::warn(glue::glue(gettext("BLAST db unavailable: {conditionMessage(e)}"))); NULL })
+        rlang::warn(glue::glue(gettext("BLAST db unavailable: {conditionMessage(e)}")))
+        NULL
+      })
       blast_primers(primers, db)
     }
   }
@@ -1558,17 +1796,20 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   list(
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     as_candidates = as_cand,
-    efficiency = best_as |> dplyr::select("ref_on","ref_off","alt_on","alt_off","discrimination"),
+    efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
     thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x), name = .y)) |>
       purrr::list_rbind(),
     complementarity = dimer_thermo(primers),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
     blast = blast,
-    tails = c(AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
-              AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
-              COM    = best$com)
-  ) |> structure(class = "kasp_assay")
+    tails = c(
+      AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
+      AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),
+      COM = best$com
+    )
+  ) |>
+    structure(class = "kasp_assay")
 }
 
 #' Is `x` a KASP assay object?
@@ -1600,8 +1841,10 @@ passes_all <- function(assay, limits = KASP_LIMITS) {
 #' @export
 print.kasp_assay <- function(x, ...) {
   a <- x$assay[1L, ]
-  cat("<kasp_assay>",
-      glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (strand {x$strand})"), "\n")
+  cat(
+    "<kasp_assay>",
+    glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (strand {x$strand})"), "\n"
+  )
   cat("  AS-ref ", a$as_ref, "\n")
   cat("  AS-alt ", a$as_alt, "\n")
   cat("  COM    ", a$com, "\n")
@@ -1619,8 +1862,11 @@ print.kasp_assay <- function(x, ...) {
 #' @family KASP design
 #' @export
 variant_type <- function(ref, alt) {
-  if (nchar(ref) == nchar(alt)) ifelse(nchar(ref) == 1L, "SNP", "MNP")
-  else ifelse(nchar(alt) > nchar(ref), "insertion", "deletion")
+  if (nchar(ref) == nchar(alt)) {
+    ifelse(nchar(ref) == 1L, "SNP", "MNP")
+  } else {
+    ifelse(nchar(alt) > nchar(ref), "insertion", "deletion")
+  }
 }
 
 #' Design KASP markers for a table of loci, with a per-locus verdict
@@ -1653,31 +1899,40 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     rlang::abort(glue::glue(gettext("`loci` is missing column(s): {paste(missing, collapse = ', ')}")))
   }
   one <- function(ch, pos, ref, alt) {
-    snp  <- tibble::tibble(chrom = as.character(ch), pos = as.integer(pos),
-                           ref = as.character(ref), alt = as.character(alt))
+    snp <- tibble::tibble(
+      chrom = as.character(ch), pos = as.integer(pos),
+      ref = as.character(ref), alt = as.character(alt)
+    )
     type <- variant_type(snp$ref, snp$alt)
     warns <- character(0)
     res <- withCallingHandlers(
-      tryCatch({
-        a   <- assemble_kasp_assay(genome, snp, variants = variants, ...)
-        chk <- kasp_design_checks(a)
-        tibble::tibble(
-          chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
-          strand = a$strand, amplicon = a$assay$amplicon[1],
-          discrimination = a$efficiency$discrimination[1],
-          n_fail = sum(!chk$pass),
-          verdict = if (all(chk$pass)) "pass" else "warn",
-          note = paste(chk$criterion[!chk$pass], collapse = "; "))
-      }, error = function(e) {
-        tibble::tibble(chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
-                       type = type, strand = NA_character_, amplicon = NA_integer_,
-                       discrimination = NA_real_, n_fail = NA_integer_,
-                       verdict = "fail", note = conditionMessage(e))
-      }),
+      tryCatch(
+        {
+          a <- assemble_kasp_assay(genome, snp, variants = variants, ...)
+          chk <- kasp_design_checks(a)
+          tibble::tibble(
+            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+            strand = a$strand, amplicon = a$assay$amplicon[1],
+            discrimination = a$efficiency$discrimination[1],
+            n_fail = sum(!chk$pass),
+            verdict = if (all(chk$pass)) "pass" else "warn",
+            note = paste(chk$criterion[!chk$pass], collapse = "; ")
+          )
+        },
+        error = function(e) {
+          tibble::tibble(
+            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
+            type = type, strand = NA_character_, amplicon = NA_integer_,
+            discrimination = NA_real_, n_fail = NA_integer_,
+            verdict = "fail", note = conditionMessage(e)
+          )
+        }
+      ),
       warning = function(w) {
         warns <<- c(warns, conditionMessage(w))
         invokeRestart("muffleWarning")
-      })
+      }
+    )
     # surface any assembly warnings on an otherwise built assay
     if (res$verdict != "fail" && length(warns)) {
       res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
@@ -1687,7 +1942,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   }
 
   if (is.null(BPPARAM)) {
-    n  <- nrow(loci)
+    n <- nrow(loci)
     id <- cli::cli_progress_bar(gettext("Designing KASP markers"), total = n)
     res <- purrr::imap_dfr(seq_len(n), function(i, ...) {
       cli::cli_progress_update(id = id)
@@ -1741,39 +1996,48 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
                             stock_uM = 100, as_uM = 12, com_uM = 30,
                             reaction_uL = 10, master_mix_conc = 2,
                             dna_uL = 1, overfill = 0.10) {
-  ratios      <- c(AS1_FAM = as_uM, AS2_HEX = as_uM, COM = com_uM)
-  stock_share <- ratios / stock_uM                       # fraction of the mix
+  ratios <- c(AS1_FAM = as_uM, AS2_HEX = as_uM, COM = com_uM)
+  stock_share <- ratios / stock_uM # fraction of the mix
   water_share <- 1 - sum(stock_share)
   if (water_share < 0) {
-    rlang::abort(glue::glue(gettext(
-      "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the available {stock_uM} uM stock; raise `stock_uM` or lower the targets.")))
+    rlang::abort(c(
+      glue::glue(gettext(
+        "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} uM stock."
+      )),
+      i = gettext("Raise `stock_uM` or lower the targets.")
+    ))
   }
 
   primer_mix <- tibble::tibble(
     component = c(names(ratios), "nuclease-free water"),
-    stock_uM  = c(rep(stock_uM, length(ratios)), NA_real_),
-    final_uM  = c(unname(ratios), NA_real_),
+    stock_uM = c(rep(stock_uM, length(ratios)), NA_real_),
+    final_uM = c(unname(ratios), NA_real_),
     per_rxn_uL = NA_real_,
-    total_uL  = c(unname(stock_share) * mix_uL, water_share * mix_uL),
-    stage     = "primer mix")
+    total_uL = c(unname(stock_share) * mix_uL, water_share * mix_uL),
+    stage = "primer mix"
+  )
 
   assay_per_rxn <- round(0.014 * reaction_uL, 3)
   master_per_rxn <- reaction_uL / master_mix_conc
-  water_per_rxn  <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
+  water_per_rxn <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
   if (water_per_rxn < 0) {
     rlang::abort(glue::glue(gettext(
-      "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`.")))
+      "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
+    )))
   }
   total_rxn <- ceiling(n_reactions * (1 + overfill))
 
   reaction <- tibble::tibble(
-    component  = c(glue::glue("{master_mix_conc}x KASP master mix"), "primer mix",
-                   "template DNA", "nuclease-free water"),
-    stock_uM   = NA_real_,
-    final_uM   = NA_real_,
+    component = c(
+      glue::glue("{master_mix_conc}x KASP master mix"), "primer mix",
+      "template DNA", "nuclease-free water"
+    ),
+    stock_uM = NA_real_,
+    final_uM = NA_real_,
     per_rxn_uL = c(master_per_rxn, assay_per_rxn, dna_uL, water_per_rxn),
-    total_uL   = c(master_per_rxn, assay_per_rxn, dna_uL, water_per_rxn) * total_rxn,
-    stage      = "reaction")
+    total_uL = c(master_per_rxn, assay_per_rxn, dna_uL, water_per_rxn) * total_rxn,
+    stage = "reaction"
+  )
 
   dplyr::bind_rows(primer_mix, reaction)
 }
@@ -1808,64 +2072,75 @@ longest_run <- function(seq) {
 #' @family KASP checks
 #' @export
 kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
-  aa    <- assay$assay[1L, ]
-  th    <- assay$thermo
-  d     <- assay$complementarity
-  disc  <- assay$efficiency$discrimination[1L]
+  aa <- assay$assay[1L, ]
+  th <- assay$thermo
+  d <- assay$complementarity
+  disc <- assay$efficiency$discrimination[1L]
 
   as_tm <- mean(th$tm[th$name %in% c("AS_ref", "AS_alt")])
   com_tm <- aa$com_tm
-  hair  <- min(th$hairpin_dg)
-  cross <- min(d$dg[d$a != d$b])          # worst hetero-dimer
-  homo  <- min(d$dg[d$a == d$b])          # worst self-dimer
-  run   <- max(longest_run(aa$as_ref), longest_run(aa$com))
+  hair <- min(th$hairpin_dg)
+  cross <- min(d$dg[d$a != d$b]) # worst hetero-dimer
+  homo <- min(d$dg[d$a == d$b]) # worst self-dimer
+  run <- max(longest_run(aa$as_ref), longest_run(aa$com))
 
   # in-silico PCR (only if computed): REF primer -> 1 product, ALT primer -> 0
-  amp        <- assay$amplicons
-  amp_obs    <- if (is.null(amp)) NA_real_ else max(amp$n_products)
-  amp_pass   <- if (is.null(amp)) FALSE else {
-    ref <- amp$n_products[amp$primer == "AS_ref"]; alt <- amp$n_products[amp$primer == "AS_alt"]
+  amp <- assay$amplicons
+  amp_obs <- if (is.null(amp)) NA_real_ else max(amp$n_products)
+  amp_pass <- if (is.null(amp)) {
+    FALSE
+  } else {
+    ref <- amp$n_products[amp$primer == "AS_ref"]
+    alt <- amp$n_products[amp$primer == "AS_alt"]
     length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
   }
 
   tibble::tibble(
-    criterion = c("amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
-                  "COM Tm >= AS Tm", "AS GC", "COM GC",
-                  "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
-                  "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
-                  "worst cross-dimer dG37", "worst homodimer dG37",
-                  "discrimination", "in-silico PCR (REF 1 / ALT 0)"),
-    observed  = c(aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
-                  run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
-                  sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
-                  hair, cross, homo, disc, amp_obs),
-    limit     = c(glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
-                  glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
-                  glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
-                  ">= 0",
-                  glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
-                  glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
-                  glue::glue("< {limits$max_run}"),
-                  "0",
-                  "0",
-                  glue::glue(">= {limits$hairpin_dg}"),
-                  glue::glue(">= {limits$duplex_dg}"),
-                  glue::glue(">= {limits$homodimer_dg}"),
-                  glue::glue(">= {limits$discrimination}"),
-                  "REF=1, ALT=0"),
-    pass      = c(dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
-                  dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
-                  dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
-                  com_tm >= as_tm,
-                  dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
-                  dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
-                  run < limits$max_run,
-                  !has_repeat(aa$as_ref) && !has_repeat(aa$com),
-                  !any(has_palindrome(c(aa$as_ref, aa$as_alt, aa$com))),
-                  hair >= limits$hairpin_dg,
-                  cross >= limits$duplex_dg,
-                  homo >= limits$homodimer_dg,
-                  disc >= limits$discrimination,
-                  amp_pass)
+    criterion = c(
+      "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
+      "COM Tm >= AS Tm", "AS GC", "COM GC",
+      "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
+      "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
+      "worst cross-dimer dG37", "worst homodimer dG37",
+      "discrimination", "in-silico PCR (REF 1 / ALT 0)"
+    ),
+    observed = c(
+      aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
+      run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
+      sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
+      hair, cross, homo, disc, amp_obs
+    ),
+    limit = c(
+      glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
+      glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
+      glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
+      ">= 0",
+      glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
+      glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
+      glue::glue("< {limits$max_run}"),
+      "0",
+      "0",
+      glue::glue(">= {limits$hairpin_dg}"),
+      glue::glue(">= {limits$duplex_dg}"),
+      glue::glue(">= {limits$homodimer_dg}"),
+      glue::glue(">= {limits$discrimination}"),
+      "REF=1, ALT=0"
+    ),
+    pass = c(
+      dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
+      dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
+      dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
+      com_tm >= as_tm,
+      dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
+      dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
+      run < limits$max_run,
+      !has_repeat(aa$as_ref) && !has_repeat(aa$com),
+      !any(has_palindrome(c(aa$as_ref, aa$as_alt, aa$com))),
+      hair >= limits$hairpin_dg,
+      cross >= limits$duplex_dg,
+      homo >= limits$homodimer_dg,
+      disc >= limits$discrimination,
+      amp_pass
+    )
   )
 }

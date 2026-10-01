@@ -7,11 +7,11 @@ test_that("the primer mix keeps the AS:AS:COM = 2:2:5 ratio", {
   hex <- pm$final_uM[pm$component == "AS2_HEX"]
   com <- pm$final_uM[pm$component == "COM"]
   expect_equal(fam, hex)
-  expect_equal(com / fam, 2.5)                       # 5 / 2
+  expect_equal(com / fam, 2.5) # five parts over two
   # stock volumes are in the same 2:2:5 proportion
   mix <- dplyr::filter(pm, .data$component != "nuclease-free water")
-  expect_equal(mix$total_uL, c(12, 12, 30))          # uL for a 100 uL mix
-  expect_equal(sum(pm$total_uL), 100)                # stocks + water fill the mix
+  expect_equal(mix$total_uL, c(12, 12, 30)) # uL for a 100 uL mix
+  expect_equal(sum(pm$total_uL), 100) # stocks + water fill the mix
 })
 
 test_that("the reaction volumes add up to the requested total", {

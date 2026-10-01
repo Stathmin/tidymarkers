@@ -4,12 +4,12 @@
 \alias{in_silico_pcr}
 \title{In-silico PCR: every product a primer pair would amplify}
 \usage{
-in_silico_pcr(F_primer, R_primer, genome, max_mismatch = 0L, BPPARAM = NULL)
+in_silico_pcr(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM = NULL)
 }
 \arguments{
-\item{F_primer}{forward primer (5'->3'), binds the plus strand.}
+\item{f_primer}{forward primer (5'->3'), binds the plus strand.}
 
-\item{R_primer}{reverse primer (5'->3').}
+\item{r_primer}{reverse primer (5'->3').}
 
 \item{genome}{DNAStringSet.}
 

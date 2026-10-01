@@ -2,8 +2,10 @@
 
 make_fa <- function() {
   fa <- tempfile(fileext = ".fa")
-  writeLines(c(">1 desc", "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT",
-               ">2 desc", "TTTTGGGGCCCCAAAATTTT"), fa)
+  writeLines(c(
+    ">1 desc", "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT",
+    ">2 desc", "TTTTGGGGCCCCAAAATTTT"
+  ), fa)
   fa
 }
 
@@ -18,8 +20,10 @@ test_that("a kasp_genome reads the same regions as an in-memory DNAStringSet", {
 
   mem <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, use_index = FALSE)
   expect_equal(as.character(genome_seq(gs, "Chr1")), as.character(mem[["Chr1"]]))
-  expect_equal(as.character(genome_seq(gs, "Chr2", 3L, 6L)),
-               as.character(genome_seq(mem, "Chr2", 3L, 6L)))
+  expect_equal(
+    as.character(genome_seq(gs, "Chr2", 3L, 6L)),
+    as.character(genome_seq(mem, "Chr2", 3L, 6L))
+  )
 })
 
 test_that("design helpers accept a kasp_genome (no whole genome in RAM)", {

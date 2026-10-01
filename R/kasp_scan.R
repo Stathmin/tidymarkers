@@ -33,9 +33,12 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH."),
-                   i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`).")))
+      i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`).")
+    ))
   }
-  fasta <- if (inherits(genome, "kasp_genome")) genome$path else {
+  fasta <- if (inherits(genome, "kasp_genome")) {
+    genome$path
+  } else {
     fs::dir_create(fs::path_dir(path))
     Biostrings::writeXStringSet(genome, path)
     path
@@ -64,25 +67,36 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   if (!has_blast()) {
     rlang::abort(c(
       gettext("No NCBI BLAST+ on PATH (has_blast() is FALSE)."),
-      i = gettext("Install BLAST+, or use specificity_seed() on an in-memory genome.")))
+      i = gettext("Install BLAST+, or use specificity_seed() on an in-memory genome.")
+    ))
   }
-  seeds <- if (is.na(k)) as.character(primers)
-           else unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
+  seeds <- if (is.na(k)) {
+    as.character(primers)
+  } else {
+    unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
+  }
   query <- Biostrings::DNAStringSet(stats::setNames(seeds, names(primers)))
   # rBLAST::blast() validates the database itself (globs the index files and runs
   # `blastdbcmd -info`), so a missing or corrupt database surfaces there; we only
   # re-raise it with the pipeline's own hint instead of a hand-rolled .nsq probe.
   bl <- rlang::try_fetch(
     rBLAST::blast(db_path, type = "blastn"),
-    error = function(e) rlang::abort(
-      glue::glue(gettext(
-        "Could not open a BLAST database at {db_path} (build it with kasp_blast_index()).")),
-      parent = e))
+    error = function(e) {
+      rlang::abort(
+        glue::glue(gettext(
+          "Could not open a BLAST database at {db_path} (build it with kasp_blast_index())."
+        )),
+        parent = e
+      )
+    }
+  )
   run <- function(q) {
     # a SOCK worker is a fresh process: load rBLAST so predict.BLAST() dispatches
     requireNamespace("rBLAST", quietly = TRUE)
-    stats::predict(bl, newdata = q,
-                   BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no"))
+    stats::predict(bl,
+      newdata = q,
+      BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no")
+    )
   }
   res <- if (is.null(BPPARAM)) {
     run(query)
@@ -92,7 +106,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
     purrr::list_rbind(BiocParallel::bplapply(idx, function(ii) run(query[ii]), BPPARAM = BPPARAM))
   }
   cnt <- if (is.null(res) || nrow(res) == 0L) integer(0) else table(res$qseqid)
-  hits <- as.integer(cnt[names(primers)]); hits[is.na(hits)] <- 0L
+  hits <- as.integer(cnt[names(primers)])
+  hits[is.na(hits)] <- 0L
   tibble::tibble(primer = names(primers), seed = seeds, hits = hits)
 }
 
@@ -112,14 +127,17 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                            BPPARAM = NULL) {
   if (!inherits(genome, "kasp_genome")) {
-    return(specificity_seed(primers, genome, k = k, max_mismatch = max_mismatch,
-                            BPPARAM = BPPARAM))
+    return(specificity_seed(primers, genome,
+      k = k, max_mismatch = max_mismatch,
+      BPPARAM = BPPARAM
+    ))
   }
   db <- genome$blast_db
   if (is.null(db)) {
     rlang::abort(c(
       gettext("This indexed genome has no BLAST database attached."),
-      i = gettext("Build one with kasp_blast_index(genome) and pass it as `blast_db=`.")))
+      i = gettext("Build one with kasp_blast_index(genome) and pass it as `blast_db=`.")
+    ))
   }
   specificity_blast(primers, db, k = k, BPPARAM = BPPARAM)
 }

@@ -1,4 +1,12 @@
 linters: linters_with_defaults(
-  line_length_linter = line_length_linter(120L),
-  object_usage_linter = NULL
-)
+    line_length_linter = line_length_linter(120L),
+    object_name_linter = object_name_linter(
+        styles = c("snake_case", "symbols", "SNAKE_CASE"),
+        regexes = c(unit = "^[a-z][a-z0-9]*(_[a-z0-9]*[A-Z][a-zA-Z0-9]*)+$")
+      ),
+    object_usage_linter = NULL
+  )
+exclusions: list(
+    "data-raw",
+    "inst/scripts"
+  )

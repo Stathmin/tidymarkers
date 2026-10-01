@@ -2,8 +2,10 @@
 
 test_that("dimer_thermo is symmetric and includes homodimers", {
   skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
-  p <- c(A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",
-         C = "GGGGCCCCAAAATTTTACGT")
+  p <- c(
+    A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",
+    C = "GGGGCCCCAAAATTTTACGT"
+  )
   d <- dimer_thermo(p)
   expect_equal(nrow(d), length(p)^2)
   m <- matrix(d$dg, nrow = length(p), dimnames = list(names(p), names(p)))
@@ -14,8 +16,10 @@ test_that("dimer_thermo is symmetric and includes homodimers", {
 test_that("dimer_thermo is invariant to the parallel backend", {
   skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
   skip_if_not_installed("BiocParallel")
-  p <- c(A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",
-         C = "GGGGCCCCAAAATTTTACGT")
+  p <- c(
+    A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",
+    C = "GGGGCCCCAAAATTTTACGT"
+  )
   s <- dimer_thermo(p)
   expect_equal(dimer_thermo(p, BPPARAM = BiocParallel::SerialParam()), s)
   skip_on_os("windows")

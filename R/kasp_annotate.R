@@ -42,9 +42,11 @@ load_namespace_quietly <- function(pkg, reason = NULL) {
   withCallingHandlers(
     requireNamespace(pkg, quietly = TRUE),
     warning = function(w) {
-      if (stringr::str_detect(conditionMessage(w), "replacing previous import"))
+      if (stringr::str_detect(conditionMessage(w), "replacing previous import")) {
         invokeRestart("muffleWarning")
-    })
+      }
+    }
+  )
   invisible(TRUE)
 }
 
@@ -91,7 +93,8 @@ kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
     if (!fs::file_exists(gtf)) {
       url <- glue::glue(
         "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-{release}/gtf/",
-        "arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.{release}.gtf.gz")
+        "arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.{release}.gtf.gz"
+      )
       cli::cli_alert_info(gettext("Downloading the Ensembl Plants GTF into {.path {cache}}."))
       utils::download.file(url, gtf, mode = "wb", quiet = TRUE)
     }
@@ -99,9 +102,11 @@ kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
   out <- fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite")
   if (!fs::file_exists(out)) {
     cli::cli_alert_info(gettext("Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."))
-    ensembldb::ensDbFromGtf(gtf = as.character(gtf), outfile = as.character(out),
-                            organism = "Arabidopsis_thaliana",
-                            genomeVersion = "TAIR10", version = release)
+    ensembldb::ensDbFromGtf(
+      gtf = as.character(gtf), outfile = as.character(out),
+      organism = "Arabidopsis_thaliana",
+      genomeVersion = "TAIR10", version = release
+    )
   }
   ensembldb::EnsDb(out)
 }
@@ -140,7 +145,7 @@ LOCATION_TO_SO <- c(
 #' @keywords internal
 #' @noRd
 txdb_seqname_map <- function(chrom, txdb) {
-  inv   <- stats::setNames(names(ATH_CHROM_MAP), ATH_CHROM_MAP)  # Chr1 -> 1
+  inv <- stats::setNames(names(ATH_CHROM_MAP), ATH_CHROM_MAP) # values back to names
   txlev <- GenomeInfoDb::seqlevels(txdb)
   mapped <- dplyr::coalesce(unname(inv[chrom]), chrom)
   ifelse(mapped %in% txlev, mapped, chrom)
@@ -180,7 +185,9 @@ txdb_seqname_map <- function(chrom, txdb) {
 annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NULL) {
   load_namespace_quietly("VariantAnnotation", reason = "for structured annotation")
   txdb <- txdb %||% kasp_txdb()
-  if (nrow(variants) == 0L) return(variants)
+  if (nrow(variants) == 0L) {
+    return(variants)
+  }
 
   if (!is.null(gene) && !is.null(gene$chrom)) {
     variants <- dplyr::filter(variants, .data$chrom == ath_chrom(gene$chrom))
@@ -191,23 +198,29 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
   gr <- GenomicRanges::GRanges(
     txdb_seqname_map(variants$chrom, txdb),
     IRanges::IRanges(variants$pos, width = nchar(refs)),
-    ref = refs, alt = alts)
+    ref = refs, alt = alts
+  )
 
   # VariantAnnotation/AnnotationDbi emit benign chatter here (out-of-bound
   # notes from a renamed seqinfo, `select()` progress); quieten it so the
   # returned table is the only output
   loc <- suppressWarnings(suppressMessages(
-    VariantAnnotation::locateVariants(gr, txdb, VariantAnnotation::AllVariants())))
+    VariantAnnotation::locateVariants(gr, txdb, VariantAnnotation::AllVariants())
+  ))
   loc <- tibble::as_tibble(as.data.frame(loc)) |>
-    dplyr::mutate(query   = as.integer(.data$QUERYID),
-                  LOCATION = as.character(.data$LOCATION),
-                  GENEID   = as.character(.data$GENEID)) |>
+    dplyr::mutate(
+      query = as.integer(.data$QUERYID),
+      LOCATION = as.character(.data$LOCATION),
+      GENEID = as.character(.data$GENEID)
+    ) |>
     # one variant can sit in several transcripts; keep the most "coding" location
     dplyr::mutate(loc_rank = match(.data$LOCATION, names(LOCATION_TO_SO))) |>
     dplyr::arrange(.data$query, .data$loc_rank) |>
-    dplyr::summarise(so_location = unname(LOCATION_TO_SO[utils::head(.data$LOCATION, 1L)]),
-                     gene_id     = utils::head(.data$GENEID, 1L),
-                     .by = "query")
+    dplyr::summarise(
+      so_location = unname(LOCATION_TO_SO[utils::head(.data$LOCATION, 1L)]),
+      gene_id = utils::head(.data$GENEID, 1L),
+      .by = "query"
+    )
 
   if (is.null(variants$consequence)) variants$consequence <- NA_character_
   out <- dplyr::mutate(variants, query = dplyr::row_number()) |>
@@ -221,15 +234,20 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
     }
     pc <- suppressWarnings(suppressMessages(
       VariantAnnotation::predictCoding(gr, txdb, seqsource,
-                                       varAllele = Biostrings::DNAStringSet(alts))))
+        varAllele = Biostrings::DNAStringSet(alts)
+      )
+    ))
     coding <- tibble::as_tibble(as.data.frame(pc)) |>
-      dplyr::mutate(query = as.integer(.data$QUERYID),
-                    CONSEQUENCE = as.character(.data$CONSEQUENCE)) |>
+      dplyr::mutate(
+        query = as.integer(.data$QUERYID),
+        CONSEQUENCE = as.character(.data$CONSEQUENCE)
+      ) |>
       dplyr::arrange(.data$query) |>
       dplyr::summarise(
-        so_codon     = unname(VA_TO_SO[utils::head(.data$CONSEQUENCE, 1L)]),
+        so_codon = unname(VA_TO_SO[utils::head(.data$CONSEQUENCE, 1L)]),
         codon_change = paste(unique(paste0(.data$REFCODON, ">", .data$VARCODON)), collapse = ","),
-        .by = "query")
+        .by = "query"
+      )
     out <- dplyr::left_join(out, coding, by = "query")
   } else {
     out$so_codon <- NA_character_

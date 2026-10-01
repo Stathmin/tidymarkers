@@ -40,19 +40,25 @@
 #' @export
 kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
                         bsgenome = NULL, fm_index = NULL) {
-  if (!is.null(bsgenome)) return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index))
+  if (!is.null(bsgenome)) {
+    return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index))
+  }
   plain <- fasta_index(path)
-  fa    <- Rsamtools::FaFile(plain)
-  si    <- GenomeInfoDb::seqinfo(fa)                 # names + lengths from the .fai
-  raw   <- as.character(GenomeInfoDb::seqnames(si))
-  len   <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
-  norm  <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
-  keep  <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
+  fa <- Rsamtools::FaFile(plain)
+  si <- GenomeInfoDb::seqinfo(fa) # names + lengths from the .fai
+  raw <- as.character(GenomeInfoDb::seqnames(si))
+  len <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
+  norm <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
+  keep <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
   seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
-  structure(list(path = plain, fa = fa, seqnames = seqnames,
-                 lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
-                 blast_db = blast_db, fm_index = fm_index),
-            class = "kasp_genome")
+  structure(
+    list(
+      path = plain, fa = fa, seqnames = seqnames,
+      lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
+      blast_db = blast_db, fm_index = fm_index
+    ),
+    class = "kasp_genome"
+  )
 }
 
 #' Build a `kasp_genome` from a `BSgenome` object
@@ -67,16 +73,20 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
     rlang::check_installed(bsgenome, reason = gettext("for the BSgenome genome source"))
     bsgenome <- getExportedValue(bsgenome, bsgenome)
   }
-  si   <- GenomeInfoDb::seqinfo(bsgenome)              # names + lengths, no DNA
-  raw  <- as.character(GenomeInfoDb::seqnames(si))
-  len  <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
+  si <- GenomeInfoDb::seqinfo(bsgenome) # names + lengths, no DNA
+  raw <- as.character(GenomeInfoDb::seqnames(si))
+  len <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
   norm <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
   keep <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
   seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
-  structure(list(path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
-                 lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
-                 blast_db = blast_db, fm_index = fm_index),
-            class = "kasp_genome")
+  structure(
+    list(
+      path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
+      lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
+      blast_db = blast_db, fm_index = fm_index
+    ),
+    class = "kasp_genome"
+  )
 }
 
 #' Print a KASP genome source
@@ -91,8 +101,10 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
 print.kasp_genome <- function(x, ...) {
   source <- if (!is.null(x$bsgenome)) paste0("<BSgenome> ", class(x$bsgenome)[1L]) else fs::path_file(x$path)
   cat("<kasp_genome>", source, "\n")
-  cat("  sequences:", length(x$seqnames),
-      paste0("(", paste(utils::head(names(x$seqnames), 6L), collapse = ", "), ")"), "\n")
+  cat(
+    "  sequences:", length(x$seqnames),
+    paste0("(", paste(utils::head(names(x$seqnames), 6L), collapse = ", "), ")"), "\n"
+  )
   cat("  BLAST db:", if (is.null(x$blast_db)) "none (see kasp_blast_index())" else x$blast_db, "\n")
   cat("  FM index:", if (is.null(x$fm_index)) "none (see kasp_fm_index())" else x$fm_index, "\n")
   invisible(x)
@@ -112,7 +124,9 @@ genome_chroms <- function(genome) {
 #' @family KASP input
 #' @export
 genome_length <- function(genome, chrom) {
-  if (!inherits(genome, "kasp_genome")) return(length(genome[[chrom]]))
+  if (!inherits(genome, "kasp_genome")) {
+    return(length(genome[[chrom]]))
+  }
   len <- genome$lengths[[chrom]]
   if (is.null(len)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
   len
@@ -128,13 +142,16 @@ genome_length <- function(genome, chrom) {
 #' @family KASP input
 #' @export
 genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, chrom)) {
-  start <- as.integer(start); end <- as.integer(end)
+  start <- as.integer(start)
+  end <- as.integer(end)
   if (!inherits(genome, "kasp_genome")) {
     return(Biostrings::subseq(genome[[chrom]], start = start, end = end))
   }
   raw <- genome$seqnames[[chrom]]
   if (is.null(raw)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
   gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
-  if (!is.null(genome$bsgenome)) return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])
+  if (!is.null(genome$bsgenome)) {
+    return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])
+  }
   Rsamtools::scanFa(genome$fa, gr)[[1L]]
 }

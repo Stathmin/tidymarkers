@@ -29,12 +29,14 @@ FM_MISMATCH <- 2L
 #' @export
 kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm")) {
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
-  basename <- as.character(basename)          # Rsubread wants a plain string
+  basename <- as.character(basename) # Rsubread wants a plain string
   if (fs::file_exists(paste0(basename, ".files"))) {
     cli::cli_alert_info(gettext("Reusing the existing FM-index at {.path {basename}}."))
     return(basename)
   }
-  fasta <- if (inherits(genome, "kasp_genome")) genome$path else {
+  fasta <- if (inherits(genome, "kasp_genome")) {
+    genome$path
+  } else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))
     Biostrings::writeXStringSet(genome, p)
@@ -65,20 +67,25 @@ kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm"
 specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L) {
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
   rlang::check_installed("Rsamtools", reason = gettext("to read the alignments"))
-  index <- as.character(index)                # Rsubread wants a plain string
-  td    <- as.character(withr::local_tempdir())
+  index <- as.character(index) # Rsubread wants a plain string
+  td <- as.character(withr::local_tempdir())
   reads <- file.path(td, "reads.fa")
-  bam   <- file.path(td, "hits.bam")
+  bam <- file.path(td, "hits.bam")
   Biostrings::writeXStringSet(
-    Biostrings::DNAStringSet(stats::setNames(as.character(primers), names(primers))), reads)
+    Biostrings::DNAStringSet(stats::setNames(as.character(primers), names(primers))), reads
+  )
   # Rsubread prints a progress report to stdout with no quiet switch; the result
   # is the alignment file, so the chit-chat is discarded
   invisible(utils::capture.output(
-    Rsubread::align(index = index, readfile1 = reads, output_file = bam, type = 1,
-                    unique = FALSE, nBestLocations = 10000L,
-                    maxMismatches = max_mismatches, nthreads = nthreads)))
-  q    <- as.character(Rsamtools::scanBam(bam)[[1L]]$qname)
-  cnt  <- table(q)
-  hits <- as.integer(cnt[names(primers)]); hits[is.na(hits)] <- 0L
+    Rsubread::align(
+      index = index, readfile1 = reads, output_file = bam, type = 1,
+      unique = FALSE, nBestLocations = 10000L,
+      maxMismatches = max_mismatches, nthreads = nthreads
+    )
+  ))
+  q <- as.character(Rsamtools::scanBam(bam)[[1L]]$qname)
+  cnt <- table(q)
+  hits <- as.integer(cnt[names(primers)])
+  hits[is.na(hits)] <- 0L
   tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits)
 }

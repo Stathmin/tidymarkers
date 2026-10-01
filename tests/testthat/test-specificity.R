@@ -1,8 +1,8 @@
 # Specificity seed counting: a known seed must be counted on both strands.
 
 test_that("specificity_seed counts seed occurrences on both strands", {
-  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
-  primers <- c(P = "TTTTTTAAACCCGGG")          # 3'-terminal 9 nt = AAACCCGGG
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  primers <- c(P = "TTTTTTAAACCCGGG") # 3'-terminal 9 nt = AAACCCGGG
   # forward "AAACCCGGG" x2 + reverse-complement "CCCGGGTTT" x2 = 4
   res <- specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)
   expect_equal(res$hits, 4L)
@@ -10,35 +10,44 @@ test_that("specificity_seed counts seed occurrences on both strands", {
 })
 
 test_that("specificity_seed returns zero hits for an absent seed", {
-  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
   primers <- c(P = "TTTTTTACGACGAC")
   expect_equal(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)$hits, 0L)
 })
 
 test_that("the mismatch scan is invariant to the parallel backend", {
   skip_if_not_installed("BiocParallel")
-  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
-                                        chr2 = "GGGTTTAAACCC"))
+  genome <- Biostrings::DNAStringSet(c(
+    chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
+    chr2 = "GGGTTTAAACCC"
+  ))
   primers <- c(P = "TTTTTTAAACCCGGG", Q = "TTTTTTGGGAAACCC")
-  serial  <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L)
-  par     <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L,
-                              BPPARAM = BiocParallel::SerialParam())
+  serial <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L)
+  par <- specificity_seed(primers, genome,
+    k = 9L, max_mismatch = 1L,
+    BPPARAM = BiocParallel::SerialParam()
+  )
   expect_equal(par$hits, serial$hits)
   skip_on_os("windows")
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
   on.exit(BiocParallel::bpstop(bp), add = TRUE)
-  mc <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L,
-                         BPPARAM = bp)
+  mc <- specificity_seed(primers, genome,
+    k = 9L, max_mismatch = 1L,
+    BPPARAM = bp
+  )
   expect_equal(mc$hits, serial$hits)
 })
 
 test_that("the exact PDict path matches a manual both-strand count", {
-  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
-                                        chr2 = "GGGAAACCC"))
+  genome <- Biostrings::DNAStringSet(c(
+    chr1 = "AAACCCGGGTTTAAACCCGGGTTT",
+    chr2 = "GGGAAACCC"
+  ))
   primers <- c(P = "TTTTTTAAACCCGGG", Q = "TTTTTTGGGAAACCC")
   res <- specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)
   manual <- vapply(unname(substr(primers, 8L, 16L)), function(s) {
-    d <- Biostrings::DNAString(s); r <- Biostrings::reverseComplement(d)
+    d <- Biostrings::DNAString(s)
+    r <- Biostrings::reverseComplement(d)
     sum(Biostrings::vcountPattern(d, genome)) + sum(Biostrings::vcountPattern(r, genome))
   }, numeric(1))
   expect_equal(res$hits, as.integer(manual))
@@ -46,10 +55,12 @@ test_that("the exact PDict path matches a manual both-strand count", {
 
 test_that("a BiocParallel BPPARAM gives the same mismatch counts as serial", {
   skip_if_not_installed("BiocParallel")
-  genome  <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
   primers <- c(P = "TTTTTTAAACCCGGG")
   serial <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L)
-  par    <- specificity_seed(primers, genome, k = 9L, max_mismatch = 1L,
-                             BPPARAM = BiocParallel::SerialParam())
+  par <- specificity_seed(primers, genome,
+    k = 9L, max_mismatch = 1L,
+    BPPARAM = BiocParallel::SerialParam()
+  )
   expect_equal(par$hits, serial$hits)
 })

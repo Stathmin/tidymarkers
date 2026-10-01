@@ -26,7 +26,7 @@
 #' @export
 normalise_allele <- function(x) {
   x <- toupper(x)
-  x <- chartr("RYSWKMBDHV", "NNNNNNNNNN", x)   # IUPAC ambiguity -> N
+  x <- chartr("RYSWKMBDHV", "NNNNNNNNNN", x) # IUPAC ambiguity -> N
   gsub("[^ACGTN]", "N", x)
 }
 
@@ -52,19 +52,24 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
-    VariantAnnotation = read_variants_vcf_va(path, chrom, start, end))
+    VariantAnnotation = read_variants_vcf_va(path, chrom, start, end)
+  )
 
   if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
-  if (!is.null(end))   v <- dplyr::filter(v, .data$pos <= end)
+  if (!is.null(end)) v <- dplyr::filter(v, .data$pos <= end)
 
   v |>
     # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation,
     # so they are not mangled into a fake `N` allele
-    dplyr::filter(!stringr::str_detect(.data$ref, "^<|[*.]"),
-                  !stringr::str_detect(.data$alt, "^<|[*.]")) |>
-    dplyr::mutate(ref = normalise_allele(.data$ref),
-                  alt = normalise_allele(.data$alt)) |>
+    dplyr::filter(
+      !stringr::str_detect(.data$ref, "^<|[*.]"),
+      !stringr::str_detect(.data$alt, "^<|[*.]")
+    ) |>
+    dplyr::mutate(
+      ref = normalise_allele(.data$ref),
+      alt = normalise_allele(.data$alt)
+    ) |>
     dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
 }
 
@@ -78,13 +83,19 @@ read_variants_vcf_vroom <- function(path) {
   if (is.na(hdr)) rlang::abort(glue::glue(gettext("{path} has no '#CHROM' header line.")))
   nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
 
-  ct <- vroom::cols(.default = vroom::col_skip(),
-                    CHROM = "c", POS = "i", REF = "c", ALT = "c")
-  vroom::vroom(path, comment = "#", col_names = nms, col_types = ct,
-               col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE) |>
-    dplyr::transmute(chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
-                     ref = .data$REF, alt = .data$ALT) |>
-    tidyr::separate_longer_delim("alt", delim = ",")          # multi-allelic -> rows
+  ct <- vroom::cols(
+    .default = vroom::col_skip(),
+    CHROM = "c", POS = "i", REF = "c", ALT = "c"
+  )
+  vroom::vroom(path,
+    comment = "#", col_names = nms, col_types = ct,
+    col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE
+  ) |>
+    dplyr::transmute(
+      chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
+      ref = .data$REF, alt = .data$ALT
+    ) |>
+    tidyr::separate_longer_delim("alt", delim = ",") # one row per ALT allele
 }
 
 #' Canonical VCF reader (`VariantAnnotation::readVcf`)
@@ -100,11 +111,13 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
   if (!is.null(chrom) && !is.null(start) && !is.null(end)) {
     seqs <- tryCatch(
       as.character(GenomeInfoDb::seqnames(VariantAnnotation::scanVcfHeader(path))),
-      error = function(e) character(0))
+      error = function(e) character(0)
+    )
     hit <- seqs[ath_chrom(seqs) == ath_chrom(chrom)][1L]
     if (length(hit) && !is.na(hit)) {
       param <- VariantAnnotation::ScanVcfParam(
-        which = GenomicRanges::GRanges(hit, IRanges::IRanges(start, end)))
+        which = GenomicRanges::GRanges(hit, IRanges::IRanges(start, end))
+      )
     }
   }
   vcf <- VariantAnnotation::readVcf(path, param = param)
@@ -113,8 +126,9 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
     chrom = ath_chrom(as.character(GenomicRanges::seqnames(rng))),
     pos   = as.integer(GenomicRanges::start(rng)),
     ref   = as.character(VariantAnnotation::ref(vcf)),
-    alt   = purrr::map(VariantAnnotation::alt(vcf), as.character)) |>
-    tidyr::unnest_longer("alt")                                 # multi-allelic -> rows
+    alt   = purrr::map(VariantAnnotation::alt(vcf), as.character)
+  ) |>
+    tidyr::unnest_longer("alt") # one row per ALT allele
 }
 
 #' Ensure a FASTA has a `.fai` index, decompressing `.gz` once if needed
@@ -151,7 +165,9 @@ mask_positions <- function(seq, positions) {
   s <- Biostrings::DNAString(as.character(seq))
   positions <- as.integer(positions)
   positions <- positions[!is.na(positions) & positions >= 1L & positions <= length(s)]
-  if (!length(positions)) return(s)
+  if (!length(positions)) {
+    return(s)
+  }
   Biostrings::replaceAt(s, IRanges::IRanges(positions, positions), "N")
 }
 
@@ -201,15 +217,19 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
 
   if (isTRUE(use_index) && !is.null(seqids)) {
     plain <- fasta_index(path)
-    fai   <- readr::read_tsv(paste0(plain, ".fai"), show_col_types = FALSE,
-      col_names = c("name", "length", "offset", "linebases", "linebytes"))
-    tok    <- sub("\\s.*$", "", fai$name)
+    fai <- readr::read_tsv(paste0(plain, ".fai"),
+      show_col_types = FALSE,
+      col_names = c("name", "length", "offset", "linebases", "linebytes")
+    )
+    tok <- sub("\\s.*$", "", fai$name)
     mapped <- if (!is.null(chrom_map)) unname(chrom_map[tok]) else tok
-    keep   <- (tok %in% seqids) | (!is.na(mapped) & mapped %in% seqids)
-    sel    <- fai[keep, , drop = FALSE]
-    if (nrow(sel) == 0L) return(Biostrings::DNAStringSet())
+    keep <- (tok %in% seqids) | (!is.na(mapped) & mapped %in% seqids)
+    sel <- fai[keep, , drop = FALSE]
+    if (nrow(sel) == 0L) {
+      return(Biostrings::DNAStringSet())
+    }
     gr <- GenomicRanges::GRanges(sel$name, IRanges::IRanges(1L, sel$length))
-    g  <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    g <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
     return(normalise(g))
   }
   normalise(Biostrings::readDNAStringSet(path))

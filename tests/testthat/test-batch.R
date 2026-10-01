@@ -17,20 +17,23 @@ test_that("design_kasp_markers returns a tidy per-locus verdict without aborting
   W <- Biostrings::DNAString(bseq(500, 4))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   cand <- seq(160L, 340L, by = 1L)
-  clean <- cand[vapply(cand, function(p)
-    !has_run(as.character(Biostrings::subseq(W, p - 35L, p + 35L))), logical(1))]
-  p1 <- clean[1L]; p2 <- clean[which(abs(clean - p1) > 60L)[1L]]
+  clean <- cand[vapply(cand, function(p) {
+    !has_run(as.character(Biostrings::subseq(W, p - 35L, p + 35L)))
+  }, logical(1))]
+  p1 <- clean[1L]
+  p2 <- clean[which(abs(clean - p1) > 60L)[1L]]
   ref1 <- as.character(Biostrings::subseq(W, p1, p1))
   alt1 <- setdiff(c("A", "C", "G", "T"), ref1)[1L]
   ref2 <- as.character(Biostrings::subseq(W, p2, p2))
   loci <- tibble::tibble(
     chrom = c("Chr1", "Chr1", "Chr1"),
-    pos   = c(p1, p2, 5L),                                   # last one is un-designable
+    pos   = c(p1, p2, 5L), # last one is un-designable
     ref   = c(ref1, ref2, "A"),
-    alt   = c(alt1, paste0(ref2, "GG"), "G"))
+    alt   = c(alt1, paste0(ref2, "GG"), "G")
+  )
   res <- design_kasp_markers(genome, loci, flank = 150L)
   expect_equal(nrow(res), 3L)
-  expect_true(all(c("chrom","pos","ref","alt","type","verdict","note") %in% names(res)))
+  expect_true(all(c("chrom", "pos", "ref", "alt", "type", "verdict", "note") %in% names(res)))
   expect_equal(res$type, c("SNP", "insertion", "SNP"))
   # the un-designable edge locus is captured as a failure, not thrown ...
   expect_equal(res$verdict[3L], "fail")
@@ -51,11 +54,15 @@ test_that("a BiocParallel backend gives the same batch verdicts", {
   W <- Biostrings::DNAString(bseq(400, 4))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   ref <- as.character(Biostrings::subseq(W, 210L, 210L))
-  loci <- tibble::tibble(chrom = "Chr1", pos = 210L, ref = ref,
-                         alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
+  loci <- tibble::tibble(
+    chrom = "Chr1", pos = 210L, ref = ref,
+    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
   serial <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L))
-  par    <- suppressWarnings(design_kasp_markers(genome, loci, flank = 150L,
-                                                 BPPARAM = BiocParallel::SerialParam()))
+  par <- suppressWarnings(design_kasp_markers(genome, loci,
+    flank = 150L,
+    BPPARAM = BiocParallel::SerialParam()
+  ))
   expect_equal(par, serial)
   skip_on_os("windows")
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
