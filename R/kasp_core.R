@@ -345,6 +345,34 @@ primer_dropout <- function(primer, plus_win, forward, var_offset, var_alt, var_w
   min(1, sum(var_w * (1 - eta)))
 }
 
+#' Expected dropout of a window on the design template
+#'
+#' The one place that turns "a primer over the design template + the known
+#' variants" into [primer_dropout()]'s expected dropout, shared by the AS 3'
+#' window and the COM footprint.  `0` when the window holds no (fit-in-window)
+#' variant.
+#' @keywords internal
+#' @noRd
+zone_dropout <- function(primer, start, end, forward, n_var, tmpl, off, vpos, vblock, valt, vweight) {
+  if (is.na(n_var) || n_var == 0L) {
+    return(0)
+  }
+  idx <- which(vpos >= start & vpos <= end & !(vpos %in% vblock))
+  if (!length(idx)) {
+    return(0)
+  }
+  i1 <- max(start - off + 1L, 1L)
+  i2 <- min(end - off + 1L, length(tmpl$seq))
+  if (i2 < i1) {
+    return(0)
+  }
+  w <- if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
+  primer_dropout(
+    primer, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
+    forward, vpos[idx] - start + 1L, valt[idx], w
+  )
+}
+
 #' Per-user cache directory for downloads and indices
 #'
 #' Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST

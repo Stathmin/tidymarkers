@@ -110,6 +110,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   is_indel <- ref_len != alt_len
   vblock <- seq.int(snp$pos, snp$pos + max(ref_len, alt_len) - 1L) # the target's own bases
 
+  # one service for both critical zones (AS 3' window, COM footprint): the
+  # expected dropout over the design template's variants; NA if DECIPHER chokes
+  dropout_at <- function(pr, a, b, forward, cnt) {
+    zone_dropout(pr, a, b, forward, cnt, tmpl, off, vpos, vblock, valt, vweight)
+  }
+  safe_dropout <- purrr::possibly(dropout_at, otherwise = NA_real_)
+
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
   # the REF AS primer's 3'-terminal base is the variant anchor for its strand
   anchor_of <- function(strand) as_anchor(snp$pos, ref_len, strand)
@@ -198,30 +205,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       as_dropout = if (use_eff) {
         purrr::pmap_dbl(
           list(.data$ref_primer, .data$win3p_start, .data$win3p_end, .data$strand, .data$n_3p),
-          function(pr, a, b, st, cnt) {
-            tryCatch(
-              {
-                if (is.na(cnt) || cnt == 0L || is.na(a) || is.na(b)) {
-                  return(0)
-                }
-                idx <- which(vpos >= a & vpos <= b & !(vpos %in% vblock))
-                if (!length(idx)) {
-                  return(0)
-                }
-                i1 <- max(a - off + 1L, 1L)
-                i2 <- min(b - off + 1L, length(tmpl$seq))
-                if (i2 < i1) {
-                  return(0)
-                }
-                primer_dropout(
-                  pr, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
-                  identical(st, "+"), vpos[idx] - a + 1L, valt[idx],
-                  if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
-                )
-              },
-              error = function(e) NA_real_
-            )
-          }
+          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, identical(st, "+"), cnt)
         )
       } else {
         NA_real_
@@ -329,30 +313,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       com_dropout = if (use_eff) {
         purrr::pmap_dbl(
           list(.data$com, .data$com_start, .data$com_end, .data$strand, .data$n_var),
-          function(pr, a, b, st, cnt) {
-            tryCatch(
-              {
-                if (is.na(cnt) || cnt == 0L || is.na(a) || is.na(b)) {
-                  return(0)
-                }
-                idx <- which(vpos >= a & vpos <= b & !(vpos %in% vblock))
-                if (!length(idx)) {
-                  return(0)
-                }
-                i1 <- max(a - off + 1L, 1L)
-                i2 <- min(b - off + 1L, length(tmpl$seq))
-                if (i2 < i1) {
-                  return(0)
-                }
-                primer_dropout(
-                  pr, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
-                  !identical(st, "+"), vpos[idx] - a + 1L, valt[idx],
-                  if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
-                )
-              },
-              error = function(e) NA_real_
-            )
-          }
+          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, !identical(st, "+"), cnt)
         )
       } else {
         NA_real_

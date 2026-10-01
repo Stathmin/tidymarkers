@@ -171,17 +171,24 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
   )
 }
 
+#' Order rows lexicographically: `desc` columns high-to-low, then `asc` low-to-high
+#' @keywords internal
+#' @noRd
+order_by_margins <- function(data, desc, asc = character(0)) {
+  dplyr::arrange(
+    data,
+    dplyr::across(dplyr::all_of(intersect(desc, names(data))), dplyr::desc),
+    dplyr::across(dplyr::all_of(intersect(asc, names(data))))
+  )
+}
+
 #' Sort candidates lexicographically on tiers then ties (no gating)
 #'
 #' Used to build shortlists (e.g. which placements to seed-screen) with the same
 #' ordering the final selection uses.
 #' @keywords internal
 #' @noRd
-rank_candidates <- function(data, tiers, ties) {
-  d <- data
-  for (t in tiers) d[[paste0(".neg_", t)]] <- -d[[t]]
-  dplyr::arrange(d, !!!rlang::syms(paste0(".neg_", tiers)), !!!rlang::syms(intersect(ties, names(d))))
-}
+rank_candidates <- function(data, tiers, ties) order_by_margins(data, tiers, ties)
 
 #' Pick the best candidate, relaxing gates only as far as necessary
 #'
@@ -202,7 +209,7 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties, gate_margi
   relaxed <- character(0)
   repeat {
     ok <- if (length(active)) {
-      Reduce(`&`, lapply(active, function(g) data[[g]]))
+      purrr::reduce(data[active], `&`)
     } else {
       rep(TRUE, nrow(data))
     }
@@ -216,13 +223,7 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties, gate_margi
       } else {
         character(0)
       }
-      ranked <- c(extra, tiers)
-      for (t in ranked) surv[[paste0(".neg_", t)]] <- -surv[[t]]
-      ord <- dplyr::arrange(
-        surv,
-        !!!rlang::syms(paste0(".neg_", ranked)),
-        !!!rlang::syms(intersect(ties, names(surv)))
-      )
+      ord <- order_by_margins(surv, c(extra, tiers), intersect(ties, names(surv)))
       best <- ord[1L, , drop = FALSE]
       violated <- gates[!vapply(gates, function(g) isTRUE(best[[g]]), logical(1))]
       return(list(best = best, relaxed = relaxed, violated = unique(violated)))
