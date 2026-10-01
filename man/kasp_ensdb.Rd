@@ -4,7 +4,7 @@
 \alias{kasp_ensdb}
 \title{Build (or load) an \code{EnsDb} gene model from the Ensembl Plants GTF}
 \usage{
-kasp_ensdb(gtf = NULL, cache = here::here("data", "cache"), release = 63L)
+kasp_ensdb(gtf = NULL, cache = kasp_cache_dir(), release = 63L)
 }
 \arguments{
 \item{gtf}{GTF path; when \code{NULL}, the Ensembl Plants GTF is downloaded (once).}

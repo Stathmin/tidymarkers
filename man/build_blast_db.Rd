@@ -4,7 +4,7 @@
 \alias{build_blast_db}
 \title{Build (once) a BLAST nucleotide database from the TAIR10 genome}
 \usage{
-build_blast_db(genome, path = here::here("data", "cache", "tair10.fa"))
+build_blast_db(genome, path = fs::path(kasp_cache_dir(), "tair10.fa"))
 }
 \arguments{
 \item{genome}{DNAStringSet.}

@@ -12,14 +12,20 @@ plot_discrimination(assay, n = 15L)
 \item{n}{number of candidates to show.}
 }
 \description{
-One bar chart, shared by the driver and the report so the two cannot drift.
+One horizontal bar chart, shared by the driver and the report so the two
+cannot drift.  The placement actually chosen by \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} is
+highlighted and the acceptance threshold is drawn, so a candidate that only
+\emph{looks} good is obvious at a glance.
 }
 \seealso{
 Other KASP plots:
+\code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
+\code{\link[=plot_design_search_step]{plot_design_search_step()}},
 \code{\link[=plot_dimer_qc]{plot_dimer_qc()}},
 \code{\link[=plot_primers]{plot_primers()}},
 \code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
-\code{\link[=plot_variant_landscape]{plot_variant_landscape()}}
+\code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
+\code{\link[=render_design_search]{render_design_search()}}
 }
 \concept{KASP plots}

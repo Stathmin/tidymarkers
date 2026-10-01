@@ -1,0 +1,11 @@
+/*-- scss:defaults --*/
+$presentation-heading-color: #1b4965;
+$link-color: #1b4965;
+$code-color: #9a031e;
+$font-family-sans-serif: "Inter", "Segoe UI", system-ui, sans-serif;
+
+/*-- scss:rules --*/
+.reveal .slide-logo { max-height: 40px; }
+.reveal pre code { font-size: 0.85em; line-height: 1.35; }
+.reveal table { font-size: 0.8em; }
+.reveal h2 { border-bottom: 2px solid #cae9ff; padding-bottom: .2em; }

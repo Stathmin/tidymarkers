@@ -1,0 +1,387 @@
+---
+title: "Подбор KASP-маркеров на R — сквозной разбор по методике"
+subtitle: "FRI (AT4G00650) у Arabidopsis thaliana: этапы, находки, пороги"
+author: "kasp-example"
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    incremental: false
+    embed-resources: true
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: true
+knitr:
+  opts_chunk:
+    fig.path: "../_site/lecture/figures/"
+    cache.path: "../_site/lecture/cache/"
+editor: source
+---
+
+## Как читать эту лекцию
+
+Это **live-прогон**, а не теория: каждый этап запускает код пакета и показывает
+числа для реального локуса — FRI, `Chr4:269745 G>A` (stop_gained), 1001 Genomes.
+
+Порядок этапов — по методичке LGC/KBioscience для KASP (+ EasyKASP 2025).
+
+```{r}
+#| label: setup
+suppressPackageStartupMessages({
+  library(kaspexample); library(here); library(dplyr); library(ggplot2); library(ggmsa)
+})
+```
+
+::: {.notes}
+Источник — `lecture/kasp-slides.qmd`; рендер `sh lecture/render.sh` (поднимает
+OligoArrayAux на PATH). Отдельные слайды — отдельные этапы; в нотах к каждому —
+что сказать.
+:::
+
+## Этап 0. Что такое KASP и что решает дизайн
+
+- Два **аллель-специфичных** праймера (AS1/AS2) с разными флуорофорами + один **общий** (COM).
+- Специфичность держится на **одном** основании 3'-конца AS-праймера.
+- Значит, всё решают: выбор мишени → 3'-окно → термодинамика → специфичность в геноме.
+
+::: {.notes}
+Один слайд — одна мысль. Дальше идём по этапам методички и на каждом показываем,
+что именно мы проверили и что нашли.
+:::
+
+## Этап 1. Мишень: качественный вариант с чистым 3'-окном
+
+```{r}
+#| label: data
+genome   <- ath_genome()                                   # TAIR10, кэш в kasp_cache_dir()
+gene     <- ensembl_gene("AT4G00650")                      # FRI
+variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
+snp      <- pick_target_snp(variants, genome, gene)
+snp |> dplyr::select(id, chrom, pos, ref, alt, consequence, n_3p, seed_hits)
+```
+
+**Что проверяем:** тяжесть последствия (VEP `impact` или канонические SO-термы),
+отсутствие *других* вариантов в 3'-окне (`n_3p`), уникальность 3'-сида (`seed_hits`).
+Комплементарные пары (A/T, C/G) пропускаются — 3'-база их не различает.
+
+::: {.notes}
+Здесь `n_3p = 0` — в 3'-окне мишени нет других вариантов 1001 Genomes.
+`seed_hits` тут — лучшая из двух цепей; про расхождение со стадией специфичности
+скажем на этапе 7.
+:::
+
+## Этап 2. Окно дизайна и фланки (подсказка направления)
+
+```{r}
+#| label: window
+win_len <- length(genome_seq(genome, "Chr4", snp$pos - 150L, snp$pos + 150L))
+glue::glue("{win_len} nt design window (Chr4 {snp$pos - 150}..{snp$pos + 150})") |> as.character()
+strand_gc_hint(genome, snp$chrom, snp$pos)
+```
+
+EasyKASP советует ставить AS-праймер туда, где GC флангов даёт рабочий Tm — но выбор
+цепи и длины у нас всё равно решает физика (`DECIPHER`), а не «правило на глаз».
+
+::: {.notes}
+`strand_gc_hint()` — просто подсказка, куда смотреть; финально цепь выбирает алгоритм.
+:::
+
+## Этап 3. AS-праймер: перебор и Tm/GC-окна
+
+Как «двигаем праймер»: перебираем **обе цепи × длину 20–27 × позицию и основание
+стабилизирующего мисматча**, потом оставляем попавшие в окна Tm/GC.
+
+```{r}
+#| label: design
+assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
+                             strands = c("+", "-"), tm_range = c(58, 64), clean_3p = 5L)
+
+raw <- design_as_primers(assay$template$seq, assay$template$snp_i,
+                         snp$ref, snp$alt, strands = c("+", "-"))
+tibble::tibble(
+  placements     = nrow(raw),
+  Tm_range       = glue::glue("{round(min(raw$tm),1)}-{round(max(raw$tm),1)} C"),
+  pass_Tm_window = sum(dplyr::between(raw$tm, 58, 64)),
+  pass_GC_window = sum(dplyr::between(raw$gc, 0.35, 0.70))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+112 размещений; окно Tm [58,64] отсекает больше половины (47.7–66 C). Именно
+перебор длины/цепи двигает Tm в окно. Замените tm_range, чтобы увидеть сдвиг.
+:::
+
+## Этап 3 (продолжение). Кого выбрал алгоритм и почему не «самый громкий»
+
+```{r}
+#| label: as-choice
+ranked <- assay$as_candidates |>
+  dplyr::arrange(n_3p, n_var, dplyr::desc(discrimination), wobble,
+                 seed_hits, abs(tm - 60), dg_3p, as_length)
+cat("CHOSEN (row 1 of the ranking):\n")
+ranked |> dplyr::slice_head(n = 1) |>
+  dplyr::select(strand, as_length, tm, gc, discrimination, n_3p, n_var, seed_hits) |>
+  knitr::kable(digits = 2)
+cat("\nHighest discrimination, but rejected:\n")
+ranked |> dplyr::slice_max(discrimination, n = 4) |>
+  dplyr::select(strand, as_length, tm, gc, discrimination, n_3p, n_var, seed_hits) |>
+  knitr::kable(digits = 2)
+```
+
+**Находка:** размещения с дискриминацией **0.97** (минус-цепь) перекрывают **2–3**
+других варианта 1001 Genomes в своём футпринте; выбранный плюс-цепь-27-мер — только
+**1** (`n_var`). Загрузка вариантов в футпринте в методике выше дискриминации.
+
+::: {.notes}
+Это прямой ответ на «почему 0.93, а не 0.97»: не потому что 0.93 «лучше», а потому
+что у 0.97 в футпринте сидят лишние варианты. Сортировка лексикографическая.
+:::
+
+## Этап 4. Дискриминация и 3'-стабильность выбранного AS
+
+```{r}
+#| label: eff
+assay$efficiency |>
+  knitr::kable(digits = 3,
+    caption = "ref_on/ref_off — AS-ref на своём/чужом аллеле; alt_* — аналогично")
+```
+
+Дискриминация = (ref_on − ref_off + alt_on − alt_off) / 2, считается `DECIPHER`
+(Taq-aware: гибридизация **и** достройка от 3'-конца), а не эмпирической формулой.
+
+::: {.notes}
+`ref_on 1.00`, `ref_off 0.02` — своя аллель достраивается, чужая почти нет.
+:::
+
+## Этап 5. Общий праймер: Tm ≥ AS, ампликон ≤ 100 bp
+
+```{r}
+#| label: com
+assay$assay |>
+  dplyr::count(com_tm_ge_as = com_tm >= mean(assay$thermo$tm[assay$thermo$name != "COM"]),
+               amplicon_ok = dplyr::between(amplicon, 50, 100)) |>
+  knitr::kable(caption = "5 размещений COM: сколько закрывают ампликон и держат Tm")
+assay$assay |>
+  dplyr::select(rank, strand, com, len, com_tm, n_var, amplicon) |>
+  knitr::kable(digits = 2)
+```
+
+::: {.notes}
+COM ставится на ту же цепь, что и AS, чтобы ампликон закрылся; методика требует
+COM Tm не ниже AS и продукт короче 100 bp (EasyKASP).
+:::
+
+## Этап 6. Структурный QC: шпильки, гомо- и гетеродимеры
+
+```{r}
+#| label: struct
+assay$thermo |>
+  dplyr::select(primer, len, tm, gc, hairpin_dg, terminal_dg) |>
+  knitr::kable(digits = 2, caption = "OligoArrayAux: dG37 шпильки и 3'-конца")
+pal <- find_palindromes(c(AS_ref = assay$assay$as_ref[1],
+                          AS_alt = assay$assay$as_alt[1], COM = assay$assay$com[1]))
+data.frame(primer = names(pal), inverted_repeats = vapply(pal, nrow, integer(1)))
+```
+
+```{r}
+#| label: dimers
+ggplot(assay$complementarity, aes(a, b, fill = dg)) +
+  geom_tile(colour = "white", linewidth = 1) +
+  geom_text(aes(label = round(dg, 1)), size = 4) +
+  scale_fill_gradient(low = "firebrick", high = "white", name = "dG37") +
+  coord_equal() + labs(x = NULL, y = NULL, title = "Дуплексы: кросс- и само-димеры")
+```
+
+::: {.notes}
+Шпильки у всех трёх праймеров с положительным dG (не образуются). Инвертированных
+повторов нет. Сильнейшая пара — COM×AS-alt, dG37 ≈ −3.3, порог −9.
+:::
+
+## Этап 7. Специфичность в геноме: оф-таргеты
+
+```{r}
+#| label: specific
+assay$specificity |>
+  knitr::kable(caption = "3'-сид (15 nt, ≤1 мисматч) по TAIR10 — сколько мест в геноме")
+```
+
+**Находка:** 3'-сид AS-праймера встречается в геноме **десятки** раз при 1 мисматче.
+Это ожидаемо для короткого сида и **не** режет тест: решает не сид, а полный праймер.
+Проверяем его напрямую:
+
+```{r}
+#| label: pcr
+assay$amplicons |> knitr::kable(caption = "виртуальная ПЦР: REF даёт 1 продукт, ALT — 0")
+```
+
+::: {.notes}
+Важный нюанс: `seed_hits` (этап 1) — это лучшая из двух цепей; AS встал на цепь,
+где сид «громче». Поэтому seed-скан — фильтр, а не приговор; приговор выносит
+in-silico PCR (1/0) и FM-скан полного праймера.
+:::
+
+## Этап 7 (продолжение). FM-индекс: сквозной скан полного праймера
+
+```{r}
+#| label: fm
+fm <- kasp_fm_index(genome, basename = fs::path(kasp_cache_dir(), "tair10_fm"))
+fm_hits <- specificity_fm(c(AS_ref = assay$assay$as_ref[1], AS_alt = assay$assay$as_alt[1],
+                            COM = assay$assay$com[1]), fm, nthreads = 2L)
+fm_hits |> knitr::kable(caption = "Rsubread FM-индекс: сколько локусов в геноме матчит полный праймер")
+```
+
+Индекс строится один раз (кэш), геном не грузится в память, маппинг многопоточный.
+
+::: {.notes}
+Полные праймеры уникальны (1 локус) — вот чем закрывается вопрос об оф-таргетах.
+:::
+
+## Этап 8. Как сходится поиск (анимация)
+
+```{r}
+#| label: design-search
+render_design_search(assay, variants, snp, path = here::here("results", "design_search.gif"))
+```
+
+![](../results/design_search.gif){width=100%}
+
+Кадр = проверенное размещение AS (затем COM) в порядке алгоритма, с причиной отказа.
+
+::: {.notes}
+Пролистайте гиф: видно, как отсекаются варианты из 3'-окна и футпринта и как
+остаётся принятый тест. Держите на экране пару секунд на «rejected: …».
+:::
+
+## Этап 9. Приёмка и заказ
+
+```{r}
+#| label: checks
+kasp_design_checks(assay) |> knitr::kable()
+```
+
+```{r}
+#| label: order
+kasp_primer_table(assay, gene) |>
+  dplyr::select(role, oligo_id, sequence, tm, gc, length) |>
+  knitr::kable()
+```
+
+::: {.notes}
+14 критериев: длина ампликона, Tm AS/COM, COM≥AS, GC, гомополимеры, SSR,
+инвертированные повторы, шпильки, димеры, дискриминация, виртуальная ПЦР.
+Хвосты FAM/HEX и IDT/LGC — в `export_primers()`.
+:::
+
+## Этап 10. Полный чек-лист методички: структура и термодинамика
+
+Каждая рекомендация LGC/KBioscience + EasyKASP 2025 → функция пакета → наш прогон.
+
+```{r}
+#| label: recs-struct
+chk <- kasp_design_checks(assay)
+obs <- function(c) chk$observed[match(c, chk$criterion)]
+aa  <- assay$assay[1, ]
+wt  <- assay$as_candidates |>
+  dplyr::arrange(n_3p, n_var, dplyr::desc(discrimination), wobble, seed_hits, abs(tm - 60), dg_3p, as_length) |>
+  dplyr::slice_head(n = 1)
+
+tibble::tibble(
+  Рекомендация = c("Ампликон короткий", "SNP — терминальное 3'-основание", "Длина AS",
+                   "Tm AS (свой аллель)", "GC AS", "Цепь: GC≈45%, без повторов",
+                   "Стабилизирующий мисматч −2/−3", "Последние 5 nt без др. SNP"),
+  Порог = c("50–100 bp", "обязательно", "20–28 nt", "55–65 °C", "40–60%",
+            "обе цепи", "1–3 nt от 3'", "0 вариантов"),
+  `Как в пакете` = c("kasp_design_checks()", "make_as_primer()", "design_as_primers()",
+                     "primer_tm() (TmCalculator)", "gc_frac()", "strand × длины × перебор",
+                     "stab_ats (скан)", "n_3p: IRanges::countOverlaps"),
+  Прогон = c(glue::glue("{obs('amplicon length (bp)')} bp"),
+             glue::glue("{assay$snp$ref}>{assay$snp$alt}"),
+             glue::glue("{wt$as_length} nt"),
+             glue::glue("{round(obs('AS Tm (C)'),1)} °C"),
+             glue::glue("{round(100*obs('AS GC'),0)}%"),
+             glue::glue("выбрана {wt$strand}") ,
+             glue::glue("мисматч не нужен"),
+             glue::glue("{aa$as_n_3p} вариант(ов)"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+Слева — что советует методичка, в середине — какой функцией это сделано, справа —
+результат нашего прогона. Все значения — живые, не из головы.
+:::
+
+## Этап 10 (продолжение). Чек-лист: общий праймер и структура
+
+```{r}
+#| label: recs-com
+obs_c <- function(label) chk$observed[match(label, chk$criterion)]
+tibble::tibble(
+  Рекомендация = c("Длина COM", "GC COM", "COM Tm ≥ Tm AS", "Гомополимеры < 4",
+                   "Шпильки (ΔG37)", "Димеры любой пары (ΔG37)", "Инвертированные повторы",
+                   "SSR 2–4 nt"),
+  Порог = c("18–25 nt", "40–60%", "≥ AS Tm", "< 4 nt", "≥ −3", "≥ −9", "нет", "нет"),
+  `Как в пакете` = c("design_common_primers()", "gc_frac()", "com_tm vs AS Tm",
+                     "has_run()", "primer_thermo()/OligoArrayAux", "dimer_thermo()/OligoArrayAux",
+                     "find_palindromes() (Biostrings)", "find_repeats()"),
+  Прогон = c(glue::glue("{aa$len} nt"),
+             glue::glue("{round(100*aa$com_gc,0)}%"),
+             glue::glue("{round(chk$observed[match('COM Tm >= AS Tm', chk$criterion)],1)} °C"),
+             glue::glue("{chk$observed[match('longest homopolymer (bp)', chk$criterion)]}"),
+             glue::glue("{round(chk$observed[match('worst hairpin dG37', chk$criterion)],1)}"),
+             glue::glue("{round(chk$observed[match('worst cross-dimer dG37', chk$criterion)],1)}"),
+             glue::glue("{chk$observed[match('inverted repeat (arms>=4, loop<=6)', chk$criterion)]}"),
+             glue::glue("{chk$observed[match('SSR (2-4 nt, >=3 copies)', chk$criterion)]}"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+Отдельно проговорите пару AS1–AS2: у KASP она ожидаемо сильнее — праймеры почти
+идентичны и конкурируют за один сайт, это норма, а не дефект.
+:::
+
+## Этап 10 (продолжение). Чек-лист: дискриминация, специфичность, валидация
+
+```{r}
+#| label: recs-spec
+spec <- assay$specificity
+fm_n <- paste(fm_hits$hits, collapse = "/")
+tibble::tibble(
+  Рекомендация = c("Дискриминация on–off", "Избегать wobble G:T / C:A",
+                   "Специфичность: ровно 1 продукт", "Пре-скрининг 3'-сида",
+                   "Оф-таргет целого праймера фатален", "Аннотация варианта", "Валидация: контроли"),
+  `Как в пакете` = c("pcr_efficiency() (DECIPHER, Taq)", "wobble_mismatch()",
+                     "in_silico_pcr() (matchProbePair)", "specificity_seed() (PDict)",
+                     "specificity_fm() (Rsubread FM-индекс)", "annotate_variants() (TxDb/VEP)",
+                     "wet lab (не код)"),
+  Прогон = c(glue::glue("{round(assay$efficiency$ref_on,2)} on / {round(assay$efficiency$ref_off,2)} off"),
+             glue::glue("{assay$specificity$seed[1]} — G:T"),
+             glue::glue("REF 1 / ALT 0"),
+             glue::glue("seed hits: {spec$hits[1]}/{spec$hits[2]}/{spec$hits[3]}"),
+             glue::glue("{fm_n} локус на AS-ref/alt/COM"),
+             glue::glue("stop_gained (AT4G00650)"),
+             glue::glue("REF / ALT / het / NTC"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+Два разных уровня специфичности: сид (фильтр) и целый праймер (приговор). Сид AS
+даёт десятки хитов при 1 мисматче — это нормально; решает in-silico PCR + FM.
+:::
+
+## Как показывать этот материал
+
+- **Сцена:** этот дек — `sh lecture/render.sh` → `_site/lecture/kasp-slides.html`.
+  Ноут `n` — заметки докладчика на каждом слайде; `s` — режим докладчика.
+- **Почитать:** отчёт `rmarkdown::render("report/kasp_report.Rmd")` и виньетка
+  `vignette("kasp-intro")`.
+- **Живой прогон:** `Rscript inst/scripts/run_kasp.R` (числа и панели в `results/`).
+
+Источник лекции — `lecture/kasp-slides.qmd`; там же `README.md` с командами.
+
+::: {.notes}
+Порядок показа: 0→1→...→10, на каждом этапе — запуск чанка и обсуждение числа.
+В конце — чек-лист как «сдаём приёмку».
+:::

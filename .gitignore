@@ -5,9 +5,8 @@ results/*
 .tools/
 .deps/
 
-# curated demo data must be tracked, but not the download cache
+# curated demo data must be tracked
 !inst/
-data/cache/
 
 # R
 .Rproj.user/
@@ -22,3 +21,10 @@ report/*.nb.html
 # R CMD check / build artefacts
 *.Rcheck/
 *.tar.gz
+
+/.quarto/
+_site/
+lecture/*_cache/
+lecture/*_files/
+report/*_cache/
+report/*_files/

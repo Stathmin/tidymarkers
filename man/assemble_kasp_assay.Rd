@@ -16,6 +16,7 @@ assemble_kasp_assay(
   clean_3p = 5L,
   max_footprint_variants = Inf,
   min_disc = 0.5,
+  specificity_candidates = 10L,
   run_blast = FALSE,
   BPPARAM = NULL
 )
@@ -43,6 +44,10 @@ only penalises them in the ranking.  Use \code{\link[=mask_positions]{mask_posit
 positions in your own template if you need the literal \code{N}s.}
 
 \item{min_disc}{minimum discrimination (on- minus off-target efficiency).}
+
+\item{specificity_candidates}{how many leading AS placements to screen for
+3'-seed genome-wide uniqueness when breaking ties (mirrors
+\code{\link[=pick_target_snp]{pick_target_snp()}}; \code{0} disables the screen).}
 
 \item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
 

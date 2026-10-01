@@ -74,6 +74,9 @@ Rscript -e 'rmarkdown::render("report/kasp_report.Rmd")'
 
 # 6. тесты (инварианты ядра дизайна)
 Rscript -e 'testthat::test_local()'    # грузит пакет из исходников (pkgload)
+
+# 7. лекционный дек Quarto (reveal.js)
+sh lecture/render.sh                    # ставит OligoArrayAux на PATH и рендерит
 ```
 
 Результаты в `results/` (консолидировано): `kasp_design.csv` (кандидаты-тесты),
@@ -103,6 +106,9 @@ Rscript -e 'testthat::test_local()'    # грузит пакет из исход
 Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.
 Начните с виньетки: `vignette("kasp-intro")`.
+
+Лекция: `lecture/kasp-slides.qmd` — живые tidyverse-чанки (рендер `sh lecture/render.sh`,
+нужен `quarto` CLI); подробности в `lecture/README.md`.
 
 ---
 
@@ -181,7 +187,7 @@ Zhang, Yang & Wen, *BMC Bioinformatics* 2025, 26:292, doi:10.1186/s12859-025-063
 ## 4. Что считает пайплайн
 
 1. `ensembl_gene()` / `ensembl_variants()` — ген-модель и SNP из 1001 Genomes
-   (Ensembl Plants REST, с кэшем в `data/cache/` и retry).
+   (Ensembl Plants REST, с кэшем в пользовательском кэше `kasp_cache_dir()` и retry).
 2. `pick_target_snp()` — отбор пригодной замены (SNP/MNP): референс из генома; сначала
    предпочитаем «чистую» 3'-зону AS (нет других вариантов в последних 5 нт,
    метрика `n_3p`, лучшая из двух цепей), затем missense > splice > synonymous >
@@ -247,6 +253,10 @@ kasp-example/
 ├── tests/testthat.R         # раннер (функции сорсятся, без сборки пакета)
 ├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика oligo_dg
 ├── inst/extdata/example_targets.csv # реальные SNP-мишени FRI (для variant_id)
-├── data/cache/              # кэш Ensembl + BLAST (в .gitignore)
+├── inst/scripts/            # run_kasp.R, quickstart.R (демо)
+├── lecture/                 # Quarto-дек лекции (`sh lecture/render.sh`)
 └── results/                 # вывод (в .gitignore)
 ```
+
+Внешние данные и индексы (геном, варианты, BLAST/FM-индексы) живут в
+пользовательском кэше `kasp_cache_dir()` (`tools::R_user_dir`), а не в проекте.

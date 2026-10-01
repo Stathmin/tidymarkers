@@ -79,13 +79,18 @@
 - [x] `variant_type()` — SNP / MNP / insertion / deletion (`b0ff61d`)
 - [x] `BPPARAM` — параллель по локусам (`80ccc76`)
 
-## J. Визуализация (`R/kasp_plots.R`, пакетные библиотеки)
-- [x] `plot_discrimination()` — бар-чарт кандидатов (`ca75edb`)
+## J. Визуализация (`R/kasp_plots.R`, `R/kasp_search_anim.R`, пакетные библиотеки)
 - [x] `plot_primers()` — стрелки `gggenes` + локальная дорожка вариантов (`0420d26`, `2ed509a`)
 - [x] `plot_variant_landscape()` — модель гена + врезка региона (`0420d26`)
 - [x] `plot_alignment()` — `ggmsa` (ДНК-MSA + логотип), REF/ALT и AS (`0420d26`)
 - [x] `plot_self_complementarity()` — праймер против своего revcomp (`ggmsa`) (`0420d26`)
 - [x] `plot_dimer_qc()` — матрица dG дуплексов + шпильки (`0420d26`)
+- [x] `plot_discrimination()` — бар-чарт кандидатов (оставлен как вспомогательный)
+- [x] **Анимация поиска** (`design_search_frames()`, `plot_design_search_step()`,
+      `render_design_search()`) — GIF: перебор AS-размещений в порядке алгоритма и
+      затем COM, каждое с причиной отказа, до принятого теста; статичная дорожка
+      вариантов. Кадры — обычные ggplots, сборка GIF через ImageMagick `convert`
+      (gganimate требует `transformr`→`sf`/GDAL).
 
 ## K. Вывод и заказ
 - [x] `export_primers()` — tidy + sheets для IDT (bulk) и LGC/KASP (`0420d26`)
@@ -137,7 +142,8 @@
 - [x] `CONTRIBUTING.md` — цикл разработки, стиль, документация
 
 ### M5. Уроки для лекции
-- [x] Скелет-слайды «какая библиотека за что отвечает» (`inst/slides/library-map.md`)
+- [x] Лекционный дек Quarto (`lecture/kasp-slides.qmd` + `sh lecture/render.sh`) — живой
+      tidyverse-прогон; заменил прежний скелет `inst/slides/library-map.md` (убран)
 - [x] Живой пример: `inst/scripts/quickstart.R` (один SNP → тест → вердикт, на кэше)
 
 ## N. Честный аудит: библиотеки vs самописное  [местами очередь]

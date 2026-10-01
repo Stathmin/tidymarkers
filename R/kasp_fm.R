@@ -17,10 +17,10 @@ FM_MISMATCH <- 2L
 #' Build an FM-index for a genome (`Rsubread::buildindex`)
 #'
 #' Writes the (uncompressed) genome FASTA once and builds a Subread FM-index next
-#' to it.  Attach the returned basename to a `kasp_genome` with
-#' `kasp_genome(..., fm_index = <basename>)` to let [specificity_of()]/the
-#' assembly use it, or pass it straight to [specificity_fm()].  Building is a
-#' one-off cost per genome.
+#' to it.  Idempotent: if `basename`'s index files already exist they are reused,
+#' so calling this on every run only pays the build cost once.  Attach the
+#' returned basename to a `kasp_genome` with `kasp_genome(..., fm_index = <basename>)`
+#' to let the assembly use it, or pass it straight to [specificity_fm()].
 #'
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
 #' @param basename index basename to create (no extension).
@@ -30,6 +30,10 @@ FM_MISMATCH <- 2L
 kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm")) {
   rlang::check_installed("Rsubread", reason = "for the FM-index genome scan")
   basename <- as.character(basename)          # Rsubread wants a plain string
+  if (fs::file_exists(paste0(basename, ".files"))) {
+    cli::cli_alert_info("Reusing the existing FM-index at {.path {basename}}.")
+    return(basename)
+  }
   fasta <- if (inherits(genome, "kasp_genome")) genome$path else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))

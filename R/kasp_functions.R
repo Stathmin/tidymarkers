@@ -304,19 +304,34 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
   as.integer(length(IRanges::findOverlaps(IRanges::IRanges(v, v), interval)))
 }
 
+#' Per-user cache directory for downloads and indices
+#'
+#' Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST
+#' and FM indices) lives here — in the OS user cache, not in the project tree — so
+#' the working directory stays clean and the cache is shared across projects.
+#' @return the cache directory path (created if needed).
+#' @family KASP input
+#' @export
+kasp_cache_dir <- function() {
+  d <- tools::R_user_dir("kaspexample", which = "cache")
+  fs::dir_create(d)
+  d
+}
+
 #' Download (once) and load the TAIR10 genome as a DNAStringSet
 #'
-#' The FASTA comes from Ensembl Plants and is cached under `data/cache/`.
+#' The FASTA comes from Ensembl Plants and is cached in the per-user cache
+#' directory (`tools::R_user_dir("kaspexample", "cache")`), not in the project.
 #' Sequence names are normalised to Chr1..Chr5 / ChrM / ChrC (scaffolds
 #' dropped), so they line up with the Ensembl gene records used elsewhere.
 #' @param cache cache directory for the downloaded FASTA.
 #' @param release Ensembl Plants release number.
 #' @section Caching:
-#' The download (~35 MB) happens once and is reused; delete
-#' `data/cache/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz` to refresh.
+#' The download (~35 MB) happens once and is reused; delete the cached
+#' `Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz` to refresh.
 #' @family KASP input
 #' @export
-ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
+ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
   fs::dir_create(cache)
   fa <- fs::path(cache, "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz")
   if (!fs::file_exists(fa)) {
@@ -358,7 +373,7 @@ ath_genome <- function(cache = here::here("data", "cache"), release = 63L) {
 #' @family KASP input
 #' @export
 ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
-                         cache = here::here("data", "cache")) {
+                         cache = kasp_cache_dir()) {
   fs::dir_create(cache)
   path <- fs::path(cache, glue::glue("{species}_{gene_id}.json"))
   if (!fs::file_exists(path)) {
@@ -399,7 +414,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
 #' @export
 ensembl_variants <- function(chrom, start, end,
                              species = "arabidopsis_thaliana",
-                             cache = here::here("data", "cache")) {
+                             cache = kasp_cache_dir()) {
   fs::dir_create(cache)
   region <- glue::glue("{sub('^Chr', '', chrom)}:{start}-{end}")
   path <- fs::path(cache, glue::glue("{species}_var_{region}.json"))
@@ -1352,7 +1367,7 @@ blast_primers <- function(primers, db_path) {
 #' @param path FASTA path to write (and index).
 #' @family KASP specificity
 #' @export
-build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa")) {
+build_blast_db <- function(genome, path = fs::path(kasp_cache_dir(), "tair10.fa")) {
   fs::dir_create(fs::path_dir(path))
   if (!fs::file_exists(path)) Biostrings::writeXStringSet(genome, path)
   rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE)
@@ -1371,6 +1386,19 @@ build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa
 #' variants falling under the primer footprint (the 3'-terminal 5 nt are handled
 #' earlier by [pick_target_snp()]), then maximise discrimination.
 #'
+#' @section Selection policy:
+#' The AS placement is chosen lexicographically by:
+#' 1. cleanest 3' window (`n_3p`, best of the two orientations);
+#' 2. fewest other variants under the primer footprint (`n_var`);
+#' 3. highest discrimination (DECIPHER);
+#' 4. not a weak G:T / A:C wobble mismatch;
+#' 5. quieter 3'-seed genome-wide (`seed_hits`, best of the two strands) — a
+#'    specificity tie-break computed only for the top `specificity_candidates`
+#'    placements, mirroring [pick_target_snp()];
+#' 6. then `|Tm - target|`, 3'-stability and length.
+#' The common primer is then placed on the winning strand and ranked by
+#' amplicon length, `COM Tm >= AS Tm`, dimers/hairpin, footprint load and Tm
+#' proximity (see [design_common_primers()]).
 #' @section KASP design pipeline:
 #' Typical use is `ath_genome()` -> `ensembl_gene()`/`ensembl_variants()` ->
 #' `pick_target_snp()` -> `assemble_kasp_assay()` -> `kasp_design_checks()`.
@@ -1387,6 +1415,9 @@ build_blast_db <- function(genome, path = here::here("data", "cache", "tair10.fa
 #'   only penalises them in the ranking.  Use [mask_positions()] to blank such
 #'   positions in your own template if you need the literal `N`s.
 #' @param min_disc minimum discrimination (on- minus off-target efficiency).
+#' @param specificity_candidates how many leading AS placements to screen for
+#'   3'-seed genome-wide uniqueness when breaking ties (mirrors
+#'   [pick_target_snp()]; `0` disables the screen).
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
 #' @param BPPARAM optional `BiocParallel` backend for the genome-wide steps
 #'   (seed specificity and in-silico PCR; split by chromosome).
@@ -1410,7 +1441,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 min_gc = 0.35, max_gc = 0.70,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 max_footprint_variants = Inf,
-                                min_disc = 0.5, run_blast = FALSE, BPPARAM = NULL) {
+                                min_disc = 0.5, specificity_candidates = 10L,
+                                run_blast = FALSE, BPPARAM = NULL) {
   tmpl    <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos    <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   ref_len <- nchar(snp$ref)
@@ -1495,11 +1527,30 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
 
   # prioritise: clean 3' window, then minimal footprint variant load, then
-  # discrimination, then Tm closest to the AS target
-  best_as <- as_cand |>
+  # discrimination, then a quieter 3'-seed (genome-wide), then the tie-breakers.
+  # Only the leading placements are seed-screened (like pick_target_snp()), so the
+  # scan stays a tie-break and does not dominate the cost; an indexed genome
+  # (no in-memory DNAStringSet) skips it.
+  ordered <- as_cand |>
     dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
                    .data$wobble, abs(.data$tm - AS_TM_TARGET), .data$dg_3p, .data$as_length) |>
+    dplyr::mutate(.as_row = dplyr::row_number())
+  ordered$seed_hits <- NA_integer_
+  if (specificity_candidates > 0L && !inherits(genome, "kasp_genome")) {
+    short <- dplyr::slice_head(ordered, n = specificity_candidates)
+    seeds <- stats::setNames(
+      substr(short$ref_primer, nchar(short$ref_primer) - SEED_K + 1L, nchar(short$ref_primer)),
+      short$.as_row)
+    hits <- specificity_seed(seeds, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
+                             BPPARAM = BPPARAM)$hits
+    ordered$seed_hits[short$.as_row] <- hits
+  }
+  best_as <- ordered |>
+    dplyr::arrange(.data$n_3p, .data$n_var, dplyr::desc(.data$discrimination),
+                   .data$wobble, .data$seed_hits, abs(.data$tm - AS_TM_TARGET),
+                   .data$dg_3p, .data$as_length) |>
     dplyr::slice_head(n = 1L)
+  as_cand <- dplyr::select(ordered, - ".as_row")
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
     rlang::warn(glue::glue(

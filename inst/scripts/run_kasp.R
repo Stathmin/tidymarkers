@@ -13,7 +13,8 @@
 #
 #  External tool required: OligoArrayAux (`hybrid-min`) for DECIPHER, e.g.
 #     conda install -c bioconda oligoarrayaux
-#  Optional: NCBI BLAST+ for the (slow) genome-wide BLAST step.
+#  Optional: NCBI BLAST+ for the (slow) genome-wide BLAST step; a cached
+#  Rsubread FM-index is the index-based alternative and is built once.
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -27,6 +28,8 @@ suppressPackageStartupMessages({
 
 # Toggle the (slow) genome-wide BLAST step; the fast seed screen always runs.
 RUN_BLAST <- FALSE
+# Build/attach an Rsubread FM-index for the whole-primer genome scan (cached).
+RUN_FM <- TRUE
 
 if (!has_oligoarrayaux()) {
   rlang::abort(c("OligoArrayAux ('hybrid-min') not found on PATH.",
@@ -37,6 +40,12 @@ if (!has_oligoarrayaux()) {
 # --- 1. genome + gene --------------------------------------------------------
 genome  <- ath_genome()          # TAIR10 FASTA (Ensembl Plants), cached
 gene_id <- "AT4G00650"           # FRI (FRIGIDA): the textbook flowering-time locus
+
+# An FM-index of the genome, built once and reused on later runs (Rsubread).
+# This is the index-based alternative to BLAST for the whole-primer scan below;
+# `kasp_genome(..., fm_index = )` would let `assemble_kasp_assay(run_blast = TRUE)`
+# use it too.
+fm_index <- if (RUN_FM) kasp_fm_index(genome, basename = fs::path(kasp_cache_dir(), "tair10_fm"))
 
 gene <- ensembl_gene(gene_id)
 print(gene)
@@ -80,6 +89,12 @@ cat("Thermodynamics (TmCalculator):\n");                    print(assay$thermo)
 cat("\nDuplex dG37, kcal/mol (more negative = stronger dimer):\n")
 print(assay$complementarity)
 cat("\n3'-seed specificity (hits should be 1):\n");          print(assay$specificity)
+if (!is.null(fm_index)) {
+  cat("\nWhole-primer genome scan (FM-index via Rsubread; 1 = unique):\n")
+  fm_primers <- c(AS_ref = assay$assay$as_ref[1L], AS_alt = assay$assay$as_alt[1L],
+                  COM = assay$assay$com[1L])
+  print(specificity_fm(fm_primers, fm_index, nthreads = 2L))
+}
 if (!is.null(assay$blast)) {
   cat("\nTop BLAST hits:\n")
   print(utils::head(dplyr::arrange(assay$blast, .data$evalue), 10))
@@ -104,6 +119,10 @@ ggsave(here::here("results", "plot_primers.png"),    plot_primers(assay, variant
 ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gene, variants, snp, assay), width = 8, height = 3.5)
 suppressWarnings(ggsave(here::here("results", "plot_alignment.png"), plot_alignment(assay),  width = 8, height = 3))
 suppressWarnings(ggsave(here::here("results", "plot_dimers.png"),    plot_dimer_qc(assay),  width = 9, height = 7))
+
+# how the search converges: every AS placement (and then every COM placement) is
+# tried, tagged with why it loses, until the accepted assay (a GIF)
+render_design_search(assay, variants, snp, path = here::here("results", "design_search.gif"))
 
 # --- 8. oligo ordering sheet (the IDT/LGC files are column subsets of it) ----
 primers <- kasp_primer_table(assay, gene)

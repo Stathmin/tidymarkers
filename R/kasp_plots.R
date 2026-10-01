@@ -99,22 +99,45 @@ plot_self_complementarity <- function(assay, title = "Self-complementarity (DNA)
 
 #' Candidate AS primers ranked by discrimination
 #'
-#' One bar chart, shared by the driver and the report so the two cannot drift.
+#' One horizontal bar chart, shared by the driver and the report so the two
+#' cannot drift.  The placement actually chosen by [assemble_kasp_assay()] is
+#' highlighted and the acceptance threshold is drawn, so a candidate that only
+#' *looks* good is obvious at a glance.
+#'
 #' @param assay assembled assay.
 #' @param n number of candidates to show.
 #' @family KASP plots
 #' @export
 plot_discrimination <- function(assay, n = 15L) {
-  assay$as_candidates |>
+  aa <- assay$assay[1L, ]
+  d  <- assay$as_candidates |>
     dplyr::slice_max(.data$discrimination, n = n) |>
-    dplyr::mutate(label = paste0("strand ", .data$strand, " / len ", .data$as_length,
-                                 " / mm ", .data$stab_at, " / ", .data$stab_base)) |>
-    ggplot2::ggplot(ggplot2::aes(.data$discrimination,
-                                 stats::reorder(.data$label, .data$discrimination))) +
-    ggplot2::geom_col(fill = "darkorange") +
-    ggplot2::labs(x = "discrimination (on- minus off-target efficiency)", y = NULL,
-                  title = "Allele-specific discrimination of candidate AS primers") +
-    ggplot2::theme_minimal()
+    dplyr::mutate(
+      chosen = .data$ref_primer == aa$as_ref,
+      mm     = dplyr::if_else(is.na(.data$stab_at), "no mismatch",
+                              glue::glue("mismatch {.data$stab_base} at -{.data$stab_at}")),
+      label  = glue::glue("{.data$strand} strand \u00b7 {.data$as_length} nt \u00b7 {.data$mm}"),
+      label  = forcats::fct_reorder(.data$label, .data$discrimination))
+
+  ggplot2::ggplot(d, ggplot2::aes(.data$discrimination, .data$label)) +
+    ggplot2::geom_col(ggplot2::aes(fill = .data$chosen), width = 0.72) +
+    ggplot2::geom_vline(xintercept = KASP_LIMITS$discrimination,
+                        linetype = "dashed", colour = "grey35") +
+    ggplot2::geom_text(ggplot2::aes(label = format(round(.data$discrimination, 2), nsmall = 2)),
+                       hjust = -0.15, size = 3.1, colour = "grey25") +
+    ggplot2::scale_fill_manual(values = c(`TRUE` = "firebrick", `FALSE` = "grey86"),
+                               labels = c(`TRUE` = "chosen", `FALSE` = "candidate"),
+                               name = NULL) +
+    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(0, 0.15))) +
+    ggplot2::labs(
+      x = "discrimination (on- minus off-target efficiency)", y = NULL,
+      title = "Allele-specific discrimination of candidate primers",
+      subtitle = glue::glue("top {n} placements on both strands; ",
+                            "dashed line = acceptance threshold ({KASP_LIMITS$discrimination})"),
+      caption = "DECIPHER, Taq-aware hybridisation") +
+    ggplot2::theme_minimal(base_size = 11) +
+    ggplot2::theme(panel.grid.major.y = ggplot2::element_blank(),
+                   legend.position = "top")
 }
 
 

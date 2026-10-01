@@ -16,10 +16,10 @@ the index basename (invisibly used by \code{\link[=specificity_fm]{specificity_f
 }
 \description{
 Writes the (uncompressed) genome FASTA once and builds a Subread FM-index next
-to it.  Attach the returned basename to a \code{kasp_genome} with
-\verb{kasp_genome(..., fm_index = <basename>)} to let \code{\link[=specificity_of]{specificity_of()}}/the
-assembly use it, or pass it straight to \code{\link[=specificity_fm]{specificity_fm()}}.  Building is a
-one-off cost per genome.
+to it.  Idempotent: if \code{basename}'s index files already exist they are reused,
+so calling this on every run only pays the build cost once.  Attach the
+returned basename to a \code{kasp_genome} with \verb{kasp_genome(..., fm_index = <basename>)}
+to let the assembly use it, or pass it straight to \code{\link[=specificity_fm]{specificity_fm()}}.
 }
 \seealso{
 Other KASP specificity:

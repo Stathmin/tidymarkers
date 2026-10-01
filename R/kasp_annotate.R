@@ -83,7 +83,7 @@ kasp_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
 #' @return an `EnsDb` object.
 #' @family KASP annotation
 #' @export
-kasp_ensdb <- function(gtf = NULL, cache = here::here("data", "cache"), release = 63L) {
+kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
   rlang::check_installed("ensembldb", reason = "for an EnsDb gene model")
   fs::dir_create(cache)
   if (is.null(gtf)) {

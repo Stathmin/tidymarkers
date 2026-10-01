@@ -4,7 +4,7 @@
 \alias{ath_genome}
 \title{Download (once) and load the TAIR10 genome as a DNAStringSet}
 \usage{
-ath_genome(cache = here::here("data", "cache"), release = 63L)
+ath_genome(cache = kasp_cache_dir(), release = 63L)
 }
 \arguments{
 \item{cache}{cache directory for the downloaded FASTA.}
@@ -12,14 +12,15 @@ ath_genome(cache = here::here("data", "cache"), release = 63L)
 \item{release}{Ensembl Plants release number.}
 }
 \description{
-The FASTA comes from Ensembl Plants and is cached under \verb{data/cache/}.
+The FASTA comes from Ensembl Plants and is cached in the per-user cache
+directory (\code{tools::R_user_dir("kaspexample", "cache")}), not in the project.
 Sequence names are normalised to Chr1..Chr5 / ChrM / ChrC (scaffolds
 dropped), so they line up with the Ensembl gene records used elsewhere.
 }
 \section{Caching}{
 
-The download (~35 MB) happens once and is reused; delete
-\code{data/cache/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz} to refresh.
+The download (~35 MB) happens once and is reused; delete the cached
+\code{Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz} to refresh.
 }
 
 \seealso{
@@ -30,6 +31,7 @@ Other KASP input:
 \code{\link[=genome_chroms]{genome_chroms()}},
 \code{\link[=genome_length]{genome_length()}},
 \code{\link[=genome_seq]{genome_seq()}},
+\code{\link[=kasp_cache_dir]{kasp_cache_dir()}},
 \code{\link[=kasp_example]{kasp_example()}},
 \code{\link[=kasp_genome]{kasp_genome()}},
 \code{\link[=mask_positions]{mask_positions()}},

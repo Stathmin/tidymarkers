@@ -2,10 +2,14 @@
 ^renv$
 ^renv\.lock$
 ^results$
-^data/cache$
 ^report$
-^\.github$
 ^_pkgdown\.yml$
 ^\.lintr$
 ^.*\.Rcheck$
 ^.*\.tar\.gz$
+^lecture$
+^_quarto\.yml$
+^_site$
+^\.quarto$
+^.*\.Rproj$
+^\.Rproj\.user$

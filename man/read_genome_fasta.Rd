@@ -31,6 +31,7 @@ Other KASP input:
 \code{\link[=genome_chroms]{genome_chroms()}},
 \code{\link[=genome_length]{genome_length()}},
 \code{\link[=genome_seq]{genome_seq()}},
+\code{\link[=kasp_cache_dir]{kasp_cache_dir()}},
 \code{\link[=kasp_example]{kasp_example()}},
 \code{\link[=kasp_genome]{kasp_genome()}},
 \code{\link[=mask_positions]{mask_positions()}},
