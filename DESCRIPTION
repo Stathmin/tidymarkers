@@ -61,9 +61,17 @@ Suggests:
     TxDb.Athaliana.BioMart.plantsmart28,
     Rsubread,
     ensembldb,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    pkgload,
+    bench,
+    profmem,
+    lobstr,
+    spelling,
+    styler,
+    lintr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/testthat/parallel: true
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.0
 Config/potools/style: base

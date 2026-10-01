@@ -10,7 +10,8 @@ render_design_search(
   snp,
   path = here::here("results", "design_search.gif"),
   fps = 4L,
-  hold = 3L
+  hold = 3L,
+  cores = getOption("tidykasp.cores", 1L)
 )
 }
 \arguments{
@@ -25,15 +26,19 @@ render_design_search(
 \item{fps}{frames per second.}
 
 \item{hold}{how many extra frames to hold the chosen AS/COM/final frames.}
+
+\item{cores}{cores for drawing frames; \code{1} is serial.}
 }
 \value{
 the GIF path (invisibly).
 }
 \description{
-Renders every frame with \code{\link[=plot_design_search_step]{plot_design_search_step()}} and stitches them into a
-GIF.  gganimate is used when installed; otherwise the frames are assembled with
-the ImageMagick \code{convert} CLI (or \code{gifski}).  The winner and the final frame are
-held a few frames longer so they are readable.
+Renders each distinct frame with \code{\link[=plot_design_search_step]{plot_design_search_step()}} and stitches them
+into a GIF with the ImageMagick \code{convert} CLI (or \code{gifski}).  Only the \code{hold}
+repeats are avoided; the \code{ragg} device is used when installed.  Frames are
+independent, so \code{cores > 1} draws them in parallel on Unix (opt in with
+\code{options(tidykasp.cores = ...)}; the default of one core respects CRAN's cap
+on default core use).
 }
 \seealso{
 Other KASP plots:

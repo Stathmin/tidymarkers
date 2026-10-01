@@ -12,6 +12,7 @@
 ^_site$
 ^\.quarto$
 ^data-raw$
+^dev$
 ^.*\.Rproj$
 ^.*\.Rproj$
 ^\.Rproj\.user$

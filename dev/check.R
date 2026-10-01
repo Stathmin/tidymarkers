@@ -1,0 +1,91 @@
+# =============================================================================
+#  dev/check.R  --  the internal gate: check a change before it lands
+# =============================================================================
+#  The local stand-in for CI (which this repo deliberately does not ship, see
+#  CONTRIBUTING).  Runs the checks a "best package" runs, in order:
+#
+#    1. NAMESPACE / man/ are in sync with the roxygen comments
+#    2. R/ and tests/ are styler-clean and lintr-clean
+#    3. spelling (`inst/WORDLIST`), when the 'spelling' package is installed
+#    4. R CMD check -- only with `--full` (slow; builds and checks the tarball)
+#
+#  A missing tool is a message, not a failure, so it runs on a bare machine.
+#  Run:  Rscript dev/check.R [--full]
+# =============================================================================
+
+script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
+setwd(root)
+
+full   <- "--full" %in% commandArgs(trailingOnly = TRUE)
+failed <- character()
+
+ok <- function(...) message("  ok   ", ...)
+
+step <- function(name, code) {
+  message("\n== ", name, " ==")
+  if (!is.null(step_result <- tryCatch({ code(); NULL }, error = function(e) e))) {
+    message("  FAIL ", conditionMessage(step_result))
+    failed <<- c(failed, name)
+  }
+}
+
+# 1. roxygen ----------------------------------------------------------------
+step("documentation in sync", function() {
+  if (!requireNamespace("roxygen2", quietly = TRUE)) return(message("  skip (roxygen2 not installed)"))
+  # compare before/after roxygenise (not against git HEAD, which a dirty tree
+  # would flag); a new or changed man/ file means the sources drifted
+  snapshot <- function() {
+    files <- c("NAMESPACE", list.files("man", pattern = "\\.Rd$", full.names = TRUE))
+    vapply(files, function(f) paste(readLines(f, warn = FALSE), collapse = "\n"), character(1))
+  }
+  before <- snapshot()
+  suppressMessages(roxygen2::roxygenise())
+  if (!identical(before, snapshot())) stop("stale NAMESPACE/man - run roxygen2::roxygenise() and commit")
+  ok("NAMESPACE and man/ match the roxygen comments")
+})
+
+# 2. style + lint -----------------------------------------------------------
+step("style (styler)", function() {
+  if (!requireNamespace("styler", quietly = TRUE)) return(message("  skip (styler not installed)"))
+  styler::style_dir("R", dry = "fail")
+  styler::style_dir("tests", dry = "fail")
+  ok("R/ and tests/ are styler-clean")
+})
+
+step("lintr", function() {
+  if (!requireNamespace("lintr", quietly = TRUE)) return(message("  skip (lintr not installed)"))
+  l <- lintr::lint_package()
+  if (length(l)) {
+    print(l)
+    stop(length(l), " lint(s)")
+  }
+  ok("no lints")
+})
+
+# 3. spelling ---------------------------------------------------------------
+step("spelling", function() {
+  if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
+  words <- spelling::spell_check_package()
+  if (nrow(words)) {
+    print(words)
+    stop(nrow(words), " unknown word(s) (add good ones to inst/WORDLIST)")
+  }
+  ok("no unknown words")
+})
+
+# 4. R CMD check ------------------------------------------------------------
+step("R CMD check", function() {
+  if (!full) return(message("  skip (pass --full to build and check)"))
+  status <- system2("R", c("CMD", "check", "--no-manual", "--as-cran", "."))
+  if (!identical(as.integer(status), 0L)) stop("R CMD check failed (status ", status, ")")
+  ok("R CMD check clean")
+})
+
+# summary -------------------------------------------------------------------
+message()
+if (length(failed)) {
+  message("FAILED: ", paste(failed, collapse = ", "))
+  quit(status = 1L)
+}
+message("all checks passed")

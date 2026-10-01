@@ -219,22 +219,26 @@ plot_design_search_step <- function(frames, step) {
 
 #' Render the design-search animation as a GIF
 #'
-#' Renders every frame with [plot_design_search_step()] and stitches them into a
-#' GIF.  gganimate is used when installed; otherwise the frames are assembled with
-#' the ImageMagick `convert` CLI (or `gifski`).  The winner and the final frame are
-#' held a few frames longer so they are readable.
+#' Renders each distinct frame with [plot_design_search_step()] and stitches them
+#' into a GIF with the ImageMagick `convert` CLI (or `gifski`).  Only the `hold`
+#' repeats are avoided; the `ragg` device is used when installed.  Frames are
+#' independent, so `cores > 1` draws them in parallel on Unix (opt in with
+#' `options(tidykasp.cores = ...)`; the default of one core respects CRAN's cap
+#' on default core use).
 #' @param assay assembled assay.
 #' @param variants variant table.
 #' @param snp target variant (one row).
 #' @param path output GIF path.
 #' @param fps frames per second.
 #' @param hold how many extra frames to hold the chosen AS/COM/final frames.
+#' @param cores cores for drawing frames; `1` is serial.
 #' @return the GIF path (invisibly).
 #' @family KASP plots
 #' @export
 render_design_search <- function(assay, variants, snp,
                                  path = here::here("results", "design_search.gif"),
-                                 fps = 4L, hold = 3L) {
+                                 fps = 4L, hold = 3L,
+                                 cores = getOption("tidykasp.cores", 1L)) {
   rlang::check_installed("ggplot2")
   frames <- design_search_frames(assay, variants, snp)
   n <- nrow(frames$notes)
@@ -245,14 +249,27 @@ render_design_search <- function(assay, variants, snp,
 
   td <- fs::path_temp("kasp_anim")
   fs::dir_create(td)
-  pngs <- character(0)
-  for (i in seq_along(steps)) {
-    f <- fs::path(td, sprintf("f%04d.png", i))
-    ggplot2::ggsave(f, plot_design_search_step(frames, steps[i]),
-      width = 8, height = 4.6, dpi = 110, bg = "white"
+
+  # One PNG per *distinct* step (the `hold` repeats reuse the file); the ragg
+  # device is faster to draw with when available, and the frames are
+  # independent ggplots so `cores > 1` renders them in parallel.
+  uniq <- unique(steps)
+  files <- fs::path(td, sprintf("s%04d.png", uniq))
+  device <- if (rlang::is_installed("ragg")) ragg::agg_png else NULL
+  draw <- function(k) {
+    ggplot2::ggsave(files[k], plot_design_search_step(frames, uniq[k]),
+      width = 8, height = 4.6, dpi = 110, bg = "white", device = device
     )
-    pngs <- c(pngs, f)
+    NULL
   }
+  ncores <- min(as.integer(cores), length(uniq))
+  if (ncores > 1L && .Platform$OS.type == "unix") {
+    parallel::mclapply(seq_along(uniq), draw, mc.cores = ncores)
+  } else {
+    lapply(seq_along(uniq), draw)
+  }
+  pngs <- files[match(steps, uniq)]
+
   fs::dir_create(fs::path_dir(path))
   assemble_gif(pngs, as.character(path), delay_cs = round(100 / fps))
   cli::cli_alert_success(gettext("Design-search animation written to {.path {path}} ({length(pngs)} frames)."))

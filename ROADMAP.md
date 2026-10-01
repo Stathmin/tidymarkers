@@ -18,6 +18,9 @@ A–P — реализовано или оценено; **Q** — локализ
       `PATH`/`UNAFOLDDAT`, а тесты подхватывают сборку через
       `tests/testthat/helper-oligoarrayaux.R`
 - [x] Раннер тестов: `tests/testthat.R` (`test_check()` по установленному пакету)
+- [x] Внутренние проверки и замеры: `dev/check.R` (доки, styler, lintr, spelling,
+      `--full` → `R CMD check`), `dev/bench.R` (время + память по функциям),
+      `dev/profile-gif.R` (профиль отрисовки GIF)
 - [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 
@@ -94,7 +97,9 @@ A–P — реализовано или оценено; **Q** — локализ
       `render_design_search()`) — GIF: перебор AS-размещений в порядке алгоритма и
       затем COM, каждое с причиной отказа, до принятого теста; статичная дорожка
       вариантов. Кадры — обычные ggplots, сборка GIF через ImageMagick `convert`
-      (gganimate требует `transformr`→`sf`/GDAL).
+      (gganimate требует `transformr`→`sf`/GDAL). Рисуются только различные кадры
+      (`hold` переиспользует файл); `cores > 1` (или `options(tidykasp.cores=)`)
+      распараллеливает отрисовку на Unix — ~2× (замер: 9→5 с, `dev/profile-gif.R`).
 
 ## K. Вывод и заказ
 - [x] `export_primers()` — tidy + sheets для IDT (bulk) и LGC/KASP

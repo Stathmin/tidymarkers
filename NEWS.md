@@ -25,6 +25,10 @@
   дорожка вариантов и мишень. `design_search_frames()` (кадры) и
   `plot_design_search_step()` — библиотечные ggplots; сборка через ImageMagick
   `convert` или `gifski`. Встроено в демо, лекцию и отчёт.
+- `render_design_search()` рисует только различные кадры (повторы `hold`
+  переиспользуют файл) и может распараллелить отрисовку на Unix
+  (`options(tidykasp.cores = ...)`) — ~2× на многоядерной машине; по умолчанию один
+  поток (как требует CRAN).
 
 ### Пакет и UX
 - Проект собирается как настоящий пакет: `NAMESPACE` и `man/` из roxygen
@@ -86,6 +90,13 @@
   остаётся на TxDb (у ensembldb нет `locateVariants`, мост к TxDb теряет CDS).
 - Экосистема проверена и задокументирована (см. ROADMAP P): `oligo` — микрочипы, не
   подходит; `rprimer`/`pwalign`/`targets`/`biomaRt` — оценены.
+
+### Инструменты разработчика
+- `dev/check.R` — локальный «CI» (доки ↔ roxygen, styler, lintr, spelling;
+  `--full` → `R CMD check`); `dev/bench.R` — время и память по функциям
+  (`bench`/`Rprofmem`); `dev/profile-gif.R` — профиль отрисовки GIF.
+- Пакет стал lint-clean (`.lintr` в формате, понятном lintr 3.4); тесты можно
+  гонять параллельно (`Config/testthat/parallel`).
 
 ### Локализация и внешние инструменты
 - Все пользовательские сообщения (`stop`/`warning`/`cli`/прогресс) переведены через

@@ -8,5 +8,6 @@ linters: linters_with_defaults(
   )
 exclusions: list(
     "data-raw",
+    "dev",
     "inst/scripts"
   )
