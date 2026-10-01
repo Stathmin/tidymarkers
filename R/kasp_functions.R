@@ -1556,6 +1556,27 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM
   purrr::list_rbind(res)
 }
 
+#' Forward/reverse primer pairs for the two allele-specific virtual PCRs
+#'
+#' Uses the template-matched AS primers (no deliberate stabiliser), so the pair
+#' answers "is the target site itself amplifiable?": on the plus strand the AS
+#' primer is the forward primer, on the minus strand it is the reverse one.  A
+#' single source of truth shared by [assay_amplicons()] and the genome ideogram.
+#' @keywords internal
+#' @noRd
+as_pcr_pairs <- function(assay) {
+  aa <- assay$assay[1L, ]
+  ref_len <- nchar(assay$snp$ref)
+  anchor <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
+  seed <- c(
+    AS_ref = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$ref, strand = aa$strand),
+    AS_alt = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$alt, strand = aa$strand)
+  )
+  purrr::imap(seed, function(as_p, nm) {
+    if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
+  })
+}
+
 #' Products predicted for each allele-specific primer against the common one
 #'
 #' On the reference genome the REF primer must give exactly one product; the
@@ -1574,22 +1595,7 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM
 #' @family KASP specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
-  aa <- assay$assay[1L, ]
-  ref_len <- nchar(assay$snp$ref)
-  # template-local anchor (assay$template$seq is the small design window)
-  anchor <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
-  seed <- c(
-    AS_ref = make_as_primer(assay$template$seq, anchor,
-      aa$as_len, assay$snp$ref,
-      strand = aa$strand
-    ),
-    AS_alt = make_as_primer(assay$template$seq, anchor,
-      aa$as_len, assay$snp$alt,
-      strand = aa$strand
-    )
-  )
-  purrr::imap_dfr(seed, function(as_p, nm) {
-    fr <- if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
+  purrr::imap_dfr(as_pcr_pairs(assay), function(fr, nm) {
     prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome,
       max_mismatch = max_mismatch,
       BPPARAM = BPPARAM
@@ -1925,20 +1931,17 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       as_start = best_as$as_start, as_end = best_as$as_end,
       as_alt_start = best_as$as_alt_start, as_alt_end = best_as$as_alt_end,
       win3p_start = best_as$win3p_start, win3p_end = best_as$win3p_end
-    ) |>
-    # Robustness first: keep the amplicon <= 100 bp and the COM Tm >= AS Tm
-    # (EasyKASP), then reject strong self-structure, then minimise footprint
-    # variants, then get the COM Tm closest to target.  Logical terms sort
-    # FALSE (= criterion met) before TRUE.
-    dplyr::arrange(
-      .data$amplicon > KASP_LIMITS$amplicon[2],
-      .data$com_tm < as_tm_mean,
-      .data$com_homodimer < KASP_LIMITS$homodimer_dg,
-      .data$com_hairpin < KASP_LIMITS$hairpin_dg,
-      .data$n_var, abs(.data$com_tm - COM_TM_TARGET)
     )
 
-  best <- assays |> dplyr::slice_head(n = 1L)
+  # choose among the pairings: gate the grave sins, then rank lexicographically
+  # on tier margins, relaxing gates one at a time only when nothing clears them
+  graded <- grade_assay_pairs(assays, KASP_LIMITS, as_tm_mean)
+  pick <- select_with_ladder(graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties)
+  if (is.null(pick$best)) {
+    rlang::abort(gettext("No candidate assay survived even the relaxed constraints."))
+  }
+  best <- pick$best
+  warn_relaxed(pick$violated)
   primers <- c(AS_ref = best$as_ref, AS_alt = best$as_alt, COM = best$com)
 
   # specificity uses the template-matched allele for the AS primers (no
@@ -1989,6 +1992,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     complementarity = dimer_thermo(primers),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
+    selection = list(relaxed = pick$relaxed, violated = pick$violated),
     blast = blast,
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
@@ -2308,13 +2312,14 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
       "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
       "worst cross-dimer dG37", "worst homodimer dG37",
+      "AS 3' window variants (n)", "COM footprint variants (n)",
       "discrimination", "in-silico PCR (REF 1 / ALT 0)"
     ),
     observed = c(
       aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
       run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
       sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
-      hair, cross, homo, disc, amp_obs
+      hair, cross, homo, aa$as_n_3p, aa$n_var, disc, amp_obs
     ),
     limit = c(
       glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
@@ -2329,6 +2334,8 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       glue::glue(">= {limits$hairpin_dg}"),
       glue::glue(">= {limits$duplex_dg}"),
       glue::glue(">= {limits$homodimer_dg}"),
+      "0",
+      "0",
       glue::glue(">= {limits$discrimination}"),
       "REF=1, ALT=0"
     ),
@@ -2345,6 +2352,8 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       hair >= limits$hairpin_dg,
       cross >= limits$duplex_dg,
       homo >= limits$homodimer_dg,
+      aa$as_n_3p == 0L,
+      aa$n_var == 0L,
       disc >= limits$discrimination,
       amp_pass
     )
