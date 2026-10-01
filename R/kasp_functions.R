@@ -79,7 +79,8 @@ KASP_LIMITS <- list(
   hairpin_dg = -3, # dG37 (kcal/mol); must be >= this
   duplex_dg = -9, # cross-dimer dG37; must be >= this
   homodimer_dg = -9, # self-dimer dG37; must be >= this
-  discrimination = 0.5 # Taq on- minus off-target efficiency
+  discrimination = 0.5, # Taq on- minus off-target efficiency
+  footprint_dropout = 0.05 # expected fraction of templates lost to footprint variants
 )
 
 #' OligoArrayAux duplex / hairpin free energy
@@ -294,6 +295,51 @@ variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer
   w <- w[keep]
   hits <- IRanges::findOverlaps(IRanges::IRanges(v, v), interval)
   sum(w[as.matrix(hits)[, 1L]])
+}
+
+#' Expected dropout under a primer's binding window (DECIPHER: hybridisation + Taq)
+#'
+#' For each known variant inside the window, build the variant-bearing template
+#' and ask DECIPHER for the amplification efficiency; the expected dropout is the
+#' frequency-weighted efficiency lost.  DECIPHER's `taqEfficiency` makes a
+#' 3'-terminal mismatch far more costly than a mid-primer one, so position and
+#' mismatch identity are handled by the library, and frequency by the weights.
+#' Returns `0` when there is no (fit-in-window) variant.
+#' @param primer primer sequence, 5'->3'.
+#' @param plus_win the plus-strand sequence the primer covers (same length).
+#' @param forward `TRUE` when the primer reads left-to-right on the plus strand.
+#' @param var_offset 1-based offsets of the variants within `plus_win`.
+#' @param var_alt the variant alleles (strings).
+#' @param var_w per-variant weights (population frequency; `1` when unknown).
+#' @keywords internal
+#' @noRd
+primer_dropout <- function(primer, plus_win, forward, var_offset, var_alt, var_w) {
+  if (!length(var_offset)) {
+    return(0)
+  }
+  L <- nchar(plus_win)
+  ok <- var_offset >= 1L & var_offset <= L & nchar(var_alt) >= 1L &
+    (var_offset + nchar(var_alt) - 1L) <= L &
+    !is.na(var_alt) & !is.na(var_w)
+  if (!any(ok)) {
+    return(0)
+  }
+  var_offset <- var_offset[ok]
+  var_alt <- var_alt[ok]
+  var_w <- var_w[ok]
+  win <- Biostrings::DNAString(plus_win)
+  alt_win <- Biostrings::DNAStringSet(vapply(
+    seq_along(var_offset),
+    function(i) {
+      as.character(Biostrings::replaceAt(
+        win, IRanges::IRanges(var_offset[i], width = nchar(var_alt[i])), var_alt[i]
+      ))
+    },
+    character(1)
+  ))
+  target <- if (forward) Biostrings::reverseComplement(alt_win) else alt_win
+  eta <- pcr_efficiency(rep(primer, length(target)), as.character(target))
+  min(1, sum(var_w * (1 - eta)))
 }
 
 #' Per-user cache directory for downloads and indices
@@ -1770,10 +1816,33 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   } else {
     NULL
   }
+  off <- snp$pos - flank # template coordinate -> genomic coordinate
+  valt <- NULL
+  if (!is.null(variants)) {
+    vsub <- variants[variants$chrom == snp$chrom, , drop = FALSE]
+    if ("alt" %in% names(vsub)) {
+      valt <- as.character(vsub$alt)
+    } else if ("ref_genome" %in% names(vsub)) {
+      # Ensembl shape: alleles as a vector; the ALT allele is the one that is not
+      # the (genome) reference base at that position
+      p <- vsub$pos
+      bi <- p - off + 1L
+      ok <- !is.na(bi) & bi >= 1L & bi <= length(tmpl$seq)
+      base <- rep(NA_character_, nrow(vsub))
+      base[ok] <- substring(as.character(tmpl$seq), bi[ok], bi[ok])
+      valt <- purrr::map2_chr(vsub$ref_genome, base, function(al, b) {
+        a <- setdiff(as.character(al), b)
+        a <- a[nzchar(a) & grepl("^[ACGTNacgtn]+$", a)]
+        if (length(a)) a[[1L]] else NA_character_
+      })
+    }
+  }
+  # DECIPHER (via OligoArrayAux) is what turns a footprint variant into an
+  # expected dropout; without it we fall back to the plain weighted count
+  use_eff <- has_oligoarrayaux()
   ref_len <- nchar(snp$ref)
   alt_len <- nchar(snp$alt)
   is_indel <- ref_len != alt_len
-  off <- snp$pos - flank # template coordinate -> genomic coordinate
   vblock <- seq.int(snp$pos, snp$pos + max(ref_len, alt_len) - 1L) # the target's own bases
 
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
@@ -1859,7 +1928,39 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       }),
       w_var = purrr::map2_dbl(.data$as_start, .data$as_end, function(a, b) {
         variant_load_in(IRanges::IRanges(a, b), vpos, vweight, vblock)
-      })
+      }),
+      # expected dropout of the AS 3' window (position- and identity-aware)
+      as_dropout = if (use_eff) {
+        purrr::pmap_dbl(
+          list(.data$ref_primer, .data$win3p_start, .data$win3p_end, .data$strand, .data$n_3p),
+          function(pr, a, b, st, cnt) {
+            tryCatch(
+              {
+                if (is.na(cnt) || cnt == 0L || is.na(a) || is.na(b)) {
+                  return(0)
+                }
+                idx <- which(vpos >= a & vpos <= b & !(vpos %in% vblock))
+                if (!length(idx)) {
+                  return(0)
+                }
+                i1 <- max(a - off + 1L, 1L)
+                i2 <- min(b - off + 1L, length(tmpl$seq))
+                if (i2 < i1) {
+                  return(0)
+                }
+                primer_dropout(
+                  pr, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
+                  identical(st, "+"), vpos[idx] - a + 1L, valt[idx],
+                  if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
+                )
+              },
+              error = function(e) NA_real_
+            )
+          }
+        )
+      } else {
+        NA_real_
+      }
     )
 
   # "N-masking" as a hard constraint: optionally drop candidates sitting on
@@ -1959,7 +2060,39 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       w_var = purrr::map2_dbl(.data$gap, .data$len, function(g, L) {
         variant_load_in(com_iv(best_as$strand, L, g), vpos, vweight, vblock)
       }),
-      as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
+      # expected dropout of the COM footprint (position- and identity-aware)
+      com_dropout = if (use_eff) {
+        purrr::pmap_dbl(
+          list(.data$com, .data$com_start, .data$com_end, .data$strand, .data$n_var),
+          function(pr, a, b, st, cnt) {
+            tryCatch(
+              {
+                if (is.na(cnt) || cnt == 0L || is.na(a) || is.na(b)) {
+                  return(0)
+                }
+                idx <- which(vpos >= a & vpos <= b & !(vpos %in% vblock))
+                if (!length(idx)) {
+                  return(0)
+                }
+                i1 <- max(a - off + 1L, 1L)
+                i2 <- min(b - off + 1L, length(tmpl$seq))
+                if (i2 < i1) {
+                  return(0)
+                }
+                primer_dropout(
+                  pr, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
+                  !identical(st, "+"), vpos[idx] - a + 1L, valt[idx],
+                  if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
+                )
+              },
+              error = function(e) NA_real_
+            )
+          }
+        )
+      } else {
+        NA_real_
+      },
+      as_ref = best_as$ref_primer, as_alt = best_as$alt_primer, as_dropout = best_as$as_dropout,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
       # worst-case product over both alleles (indels differ by delta)
@@ -2334,6 +2467,7 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
   th <- assay$thermo
   d <- assay$complementarity
   disc <- assay$efficiency$discrimination[1L]
+  tol <- limits$footprint_dropout %||% 0.05
 
   as_tm <- mean(th$tm[th$name %in% c("AS_ref", "AS_alt")])
   com_tm <- aa$com_tm
@@ -2361,13 +2495,14 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
       "worst cross-dimer dG37", "worst homodimer dG37",
       "AS 3' window variants (n)", "COM footprint variants (n)",
+      "AS 3' window dropout", "COM footprint dropout",
       "discrimination", "in-silico PCR (REF 1 / ALT 0)"
     ),
     observed = c(
       aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
       run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
       sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
-      hair, cross, homo, aa$as_n_3p, aa$n_var, disc, amp_obs
+      hair, cross, homo, aa$as_n_3p, aa$n_var, aa$as_dropout, aa$com_dropout, disc, amp_obs
     ),
     limit = c(
       glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
@@ -2384,6 +2519,8 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       glue::glue(">= {limits$homodimer_dg}"),
       "0",
       "0",
+      glue::glue("<= {tol}"),
+      glue::glue("<= {tol}"),
       glue::glue(">= {limits$discrimination}"),
       "REF=1, ALT=0"
     ),
@@ -2400,8 +2537,10 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       hair >= limits$hairpin_dg,
       cross >= limits$duplex_dg,
       homo >= limits$homodimer_dg,
-      aa$as_n_3p == 0L,
-      aa$n_var == 0L,
+      !is.na(aa$as_dropout) | aa$as_n_3p == 0L,
+      !is.na(aa$com_dropout) | aa$n_var == 0L,
+      is.na(aa$as_dropout) | aa$as_dropout <= tol,
+      is.na(aa$com_dropout) | aa$com_dropout <= tol,
       disc >= limits$discrimination,
       amp_pass
     )

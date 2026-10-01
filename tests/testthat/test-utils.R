@@ -12,7 +12,7 @@ mk_assay <- function() {
     assay = tibble::tibble(
       amplicon = 90L, as_ref = p[["AS_ref"]], as_alt = p[["AS_alt"]],
       com = p[["COM"]], com_tm = 60, as_gc = 0.5, com_gc = 0.5,
-      n_var = 0L, as_n_3p = 0L
+      n_var = 0L, as_n_3p = 0L, as_dropout = 0, com_dropout = 0
     ),
     thermo = tibble::tibble(name = names(p), tm = c(57, 57, 60), gc = 0.5, hairpin_dg = -1),
     complementarity = tibble::tibble(

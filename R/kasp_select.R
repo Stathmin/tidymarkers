@@ -47,8 +47,22 @@ KASP_GATE_LABEL <- c(
 #' @keywords internal
 #' @noRd
 grade_assay_pairs <- function(assays, limits, as_tm_mean) {
-  # footprint load: the weighted load when weights are available, else the count
-  foot <- if ("w_var" %in% names(assays)) as.numeric(assays$w_var) else as.numeric(assays$n_var)
+  tol <- limits$footprint_dropout %||% 0.05
+  use_drop <- "com_dropout" %in% names(assays) && any(!is.na(assays$com_dropout))
+  # footprint load: expected dropout when DECIPHER is available, else the
+  # weighted count (still weights-aware, just position-blind)
+  foot <- if (use_drop) {
+    as.numeric(assays$com_dropout)
+  } else if ("w_var" %in% names(assays)) {
+    as.numeric(assays$w_var)
+  } else {
+    as.numeric(assays$n_var)
+  }
+  gate_foot <- if (use_drop) {
+    is.na(assays$com_dropout) | assays$com_dropout <= tol
+  } else {
+    assays$n_var == 0L
+  }
   d <- assays |>
     dplyr::mutate(
       m_disc = .data$discrimination - limits$discrimination,
@@ -68,7 +82,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
       gate_structure = .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,
       gate_amplicon = .data$amplicon >= limits$amplicon[1L] & .data$amplicon <= limits$amplicon[2L],
-      gate_com_footprint = .data$n_var == 0L,
+      gate_com_footprint = gate_foot,
       gate_as_window = .data$as_n_3p == 0L,
       # the tiers themselves: lexicographic, and within a tier a bottleneck
       tier1 = .data$m_disc,
@@ -111,6 +125,14 @@ KASP_RELAX_AS <- c("gate_wobble", "gate_discrimination", "gate_as_footprint", "g
 #' @keywords internal
 #' @noRd
 grade_as_candidates <- function(as_cand, limits, min_disc) {
+  tol <- limits$footprint_dropout %||% 0.05
+  use_drop <- "as_dropout" %in% names(as_cand) && any(!is.na(as_cand$as_dropout))
+  win_margin <- if (use_drop) -as.numeric(as_cand$as_dropout) else -as.numeric(as_cand$n_3p)
+  gate_win <- if (use_drop) {
+    is.na(as_cand$as_dropout) | as_cand$as_dropout <= tol
+  } else {
+    as_cand$n_3p == 0L
+  }
   d <- as_cand |>
     dplyr::mutate(
       as_row = dplyr::row_number(),
@@ -118,12 +140,12 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
       m_tm = -abs(.data$tm - AS_TM_TARGET),
       m_stability = -as.numeric(.data$dg_3p),
       m_footprint = -as.numeric(.data$w_var),
-      m_window = -as.numeric(.data$n_3p),
+      m_window = win_margin,
       m_wobble = -as.numeric(.data$wobble),
       gate_discrimination = .data$discrimination >= min_disc,
       gate_wobble = is.na(.data$wobble) | !.data$wobble,
       gate_as_footprint = .data$n_var == 0L,
-      gate_as_window = .data$n_3p == 0L,
+      gate_as_window = gate_win,
       tier1 = .data$m_disc,
       tier2 = .data$m_tm,
       tier3 = .data$m_stability,

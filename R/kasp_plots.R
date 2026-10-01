@@ -68,7 +68,8 @@ check_level <- function(criterion) {
     "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
     "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
     "worst cross-dimer dG37", "worst homodimer dG37",
-    "AS 3' window variants (n)", "COM footprint variants (n)"
+    "AS 3' window variants (n)", "COM footprint variants (n)",
+    "AS 3' window dropout", "COM footprint dropout"
   )
   ifelse(criterion %in% feature, "feature", "alignment")
 }
@@ -90,6 +91,8 @@ check_short <- function(criterion) {
     "worst homodimer dG37" = "homodimer",
     "AS 3' window variants (n)" = "AS 3' var",
     "COM footprint variants (n)" = "COM var",
+    "AS 3' window dropout" = "AS drop",
+    "COM footprint dropout" = "COM drop",
     "discrimination" = "discrim.",
     "in-silico PCR (REF 1 / ALT 0)" = "PCR"
   )
@@ -613,10 +616,21 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
     dplyr::between(vw$pos, com_span[1], com_span[2])
   foot <- vw[in_foot, ]
   # the AS 3'-terminal window and the COM footprint: the two zones a variant
-  # must not sit in.  Same colour logic - green when clean, red when a known
-  # variant is there (the pair's own two grave sins, drawn where they bite)
-  win_status <- if (isTRUE(aa$as_n_3p == 0L)) "ok" else "broken"
-  com_status <- if (isTRUE(aa$n_var == 0L)) "ok" else "broken"
+  # must not sit in.  A zone is "clean" when the expected dropout stays within
+  # tolerance (DECIPHER), falling back to "no known variant" when the estimate is
+  # unavailable.  Same green/red logic for both.
+  tol <- KASP_LIMITS$footprint_dropout
+  zone_status <- function(drop, n_var) {
+    if (length(drop) && !is.na(drop)) {
+      if (drop <= tol) "ok" else "broken"
+    } else if (isTRUE(n_var == 0L)) {
+      "ok"
+    } else {
+      "broken"
+    }
+  }
+  win_status <- zone_status(aa[["as_dropout"]], aa$as_n_3p)
+  com_status <- zone_status(aa[["com_dropout"]], aa$n_var)
 
   # the local variants: a thin strip on the same x axis
   p_var <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
@@ -674,7 +688,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
 #' @noRd
 format_check_value <- function(name, value) {
   out <- dplyr::case_when(
-    name %in% c("AS GC", "COM GC", "discrim.") ~ sprintf("%.0f%%", 100 * value),
+    name %in% c("AS GC", "COM GC", "discrim.", "AS drop", "COM drop") ~ sprintf("%.0f%%", 100 * value),
     name %in% c("AS Tm", "COM Tm", "dimer", "homodimer", "hairpin", "COM\u2265AS Tm") ~ sprintf("%.1f", value),
     abs(value) >= 1e6 ~ paste0(round(value / 1e6), "M"),
     abs(value) >= 1e3 ~ paste0(round(value / 1e3), "K"),

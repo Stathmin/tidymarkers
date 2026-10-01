@@ -78,3 +78,27 @@ test_that("weighted load ranks one common variant below three rare ones", {
   # the gate is still the plain count: both rows have variants under the footprint
   expect_false(any(g$data$gate_com_footprint))
 })
+
+test_that("primer_dropout is position- and frequency-aware", {
+  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  p <- "CCGACGACAACGAACTCCTT"
+  flip <- function(i) setdiff(c("A", "C", "G", "T"), substr(p, i, i))[1L]
+  # a variant at the primer's 3' end costs far more than one at its 5' end
+  d3 <- primer_dropout(p, p, TRUE, nchar(p), flip(nchar(p)), 1)
+  d5 <- primer_dropout(p, p, TRUE, 1L, flip(1L), 1)
+  expect_gt(d3, d5)
+  # weights (population frequency) scale the expected dropout
+  half <- primer_dropout(p, p, TRUE, nchar(p), flip(nchar(p)), 0.5)
+  expect_equal(half, 0.5 * d3)
+  # nothing to lose when there is no variant
+  expect_equal(primer_dropout(p, p, TRUE, integer(0), character(0), numeric(0)), 0)
+})
+
+test_that("the dropout gate tolerates benign footprint variants (dropout <= tol)", {
+  d <- pair_table(discrimination = c(0.9, 0.9))
+  d$n_var <- c(2L, 2L)
+  d$com_dropout <- c(0.02, 0.60) # same count, very different cost
+  g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
+  expect_true(g$data$gate_com_footprint[1])
+  expect_false(g$data$gate_com_footprint[2])
+})
