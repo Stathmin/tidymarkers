@@ -73,7 +73,7 @@ test_that("the vroom and VariantAnnotation backends agree", {
 })
 
 test_that("the VariantAnnotation backend filters by region too", {
-  skip_if_not_installed("VariantAnnotation")
+  skip_if_not_installed_noload("VariantAnnotation")
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
@@ -93,7 +93,7 @@ test_that("the VariantAnnotation backend filters by region too", {
 })
 
 test_that("the VariantAnnotation backend streams a region like filtering", {
-  skip_if_not_installed("VariantAnnotation")
+  skip_if_not_installed_noload("VariantAnnotation")
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",

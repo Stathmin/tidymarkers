@@ -72,9 +72,9 @@ kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
 #' @keywords internal
 #' @noRd
 bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL) {
-  rlang::check_installed("BSgenome", reason = gettext("for a BSgenome genome source"))
+  load_namespace_quietly("BSgenome", reason = gettext("for a BSgenome genome source"))
   if (is.character(bsgenome)) {
-    rlang::check_installed(bsgenome, reason = gettext("for the BSgenome genome source"))
+    load_namespace_quietly(bsgenome, reason = gettext("for the BSgenome genome source"))
     bsgenome <- getExportedValue(bsgenome, bsgenome)
   }
   si <- GenomeInfoDb::seqinfo(bsgenome) # names + lengths, no DNA

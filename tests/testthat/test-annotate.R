@@ -1,13 +1,5 @@
 # Structured annotation: a TxDb gives the consequence instead of the input string.
 
-# `testthat::skip_if_not_installed()` calls `requireNamespace()`, which loads the
-# package; loading VariantAnnotation emits a benign SummarizedExperiment import
-# warning.  Checking with `system.file()` avoids the load, and the functions
-# under test load the namespace quietly themselves.  Hence the explicit `_noload`.
-skip_if_not_installed_noload <- function(pkg) {
-  testthat::skip_if(!nzchar(system.file(package = pkg)), paste(pkg, "not installed"))
-}
-
 # Close the SQLite connections the annotation objects (TxDb/EnsDb) open, so
 # RSQLite does not warn ("call dbDisconnect()...") when R shuts down afterwards.
 withr::defer(

@@ -117,7 +117,7 @@ read_variants_vcf_vroom <- function(path) {
 #' @keywords internal
 #' @noRd
 read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
-  rlang::check_installed("VariantAnnotation", reason = gettext("for the readVcf backend"))
+  load_namespace_quietly("VariantAnnotation", reason = gettext("for the readVcf backend"))
   param <- VariantAnnotation::ScanVcfParam()
   if (!is.null(chrom) && !is.null(start) && !is.null(end)) {
     seqs <- tryCatch(

@@ -47,7 +47,7 @@ test_that("in_silico_pcr works through an indexed kasp_genome", {
 })
 
 test_that("a kasp_genome can be backed by a BSgenome (getSeq)", {
-  skip_if_not_installed("BSgenome.Athaliana.TAIR.TAIR9")
+  skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
   gs <- kasp_genome(bsgenome = "BSgenome.Athaliana.TAIR.TAIR9")
   expect_s3_class(gs, "kasp_genome")
   expect_true("Chr4" %in% genome_chroms(gs))
