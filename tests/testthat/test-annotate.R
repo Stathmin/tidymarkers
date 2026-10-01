@@ -69,7 +69,7 @@ test_that("kasp_ensdb builds an EnsDb from a GTF", {
   # Build in a subprocess: ensDbFromGtf() leaves an RSQLite connection that
   # otherwise leaks a benign "call dbDisconnect()" note at this session's exit.
   code <- sprintf(
-    'edb <- kaspexample::kasp_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
+    'edb <- tidykasp::kasp_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
     gtf, tempfile())
   res <- processx::run(file.path(R.home("bin"), "Rscript"), c("-e", code),
                        error_on_status = FALSE)

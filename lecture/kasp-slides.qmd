@@ -1,7 +1,7 @@
 ---
 title: "Подбор KASP-маркеров на R — сквозной разбор по методике"
 subtitle: "FRI (AT4G00650) у Arabidopsis thaliana: этапы, находки, пороги"
-author: "kasp-example"
+author: "tidykasp"
 format:
   revealjs:
     theme: [default, custom.scss]
@@ -31,7 +31,7 @@ editor: source
 ```{r}
 #| label: setup
 suppressPackageStartupMessages({
-  library(kaspexample); library(here); library(dplyr); library(ggplot2); library(ggmsa)
+  library(tidykasp); library(here); library(dplyr); library(ggplot2); library(ggmsa)
 })
 ```
 

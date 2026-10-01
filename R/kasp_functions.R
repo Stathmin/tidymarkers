@@ -1,93 +1,16 @@
 # =============================================================================
 #  kasp_functions.R  --  design + QC primitives for KASP assays
-#  Target organism: Arabidopsis thaliana (TAIR10)
-#  100% R.  No Python.  Heavy thermodynamics is delegated to packages.
+#  100% R; heavy thermodynamics is delegated to packages.
 # =============================================================================
 #
-#  WHAT IS KASP (in one paragraph)
-#  ---------------------------------------------------------------------------
-#  Kompetitive Allele-Specific PCR (KASP, LGC Biosearch Technologies) is a
-#  homogeneous, endpoint-fluorescence assay for scoring SNPs and small indels.
-#  One assay = THREE primers:
-#     * AS1 - allele-specific forward primer carrying a FAM  universal 5' tail
-#     * AS2 - allele-specific forward primer carrying a HEX/VIC universal tail
-#     * COM - one common (reverse) primer shared by both alleles
-#  The two AS primers are identical except for their 3'-terminal base, which is
-#  the SNP itself.  A FRET cassette + Taq polymerase read out which tail got
-#  incorporated, so discrimination comes from *competitive annealing* of the two
-#  AS primers + the inability of Taq to extend a 3'-mismatched primer.
+#  KASP = two allele-specific forward primers (FAM / HEX tails, identical except
+#  for the 3'-terminal SNP base) plus one common reverse primer.  Taq cannot
+#  extend a 3'-mismatched primer, so discrimination is competitive annealing.
 #
-#  DESIGN MANUAL (condensed, as of 2026)
-#  ---------------------------------------------------------------------------
-#  Follows LGC/KBioscience KASP guidance together with the peer-reviewed
-#  EasyKASP study (Zhang, Yang & Wen, BMC Bioinformatics 2025, 26:292,
-#  doi:10.1186/s12859-025-06322-x), which re-derived the optimal ranges from
-#  500 validated KASP assays.  Defaults, not dogma - validate in your lab.
-#  The machine-checkable form of this checklist is kasp_design_checks(), with
-#  thresholds in KASP_LIMITS, so prose and code cannot drift apart.
-#
-#  Amplicon
-#    * keep it short: 50-100 bp (EasyKASP: amplification products < 100 bp).
-#
-#  Common primer (COM)
-#    * length 18-25 nt, GC 40-60%, no runs of >= 4 identical bases; low 3'-end
-#      stability; no self/cross 3' dimers.
-#    * its Tm should be HIGHER than the two allele-specific primers (EasyKASP:
-#      the common primer typically has lower GC but more length and higher Tm).
-#
-#  Allele-specific primers (AS1/AS2)
-#    * the SNP is the 3'-TERMINAL base - the whole point of the assay.
-#    * target-specific part 20-28 nt, within 20-30 nt of the variant; Tm
-#      (matching allele) ~ 55-65 C, below the common primer's Tm.
-#    * prefer the strand whose +/-25 nt around the variant has GC ~ 45% and no
-#      repeats (EasyKASP step 1) - the both-strand search below does this.
-#    * add a DELIBERATE secondary mismatch 1-3 bases from the 3' end
-#      (usually -2 or -3): it destabilises the non-target allele more than the
-#      target one and is the main lever for discrimination.  We search for it
-#      by maximising the on-target amplification efficiency (below).
-#    * avoid the last ~5 bases covering another common SNP/indel, and 4+ base
-#      homopolymer runs.
-#
-#  Discrimination metric
-#    * we score the *Taq*-relevant quantity directly: the predicted PCR
-#      efficiency (hybridisation + 3' elongation) of each AS primer on the
-#      target vs the non-target allele (DECIPHER::CalculateEfficiencyPCR, which
-#      models side reactions and Taq extension bias at 3' mismatches).
-#      A good assay has high on-target efficiency and near-zero off-target.
-#
-#  Secondary structure / cross-complementarity
-#    * reject hairpin-prone oligos (palindromes) and, above all, 3'-end dimers
-#      between any primer pair (AS1-COM, AS2-COM, AS1-AS2, COM self).
-#
-#  Specificity
-#    * the complete assay must amplify ONE product genome-wide (primers must be
-#      single-copy; EasyKASP).  An off-target with an intact 3'-terminal match
-#      is a killer - drop it.
-#    * non-target variants in the flanking window matter; EasyKASP recommends
-#      Sanger-checking the variant and its flanks for critical markers.
-#
-#  Validation
-#    * always genotype three controls - homozygous REF, homozygous ALT and a
-#      heterozygote - plus a no-template control.
-#
-#  ACCEPTANCE CHECKLIST (what a "good" assay must satisfy; KASP_LIMITS/checks)
-#    * amplicon 50-100 bp; |AS Tm| in 55-65 C; COM Tm in 57-62 C and >= AS Tm
-#    * GC 0.40-0.60; no homopolymer run >= 4 nt; hairpin dG37 >= -3 kcal/mol
-#    * no cross-dimer or homodimer below -9 kcal/mol (37 C)
-#    * Taq discrimination >= 0.5; the 3'-seed is unique genome-wide
-#
-#  ---------------------------------------------------------------------------
-#  WHICH PACKAGE DOES WHAT (all R)
-#    - DECIPHER       : PCR efficiency incl. Taq 3'-mismatch bias (the KASP
-#                       discrimination metric).  Needs OligoArrayAux (`hybrid-min`).
-#    - TmCalculator   : nearest-neighbour Tm with salt/DMSO correction (SantaLucia 2004 et al.)
-#    - Biostrings     : sequence ops, GC (letterFrequency), local alignments
-#                       (dimers), vcountPattern (specificity)
-#    - rBLAST         : optional genome-wide BLAST (needs NCBI BLAST+ in PATH)
-#    - httr2/jsonlite : Ensembl Plants REST (variation, gene lookup)
-#  We hand-write only the KASP-specific bit (3'-anchored AS primers and the
-#  candidate scan for the common primer) because no maintained R package does
-#  KASP design natively (primeR was retired; openPrimeR needs MAFFT/ViennaRNA/MELTING).
+#  Defaults follow LGC/KBioscience guidance and EasyKASP (Zhang, Yang & Wen,
+#  BMC Bioinformatics 2025, 26:292) -- defaults, not dogma; validate in your lab.
+#  The machine-checkable form is kasp_design_checks()/KASP_LIMITS; the full
+#  design manual is README section 3 and vignette("kasp-intro").
 # =============================================================================
 
 
@@ -313,7 +236,7 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
 #' @family KASP input
 #' @export
 kasp_cache_dir <- function() {
-  d <- tools::R_user_dir("kaspexample", which = "cache")
+  d <- tools::R_user_dir("tidykasp", which = "cache")
   fs::dir_create(d)
   d
 }
@@ -321,7 +244,7 @@ kasp_cache_dir <- function() {
 #' Download (once) and load the TAIR10 genome as a DNAStringSet
 #'
 #' The FASTA comes from Ensembl Plants and is cached in the per-user cache
-#' directory (`tools::R_user_dir("kaspexample", "cache")`), not in the project.
+#' directory (`tools::R_user_dir("tidykasp", "cache")`), not in the project.
 #' Sequence names are normalised to Chr1..Chr5 / ChrM / ChrC (scaffolds
 #' dropped), so they line up with the Ensembl gene records used elsewhere.
 #' @param cache cache directory for the downloaded FASTA.
@@ -381,7 +304,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
       httr2::req_url_path_append("lookup", "id", gene_id) |>
       httr2::req_url_query(expand = 1) |>
       httr2::req_headers(`Content-Type` = "application/json") |>
-      httr2::req_user_agent("kasp-example (lecture demo)") |>
+      httr2::req_user_agent("tidykasp") |>
       httr2::req_retry(max_tries = 5L, backoff = ~ 3) |>
       httr2::req_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)
@@ -423,7 +346,7 @@ ensembl_variants <- function(chrom, start, end,
       httr2::req_url_path_append("overlap", "region", species, region) |>
       httr2::req_url_query(feature = "variation") |>
       httr2::req_headers(`Content-Type` = "application/json") |>
-      httr2::req_user_agent("kasp-example (lecture demo)") |>
+      httr2::req_user_agent("tidykasp") |>
       httr2::req_retry(max_tries = 5L, backoff = ~ 3) |>
       httr2::req_perform()
     readr::write_lines(httr2::resp_body_string(resp), path)

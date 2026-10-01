@@ -15,7 +15,7 @@ testthat::test_local()
 roxygen2::roxygenise()
 
 # полная проверка
-#   R CMD build . && R CMD check --no-manual kaspexample_*.tar.gz
+#   R CMD build . && R CMD check --no-manual tidykasp_*.tar.gz
 ```
 
 ## Стиль
@@ -35,6 +35,6 @@ roxygen2::roxygenise()
 
 ## Модель для правок
 
-`kasp-example` — обычный каталог пакета (`DESCRIPTION`, `R/`, `man/`, `vignettes/`,
-`tests/`). Файл `.github/workflows/R-CMD-check.yaml` лежит внутри пакета как шаблон:
-при выделении пакета в отдельный репозиторий перенесите его в корень репозитория.
+`tidykasp` — обычный каталог R-пакета (`DESCRIPTION`, `R/`, `man/`, `vignettes/`,
+`tests/`). CI в пакет не входит; при выделении в отдельный репозиторий настройте его
+в корне репозитория.

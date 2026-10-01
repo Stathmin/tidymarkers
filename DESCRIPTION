@@ -1,15 +1,22 @@
-Package: kaspexample
-Title: KASP Marker Design for Arabidopsis thaliana (TAIR10)
+Package: tidykasp
+Title: Tidy Design and Quality Control of KASP Genotyping Assays
 Version: 0.3.0
-Authors@R: person("Lecture", "Demo", email = "demo@example.org", role = c("aut", "cre"))
-Description: An opinionated, reproducible pipeline for designing and quality
-    controlling Kompetitive Allele-Specific PCR (KASP) genotyping assays for
-    Arabidopsis thaliana. Pulls the TAIR10 genome (Ensembl Plants FASTA), 1001
-    Genomes variation (Ensembl REST), designs allele-specific and common primers
-    on either strand, and scores thermodynamics (TmCalculator, OligoArrayAux),
-    Taq-aware allelic discrimination (DECIPHER) and genome-wide specificity
-    (Biostrings, optional rBLAST).
+Authors@R: person("Daniil", "Ulyanov", email = "uldas1508@gmail.com",
+    role = c("aut", "cre"))
+Description: An opinionated, reproducible toolkit for designing and quality
+    controlling Kompetitive Allele-Specific PCR (KASP) genotyping assays.  It is
+    genome-agnostic: supply a reference (FASTA, an indexed genome, a DNAStringSet
+    or a Bioconductor BSgenome) and variants (a VCF or the tidy variant table),
+    and it designs allele-specific and common primers on either strand and scores
+    them.  Thermodynamics come from TmCalculator and OligoArrayAux, Taq-aware
+    allelic discrimination from DECIPHER, and genome-wide specificity from
+    Biostrings (with an optional rBLAST database or an Rsubread FM-index).
+    Annotation uses VariantAnnotation with a transcript database.  An Arabidopsis
+    thaliana setup (TAIR10 genome and 1001 Genomes variation via Ensembl) is
+    bundled as a reproducible demo.
 License: MIT + file LICENSE
+URL: https://github.com/Stathmin/tidykasp
+BugReports: https://github.com/Stathmin/tidykasp/issues
 Encoding: UTF-8
 Imports:
     Biostrings,

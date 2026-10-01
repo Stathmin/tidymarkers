@@ -18,7 +18,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(kaspexample)
+  library(tidykasp)
   library(here)
   library(dplyr)
   library(ggplot2)

@@ -166,7 +166,7 @@ mask_positions <- function(seq, positions) {
 #' @family KASP input
 #' @export
 kasp_example <- function() {
-  f <- system.file("extdata", "example_targets.csv", package = "kaspexample")
+  f <- system.file("extdata", "example_targets.csv", package = "tidykasp")
   if (!nzchar(f)) rlang::abort("Bundled example data not found.")
   readr::read_csv(f, show_col_types = FALSE)
 }

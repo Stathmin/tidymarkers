@@ -1,90 +1,88 @@
-# kasp-example — инвентарь и roadmap
+# tidykasp — инвентарь и roadmap
 
-Живой список. Первая часть — **ретроспективный инвентарь** по подтипам (что уже есть,
-со ссылкой на коммит), вторая — **очередь**. Метод **не упрощаем**: где у нас пакетная
+Живой список. Первая часть — **ретроспективный инвентарь** по подтипам (что уже есть),
+вторая — **очередь**. Метод **не упрощаем**: где у нас пакетная
 термодинамика (`TmCalculator`, `DECIPHER`, `OligoArrayAux`) — оставляем её, даже если в
 сторонних инструментах есть кустарная формула.
 
 Обозначения: `[x]` сделано и покрыто тестами · `[~]` частично · `[ ]` очередь.
-Ссылки — короткие хеши коммитов (`git log --oneline -- kasp-example`).
 
 ## A. Инфраструктура и воспроизводимость
-- [x] `renv`: `DESCRIPTION` + пиннутый `renv.lock`, `renv`-activated `.Rprofile` (`a234b0f`)
+- [x] `renv`: `DESCRIPTION` + пиннутый `renv.lock`, `renv`-activated `.Rprofile`
 - [x] Вендоринг внешних тулов: OligoArrayAux в `.tools/`, запуск через `.tools/run.sh`
-      с `PATH` и `UNAFOLDDAT` (`a234b0f`)
-- [x] Раннер тестов без сборки пакета: `tests/testthat.R` (сорсит `R/*.R`) (`59c3f63`)
-- [x] `.gitignore` (кэш, results, .tools) (`a234b0f`, `7bb69b0`)
+      с `PATH` и `UNAFOLDDAT`
+- [x] Раннер тестов без сборки пакета: `tests/testthat.R` (сорсит `R/*.R`)
+- [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 
 ## B. Вход и интероперабельность (`R/kasp_io.R`)
-- [x] Ensembl Plants REST: ген-модель и варианты 1001 Genomes, кэш на диск + retry (`0eda4f2`)
-- [x] `read_variants_vcf()`: потоково через `vroom` (memory-mapped), `.vcf.gz` без распаковки (`aa06d66`)
-- [x] Мультиаллельный ALT → строки; символические аллели (`<DEL>`, `*`, `.`) отброшены (`aa06d66`, `ca75edb`)
-- [x] IUPAC/неоднозначные основания → `N` (`normalise_allele()`), регистр нормализуется (`c59957e`)
-- [x] `read_genome_fasta()`: нормализация имён + фильтр по `seqids` (`aa06d66`)
-- [x] Загрузка и кэш TAIR10 (`ath_genome()`), нормализация хромосом (`ath_chrom()`) (`0eda4f2`)
+- [x] Ensembl Plants REST: ген-модель и варианты 1001 Genomes, кэш на диск + retry
+- [x] `read_variants_vcf()`: потоково через `vroom` (memory-mapped), `.vcf.gz` без распаковки
+- [x] Мультиаллельный ALT → строки; символические аллели (`<DEL>`, `*`, `.`) отброшены
+- [x] IUPAC/неоднозначные основания → `N` (`normalise_allele()`), регистр нормализуется
+- [x] `read_genome_fasta()`: нормализация имён + фильтр по `seqids`
+- [x] Загрузка и кэш TAIR10 (`ath_genome()`), нормализация хромосом (`ath_chrom()`)
 - [x] Индекс FASTA (`fasta_index()`, `Rsamtools::indexFa`/`scanFa`) — случайный доступ;
       `read_genome_fasta(use_index=)` читает только нужные `seqids`
 - [x] Маскировка «прочих» вариантов: учёт в скоринге (`n_var`/`n_3p`) и жёсткий
       предел `max_footprint_variants`; `mask_positions()` для буквальных `N`
 
 ## C. Геометрия (единый источник истины)
-- [x] `primer_interval()` / `as_3p_interval()` / `count_variants_in()` на `IRanges` (`d8e3e27`)
-- [x] `as_anchor()` / `block_in_seg()` — SNP и MNP идут одним путём кода (`c59957e`)
-- [x] Геометрия переиспользуется дизайном, сборкой теста и графикой; спан хранится в тесте (`d8e3e27`)
+- [x] `primer_interval()` / `as_3p_interval()` / `count_variants_in()` на `IRanges`
+- [x] `as_anchor()` / `block_in_seg()` — SNP и MNP идут одним путём кода
+- [x] Геометрия переиспользуется дизайном, сборкой теста и графикой; спан хранится в тесте
 
 ## D. Движок AS-праймеров
-- [x] `design_as_primers()`: сетка цепь × длина 20–27 × позиция мисматча × основание (`0eda4f2`)
-- [x] `strands = c("+","-")` — поиск AS-праймера на обеих цепях как аргумент (`0eda4f2`)
-- [x] Дестабилизирующий (вторичный) мисматч (`0eda4f2`)
-- [x] Variant-aware отбор: минимизация вариантов под футпринтом (`n_var`), чистая 3'-зона (`n_3p`) (`0eda4f2`, `ca75edb`)
-- [x] Substitution-блоки / MNP — замена блока, дискриминация с любой цепи (`c59957e`)
-- [x] `design_as_primers_indel()`: аллельные шаблоны (`allele_templates()`) + скан стыка, размещение выбирает DECIPHER (`2ed509a`)
-- [x] Тай-брейк по wobble и 3'-стабильности (`fba27ad`)
+- [x] `design_as_primers()`: сетка цепь × длина 20–27 × позиция мисматча × основание
+- [x] `strands = c("+","-")` — поиск AS-праймера на обеих цепях как аргумент
+- [x] Дестабилизирующий (вторичный) мисматч
+- [x] Variant-aware отбор: минимизация вариантов под футпринтом (`n_var`), чистая 3'-зона (`n_3p`)
+- [x] Substitution-блоки / MNP — замена блока, дискриминация с любой цепи
+- [x] `design_as_primers_indel()`: аллельные шаблоны (`allele_templates()`) + скан стыка, размещение выбирает DECIPHER
+- [x] Тай-брейк по wobble и 3'-стабильности
 
 ## E. Общий (common) праймер
-- [x] `design_common_primers()`: скан кандидатов, метрики из пакетов (`0eda4f2`)
-- [x] Учёт самоструктуры COM (гомодимер/шпилька), `COM Tm >= AS Tm`, ампликон ≤ 100 bp (`ee63dfa`)
+- [x] `design_common_primers()`: скан кандидатов, метрики из пакетов
+- [x] Учёт самоструктуры COM (гомодимер/шпилька), `COM Tm >= AS Tm`, ампликон ≤ 100 bp
 
 ## F. Термодинамика и структурный QC
-- [x] Tm через `TmCalculator` (NN, SantaLucia 2004, солевая/DMSO-коррекция) (`0eda4f2`)
-- [x] Аллельная дискриминация через `DECIPHER::CalculateEfficiencyPCR` (гибридизация + Taq) (`0eda4f2`)
-- [x] `oligo_dg()` / `dimer_thermo()` / шпильки через OligoArrayAux (DNA) (`0eda4f2`, `7db2005`)
-- [x] `has_run()` / `find_repeats()` — гомополимеры и SSR (`b93aab8`)
-- [x] `terminal_dg()` — 3'-концевая стабильность (GC-clamp) (`fba27ad`)
-- [x] `wobble_mismatch()` — слабое G:T / A:C неспаривание (симметрично по REF/ALT) (`fba27ad`)
+- [x] Tm через `TmCalculator` (NN, SantaLucia 2004, солевая/DMSO-коррекция)
+- [x] Аллельная дискриминация через `DECIPHER::CalculateEfficiencyPCR` (гибридизация + Taq)
+- [x] `oligo_dg()` / `dimer_thermo()` / шпильки через OligoArrayAux (DNA)
+- [x] `has_run()` / `find_repeats()` — гомополимеры и SSR
+- [x] `terminal_dg()` — 3'-концевая стабильность (GC-clamp)
+- [x] `wobble_mismatch()` — слабое G:T / A:C неспаривание (симметрично по REF/ALT)
 
 ## G. Специфичность
-- [x] `specificity_seed()` — 3'-сид по обеим цепям (`d8e3e27`)
+- [x] `specificity_seed()` — 3'-сид по обеим цепям
 - [x] Быстрый точный путь `PDict`/`vcountPDict`; мисматч-скан — параллель по
       хромосомам (`BiocParallel`); `in_silico_pcr` тоже параллелен (см. O)
-- [x] `in_silico_pcr()` через `matchProbePair`: REF → 1 продукт, ALT → 0 (`b93aab8`)
-- [x] Опциональный BLAST (`rBLAST`, `blastn-short`) (`0eda4f2`)
+- [x] `in_silico_pcr()` через `matchProbePair`: REF → 1 продукт, ALT → 0
+- [x] Опциональный BLAST (`rBLAST`, `blastn-short`)
 - [x] Индексный скан генома: `kasp_genome()` + `specificity_blast()` + диспетчер
       `specificity_of()` (BLAST-индекс); регионный доступ без ДНК в RAM (см. O)
-- [x] `strand_gc_hint()` — направление по GC флангов (EasyKASP) (`b93aab8`)
+- [x] `strand_gc_hint()` — направление по GC флангов (EasyKASP)
 
 ## H. Отбор мишени и приёмка
 - [x] `pick_target_snp()`: референс из генома; приоритет — чистая 3'-зона → тяжесть
-      последствия (VEP `impact` или канонические SO-термы) → транзиция (`0eda4f2`,
-      `ca75edb`, `c59957e`, `d52a253`)
+      последствия (VEP `impact` или канонические SO-термы) → транзиция
 - [x] Специфичность 3'-сида учтена при выборе мишени: `seed_hits` (лучшая из двух
       цепей) как критерий среди топ-`specificity_candidates`; комплементарные пары
-      (A/T, C/G) пропускаются — их 3'-основание не различает (`d52a253`+)
-- [x] `KASP_LIMITS` + `kasp_design_checks()` — tidy `criterion/observed/limit/pass`, пороги LGC/EasyKASP (`ee63dfa`)
-- [x] Отказ от чужой эмпирической формулы Tm (EasyKASP) в пользу NN-термодинамики (`b93aab8`)
+      (A/T, C/G) пропускаются — их 3'-основание не различает
+- [x] `KASP_LIMITS` + `kasp_design_checks()` — tidy `criterion/observed/limit/pass`, пороги LGC/EasyKASP
+- [x] Отказ от чужой эмпирической формулы Tm (EasyKASP) в пользу NN-термодинамики
 
 ## I. Батч-дизайн
-- [x] `design_kasp_markers()` — строка на локус, вердикт `pass`/`warn`/`fail` + причина (`b0ff61d`)
-- [x] `variant_type()` — SNP / MNP / insertion / deletion (`b0ff61d`)
-- [x] `BPPARAM` — параллель по локусам (`80ccc76`)
+- [x] `design_kasp_markers()` — строка на локус, вердикт `pass`/`warn`/`fail` + причина
+- [x] `variant_type()` — SNP / MNP / insertion / deletion
+- [x] `BPPARAM` — параллель по локусам
 
 ## J. Визуализация (`R/kasp_plots.R`, `R/kasp_search_anim.R`, пакетные библиотеки)
-- [x] `plot_primers()` — стрелки `gggenes` + локальная дорожка вариантов (`0420d26`, `2ed509a`)
-- [x] `plot_variant_landscape()` — модель гена + врезка региона (`0420d26`)
-- [x] `plot_alignment()` — `ggmsa` (ДНК-MSA + логотип), REF/ALT и AS (`0420d26`)
-- [x] `plot_self_complementarity()` — праймер против своего revcomp (`ggmsa`) (`0420d26`)
-- [x] `plot_dimer_qc()` — матрица dG дуплексов + шпильки (`0420d26`)
+- [x] `plot_primers()` — стрелки `gggenes` + локальная дорожка вариантов
+- [x] `plot_variant_landscape()` — модель гена + врезка региона
+- [x] `plot_alignment()` — `ggmsa` (ДНК-MSA + логотип), REF/ALT и AS
+- [x] `plot_self_complementarity()` — праймер против своего revcomp (`ggmsa`)
+- [x] `plot_dimer_qc()` — матрица dG дуплексов + шпильки
 - [x] `plot_discrimination()` — бар-чарт кандидатов (оставлен как вспомогательный)
 - [x] **Анимация поиска** (`design_search_frames()`, `plot_design_search_step()`,
       `render_design_search()`) — GIF: перебор AS-размещений в порядке алгоритма и
@@ -93,14 +91,14 @@
       (gganimate требует `transformr`→`sf`/GDAL).
 
 ## K. Вывод и заказ
-- [x] `export_primers()` — tidy + sheets для IDT (bulk) и LGC/KASP (`0420d26`)
-- [x] `kasp_primer_table()` — join-таблица олиго с хвостами (`ca75edb`)
-- [x] `kasp_mix_recipe()` — рецепт смеси (AS:AS:COM = 2:2:5) и реакции (`681f38f`)
-- [x] `report/kasp_report.Rmd` — нарративный отчёт (квейзи-виньетка) (`7bb69b0`, `9a34a4c`)
+- [x] `export_primers()` — tidy + sheets для IDT (bulk) и LGC/KASP
+- [x] `kasp_primer_table()` — join-таблица олиго с хвостами
+- [x] `kasp_mix_recipe()` — рецепт смеси (AS:AS:COM = 2:2:5) и реакции
+- [x] `report/kasp_report.Rmd` — нарративный отчёт (квейзи-виньетка)
 
 ## L. Гигиена
-- [x] Идиоматический tidyverse-стайл: `list_rbind`/`crossing`/`.data` вместо `*_dfr`/`expand.grid` (`ca75edb`)
-- [x] Тесты на всё новое; 170 проверок; ретро-чистка пустых ассертов (`011acd1`)
+- [x] Идиоматический tidyverse-стайл: `list_rbind`/`crossing`/`.data` вместо `*_dfr`/`expand.grid`
+- [x] Тесты на всё новое; 170 проверок; ретро-чистка пустых ассертов
 
 ---
 
@@ -114,7 +112,7 @@
 - [x] `DESCRIPTION` с `Imports`/`Suggests` и `Config/testthat/edition: 3`
 - [x] roxygen-заголовки: `@export`, `@param` (все аргументы), `@return` на публичных
 - [x] Собрать настоящий пакет: `NAMESPACE` + `man/` из roxygen (`roxygen2::roxygenise()`),
-      `R CMD check` — **Status: OK** (0 ERROR / 0 WARNING / 0 NOTE); `library(kaspexample)`
+      `R CMD check` — **Status: OK** (0 ERROR / 0 WARNING / 0 NOTE); `library(tidykasp)`
 - [x] `@family`-теги по подтипам (geometry / input / design / thermodynamics /
       specificity / QC / checks / output / plots / utilities) — собираются в «See also»
 - [x] `@examples` на публичных функциях (сетевые/геномные — в `\dontrun{}`)

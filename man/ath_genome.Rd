@@ -13,7 +13,7 @@ ath_genome(cache = kasp_cache_dir(), release = 63L)
 }
 \description{
 The FASTA comes from Ensembl Plants and is cached in the per-user cache
-directory (\code{tools::R_user_dir("kaspexample", "cache")}), not in the project.
+directory (\code{tools::R_user_dir("tidykasp", "cache")}), not in the project.
 Sequence names are normalised to Chr1..Chr5 / ChrM / ChrC (scaffolds
 dropped), so they line up with the Ensembl gene records used elsewhere.
 }

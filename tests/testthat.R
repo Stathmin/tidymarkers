@@ -3,5 +3,5 @@
 # testthat runs the tests in an environment that inherits the package namespace,
 # so internal (non-exported) helpers are reachable without `:::`.
 library(testthat)
-library(kaspexample)
-test_check("kaspexample")
+library(tidykasp)
+test_check("tidykasp")

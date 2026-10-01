@@ -13,7 +13,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.height = 4)
 suppressPackageStartupMessages({
-  library(kaspexample)   # пакет и есть протокол
+  library(tidykasp)   # пакет и есть протокол
   library(tidyverse); library(here); library(ggmsa)
 })
 ```

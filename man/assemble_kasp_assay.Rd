@@ -60,6 +60,24 @@ that pass the physico-chemical filters we minimise the number of other
 variants falling under the primer footprint (the 3'-terminal 5 nt are handled
 earlier by \code{\link[=pick_target_snp]{pick_target_snp()}}), then maximise discrimination.
 }
+\section{Selection policy}{
+
+The AS placement is chosen lexicographically by:
+\enumerate{
+\item cleanest 3' window (\code{n_3p}, best of the two orientations);
+\item fewest other variants under the primer footprint (\code{n_var});
+\item highest discrimination (DECIPHER);
+\item not a weak G:T / A:C wobble mismatch;
+\item quieter 3'-seed genome-wide (\code{seed_hits}, best of the two strands) — a
+specificity tie-break computed only for the top \code{specificity_candidates}
+placements, mirroring \code{\link[=pick_target_snp]{pick_target_snp()}};
+\item then \verb{|Tm - target|}, 3'-stability and length.
+The common primer is then placed on the winning strand and ranked by
+amplicon length, \verb{COM Tm >= AS Tm}, dimers/hairpin, footprint load and Tm
+proximity (see \code{\link[=design_common_primers]{design_common_primers()}}).
+}
+}
+
 \section{KASP design pipeline}{
 
 Typical use is \code{ath_genome()} -> \code{ensembl_gene()}/\code{ensembl_variants()} ->

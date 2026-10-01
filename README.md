@@ -1,20 +1,41 @@
-# kasp-example — подбор KASP-маркеров для гена арабидопсиса
+<img src="man/figures/logo.png" align="right" width="150" alt="tidykasp logo" />
+
+# tidykasp — tidy-дизайн и QC KASP-маркеров
 
 <!-- badges: start -->
-[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-OK-success.svg)](https://github.com/)
+[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-OK-success.svg)](https://github.com/Stathmin/tidykasp/actions)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- badges: end -->
 
-Небольшой, но «взрослый» воспроизводимый пайплайн **на чистом R**: по гену
-*Arabidopsis thaliana* (в демо — **FRI / AT4G00650**, классический локус времени
-цветения) он находит реальные SNP из проекта *1001 Genomes*, проектирует
-KASP-тест (два аллель-специфичных праймера и один общий) и оценивает
-термодинамику, **Taq-зависимую аллельную дискриминацию** и специфичность по
-всему геному.
+Воспроизводимый инструмент **на чистом R** для подбора и контроля качества
+KASP-тестов. Он **геном-агностичен**: подайте референс (FASTA, индексированный
+`kasp_genome()`, `DNAStringSet` или Bioconductor `BSgenome`) и варианты (VCF или
+tidy-таблицу) — инструмент проектирует аллель-специфичные и общий праймеры на
+обеих цепях и оценивает их.
+
+В комплекте — воспроизводимое **демо** на *Arabidopsis thaliana*: локус времени
+цветения **FRI / AT4G00650**, реальные SNP из проекта *1001 Genomes*, геном TAIR10
+(Ensembl Plants). Другой референс/вариация — так же, обёртками
+`kasp_genome()`/`read_variants_vcf()` (см. `vignette("custom-genome")`).
 
 Никаких прыжков между Python и R: вся логика — R, а тяжёлая физика делегирована
 пакетам.
+
+## 0. Установка
+
+```r
+# с GitHub (нужен remotes; при желании — build_vignettes = FALSE, чтобы не собирать виньетки)
+remotes::install_github("Stathmin/tidykasp")
+
+# из локальной копии
+# remotes::install_local(".")
+```
+
+Требуется **R ≥ 4.5** и внешний **OligoArrayAux** (`hybrid-min`) — термодинамика
+для `DECIPHER`; опционально **NCBI BLAST+**. Пакет тянет только `Imports`
+(Bioconductor + tidyverse); тяжёлые опции (`TxDb`/`BSgenome`, `Rsubread`,
+`ensembldb`) — в `Suggests` и не ставятся сами. Подробности — в разделе 2.
 
 ---
 
@@ -64,7 +85,7 @@ Rscript -e 'renv::restore(prompt = FALSE)'
 # 3. установить сам пакет
 R CMD INSTALL .              # или: Rscript -e 'pkgload::load_all()' для разработки
 # когда пакет вынесен в свой репозиторий:
-#   remotes::install_github("<user>/kaspexample")
+#   remotes::install_github("<user>/tidykasp")
 
 # 4. прогон демо-пайплайна
 Rscript inst/scripts/run_kasp.R
@@ -101,7 +122,7 @@ sh lecture/render.sh                    # ставит OligoArrayAux на PATH �
 > conda, путь к данным `share/oligoarrayaux` прописывается автоматически. При
 > ручной сборке проще указать таблицы через переменную окружения `UNAFOLDDAT`,
 > чем менять рабочий каталог:
-> `UNAFOLDDAT=/path/to/share/oligoarrayaux Rscript R/run_kasp.R`.
+> `UNAFOLDDAT=/path/to/share/oligoarrayaux Rscript inst/scripts/run_kasp.R`.
 
 Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.
@@ -240,19 +261,23 @@ assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
 ## 6. Структура
 
 ```
-kasp-example/
+tidykasp/
 ├── DESCRIPTION              # зависимости (читает renv)
 ├── renv.lock                # зафиксированные версии (в т.ч. DECIPHER, TmCalculator)
-├── ROADMAP.md               # перечень работ (что ещё не сделано)
-├── R/
-│   ├── kasp_functions.R     # примитивы дизайна + мануал в комментариях
+├── ROADMAP.md               # инвентарь и очередь работ
+├── R/                       # дизайн, ввод-вывод, специфичность, графика
+│   ├── kasp_functions.R     # примитивы дизайна + QC
 │   ├── kasp_io.R            # чтение VCF (vroom) и FASTA (нормализация имён, IUPAC)
-│   ├── kasp_plots.R         # ggplot-расширения: раскладка, полиморфизмы, шпильки, матрица димеров
-│   └── run_kasp.R           # сквозной прогон
+│   ├── kasp_genome.R        # индексированный источник генома
+│   ├── kasp_scan.R          # BLAST-индекс специфичности
+│   ├── kasp_fm.R            # FM-индекс (Rsubread)
+│   ├── kasp_annotate.R      # аннотация вариантов (TxDb / BSgenome)
+│   ├── kasp_plots.R         # графика: раскладка, полиморфизмы, шпильки, матрица димеров
+│   └── kasp_search_anim.R   # анимация поиска (GIF)
 ├── report/kasp_report.Rmd   # нарративный отчёт
-├── tests/testthat.R         # раннер (функции сорсятся, без сборки пакета)
-├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика oligo_dg
-├── inst/extdata/example_targets.csv # реальные SNP-мишени FRI (для variant_id)
+├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика
+├── vignettes/               # kasp-intro, custom-genome, reading-results
+├── inst/extdata/            # example_targets.csv (реальные SNP-мишени FRI)
 ├── inst/scripts/            # run_kasp.R, quickstart.R (демо)
 ├── lecture/                 # Quarto-дек лекции (`sh lecture/render.sh`)
 └── results/                 # вывод (в .gitignore)
@@ -260,3 +285,12 @@ kasp-example/
 
 Внешние данные и индексы (геном, варианты, BLAST/FM-индексы) живут в
 пользовательском кэше `kasp_cache_dir()` (`tools::R_user_dir`), а не в проекте.
+
+---
+
+## Воспроизводимость
+
+renv.lock фиксирует точные версии зависимостей дев-окружения. Активация renv
+(.Rprofile/renv/) в репозиторий намеренно не входит: иначе R CMD build / R CMD check
+из свежего клона собирают изолированную (пустую) библиотеку и падают до renv::restore().
+Нужны точные версии — renv::init(), затем renv::restore().

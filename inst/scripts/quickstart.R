@@ -2,16 +2,16 @@
 #  quickstart.R  --  one SNP -> one assay, as fast as the cache allows
 # =============================================================================
 #  Run from the project root:   Rscript inst/scripts/quickstart.R
-#  Needs: kaspexample installed, OligoArrayAux on PATH, TAIR10 already cached
+#  Needs: tidykasp installed, OligoArrayAux on PATH, TAIR10 already cached
 #  (ath_genome() downloads it once on first use).
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(kaspexample)
+  library(tidykasp)
   library(here)
 })
 
-cli::cli_h1("kaspexample quickstart")
+cli::cli_h1("tidykasp quickstart")
 
 genome <- ath_genome()                                   # cached after first run
 gene   <- ensembl_gene("AT4G00650")                      # FRI
