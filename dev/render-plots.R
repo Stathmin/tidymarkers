@@ -15,9 +15,10 @@ suppressMessages(pkgload::load_all(root, quiet = TRUE))
 
 if (!nzchar(Sys.which("hybrid-min"))) stop("OligoArrayAux not on PATH - see data-raw/install-oligoarrayaux.R")
 
-make_assay <- function(seed = 4L, n = 500L, pos = 250L) {
+make_assay <- function(seed = 4L, n = 20000L, pos = 10000L) {
+  rand <- function(len) paste(sample(c("A", "C", "G", "T"), len, TRUE), collapse = "")
   for (s in seed:(seed + 19L)) {
-    withr::with_seed(s, genome <- Biostrings::DNAStringSet(c(Chr1 = paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = ""))))
+    withr::with_seed(s, genome <- Biostrings::DNAStringSet(c(Chr1 = rand(n), Chr2 = rand(n), Chr3 = rand(n))))
     ref <- as.character(Biostrings::subseq(genome[["Chr1"]], pos, pos))
     snp <- tibble::tibble(
       chrom = "Chr1", pos = pos, ref = ref,
@@ -25,7 +26,7 @@ make_assay <- function(seed = 4L, n = 500L, pos = 250L) {
     )
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error")) return(list(assay = a, snp = snp, variants = vs))
+    if (!inherits(a, "try-error")) return(list(assay = a, snp = snp, variants = vs, genome = genome))
   }
   stop("no random genome assembled into an assay")
 }
@@ -38,14 +39,14 @@ save <- function(name, plot) {
   f <- fs::path(out, paste0(name, ".png"))
   tryCatch(
     {
-      ggplot2::ggsave(f, plot, width = 9, height = 6.5, dpi = 110, bg = "white")
+      ggplot2::ggsave(f, plot, width = 9.5, height = 7.5, dpi = 110, bg = "white")
       cat("wrote", f, "\n")
     },
     error = function(e) cat("FAIL", name, ":", conditionMessage(e), "\n")
   )
 }
 
-save("primers", plot_primers(m$assay, m$variants, m$snp))
+save("primers", plot_primers(m$assay, m$variants, m$snp, genome = m$genome))
 save("checks", plot_checks(m$assay))
 save("alignment", plot_alignment(m$assay))
 save("self_complementarity", plot_self_complementarity(m$assay))

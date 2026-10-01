@@ -4,7 +4,7 @@
 \alias{plot_primers}
 \title{Local assay map: styled primers, Tm, and the acceptance checks}
 \usage{
-plot_primers(assay, variants, snp)
+plot_primers(assay, variants, snp, genome = NULL, features = NULL)
 }
 \arguments{
 \item{assay}{assembled assay.}
@@ -12,6 +12,14 @@ plot_primers(assay, variants, snp)
 \item{variants}{variant table.}
 
 \item{snp}{target variant (one row).}
+
+\item{genome}{optional \code{kasp_genome} or \code{DNAStringSet}; when given, the
+genome-wide ideogram panel is added.}
+
+\item{features}{optional annotation to draw on the feature row: a data frame
+with \code{start}/\code{end} (and optional \code{strand}, \code{name}), or a gene record from
+\code{\link[=ensembl_gene]{ensembl_gene()}}.  A KASP marker should sit on an annotated feature, so the
+row says \code{"no feature annotation"} when nothing (or no overlap) is given.}
 }
 \value{
 a \code{patchwork} object: the local map (primers over the variant track,
@@ -23,9 +31,10 @@ primer is drawn as its sequence of letters: neutral black by default, \strong{bo
 over the 3' GC-clamp window, and \strong{bright red} on the bases of an SSR or a
 hairpin stem; a ring marks an injected mismatch / the 3' discriminating base.
 The Tm sits just past the 3' end, with its deviation from the target as a
-green/red tumbler.  Below: the local variant track (same x axis).  Right: a
-thin column of per-criterion tumblers - the \emph{feature} level (one oligo) and
-the \emph{alignment} level (how the primers sit together on the template).
+green/red tumbler.  Below: the amplicon's own sequence, the local variant
+track and a feature-annotation row (same x axis), then - when \code{genome} is
+given - a thin genome-wide ideogram (\code{assay_ideogram()}) of exact primer hits
+and in-silico PCR products.  Right: a thin column of per-criterion tumblers.
 }
 \examples{
 \dontrun{

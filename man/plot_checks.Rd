@@ -9,7 +9,7 @@ plot_checks(assay, limits = KASP_LIMITS)
 \arguments{
 \item{assay}{assembled assay.}
 
-\item{limits}{thresholds (see \link{KASP_LIMITS}).}
+\item{limits}{thresholds (see \code{KASP_LIMITS}).}
 }
 \value{
 a \code{ggplot} tumbler list.
