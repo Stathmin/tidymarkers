@@ -7,7 +7,8 @@
 
 Обозначения: `[x]` сделано и покрыто тестами · `[~]` частично · `[ ]` очередь.
 
-A–P — реализовано или оценено; **Q** — локализация (i18n): разбор + реализация (в `main`).
+A–P — реализовано или оценено; **Q** — локализация (i18n); **R–T** — аудит 2026:
+недоиспользованные возможности, переносимость (Windows/macOS), соответствие CRAN/tidyverse.
 
 ## A. Инфраструктура и воспроизводимость
 - [x] `renv`: `DESCRIPTION` + пиннутый `renv.lock` (живая активация в репозиторий
@@ -359,6 +360,77 @@ A–P — реализовано или оценено; **Q** — локализ
       **Не ассертить точный текст сообщений** в тестах: их переводят, а `R CMD check` и так
       гоняет примеры/тесты с `LANGUAGE=en` и коллацией `C`. Вернуть английский в сессии —
       `Sys.setenv(LANGUAGE = "en")`.
+
+## R. Недоиспользованные возможности (dev/QA и библиотеки)
+- [x] `renv.lock`: запинены инструменты разработки (`bench`, `profmem`, `lobstr`,
+      `spelling`, `styler`, `lintr`, `pkgdown`, `potools` + зависимости) — `dev/README.md`
+      теперь воспроизводим
+- [x] Шаг орфографии вынесен за флаг `--spelling` (`dev/check.R`): проза русская,
+      англ. словарь помечает каждое слово; `inst/WORDLIST` при этом не нужен
+- [ ] Вернуть `object_usage_linter` (сейчас `NULL` в `.lintr`): `codetools` ловит
+      неопределённые глобалы/опечатки и мёртвые присваивания
+- [ ] `primer_tm()`: прокинуть `DMSO`/`formamide` в `TmCalculator::tm_calculate()`
+      (F заявляет DMSO-коррекцию; код передаёт только `Na`/`Mg`/`dNTPs`)
+- [ ] `dev/bench.R`: сохранять базовую таблицу (медианы + аллокации) и сравнивать с
+      ней; задействовать `profmem`/`lobstr` вместо самописного `Rprofmem`
+- [ ] testthat 3e: `expect_snapshot()` для сообщений (стабильность i18n) и
+      `withr::local_tempdir()` вместо ручных `on.exit(unlink)`
+- [ ] `httr2`: `req_throttle()`/`req_cache()` для Ensembl REST (лимит ~15 req/s)
+- [ ] `cli`: `cli_abort()`/`cli_warn()`/`cli_inform()` с bullet-ами (`i`/`x`) и
+      плюрализацией для пользовательских ошибок (сейчас `rlang`-строки)
+- [ ] `BiocParallel`: прокинуть `RNGseed`/`progressbar` в `bplapply`
+- [ ] Мёртвый/латентный вес в `renv.lock` (`R4RNA`, `ff`, `targets`, `rprimer`,
+      `oligo`, `biomaRt`, `pwalign` не используются в `R/`): проверить
+      `renv::dependencies()` и решить — обёртка или удаление
+- [x] `Biostrings`/`Rsamtools`/`ggmsa`/`gggenes`/`ggrepel`/`patchwork` используются
+      хорошо (PDict/`vcountPDict`, `matchProbePair`, `findPalindromes`, `scanFa`)
+
+## S. Переносимость (Windows/macOS)
+- [ ] **GIF-сборка:** на Windows `convert` — диспетчер диска (`System32\convert.exe`),
+      ImageMagick 7 — `magick`. Брать путь из `Sys.which` (`magick` в приоритете),
+      `System32\convert.exe` считать отсутствующим (`kasp_search_anim.R`, `data-raw/logo.R`)
+- [ ] **OligoArrayAux:** `./configure`/`make`/`cc` под Windows → Rtools (MSYS2/UCRT64)
+      и запуск через `bash -lc`; бинарь `hybrid-min.exe`, а `helper-oligoarrayaux.R`
+      должен видеть `.exe`, иначе термотесты молча скипаются
+- [ ] **`sha256sum` и пробелы в путях:** фолбэк на `digest`/`tools::md5sum`; кавычить
+      `UNAFOLDDAT`/`--prefix`
+- [ ] **`.gitattributes`:** `* text=auto eol=lf`, а `*.mo`/`*.rds`/`*.png` — бинарные
+      (Git-for-Windows с `autocrlf=true` иначе портит `.po`/данные)
+- [ ] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
+      Windows/macOS, `sh` только из Git-Bash/Rtools; `apt-get`-хинты (напр.
+      `R/kasp_scan.R`) дополнить кроссплатформенными
+- [ ] **Форк:** `parallel::mclapply` в `render_design_search()` (Unix-only) корректен,
+      но ради macOS/CRAN рассмотреть `BiocParallel::SnowParam`
+- [ ] Проверить на живой Windows/R-hub: сборку `hybrid-min.exe` и паритет `-q`-вывода,
+      `PATHEXT`/processx, cairo/`ggmsa`, CRLF у `vroom`
+
+## T. Соответствие CRAN/tidyverse
+- [x] `.Rbuildignore`: `^\.i18n-lib$` (каталог попадал в тарбол → NOTE и лишняя
+      зависимость `R (>= 3.5.0)`); убран дубль `^.*\.Rproj$`
+- [x] `ragg` объявлен в `Suggests` (`ragg::agg_png` давал WARNING «'::' import not
+      declared from: 'ragg'»)
+- [ ] **`@examples`** есть лишь у единиц экспортов — добавить исполнимые примеры всем;
+      сеть/тяжёлое (`ath_genome()`, `ensembl_*()`, `kasp_ensdb()`, OligoArrayAux/BLAST/
+      `ragg`) — в `\dontrun{}`
+- [ ] **`@return`** отсутствует у десятков экспортов (`kasp_genome.R`, `kasp_io.R`,
+      `kasp_plots.R` целиком) — дописать
+- [ ] **Запись вне `tempdir()`:** дефолты `dir = here::here("results")`
+      (`write_kasp_results()`, `export_primers()`, `render_design_search()`); в пакете —
+      `tempdir()`, а `here::` оставить скриптам в `dev/`
+- [ ] **Стиль сообщений** противоречит Q1: строки с заглавной и точкой
+      (`kasp_functions.R`, `kasp_io.R`, `kasp_scan.R`) — привести к «строчная, без точки»
+- [ ] **i18n:** завести `Language:` в `DESCRIPTION` (Q4)
+- [ ] **Тесты не должны ассертить переводной текст** (`LANGUAGE=ru` ломает `test-mnp.R`,
+      `test-utils.R`, `test-indel.R`, `test-mix-recipe.R`, `test-scan.R`) — обернуть
+      `withr::local_envvar(LANGUAGE = "en")` или проверять класс
+- [ ] **Бейджи/CI:** бейдж `lifecycle: experimental` без зависимости `lifecycle`;
+      бейдж R-CMD-check статичный, воркфлоу нет
+- [ ] **Мелочи:** `COPYRIGHT HOLDER` в `LICENSE` ≠ автор; нет `CITATION`;
+      `Config/roxygen2/version` (8.1.0) ≠ установленному (8.0.0); лишний
+      `utils::globalVariables(".data")` при `@importFrom rlang .data`
+- [x] Уже соответствует: Title/Description (англ., title case), `Authors@R`,
+      License+LICENSE, URL/BugReports, `Encoding`, `|>`/`.data$`, `rlang`/`cli`,
+      `@family`/`@noRd`, тесты edition 3 без сети/снапшотов, поставка `po/` + `.mo`
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

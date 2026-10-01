@@ -92,11 +92,16 @@
   подходит; `rprimer`/`pwalign`/`targets`/`biomaRt` — оценены.
 
 ### Инструменты разработчика
-- `dev/check.R` — локальный «CI» (доки ↔ roxygen, styler, lintr, spelling;
-  `--full` → `R CMD check`); `dev/bench.R` — время и память по функциям
-  (`bench`/`Rprofmem`); `dev/profile-gif.R` — профиль отрисовки GIF.
+- `dev/check.R` — локальный «CI» (доки ↔ roxygen, styler, lintr; `--full` →
+  `R CMD check`, `--spelling` → орфография); `dev/bench.R` — время и память по
+  функциям (`bench`/`Rprofmem`); `dev/profile-gif.R` — профиль отрисовки GIF.
 - Пакет стал lint-clean (`.lintr` в формате, понятном lintr 3.4); тесты можно
   гонять параллельно (`Config/testthat/parallel`).
+- `renv.lock` запинил инструменты разработки (`styler`, `lintr`, `spelling`, `bench`,
+  `profmem`, `lobstr`, `pkgdown`, `potools`); `.i18n-lib/` убран из сборки
+  (`.Rbuildignore`), `ragg`/`pkgdown` объявлены в `Suggests`.
+- Аудит (ROADMAP R–T): недоиспользованные возможности, переносимость Windows/macOS и
+  соответствие CRAN/tidyverse.
 
 ### Локализация и внешние инструменты
 - Все пользовательские сообщения (`stop`/`warning`/`cli`/прогресс) переведены через

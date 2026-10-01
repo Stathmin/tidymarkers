@@ -6,19 +6,21 @@
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean
-#    3. spelling (`inst/WORDLIST`), when the 'spelling' package is installed
+#    3. spelling -- only with `--spelling` (the prose is Russian, so an English
+#       dictionary flags every word; the R/roxygen code is checked by lintr)
 #    4. R CMD check -- only with `--full` (slow; builds and checks the tarball)
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
-#  Run:  Rscript dev/check.R [--full]
+#  Run:  Rscript dev/check.R [--full] [--spelling]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
 setwd(root)
 
-full   <- "--full" %in% commandArgs(trailingOnly = TRUE)
-failed <- character()
+full     <- "--full" %in% commandArgs(trailingOnly = TRUE)
+spelling <- "--spelling" %in% commandArgs(trailingOnly = TRUE)
+failed   <- character()
 
 ok <- function(...) message("  ok   ", ...)
 
@@ -65,11 +67,12 @@ step("lintr", function() {
 
 # 3. spelling ---------------------------------------------------------------
 step("spelling", function() {
+  if (!spelling) return(message("  skip (pass --spelling; the docs are Russian)"))
   if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
   words <- spelling::spell_check_package()
   if (nrow(words)) {
     print(words)
-    stop(nrow(words), " unknown word(s) (add good ones to inst/WORDLIST)")
+    stop(nrow(words), " unknown word(s)")
   }
   ok("no unknown words")
 })

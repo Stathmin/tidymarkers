@@ -13,6 +13,6 @@
 ^\.quarto$
 ^data-raw$
 ^dev$
-^.*\.Rproj$
+^\.i18n-lib$
 ^.*\.Rproj$
 ^\.Rproj\.user$
