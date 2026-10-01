@@ -9,10 +9,19 @@ plot_dimer_qc(assay)
 \arguments{
 \item{assay}{assembled assay.}
 }
+\value{
+a \code{patchwork} object: the duplex dG heatmap and hairpin dG bars over
+the self-complementarity panels.
+}
 \description{
 Readable replacement for a 3-node network: a symmetric matrix of duplex
 free energies (kcal/mol, 37 C; more negative = stronger dimer) plus a bar
 panel of intramolecular folding (hairpin) free energies.
+}
+\examples{
+\dontrun{
+plot_dimer_qc(assay)
+}
 }
 \seealso{
 Other KASP plots:

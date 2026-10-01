@@ -13,11 +13,20 @@ plot_primers(assay, variants, snp)
 
 \item{snp}{target variant (one row).}
 }
+\value{
+a \code{patchwork} object: the primer arrows above the local variant
+track, sharing an x axis.
+}
 \description{
 Top: gggenes arrows on the design window (genomic coordinates), pointing in
 the direction of extension.  Bottom: the variants that fall inside that
 window, on the same x axis.  The assay orientation (\code{+}/\code{-}) decides which
 side of the SNP the primers sit on.
+}
+\examples{
+\dontrun{
+plot_primers(assay, variants, snp)
+}
 }
 \seealso{
 Other KASP plots:

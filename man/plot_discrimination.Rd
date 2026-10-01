@@ -11,11 +11,19 @@ plot_discrimination(assay, n = 15L)
 
 \item{n}{number of candidates to show.}
 }
+\value{
+a \code{ggplot} bar chart of the top \code{n} candidates by discrimination.
+}
 \description{
 One horizontal bar chart, shared by the driver and the report so the two
 cannot drift.  The placement actually chosen by \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} is
 highlighted and the acceptance threshold is drawn, so a candidate that only
 \emph{looks} good is obvious at a glance.
+}
+\examples{
+\dontrun{
+plot_discrimination(assay)
+}
 }
 \seealso{
 Other KASP plots:

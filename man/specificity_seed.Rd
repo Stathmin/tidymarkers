@@ -24,6 +24,9 @@ specificity_seed(
 \item{BPPARAM}{optional \code{BiocParallel} backend; the mismatch scan is split by
 genome sequence, so \code{MulticoreParam()} uses one worker per chromosome.}
 }
+\value{
+a tibble \code{primer}, \code{seed}, \code{hits} (both-strand, genome-wide counts).
+}
 \description{
 For the exact case (\code{max_mismatch = 0}) counts come from \code{Biostrings::PDict}
 (\code{vcountPDict}) - the precomputed-dictionary fast path, one call for all
@@ -32,6 +35,12 @@ primers.  With mismatches Biostrings has no counting index (\code{PDict()} build
 \code{vcountPattern} \strong{parallelised over the genome's sequences} (and, per
 sequence, once for all seeds), which is how this scales to large genomes.
 Results are summed over both strands and over all genome sequences.
+}
+\examples{
+\dontrun{
+genome <- ath_genome()
+specificity_seed(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
+}
 }
 \seealso{
 Other KASP specificity:

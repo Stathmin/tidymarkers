@@ -110,6 +110,12 @@
 - Переносимость: `image_tool()` различает ImageMagick 6/7 и отвергает
   `System32\convert.exe`; добавлен `.gitattributes` (`eol=lf`); `sha256_of()` умеет
   `sha256sum`/`shasum`/`openssl`.
+- `@return` и `@examples` — у всех экспортов (сеть/термо/BLAST — в `\dontrun{}`);
+  `expect_snapshot()` на пользовательские сообщения; `dev/bench.R` — с базовой
+  таблицей `dev/bench-baseline.csv`.
+- Параллель: общий `bp_lapply()` добавляет прогресс через `BPOPTIONS`; дефолты записи
+  файлов — `tempdir()` (CRAN), `here` переведён в `Suggests`; из `renv.lock` убран
+  мёртвый вес (8 неиспользуемых листьев).
 
 ### Локализация и внешние инструменты
 - Все пользовательские сообщения (`stop`/`warning`/`cli`/прогресс) переведены через

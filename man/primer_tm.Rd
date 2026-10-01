@@ -11,9 +11,16 @@ primer_tm(seq, DMSO = PCR_COND$DMSO)
 
 \item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.}
 }
+\value{
+a numeric vector of Tm (C), one per oligo.
+}
 \description{
 \code{res$gr} uses TmCalculator's \code{$} accessor for the result GRanges; \code{Tm} is a
 metadata column on it.
+}
+\examples{
+primer_tm("GAAGGTGACCAAGTTCATGCT")
+primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
 }
 \seealso{
 Other KASP thermodynamics:

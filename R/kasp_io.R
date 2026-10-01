@@ -22,6 +22,10 @@
 #' can treat "unknown base" uniformly instead of dropping the whole record.
 #' @keywords internal
 #' @param x character vector of allele strings.
+#' @return a character vector the same length as `x`, upper-cased and with any
+#'   non-`ACGTN` character (including IUPAC ambiguity codes) replaced by `N`.
+#' @examples
+#' normalise_allele(c("a", "R", "g"))
 #' @family KASP input
 #' @export
 normalise_allele <- function(x) {
@@ -43,6 +47,13 @@ normalise_allele <- function(x) {
 #'   (INFO/GT, phased, breakends, missing ALT).  When a region and a bgzipped +
 #'   tabix-indexed file are given, `readVcf` streams just that region
 #'   (`ScanVcfParam(which=)`); both backends return the same tibble.
+#' @return a tibble with columns `chrom`, `pos`, `ref`, `alt`, one row per ALT
+#'   allele; symbolic/absent ALT alleles are dropped and the alleles are
+#'   normalised with [normalise_allele()].
+#' @examples
+#' vcf <- withr::local_tempfile(fileext = ".vcf")
+#' writeLines("##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n1\t250\t.\tA\tG\t.\t.\t.", vcf)
+#' read_variants_vcf(vcf)
 #' @family KASP input
 #' @export
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
@@ -137,6 +148,11 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' first materialised next to it (once, cached) before indexing.  Returns the
 #' path to the plain, indexed FASTA.
 #' @param path FASTA path (gzipped is decompressed once).
+#' @return the path to the plain, `.fai`-indexed FASTA (a character scalar).
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">Chr1", "ACGTACGTACGT"), fa)
+#' fasta_index(fa)
 #' @family KASP input
 #' @export
 fasta_index <- function(path) {
@@ -159,6 +175,9 @@ fasta_index <- function(path) {
 #' ignored.
 #' @param seq a DNAString (or string).
 #' @param positions 1-based positions to mask.
+#' @return a `DNAString` with the selected positions replaced by `N`.
+#' @examples
+#' mask_positions("ACGTACGT", c(2, 5))
 #' @family KASP input
 #' @export
 mask_positions <- function(seq, positions) {
@@ -179,6 +198,8 @@ mask_positions <- function(seq, positions) {
 #'
 #' @return tibble with `id`, `chrom`, `pos`, `ref`, `alt`, `consequence`,
 #'   `transition`.
+#' @examples
+#' kasp_example()
 #' @family KASP input
 #' @export
 kasp_example <- function() {
@@ -197,6 +218,13 @@ kasp_example <- function() {
 #' @param use_index when `TRUE` and `seqids` is given, read only those sequences
 #'   through the `Rsamtools` FASTA index (random access, no whole-genome load);
 #'   otherwise the whole file is read with `Biostrings`.
+#' @return a `DNAStringSet`; sequence names are stripped of their deflines and,
+#'   when `chrom_map` is given, replaced by the mapped names (only mapped
+#'   sequences are kept).
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGT"), fa)
+#' read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
 #' @family KASP input
 #' @export
 read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {

@@ -27,8 +27,18 @@ canonical reader (\code{readVcf}) and is the safer choice for complex records
 tabix-indexed file are given, \code{readVcf} streams just that region
 (\code{ScanVcfParam(which=)}); both backends return the same tibble.}
 }
+\value{
+a tibble with columns \code{chrom}, \code{pos}, \code{ref}, \code{alt}, one row per ALT
+allele; symbolic/absent ALT alleles are dropped and the alleles are
+normalised with \code{\link[=normalise_allele]{normalise_allele()}}.
+}
 \description{
 Read variants from a VCF/BCF file (streaming, memory-mapped)
+}
+\examples{
+vcf <- withr::local_tempfile(fileext = ".vcf")
+writeLines("##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n1\t250\t.\tA\tG\t.\t.\t.", vcf)
+read_variants_vcf(vcf)
 }
 \seealso{
 Other KASP input:

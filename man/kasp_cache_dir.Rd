@@ -14,6 +14,9 @@ Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST
 and FM indices) lives here — in the OS user cache, not in the project tree — so
 the working directory stays clean and the cache is shared across projects.
 }
+\examples{
+kasp_cache_dir()
+}
 \seealso{
 Other KASP input:
 \code{\link[=ath_genome]{ath_genome()}},

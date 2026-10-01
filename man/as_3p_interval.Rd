@@ -13,9 +13,16 @@ as_3p_interval(snp_pos, strand, window = 5L)
 
 \item{window}{number of 3'-terminal bases counted (includes the variant).}
 }
+\value{
+an \link[IRanges:IRanges]{IRanges::IRanges} of the \code{window - 1} bases just inside the SNP.
+}
 \description{
 \code{window} counts the 3'-terminal bases including the SNP itself, so the
 returned interval has \code{window - 1} positions.
+}
+\examples{
+as_3p_interval(100L, "+")
+as_3p_interval(100L, "-")
 }
 \seealso{
 Other KASP geometry:

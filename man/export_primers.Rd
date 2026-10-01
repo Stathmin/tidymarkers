@@ -4,7 +4,7 @@
 \alias{export_primers}
 \title{Write IDT, LGC and tidy order sheets for the assay primers}
 \usage{
-export_primers(assay, gene, dir = here::here("results"))
+export_primers(assay, gene, dir = tempdir())
 }
 \arguments{
 \item{assay}{assembled assay.}
@@ -13,11 +13,20 @@ export_primers(assay, gene, dir = here::here("results"))
 
 \item{dir}{output directory.}
 }
+\value{
+the tidy primer table (see \code{\link[=kasp_primer_table]{kasp_primer_table()}}), invisibly; called
+for its side effect of writing the IDT/LGC/tidy order sheets.
+}
 \description{
 \itemize{
 \item \verb{*_idt.csv}  : IDT bulk oligo input (Name, Sequence, Scale, Purification)
 \item \verb{*_lgc.csv}  : LGC/KASP assay order (one row per assay, wide)
 \item \verb{*_tidy.csv} : the long tidy table
+}
+}
+\examples{
+\dontrun{
+export_primers(assay, gene, dir = tempdir())
 }
 }
 \seealso{

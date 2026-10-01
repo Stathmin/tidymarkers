@@ -11,8 +11,17 @@ passes_all(assay, limits = KASP_LIMITS)
 
 \item{limits}{thresholds; see \code{\link[=kasp_design_checks]{kasp_design_checks()}}.}
 }
+\value{
+a single logical, \code{TRUE} when every check passes.
+}
 \description{
 Do all acceptance checks pass?
+}
+\examples{
+\dontrun{
+assay <- assemble_kasp_assay(genome, snp)
+passes_all(assay)
+}
 }
 \seealso{
 Other KASP checks:

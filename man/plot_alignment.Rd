@@ -9,12 +9,20 @@ plot_alignment(assay)
 \arguments{
 \item{assay}{assembled assay (from \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}).}
 }
+\value{
+a \code{ggmsa} alignment plot (a \code{ggplot} object).
+}
 \description{
 A DNA MSA rendered by ggmsa, with a sequence logo on top.  The two template
 rows are the primer-binding sequences carrying the REF/ALT allele (without the
 deliberate stabilising mismatch); the two AS rows are the real primers, so a
 column that differs between a template row and its AS row is the injected
 secondary mismatch.  Works for either assay orientation.
+}
+\examples{
+\dontrun{
+plot_alignment(assay)
+}
 }
 \seealso{
 Other KASP plots:

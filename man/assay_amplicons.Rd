@@ -15,10 +15,19 @@ assay_amplicons(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
 
 \item{BPPARAM}{optional \code{BiocParallel} backend (see \code{\link[=in_silico_pcr]{in_silico_pcr()}}).}
 }
+\value{
+a tibble \code{primer}, \code{n_products}, \code{width}, one row per AS primer.
+}
 \description{
 On the reference genome the REF primer must give exactly one product; the
 ALT primer (the other base / the indel) should give none.  Uses the
 template-matched primers (no deliberate stabiliser), like \code{\link[=specificity_seed]{specificity_seed()}}.
+}
+\examples{
+\dontrun{
+assay <- assemble_kasp_assay(genome, snp)
+assay_amplicons(assay, genome)
+}
 }
 \seealso{
 Other KASP specificity:

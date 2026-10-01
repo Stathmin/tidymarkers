@@ -32,6 +32,9 @@ need OligoArrayAux.  The defaults are deliberately strict (arms >= 4 bp, loop
 <= 6 bp, no mismatches): a well-designed primer returns no hits, whereas a
 repetitive or self-symmetric one returns several.
 }
+\examples{
+find_palindromes(c(hit = "ACGTACGT", none = "AACCGG"))
+}
 \seealso{
 Other KASP QC:
 \code{\link[=find_repeats]{find_repeats()}},

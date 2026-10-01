@@ -15,6 +15,9 @@ A small table of real 1001-Genomes variants in \emph{FRIGIDA}, handy for the
 \code{variant_id} argument of \code{\link[=pick_target_snp]{pick_target_snp()}} and for trying the pipeline
 without pulling data from Ensembl.
 }
+\examples{
+kasp_example()
+}
 \seealso{
 Other KASP input:
 \code{\link[=ath_genome]{ath_genome()}},

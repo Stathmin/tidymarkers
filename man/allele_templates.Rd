@@ -13,11 +13,18 @@ allele_templates(ref_tmpl, snp_i, ref, alt)
 
 \item{ref, alt}{alleles as ACGT strings.}
 }
+\value{
+a list with \code{ref} and \code{alt} (\code{DNAString} templates), \code{delta} (the
+length difference) and the \code{block_ref}/\code{block_alt} alleles.
+}
 \description{
 Both templates share the left flank (up to \code{snp_i - 1}).  The REF template is
 the genomic window; the ALT template replaces the REF block with the ALT
 allele.  Coordinates left of the block are identical, and to the right they
 differ by \code{delta = nchar(alt) - nchar(ref)}.
+}
+\examples{
+allele_templates(Biostrings::DNAString("ACGTACGTACGT"), 5L, "G", "TT")
 }
 \seealso{
 Other KASP design:

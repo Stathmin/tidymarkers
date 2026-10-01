@@ -24,9 +24,17 @@ the binding site (as in \code{?DECIPHER::CalculateEfficiencyPCR}).}
 
 \item{ions}{monovalent + divalent salt (M).}
 }
+\value{
+a numeric vector of efficiencies (0-1), one per primer/target pair.
+}
 \description{
 Models hybridisation (incl. side reactions) times Taq elongation efficiency,
 so a 3'-terminal mismatch is strongly penalised - the physical basis of KASP.
+}
+\examples{
+\dontrun{
+pcr_efficiency("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
+}
 }
 \seealso{
 Other KASP thermodynamics:

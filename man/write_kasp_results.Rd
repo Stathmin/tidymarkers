@@ -4,7 +4,7 @@
 \alias{write_kasp_results}
 \title{Write the assay results as a few consolidated files}
 \usage{
-write_kasp_results(assay, gene, dir = here::here("results"))
+write_kasp_results(assay, gene, dir = tempdir())
 }
 \arguments{
 \item{assay}{assembled assay.}
@@ -28,6 +28,11 @@ the per-consumer formats are column subsets of the same data:
 \item \code{kasp_dimer_dg.csv} — duplex dG37 per primer pair (long);
 \item \verb{\{base\}_tidy.csv} / \verb{_idt.csv} / \verb{_lgc.csv} — the order table and its
 IDT / LGC column subsets (see \code{\link[=export_primers]{export_primers()}}).
+}
+}
+\examples{
+\dontrun{
+write_kasp_results(assay, gene, dir = tempdir())
 }
 }
 \seealso{

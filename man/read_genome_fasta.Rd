@@ -19,8 +19,18 @@ reading (a cheap subset when only a few chromosomes are needed).}
 through the \code{Rsamtools} FASTA index (random access, no whole-genome load);
 otherwise the whole file is read with \code{Biostrings}.}
 }
+\value{
+a \code{DNAStringSet}; sequence names are stripped of their deflines and,
+when \code{chrom_map} is given, replaced by the mapped names (only mapped
+sequences are kept).
+}
 \description{
 Read an arbitrary genome FASTA, optionally normalising sequence names
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGT"), fa)
+read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
 }
 \seealso{
 Other KASP input:

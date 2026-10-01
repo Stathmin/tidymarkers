@@ -15,8 +15,17 @@ plot_variant_landscape(gene, variants, snp, assay)
 
 \item{assay}{assembled assay.}
 }
+\value{
+a \code{ggplot} object: the gene model and variant track with an inset of
+the target region.
+}
 \description{
 Gene model with the 1001-Genomes variant track + inset of the target region
+}
+\examples{
+\dontrun{
+plot_variant_landscape(gene, variants, snp, assay)
+}
 }
 \seealso{
 Other KASP plots:

@@ -6,8 +6,14 @@
 \usage{
 has_blast()
 }
+\value{
+\code{TRUE} when both \code{blastn} and \code{makeblastdb} are found on the \code{PATH}.
+}
 \description{
 Is NCBI BLAST+ available (for the indexed genome scan)?
+}
+\examples{
+has_blast()
 }
 \seealso{
 Other KASP specificity:

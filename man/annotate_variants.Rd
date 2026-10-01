@@ -41,6 +41,14 @@ just another step in the pipe:
   pick_target_snp(genome, gene)
 }\if{html}{\out{</div>}}
 }
+\examples{
+\dontrun{
+annotate_variants(
+  read_variants_vcf(vcf),
+  txdb = kasp_txdb(), seqsource = kasp_bsgenome()
+)
+}
+}
 \seealso{
 Other KASP annotation:
 \code{\link[=kasp_bsgenome]{kasp_bsgenome()}},

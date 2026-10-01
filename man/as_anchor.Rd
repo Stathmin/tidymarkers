@@ -13,12 +13,19 @@ as_anchor(v_start, ref_len, strand)
 
 \item{strand}{binding strand.}
 }
+\value{
+a single integer plus-strand coordinate.
+}
 \description{
 A variant is a substitution block \verb{[v_start, v_start + ref_len - 1]} (a SNP is
 the \code{ref_len = 1} case).  On the plus strand the AS primer's 3' end sits on
 the block's last base; on the minus strand (where the primer is the reverse
 complement) it sits on the block's first base.  All primer geometry is then
 expressed through this single anchor, so SNP and MNP share one code path.
+}
+\examples{
+as_anchor(100L, 1L, "+")
+as_anchor(100L, 3L, "-")
 }
 \seealso{
 Other KASP geometry:

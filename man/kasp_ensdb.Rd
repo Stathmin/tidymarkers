@@ -31,6 +31,11 @@ for gene/transcript/exon queries from the current model; converting it to a
 (CDS rows are dropped), which is exactly why the \code{TxDb} path is the annotation
 backend.
 }
+\examples{
+\dontrun{
+edb <- kasp_ensdb()
+}
+}
 \seealso{
 Other KASP annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},

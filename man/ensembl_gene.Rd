@@ -17,8 +17,17 @@ ensembl_gene(
 
 \item{cache}{cache directory.}
 }
+\value{
+a one-row tibble (\code{gene_id}, \code{symbol}, \code{chrom}, \code{start}, \code{end},
+\code{strand}, \code{description}).
+}
 \description{
 Fetch a gene record from Ensembl Plants REST (cached on disk)
+}
+\examples{
+\dontrun{
+ensembl_gene("AT4G00650")
+}
 }
 \seealso{
 Other KASP input:

@@ -6,8 +6,14 @@
 \usage{
 has_oligoarrayaux()
 }
+\value{
+a single logical.
+}
 \description{
 DECIPHER's thermodynamics runs through OligoArrayAux.
+}
+\examples{
+has_oligoarrayaux()
 }
 \seealso{
 Other KASP utilities:

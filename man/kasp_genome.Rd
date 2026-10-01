@@ -43,6 +43,11 @@ A \code{kasp_genome} can also be built from a Bioconductor \code{BSgenome} objec
 (\verb{bsgenome =}), in which case regions are read with \code{\link[BSgenome:getSeq]{BSgenome::getSeq()}} and no
 FASTA needs to live on disk.
 }
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+kasp_genome(fa, chrom_map = c("1" = "Chr1"))
+}
 \seealso{
 Other KASP input:
 \code{\link[=ath_genome]{ath_genome()}},

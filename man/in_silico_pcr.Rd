@@ -26,6 +26,12 @@ Uses \code{Biostrings::matchProbePair} (the library's own virtual PCR) to find
 each product the forward/reverse pair generates, chromosome by chromosome.
 A KASP test must amplify exactly one product per allele.
 }
+\examples{
+\dontrun{
+genome <- ath_genome()
+in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome)
+}
+}
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},

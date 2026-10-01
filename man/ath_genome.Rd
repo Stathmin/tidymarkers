@@ -11,6 +11,10 @@ ath_genome(cache = kasp_cache_dir(), release = 63L)
 
 \item{release}{Ensembl Plants release number.}
 }
+\value{
+a \code{DNAStringSet} of the seven TAIR10 chromosomes (\code{Chr1}..\code{Chr5},
+\code{ChrM}, \code{ChrC}).
+}
 \description{
 The FASTA comes from Ensembl Plants and is cached in the per-user cache
 directory (\code{tools::R_user_dir("tidykasp", "cache")}), not in the project.
@@ -23,6 +27,12 @@ The download (~35 MB) happens once and is reused; delete the cached
 \code{Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz} to refresh.
 }
 
+\examples{
+\dontrun{
+genome <- ath_genome()
+length(genome)
+}
+}
 \seealso{
 Other KASP input:
 \code{\link[=ensembl_gene]{ensembl_gene()}},

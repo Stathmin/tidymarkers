@@ -16,6 +16,11 @@ a \code{TxDb} object.
 Loads \code{TxDb.Athaliana.BioMart.plantsmart28} (a \code{Suggests} dependency) without
 attaching it to the search path.
 }
+\examples{
+\dontrun{
+txdb <- kasp_txdb()
+}
+}
 \seealso{
 Other KASP annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},

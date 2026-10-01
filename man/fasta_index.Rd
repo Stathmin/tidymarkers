@@ -9,10 +9,18 @@ fasta_index(path)
 \arguments{
 \item{path}{FASTA path (gzipped is decompressed once).}
 }
+\value{
+the path to the plain, \code{.fai}-indexed FASTA (a character scalar).
+}
 \description{
 \code{Rsamtools::indexFa()} needs a plain (or bgzipped) FASTA, so a \code{.gz} file is
 first materialised next to it (once, cached) before indexing.  Returns the
 path to the plain, indexed FASTA.
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">Chr1", "ACGTACGTACGT"), fa)
+fasta_index(fa)
 }
 \seealso{
 Other KASP input:

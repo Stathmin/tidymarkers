@@ -15,9 +15,17 @@ strand_gc_hint(genome, chrom, pos, flank = 25L)
 
 \item{flank}{bases to look at on each side.}
 }
+\value{
+a tibble with \code{side} (\code{upstream}/\code{downstream}), \code{gc} and
+\code{distance_to_45}.
+}
 \description{
 EasyKASP chooses the read direction by flank GC: it prefers the side whose
 +/-\code{flank} bases sit closest to 45\%.  Returned here as a diagnostic.
+}
+\examples{
+g <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
+strand_gc_hint(g, "Chr1", 15L, flank = 5L)
 }
 \seealso{
 Other KASP design:

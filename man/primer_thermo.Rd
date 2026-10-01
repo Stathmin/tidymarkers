@@ -9,8 +9,17 @@ primer_thermo(primer)
 \arguments{
 \item{primer}{oligo(s) 5'->3'.}
 }
+\value{
+a tibble, one row per primer (\code{primer}, \code{len}, \code{tm}, \code{gc},
+\code{hairpin_dg}, \code{terminal_dg}).
+}
 \description{
 Full structural profile of one primer
+}
+\examples{
+\dontrun{
+primer_thermo("GAAGGTGACCAAGTTCATGCT")
+}
 }
 \seealso{
 Other KASP thermodynamics:

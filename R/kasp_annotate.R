@@ -22,6 +22,10 @@
 #'
 #' @param package TxDb package name.
 #' @return a `TxDb` object.
+#' @examples
+#' \dontrun{
+#' txdb <- kasp_txdb()
+#' }
 #' @family KASP annotation
 #' @export
 kasp_txdb <- function(package = "TxDb.Athaliana.BioMart.plantsmart28") {
@@ -57,6 +61,10 @@ load_namespace_quietly <- function(pkg, reason = NULL) {
 #'
 #' @param package BSgenome package name.
 #' @return a `BSgenome` object.
+#' @examples
+#' \dontrun{
+#' bsgenome <- kasp_bsgenome()
+#' }
 #' @family KASP annotation
 #' @export
 kasp_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
@@ -83,6 +91,10 @@ kasp_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
 #' @param cache cache directory for the GTF and the built `EnsDb`.
 #' @param release Ensembl Plants release number.
 #' @return an `EnsDb` object.
+#' @examples
+#' \dontrun{
+#' edb <- kasp_ensdb()
+#' }
 #' @family KASP annotation
 #' @export
 kasp_ensdb <- function(gtf = NULL, cache = kasp_cache_dir(), release = 63L) {
@@ -180,6 +192,13 @@ txdb_seqname_map <- function(chrom, txdb) {
 #'   annotation to one locus.
 #' @return `variants` with `consequence`, plus `gene_id` from the `TxDb` (and
 #'   `codon_change` when `seqsource` is supplied).
+#' @examples
+#' \dontrun{
+#' annotate_variants(
+#'   read_variants_vcf(vcf),
+#'   txdb = kasp_txdb(), seqsource = kasp_bsgenome()
+#' )
+#' }
 #' @family KASP annotation
 #' @export
 annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NULL) {

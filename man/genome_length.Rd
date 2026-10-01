@@ -11,8 +11,16 @@ genome_length(genome, chrom)
 
 \item{chrom}{sequence name.}
 }
+\value{
+the sequence length as a single integer.
+}
 \description{
 Length of one sequence of a genome
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+genome_length(kasp_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1")
 }
 \seealso{
 Other KASP input:

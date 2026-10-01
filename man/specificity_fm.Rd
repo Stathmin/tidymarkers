@@ -26,6 +26,12 @@ index-based counterpart of \code{\link[=blast_primers]{blast_primers()}}: a whol
 3'-seed scan of \code{\link[=specificity_seed]{specificity_seed()}}.  The mapping is multithreaded via
 \code{nthreads} and never loads the genome into R.
 }
+\examples{
+\dontrun{
+idx <- kasp_fm_index(kasp_genome("genome.fa"))
+specificity_fm(c(AS = "ACGTACGTACGTACGT"), idx)
+}
+}
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},

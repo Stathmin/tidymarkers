@@ -14,12 +14,22 @@ oligo_dg(seq1, seq2 = NULL, na = 0.05, temp = 37)
 
 \item{temp}{temperature (C).}
 }
+\value{
+a single numeric dG in kcal/mol, or \code{NA_real_} when OligoArrayAux is
+unavailable or the run fails.
+}
 \description{
 The DNA engine DECIPHER already uses: \code{hybrid-min} (duplex of two strands) or
 \code{hybrid-ss-min} (intramolecular folding of one strand).  Returns dG in kcal/mol
 (more negative = more stable); \code{NA} if OligoArrayAux is not on \code{PATH}.  A
 non-zero exit or an unparsable result is reported as a warning (not a silent
 \code{NA}), and the run goes through \code{processx} so failures are explicit.
+}
+\examples{
+\dontrun{
+oligo_dg("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
+oligo_dg("GCGCGCGC") # hairpin (folding) dG
+}
 }
 \seealso{
 Other KASP thermodynamics:

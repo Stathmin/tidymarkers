@@ -15,10 +15,18 @@ snp_template(genome, chrom, pos, flank = 150L)
 
 \item{flank}{window half-width (bp).}
 }
+\value{
+a list with \code{seq} (the window as a standalone \code{DNAString}) and
+\code{snp_i} (the variant's coordinate within it).
+}
 \description{
 The window is copied into a standalone \code{DNAString}: \code{subseq()} of a
 \code{DNAStringSet} keeps a reference to the genome-wide shared pool, which would
 otherwise bloat anything we serialise (e.g. the saved assay).
+}
+\examples{
+g <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
+snp_template(g, "Chr1", 10L, flank = 5L)
 }
 \seealso{
 Other KASP input:

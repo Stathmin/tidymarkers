@@ -13,8 +13,14 @@ has_repeat(seq, units = 2:4, min_copies = 3L)
 
 \item{min_copies}{tandem copies required for a hit.}
 }
+\value{
+a logical vector, one per input sequence.
+}
 \description{
 Does a sequence contain an SSR? (see \code{\link[=find_repeats]{find_repeats()}})
+}
+\examples{
+has_repeat(c("ACACACAC", "ACGT"))
 }
 \seealso{
 Other KASP QC:

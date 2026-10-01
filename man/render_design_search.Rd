@@ -8,7 +8,7 @@ render_design_search(
   assay,
   variants,
   snp,
-  path = here::here("results", "design_search.gif"),
+  path = fs::path(tempdir(), "design_search.gif"),
   fps = 4L,
   hold = 3L,
   cores = getOption("tidykasp.cores", 1L)
@@ -39,6 +39,11 @@ repeats are avoided; the \code{ragg} device is used when installed.  Frames are
 independent, so \code{cores > 1} draws them in parallel on Unix (opt in with
 \code{options(tidykasp.cores = ...)}; the default of one core respects CRAN's cap
 on default core use).
+}
+\examples{
+\dontrun{
+render_design_search(assay, variants, snp, path = tempfile(fileext = ".gif"))
+}
 }
 \seealso{
 Other KASP plots:

@@ -14,6 +14,9 @@
 # =============================================================================
 
 #' Is NCBI BLAST+ available (for the indexed genome scan)?
+#' @return `TRUE` when both `blastn` and `makeblastdb` are found on the `PATH`.
+#' @examples
+#' has_blast()
 #' @family KASP specificity
 #' @export
 has_blast <- function() nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb"))
@@ -27,6 +30,10 @@ has_blast <- function() nzchar(Sys.which("blastn")) && nzchar(Sys.which("makebla
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
 #' @param path FASTA path to write a `DNAStringSet` to (ignored for `kasp_genome`).
 #' @return the BLAST database path (invisibly used by [specificity_blast()]).
+#' @examples
+#' \dontrun{
+#' db <- kasp_blast_index(kasp_genome("genome.fa"))
+#' }
 #' @family KASP specificity
 #' @export
 kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_genome.fa")) {
@@ -60,6 +67,11 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
 #'   (matching the seed convention); `NA` uses the whole primer.
 #' @param BPPARAM optional `BiocParallel` backend; queries are split across workers.
 #' @return tibble `primer`, `seed`, `hits`.
+#' @examples
+#' \dontrun{
+#' db <- kasp_blast_index(kasp_genome("genome.fa"))
+#' specificity_blast(c(AS = "ACGTACGTACGTACGT"), db)
+#' }
 #' @family KASP specificity
 #' @export
 specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL) {
@@ -103,7 +115,11 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   } else {
     nw <- max(1L, BiocParallel::bpnworkers(BPPARAM))
     idx <- split(seq_along(query), cut(seq_along(query), breaks = nw))
-    purrr::list_rbind(BiocParallel::bplapply(idx, function(ii) run(query[ii]), BPPARAM = BPPARAM))
+    purrr::list_rbind(BiocParallel::bplapply(
+      idx, function(ii) run(query[ii]),
+      BPPARAM = BPPARAM,
+      BPOPTIONS = BiocParallel::bpoptions(progressbar = interactive())
+    ))
   }
   cnt <- if (is.null(res) || nrow(res) == 0L) integer(0) else table(res$qseqid)
   hits <- as.integer(cnt[names(primers)])
@@ -122,6 +138,12 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
+#' @return a tibble with one row per primer (`primer`, `seed`, `hits`); the
+#'   in-memory path delegates to [specificity_seed()], the indexed path to
+#'   [specificity_blast()].
+#' @examples
+#' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
+#' specificity_of(c(AS = "ACGTACGT"), genome)
 #' @family KASP specificity
 #' @export
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,

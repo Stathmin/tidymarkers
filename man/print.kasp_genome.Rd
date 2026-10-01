@@ -11,8 +11,16 @@
 
 \item{...}{unused.}
 }
+\value{
+\code{x}, invisibly (called for its side effect of printing a summary).
+}
 \description{
 Compact summary: FASTA file, sequences and whether a BLAST db is attached.
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+print(kasp_genome(fa, chrom_map = c("1" = "Chr1")))
 }
 \seealso{
 Other KASP input:

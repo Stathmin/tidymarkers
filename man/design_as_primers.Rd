@@ -35,6 +35,12 @@ the mirror-image primer extending upstream.  Both are valid KASP layouts.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
 }
+\value{
+a tibble, one row per primer configuration, with \code{strand},
+\code{as_length}, \code{stab_at}, \code{stab_base}, \code{ref_primer}, \code{alt_primer},
+\code{ref_on}/\code{ref_off}/\code{alt_on}/\code{alt_off}, \code{discrimination}, \code{tm}, \code{gc},
+\code{dg_3p}, \code{tmpl_start}, \code{tmpl_end}.
+}
 \description{
 For every strand, length, secondary-mismatch position and mismatch base we
 build the REF and ALT allele-anchored primers and predict the PCR efficiency of

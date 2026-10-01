@@ -373,19 +373,23 @@ A–P — реализовано или оценено; **Q** — локализ
       `PCR_COND$DMSO`) — F больше не расходится с кодом
 - [x] `dev/bench.R` переписан на `bench` (медиана + `mem_alloc`) и `lobstr` (размеры
       объектов) вместо самописного `Rprofmem`/`system.time`
-- [ ] `dev/bench.R`: сохранять базовую таблицу и сравнивать с ней (регрессия)
+- [x] `dev/bench.R`: базовая таблица `dev/bench-baseline.csv` (`--update`), вывод — с
+      множителем времени к базовой и флагом замедления
 - [x] Тесты — на `withr`-идиомах: `with_seed`/`local_seed`, `local_tempfile`/
       `local_tempdir`, `local_envvar(LANGUAGE = "en")` вместо `set.seed`/`tempfile`/
       ручных `on.exit(unlink)`
-- [ ] testthat 3e: `expect_snapshot()` для сообщений (стабильность i18n)
+- [x] testthat 3e: `expect_snapshot()` для сообщений (`test-messages.R`, `_snaps/messages.md`)
 - [x] `httr2`: общий `ensembl_perform()` с `req_throttle(15)`/`req_retry`/
       `req_user_agent` вместо копипасты (дисковый кэш остаётся свой; `req_cache()` — опция)
 - [ ] `cli`: `cli_abort()`/`cli_warn()`/`cli_inform()` с bullet-ами (`i`/`x`) и
-      плюрализацией для пользовательских ошибок (сейчас `rlang`-строки)
-- [ ] `BiocParallel`: прокинуть `RNGseed`/`progressbar` в `bplapply`
-- [ ] Мёртвый/латентный вес в `renv.lock` (`R4RNA`, `ff`, `targets`, `rprimer`,
-      `oligo`, `biomaRt`, `pwalign` не используются в `R/`): проверить
-      `renv::dependencies()` и решить — обёртка или удаление
+      плюрализацией для пользовательских ошибок (сейчас `rlang`-строки + `gettext`)
+- [x] `BiocParallel`: общий `bp_lapply()` ставит `progressbar` через `BPOPTIONS`;
+      `RNGseed` — на BPPARAM (`MulticoreParam(RNGseed=)`; `bpoptions` его не принимает),
+      а ядра дизайна детерминированы, сеять нечего
+- [x] Мёртвый/латентный вес `renv.lock`: closure-анализ → удалены 8 листьев
+      (`oligo`, `oligoClasses`, `affxparser`, `affyio`, `preprocessCore`, `rprimer`,
+      `shinycssloaders`, `shinyFeedback`); `R4RNA`/`ff`/`targets`/`pwalign`/`biomaRt`
+      оказались достижимы (оставлены)
 - [x] `Biostrings`/`Rsamtools`/`ggmsa`/`gggenes`/`ggrepel`/`patchwork` используются
       хорошо (PDict/`vcountPDict`, `matchProbePair`, `findPalindromes`, `scanFa`)
 
@@ -412,20 +416,19 @@ A–P — реализовано или оценено; **Q** — локализ
       зависимость `R (>= 3.5.0)`); убран дубль `^.*\.Rproj$`
 - [x] `ragg` объявлен в `Suggests` (`ragg::agg_png` давал WARNING «'::' import not
       declared from: 'ragg'»)
-- [ ] **`@examples`** есть лишь у единиц экспортов — добавить исполнимые примеры всем;
-      сеть/тяжёлое (`ath_genome()`, `ensembl_*()`, `kasp_ensdb()`, OligoArrayAux/BLAST/
-      `ragg`) — в `\dontrun{}`
-- [ ] **`@return`** отсутствует у десятков экспортов (`kasp_genome.R`, `kasp_io.R`,
-      `kasp_plots.R` целиком) — дописать
-- [ ] **Запись вне `tempdir()`:** дефолты `dir = here::here("results")`
-      (`write_kasp_results()`, `export_primers()`, `render_design_search()`); в пакете —
-      `tempdir()`, а `here::` оставить скриптам в `dev/`
+- [x] **`@examples`** добавлены всем экспортам: короткие исполнимые у чистых хелперов,
+      `\dontrun{}` у сетевых/термо/BLAST/файловых (`ath_genome()`, `ensembl_*()`,
+      OligoArrayAux, `specificity_*()`, `write_kasp_results()`…)
+- [x] **`@return`** дописан всем экспортам (описание типа/структуры возврата)
+- [x] **Запись вне `tempdir()`:** дефолты `write_kasp_results()`/`export_primers()`/
+      `render_design_search()` → `tempdir()`; `here` ушёл из `Imports` в `Suggests`
+      (нужен только `inst/scripts`)
 - [ ] **Стиль сообщений** противоречит Q1: строки с заглавной и точкой
       (`kasp_functions.R`, `kasp_io.R`, `kasp_scan.R`) — привести к «строчная, без точки»
-- [ ] **i18n:** завести `Language:` в `DESCRIPTION` (Q4)
-- [ ] **Тесты не должны ассертить переводной текст** (`LANGUAGE=ru` ломает `test-mnp.R`,
-      `test-utils.R`, `test-indel.R`, `test-mix-recipe.R`, `test-scan.R`) — обернуть
-      `withr::local_envvar(LANGUAGE = "en")` или проверять класс
+- [x] **i18n / `Language:`** — решено **не** задавать: справочник (`.Rd`) английский,
+      и `Language: ru` объявил бы его русским; русская проза — отдельный слой (Q4)
+- [x] **Тесты не ассертят переводной текст** напрямую: в блоках с англ. подстроками
+      добавлен `withr::local_envvar(LANGUAGE = "en")`
 - [ ] **Бейджи/CI:** бейдж `lifecycle: experimental` без зависимости `lifecycle`;
       бейдж R-CMD-check статичный, воркфлоу нет
 - [ ] **Мелочи:** `COPYRIGHT HOLDER` в `LICENSE` ≠ автор; нет `CITATION`;

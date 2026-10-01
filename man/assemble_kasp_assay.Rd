@@ -54,6 +54,12 @@ positions in your own template if you need the literal \code{N}s.}
 \item{BPPARAM}{optional \code{BiocParallel} backend for the genome-wide steps
 (seed specificity and in-silico PCR; split by chromosome).}
 }
+\value{
+a \code{kasp_assay} object: a list holding the \code{snp}, the template, the
+chosen \code{strand}, ranked \code{assay}/\code{as_candidates} tibbles, \code{efficiency},
+\code{thermo}, \code{complementarity}, \code{specificity}, \code{amplicons}, \code{blast} results and
+the tailed \code{tails} primers.
+}
 \description{
 When \code{variants} is supplied the selection is \emph{variant-aware}: among primers
 that pass the physico-chemical filters we minimise the number of other

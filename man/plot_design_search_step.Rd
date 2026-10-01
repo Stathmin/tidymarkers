@@ -11,10 +11,19 @@ plot_design_search_step(frames, step)
 
 \item{step}{frame index.}
 }
+\value{
+a \code{ggplot} object for one frame of the animation.
+}
 \description{
 A library-drawn panel (gggenes arrows over the static variant track) with the
 step's verdict as the subtitle.  Used by \code{\link[=render_design_search]{render_design_search()}} and handy on
 its own for a slide.
+}
+\examples{
+\dontrun{
+frames <- design_search_frames(assay, variants, snp)
+plot_design_search_step(frames, 1)
+}
 }
 \seealso{
 Other KASP plots:

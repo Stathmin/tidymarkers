@@ -10,11 +10,18 @@ wobble_mismatch(on_allele, off_allele)
 \item{on_allele, off_allele}{plus-strand alleles (the primer carries \code{on}, the
 other allele is \code{off}).}
 }
+\value{
+a logical vector, one per allele pair.
+}
 \description{
 \code{on_allele}/\code{off_allele} are the plus-strand alleles.  The primer carries the
 "on" base and faces the complement of the "off" base, so the mismatch set is
 \verb{\{on, complement(off)\}}; G:T and A:C are the least destabilising and give the
 poorest allelic discrimination (LGC/KBioscience note).  Reported as a flag.
+}
+\examples{
+wobble_mismatch("A", "G") # TRUE (A:C mismatch)
+wobble_mismatch("A", "C") # FALSE
 }
 \seealso{
 Other KASP thermodynamics:

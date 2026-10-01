@@ -36,6 +36,10 @@
 #' @param bsgenome a `BSgenome` object (or a package name) to read from instead
 #'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`); `path` is then unused.
 #' @return a `kasp_genome` object.
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+#' kasp_genome(fa, chrom_map = c("1" = "Chr1"))
 #' @family KASP input
 #' @export
 kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
@@ -95,6 +99,11 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
 #'
 #' @param x a `kasp_genome`.
 #' @param ... unused.
+#' @return `x`, invisibly (called for its side effect of printing a summary).
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+#' print(kasp_genome(fa, chrom_map = c("1" = "Chr1")))
 #' @method print kasp_genome
 #' @family KASP input
 #' @export
@@ -112,6 +121,11 @@ print.kasp_genome <- function(x, ...) {
 
 #' Sequence names of a genome (indexed source or DNAStringSet)
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
+#' @return a character vector of sequence names.
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+#' genome_chroms(kasp_genome(fa, chrom_map = c("1" = "Chr1")))
 #' @family KASP input
 #' @export
 genome_chroms <- function(genome) {
@@ -121,6 +135,11 @@ genome_chroms <- function(genome) {
 #' Length of one sequence of a genome
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
 #' @param chrom sequence name.
+#' @return the sequence length as a single integer.
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+#' genome_length(kasp_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1")
 #' @family KASP input
 #' @export
 genome_length <- function(genome, chrom) {
@@ -139,6 +158,11 @@ genome_length <- function(genome, chrom) {
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
 #' @param chrom sequence name (as returned by [genome_chroms()]).
 #' @param start,end 1-based inclusive coordinates; default to the whole sequence.
+#' @return a `DNAString` for the requested interval.
+#' @examples
+#' fa <- withr::local_tempfile(fileext = ".fa")
+#' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+#' genome_seq(kasp_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1", 2, 6)
 #' @family KASP input
 #' @export
 genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, chrom)) {

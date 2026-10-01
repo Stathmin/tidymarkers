@@ -20,6 +20,11 @@ For an in-memory \code{DNAStringSet} the FASTA is written to \code{path} first; 
 database to pass to \code{\link[=specificity_blast]{specificity_blast()}}; attach it to a \code{kasp_genome} with
 \verb{kasp_genome(..., blast_db = <path>)} to let \code{\link[=specificity_of]{specificity_of()}} use it.
 }
+\examples{
+\dontrun{
+db <- kasp_blast_index(kasp_genome("genome.fa"))
+}
+}
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},

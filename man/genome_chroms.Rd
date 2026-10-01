@@ -9,8 +9,16 @@ genome_chroms(genome)
 \arguments{
 \item{genome}{a \code{kasp_genome} or a \code{DNAStringSet}.}
 }
+\value{
+a character vector of sequence names.
+}
 \description{
 Sequence names of a genome (indexed source or DNAStringSet)
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+genome_chroms(kasp_genome(fa, chrom_map = c("1" = "Chr1")))
 }
 \seealso{
 Other KASP input:

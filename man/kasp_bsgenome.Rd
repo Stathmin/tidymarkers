@@ -16,6 +16,11 @@ a \code{BSgenome} object.
 Loads \code{BSgenome.Athaliana.TAIR.TAIR9} (a \code{Suggests} dependency), the reference
 source \code{predictCoding()} needs for codon-level consequences.
 }
+\examples{
+\dontrun{
+bsgenome <- kasp_bsgenome()
+}
+}
 \seealso{
 Other KASP annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},

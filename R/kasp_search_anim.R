@@ -24,6 +24,13 @@
 #' @param assay assembled assay (from [assemble_kasp_assay()]).
 #' @param variants variant table.
 #' @param snp target variant (one row).
+#' @return a list with `primers` (arrow rows, one per role per step), `notes`
+#'   (one row per step: headline, detail and verdict), `track`, `snp` and `win`
+#'   (the design window).
+#' @examples
+#' \dontrun{
+#' design_search_frames(assay, variants, snp)
+#' }
 #' @family KASP plots
 #' @export
 design_search_frames <- function(assay, variants, snp) {
@@ -173,6 +180,12 @@ design_search_frames <- function(assay, variants, snp) {
 #' its own for a slide.
 #' @param frames result of [design_search_frames()].
 #' @param step frame index.
+#' @return a `ggplot` object for one frame of the animation.
+#' @examples
+#' \dontrun{
+#' frames <- design_search_frames(assay, variants, snp)
+#' plot_design_search_step(frames, 1)
+#' }
 #' @family KASP plots
 #' @export
 plot_design_search_step <- function(frames, step) {
@@ -233,10 +246,14 @@ plot_design_search_step <- function(frames, step) {
 #' @param hold how many extra frames to hold the chosen AS/COM/final frames.
 #' @param cores cores for drawing frames; `1` is serial.
 #' @return the GIF path (invisibly).
+#' @examples
+#' \dontrun{
+#' render_design_search(assay, variants, snp, path = tempfile(fileext = ".gif"))
+#' }
 #' @family KASP plots
 #' @export
 render_design_search <- function(assay, variants, snp,
-                                 path = here::here("results", "design_search.gif"),
+                                 path = fs::path(tempdir(), "design_search.gif"),
                                  fps = 4L, hold = 3L,
                                  cores = getOption("tidykasp.cores", 1L)) {
   rlang::check_installed("ggplot2")

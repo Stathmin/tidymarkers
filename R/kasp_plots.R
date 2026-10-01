@@ -57,6 +57,11 @@ variants_in_window <- function(variants, chrom, win) {
 #' column that differs between a template row and its AS row is the injected
 #' secondary mismatch.  Works for either assay orientation.
 #' @param assay assembled assay (from [assemble_kasp_assay()]).
+#' @return a `ggmsa` alignment plot (a `ggplot` object).
+#' @examples
+#' \dontrun{
+#' plot_alignment(assay)
+#' }
 #' @family KASP plots
 #' @export
 plot_alignment <- function(assay) {
@@ -84,6 +89,12 @@ plot_alignment <- function(assay) {
 #' Columns that match are self-complementary (hairpin-prone stems).
 #' @param assay assembled assay.
 #' @param title panel title (or `NULL`).
+#' @return a `patchwork` object stacking one primer-vs-reverse-complement
+#'   alignment per assay primer.
+#' @examples
+#' \dontrun{
+#' plot_self_complementarity(assay)
+#' }
 #' @family KASP plots
 #' @export
 plot_self_complementarity <- function(
@@ -119,6 +130,11 @@ plot_self_complementarity <- function(
 #'
 #' @param assay assembled assay.
 #' @param n number of candidates to show.
+#' @return a `ggplot` bar chart of the top `n` candidates by discrimination.
+#' @examples
+#' \dontrun{
+#' plot_discrimination(assay)
+#' }
 #' @family KASP plots
 #' @export
 plot_discrimination <- function(assay, n = 15L) {
@@ -179,6 +195,12 @@ plot_discrimination <- function(assay, n = 15L) {
 #' @param assay assembled assay.
 #' @param variants variant table.
 #' @param snp target variant (one row).
+#' @return a `patchwork` object: the primer arrows above the local variant
+#'   track, sharing an x axis.
+#' @examples
+#' \dontrun{
+#' plot_primers(assay, variants, snp)
+#' }
 #' @family KASP plots
 #' @export
 plot_primers <- function(assay, variants, snp) {
@@ -255,6 +277,12 @@ plot_primers <- function(assay, variants, snp) {
 #' @param variants variant table.
 #' @param snp target variant (one row).
 #' @param assay assembled assay.
+#' @return a `ggplot` object: the gene model and variant track with an inset of
+#'   the target region.
+#' @examples
+#' \dontrun{
+#' plot_variant_landscape(gene, variants, snp, assay)
+#' }
 #' @family KASP plots
 #' @export
 plot_variant_landscape <- function(gene, variants, snp, assay) {
@@ -325,6 +353,12 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' free energies (kcal/mol, 37 C; more negative = stronger dimer) plus a bar
 #' panel of intramolecular folding (hairpin) free energies.
 #' @param assay assembled assay.
+#' @return a `patchwork` object: the duplex dG heatmap and hairpin dG bars over
+#'   the self-complementarity panels.
+#' @examples
+#' \dontrun{
+#' plot_dimer_qc(assay)
+#' }
 #' @family KASP plots
 #' @export
 plot_dimer_qc <- function(assay) {
@@ -381,9 +415,13 @@ plot_dimer_qc <- function(assay) {
 #' @param assay assembled assay.
 #' @param gene gene record (used for the file base name).
 #' @param dir output directory.
+#' @examples
+#' \dontrun{
+#' write_kasp_results(assay, gene, dir = tempdir())
+#' }
 #' @family KASP output
 #' @export
-write_kasp_results <- function(assay, gene, dir = here::here("results")) {
+write_kasp_results <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
   base <- glue::glue("kasp_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}")
 
@@ -430,6 +468,13 @@ write_kasp_results <- function(assay, gene, dir = here::here("results")) {
 #' Tidy table of the assay oligos (with KASP tails)
 #' @param assay assembled assay.
 #' @param gene gene record.
+#' @return a tibble (`assay`, `role`, `oligo_id`, `sequence`, `seq_no_tail`,
+#'   `tail`, `tm`, `gc`, `length`) with the three assay oligos and their KASP
+#'   tails.
+#' @examples
+#' \dontrun{
+#' kasp_primer_table(assay, gene)
+#' }
 #' @family KASP output
 #' @export
 kasp_primer_table <- function(assay, gene) {
@@ -465,9 +510,15 @@ kasp_primer_table <- function(assay, gene) {
 #' @param assay assembled assay.
 #' @param gene gene record.
 #' @param dir output directory.
+#' @return the tidy primer table (see [kasp_primer_table()]), invisibly; called
+#'   for its side effect of writing the IDT/LGC/tidy order sheets.
+#' @examples
+#' \dontrun{
+#' export_primers(assay, gene, dir = tempdir())
+#' }
 #' @family KASP output
 #' @export
-export_primers <- function(assay, gene, dir = here::here("results")) {
+export_primers <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
   tbl <- kasp_primer_table(assay, gene)
   base <- glue::glue("kasp_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}")

@@ -13,11 +13,21 @@ design_search_frames(assay, variants, snp)
 
 \item{snp}{target variant (one row).}
 }
+\value{
+a list with \code{primers} (arrow rows, one per role per step), \code{notes}
+(one row per step: headline, detail and verdict), \code{track}, \code{snp} and \code{win}
+(the design window).
+}
 \description{
 \code{primers} (arrows, one row per role per step), \code{notes} (one row per step: the
 headline, the multi-line detail incl. the sequence and the verdict), the
 static \code{track} and \code{snp}, and the \code{win}dow.  Exposed so the animation logic
 can be tested without rendering.
+}
+\examples{
+\dontrun{
+design_search_frames(assay, variants, snp)
+}
 }
 \seealso{
 Other KASP plots:

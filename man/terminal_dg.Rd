@@ -11,10 +11,19 @@ terminal_dg(primer, n = 5L)
 
 \item{n}{terminal window length.}
 }
+\value{
+a numeric vector of dG (kcal/mol), one per primer (\code{NA_real_} when
+OligoArrayAux is unavailable).
+}
 \description{
 The last \code{n} bases are annealed to their reverse complement and scored with
 OligoArrayAux (kcal/mol, 37 C); more negative = a more stable 3' anchor, the
 "GC clamp" a polymerase needs to initiate.  Used as a design diagnostic.
+}
+\examples{
+\dontrun{
+terminal_dg("GAAGGTGACCAAGTTCATGCT")
+}
 }
 \seealso{
 Other KASP thermodynamics:

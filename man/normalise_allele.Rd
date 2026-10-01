@@ -9,10 +9,17 @@ normalise_allele(x)
 \arguments{
 \item{x}{character vector of allele strings.}
 }
+\value{
+a character vector the same length as \code{x}, upper-cased and with any
+non-\code{ACGTN} character (including IUPAC ambiguity codes) replaced by \code{N}.
+}
 \description{
 Upper-cases the string and folds any IUPAC ambiguity code (R, Y, S, W, K,
 M, B, D, H, V) - or anything else non-ACGTN - to \code{N}, so downstream design
 can treat "unknown base" uniformly instead of dropping the whole record.
+}
+\examples{
+normalise_allele(c("a", "R", "g"))
 }
 \seealso{
 Other KASP input:

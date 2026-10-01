@@ -13,10 +13,17 @@ find_repeats(seq, units = 2:4, min_copies = 3L)
 
 \item{min_copies}{tandem copies required for a hit.}
 }
+\value{
+a list, one character vector per input, of the repeated units (unique,
+possibly empty).
+}
 \description{
 EasyKASP screens candidate primers for SSR repeat units, not just
 homopolymers.  Returns, for each input, the repeated units of length \code{units}
 occurring at least \code{min_copies} times in tandem.
+}
+\examples{
+find_repeats(c("ACACACAC", "ACGTACGT"))
 }
 \seealso{
 Other KASP QC:

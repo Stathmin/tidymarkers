@@ -21,6 +21,11 @@ so calling this on every run only pays the build cost once.  Attach the
 returned basename to a \code{kasp_genome} with \verb{kasp_genome(..., fm_index = <basename>)}
 to let the assembly use it, or pass it straight to \code{\link[=specificity_fm]{specificity_fm()}}.
 }
+\examples{
+\dontrun{
+idx <- kasp_fm_index(kasp_genome("genome.fa"))
+}
+}
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},

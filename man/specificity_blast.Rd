@@ -25,6 +25,12 @@ is directly comparable to \code{\link[=specificity_seed]{specificity_seed()}}'s 
 thresholds are BLAST's (word size 7, no \code{dust}), i.e. this is a heuristic
 index-based screen, not an exact count.
 }
+\examples{
+\dontrun{
+db <- kasp_blast_index(kasp_genome("genome.fa"))
+specificity_blast(c(AS = "ACGTACGTACGTACGT"), db)
+}
+}
 \seealso{
 Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},

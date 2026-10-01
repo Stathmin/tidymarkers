@@ -61,6 +61,13 @@ cannot tell them apart.  The genome-wide seed scan runs only on the best
 }
 }
 
+\examples{
+\dontrun{
+genome <- ath_genome()
+v <- ensembl_variants("Chr4", 268901, 271503)
+pick_target_snp(v, genome, ensembl_gene("AT4G00650"))
+}
+}
 \seealso{
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},

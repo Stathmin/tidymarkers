@@ -23,10 +23,19 @@ specificity_of(
 
 \item{BPPARAM}{optional \code{BiocParallel} backend.}
 }
+\value{
+a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}); the
+in-memory path delegates to \code{\link[=specificity_seed]{specificity_seed()}}, the indexed path to
+\code{\link[=specificity_blast]{specificity_blast()}}.
+}
 \description{
 In-memory \code{DNAStringSet} -> \code{\link[=specificity_seed]{specificity_seed()}} (exact \code{PDict} path, or a
 chromosome-parallel scan).  Indexed \code{kasp_genome} -> \code{\link[=specificity_blast]{specificity_blast()}}
 through its BLAST database.  This is what the rest of the pipeline calls.
+}
+\examples{
+genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
+specificity_of(c(AS = "ACGTACGT"), genome)
 }
 \seealso{
 Other KASP specificity:

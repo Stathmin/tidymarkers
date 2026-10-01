@@ -15,8 +15,14 @@ has_palindrome(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L)
 
 \item{max_mismatch}{mismatches allowed in the arms.}
 }
+\value{
+a logical vector, one per input sequence.
+}
 \description{
 Does a primer contain an inverted repeat? (see \code{\link[=find_palindromes]{find_palindromes()}})
+}
+\examples{
+has_palindrome(c("ACGTACGT", "AACCGG"))
 }
 \seealso{
 Other KASP QC:

@@ -110,7 +110,7 @@ if (!all(checks$pass)) {
 # --- 5-6. persist (consolidated: design / primer QC / dimers + order subsets) -
 fs::dir_create(here::here("results"))
 saveRDS(assay, here::here("results", "kasp_assay.rds"))
-write_kasp_results(assay, gene)   # kasp_design.csv, kasp_primer_qc.csv, kasp_dimer_dg.csv, order subsets
+write_kasp_results(assay, gene, dir = here::here("results")) # kasp_design.csv, kasp_primer_qc.csv, ...
 
 # --- 7. library-driven views (see R/kasp_plots.R) ---------------------------
 # ggmsa emits internal warnings (aes_ deprecation + a manual-scale note) that are

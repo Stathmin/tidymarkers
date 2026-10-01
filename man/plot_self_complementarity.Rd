@@ -14,8 +14,17 @@ plot_self_complementarity(
 
 \item{title}{panel title (or \code{NULL}).}
 }
+\value{
+a \code{patchwork} object stacking one primer-vs-reverse-complement
+alignment per assay primer.
+}
 \description{
 Columns that match are self-complementary (hairpin-prone stems).
+}
+\examples{
+\dontrun{
+plot_self_complementarity(assay)
+}
 }
 \seealso{
 Other KASP plots:

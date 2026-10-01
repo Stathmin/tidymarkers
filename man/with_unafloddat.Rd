@@ -11,10 +11,18 @@ with_unafloddat(path, code)
 
 \item{code}{expression to evaluate (e.g. \code{assemble_kasp_assay(...)}).}
 }
+\value{
+the value of \code{code}, evaluated with \code{UNAFOLDDAT} set to \code{path}.
+}
 \description{
 The thermodynamics engine (DECIPHER via OligoArrayAux) needs \code{UNAFOLDDAT} to
 find its parameter tables.  This temporarily sets it, so you need not fiddle
 with the environment by hand.
+}
+\examples{
+\dontrun{
+with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
+}
 }
 \seealso{
 Other KASP utilities:

@@ -25,6 +25,10 @@ FM_MISMATCH <- 2L
 #' @param genome a `kasp_genome` or a `DNAStringSet`.
 #' @param basename index basename to create (no extension).
 #' @return the index basename (invisibly used by [specificity_fm()]).
+#' @examples
+#' \dontrun{
+#' idx <- kasp_fm_index(kasp_genome("genome.fa"))
+#' }
 #' @family KASP specificity
 #' @export
 kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm")) {
@@ -62,6 +66,11 @@ kasp_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "kasp_fm"
 #' @param nthreads threads for `Rsubread::align()`.
 #' @return tibble `primer`, `seed` (the primer itself) and `hits` (genome-wide
 #'   alignment count; more than one = a potential off-target).
+#' @examples
+#' \dontrun{
+#' idx <- kasp_fm_index(kasp_genome("genome.fa"))
+#' specificity_fm(c(AS = "ACGTACGTACGTACGT"), idx)
+#' }
 #' @family KASP specificity
 #' @export
 specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L) {

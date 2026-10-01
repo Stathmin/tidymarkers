@@ -11,8 +11,18 @@ kasp_primer_table(assay, gene)
 
 \item{gene}{gene record.}
 }
+\value{
+a tibble (\code{assay}, \code{role}, \code{oligo_id}, \code{sequence}, \code{seq_no_tail},
+\code{tail}, \code{tm}, \code{gc}, \code{length}) with the three assay oligos and their KASP
+tails.
+}
 \description{
 Tidy table of the assay oligos (with KASP tails)
+}
+\examples{
+\dontrun{
+kasp_primer_table(assay, gene)
+}
 }
 \seealso{
 Other KASP output:

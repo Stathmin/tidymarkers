@@ -42,6 +42,12 @@ allele, and its PCR efficiency against the OTHER allele is scored with
 DECIPHER (the same Taq-aware model used elsewhere).  The placement that
 actually discriminates is therefore chosen by the physics, not by a hand rule.
 }
+\examples{
+\dontrun{
+tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
+design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
+}
+}
 \seealso{
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},

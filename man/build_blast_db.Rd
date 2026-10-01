@@ -11,8 +11,17 @@ build_blast_db(genome, path = fs::path(kasp_cache_dir(), "tair10.fa"))
 
 \item{path}{FASTA path to write (and index).}
 }
+\value{
+the \code{path} to the FASTA that was written and indexed.
+}
 \description{
 Build (once) a BLAST nucleotide database from the TAIR10 genome
+}
+\examples{
+\dontrun{
+genome <- ath_genome()
+build_blast_db(genome)
+}
 }
 \seealso{
 Other KASP specificity:

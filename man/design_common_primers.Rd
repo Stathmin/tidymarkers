@@ -36,6 +36,10 @@ design_common_primers(
 
 \item{n}{number of candidates to return.}
 }
+\value{
+a tibble of candidates (\code{com}, \code{len}, \code{gap}, \code{start}, \code{end}, \code{com_gc},
+\code{com_tm}, \code{run}, \code{ssr}, \code{rank}).
+}
 \description{
 Enumerates the partner primer and keeps the ones whose length, GC, Tm and
 complexity look like a good KASP common primer.  \code{strand} is the orientation
@@ -52,6 +56,11 @@ primer \emph{upstream} of the SNP (sequence = the plus strand itself).
 
 Metrics come from packages (TmCalculator, Biostrings); enumeration/filtering
 is ours.
+}
+\examples{
+set.seed(1)
+w <- Biostrings::DNAString(paste(sample(c("A", "C", "G", "T"), 160L, TRUE), collapse = ""))
+design_common_primers(w, 80L, n = 3L)
 }
 \seealso{
 Other KASP design:

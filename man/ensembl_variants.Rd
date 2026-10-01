@@ -17,12 +17,21 @@ ensembl_variants(
 
 \item{species, cache}{as in \code{\link[=ensembl_gene]{ensembl_gene()}}.}
 }
+\value{
+a tibble of variants (\code{id}, \code{chrom}, \code{pos}, \code{ref_genome},
+\code{consequence}), one row per record.
+}
 \description{
 Returns \code{id}, \code{chrom}, \code{pos}, \code{ref_genome} (the allele vector) and
 \code{consequence} — the Ensembl/Sequence-Ontology term(s).  The \code{overlap/region}
 endpoint does \strong{not} provide a VEP \code{impact} column, so \code{\link[=pick_target_snp]{pick_target_snp()}}
 ranks on the SO terms; a table you build yourself with an \code{impact} column is
 also accepted.
+}
+\examples{
+\dontrun{
+ensembl_variants("Chr4", 268901, 271503)
+}
 }
 \seealso{
 Other KASP input:

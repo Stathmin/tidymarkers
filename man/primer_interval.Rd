@@ -17,9 +17,17 @@ primer_interval(snp_pos, strand, length, gap = 0L, role = c("AS", "COM"))
 
 \item{role}{\code{"AS"} (allele-specific) or \code{"COM"} (common).}
 }
+\value{
+an \link[IRanges:IRanges]{IRanges::IRanges} of width \code{length}, the primer's plus-strand
+interval.
+}
 \description{
 \code{role = "AS"} = allele-specific primer (3'-terminal base at the SNP);
 \code{role = "COM"} = the common primer, \code{gap} bases away on the other side.
+}
+\examples{
+primer_interval(100L, "+", 20L)
+primer_interval(100L, "-", 20L, gap = 30L, role = "COM")
 }
 \seealso{
 Other KASP geometry:

@@ -11,8 +11,17 @@ blast_primers(primers, db_path)
 
 \item{db_path}{BLAST database path.}
 }
+\value{
+a tibble of BLAST hits, or \code{NULL} when the database is missing or the
+query fails.
+}
 \description{
 BLAST every primer against a local genome database (rBLAST, optional)
+}
+\examples{
+\dontrun{
+blast_primers(c(AS = "GAAGGTGACCAAGTTCATGCT"), "tair10")
+}
 }
 \seealso{
 Other KASP specificity:

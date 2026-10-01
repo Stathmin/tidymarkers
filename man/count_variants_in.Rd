@@ -13,8 +13,14 @@ count_variants_in(interval, vpos, exclude = NA_integer_)
 
 \item{exclude}{positions to drop (typically the target variant).}
 }
+\value{
+a single integer count (\code{NA_integer_} when \code{vpos} is \code{NULL}).
+}
 \description{
 \code{exclude} drops positions (typically the target SNP) from the count.
+}
+\examples{
+count_variants_in(IRanges::IRanges(10, 20), c(5L, 12L, 18L))
 }
 \seealso{
 Other KASP geometry:

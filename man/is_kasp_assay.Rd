@@ -9,8 +9,14 @@ is_kasp_assay(x)
 \arguments{
 \item{x}{object to test.}
 }
+\value{
+a single logical.
+}
 \description{
 Is \code{x} a KASP assay object?
+}
+\examples{
+is_kasp_assay(list())
 }
 \seealso{
 Other KASP utilities:

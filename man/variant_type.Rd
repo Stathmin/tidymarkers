@@ -9,8 +9,16 @@ variant_type(ref, alt)
 \arguments{
 \item{ref, alt}{allele strings.}
 }
+\value{
+a character string: \code{"SNP"}, \code{"MNP"}, \code{"insertion"} or \code{"deletion"}.
+}
 \description{
 Classify a variant by its REF/ALT strings
+}
+\examples{
+variant_type("A", "G") # SNP
+variant_type("ACGT", "TCGA") # MNP
+variant_type("A", "ACGT") # insertion
 }
 \seealso{
 Other KASP design:

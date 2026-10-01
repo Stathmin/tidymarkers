@@ -11,10 +11,16 @@ mask_positions(seq, positions)
 
 \item{positions}{1-based positions to mask.}
 }
+\value{
+a \code{DNAString} with the selected positions replaced by \code{N}.
+}
 \description{
 Used to blank out \emph{other} variants flanking a target so no ambiguous base
 leaks into a designed or exported primer.  Positions outside the sequence are
 ignored.
+}
+\examples{
+mask_positions("ACGTACGT", c(2, 5))
 }
 \seealso{
 Other KASP input:

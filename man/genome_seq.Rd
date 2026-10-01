@@ -13,9 +13,17 @@ genome_seq(genome, chrom, start = 1L, end = genome_length(genome, chrom))
 
 \item{start, end}{1-based inclusive coordinates; default to the whole sequence.}
 }
+\value{
+a \code{DNAString} for the requested interval.
+}
 \description{
 This is the single accessor the design code uses, so an indexed genome and an
 in-memory one behave identically.
+}
+\examples{
+fa <- withr::local_tempfile(fileext = ".fa")
+writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+genome_seq(kasp_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1", 2, 6)
 }
 \seealso{
 Other KASP input:

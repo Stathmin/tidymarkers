@@ -11,9 +11,17 @@
 
 \item{...}{unused.}
 }
+\value{
+\code{x}, invisibly.
+}
 \description{
 Compact one-screen summary: target, the three oligos, amplicon size and
 discrimination.
+}
+\examples{
+\dontrun{
+print(assay)
+}
 }
 \seealso{
 Other KASP utilities:
