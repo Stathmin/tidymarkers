@@ -95,6 +95,24 @@ check_short <- function(criterion) {
   )
 }
 
+#' Variant points on a track, sized by population frequency when present
+#'
+#' Weights are optional; when the variant table carries `pop_freq` the markers
+#' grow with it (compressed into a modest range so they never shout), otherwise
+#' every variant is a small neutral dot.
+#' @keywords internal
+#' @noRd
+variant_points <- function(variants) {
+  if ("pop_freq" %in% names(variants)) {
+    list(
+      ggplot2::geom_point(ggplot2::aes(colour = .data$consequence, size = .data$pop_freq)),
+      ggplot2::scale_size_continuous(range = c(0.9, 2.6), guide = "none")
+    )
+  } else {
+    ggplot2::geom_point(ggplot2::aes(colour = .data$consequence), size = 1.3)
+  }
+}
+
 #' The 3' terminal window of a primer span (plus-strand coordinates)
 #' @keywords internal
 #' @noRd
@@ -579,7 +597,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
       ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[win_status]], alpha = 0.22
     ) +
-    ggplot2::geom_point(ggplot2::aes(colour = .data$consequence), size = 1.3) +
+    variant_points(vw) +
     ggplot2::geom_point(data = foot, ggplot2::aes(.data$pos, 1), shape = 1, colour = "black", size = 2.1) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 1),
@@ -705,10 +723,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
       ggplot2::aes(xmin = .data$start, xmax = .data$end, y = 1, forward = .data$strand > 0),
       fill = "grey80"
     ) +
-    ggplot2::geom_point(
-      data = v, ggplot2::aes(.data$pos, 2, colour = .data$consequence),
-      size = 1.3, shape = 108
-    ) +
+    variant_points(v) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 2),
       shape = 21, fill = "firebrick", colour = "white", size = 3
@@ -731,7 +746,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
   win <- design_window(assay, snp)
   vw <- variants_in_window(variants, snp$chrom, win)
   inset <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
-    ggplot2::geom_point(ggplot2::aes(colour = .data$consequence), size = 1.1) +
+    variant_points(vw) +
     ggplot2::geom_point(
       data = snp, ggplot2::aes(.data$pos, 1),
       shape = 21, fill = "firebrick", colour = "white", size = 2

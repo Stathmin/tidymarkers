@@ -272,6 +272,30 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
   as.integer(length(IRanges::findOverlaps(IRanges::IRanges(v, v), interval)))
 }
 
+#' Weighted variant load of an interval (sum of per-variant weights)
+#'
+#' The count of [count_variants_in()] says *how many* known variants sit under a
+#' primer; not all variants are equally bad, so when the variant table carries an
+#' optional `pop_freq` (population allele frequency) we sum those instead of
+#' counting.  Absent weights every variant counts 1, so the load degrades
+#' gracefully to the plain count.
+#' @keywords internal
+#' @noRd
+variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer_) {
+  if (is.null(vpos)) {
+    return(NA_real_)
+  }
+  keep <- !is.na(vpos) & !(vpos %in% exclude)
+  v <- vpos[keep]
+  if (!length(v)) {
+    return(0)
+  }
+  w <- if (is.null(vweight)) rep(1, length(vpos)) else as.numeric(vweight)
+  w <- w[keep]
+  hits <- IRanges::findOverlaps(IRanges::IRanges(v, v), interval)
+  sum(w[as.matrix(hits)[, 1L]])
+}
+
 #' Per-user cache directory for downloads and indices
 #'
 #' Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST
@@ -1736,6 +1760,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 run_blast = FALSE, BPPARAM = NULL) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
+  # optional per-variant weights (population allele frequency); absent -> all 1
+  vweight <- if (!is.null(variants) && "pop_freq" %in% names(variants)) {
+    variants$pop_freq[variants$chrom == snp$chrom]
+  } else {
+    NULL
+  }
   ref_len <- nchar(snp$ref)
   alt_len <- nchar(snp$alt)
   is_indel <- ref_len != alt_len
@@ -1822,6 +1852,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       }),
       n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b) {
         count_variants_in(IRanges::IRanges(a, b), vpos, vblock)
+      }),
+      w_var = purrr::map2_dbl(.data$as_start, .data$as_end, function(a, b) {
+        variant_load_in(IRanges::IRanges(a, b), vpos, vweight, vblock)
       })
     )
 
@@ -1918,6 +1951,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       ),
       n_var = purrr::map2_int(.data$gap, .data$len, function(g, L) {
         count_variants_in(com_iv(best_as$strand, L, g), vpos, vblock)
+      }),
+      w_var = purrr::map2_dbl(.data$gap, .data$len, function(g, L) {
+        variant_load_in(com_iv(best_as$strand, L, g), vpos, vweight, vblock)
       }),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       discrimination = best_as$discrimination, as_gc = best_as$gc,

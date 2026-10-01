@@ -47,6 +47,8 @@ KASP_GATE_LABEL <- c(
 #' @keywords internal
 #' @noRd
 grade_assay_pairs <- function(assays, limits, as_tm_mean) {
+  # footprint load: the weighted load when weights are available, else the count
+  foot <- if ("w_var" %in% names(assays)) as.numeric(assays$w_var) else as.numeric(assays$n_var)
   d <- assays |>
     dplyr::mutate(
       m_disc = .data$discrimination - limits$discrimination,
@@ -60,7 +62,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
         .data$amplicon - limits$amplicon[1L],
         limits$amplicon[2L] - .data$amplicon
       ),
-      m_footprint = -as.numeric(.data$n_var),
+      m_footprint = -foot,
       gate_discrimination = .data$discrimination >= limits$discrimination,
       gate_structure = .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,

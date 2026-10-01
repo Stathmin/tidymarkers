@@ -69,3 +69,12 @@ test_that("a variant in the AS 3' window is graver than everything else", {
   expect_equal(pick$best$as_n_3p, 0L)
   expect_length(pick$relaxed, 0L)
 })
+
+test_that("weighted load ranks one common variant below three rare ones", {
+  d <- pair_table(discrimination = c(0.9, 0.9), n_var = c(1L, 3L))
+  d$w_var <- c(0.40, 0.03) # one common SNP is the graver load here
+  g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
+  expect_equal(g$data$m_footprint, -c(0.40, 0.03))
+  # the gate is still the plain count: both rows have variants under the footprint
+  expect_false(any(g$data$gate_com_footprint))
+})

@@ -45,7 +45,7 @@ make_plot_assay <- function(seed = 4L, n = 500L, pos = 250L) {
     })
     ref <- as.character(Biostrings::subseq(genome[["Chr1"]], pos, pos))
     snp <- tibble::tibble(chrom = "Chr1", pos = pos, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
-    vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
+    vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant", pop_freq = 0.3)
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
     if (!inherits(a, "try-error")) {
       return(list(assay = a, snp = snp, variants = vs, genome = genome))
@@ -78,6 +78,9 @@ test_that("the assay plots render and carry the two-level vocabulary", {
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp), "patchwork")
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp, genome = m$genome), "patchwork")
   expect_s3_class(plot_alignment(m$assay), "ggplot")
+
+  # an optional pop_freq weights the footprint load and sizes the markers
+  expect_true("w_var" %in% names(m$assay$assay))
 })
 
 # the genome-wide ideogram (exact primer hits + in-silico PCR products)
