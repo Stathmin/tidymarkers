@@ -123,7 +123,7 @@ KASP_RELAX_AS <- c("gate_wobble", "gate_discrimination", "gate_as_footprint", "g
 
 #' Grade candidate AS primers: hard gates + tiered margins
 #'
-#' The AS-side twin of [grade_assay_pairs()]: the same vocabulary (gates for the
+#' The AS-side twin of `grade_assay_pairs()`: the same vocabulary (gates for the
 #' grave sins, margins ranked lexicographically) applied to one oligo on its own.
 #' @param as_cand one row per AS placement.
 #' @param limits thresholds (see `KASP_LIMITS`).
