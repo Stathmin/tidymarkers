@@ -63,8 +63,16 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
   } else {
     assays$n_var == 0L
   }
+  use_win_drop <- "as_dropout" %in% names(assays) && any(!is.na(assays$as_dropout))
+  win_margin <- if (use_win_drop) -as.numeric(assays$as_dropout) else -as.numeric(assays$as_n_3p)
+  gate_win <- if (use_win_drop) {
+    is.na(assays$as_dropout) | assays$as_dropout <= tol
+  } else {
+    assays$as_n_3p == 0L
+  }
   d <- assays |>
     dplyr::mutate(
+      .row = dplyr::row_number(),
       m_disc = .data$discrimination - limits$discrimination,
       m_structure = pmin(
         .data$com_homodimer - limits$homodimer_dg,
@@ -77,13 +85,13 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
         limits$amplicon[2L] - .data$amplicon
       ),
       m_footprint = -foot,
-      m_window = -as.numeric(.data$as_n_3p),
+      m_window = win_margin,
       gate_discrimination = .data$discrimination >= limits$discrimination,
       gate_structure = .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,
       gate_amplicon = .data$amplicon >= limits$amplicon[1L] & .data$amplicon <= limits$amplicon[2L],
       gate_com_footprint = gate_foot,
-      gate_as_window = .data$as_n_3p == 0L,
+      gate_as_window = gate_win,
       # the tiers themselves: lexicographic, and within a tier a bottleneck
       tier1 = .data$m_disc,
       tier2 = .data$m_structure,

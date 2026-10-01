@@ -2034,7 +2034,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # closes.  design_common_primers() works in TEMPLATE coordinates, so its
   # anchor is the template-local variant anchor (not the genomic one).
   common <- design_common_primers(tmpl$seq, as_anchor(tmpl$snp_i, ref_len, best_as$strand),
-    strand = best_as$strand, tm_range = tm_range
+    strand = best_as$strand, tm_range = tm_range, n = 60L
   ) |>
     dplyr::mutate(
       com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
@@ -2114,6 +2114,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     rlang::abort(gettext("No candidate assay survived even the relaxed constraints."))
   }
   best <- pick$best
+  # keep the chosen pairing first: the rest of the package (checks, plots) reads
+  # assay[1, ] as "the" assay, so the ranking must be reflected in the row order
+  ord <- c(pick$best$.row, setdiff(seq_len(nrow(assays)), pick$best$.row))
+  assays <- assays[ord, , drop = FALSE]
+  assays$rank <- seq_len(nrow(assays))
   warn_relaxed(pick$violated)
   primers <- c(AS_ref = best$as_ref, AS_alt = best$as_alt, COM = best$com)
 

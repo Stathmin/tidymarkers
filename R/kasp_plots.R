@@ -638,9 +638,11 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
       xmin = com_span[1] - 0.5, xmax = com_span[2] + 0.5,
       ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[com_status]], alpha = 0.22
     ) +
+    # the AS 3' window is the discriminating side: drawn as a taller square so it
+    # reads as the important zone, coloured by its own dropout
     ggplot2::annotate("rect",
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
-      ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[win_status]], alpha = 0.22
+      ymin = 0.22, ymax = 1.78, fill = KASP_STATUS[[win_status]], alpha = 0.30
     ) +
     variant_points(vw, 1) +
     ggplot2::geom_point(data = foot, ggplot2::aes(.data$pos, 1), shape = 1, colour = "black", size = 2.1) +
