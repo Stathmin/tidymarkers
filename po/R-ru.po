@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-01 15:25+0300\n"
+"POT-Creation-Date: 2026-10-01 15:48+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -120,8 +120,8 @@ msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
 
 #: kasp_functions.R:735
-msgid "conda install -c bioconda oligoarrayaux"
-msgstr "conda install -c bioconda oligoarrayaux"
+msgid "build it with data-raw/install-oligoarrayaux.R"
+msgstr "соберите его скриптом data-raw/install-oligoarrayaux.R"
 
 #: kasp_functions.R:801
 msgid "No common primer passed the filters."

@@ -7,13 +7,17 @@
 
 Обозначения: `[x]` сделано и покрыто тестами · `[~]` частично · `[ ]` очередь.
 
-A–P — реализовано или оценено; **Q** — локализация (i18n): разбор + прототип на ветке `i18n-prototype`.
+A–P — реализовано или оценено; **Q** — локализация (i18n): разбор + реализация (в `main`).
 
 ## A. Инфраструктура и воспроизводимость
-- [x] `renv`: `DESCRIPTION` + пиннутый `renv.lock`, `renv`-activated `.Rprofile`
-- [x] Вендоринг внешних тулов: OligoArrayAux в `.tools/`, запуск через `.tools/run.sh`
-      с `PATH` и `UNAFOLDDAT`
-- [x] Раннер тестов без сборки пакета: `tests/testthat.R` (сорсит `R/*.R`)
+- [x] `renv`: `DESCRIPTION` + пиннутый `renv.lock` (живая активация в репозиторий
+      намеренно не входит)
+- [x] Внешний тул OligoArrayAux собирается из исходников скриптом
+      `data-raw/install-oligoarrayaux.R` (base R, без conda) в `.tools/` как
+      `bin/` + `share/oligoarrayaux/`; `lecture/render.sh` выставляет
+      `PATH`/`UNAFOLDDAT`, а тесты подхватывают сборку через
+      `tests/testthat/helper-oligoarrayaux.R`
+- [x] Раннер тестов: `tests/testthat.R` (`test_check()` по установленному пакету)
 - [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 

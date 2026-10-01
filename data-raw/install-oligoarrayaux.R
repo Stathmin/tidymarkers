@@ -1,0 +1,126 @@
+# =============================================================================
+#  data-raw/install-oligoarrayaux.R  --  build OligoArrayAux from source
+# =============================================================================
+#  DECIPHER's thermodynamics shells out to OligoArrayAux (`hybrid-min` for
+#  duplexes, `hybrid-ss-min` for hairpins).  It is a small C program, so we
+#  build it from source into the git-ignored `.tools/`, laid out exactly as
+#  `lecture/render.sh` expects:
+#
+#      .tools/bin/hybrid-min            <- put on PATH
+#      .tools/share/oligoarrayaux/      <- the UNAFOLDDAT data tables
+#
+#  No conda, no distro package.  Deliberately base-R only (no `here`/`fs`), so
+#  it can run before `renv::restore()` has produced any library.
+#
+#  Run:  Rscript data-raw/install-oligoarrayaux.R
+#  Re-running is cheap: a working build is smoke-tested and left alone.
+# =============================================================================
+
+version <- "3.8.1"
+url <- sprintf("https://www.unafold.org/download/oligoarrayaux-%s.tar.gz", version)
+sha256 <- "b635bcf8c3e8bc154f3b2db8c0147e0ef22bb17bcc4ed8c2c23cc3c6d2d1a5f2"
+
+# The package root: this file lives in <root>/data-raw/, so go two levels up.
+# (Falls back to the working directory when sourced, not run, by Rscript.)
+script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
+
+tools <- file.path(root, ".tools")
+src <- file.path(tools, sprintf("oligoarrayaux-%s", version))
+tar <- file.path(tools, sprintf("oligoarrayaux-%s.tar.gz", version))
+bin <- file.path(tools, "bin")
+dat <- file.path(tools, "share", "oligoarrayaux")
+
+say <- function(...) message("oligoarrayaux: ", ...)
+
+# A working install runs hybrid-min on a known duplex and prints one number.
+smoke <- function() {
+  exe <- file.path(bin, "hybrid-min")
+  if (!file.exists(exe)) {
+    return(FALSE)
+  }
+  out <- suppressWarnings(system2(
+    exe, c(
+      "-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q",
+      "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"
+    ),
+    env = sprintf("UNAFOLDDAT=%s", dat), stdout = TRUE, stderr = FALSE
+  ))
+  length(out) == 1L && is.finite(suppressWarnings(as.numeric(out)))
+}
+
+run <- function(command, args = character()) {
+  status <- system2(command, args)
+  if (!identical(as.integer(status), 0L)) {
+    stop(sprintf("'%s' failed (status %s)", command, status), call. = FALSE)
+  }
+}
+
+with_dir <- function(dir, code) {
+  old <- setwd(dir)
+  on.exit(setwd(old))
+  force(code)
+}
+
+sha256_of <- function(path) {
+  out <- suppressWarnings(tryCatch(
+    system2("sha256sum", shQuote(path), stdout = TRUE, stderr = FALSE),
+    error = function(e) character()
+  ))
+  if (!length(out)) {
+    return(NA_character_)
+  }
+  strsplit(out[[1L]], "[[:space:]]+")[[1L]][[1L]]
+}
+
+main <- function() {
+  if (smoke()) {
+    say("already built and working")
+    return(invisible())
+  }
+
+  for (tool in c("make", "cc")) {
+    if (!nzchar(Sys.which(tool))) {
+      stop(sprintf("build tool '%s' not found on PATH", tool), call. = FALSE)
+    }
+  }
+
+  dir.create(tools, showWarnings = FALSE, recursive = TRUE)
+
+  if (!file.exists(tar)) {
+    say("downloading ", url)
+    utils::download.file(url, tar, mode = "wb", quiet = FALSE)
+  }
+  got <- sha256_of(tar)
+  if (is.na(got)) {
+    say("no sha256sum available - skipping checksum")
+  } else if (!identical(tolower(got), sha256)) {
+    stop(sprintf(
+      "checksum mismatch for %s\n  expected %s\n  got      %s",
+      tar, sha256, got
+    ), call. = FALSE)
+  }
+
+  if (!dir.exists(src)) {
+    say("unpacking ", basename(tar))
+    utils::untar(tar, exdir = tools)
+  }
+
+  say("configuring + building (this takes a minute)")
+  with_dir(src, {
+    run("./configure", sprintf("--prefix=%s", shQuote(tools)))
+    run("make")
+    run("make", "install")
+  })
+
+  if (!smoke()) stop("build finished but hybrid-min did not return a dG", call. = FALSE)
+  say("done")
+}
+
+main()
+
+# Point the session (or the shell) at the result:
+#   export PATH="$PWD/.tools/bin:$PATH"
+#   export UNAFOLDDAT="$PWD/.tools/share/oligoarrayaux"
+say(sprintf("PATH       += %s", bin))
+say(sprintf("UNAFOLDDAT  = %s", dat))

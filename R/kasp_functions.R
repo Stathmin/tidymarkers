@@ -732,7 +732,7 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
     rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
-                   i = gettext("conda install -c bioconda oligoarrayaux")))
+                   i = gettext("build it with data-raw/install-oligoarrayaux.R")))
   }
   as.numeric(DECIPHER::CalculateEfficiencyPCR(
     primer = Biostrings::DNAStringSet(as.character(primers)),

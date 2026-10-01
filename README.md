@@ -72,9 +72,9 @@ remotes::install_github("Stathmin/tidykasp")
 
 ```bash
 # 1. внешние инструменты
-#    a) OligoArrayAux для DECIPHER (термодинамика)
-conda install -c bioconda oligoarrayaux      # рекомендую (патчит путь к данным)
-#   или собрать из UNAFold: http://unafold.rna.albany.edu/?q=DINAMelt/OligoArrayAux
+#    a) OligoArrayAux для DECIPHER (термодинамика) — собираем из исходников,
+#       чистым R, в .tools/ (без conda)
+Rscript data-raw/install-oligoarrayaux.R
 #    b) cairo для gdtools/ggmsa
 sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreetype6-dev
 
@@ -118,11 +118,11 @@ sh lecture/render.sh                    # ставит OligoArrayAux на PATH �
 > и те же интервалы, а координаты спанов сохраняются в объекте теста — поэтому
 > рисунок не может разойтись с дизайном.
 
-> `DECIPHER` работает через системный вызов `hybrid-min`. Если ставить через
-> conda, путь к данным `share/oligoarrayaux` прописывается автоматически. При
-> ручной сборке проще указать таблицы через переменную окружения `UNAFOLDDAT`,
-> чем менять рабочий каталог:
-> `UNAFOLDDAT=/path/to/share/oligoarrayaux Rscript inst/scripts/run_kasp.R`.
+> `DECIPHER` работает через системный вызов `hybrid-min`. Скрипт из шага 1 кладёт
+> бинарники в `.tools/bin`, а таблицы — в `.tools/share/oligoarrayaux`; укажите их
+> через `PATH` и `UNAFOLDDAT` (так делает `lecture/render.sh`, а тесты — через
+> `helper-oligoarrayaux.R`) либо оберните вызов в `with_unafloddat(...)`:
+> `export PATH="$PWD/.tools/bin:$PATH" UNAFOLDDAT="$PWD/.tools/share/oligoarrayaux"`.
 
 Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.

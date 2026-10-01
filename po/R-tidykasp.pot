@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-01 15:26+0300\n"
+"POT-Creation-Date: 2026-10-01 15:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -106,7 +106,7 @@ msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr ""
 
 #: kasp_functions.R:735
-msgid "conda install -c bioconda oligoarrayaux"
+msgid "build it with data-raw/install-oligoarrayaux.R"
 msgstr ""
 
 #: kasp_functions.R:801

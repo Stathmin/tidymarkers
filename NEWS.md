@@ -87,6 +87,15 @@
 - Экосистема проверена и задокументирована (см. ROADMAP P): `oligo` — микрочипы, не
   подходит; `rprimer`/`pwalign`/`targets`/`biomaRt` — оценены.
 
+### Локализация и внешние инструменты
+- Все пользовательские сообщения (`stop`/`warning`/`cli`/прогресс) переведены через
+  GNU gettext (`po/`, русский каталог `R-ru.po`); выбор по `LANGUAGE`, справка `.Rd`
+  остаётся английской (обоснование — ROADMAP Q).
+- OligoArrayAux собирается из исходников скриптом `data-raw/install-oligoarrayaux.R`
+  (base R, без conda) в `.tools/`; `lecture/render.sh` и тесты
+  (`helper-oligoarrayaux.R`) подхватывают сборку, поэтому термодинамические тесты
+  больше не скипаются.
+
 ## 0.2.0
 - `kasp_design_checks()` и `KASP_LIMITS`; пороги LGC/EasyKASP.
 - `in_silico_pcr()` (`matchProbePair`), SSR-скрин, `strand_gc_hint()`.
