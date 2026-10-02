@@ -38,6 +38,21 @@ test_that("the mismatch scan is invariant to the parallel backend", {
   expect_equal(mc$hits, serial$hits)
 })
 
+test_that("specificity counts the reference genome, not the variant/allele list", {
+  # the seed is looked up in the reference genome only, so a position that merely
+  # *varies* across accessions (a row in the variant table) is one reference locus,
+  # not a phantom repeat; a genuine duplication in the genome is what adds a hit.
+  seed <- "GTCAGTCC"
+  primer <- paste0("AAAA", seed)
+  one <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTGTCAGTCCACGTACGT"))
+  two <- Biostrings::DNAStringSet(c(chr1 = "GTCAGTCCACGTACGTGTCAGTCC"))
+  expect_equal(specificity_seed(c(P = primer), one, k = 8L, max_mismatch = 0L)$hits, 1L)
+  expect_equal(specificity_seed(c(P = primer), two, k = 8L, max_mismatch = 0L)$hits, 2L)
+  # the specificity API takes a genome, never a variant table - so it cannot
+  # double-count the alternative alleles of a multi-variant feature
+  expect_false("variants" %in% names(formals(specificity_seed)))
+})
+
 test_that("the exact PDict path matches a manual both-strand count", {
   genome <- Biostrings::DNAStringSet(c(
     chr1 = "AAACCCGGGTTTAAACCCGGGTTT",

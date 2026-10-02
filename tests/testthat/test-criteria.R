@@ -29,8 +29,8 @@ test_that("kasp_criteria declares gates, tiers and checks with metadata", {
   expect_setequal(
     crit$id[crit$role == "gate" & crit$hard],
     c(
-      paste0("as:gate:", setdiff(KASP_GATES_AS, KASP_RELAX_AS)),
-      paste0("pair:gate:", setdiff(KASP_GATES_PAIR, KASP_RELAX_PAIR))
+      sprintf("as:gate:%s", setdiff(KASP_GATES_AS, KASP_RELAX_AS)),
+      sprintf("pair:gate:%s", setdiff(KASP_GATES_PAIR, KASP_RELAX_PAIR))
     )
   )
 })

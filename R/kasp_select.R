@@ -24,11 +24,11 @@
 KASP_RELAX_PAIR <- c("gate_amplicon", "gate_structure", "gate_tm", "gate_com_footprint")
 KASP_RELAX_AS <- c("gate_wobble", "gate_as_footprint")
 
-# The gate set is the same for both stages; grade_*() returns it in this order.
-KASP_GATES_PAIR <- c(
-  "gate_discrimination", "gate_structure", "gate_tm", "gate_amplicon",
-  "gate_com_footprint", "gate_as_window"
-)
+# The gate set: the AS stage decides discrimination and the 3' window (they are
+# fixed by the AS placement), so the pair stage only gates what varies across
+# COM placements - structure, Tm, amplicon and the COM footprint.  Re-gating the
+# AS's constants here would be vacuous.
+KASP_GATES_PAIR <- c("gate_structure", "gate_tm", "gate_amplicon", "gate_com_footprint")
 KASP_GATES_AS <- c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window")
 
 # How far a gate's margin bar may be lowered (floor, in margin units: >= 0 passes
@@ -47,9 +47,8 @@ KASP_GATE_FLOOR_PAIR <- c(
 # grade_*() functions and the decision graph both read these, so adding a tier or
 # changing the order shows up in the picture.
 KASP_TIERS_PAIR <- c(
-  tier1 = "discrimination", tier2 = "structure (hairpin / homodimer)",
-  tier3 = "Tm (COM vs AS / target)", tier4 = "amplicon length",
-  tier5 = "footprint load"
+  tier1 = "structure (hairpin / homodimer)", tier2 = "Tm (COM vs AS / target)",
+  tier3 = "amplicon length", tier4 = "footprint load"
 )
 KASP_TIES_PAIR <- c("run", "ssr", "com_start")
 KASP_TIERS_AS <- c(
@@ -154,11 +153,12 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
       gate_com_footprint = gate_foot,
       gate_as_window = gate_win,
       # the tiers themselves: lexicographic, and within a tier a bottleneck
-      tier1 = .data$m_disc,
-      tier2 = .data$m_structure,
-      tier3 = pmin(.data$m_tm_com, .data$m_tm_tgt),
-      tier4 = .data$m_amplicon,
-      tier5 = .data$m_footprint
+      # (discrimination and the AS window are fixed at the AS stage, so they are
+      # not re-ranked here)
+      tier1 = .data$m_structure,
+      tier2 = pmin(.data$m_tm_com, .data$m_tm_tgt),
+      tier3 = .data$m_amplicon,
+      tier4 = .data$m_footprint
     )
   list(
     data = d,

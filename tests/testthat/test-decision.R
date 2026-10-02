@@ -19,12 +19,14 @@ test_that("the decision schema mirrors the selection constants and is a DAG", {
   hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
   soft_ids <- c(paste0("as:gate:", KASP_RELAX_AS), paste0("pair:gate:", KASP_RELAX_PAIR))
   expect_setequal(hard, setdiff(c(gate("as"), gate("pair")), soft_ids))
-  expect_true(all(c("as:doomed", "pair:doomed", "as:survivors", "pair:survivors") %in% s$nodes$name))
+  expect_true(all(c("doomed", "as:survivors", "pair:survivors") %in% s$nodes$name))
+  # one shared DOOMED terminal, reached from both refinement nodes
+  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
 
   # endpoints are known, the stages are chained, and it only flows downward
   expect_true(all(s$edges$from %in% s$nodes$name))
   expect_true(all(s$edges$to %in% s$nodes$name))
-  expect_true("as:best -> pair:gate:gate_discrimination" %in% paste(s$edges$from, s$edges$to, sep = " -> "))
+  expect_true("as:best -> pair:gate:gate_structure" %in% paste(s$edges$from, s$edges$to, sep = " -> "))
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(ord[s$edges$to] > ord[s$edges$from]))
   # the refinement branch rejoins the ranking, not the outcome, and has a doomed exit
@@ -49,11 +51,11 @@ test_that("the graph is a tidygraph and can be drawn", {
 })
 
 test_that("an assay's outcome is stamped on the gates", {
-  fake <- list(selection = list(relaxed = "gate_tm", violated = c("gate_tm", "gate_as_window"), as = "gate_wobble"))
+  fake <- list(selection = list(relaxed = "gate_tm", violated = c("gate_tm", "gate_com_footprint"), as = "gate_wobble"))
   g <- kasp_decision_graph(fake)
   st <- function(n) tibble::as_tibble(g)[["status"]][tibble::as_tibble(g)[["name"]] == n]
   expect_equal(st("pair:gate:gate_tm"), "violated")
-  expect_equal(st("pair:gate:gate_as_window"), "violated")
+  expect_equal(st("pair:gate:gate_com_footprint"), "violated")
   expect_equal(st("pair:gate:gate_amplicon"), "ok")
   expect_equal(st("as:gate:gate_wobble"), "violated")
   expect_equal(st("as:gate:gate_discrimination"), "ok")

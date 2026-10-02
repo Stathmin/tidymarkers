@@ -49,6 +49,7 @@ kasp_decision_schema <- function() {
   push <- function(df) buf$rows[[length(buf$rows) + 1L]] <- df
   add_edge <- function(df) buf$edges[[length(buf$edges) + 1L]] <- df
   o <- 0
+  refine_ids <- character(0)
   node <- function(name, stage, kind, label, order, x = 0, hard = FALSE, detail = NA_character_) {
     tibble::tibble(
       name = name, stage = stage, kind = kind, label = label,
@@ -76,7 +77,6 @@ kasp_decision_schema <- function() {
       merge = paste0(st$id, ":survivors"),
       tier = paste0(st$id, ":tier:", names(tiers)),
       best = paste0(st$id, ":best"),
-      doomed = paste0(st$id, ":doomed"),
       refine = paste0(st$id, ":refine")
     )
     push(node(ids$gate, st$id, "gate", unname(KASP_GATE_SHORT[gates]), o + seq_along(gates),
@@ -100,14 +100,13 @@ kasp_decision_schema <- function() {
     push(node(ids$tier, st$id, "tier", unname(tiers), merge_order + seq_along(tiers)))
     best_order <- merge_order + length(tiers) + 1L
     push(node(ids$best, st$id, "outcome", "best", best_order))
-    push(node(ids$doomed, st$id, "doomed", "DOOMED", best_order, x = 0.85))
     o <- best_order
+    refine_ids <- c(refine_ids, ids$refine)
     add_edge(dplyr::bind_rows(
       chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"),
       chain(ids$decision, ids$merge, "pass"),
       chain(ids$decision, ids$refine, "fail"),
       chain(ids$refine, ids$merge, "relax"),
-      chain(ids$refine, ids$doomed, "doomed"),
       chain(ids$merge, ids$tier[1L], "pass"),
       chain(ids$tier[-length(tiers)], ids$tier[-1L], "pass"),
       chain(ids$tier[length(tiers)], ids$best, "pass")
@@ -115,7 +114,10 @@ kasp_decision_schema <- function() {
   }
   # stage entries: the site checks feed the AS stage; the AS best feeds the pair
   add_edge(chain(site$id[nrow(site)], "as:gate:gate_discrimination", "check"))
-  add_edge(chain("as:best", "pair:gate:gate_discrimination", "flow"))
+  add_edge(chain("as:best", "pair:gate:gate_structure", "flow"))
+  # one shared DOOMED terminal (a hard gate blocked, or every soft floor is spent)
+  push(node("doomed", "doomed", "doomed", "DOOMED", o <- o + 1, x = 0.85))
+  add_edge(chain(refine_ids, "doomed", "doomed"))
 
   # --- the assay acceptance checks + verdict ---------------------------------
   chk <- crit[crit$stage == "assay", ]
