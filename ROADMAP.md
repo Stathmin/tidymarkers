@@ -25,6 +25,40 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 
+### A1. Внешние тулы у пользователя: «поставил одной строкой и работает»  [очередь]
+
+Сейчас `hybrid-min`/`hybrid-ss-min` (OligoArrayAux — движок `DECIPHER`) и
+`blastn`/`makeblastdb` (NCBI BLAST+) ищутся **только** через `Sys.which()`, то есть по
+`PATH`. В репозитории это прячется за `data-raw/install-oligoarrayaux.R` + `.tools/` +
+`tests/testthat/helper-oligoarrayaux.R`, но у пользователя, поставившего пакет
+`remotes::install_github()`, тулов нет: термо/QC молча скипаются, BLAST-функции падают.
+Нужен тот же путь, но без ручного `export PATH/UNAFOLDDAT`.
+
+- [ ] **Слоистый резолвер** (внутр. `kasp_tool("oligoarrayaux"|"blast")`): порядок —
+      `options(tidykasp.*)`/явный путь → проектный `.tools/` (dev) → пользовательский кэш
+      `kasp_cache_dir()/tools` → системный `PATH`. Возвращает путь к exe (+ каталог
+      `UNAFOLDDAT`); `has_oligoarrayaux()`/`has_blast()`/`oligo_dg()` ходят только через
+      него, а `UNAFOLDDAT` ставят `withr::with_envvar()` на время вызова. Один код-путь
+      для dev-репозитория и для установленного пакета (нынешний `.tools` — частный случай).
+- [ ] **Рантайм-установщик** `kasp_install_tools()`: качает релизный тарбол OligoArrayAux,
+      сверяет sha256, собирает (`make`), дымовой тест, кладёт в **`R_user_dir`** (не в
+      каталог пакета — он read-only), идемпотентно; согласие спрашивает один раз
+      (`cli`/`utils::askYesNo`), оффлайн — если уже собрано. Windows: `bash -lc` + Rtools
+      или предсобранный `.exe` в кэш. Прецеденты: `tinytex::install_tinytex()`,
+      `webshot2`/`chromote` (Chrome в рантайме), `rnaturalearth`/`elevatr` (данные).
+      BLAST+ есть в apt/conda (`ncbi-blast+`) — **не бандлим**, а советуем `pak` (ниже).
+- [ ] **Одна строка для пользователя**: `pak::pak("stathmin/tidykasp", sysreqs = TRUE)`
+      (системные `ncbi-blast+`, cairo; `renv::sysreqs()` тоже умеет) →
+      `tidykasp::kasp_install_tools()` → всё на месте. Первый вызов функции без тула даёт
+      `cli`-подсказку «запусти `kasp_install_tools()`», а не тихий `NA`.
+- [ ] **CRAN-рамки** (в `CONTRIBUTING`/доках): сеть и запись — только в рантайме, только в
+      `R_user_dir`/`tempdir`, с согласием; ничего не качать во время install/`R CMD check`;
+      `configure` — только детект, не загрузка; `SystemRequirements:` задокументированы,
+      отсутствие тула — корректный skip/warning (как сейчас).
+- [ ] Единый тест-хелпер `skip_if_no_oligoarrayaux()` вместо ad-hoc
+      `skip_if_not(nzchar(Sys.which("hybrid-min")))`; `helper-oligoarrayaux.R` читает и
+      пользовательский кэш, а не только `.tools/`.
+
 ## B. Вход и интероперабельность (`R/kasp_io.R`)
 - [x] Ensembl Plants REST: ген-модель и варианты 1001 Genomes, кэш на диск + retry
 - [x] `read_variants_vcf()`: потоково через `vroom` (memory-mapped), `.vcf.gz` без распаковки
@@ -447,7 +481,7 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **OligoArrayAux, `.exe`:** `helper-oligoarrayaux.R` видит и `hybrid-min.exe`,
       так что термотесты на Windows не скипаются молча
 - [ ] **OligoArrayAux, сборка:** `./configure`/`make` под Windows требуют Rtools
-      (MSYS2/UCRT64) и запуска через `bash -lc` — задокументировать
+      (MSYS2/UCRT64) и запуска через `bash -lc` — задокументировать (см. установщик A1)
 - [x] **sha256 и пробелы:** `sha256_of()` пробует `sha256sum`/`shasum`/`openssl`;
       `UNAFOLDDAT`/`--prefix` кавычатся; компилятор ищется как `cc`/`gcc`/`clang`
 - [x] **`.gitattributes`:** `* text=auto eol=lf`, `*.mo`/`*.rds`/`*.png`/`*.gif` — бинарные
