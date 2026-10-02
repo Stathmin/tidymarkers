@@ -14,6 +14,8 @@ design_as_primers_indel(
   temp = PCR_EFF$temp,
   P = PCR_EFF$P,
   ions = PCR_EFF$ions,
+  gc_range = NULL,
+  tm_range = NULL,
   BPPARAM = NULL
 )
 }
@@ -29,6 +31,9 @@ design_as_primers_indel(
 \item{lengths}{AS-primer lengths to try.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
+
+\item{gc_range, tm_range}{optional accepted windows; candidates outside them are
+dropped \strong{before} the DECIPHER calls.  \code{NULL} keeps every candidate.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend for the batched DECIPHER calls.}
 }

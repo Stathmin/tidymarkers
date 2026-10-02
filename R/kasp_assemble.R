@@ -185,7 +185,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
     as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands, linked = linked_off, BPPARAM = BPPARAM
+      strands = strands, linked = linked_off,
+      gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
     ) |>
       dplyr::filter(
         dplyr::between(.data$gc, min_gc, max_gc),
@@ -201,7 +202,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       )
   } else {
     ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands, BPPARAM = BPPARAM
+      strands = strands, gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
     ) |>
       dplyr::filter(
         dplyr::between(.data$gc, min_gc, max_gc),

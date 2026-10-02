@@ -153,6 +153,9 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param linked optional two-column table (`offset` 1-based within `window`,
 #'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and
 #'   ALT primer (makes it mismatch REF twice).
+#' @param gc_range,tm_range optional accepted windows; configurations outside
+#'   them are dropped **before** the DECIPHER batch (the caller would filter them
+#'   afterwards anyway).  `NULL` keeps every configuration.
 #' @param temp,P,ions as in [pcr_efficiency()].
 #' @param BPPARAM optional `BiocParallel` backend; the batched DECIPHER call and
 #'   the 3'-stability map are run across cores (`NULL` = serial).
@@ -165,7 +168,7 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = 20:27, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
-                              linked = NULL, BPPARAM = NULL) {
+                              linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
   # linked variants (substitutions co-segregating with the ALT haplotype) are
   # baked into the ALT template and the ALT primer, so it mismatches REF twice;
@@ -179,12 +182,11 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       as.character(linked$alt)
     )
   }
+  anchor_of <- function(strand) as_anchor(v_start, ref_len, strand)
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
   # the one the (perfectly matching) primer already carries there.
   mismatch_bases <- function(L, k, strand) {
-    base_p <- make_as_primer(window, as_anchor(v_start, ref_len, strand), L, ref,
-      strand = strand
-    )
+    base_p <- make_as_primer(window, anchor_of(strand), L, ref, strand = strand)
     cur <- substr(base_p, L - k + 1L, L - k + 1L)
     setdiff(c("A", "C", "G", "T"), cur)
   }
@@ -197,31 +199,63 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     )) |>
     tidyr::unnest_longer("stab_base")
 
-  # build all primer/target pairs and score them in ONE batched DECIPHER call
-  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base) {
+  # build each configuration's REF primer ONCE, apply the caller's GC/Tm window,
+  # and only then build the ALT primer and score the four targets - the caller
+  # drops out-of-window rows anyway, so nothing is built or scored twice
+  cfgs <- cfgs |>
+    dplyr::mutate(
+      ref_primer = purrr::pmap_chr(
+        list(.data$as_length, .data$strand, .data$stab_at, .data$stab_base),
+        function(L, st, k, b) {
+          make_as_primer(window, anchor_of(st), L, ref,
+            strand = st,
+            stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b
+          )
+        }
+      ),
+      tm = primer_tm(.data$ref_primer),
+      gc = gc_frac(.data$ref_primer)
+    )
+  if (!is.null(gc_range)) {
+    cfgs <- dplyr::filter(cfgs, dplyr::between(.data$gc, gc_range[1L], gc_range[2L]))
+  }
+  if (!is.null(tm_range)) {
+    cfgs <- dplyr::filter(cfgs, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]))
+  }
+  if (nrow(cfgs) == 0L) {
+    return(empty_as_primers())
+  }
+  cfgs$alt_primer <- purrr::pmap_chr(
+    list(cfgs$as_length, cfgs$strand, cfgs$stab_at, cfgs$stab_base),
+    function(L, st, k, b) {
+      make_as_primer(window_alt, anchor_of(st), L, alt,
+        strand = st,
+        stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b
+      )
+    }
+  )
+
+  # the four on/off targets per configuration, scored in ONE batched DECIPHER call
+  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base, ref_primer, alt_primer, tm, gc) {
     L <- as_length
-    k <- if (is.na(stab_at)) NULL else stab_at
-    b <- if (is.na(stab_base)) NULL else stab_base
-    anchor <- as_anchor(v_start, ref_len, strand)
     # binding window on the plus strand (REF), and the ALT haplotype carrying the
     # linked substitutions as well
-    seg_ref <- as_window(window, anchor, L, strand)
-    seg_alt <- Biostrings::replaceAt(as_window(window_alt, anchor, L, strand), block_in_seg(ref_len, L, strand), alt)
-    ref_p <- make_as_primer(window, anchor, L, ref, strand = strand, stab_at = k, stab_base = b)
-    alt_p <- make_as_primer(window_alt, anchor, L, alt, strand = strand, stab_at = k, stab_base = b)
+    seg_ref <- as_window(window, anchor_of(strand), L, strand)
+    seg_alt <- Biostrings::replaceAt(
+      as_window(window_alt, anchor_of(strand), L, strand),
+      block_in_seg(ref_len, L, strand), alt
+    )
     t_ref <- as.character(as_target(seg_ref, strand))
     t_alt <- as.character(as_target(seg_alt, strand))
     # explicit on/off pairing: the "on" target carries the primer's own allele,
     # the "off" target carries the other one.  Written out (not c()-positional)
     # so a swap cannot silently invert the discrimination metric.
-    specs <- tibble::tibble(
-      which  = c("ref_on", "ref_off", "alt_on", "alt_off"),
-      primer = c(ref_p, ref_p, alt_p, alt_p),
-      target = c(t_ref, t_alt, t_alt, t_ref)
-    )
-    dplyr::mutate(specs,
-      strand = strand, as_length = L,
-      stab_at = stab_at, stab_base = stab_base
+    tibble::tibble(
+      which = c("ref_on", "ref_off", "alt_on", "alt_off"),
+      primer = c(ref_primer, ref_primer, alt_primer, alt_primer),
+      target = c(t_ref, t_alt, t_alt, t_ref),
+      strand = strand, as_length = L, stab_at = stab_at, stab_base = stab_base,
+      ref_primer = ref_primer, alt_primer = alt_primer, tm = tm, gc = gc
     )
   }) |>
     purrr::list_rbind()
@@ -230,48 +264,48 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   )
 
   wide <- pairs |>
-    dplyr::select("strand", "as_length", "stab_at", "stab_base", "which", "eff") |>
+    dplyr::select(
+      "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
+      "tm", "gc", "which", "eff"
+    ) |>
     tidyr::pivot_wider(names_from = "which", values_from = "eff") |>
     dplyr::mutate(discrimination = ((.data$ref_on - .data$ref_off) + (.data$alt_on - .data$alt_off)) / 2)
 
-  # attach sequences/metrics for the surviving configurations
+  # template-local footprint of the AS primer (genomic coords are added by the
+  # caller, which knows the window offset)
   wide |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      ref_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
-        .data$as_length, ref,
-        strand = .data$strand,
-        if (is.na(.data$stab_at)) NULL else .data$stab_at,
-        if (is.na(.data$stab_base)) NULL else .data$stab_base
-      ),
-      alt_primer = make_as_primer(window_alt, as_anchor(v_start, ref_len, .data$strand),
-        .data$as_length, alt,
-        strand = .data$strand,
-        if (is.na(.data$stab_at)) NULL else .data$stab_at,
-        if (is.na(.data$stab_base)) NULL else .data$stab_base
-      ),
-      # template-local footprint of the AS primer (genomic coords are added by
-      # the caller, which knows the window offset)
-      tmpl_start = IRanges::start(primer_interval(as_anchor(v_start, ref_len, .data$strand),
+      tmpl_start = IRanges::start(primer_interval(anchor_of(.data$strand),
         .data$strand, .data$as_length,
         role = "AS"
       )),
-      tmpl_end = IRanges::end(primer_interval(as_anchor(v_start, ref_len, .data$strand),
+      tmpl_end = IRanges::end(primer_interval(anchor_of(.data$strand),
         .data$strand, .data$as_length,
         role = "AS"
       ))
     ) |>
     dplyr::ungroup() |>
-    dplyr::mutate(
-      gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer),
-      dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM)
-    ) |>
+    dplyr::mutate(dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM)) |>
     dplyr::select(
       "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
       "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
       "dg_3p", "tmpl_start", "tmpl_end"
     ) |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
+}
+
+#' Zero-row `design_as_primers()` result, keeping the schema
+#' @keywords internal
+#' @noRd
+empty_as_primers <- function() {
+  tibble::tibble(
+    strand = character(), as_length = integer(), stab_at = integer(),
+    stab_base = character(), ref_primer = character(), alt_primer = character(),
+    ref_on = numeric(), ref_off = numeric(), alt_on = numeric(), alt_off = numeric(),
+    discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
+    tmpl_start = integer(), tmpl_end = integer()
+  )
 }
 
 
@@ -329,6 +363,8 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #'   `on_eff`, `off_eff`, `discrimination`, `tm`, `gc`.
 #' @param strands strands to scan.
 #' @param temp,P,ions as in [pcr_efficiency()].
+#' @param gc_range,tm_range optional accepted windows; candidates outside them are
+#'   dropped **before** the DECIPHER calls.  `NULL` keeps every candidate.
 #' @param BPPARAM optional `BiocParallel` backend for the batched DECIPHER calls.
 #' @examples
 #' \dontrun{
@@ -340,7 +376,7 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     strands = c("+", "-"), lengths = 20:27,
                                     temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
-                                    BPPARAM = NULL) {
+                                    gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
   alt_len <- nchar(alt)
   if (ref_len == alt_len) {
@@ -402,17 +438,40 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
   )
   if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
 
+  # apply the caller's GC/Tm window before the DECIPHER calls (the caller drops
+  # those rows afterwards anyway); an empty result is left for the caller
+  cand$tm <- primer_tm(cand$primer)
+  cand$gc <- gc_frac(cand$primer)
+  if (!is.null(gc_range)) {
+    cand <- dplyr::filter(cand, dplyr::between(.data$gc, gc_range[1L], gc_range[2L]))
+  }
+  if (!is.null(tm_range)) {
+    cand <- dplyr::filter(cand, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]))
+  }
+  if (nrow(cand) == 0L) {
+    return(empty_indel_primers())
+  }
+
   cores <- kasp_ncores(BPPARAM)
   cand$on_eff <- pcr_efficiency(cand$primer, cand$on, temp = temp, P = P, ions = ions, cores = cores)
   cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions, cores = cores)
   cand |>
-    dplyr::mutate(
-      discrimination = .data$on_eff - .data$off_eff,
-      tm = primer_tm(.data$primer), gc = gc_frac(.data$primer)
-    ) |>
+    dplyr::mutate(discrimination = .data$on_eff - .data$off_eff) |>
     dplyr::select(
       "allele", "strand", "as_length", "as_start", "as_end", "primer",
       "on_eff", "off_eff", "discrimination", "tm", "gc"
     ) |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
+}
+
+#' Zero-row `design_as_primers_indel()` result, keeping the schema
+#' @keywords internal
+#' @noRd
+empty_indel_primers <- function() {
+  tibble::tibble(
+    allele = character(), strand = character(), as_length = integer(),
+    as_start = integer(), as_end = integer(), primer = character(),
+    on_eff = numeric(), off_eff = numeric(), discrimination = numeric(),
+    tm = numeric(), gc = numeric()
+  )
 }

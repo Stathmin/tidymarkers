@@ -16,6 +16,8 @@ design_as_primers(
   P = PCR_EFF$P,
   ions = PCR_EFF$ions,
   linked = NULL,
+  gc_range = NULL,
+  tm_range = NULL,
   BPPARAM = NULL
 )
 }
@@ -40,6 +42,10 @@ the mirror-image primer extending upstream.  Both are valid KASP layouts.}
 \item{linked}{optional two-column table (\code{offset} 1-based within \code{window},
 \code{alt}) of co-segregating substitutions to bake into the ALT haplotype and
 ALT primer (makes it mismatch REF twice).}
+
+\item{gc_range, tm_range}{optional accepted windows; configurations outside
+them are dropped \strong{before} the DECIPHER batch (the caller would filter them
+afterwards anyway).  \code{NULL} keeps every configuration.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; the batched DECIPHER call and
 the 3'-stability map are run across cores (\code{NULL} = serial).}
