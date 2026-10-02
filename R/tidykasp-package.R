@@ -19,7 +19,3 @@
 #' @keywords internal
 #' @importFrom rlang .data
 "_PACKAGE"
-
-# Column names used inside dplyr/ggplot2 non-standard evaluation (covered by
-# rlang's `.data` pronoun); listed so `R CMD check` does not flag them.
-utils::globalVariables(c(".data"))

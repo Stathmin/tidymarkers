@@ -507,16 +507,18 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **Запись вне `tempdir()`:** дефолты `write_kasp_results()`/`export_primers()`/
       `render_design_search()` → `tempdir()`; `here` ушёл из `Imports` в `Suggests`
       (нужен только `inst/scripts`)
-- [ ] **Стиль сообщений** противоречит Q1: строки с заглавной и точкой
-      (`kasp_functions.R`, `kasp_io.R`, `kasp_scan.R`) — привести к «строчная, без точки»
+- [ ] **Стиль сообщений** против Q1: часть строк с заглавной и точкой (напр.
+      `kasp_io.R`, `kasp_scan.R`) — привести к «строчная, без точки»; правка текста
+      требует обновить и `po/R-ru.po` (`potools::po_extract()`/`po_merge()`), поэтому
+      делать одним заходом с миграцией на `cli` (§R)
 - [x] **i18n / `Language:`** — решено **не** задавать: справочник (`.Rd`) английский,
       и `Language: ru` объявил бы его русским; русская проза — отдельный слой (Q4)
 - [x] **Тесты не ассертят переводной текст** напрямую: в блоках с англ. подстроками
       добавлен `withr::local_envvar(LANGUAGE = "en")`
 - [ ] **Бейджи/CI:** бейдж `lifecycle: experimental` без зависимости `lifecycle`;
-      бейдж R-CMD-check статичный, воркфлоу нет
-- [ ] **Мелочи:** `COPYRIGHT HOLDER` в `LICENSE` ≠ автор; нет `CITATION`;
-      `Config/roxygen2/version` (8.1.0) ≠ установленному (8.0.0); лишний
+      бейдж R-CMD-check статичный, воркфлоу нет (CI намеренно не в репозиторий, см. CONTRIBUTING)
+- [x] **Мелочи:** `COPYRIGHT HOLDER` в `LICENSE` = автор; добавлен `inst/CITATION`;
+      `Config/roxygen2/version` совпадает с установленным (8.1.0); убран лишний
       `utils::globalVariables(".data")` при `@importFrom rlang .data`
 - [x] Уже соответствует: Title/Description (англ., title case), `Authors@R`,
       License+LICENSE, URL/BugReports, `Encoding`, `|>`/`.data$`, `rlang`/`cli`,

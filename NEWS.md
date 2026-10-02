@@ -79,6 +79,8 @@
   (все аргументы документированы, `@family` для «See also», `@examples`).
 - Объект теста получил класс `kasp_assay` и `print()`-метод; хелперы
   `is_kasp_assay()`, `passes_all()`, `kasp_example()`.
+- Метаданные пакета: `inst/CITATION`, `COPYRIGHT HOLDER` = автор в `LICENSE`,
+  убран лишний `utils::globalVariables(".data")` (`@importFrom rlang .data`).
 - Виньетка `kasp-intro`; `NEWS.md`.
 - Внешний доступ к FASTA по индексу (`Rsamtools::indexFa`).
 
