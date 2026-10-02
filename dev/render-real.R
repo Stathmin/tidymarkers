@@ -42,4 +42,15 @@ save("primers_fri", plot_primers(assay, variants, snp, genome = genome, features
 save("variants_fri", plot_variant_landscape(gene, variants, snp, assay), width = 10, height = 4.5)
 save("checks_fri", plot_checks(assay), width = 3, height = 6)
 
+# --- a real co-segregating substitution --------------------------------------
+# The FRI stop-gain at 269906 (T>A) rides with the 269907 G>T missense target.
+# Pinned to the '+' strand (whose AS footprint spans 269906), the linked base is
+# baked into the ALT primer, so it mismatches REF twice and its discrimination
+# rises.  Shows `linked=` on real data.
+snp_l <- pick_target_snp(variants, genome, gene, variant_id = "ENSVATH02604837")
+linked <- tibble::tibble(target = 269907L, linked = 269906L)
+assay_l <- assemble_kasp_assay(genome, snp_l, variants = variants, flank = 150L,
+                               strands = "+", linked = linked)
+save("primers_fri_linked", plot_primers(assay_l, variants, snp_l, genome = genome, features = gene))
+
 cat("done\n")
