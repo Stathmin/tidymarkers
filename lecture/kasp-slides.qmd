@@ -31,7 +31,7 @@ editor: source
 ```{r}
 #| label: setup
 suppressPackageStartupMessages({
-  library(tidykasp); library(here); library(dplyr); library(ggplot2); library(ggmsa)
+  library(tidykasp); library(here); library(dplyr); library(ggplot2)
 })
 ```
 

@@ -94,10 +94,14 @@
 - `plot_primers()` — локальная карта ассая: буквы последовательностей (нейтрально чёрные),
   **жирные** — 3' GC-clamp, **красные** — основания SSR/шпильки, кольцо — мисматч/
   3'-основание, Tm числом и ΔTm-тумблером; справа — тонкая колонка тумблеров
-  `plot_checks()` с фасетом feature/alignment.
-- `plot_alignment()` подсвечивает дискриминирующую колонку (`position_highlight`);
-  `geom_seqlogo`/`geom_GC` не используются (ломаются при вызове через `ggmsa::`).
-- `plot_discrimination()` удалён.
+  `plot_checks()` с фасетом site/feature/alignment/specificity; в тумблерах значение
+  ≤ 4 символов (site class — код `bial`/`degn`/`comp`/`indl`).
+- **Удалены** `plot_alignment()`, `plot_self_complementarity()`, `plot_dimer_qc()`
+  (и `plot_discrimination()` ранее) — в текущем виде не нужны; `ggmsa` ушёл из `Imports`.
+- `off-target` теперь считается по **точным** совпадениям праймера в геноме (из идеограммы),
+  а не по 3'-сиду с 1 мисматчем (тот в 100+ Мб геноме шумит); порог футпринта
+  `footprint_dropout` 5% → 10%.
+- `dev/render-targets.R` рисует карту для каждой мишени из `inst/extdata/example_targets.csv`.
 
 ### Пакет и UX
 - Проект собирается как настоящий пакет: `NAMESPACE` и `man/` из roxygen

@@ -23,7 +23,6 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(ggplot2)
   library(Biostrings)
-  library(ggmsa)               # geom_seqlogo needs it attached, not just namespaced
 })
 
 # Toggle the (slow) genome-wide BLAST step; the fast seed screen always runs.
@@ -113,12 +112,8 @@ saveRDS(assay, here::here("results", "kasp_assay.rds"))
 write_kasp_results(assay, gene, dir = here::here("results")) # kasp_design.csv, kasp_primer_qc.csv, ...
 
 # --- 7. library-driven views (see R/kasp_plots.R) ---------------------------
-# ggmsa emits internal warnings (aes_ deprecation + a manual-scale note) that are
-# not actionable here; silence them only while rendering the ggmsa-based panels.
 ggsave(here::here("results", "plot_primers.png"),    plot_primers(assay, variants, snp, genome = genome, features = gene), width = 10, height = 7.5)
 ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gene, variants, snp, assay), width = 8, height = 3.5)
-suppressWarnings(ggsave(here::here("results", "plot_alignment.png"), plot_alignment(assay),  width = 8, height = 3))
-suppressWarnings(ggsave(here::here("results", "plot_dimers.png"),    plot_dimer_qc(assay),  width = 9, height = 7))
 
 # how the search converges: every AS placement (and then every COM placement) is
 # tried, tagged with why it loses, until the accepted assay (a GIF)

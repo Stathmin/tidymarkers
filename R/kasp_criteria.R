@@ -67,7 +67,7 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
       "worst cross-dimer dG37", "worst homodimer dG37",
       "AS 3' window variants (n)", "COM footprint variants (n)",
       "AS 3' window dropout", "COM footprint dropout", "discrimination",
-      "in-silico PCR (REF 1 / ALT 0)", "off-target specificity (seed hits)"
+      "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)"
     ),
     level = c(
       "site", "site", "site",
@@ -78,7 +78,7 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
         "worst cross-dimer dG37", "worst homodimer dG37",
         "AS 3' window variants (n)", "COM footprint variants (n)",
         "AS 3' window dropout", "COM footprint dropout", "discrimination",
-        "in-silico PCR (REF 1 / ALT 0)", "off-target specificity (seed hits)"
+        "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)"
       ))
     ),
     hard = c(

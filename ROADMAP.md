@@ -206,9 +206,9 @@ A–P — реализовано или оценено; **Q** — локализ
       текущего primer×revcomp MSA
 - [ ] `plot_discrimination()` — удалён (шумный бар-чарт)
 - [x] `plot_variant_landscape()` — модель гена + врезка региона
-- [x] `plot_alignment()` — `ggmsa` (ДНК-MSA + логотип), REF/ALT и AS
-- [x] `plot_self_complementarity()` — праймер против своего revcomp (`ggmsa`)
-- [x] `plot_dimer_qc()` — матрица dG дуплексов + шпильки
+- [x] `plot_alignment()`, `plot_self_complementarity()`, `plot_dimer_qc()` — **удалены**
+      (в текущем виде не нужны; `ggmsa` убран из `Imports`). Замена выравнивания/
+      самокомплементарности — отдельная задача ниже (dot-plot/дуги), пока не делаем.
 
 - [x] **Анимация поиска** (`design_search_frames()`, `plot_design_search_step()`,
       `render_design_search()`) — GIF: перебор AS-размещений в порядке алгоритма и

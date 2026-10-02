@@ -55,9 +55,11 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
     length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
   }
 
-  # off-target: the AS primers' 3'-seed must be unique (one locus), when screened
-  sp <- assay$specificity
-  ot_obs <- if (is.null(sp) || !"hits" %in% names(sp)) NA_real_ else suppressWarnings(max(sp$hits, na.rm = TRUE))
+  # off-target: exact genome matches of each primer (from the ideogram, computed
+  # once).  This is an *exact* hit count - a 1-mismatch 3'-seed count is noise in
+  # a 100+ Mb genome and would not mean a real off-target amplicon.
+  ih <- assay$ideogram$hits
+  ot_obs <- if (is.null(ih) || !nrow(ih)) NA_real_ else as.numeric(max(table(ih$primer)))
   ot_pass <- is.na(ot_obs) || ot_obs <= 1
 
   # site-level facts (absent on an older assay)

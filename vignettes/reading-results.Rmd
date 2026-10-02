@@ -66,10 +66,9 @@ qc[qc$name != "COM" && !is.na(qc$name), ]   # AS-праймеры
 
 ## Графики
 
-- `plot_alignment()` — ДНК-выравнивание REF/ALT и AS-праймеров (`ggmsa`);
-- `plot_primers()` — стрелки праймеров на дорожке вариантов (`gggenes`);
+- `plot_primers()` — карта теста: праймеры, дорожка вариантов, тумблеры;
 - `plot_variant_landscape()` — модель гена + врезка региона дизайна;
-- `plot_dimer_qc()` — матрица dG дуплексов + шпильки;
+- `plot_decision_tree()` — дерево решения отбора.
 
 
-См. также `?kasp_design_checks`, `?write_kasp_results`, `?plot_dimer_qc`.
+См. также `?kasp_design_checks`, `?write_kasp_results`, `?plot_checks`.

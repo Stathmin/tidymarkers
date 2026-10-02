@@ -14,7 +14,7 @@ output:
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.height = 4)
 suppressPackageStartupMessages({
   library(tidykasp)   # пакет и есть протокол
-  library(tidyverse); library(here); library(ggmsa)
+  library(tidyverse); library(here)
 })
 ```
 
@@ -211,14 +211,6 @@ plot_primers(assay, variants, snp)
 
 ```{r viz-landscape, fig.height=4}
 plot_variant_landscape(gene, variants, snp, assay)
-```
-
-```{r viz-alignment, fig.height=3.5}
-suppressWarnings(plot_alignment(assay))
-```
-
-```{r viz-dimers, fig.height=7}
-suppressWarnings(plot_dimer_qc(assay))
 ```
 
 ## Заказ праймеров (IDT / LGC)

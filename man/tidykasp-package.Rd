@@ -14,8 +14,8 @@ tidy variant table the package uses), and it designs allele-specific and common
 primers on either strand and scores them.  Everything is done in R:
 thermodynamics come from \code{TmCalculator}, \code{DECIPHER} and OligoArrayAux, sequence
 work from \code{Biostrings}/\code{Rsamtools}, annotation from \code{VariantAnnotation}/\code{TxDb},
-and the visuals from dedicated plotting libraries (\code{ggmsa}, \code{gggenes},
-\code{ggrepel}, \code{patchwork}).
+and the visuals from dedicated plotting libraries (\code{gggenes},
+\code{ggrepel}, \code{patchwork}, \code{ggraph}).
 }
 \details{
 An \emph{Arabidopsis thaliana} setup (TAIR10 genome + 1001 Genomes variation via

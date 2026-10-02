@@ -83,7 +83,7 @@ KASP_LIMITS <- list(
   duplex_dg = -9, # cross-dimer dG37; must be >= this
   homodimer_dg = -9, # self-dimer dG37; must be >= this
   discrimination = 0.5, # Taq on- minus off-target efficiency
-  footprint_dropout = 0.05 # expected fraction of templates lost to footprint variants
+  footprint_dropout = 0.10 # expected fraction of templates lost to footprint variants
 )
 
 #' OligoArrayAux duplex / hairpin free energy

@@ -77,7 +77,6 @@ test_that("the assay plots render and carry the two-level vocabulary", {
   expect_s3_class(plot_checks(m$assay), "ggplot")
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp), "patchwork")
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp, genome = m$genome), "patchwork")
-  expect_s3_class(plot_alignment(m$assay), "ggplot")
 
   # an optional pop_freq weights the footprint load and sizes the markers
   expect_true("w_var" %in% names(m$assay$assay))

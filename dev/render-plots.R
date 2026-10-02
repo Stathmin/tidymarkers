@@ -48,8 +48,4 @@ save <- function(name, plot) {
 
 save("primers", plot_primers(m$assay, m$variants, m$snp, genome = m$genome))
 save("checks", plot_checks(m$assay))
-save("alignment", plot_alignment(m$assay))
-save("self_complementarity", plot_self_complementarity(m$assay))
-
-save("dimer_qc", plot_dimer_qc(m$assay))
 cat("done\n")

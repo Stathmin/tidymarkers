@@ -3,15 +3,10 @@
 # =============================================================================
 #  No hand-rolled geometry: every panel is drawn by a dedicated library.
 #
-#    - ggmsa (Bioconductor)  : DNA multiple-sequence alignments (+ seq logo)
 #    - gggenes               : strand-aware arrows (primers on the template,
 #                              gene model + variant track)
 #    - ggrepel               : non-overlapping labels
 #    - OligoArrayAux         : DNA duplex / hairpin free energies (via oligo_dg())
-#
-#  Hairpins / self-complementarity are shown the DNA way: an alignment of each
-#  primer against its own reverse complement (ggmsa). RNA-only tools (R4RNA /
-#  ggmsa::geom_helix) are deliberately NOT used - we work with DNA.
 #
 #  export_primers() writes tidy order sheets for IDT (bulk oligo input) and
 #  LGC/KASP (assay order).
@@ -53,8 +48,7 @@ variants_in_window <- function(variants, chrom, win) {
 #    primer arrow (a sub-gene span for the clamp, a pin for the mismatch).
 #  * alignment level - how the two allele-specific primers and the common primer
 #    sit together on the template: amplicon size, COM Tm >= AS Tm, the
-#    discrimination the placement buys, the in-silico PCR products.  Drawn on the
-#    template and on the REF-vs-ALT ggmsa alignment.
+#    discrimination the placement buys, the in-silico PCR products.
 #  Both levels are coloured the same way: ok (green) vs broken (red).
 
 KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
@@ -64,7 +58,7 @@ KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
 #' @noRd
 check_level <- function(criterion) {
   site <- c("target site class", "ALT alleles (n)", "linked variants skipped (n)")
-  specificity <- c("off-target specificity (seed hits)")
+  specificity <- c("off-target exact primer hits (n)")
   feature <- c(
     "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
     "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
@@ -88,7 +82,7 @@ check_short <- function(criterion) {
     "target site class" = "site class",
     "ALT alleles (n)" = "ALT n",
     "linked variants skipped (n)" = "linked skip",
-    "off-target specificity (seed hits)" = "off-target",
+    "off-target exact primer hits (n)" = "off-target",
     "amplicon length (bp)" = "amplicon",
     "AS Tm (C)" = "AS Tm",
     "COM Tm (C)" = "COM Tm",
@@ -363,86 +357,6 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
       legend.key.size = ggplot2::unit(6, "pt"),
       legend.text = ggplot2::element_text(size = 6)
     )
-}
-
-
-# =============================================================================
-#  Alignments (ggmsa)
-# =============================================================================
-
-#' AS primers aligned against the template; SNP + mismatches visible
-#'
-#' A DNA MSA rendered by ggmsa.  The two template rows are the primer-binding
-#' sequences carrying the REF/ALT allele (without the deliberate stabilising
-#' mismatch); the two AS rows are the real primers, so a column that differs
-#' between a template row and its AS row is the injected secondary mismatch.
-#' The AS 3'-terminal column - exactly where REF and ALT disagree - is
-#' highlighted (`position_highlight`).  Works for either assay orientation.
-#' (ggmsa's add-on geoms are deliberately not used: `geom_seqlogo()` only works
-#' when ggmsa is attached, and `geom_GC()` fails to build.)
-#' @param assay assembled assay (from [assemble_kasp_assay()]).
-#' @return a `ggmsa` alignment plot (a `ggplot` object).
-#' @examples
-#' \dontrun{
-#' plot_alignment(assay)
-#' }
-#' @family KASP plots
-#' @export
-plot_alignment <- function(assay) {
-  tmpl <- assay$template$seq
-  snp_i <- assay$template$snp_i
-  p <- assay_primers(assay)
-  L <- nchar(p[["AS_ref"]])
-  strand <- assay$strand %||% "+"
-  anchor <- as_anchor(snp_i, nchar(assay$snp$ref), strand)
-  # template rows in the SAME 5'->3' orientation as the primers, one per allele
-  t_ref <- make_as_primer(tmpl, anchor, L, assay$snp$ref, strand = strand)
-  t_alt <- make_as_primer(tmpl, anchor, L, assay$snp$alt, strand = strand)
-  msa <- Biostrings::DNAStringSet(c(
-    template_ref = t_ref, template_alt = t_alt,
-    AS_ref = p[["AS_ref"]], AS_alt = p[["AS_alt"]]
-  ))
-  # The AS primer is anchored on the variant, so its 3'-terminal column (column
-  # L in this orientation) is exactly where template_ref and template_alt differ:
-  # highlight that whole column - it is the base KASP discrimination rests on.
-  suppressWarnings(
-    ggmsa::ggmsa(msa, 1, L,
-      color = "Chemistry_NT", seq_name = TRUE, char_width = 0.6,
-      position_highlight = L
-    )
-  )
-}
-
-#' Self-complementarity of each primer (DNA): primer vs its reverse complement
-#'
-#' Columns that match are self-complementary (hairpin-prone stems).
-#' @param assay assembled assay.
-#' @param title panel title (or `NULL`).
-#' @return a `patchwork` object stacking one primer-vs-reverse-complement
-#'   alignment per assay primer.
-#' @examples
-#' \dontrun{
-#' plot_self_complementarity(assay)
-#' }
-#' @family KASP plots
-#' @export
-plot_self_complementarity <- function(
-  assay,
-  title = "Self-complementarity (DNA): matching columns = hairpin-prone stems"
-) {
-  plots <- purrr::imap(assay_primers(assay), function(s, nm) {
-    rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(s)))
-    suppressWarnings(
-      ggmsa::ggmsa(Biostrings::DNAStringSet(c(primer = s, revcomp = rc)),
-        1, nchar(s),
-        color = "Chemistry_NT", seq_name = TRUE, char_width = 0.5
-      )
-    ) +
-      ggplot2::theme(plot.margin = ggplot2::margin(1, 4, 1, 4))
-  })
-  p <- patchwork::wrap_plots(plots, ncol = 1)
-  if (!is.null(title)) p <- p + patchwork::plot_annotation(title = title)
-  p
 }
 
 
@@ -797,6 +711,10 @@ plot_checks <- function(assay, limits = KASP_LIMITS) {
       status = ifelse(.data$pass, "ok", "broken"),
       value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))
     )
+  # the site class is shown as a 4-char code (monospace column, max 4 wide)
+  cls <- c(biallelic = "bial", degenerate = "degn", complementary = "comp", indel = "indl", none = "--")
+  is_site <- chk$criterion == "target site class"
+  chk$value[is_site] <- unname(cls[chk$detail[is_site]])
   ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
     ggplot2::geom_text(
@@ -885,59 +803,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 
 
 # =============================================================================
-#  Cross-complementarity network (ggraph / tidygraph)
-# =============================================================================
-
-#' Dimer QC: pairwise duplex dG heatmap + hairpin dG (OligoArrayAux, DNA)
-#'
-#' Readable replacement for a 3-node network: a symmetric matrix of duplex
-#' free energies (kcal/mol, 37 C; more negative = stronger dimer) plus a bar
-#' panel of intramolecular folding (hairpin) free energies.
-#' @param assay assembled assay.
-#' @return a `patchwork` object: the duplex dG heatmap and hairpin dG bars over
-#'   the self-complementarity panels.
-#' @examples
-#' \dontrun{
-#' plot_dimer_qc(assay)
-#' }
-#' @family KASP plots
-#' @export
-plot_dimer_qc <- function(assay) {
-  d <- assay$complementarity # already a full symmetric matrix
-
-  heat <- ggplot2::ggplot(d, ggplot2::aes(.data$a, .data$b, fill = .data$dg)) +
-    ggplot2::geom_tile(colour = "white", linewidth = 1) +
-    ggplot2::geom_text(ggplot2::aes(label = round(.data$dg, 1)), size = 4) +
-    ggplot2::scale_fill_gradient(
-      low = "firebrick", high = "white",
-      limits = c(min(d$dg, na.rm = TRUE), 0),
-      name = "dG37\n(kcal/mol)"
-    ) +
-    ggplot2::coord_equal() +
-    ggplot2::labs(x = NULL, y = NULL, title = "Duplex dG37 (kcal/mol)") +
-    ggplot2::theme_minimal()
-
-  hair <- ggplot2::ggplot(
-    assay$thermo,
-    ggplot2::aes(.data$hairpin_dg, stats::reorder(.data$name, .data$hairpin_dg))
-  ) +
-    ggplot2::geom_col(fill = "steelblue") +
-    ggplot2::geom_vline(xintercept = HAIRPIN_DG_WARN, linetype = "dashed", colour = "firebrick") +
-    ggplot2::labs(
-      x = "hairpin dG37 (kcal/mol)", y = NULL,
-      title = "Hairpin dG37 (kcal/mol)"
-    ) +
-    ggplot2::theme_minimal()
-
-  sc <- plot_self_complementarity(assay, title = NULL)
-  (heat | hair) / sc +
-    patchwork::plot_layout(heights = c(1, 1.1)) +
-    patchwork::plot_annotation(title = "Primer QC: duplex/hairpin dG37 + self-complementarity")
-}
-
-
-# =============================================================================
-#  Oligo ordering (IDT / LGC)
+#  Output helpers
 # =============================================================================
 
 #' Write the assay results as a few consolidated files

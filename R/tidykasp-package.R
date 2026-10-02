@@ -8,8 +8,8 @@
 #' primers on either strand and scores them.  Everything is done in R:
 #' thermodynamics come from `TmCalculator`, `DECIPHER` and OligoArrayAux, sequence
 #' work from `Biostrings`/`Rsamtools`, annotation from `VariantAnnotation`/`TxDb`,
-#' and the visuals from dedicated plotting libraries (`ggmsa`, `gggenes`,
-#' `ggrepel`, `patchwork`).
+#' and the visuals from dedicated plotting libraries (`gggenes`,
+#' `ggrepel`, `patchwork`, `ggraph`).
 #'
 #' An *Arabidopsis thaliana* setup (TAIR10 genome + 1001 Genomes variation via
 #' Ensembl) is bundled as a reproducible demo ([ath_genome()], [ensembl_gene()],
