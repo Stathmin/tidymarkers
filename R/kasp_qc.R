@@ -7,6 +7,8 @@
 
 #' Full structural profile of one primer
 #' @param primer oligo(s) 5'->3'.
+#' @param BPPARAM optional `BiocParallel` backend; the hairpin and terminal-dG
+#'   maps are independent OligoArrayAux subprocesses.
 #' @return a tibble, one row per primer (`primer`, `len`, `tm`, `gc`,
 #'   `hairpin_dg`, `terminal_dg`).
 #' @examples
@@ -15,15 +17,15 @@
 #' }
 #' @family KASP thermodynamics
 #' @export
-primer_thermo <- function(primer) {
+primer_thermo <- function(primer, BPPARAM = NULL) {
   s <- as.character(primer)
   tibble::tibble(
     primer       = s,
     len          = nchar(s),
     tm           = primer_tm(s),
     gc           = gc_frac(s),
-    hairpin_dg   = oligo_dg(s), # hybrid-ss-min, kcal/mol
-    terminal_dg  = terminal_dg(s)
+    hairpin_dg   = oligo_dg_vec(s, BPPARAM = BPPARAM), # hybrid-ss-min, kcal/mol
+    terminal_dg  = terminal_dg(s, BPPARAM = BPPARAM)
   ) # 3'-terminal n-mer duplex, kcal/mol
 }
 
@@ -34,6 +36,8 @@ primer_thermo <- function(primer) {
 #' "GC clamp" a polymerase needs to initiate.  Used as a design diagnostic.
 #' @param primer oligo(s) 5'->3'.
 #' @param n terminal window length.
+#' @param BPPARAM optional `BiocParallel` backend; the distinct terminal n-mers
+#'   are annealed in parallel.
 #' @return a numeric vector of dG (kcal/mol), one per primer (`NA_real_` when
 #'   OligoArrayAux is unavailable).
 #' @examples
@@ -42,14 +46,17 @@ primer_thermo <- function(primer) {
 #' }
 #' @family KASP thermodynamics
 #' @export
-terminal_dg <- function(primer, n = 5L) {
-  vapply(as.character(primer), function(s) {
-    if (nchar(s) < n) {
-      return(NA_real_)
-    }
-    mer <- substr(s, nchar(s) - n + 1L, nchar(s))
-    oligo_dg(mer, as.character(Biostrings::reverseComplement(Biostrings::DNAString(mer))))
-  }, numeric(1), USE.NAMES = FALSE)
+terminal_dg <- function(primer, n = 5L, BPPARAM = NULL) {
+  s <- as.character(primer)
+  mer <- substr(s, nchar(s) - n + 1L, nchar(s))
+  mer[nchar(s) < n] <- NA_character_
+  um <- unique(mer[!is.na(mer)])
+  dg <- stats::setNames(rep(NA_real_, length(um)), um)
+  if (length(um)) {
+    rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(um)))
+    dg <- stats::setNames(oligo_dg_vec(um, rc, BPPARAM = BPPARAM), um)
+  }
+  unname(dg[mer])
 }
 
 #' Is the 3'-terminal allelic mismatch a weak "wobble" pair (G:T / A:C)?

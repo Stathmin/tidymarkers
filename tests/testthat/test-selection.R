@@ -95,6 +95,25 @@ test_that("primer_dropout is position- and frequency-aware", {
   expect_equal(primer_dropout(p, p, TRUE, integer(0), character(0), numeric(0)), 0)
 })
 
+test_that("zone_dropouts pools candidates and matches the per-zone dropout", {
+  skip_if_no_oligoarrayaux()
+  tmpl <- list(seq = Biostrings::DNAString(paste(rep("ACGT", 40L), collapse = "")))
+  off <- 1L
+  vpos <- c(30L, 60L, 61L, 90L)
+  valt <- c("T", "G", "T", "C")
+  vweight <- c(1, 0.5, 1, 0.2)
+  primers <- c("ACGTACGTACGTACGTACGT", "TTTTACGTACGTACGTACGT")
+  starts <- c(20L, 50L)
+  ends <- c(40L, 70L)
+  forwards <- c(TRUE, FALSE)
+  nvars <- c(2L, 2L)
+  ref <- vapply(seq_along(primers), function(i) {
+    zone_dropout(primers[i], starts[i], ends[i], forwards[i], nvars[i], tmpl, off, vpos, integer(0), valt, vweight)
+  }, numeric(1))
+  got <- zone_dropouts(primers, starts, ends, forwards, nvars, tmpl, off, vpos, integer(0), valt, vweight)
+  expect_equal(got, ref)
+})
+
 test_that("the dropout gate tolerates benign footprint variants (dropout <= tol)", {
   d <- pair_table(discrimination = c(0.9, 0.9))
   d$n_var <- c(2L, 2L)

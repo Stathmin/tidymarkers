@@ -320,15 +320,32 @@ variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer
 #' @keywords internal
 #' @noRd
 primer_dropout <- function(primer, plus_win, forward, var_offset, var_alt, var_w) {
-  if (!length(var_offset)) {
+  p <- dropout_pairs(primer, plus_win, forward, var_offset, var_alt, var_w)
+  if (is.null(p)) {
     return(0)
+  }
+  eta <- pcr_efficiency(p$primer, p$target)
+  min(1, sum(p$w * (1 - eta)))
+}
+
+#' Build the (primer, target, weight) units for a zone's expected dropout
+#'
+#' The primer is paired with each in-window variant allele in turn; the units are
+#' kept so many zones' pairs can be pooled into one `pcr_efficiency()` call
+#' (DECIPHER setup dominates when a zone holds only a few variants).  `NULL` when
+#' no variant fits the window.
+#' @keywords internal
+#' @noRd
+dropout_pairs <- function(primer, plus_win, forward, var_offset, var_alt, var_w) {
+  if (!length(var_offset)) {
+    return(NULL)
   }
   L <- nchar(plus_win)
   ok <- var_offset >= 1L & var_offset <= L & nchar(var_alt) >= 1L &
     (var_offset + nchar(var_alt) - 1L) <= L &
     !is.na(var_alt) & !is.na(var_w)
   if (!any(ok)) {
-    return(0)
+    return(NULL)
   }
   var_offset <- var_offset[ok]
   var_alt <- var_alt[ok]
@@ -344,8 +361,11 @@ primer_dropout <- function(primer, plus_win, forward, var_offset, var_alt, var_w
     character(1)
   ))
   target <- if (forward) Biostrings::reverseComplement(alt_win) else alt_win
-  eta <- pcr_efficiency(rep(primer, length(target)), as.character(target))
-  min(1, sum(var_w * (1 - eta)))
+  list(
+    primer = rep(primer, length(target)),
+    target = as.character(target),
+    w = var_w
+  )
 }
 
 #' Expected dropout of a window on the design template
@@ -374,6 +394,58 @@ zone_dropout <- function(primer, start, end, forward, n_var, tmpl, off, vpos, vb
     primer, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
     forward, vpos[idx] - start + 1L, valt[idx], w
   )
+}
+
+#' Expected dropout of many zones, with every DECIPHER pair pooled into one call
+#'
+#' Numerically identical to calling [zone_dropout()] per zone, but the per-zone
+#' (primer, target) units are concatenated and scored by a single
+#' `pcr_efficiency()`.  With dozens of candidates each holding a few variants the
+#' per-call DECIPHER setup dominates, so pooling is the difference between
+#' seconds and minutes in a scan.  `forward` is a logical vector.
+#' @keywords internal
+#' @noRd
+zone_dropouts <- function(primers, starts, ends, forwards, n_vars, tmpl, off, vpos,
+                          vblock, valt, vweight, cores = 1L) {
+  n <- length(primers)
+  out <- numeric(n)
+  if (n == 0L) {
+    return(out)
+  }
+  weights <- vector("list", n)
+  primer <- character(0)
+  target <- character(0)
+  span <- length(tmpl$seq)
+  for (i in seq_len(n)) {
+    if (is.na(n_vars[i]) || n_vars[i] == 0L) next
+    idx <- which(vpos >= starts[i] & vpos <= ends[i] & !(vpos %in% vblock))
+    if (!length(idx)) next
+    i1 <- max(starts[i] - off + 1L, 1L)
+    i2 <- min(ends[i] - off + 1L, span)
+    if (i2 < i1) next
+    w <- if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
+    p <- dropout_pairs(
+      primers[i], as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
+      forwards[i], vpos[idx] - starts[i] + 1L, valt[idx], w
+    )
+    if (is.null(p)) next
+    weights[[i]] <- p$w
+    primer <- c(primer, p$primer)
+    target <- c(target, p$target)
+  }
+  if (!length(primer)) {
+    return(out)
+  }
+  eta <- pcr_efficiency(primer, target, cores = cores)
+  k <- 1L
+  for (i in seq_len(n)) {
+    w <- weights[[i]]
+    if (is.null(w)) next
+    ei <- eta[k:(k + length(w) - 1L)]
+    k <- k + length(w)
+    out[i] <- min(1, sum(w * (1 - ei)))
+  }
+  out
 }
 
 #' Per-user cache directory for downloads and indices

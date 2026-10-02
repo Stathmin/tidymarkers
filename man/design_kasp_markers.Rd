@@ -14,7 +14,9 @@ design_kasp_markers(genome, loci, variants = loci, BPPARAM = NULL, ...)
 \item{variants}{variant table for footprint accounting; defaults to \code{loci}.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; when given, loci are processed
-in parallel (a forked backend avoids copying the genome).}
+in parallel (a forked backend avoids copying the genome).  The per-locus
+subprocess work is then forced serial, so cores are not oversubscribed; with
+no backend, \code{cores} is forwarded to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} instead.}
 
 \item{...}{passed on to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 }

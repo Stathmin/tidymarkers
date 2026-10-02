@@ -4,10 +4,13 @@
 \alias{primer_thermo}
 \title{Full structural profile of one primer}
 \usage{
-primer_thermo(primer)
+primer_thermo(primer, BPPARAM = NULL)
 }
 \arguments{
 \item{primer}{oligo(s) 5'->3'.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend; the hairpin and terminal-dG
+maps are independent OligoArrayAux subprocesses.}
 }
 \value{
 a tibble, one row per primer (\code{primer}, \code{len}, \code{tm}, \code{gc},

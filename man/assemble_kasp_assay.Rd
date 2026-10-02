@@ -19,6 +19,7 @@ assemble_kasp_assay(
   specificity_candidates = 10L,
   linked = NULL,
   run_blast = FALSE,
+  cores = getOption("tidykasp.cores", 1L),
   BPPARAM = NULL
 )
 }
@@ -56,8 +57,15 @@ ALT primer so it mismatches REF twice (see \code{\link[=design_as_primers]{desig
 
 \item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
 
+\item{cores}{processors for the per-SNP subprocess work (the DECIPHER PCR
+efficiencies and the OligoArrayAux dG maps); \code{1} (the default, from
+\code{getOption("tidykasp.cores")}) keeps CRAN happy, and larger values give a
+near-linear speed-up of a single assay.  When \code{BPPARAM} is set it wins.}
+
 \item{BPPARAM}{optional \code{BiocParallel} backend for the genome-wide steps
-(seed specificity and in-silico PCR; split by chromosome).}
+(seed specificity and in-silico PCR; split by chromosome) and for the
+subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
+\code{cores = 1} / a serial \code{BPPARAM}.}
 }
 \value{
 a \code{kasp_assay} object: a list holding the \code{snp}, the template, the

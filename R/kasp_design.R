@@ -154,6 +154,8 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and
 #'   ALT primer (makes it mismatch REF twice).
 #' @param temp,P,ions as in [pcr_efficiency()].
+#' @param BPPARAM optional `BiocParallel` backend; the batched DECIPHER call and
+#'   the 3'-stability map are run across cores (`NULL` = serial).
 #' @return a tibble, one row per primer configuration, with `strand`,
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
 #'   `ref_on`/`ref_off`/`alt_on`/`alt_off`, `discrimination`, `tm`, `gc`,
@@ -163,7 +165,7 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = 20:27, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
-                              linked = NULL) {
+                              linked = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
   # linked variants (substitutions co-segregating with the ALT haplotype) are
   # baked into the ALT template and the ALT primer, so it mismatches REF twice;
@@ -223,7 +225,9 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     )
   }) |>
     purrr::list_rbind()
-  pairs$eff <- pcr_efficiency(pairs$primer, pairs$target, temp = temp, P = P, ions = ions)
+  pairs$eff <- pcr_efficiency(pairs$primer, pairs$target,
+    temp = temp, P = P, ions = ions, cores = kasp_ncores(BPPARAM)
+  )
 
   wide <- pairs |>
     dplyr::select("strand", "as_length", "stab_at", "stab_base", "which", "eff") |>
@@ -260,7 +264,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     dplyr::ungroup() |>
     dplyr::mutate(
       gc = gc_frac(.data$ref_primer), tm = primer_tm(.data$ref_primer),
-      dg_3p = terminal_dg(.data$ref_primer)
+      dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM)
     ) |>
     dplyr::select(
       "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
@@ -325,6 +329,7 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #'   `on_eff`, `off_eff`, `discrimination`, `tm`, `gc`.
 #' @param strands strands to scan.
 #' @param temp,P,ions as in [pcr_efficiency()].
+#' @param BPPARAM optional `BiocParallel` backend for the batched DECIPHER calls.
 #' @examples
 #' \dontrun{
 #' tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
@@ -334,7 +339,8 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #' @export
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     strands = c("+", "-"), lengths = 20:27,
-                                    temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
+                                    temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
+                                    BPPARAM = NULL) {
   ref_len <- nchar(ref)
   alt_len <- nchar(alt)
   if (ref_len == alt_len) {
@@ -396,8 +402,9 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
   )
   if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
 
-  cand$on_eff <- pcr_efficiency(cand$primer, cand$on, temp = temp, P = P, ions = ions)
-  cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions)
+  cores <- kasp_ncores(BPPARAM)
+  cand$on_eff <- pcr_efficiency(cand$primer, cand$on, temp = temp, P = P, ions = ions, cores = cores)
+  cand$off_eff <- pcr_efficiency(cand$primer, cand$off, temp = temp, P = P, ions = ions, cores = cores)
   cand |>
     dplyr::mutate(
       discrimination = .data$on_eff - .data$off_eff,

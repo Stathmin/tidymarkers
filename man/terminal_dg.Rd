@@ -4,12 +4,15 @@
 \alias{terminal_dg}
 \title{Duplex free energy of a primer's 3'-terminal n-mer (3'-end stability)}
 \usage{
-terminal_dg(primer, n = 5L)
+terminal_dg(primer, n = 5L, BPPARAM = NULL)
 }
 \arguments{
 \item{primer}{oligo(s) 5'->3'.}
 
 \item{n}{terminal window length.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend; the distinct terminal n-mers
+are annealed in parallel.}
 }
 \value{
 a numeric vector of dG (kcal/mol), one per primer (\code{NA_real_} when

@@ -45,8 +45,14 @@
 #'   3'-seed genome-wide uniqueness when breaking ties (mirrors
 #'   [pick_target_snp()]; `0` disables the screen).
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
+#' @param cores processors for the per-SNP subprocess work (the DECIPHER PCR
+#'   efficiencies and the OligoArrayAux dG maps); `1` (the default, from
+#'   `getOption("tidykasp.cores")`) keeps CRAN happy, and larger values give a
+#'   near-linear speed-up of a single assay.  When `BPPARAM` is set it wins.
 #' @param BPPARAM optional `BiocParallel` backend for the genome-wide steps
-#'   (seed specificity and in-silico PCR; split by chromosome).
+#'   (seed specificity and in-silico PCR; split by chromosome) and for the
+#'   subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
+#'   `cores = 1` / a serial `BPPARAM`.
 #' @return a `kasp_assay` object: a list holding the `snp`, the template, the
 #'   chosen `strand`, ranked `assay`/`as_candidates` tibbles, `efficiency`,
 #'   `thermo`, `complementarity`, `specificity`, `amplicons`, `blast` results and
@@ -75,7 +81,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
-                                linked = NULL, run_blast = FALSE, BPPARAM = NULL) {
+                                linked = NULL, run_blast = FALSE,
+                                cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
+  if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   # optional per-variant weights (population allele frequency); absent -> all 1
@@ -119,6 +127,24 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     zone_dropout(pr, a, b, forward, cnt, tmpl, off, vpos, exclude, valt, vweight)
   }
   safe_dropout <- purrr::possibly(dropout_at, otherwise = NA_real_)
+  # pool every candidate zone's DECIPHER pairs into one call; if that batch
+  # fails, fall back to the per-candidate path (same NA semantics)
+  batch_or_safe <- function(primers, starts, ends, forwards, nvars, exclude) {
+    if (!use_eff) {
+      return(rep(NA_real_, length(primers)))
+    }
+    tryCatch(
+      zone_dropouts(primers, starts, ends, forwards, nvars, tmpl, off, vpos, exclude, valt, vweight,
+        cores = kasp_ncores(BPPARAM)
+      ),
+      error = function(e) {
+        purrr::pmap_dbl(
+          list(primers, starts, ends, forwards, nvars),
+          function(pr, a, b, fw, cnt) safe_dropout(pr, a, b, fw, cnt, exclude = exclude)
+        )
+      }
+    )
+  }
 
   # co-segregating substitutions to bake into the ALT primer (see design_as_primers):
   # positions in `linked$linked` that ride with `snp$pos`, mapped to template coords
@@ -159,7 +185,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
     as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands, linked = linked_off
+      strands = strands, linked = linked_off, BPPARAM = BPPARAM
     ) |>
       dplyr::filter(
         dplyr::between(.data$gc, min_gc, max_gc),
@@ -175,7 +201,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       )
   } else {
     ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands
+      strands = strands, BPPARAM = BPPARAM
     ) |>
       dplyr::filter(
         dplyr::between(.data$gc, min_gc, max_gc),
@@ -234,14 +260,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         variant_load_in(IRanges::IRanges(a, b), vpos, vweight, as_exclude)
       }),
       # expected dropout of the AS 3' window (position- and identity-aware)
-      as_dropout = if (use_eff) {
-        purrr::pmap_dbl(
-          list(.data$ref_primer, .data$win3p_start, .data$win3p_end, .data$strand, .data$n_3p),
-          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, identical(st, "+"), cnt, exclude = as_exclude)
-        )
-      } else {
-        NA_real_
-      }
+      as_dropout = batch_or_safe(
+        .data$ref_primer, .data$win3p_start, .data$win3p_end,
+        .data$strand == "+", .data$n_3p, as_exclude
+      )
     )
 
   # "N-masking" as a hard constraint: optionally drop candidates sitting on
@@ -318,8 +340,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     strand = best_as$strand, tm_range = tm_range, n = 60L
   ) |>
     dplyr::mutate(
-      com_homodimer = purrr::map_dbl(.data$com, ~ oligo_dg(.x, .x)),
-      com_hairpin = purrr::map_dbl(.data$com, ~ oligo_dg(.x))
+      com_homodimer = oligo_dg_vec(.data$com, .data$com, BPPARAM = BPPARAM),
+      com_hairpin = oligo_dg_vec(.data$com, BPPARAM = BPPARAM)
     )
 
   as_tm_mean <- mean(best_as$tm)
@@ -342,14 +364,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         variant_load_in(com_iv(best_as$strand, L, g), vpos, vweight, vblock)
       }),
       # expected dropout of the COM footprint (position- and identity-aware)
-      com_dropout = if (use_eff) {
-        purrr::pmap_dbl(
-          list(.data$com, .data$com_start, .data$com_end, .data$strand, .data$n_var),
-          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, !identical(st, "+"), cnt)
-        )
-      } else {
-        NA_real_
-      },
+      com_dropout = batch_or_safe(
+        .data$com, .data$com_start, .data$com_end,
+        .data$strand != "+", .data$n_var, vblock
+      ),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer, as_dropout = best_as$as_dropout,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
@@ -393,14 +411,19 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     COM    = best$com
   )
 
-  # in-silico PCR: the REF primer must give one product, the ALT primer none
-  amplicons <- tryCatch(
-    assay_amplicons(list(assay = best, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
+  # in-silico PCR: the REF primer must give one product, the ALT primer none.
+  # The products are computed once and reused for the amplicon counts, the
+  # ideogram below and (via `out$ideogram`) the plots, so the genome is scanned
+  # a single time per assay instead of three.
+  stub <- list(assay = best, template = tmpl, snp = snp)
+  pcr_products <- tryCatch(
+    assay_pcr_products(stub, genome, BPPARAM = BPPARAM),
     error = function(e) {
       rlang::warn(glue::glue(gettext("in-silico PCR failed: {conditionMessage(e)}")))
       NULL
     }
   )
+  amplicons <- if (is.null(pcr_products)) NULL else assay_amplicon_counts(pcr_products)
 
   # whole-primer genome scan (only when requested): an attached FM-index is
   # queried first (index-based, multithreaded), otherwise the BLAST database
@@ -426,9 +449,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
-    thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x), name = .y)) |>
+    thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x, BPPARAM = BPPARAM), name = .y)) |>
       purrr::list_rbind(),
-    complementarity = dimer_thermo(primers),
+    complementarity = dimer_thermo(primers, BPPARAM = BPPARAM),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
     selection = list(
@@ -444,7 +467,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   )
   # precompute the whole-genome ideogram inputs once, so plotting only reads the
   # object instead of rescanning the genome
-  out$ideogram <- tryCatch(assay_ideogram_data(out, genome),
+  out$ideogram <- tryCatch(assay_ideogram_data(out, genome, BPPARAM = BPPARAM, products = pcr_products),
     error = function(e) {
       rlang::warn(glue::glue(gettext("genome ideogram failed: {conditionMessage(e)}")))
       NULL

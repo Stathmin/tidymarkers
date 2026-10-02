@@ -13,7 +13,8 @@ design_as_primers_indel(
   lengths = 20:27,
   temp = PCR_EFF$temp,
   P = PCR_EFF$P,
-  ions = PCR_EFF$ions
+  ions = PCR_EFF$ions,
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ design_as_primers_indel(
 \item{lengths}{AS-primer lengths to try.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
+
+\item{BPPARAM}{optional \code{BiocParallel} backend for the batched DECIPHER calls.}
 }
 \value{
 tidy tibble of candidates: \code{allele} (\code{ref}/\code{alt}), \code{strand},

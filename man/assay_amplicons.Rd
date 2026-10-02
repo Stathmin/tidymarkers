@@ -4,7 +4,13 @@
 \alias{assay_amplicons}
 \title{Products predicted for each allele-specific primer against the common one}
 \usage{
-assay_amplicons(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
+assay_amplicons(
+  assay,
+  genome,
+  max_mismatch = 0L,
+  BPPARAM = NULL,
+  products = NULL
+)
 }
 \arguments{
 \item{assay}{assembled assay (from \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}).}
@@ -14,6 +20,10 @@ assay_amplicons(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
 \item{max_mismatch}{mismatches tolerated in the primer match.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend (see \code{\link[=in_silico_pcr]{in_silico_pcr()}}).}
+
+\item{products}{precomputed products from \code{\link[=assay_pcr_products]{assay_pcr_products()}}; when given,
+the genome is not rescanned (the ideogram and the amplicon counts then share
+one virtual PCR).}
 }
 \value{
 a tibble \code{primer}, \code{n_products}, \code{width}, one row per AS primer.

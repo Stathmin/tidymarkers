@@ -26,3 +26,15 @@ test_that("primer_thermo reports the terminal stability", {
   expect_true(all(c("tm", "gc", "hairpin_dg", "terminal_dg") %in% names(th)))
   expect_true(is.finite(th$terminal_dg))
 })
+
+test_that("the thermo maps are invariant to the parallel backend", {
+  skip_if_no_oligoarrayaux()
+  skip_if_not_installed("BiocParallel")
+  p <- c("ACGTACGTACGTACGCGG", "TTTTGGGGCCCCAAAATTTT", "GAAGGTGACCAAGTTCATGCT")
+  # a duplicated 3' end must also map back to the same (deduped) value
+  s <- terminal_dg(c(p, p[3L]))
+  expect_equal(terminal_dg(c(p, p[3L]), BPPARAM = BiocParallel::SerialParam()), s)
+  expect_equal(primer_thermo(p, BPPARAM = BiocParallel::SerialParam()), primer_thermo(p))
+  skip_on_os("windows")
+  expect_equal(terminal_dg(c(p, p[3L]), BPPARAM = BiocParallel::MulticoreParam(2L)), s)
+})

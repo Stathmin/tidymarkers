@@ -184,6 +184,50 @@ with_unafloddat <- function(path, code) {
   withr::with_envvar(c(UNAFOLDDAT = path), code)
 }
 
+#' Turn a core count into a `BiocParallel` backend (or `NULL` for one core)
+#'
+#' The single place `cores` becomes a `BPPARAM`: fork on Unix, a worker pool
+#' elsewhere, and `NULL` for a single core - the CRAN-friendly default.  Pass a
+#' `BPPARAM` explicitly to override, which is also how a caller avoids nesting
+#' (an outer locus-level backend should force the inner one to `NULL`).
+#' @keywords internal
+#' @noRd
+kasp_bpparam <- function(cores = getOption("tidykasp.cores", 1L)) {
+  n <- max(1L, as.integer(cores))
+  if (n <= 1L) {
+    return(NULL)
+  }
+  if (.Platform$OS.type == "unix") BiocParallel::MulticoreParam(n) else BiocParallel::SnowParam(n)
+}
+
+#' Worker count of a `BPPARAM` (1 when `NULL`)
+#' @keywords internal
+#' @noRd
+kasp_ncores <- function(BPPARAM = NULL) {
+  if (is.null(BPPARAM)) 1L else max(1L, BiocParallel::bpnworkers(BPPARAM))
+}
+
+#' OligoArrayAux dG for many oligos, optionally in parallel
+#'
+#' A vectorised `oligo_dg()` (duplex when `seq2` is given, else hairpin folding).
+#' Each pair is its own `hybrid-min` subprocess, so with a `BPPARAM` the batch
+#' runs across cores - the COM candidates and the QC maps are the per-SNP hot
+#' spot.
+#' @keywords internal
+#' @noRd
+oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL) {
+  n <- length(seq1)
+  if (n == 0L) {
+    return(numeric(0))
+  }
+  one <- function(i) if (is.null(seq2)) oligo_dg(seq1[[i]]) else oligo_dg(seq1[[i]], seq2[[i]])
+  if (is.null(BPPARAM)) {
+    vapply(seq_len(n), one, numeric(1))
+  } else {
+    unlist(bp_lapply(seq_len(n), one, BPPARAM), use.names = FALSE)
+  }
+}
+
 #' PCR amplification efficiency of primer/target pairs (DECIPHER)
 #'
 #' Models hybridisation (incl. side reactions) times Taq elongation efficiency,
@@ -195,6 +239,9 @@ with_unafloddat <- function(path, code) {
 #' @param temp annealing temperature (C).
 #' @param P primer concentration (M).
 #' @param ions monovalent + divalent salt (M).
+#' @param cores processors for the vectorised DECIPHER call (default
+#'   `getOption("tidykasp.cores", 1L)`; the many OligoArrayAux subprocesses are
+#'   the hot spot, so >1 helps a lot, and 1 keeps CRAN happy).
 #' @return a numeric vector of efficiencies (0-1), one per primer/target pair.
 #' @examples
 #' \dontrun{
@@ -203,7 +250,8 @@ with_unafloddat <- function(path, code) {
 #' @family KASP thermodynamics
 #' @export
 pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
-                           P = PCR_EFF$P, ions = PCR_EFF$ions) {
+                           P = PCR_EFF$P, ions = PCR_EFF$ions,
+                           cores = getOption("tidykasp.cores", 1L)) {
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
     rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
@@ -213,6 +261,7 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
   with_oligoarrayaux(as.numeric(DECIPHER::CalculateEfficiencyPCR(
     primer = Biostrings::DNAStringSet(as.character(primers)),
     target = Biostrings::DNAStringSet(as.character(targets)),
-    temp = temp, P = P, ions = ions, taqEfficiency = TRUE
+    temp = temp, P = P, ions = ions, taqEfficiency = TRUE,
+    processors = max(1L, as.integer(cores))
   )))
 }

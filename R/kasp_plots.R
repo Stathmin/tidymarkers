@@ -239,10 +239,12 @@ primer_letters <- function(assay, clamp_n = 5L) {
 #' Ideogram inputs: chromosome bars + exact primer hits + in-silico PCR products
 #'
 #' Computed once (at design time) and carried on the assay (`assay$ideogram`), so
-#' plotting reads the object instead of rescanning the genome.
+#' plotting reads the object instead of rescanning the genome.  When `hits` or
+#' `products` are supplied (the design-time virtual PCR, see
+#' [assay_pcr_products()]) they are reused instead of rescanned.
 #' @keywords internal
 #' @noRd
-assay_ideogram_data <- function(assay, genome) {
+assay_ideogram_data <- function(assay, genome, BPPARAM = NULL, hits = NULL, products = NULL) {
   if (is.null(genome)) {
     return(NULL)
   }
@@ -252,19 +254,24 @@ assay_ideogram_data <- function(assay, genome) {
     length = vapply(chroms, function(ch) genome_length(genome, ch), numeric(1))
   )
   roles <- c(AS_ref = "AS-ref", AS_alt = "AS-alt", COM = "COM")
-  hits <- primer_hits(assay_primers(assay), genome)
+  hits <- hits %||% primer_hits(assay_primers(assay), genome, BPPARAM = BPPARAM)
   if (nrow(hits)) hits$signal <- roles[hits$primer]
-  prods <- purrr::imap_dfr(as_pcr_pairs(assay), function(fr, nm) {
-    in_silico_pcr(fr[["F"]], fr[["R"]], genome) |> dplyr::mutate(signal = roles[[nm]])
+  products <- products %||%
+    assay_pcr_products(assay, genome, BPPARAM = BPPARAM)
+  prods <- purrr::imap_dfr(products, function(p, nm) {
+    if (nrow(p)) dplyr::mutate(p, signal = roles[[nm]]) else NULL
   })
   list(bars = bars, hits = hits, products = prods)
 }
 
 #' Where every primer matches the genome (positions), for the ideogram
+#'
+#' The scan is split by chromosome when a `BPPARAM` is given.
 #' @keywords internal
 #' @noRd
-primer_hits <- function(primers, genome) {
-  purrr::list_rbind(lapply(genome_chroms(genome), function(ch) {
+primer_hits <- function(primers, genome, BPPARAM = NULL) {
+  scan_one <- function(ch) {
+    worker_biostrings()
     subject <- Biostrings::DNAStringSet(genome_seq(genome, ch))
     purrr::imap_dfr(primers, function(p, nm) {
       # a primer binds either strand: search the plus strand for the primer and
@@ -278,7 +285,13 @@ primer_hits <- function(primers, genome) {
       }
       tibble::tibble(primer = nm, chrom = ch, pos = sort(unique(pos)))
     })
-  }))
+  }
+  chroms <- genome_chroms(genome)
+  if (is.null(BPPARAM)) {
+    purrr::list_rbind(lapply(chroms, scan_one))
+  } else {
+    purrr::list_rbind(bp_lapply(chroms, scan_one, BPPARAM))
+  }
 }
 
 #' Genome ideogram: exact primer hits + in-silico PCR products

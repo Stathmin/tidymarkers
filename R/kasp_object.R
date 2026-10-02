@@ -89,7 +89,9 @@ variant_type <- function(ref, alt) {
 #' @param loci tibble of loci (`chrom`, `pos`, `ref`, `alt`).
 #' @param variants variant table for footprint accounting; defaults to `loci`.
 #' @param BPPARAM optional `BiocParallel` backend; when given, loci are processed
-#'   in parallel (a forked backend avoids copying the genome).
+#'   in parallel (a forked backend avoids copying the genome).  The per-locus
+#'   subprocess work is then forced serial, so cores are not oversubscribed; with
+#'   no backend, `cores` is forwarded to [assemble_kasp_assay()] instead.
 #' @param ... passed on to [assemble_kasp_assay()].
 #' @return tidy tibble, one row per locus.
 #' @examples
@@ -106,17 +108,19 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   if (length(missing)) {
     rlang::abort(glue::glue(gettext("`loci` is missing column(s): {paste(missing, collapse = ', ')}")))
   }
-  one <- function(ch, pos, ref, alt) {
+  one <- function(ch, pos, ref, alt, cores) {
     snp <- tibble::tibble(
       chrom = as.character(ch), pos = as.integer(pos),
       ref = as.character(ref), alt = as.character(alt)
     )
     type <- variant_type(snp$ref, snp$alt)
     warns <- character(0)
+    dots <- rlang::list2(...)
+    dots$cores <- cores
     res <- withCallingHandlers(
       tryCatch(
         {
-          a <- assemble_kasp_assay(genome, snp, variants = variants, ...)
+          a <- rlang::exec(assemble_kasp_assay, genome, snp, variants = variants, !!!dots)
           chk <- kasp_design_checks(a)
           tibble::tibble(
             chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
@@ -154,14 +158,16 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     id <- cli::cli_progress_bar(gettext("Designing KASP markers"), total = n)
     res <- purrr::imap_dfr(seq_len(n), function(i, ...) {
       cli::cli_progress_update(id = id)
-      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i])
+      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i],
+        cores = getOption("tidykasp.cores", 1L)
+      )
     })
     cli::cli_progress_done(id = id)
     res
   } else {
     res <- bp_lapply(seq_len(nrow(loci)), function(i) {
       worker_biostrings()
-      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i])
+      one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i], cores = 1L)
     }, BPPARAM)
     purrr::list_rbind(res)
   }

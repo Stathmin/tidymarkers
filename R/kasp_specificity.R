@@ -154,6 +154,9 @@ as_pcr_pairs <- function(assay) {
 #' @param genome DNAStringSet.
 #' @param max_mismatch mismatches tolerated in the primer match.
 #' @param BPPARAM optional `BiocParallel` backend (see [in_silico_pcr()]).
+#' @param products precomputed products from [assay_pcr_products()]; when given,
+#'   the genome is not rescanned (the ideogram and the amplicon counts then share
+#'   one virtual PCR).
 #' @return a tibble `primer`, `n_products`, `width`, one row per AS primer.
 #' @examples
 #' \dontrun{
@@ -162,12 +165,32 @@ as_pcr_pairs <- function(assay) {
 #' }
 #' @family KASP specificity
 #' @export
-assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
-  purrr::imap_dfr(as_pcr_pairs(assay), function(fr, nm) {
-    prods <- in_silico_pcr(fr[["F"]], fr[["R"]], genome,
-      max_mismatch = max_mismatch,
-      BPPARAM = BPPARAM
+assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, products = NULL) {
+  products <- products %||%
+    assay_pcr_products(assay, genome, max_mismatch = max_mismatch, BPPARAM = BPPARAM)
+  assay_amplicon_counts(products)
+}
+
+#' Every in-silico PCR product of an assay's two allele-specific pairings
+#'
+#' One virtual-PCR pass per AS primer ([as_pcr_pairs()]); computed once at design
+#' time and reused for both the amplicon counts and the genome ideogram, so the
+#' genome is scanned once instead of twice.
+#' @keywords internal
+#' @noRd
+assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
+  purrr::imap(as_pcr_pairs(assay), function(fr, nm) {
+    in_silico_pcr(fr[["F"]], fr[["R"]], genome,
+      max_mismatch = max_mismatch, BPPARAM = BPPARAM
     )
+  })
+}
+
+#' Turn per-primer product tables into the amplicon summary
+#' @keywords internal
+#' @noRd
+assay_amplicon_counts <- function(products) {
+  purrr::imap_dfr(products, function(prods, nm) {
     tibble::tibble(
       primer = nm, n_products = nrow(prods),
       width = if (nrow(prods)) max(prods$width) else NA_integer_
