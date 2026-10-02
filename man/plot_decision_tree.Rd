@@ -7,19 +7,18 @@
 plot_decision_tree(x = NULL)
 }
 \arguments{
-\item{x}{an assembled assay, a \code{kasp_decision_graph()} result, or \code{NULL} for
-the bare schema.}
+\item{x}{an assembled assay, a \code{kasp_decision_graph()} result, or \code{NULL}.}
 }
 \value{
 a \code{ggraph}/\code{ggplot} object.
 }
 \description{
-Renders the graph from \code{\link[=kasp_decision_graph]{kasp_decision_graph()}} with \code{ggraph}: gates are boxes
-down the main path, the "all gates pass?" decision splits into the tier
-ranking (pass, green) or the relaxation ladder on the right (fail, amber/red).
-With an assay the traversed nodes are coloured by their outcome (green =
-enforced, amber = relaxed, red = violated), so you can see step by step what
-the engine looked at and where it compromised.
+Renders the graph from \code{\link[=kasp_decision_graph]{kasp_decision_graph()}} with \code{ggraph}: the target-site
+checks, the two selection stages (hard gates never relaxed, the refinement
+ladder rejoining the ranking, a DOOMED terminal) and the assay acceptance
+checks ending in a verdict.  Hard limits are drawn with a \strong{bold border};
+with an assay the traversed nodes are coloured by outcome (green enforced,
+amber relaxed, red violated).
 }
 \examples{
 \dontrun{
@@ -29,7 +28,9 @@ plot_decision_tree(assay) # this assay's traversal
 }
 \seealso{
 Other KASP checks:
+\code{\link[=kasp_criteria]{kasp_criteria()}},
 \code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
+\code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
 \code{\link[=passes_all]{passes_all()}}
 }

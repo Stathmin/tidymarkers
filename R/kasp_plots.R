@@ -64,6 +64,7 @@ KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
 #' @noRd
 check_level <- function(criterion) {
   site <- c("target site class", "ALT alleles (n)", "linked variants skipped (n)")
+  specificity <- c("off-target specificity (seed hits)")
   feature <- c(
     "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
     "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
@@ -72,7 +73,11 @@ check_level <- function(criterion) {
     "AS 3' window variants (n)", "COM footprint variants (n)",
     "AS 3' window dropout", "COM footprint dropout"
   )
-  ifelse(criterion %in% site, "site", ifelse(criterion %in% feature, "feature", "alignment"))
+  out <- rep("alignment", length(criterion))
+  out[criterion %in% feature] <- "feature"
+  out[criterion %in% site] <- "site"
+  out[criterion %in% specificity] <- "specificity"
+  out
 }
 
 #' Short labels for the acceptance criteria (for the tumbler column)
@@ -83,6 +88,7 @@ check_short <- function(criterion) {
     "target site class" = "site class",
     "ALT alleles (n)" = "ALT n",
     "linked variants skipped (n)" = "linked skip",
+    "off-target specificity (seed hits)" = "off-target",
     "amplicon length (bp)" = "amplicon",
     "AS Tm (C)" = "AS Tm",
     "COM Tm (C)" = "COM Tm",
@@ -783,9 +789,10 @@ format_check_value <- function(name, value) {
 #' @family KASP plots
 #' @export
 plot_checks <- function(assay, limits = KASP_LIMITS) {
-  chk <- kasp_design_checks(assay, limits) |>
+  chk <- assay$evaluation %||% kasp_design_checks(assay, limits)
+  chk <- chk |>
     dplyr::mutate(
-      level = factor(check_level(.data$criterion), levels = c("site", "feature", "alignment")),
+      level = factor(.data$level, levels = c("site", "feature", "alignment", "specificity")),
       name = check_short(.data$criterion),
       status = ifelse(.data$pass, "ok", "broken"),
       value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))

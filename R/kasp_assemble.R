@@ -115,8 +115,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # one service for both critical zones (AS 3' window, COM footprint): the
   # expected dropout over the design template's variants; NA if DECIPHER chokes
-  dropout_at <- function(pr, a, b, forward, cnt) {
-    zone_dropout(pr, a, b, forward, cnt, tmpl, off, vpos, vblock, valt, vweight)
+  dropout_at <- function(pr, a, b, forward, cnt, exclude = vblock) {
+    zone_dropout(pr, a, b, forward, cnt, tmpl, off, vpos, exclude, valt, vweight)
   }
   safe_dropout <- purrr::possibly(dropout_at, otherwise = NA_real_)
 
@@ -141,6 +141,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     # linked entries that could not be baked (e.g. a length-changing indel)
     linked_skipped <- length(lp) - (if (is.null(linked_off)) 0L else nrow(linked_off))
   }
+
+  # co-segregating positions ride with the ALT haplotype: the AS primer is built
+  # to match them (REF matches the REF base), so they are not "other variants" in
+  # the AS zone - a linked variant in the AS 3' window is not a specificity
+  # threat.  Under COM they still hurt (COM is built on the REF template).
+  link_pos <- if (is.null(linked_off)) integer(0) else snp$pos - tmpl$snp_i + linked_off$offset
+  as_exclude <- c(vblock, link_pos)
 
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
   # the REF AS primer's 3'-terminal base is the variant anchor for its strand
@@ -218,19 +225,19 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       win3p_start = dplyr::if_else(.data$strand == "+", .data$as_end - clean_3p + 1L, .data$as_start + 1L),
       win3p_end = dplyr::if_else(.data$strand == "+", .data$as_end - 1L, .data$as_start + clean_3p - 1L),
       n_3p = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b) {
-        count_variants_in(IRanges::IRanges(a, b), vpos, vblock)
+        count_variants_in(IRanges::IRanges(a, b), vpos, as_exclude)
       }),
       n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b) {
-        count_variants_in(IRanges::IRanges(a, b), vpos, vblock)
+        count_variants_in(IRanges::IRanges(a, b), vpos, as_exclude)
       }),
       w_var = purrr::map2_dbl(.data$as_start, .data$as_end, function(a, b) {
-        variant_load_in(IRanges::IRanges(a, b), vpos, vweight, vblock)
+        variant_load_in(IRanges::IRanges(a, b), vpos, vweight, as_exclude)
       }),
       # expected dropout of the AS 3' window (position- and identity-aware)
       as_dropout = if (use_eff) {
         purrr::pmap_dbl(
           list(.data$ref_primer, .data$win3p_start, .data$win3p_end, .data$strand, .data$n_3p),
-          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, identical(st, "+"), cnt)
+          function(pr, a, b, st, cnt) safe_dropout(pr, a, b, identical(st, "+"), cnt, exclude = as_exclude)
         )
       } else {
         NA_real_
@@ -270,7 +277,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   pick_as <- select_with_ladder(
     graded_as$data, graded_as$gates, KASP_RELAX_AS,
-    graded_as$tiers, graded_as$ties, graded_as$gate_margin
+    graded_as$tiers, graded_as$ties, graded_as$gate_margin, graded_as$gate_floor
   )
   if (is.null(pick_as$best)) {
     rlang::abort(gettext("No AS primer survived even the relaxed constraints."))
@@ -360,7 +367,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # choose among the pairings: gate the grave sins, then rank lexicographically
   # on tier margins, relaxing gates one at a time only when nothing clears them
   graded <- grade_assay_pairs(assays, KASP_LIMITS, as_tm_mean)
-  pick <- select_with_ladder(graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties, graded$gate_margin)
+  pick <- select_with_ladder(
+    graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties,
+    graded$gate_margin, graded$gate_floor
+  )
   if (is.null(pick$best)) {
     rlang::abort(gettext("No candidate assay survived even the relaxed constraints."))
   }
@@ -458,6 +468,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
   }
   out$site <- kasp_site_class(snp$ref, site_alts)
+  # evaluate every registered acceptance check once, so plots/reports read the
+  # results instead of recomputing them
+  out$evaluation <- tryCatch(kasp_design_checks(out), error = function(e) NULL)
   # the selection policy as a graph, with this assay's runtime status stamped on
   out$decision <- tryCatch(kasp_decision_graph(out),
     error = function(e) NULL

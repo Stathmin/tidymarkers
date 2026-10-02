@@ -19,7 +19,12 @@ if (!nzchar(Sys.which("hybrid-min"))) stop("OligoArrayAux not on PATH - see data
 genome <- ath_genome()
 gene <- ensembl_gene("AT4G00650") # FRI (FRIGIDA)
 variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-snp <- pick_target_snp(variants, genome, gene)
+# NB: with HARD limits (no variant in the AS 3' window, real discrimination) the
+# default pick_target_snp() choice (269745) is *doomed* - it has no designable AS
+# placement.  pick_target_snp() does not yet know about designability, so the demo
+# pins a locus that is designable (269666 G>A).  See ROADMAP (doomed target +
+# next-candidate iteration).
+snp <- tibble::tibble(chrom = "Chr4", pos = 269666L, ref = "G", alt = "A")
 message("target: ", snp$chrom, ":", snp$pos, " ", snp$ref, ">", snp$alt, " (", gene$symbol, ")")
 
 assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
@@ -43,12 +48,12 @@ save("variants_fri", plot_variant_landscape(gene, variants, snp, assay), width =
 save("checks_fri", plot_checks(assay), width = 3, height = 6)
 
 # --- a real co-segregating substitution --------------------------------------
-# The FRI stop-gain at 269906 (T>A) rides with the 269907 G>T missense target.
-# Pinned to the '+' strand (whose AS footprint spans 269906), the linked base is
-# baked into the ALT primer, so it mismatches REF twice and its discrimination
-# rises.  Shows `linked=` on real data.
-snp_l <- pick_target_snp(variants, genome, gene, variant_id = "ENSVATH02604837")
-linked <- tibble::tibble(target = 269907L, linked = 269906L)
+# FRI 269043 G>A has a substitution in its '+' 3' window (269042) that, being
+# *unlinked*, would trip the HARD "no variant in the AS 3' window" gate and doom
+# the strand.  Declaring 269042 linked rides it with the ALT haplotype (baked into
+# the ALT primer), so that gate no longer fires and the strand becomes designable.
+snp_l <- tibble::tibble(chrom = "Chr4", pos = 269043L, ref = "G", alt = "A")
+linked <- tibble::tibble(target = 269043L, linked = 269042L)
 assay_l <- assemble_kasp_assay(genome, snp_l, variants = variants, flank = 150L,
                                strands = "+", linked = linked)
 save("primers_fri_linked", plot_primers(assay_l, variants, snp_l, genome = genome, features = gene))

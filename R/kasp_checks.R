@@ -1,8 +1,5 @@
 # =============================================================================
-#  kasp_checks.R  --  acceptance checks
-# =============================================================================
-# =============================================================================
-#  9. Acceptance checks - "is this a good KASP?"
+#  kasp_checks.R  --  acceptance checks (driven by the criterion registry)
 # =============================================================================
 
 #' Longest homopolymer run in a sequence
@@ -16,16 +13,16 @@ longest_run <- function(seq) {
 #'
 #' Turns the prose design manual into a tidy pass/fail table so "good" and
 #' "bad" assays are graded the same way every time (thresholds: `KASP_LIMITS`).
-#' Reads only the assay object produced by [assemble_kasp_assay()], so it is
-#' pure and cheap to test.
+#' The criterion list, levels and limits come from [kasp_criteria()] (its
+#' `role == "check"` rows), so the checks and the decision tree share one
+#' vocabulary.  Reads only the assay object produced by [assemble_kasp_assay()],
+#' so it is pure and cheap to test.
 #'
 #' @param assay result of [assemble_kasp_assay()].
 #' @param limits list of thresholds; defaults to `KASP_LIMITS`.
-#' @return tibble with `criterion`, `observed`, `limit`, `pass` and `detail`
-#'   (a human-readable value, e.g. the target's KASP class).  Criteria cover three
-#'   levels: the target *site* (class / ALT count / linked variants), each
-#'   *feature* oligo on its own, and the *alignment* (how the primers sit
-#'   together on the template).
+#' @return tibble with `stage`, `criterion`, `observed`, `limit`, `pass`,
+#'   `detail` and `level`.  Criteria cover the target *site*, each *feature*
+#'   oligo, the *alignment*, and *off-target* specificity.
 #' @examples
 #' \dontrun{
 #' assay <- assemble_kasp_assay(genome, snp)
@@ -58,76 +55,53 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
     length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
   }
 
-  # site-level facts: the target's KASP class (biallelic / degenerate / ...) and
-  # whether every co-segregating variant could be baked.  Absent on an older assay.
+  # off-target: the AS primers' 3'-seed must be unique (one locus), when screened
+  sp <- assay$specificity
+  ot_obs <- if (is.null(sp) || !"hits" %in% names(sp)) NA_real_ else suppressWarnings(max(sp$hits, na.rm = TRUE))
+  ot_pass <- is.na(ot_obs) || ot_obs <= 1
+
+  # site-level facts (absent on an older assay)
   site <- assay$site
   site_class <- if (is.null(site)) "biallelic" else as.character(site$class[1L])
   site_disc <- if (is.null(site)) TRUE else isTRUE(site$disc[1L])
   n_alt <- if (is.null(site)) 1L else as.integer(site$n_alt[1L])
   linked_skipped <- as.integer(assay$selection$linked_skipped %||% 0L)
 
-  base <- tibble::tibble(
-    criterion = c(
-      "target site class", "ALT alleles (n)", "linked variants skipped (n)",
-      "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
-      "COM Tm >= AS Tm", "AS GC", "COM GC",
-      "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
-      "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
-      "worst cross-dimer dG37", "worst homodimer dG37",
-      "AS 3' window variants (n)", "COM footprint variants (n)",
-      "AS 3' window dropout", "COM footprint dropout",
-      "discrimination", "in-silico PCR (REF 1 / ALT 0)"
-    ),
-    observed = c(
-      NA_real_, as.numeric(n_alt), as.numeric(linked_skipped),
-      aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
-      run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
-      sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
-      hair, cross, homo, aa$as_n_3p, aa$n_var, aa$as_dropout, aa$com_dropout, disc, amp_obs
-    ),
-    limit = c(
-      "discriminable", ">= 1", "0",
-      glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
-      glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
-      glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
-      ">= 0",
-      glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
-      glue::glue("[{limits$gc[1]}, {limits$gc[2]}]"),
-      glue::glue("< {limits$max_run}"),
-      "0",
-      "0",
-      glue::glue(">= {limits$hairpin_dg}"),
-      glue::glue(">= {limits$duplex_dg}"),
-      glue::glue(">= {limits$homodimer_dg}"),
-      "0",
-      "0",
-      glue::glue("<= {tol}"),
-      glue::glue("<= {tol}"),
-      glue::glue(">= {limits$discrimination}"),
-      "REF=1, ALT=0"
-    ),
-    pass = c(
-      site_disc, n_alt >= 1L, linked_skipped == 0L,
-      dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
-      dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
-      dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
-      com_tm >= as_tm,
-      dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
-      dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
-      run < limits$max_run,
-      !has_repeat(aa$as_ref) && !has_repeat(aa$com),
-      !any(has_palindrome(c(aa$as_ref, aa$as_alt, aa$com))),
-      hair >= limits$hairpin_dg,
-      cross >= limits$duplex_dg,
-      homo >= limits$homodimer_dg,
-      !is.na(aa$as_dropout) | aa$as_n_3p == 0L,
-      !is.na(aa$com_dropout) | aa$n_var == 0L,
-      is.na(aa$as_dropout) | aa$as_dropout <= tol,
-      is.na(aa$com_dropout) | aa$com_dropout <= tol,
-      disc >= limits$discrimination,
-      amp_pass
-    ),
-    detail = c(site_class, NA_character_, NA_character_, rep(NA_character_, 18L))
+  obs <- c(
+    NA_real_, as.numeric(n_alt), as.numeric(linked_skipped),
+    aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
+    run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
+    sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
+    hair, cross, homo, aa$as_n_3p, aa$n_var, aa$as_dropout, aa$com_dropout,
+    disc, amp_obs, ot_obs
   )
-  base
+  pass <- c(
+    site_disc, n_alt >= 1L, linked_skipped == 0L,
+    dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
+    dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
+    dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
+    com_tm >= as_tm,
+    dplyr::between(aa$as_gc, limits$gc[1], limits$gc[2]),
+    dplyr::between(aa$com_gc, limits$gc[1], limits$gc[2]),
+    run < limits$max_run,
+    !has_repeat(aa$as_ref) && !has_repeat(aa$com),
+    !any(has_palindrome(c(aa$as_ref, aa$as_alt, aa$com))),
+    hair >= limits$hairpin_dg,
+    cross >= limits$duplex_dg,
+    homo >= limits$homodimer_dg,
+    !is.na(aa$as_dropout) | aa$as_n_3p == 0L,
+    !is.na(aa$com_dropout) | aa$n_var == 0L,
+    is.na(aa$as_dropout) | aa$as_dropout <= tol,
+    is.na(aa$com_dropout) | aa$com_dropout <= tol,
+    disc >= limits$discrimination,
+    amp_pass, ot_pass
+  )
+  detail <- c(site_class, rep(NA_character_, length(obs) - 1L))
+
+  crit <- kasp_criteria(limits)
+  crit <- crit[crit$role == "check", ]
+  tibble::tibble(
+    stage = crit$stage, criterion = crit$label, observed = obs,
+    limit = crit$limit, pass = pass, detail = detail, level = crit$level
+  )
 }

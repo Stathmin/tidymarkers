@@ -7,13 +7,13 @@
 kasp_decision_graph(assay = NULL)
 }
 \arguments{
-\item{assay}{optional assembled assay; when given, each node is stamped with
-its runtime status from \code{assay$selection} (\code{"relaxed"}, \code{"violated"} or
-\code{"ok"}).}
+\item{assay}{optional assembled assay; when given, gate nodes are stamped from
+\code{assay$selection} (\code{"relaxed"}/\code{"violated"}/\code{"ok"}) and check nodes from
+\code{assay$evaluation} (\code{"ok"}/\code{"violated"}).}
 }
 \value{
 a \code{tidygraph::tbl_graph}; nodes carry \code{name}, \code{stage}, \code{kind},
-\code{label}, \code{x}, \code{y}, \code{status}.
+\code{label}, \code{x}, \code{y}, \code{hard}, \code{status}.
 }
 \description{
 The decision tree as a \code{tidygraph}, annotated with an assay's outcome
@@ -26,6 +26,8 @@ kasp_decision_graph(assay)
 }
 \seealso{
 Other KASP checks:
+\code{\link[=kasp_criteria]{kasp_criteria()}},
+\code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}

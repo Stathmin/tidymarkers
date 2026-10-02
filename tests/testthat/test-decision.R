@@ -1,7 +1,7 @@
 # The selection policy as data: the graph must mirror the engine's constants,
 # so a new gate / tier / rung shows up automatically.
 
-test_that("the decision schema mirrors the selection constants", {
+test_that("the decision schema mirrors the selection constants and is a DAG", {
   s <- kasp_decision_schema()
   gate <- function(st) s$nodes$name[s$nodes$kind == "gate" & s$nodes$stage == st]
   relax <- function(st) s$nodes$name[s$nodes$kind == "relax" & s$nodes$stage == st]
@@ -9,19 +9,36 @@ test_that("the decision schema mirrors the selection constants", {
 
   expect_equal(gate("as"), paste0("as:gate:", KASP_GATES_AS))
   expect_equal(gate("pair"), paste0("pair:gate:", KASP_GATES_PAIR))
+  # only the *soft* gates form the ladder
   expect_equal(relax("as"), paste0("as:relax:", KASP_RELAX_AS))
   expect_equal(relax("pair"), paste0("pair:relax:", KASP_RELAX_PAIR))
   expect_equal(tier("as"), paste0("as:tier:", names(KASP_TIERS_AS)))
   expect_equal(tier("pair"), paste0("pair:tier:", names(KASP_TIERS_PAIR)))
 
-  # every edge endpoint is a known node, and the main path is chained
+  # hard gates are exactly the ones absent from the ladder, and are flagged
+  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
+  soft_ids <- c(paste0("as:gate:", KASP_RELAX_AS), paste0("pair:gate:", KASP_RELAX_PAIR))
+  expect_setequal(hard, setdiff(c(gate("as"), gate("pair")), soft_ids))
+  expect_true(all(c("as:doomed", "pair:doomed", "as:survivors", "pair:survivors") %in% s$nodes$name))
+
+  # endpoints are known, the stages are chained, and it only flows downward
   expect_true(all(s$edges$from %in% s$nodes$name))
   expect_true(all(s$edges$to %in% s$nodes$name))
-  expect_true("as:best -> pair:start" %in% paste(s$edges$from, s$edges$to, sep = " -> "))
-
-  # it is a DAG that only flows downward: no edge loops back up
+  expect_true("as:best -> pair:gate:gate_discrimination" %in% paste(s$edges$from, s$edges$to, sep = " -> "))
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(ord[s$edges$to] > ord[s$edges$from]))
+  # the refinement branch rejoins the ranking, not the outcome, and has a doomed exit
+  expect_true("pair:survivors" %in% s$edges$to[s$edges$kind == "relax"])
+  expect_true(any(s$edges$kind == "doomed"))
+})
+
+test_that("the decision text export names hard gates, floors and the doomed exit", {
+  txt <- kasp_decision_text()
+  expect_type(txt, "character")
+  expect_true(any(grepl("hard = never relaxed", txt)))
+  expect_true(any(grepl("floor:", txt)))
+  expect_true(any(grepl("DOOMED", txt)))
+  expect_true(any(grepl("relaxation ladder", txt)))
 })
 
 test_that("the graph is a tidygraph and can be drawn", {

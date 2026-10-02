@@ -32,7 +32,7 @@ test_that("a clean pairing beats a prettier one with a COM footprint variant", {
     n_var = c(2L, 0L) # the first is otherwise perfect but sits on known SNPs
   )
   g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
-  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties)
+  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)
   expect_equal(pick$best$n_var, 0L)
   expect_length(pick$relaxed, 0L)
   expect_length(pick$violated, 0L)
@@ -44,7 +44,7 @@ test_that("the ladder relaxes only as far as needed, least grave first", {
   # equal, so the least-laden pairing wins on the footprint tie-break.
   d <- pair_table(discrimination = c(0.9, 0.9), n_var = c(3L, 1L))
   g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
-  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties)
+  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)
   expect_true("gate_com_footprint" %in% pick$relaxed)
   expect_false("gate_as_window" %in% pick$relaxed) # the gravest is never reached
   expect_true("gate_com_footprint" %in% pick$violated)
@@ -65,7 +65,7 @@ test_that("margins are compared within a tier, not summed", {
 test_that("a variant in the AS 3' window is graver than everything else", {
   d <- pair_table(discrimination = c(0.95, 0.60), as_n_3p = c(1L, 0L))
   g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
-  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties)
+  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)
   expect_equal(pick$best$as_n_3p, 0L)
   expect_length(pick$relaxed, 0L)
 })

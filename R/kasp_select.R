@@ -15,13 +15,14 @@
 #  designer makes the trade-off; we never hide it.
 # =============================================================================
 
-# Which gates we are willing to give up, in order.  The last entries are the
-# truly grave ones (a variant under a primer); they are relaxed only if even the
-# milder compromises fail to yield a candidate.
-KASP_RELAX_PAIR <- c(
-  "gate_amplicon", "gate_structure", "gate_tm",
-  "gate_discrimination", "gate_com_footprint", "gate_as_window"
-)
+# Which gates may be *somewhat* relaxed, least grave first.  Gates absent here
+# are hard limits set by the assay's chemistry / KASP literature and are never
+# lowered (a lone variant in the AS 3' window, or no allele discrimination, makes
+# the assay meaningless).  NB: a *linked* variant in the AS 3' window is not such
+# a violation - it rides with the ALT haplotype and is baked into the ALT primer,
+# so the window count excludes it (see assemble_kasp_assay(linked=)).
+KASP_RELAX_PAIR <- c("gate_amplicon", "gate_structure", "gate_tm", "gate_com_footprint")
+KASP_RELAX_AS <- c("gate_wobble", "gate_as_footprint")
 
 # The gate set is the same for both stages; grade_*() returns it in this order.
 KASP_GATES_PAIR <- c(
@@ -29,6 +30,18 @@ KASP_GATES_PAIR <- c(
   "gate_com_footprint", "gate_as_window"
 )
 KASP_GATES_AS <- c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window")
+
+# How far a gate's margin bar may be lowered (floor, in margin units: >= 0 passes
+# at the original threshold).  A floor of 0 = hard (never relaxed); a negative
+# floor bounds the relaxation (never -Inf).  gate_com_footprint's floor depends on
+# the limits/backend, so it is filled in by grade_assay_pairs().
+KASP_GATE_FLOOR_AS <- c(
+  gate_discrimination = 0, gate_wobble = -1, gate_as_footprint = -1, gate_as_window = 0
+)
+KASP_GATE_FLOOR_PAIR <- c(
+  gate_discrimination = 0, gate_structure = -3, gate_tm = -2,
+  gate_amplicon = -20, gate_com_footprint = 0, gate_as_window = 0
+)
 
 # The lexicographic tiers and their tie-breakers, named (label = meaning).  The
 # grade_*() functions and the decision graph both read these, so adding a tier or
@@ -63,6 +76,22 @@ KASP_GATE_SHORT <- c(
   gate_tm = "COM Tm >= AS Tm", gate_amplicon = "amplicon length",
   gate_com_footprint = "COM footprint", gate_as_window = "AS 3' window",
   gate_wobble = "wobble mismatch", gate_as_footprint = "AS footprint"
+)
+
+# Human-readable relaxation floor per soft gate (for the graph and text export).
+KASP_GATE_FLOOR_LABEL <- c(
+  gate_amplicon = "widen window by 20 bp",
+  gate_structure = "3 kcal/mol more stable",
+  gate_tm = "allow COM 2 C below AS",
+  gate_com_footprint = "dropout up to 2x tolerance",
+  gate_wobble = "one weak G:T / A:C 3' mismatch",
+  gate_as_footprint = "one variant under the footprint"
+)
+
+# Why a gate is hard (never lowered).
+KASP_GATE_HARD_LABEL <- c(
+  gate_discrimination = "no allele discrimination = no assay",
+  gate_as_window = "an unlinked variant in the AS 3' window destroys specificity"
 )
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins
@@ -142,13 +171,16 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
       gate_discrimination = "m_disc", gate_structure = "m_structure",
       gate_tm = "m_tm_com", gate_amplicon = "m_amplicon",
       gate_com_footprint = "m_footprint", gate_as_window = "m_window"
-    )
+    ),
+    # how far each gate may be lowered (never -Inf).  Footprint tolerance scales
+    # with the accepted dropout.
+    gate_floor = {
+      fl <- KASP_GATE_FLOOR_PAIR
+      fl["gate_com_footprint"] <- if (use_drop) -2 * tol else -3
+      fl
+    }
   )
 }
-
-# AS-candidate gates, given up least-grave first (a wobble mismatch is milder
-# than an allele-specific site lost to another variant)
-KASP_RELAX_AS <- c("gate_wobble", "gate_discrimination", "gate_as_footprint", "gate_as_window")
 
 #' Grade candidate AS primers: hard gates + tiered margins
 #'
@@ -196,7 +228,8 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
     gate_margin = c(
       gate_wobble = "m_wobble", gate_discrimination = "m_disc",
       gate_as_footprint = "m_footprint", gate_as_window = "m_window"
-    )
+    ),
+    gate_floor = KASP_GATE_FLOOR_AS
   )
 }
 
@@ -219,52 +252,63 @@ order_by_margins <- function(data, desc, asc = character(0)) {
 #' @noRd
 rank_candidates <- function(data, tiers, ties) order_by_margins(data, tiers, ties)
 
-#' Pick the best candidate, relaxing gates only as far as necessary
+#' Pick the best candidate, lowering gate thresholds only as far as necessary
 #'
-#' Applies the gates, and if none survives drops them in `relax_order` (least
-#' grave first) until at least one does.  Among the survivors, ranks
-#' lexicographically on `tiers` (descending) then `ties` (ascending).  Reports
-#' which gates were relaxed and which the winner still violates.
+#' Hard gates (floor 0) are never lowered: if nothing clears them, the design is
+#' **doomed** (`best = NULL`).  Soft gates are relaxed in `relax_order` (least
+#' grave first) and only **as far as the best achievable margin** - never to
+#' `-Inf`, and never below the gate's floor.  A lowered gate stays active at the
+#' new bound; among the survivors the choice is still the plain lexicographic tier
+#' ranking (the relaxation does not override it).  Reports which thresholds were
+#' lowered and which the winner still sits below.
 #' @param data the graded tibble (see `grade_assay_pairs()`).
 #' @param gates gate column names (all must be TRUE to pass).
-#' @param relax_order gate names in the order they may be given up.
+#' @param relax_order soft gate names in the order they may be lowered.
 #' @param tiers margin columns, ranked high-to-low, in order.
 #' @param ties column names for ascending tie-breaks.
+#' @param gate_margin named map `gate -> margin column`.
+#' @param gate_floor named map `gate -> floor` (margin units; 0 = hard).
 #' @return list with `best` (one row, or `NULL`), `relaxed` and `violated`.
 #' @keywords internal
 #' @noRd
-select_with_ladder <- function(data, gates, relax_order, tiers, ties, gate_margin = NULL) {
-  active <- gates
-  relaxed <- character(0)
-  repeat {
-    ok <- if (length(active)) {
-      purrr::reduce(data[active], `&`)
-    } else {
-      rep(TRUE, nrow(data))
-    }
-    ok[is.na(ok)] <- FALSE
-    if (nrow(data) && any(ok)) {
-      surv <- data[ok, , drop = FALSE]
-      # a relaxed gate is the compromise we accepted: minimise it first (gravest
-      # first), so the "least-bad" candidate is the least compromised one
-      extra <- if (length(relaxed) && !is.null(gate_margin)) {
-        unname(gate_margin[intersect(rev(relaxed), names(gate_margin))])
-      } else {
-        character(0)
-      }
-      ord <- order_by_margins(surv, c(extra, tiers), intersect(ties, names(surv)))
-      best <- ord[1L, , drop = FALSE]
-      violated <- gates[!vapply(gates, function(g) isTRUE(best[[g]]), logical(1))]
-      return(list(best = best, relaxed = relaxed, violated = unique(violated)))
-    }
-    if (!length(relax_order)) {
-      return(list(best = NULL, relaxed = relaxed, violated = relaxed))
-    }
-    g <- relax_order[[1L]]
-    relax_order <- relax_order[-1L]
-    active <- setdiff(active, g)
-    relaxed <- c(relaxed, g)
+select_with_ladder <- function(data, gates, relax_order, tiers, ties,
+                               gate_margin = NULL, gate_floor = NULL) {
+  if (!nrow(data)) {
+    return(list(best = NULL, relaxed = character(0), violated = character(0)))
   }
+  floors <- stats::setNames(rep(0, length(gates)), gates)
+  floors[names(gate_floor)] <- gate_floor
+  bars <- stats::setNames(rep(0, length(gates)), gates)
+  passes <- function() {
+    ok <- rep(TRUE, nrow(data))
+    for (g in gates) {
+      m <- data[[gate_margin[[g]]]]
+      ok <- ok & (is.na(m) | m >= bars[[g]]) # NA (unknown) does not block
+    }
+    ok
+  }
+  # relax soft gates, least grave first, each only to the best achievable margin
+  for (g in relax_order) {
+    if (any(passes())) break
+    if (floors[[g]] >= 0) next # hard
+    m <- data[[gate_margin[[g]]]]
+    best_achievable <- suppressWarnings(max(m, na.rm = TRUE))
+    if (is.finite(best_achievable) && best_achievable < 0) {
+      bars[[g]] <- max(floors[[g]], best_achievable)
+    }
+  }
+  ok <- passes()
+  lowered <- names(bars)[bars < 0]
+  if (!any(ok)) {
+    return(list(best = NULL, relaxed = lowered, violated = lowered))
+  }
+  surv <- data[ok, , drop = FALSE]
+  best <- order_by_margins(surv, tiers, intersect(ties, names(surv)))[1L, , drop = FALSE]
+  violated <- gates[vapply(gates, function(g) {
+    m <- best[[gate_margin[[g]]]]
+    !is.na(m) && m < 0
+  }, logical(1))]
+  list(best = best, relaxed = lowered, violated = unique(violated))
 }
 
 #' Warn (once) about the gates the chosen assay had to relax

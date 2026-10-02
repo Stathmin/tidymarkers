@@ -21,9 +21,10 @@ test_that("max_footprint_variants enforces N-masking as a hard constraint", {
     chrom = "Chr1", pos = pos, ref = ref,
     alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
-  # decoys on BOTH flanks, so every AS-primer orientation covers one
+  # decoys on BOTH flanks, inside the footprint but OUTSIDE the AS 3' window
+  # (which is a hard gate since a variant there would break specificity)
   variants <- tibble::tibble(
-    chrom = "Chr1", pos = c(pos, pos - 3L, pos + 3L),
+    chrom = "Chr1", pos = c(pos, pos - 6L, pos + 6L),
     ref = c(ref, "A", "A"), alt = c(snp$alt, "C", "T")
   )
 

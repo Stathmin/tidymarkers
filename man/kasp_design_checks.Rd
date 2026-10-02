@@ -12,17 +12,17 @@ kasp_design_checks(assay, limits = KASP_LIMITS)
 \item{limits}{list of thresholds; defaults to \code{KASP_LIMITS}.}
 }
 \value{
-tibble with \code{criterion}, \code{observed}, \code{limit}, \code{pass} and \code{detail}
-(a human-readable value, e.g. the target's KASP class).  Criteria cover three
-levels: the target \emph{site} (class / ALT count / linked variants), each
-\emph{feature} oligo on its own, and the \emph{alignment} (how the primers sit
-together on the template).
+tibble with \code{stage}, \code{criterion}, \code{observed}, \code{limit}, \code{pass},
+\code{detail} and \code{level}.  Criteria cover the target \emph{site}, each \emph{feature}
+oligo, the \emph{alignment}, and \emph{off-target} specificity.
 }
 \description{
 Turns the prose design manual into a tidy pass/fail table so "good" and
 "bad" assays are graded the same way every time (thresholds: \code{KASP_LIMITS}).
-Reads only the assay object produced by \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}, so it is
-pure and cheap to test.
+The criterion list, levels and limits come from \code{\link[=kasp_criteria]{kasp_criteria()}} (its
+\code{role == "check"} rows), so the checks and the decision tree share one
+vocabulary.  Reads only the assay object produced by \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
+so it is pure and cheap to test.
 }
 \examples{
 \dontrun{
@@ -32,7 +32,9 @@ kasp_design_checks(assay)
 }
 \seealso{
 Other KASP checks:
+\code{\link[=kasp_criteria]{kasp_criteria()}},
 \code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
+\code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }

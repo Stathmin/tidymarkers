@@ -28,9 +28,8 @@ fs::dir_create("results/plot-smoke")
 tryCatch(
   {
     genome <- ath_genome()
-    gene <- ensembl_gene("AT4G00650")
-    variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-    snp <- pick_target_snp(variants, genome, gene)
+    variants <- ensembl_variants("Chr4", 268901, 271503)
+    snp <- tibble::tibble(chrom = "Chr4", pos = 269666L, ref = "G", alt = "A")
     assay <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L))
     ggplot2::ggsave(
       "results/plot-smoke/decision-fri.png", plot_decision_tree(assay),
