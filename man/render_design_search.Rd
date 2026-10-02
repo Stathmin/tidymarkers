@@ -36,9 +36,9 @@ the GIF path (invisibly).
 Renders each distinct frame with \code{\link[=plot_design_search_step]{plot_design_search_step()}} and stitches them
 into a GIF with the ImageMagick \code{convert} CLI (or \code{gifski}).  Only the \code{hold}
 repeats are avoided; the \code{ragg} device is used when installed.  Frames are
-independent, so \code{cores > 1} draws them in parallel on Unix (opt in with
-\code{options(tidykasp.cores = ...)}; the default of one core respects CRAN's cap
-on default core use).
+independent, so \code{cores > 1} draws them in parallel (\code{BiocParallel}: fork on
+Unix, a worker pool elsewhere; opt in with \code{options(tidykasp.cores = ...)}, the
+default of one core respects CRAN's cap on default core use).
 }
 \examples{
 \dontrun{

@@ -235,9 +235,9 @@ plot_design_search_step <- function(frames, step) {
 #' Renders each distinct frame with [plot_design_search_step()] and stitches them
 #' into a GIF with the ImageMagick `convert` CLI (or `gifski`).  Only the `hold`
 #' repeats are avoided; the `ragg` device is used when installed.  Frames are
-#' independent, so `cores > 1` draws them in parallel on Unix (opt in with
-#' `options(tidykasp.cores = ...)`; the default of one core respects CRAN's cap
-#' on default core use).
+#' independent, so `cores > 1` draws them in parallel (`BiocParallel`: fork on
+#' Unix, a worker pool elsewhere; opt in with `options(tidykasp.cores = ...)`, the
+#' default of one core respects CRAN's cap on default core use).
 #' @param assay assembled assay.
 #' @param variants variant table.
 #' @param snp target variant (one row).
@@ -280,8 +280,15 @@ render_design_search <- function(assay, variants, snp,
     NULL
   }
   ncores <- min(as.integer(cores), length(uniq))
-  if (ncores > 1L && .Platform$OS.type == "unix") {
-    parallel::mclapply(seq_along(uniq), draw, mc.cores = ncores)
+  if (ncores > 1L) {
+    # fork on Unix, a worker pool elsewhere (macOS/CRAN-friendly); frames are
+    # independent, so all that is shared is the (serialisable) draw closure
+    bp <- if (.Platform$OS.type == "unix") {
+      BiocParallel::MulticoreParam(ncores)
+    } else {
+      BiocParallel::SnowParam(ncores)
+    }
+    bp_lapply(seq_along(uniq), draw, bp)
   } else {
     lapply(seq_along(uniq), draw)
   }

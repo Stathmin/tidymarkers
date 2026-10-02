@@ -490,8 +490,10 @@ A–P — реализовано или оценено; **Q** — локализ
 - [ ] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
       Windows/macOS, `sh` только из Git-Bash/Rtools; `apt-get`-хинты (напр.
       `R/kasp_scan.R`) дополнить кроссплатформенными
-- [ ] **Форк:** `parallel::mclapply` в `render_design_search()` (Unix-only) корректен,
-      но ради macOS/CRAN рассмотреть `BiocParallel::SnowParam`
+- [x] **Форк:** `render_design_search()` больше не зовёт `parallel::mclapply` (Unix-only,
+      и `parallel` не был в `Imports`); теперь `BiocParallel` — `MulticoreParam` (форк) на
+      Unix, `SnowParam` иначе, через общий `bp_lapply()`. Проверено на Linux (кадры в
+      параллель, GIF пишется).
 - [ ] Проверить на живой Windows/R-hub: сборку `hybrid-min.exe` и паритет `-q`-вывода,
       `PATHEXT`/processx, cairo/`ggmsa`, CRLF у `vroom`
 
