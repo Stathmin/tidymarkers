@@ -132,9 +132,11 @@ A–P — реализовано или оценено; **Q** — локализ
       прощает сцепленный вариант в 3'-окне; `assemble_kasp_assay(linked=)` /
       `design_as_primers(linked=)` «впечатывают» сцепленную замену в ALT-гаплотип и
       ALT-праймер (двойной мисматч к REF), REF не трогается; хранится в
-      `assay$selection$linked`. Осталось: помечать дизайн, держащийся *только* на
-      сцеплении; вправлять сцепленный **indel** (меняет длину гаплотипа, не только
-      основание). Гаплотипы/LD — 1001 Genomes per-accession
+      `assay$selection$linked`. Гаплотипы/LD — 1001 Genomes per-accession
+- [ ] Сцепление, остаток: (а) помечать дизайн, держащийся *только* на сцеплении
+      (warning, не молчание); (б) вправлять сцепленный **indel** — он меняет длину
+      гаплотипа, а не только основание, так что нужен пересбор `window_alt`, не
+      `replaceAt`; (в) множественные сцепленные варианты сразу
 - [x] Дешёвый векторный скрин мишени `screen_snp_targets()`: по SNP (или целому гену)
       без термодинамики/BLAST/геномных сканов — GC, run/SSR, хотзона вариантов, вариант
       в 3'-окне; вердикт «promising/doomed» и счёт `k/16` (strand x length). ~3 ms/SNP,
@@ -149,9 +151,11 @@ A–P — реализовано или оценено; **Q** — локализ
       колонку `class`, поэтому мультиаллельный сайт с комплементарным первым ALT
       больше не помечается `doomed`. Фикстура разных типов (SNP, MNP, инсерция/делеция,
       два близких ALT) — `inst/extdata/example_targets.csv`, `kasp_example(type=)`.
-      Осталось: сам дизайн вырожденного AS-праймера в движке (IUPAC-ALT в
-      `design_as_primers()`/`pick_target_snp()`) и сверка с литературой по multi-allelic KASP
       Гаплотипы/LD — 1001 Genomes per-accession
+- [ ] **Мультиаллельный движок:** принимать IUPAC-ALT в `design_as_primers()` /
+      `pick_target_snp()`, чтобы «degenerate»-сайты из `kasp_site_class()` действительно
+      дизайнились одним AS-праймером (сейчас класс только считается, а сборка идёт по
+      одному ALT); плюс сверка с литературой по multi-allelic KASP
 
 ## I. Батч-дизайн
 - [x] `design_kasp_markers()` — строка на локус, вердикт `pass`/`warn`/`fail` + причина
@@ -465,8 +469,15 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] testthat 3e: `expect_snapshot()` для сообщений (`test-messages.R`, `_snaps/messages.md`)
 - [x] `httr2`: общий `ensembl_perform()` с `req_throttle(15)`/`req_retry`/
       `req_user_agent` вместо копипасты (дисковый кэш остаётся свой; `req_cache()` — опция)
-- [ ] `cli`: `cli_abort()`/`cli_warn()`/`cli_inform()` с bullet-ами (`i`/`x`) и
-      плюрализацией для пользовательских ошибок (сейчас `rlang`-строки + `gettext`)
+- [ ] **Сообщения: `cli` + стиль + i18n — одним проходом.** Перевести пользовательские
+      ошибки/предупреждения с `rlang`-строк на `cli_abort()`/`cli_warn()`/`cli_inform()`
+      с bullet-ами (`i`/`x`) и плюрализацией (`cli::qty()`/`{?ед/мн}`), заодно приведя
+      стиль к Q1 «строчная, без точки» (§T). Смена msgid рвёт переводы, поэтому делать
+      **вместе с `po/R-ru.po`**: `potools::po_extract()` → обновить `.po` (элементы
+      `cli`-векторов — по элементу) → `potools::po_compile()`, затем прогнать i18n
+      end-to-end (`LANGUAGE=ru`). Диагностики `check_cracked_messages()`,
+      `check_untranslated_cat()`, `check_untranslated_src()`. Начать с самого
+      user-facing: валидация аргументов и подсказки установки тулов (`kasp_install_tools()`)
 - [x] `BiocParallel`: общий `bp_lapply()` ставит `progressbar` через `BPOPTIONS`;
       `RNGseed` — на BPPARAM (`MulticoreParam(RNGseed=)`; `bpoptions` его не принимает),
       а ядра дизайна детерминированы, сеять нечего
@@ -482,8 +493,11 @@ A–P — реализовано или оценено; **Q** — локализ
       `convert`, а `System32\convert.exe` отвергает; тот же разбор — в `data-raw/logo.R`
 - [x] **OligoArrayAux, `.exe`:** `helper-oligoarrayaux.R` видит и `hybrid-min.exe`,
       так что термотесты на Windows не скипаются молча
-- [ ] **OligoArrayAux, сборка:** `./configure`/`make` под Windows требуют Rtools
-      (MSYS2/UCRT64) и запуска через `bash -lc` — задокументировать (см. установщик A1)
+- [ ] **Windows: сборка OligoArrayAux + R-hub.** Задокументировать сборку на Windows
+      (Rtools/MSYS2/UCRT64, запуск через `bash -lc`; см. установщик A1) и проверить на
+      живом Windows/R-hub: `kasp_install_tools()` под Windows, паритет `-q`-вывода
+      `hybrid-min.exe`, `PATHEXT`/processx, cairo/`ggmsa`, CRLF у `vroom`. **Нужен
+      Windows-раннер** — в текущей (Linux) среде не воспроизводится.
 - [x] **sha256 и пробелы:** `sha256_of()` пробует `sha256sum`/`shasum`/`openssl`;
       `UNAFOLDDAT`/`--prefix` кавычатся; компилятор ищется как `cc`/`gcc`/`clang`
 - [x] **`.gitattributes`:** `* text=auto eol=lf`, `*.mo`/`*.rds`/`*.png`/`*.gif` — бинарные
@@ -494,8 +508,6 @@ A–P — реализовано или оценено; **Q** — локализ
       и `parallel` не был в `Imports`); теперь `BiocParallel` — `MulticoreParam` (форк) на
       Unix, `SnowParam` иначе, через общий `bp_lapply()`. Проверено на Linux (кадры в
       параллель, GIF пишется).
-- [ ] Проверить на живой Windows/R-hub: сборку `hybrid-min.exe` и паритет `-q`-вывода,
-      `PATHEXT`/processx, cairo/`ggmsa`, CRLF у `vroom`
 
 ## T. Соответствие CRAN/tidyverse
 - [x] `.Rbuildignore`: `^\.i18n-lib$` (каталог попадал в тарбол → NOTE и лишняя
@@ -509,10 +521,9 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **Запись вне `tempdir()`:** дефолты `write_kasp_results()`/`export_primers()`/
       `render_design_search()` → `tempdir()`; `here` ушёл из `Imports` в `Suggests`
       (нужен только `inst/scripts`)
-- [ ] **Стиль сообщений** против Q1: часть строк с заглавной и точкой (напр.
-      `kasp_io.R`, `kasp_scan.R`) — привести к «строчная, без точки»; правка текста
-      требует обновить и `po/R-ru.po` (`potools::po_extract()`/`po_merge()`), поэтому
-      делать одним заходом с миграцией на `cli` (§R)
+- [ ] **Стиль сообщений** против Q1 (заглавная/точка, напр. `kasp_io.R`,
+      `kasp_scan.R`) — объединено с миграцией на `cli` и правкой `po/R-ru.po` одним
+      проходом, см. §R
 - [x] **i18n / `Language:`** — решено **не** задавать: справочник (`.Rd`) английский,
       и `Language: ru` объявил бы его русским; русская проза — отдельный слой (Q4)
 - [x] **Тесты не ассертят переводной текст** напрямую: в блоках с англ. подстроками
