@@ -77,7 +77,7 @@ kasp_decision_schema <- function() {
       tier = paste0(st$id, ":tier:", names(tiers)),
       best = paste0(st$id, ":best"),
       doomed = paste0(st$id, ":doomed"),
-      relax = paste0(st$id, ":relax:", relax)
+      refine = paste0(st$id, ":refine")
     )
     push(node(ids$gate, st$id, "gate", unname(KASP_GATE_SHORT[gates]), o + seq_along(gates),
       hard = hard, detail = unname(KASP_GATE_LIMIT[gates])
@@ -85,10 +85,16 @@ kasp_decision_schema <- function() {
     o <- o + length(gates)
     push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
     decision_order <- o
-    push(node(ids$relax, st$id, "relax", unname(KASP_GATE_SHORT[relax]), decision_order + seq_along(relax),
-      x = 0.85, detail = unname(KASP_GATE_FLOOR_LABEL[relax])
+    # one refinement node per stage: the soft-gate ladder in order (not one node per
+    # rung - the ladder is the *same criteria* relaxed, so drawing it as a rung per
+    # gate would just duplicate the gate nodes)
+    push(node(
+      ids$refine, st$id, "relax",
+      paste0("refine: ", paste(KASP_GATE_SHORT[relax], collapse = " -> ")),
+      decision_order + 1L, x = 0.85,
+      detail = paste0(KASP_GATE_SHORT[relax], " [", KASP_GATE_FLOOR_LABEL[relax], "]", collapse = "; ")
     ))
-    merge_order <- decision_order + length(relax) + 1L
+    merge_order <- decision_order + 2L
     push(node(ids$merge, st$id, "merge", "survivors (bounds kept)", merge_order))
     push(node(ids$tier, st$id, "tier", unname(tiers), merge_order + seq_along(tiers)))
     best_order <- merge_order + length(tiers) + 1L
@@ -98,10 +104,9 @@ kasp_decision_schema <- function() {
     add_edge(dplyr::bind_rows(
       chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"),
       chain(ids$decision, ids$merge, "pass"),
-      chain(ids$decision, ids$relax[1L], "fail"),
-      chain(ids$relax[-length(relax)], ids$relax[-1L], "relax"),
-      chain(ids$relax[length(relax)], ids$merge, "relax"),
-      chain(ids$relax[length(relax)], ids$doomed, "doomed"),
+      chain(ids$decision, ids$refine, "fail"),
+      chain(ids$refine, ids$merge, "relax"),
+      chain(ids$refine, ids$doomed, "doomed"),
       chain(ids$merge, ids$tier[1L], "pass"),
       chain(ids$tier[-length(tiers)], ids$tier[-1L], "pass"),
       chain(ids$tier[length(tiers)], ids$best, "pass")

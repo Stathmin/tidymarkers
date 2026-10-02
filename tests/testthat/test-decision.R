@@ -9,9 +9,9 @@ test_that("the decision schema mirrors the selection constants and is a DAG", {
 
   expect_equal(gate("as"), paste0("as:gate:", KASP_GATES_AS))
   expect_equal(gate("pair"), paste0("pair:gate:", KASP_GATES_PAIR))
-  # only the *soft* gates form the ladder
-  expect_equal(relax("as"), paste0("as:relax:", KASP_RELAX_AS))
-  expect_equal(relax("pair"), paste0("pair:relax:", KASP_RELAX_PAIR))
+  # one refinement node per stage (the soft-gate ladder), not one node per rung
+  expect_equal(relax("as"), "as:refine")
+  expect_equal(relax("pair"), "pair:refine")
   expect_equal(tier("as"), paste0("as:tier:", names(KASP_TIERS_AS)))
   expect_equal(tier("pair"), paste0("pair:tier:", names(KASP_TIERS_PAIR)))
 
