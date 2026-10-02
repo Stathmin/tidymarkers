@@ -31,6 +31,7 @@ Other KASP plots:
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
 \code{\link[=plot_primers]{plot_primers()}},
 \code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
+\code{\link[=plot_snp_screen]{plot_snp_screen()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
 \code{\link[=render_design_search]{render_design_search()}}
 }

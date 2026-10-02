@@ -76,6 +76,7 @@ Other KASP design:
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
+\code{\link[=screen_snp_targets]{screen_snp_targets()}},
 \code{\link[=strand_gc_hint]{strand_gc_hint()}},
 \code{\link[=variant_type]{variant_type()}}
 }

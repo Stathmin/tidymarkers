@@ -348,7 +348,7 @@ primer_dropout <- function(primer, plus_win, forward, var_offset, var_alt, var_w
 #' Expected dropout of a window on the design template
 #'
 #' The one place that turns "a primer over the design template + the known
-#' variants" into [primer_dropout()]'s expected dropout, shared by the AS 3'
+#' into `primer_dropout()`'s expected dropout, shared by the AS 3'
 #' window and the COM footprint.  `0` when the window holds no (fit-in-window)
 #' variant.
 #' @keywords internal

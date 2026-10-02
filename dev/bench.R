@@ -29,17 +29,25 @@ suppressMessages(pkgload::load_all(root, quiet = TRUE))
 mk_fixture <- function(seed = 7L, n = 2000L) {
   withr::with_seed(seed, {
     w <- paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
-    list(genome = Biostrings::DNAStringSet(c(Chr1 = w)), primer = substr(w, 500L, 524L))
+    pos <- seq(300L, 1700L, by = 60L)
+    ref <- substring(w, pos, pos)
+    alt <- vapply(ref, function(b) setdiff(c("A", "C", "G", "T"), b)[1L], character(1))
+    list(
+      genome = Biostrings::DNAStringSet(c(Chr1 = w)),
+      primer = substr(w, 500L, 524L),
+      variants = tibble::tibble(chrom = "Chr1", pos = pos, ref = ref, alt = alt)
+    )
   })
 }
 fx <- mk_fixture()
 
 cases <- list(
-  primer_tm        = function() primer_tm(fx$primer),
-  gc_frac          = function() gc_frac(fx$primer),
-  snp_template     = function() snp_template(fx$genome, "Chr1", 1000L, flank = 150L),
-  in_silico_pcr    = function() in_silico_pcr(fx$primer, as.character(Biostrings::reverseComplement(Biostrings::DNAString(fx$primer))), fx$genome),
-  specificity_seed = function() specificity_seed(c(P = fx$primer), fx$genome)
+  primer_tm = function() primer_tm(fx$primer),
+  gc_frac = function() gc_frac(fx$primer),
+  snp_template = function() snp_template(fx$genome, "Chr1", 1000L, flank = 150L),
+  in_silico_pcr = function() in_silico_pcr(fx$primer, as.character(Biostrings::reverseComplement(Biostrings::DNAString(fx$primer))), fx$genome),
+  specificity_seed = function() specificity_seed(c(P = fx$primer), fx$genome),
+  screen_snp_targets = function() screen_snp_targets(fx$variants, fx$genome)
 )
 if (nzchar(Sys.which("hybrid-min"))) cases$oligo_dg <- function() oligo_dg(fx$primer)
 

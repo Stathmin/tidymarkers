@@ -54,6 +54,7 @@ Other KASP plots:
 \code{\link[=plot_dimer_qc]{plot_dimer_qc()}},
 \code{\link[=plot_primers]{plot_primers()}},
 \code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
+\code{\link[=plot_snp_screen]{plot_snp_screen()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}}
 }
 \concept{KASP plots}
