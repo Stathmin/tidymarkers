@@ -14,7 +14,8 @@ design_as_primers(
   stab_ats = c(NA, 2L, 3L),
   temp = PCR_EFF$temp,
   P = PCR_EFF$P,
-  ions = PCR_EFF$ions
+  ions = PCR_EFF$ions,
+  linked = NULL
 )
 }
 \arguments{
@@ -34,6 +35,10 @@ the mirror-image primer extending upstream.  Both are valid KASP layouts.}
 \code{NA} = none.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
+
+\item{linked}{optional two-column table (\code{offset} 1-based within \code{window},
+\code{alt}) of co-segregating substitutions to bake into the ALT haplotype and
+ALT primer (makes it mismatch REF twice).}
 }
 \value{
 a tibble, one row per primer configuration, with \code{strand},

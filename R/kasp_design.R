@@ -150,6 +150,9 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param lengths AS-primer lengths to try.
 #' @param stab_ats positions (from the 3' end) for the stabilising mismatch;
 #'   `NA` = none.
+#' @param linked optional two-column table (`offset` 1-based within `window`,
+#'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and
+#'   ALT primer (makes it mismatch REF twice).
 #' @param temp,P,ions as in [pcr_efficiency()].
 #' @return a tibble, one row per primer configuration, with `strand`,
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
@@ -159,8 +162,21 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @export
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = 20:27, stab_ats = c(NA, 2L, 3L),
-                              temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions) {
+                              temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
+                              linked = NULL) {
   ref_len <- nchar(ref)
+  # linked variants (substitutions co-segregating with the ALT haplotype) are
+  # baked into the ALT template and the ALT primer, so it mismatches REF twice;
+  # REF is left untouched
+  window_alt <- if (is.null(linked) || nrow(linked) == 0L) {
+    window
+  } else {
+    Biostrings::replaceAt(
+      window,
+      IRanges::IRanges(as.integer(linked$offset), as.integer(linked$offset)),
+      as.character(linked$alt)
+    )
+  }
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
   # the one the (perfectly matching) primer already carries there.
   mismatch_bases <- function(L, k, strand) {
@@ -185,11 +201,12 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     k <- if (is.na(stab_at)) NULL else stab_at
     b <- if (is.na(stab_base)) NULL else stab_base
     anchor <- as_anchor(v_start, ref_len, strand)
-    # binding window on the plus strand, and the same window carrying the ALT allele
+    # binding window on the plus strand (REF), and the ALT haplotype carrying the
+    # linked substitutions as well
     seg_ref <- as_window(window, anchor, L, strand)
-    seg_alt <- Biostrings::replaceAt(seg_ref, block_in_seg(ref_len, L, strand), alt)
+    seg_alt <- Biostrings::replaceAt(as_window(window_alt, anchor, L, strand), block_in_seg(ref_len, L, strand), alt)
     ref_p <- make_as_primer(window, anchor, L, ref, strand = strand, stab_at = k, stab_base = b)
-    alt_p <- make_as_primer(window, anchor, L, alt, strand = strand, stab_at = k, stab_base = b)
+    alt_p <- make_as_primer(window_alt, anchor, L, alt, strand = strand, stab_at = k, stab_base = b)
     t_ref <- as.character(as_target(seg_ref, strand))
     t_alt <- as.character(as_target(seg_alt, strand))
     # explicit on/off pairing: the "on" target carries the primer's own allele,
@@ -223,7 +240,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
         if (is.na(.data$stab_at)) NULL else .data$stab_at,
         if (is.na(.data$stab_base)) NULL else .data$stab_base
       ),
-      alt_primer = make_as_primer(window, as_anchor(v_start, ref_len, .data$strand),
+      alt_primer = make_as_primer(window_alt, as_anchor(v_start, ref_len, .data$strand),
         .data$as_length, alt,
         strand = .data$strand,
         if (is.na(.data$stab_at)) NULL else .data$stab_at,

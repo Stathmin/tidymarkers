@@ -63,6 +63,9 @@
 #' the `PATH`; if the data tables are not found automatically, point them out:
 #' `with_unafloddat("/path/to/share/oligoarrayaux", assemble_kasp_assay(...))`.
 #' @param flank template half-width (bp).
+#' @param linked optional two-column table (`target`, `linked` positions) of
+#'   co-segregating substitutions; those riding with `snp$pos` are baked into the
+#'   ALT primer so it mismatches REF twice (see [design_as_primers()]).
 #' @param min_gc,max_gc accepted AS GC window.
 #' @family KASP design
 #' @export
@@ -72,7 +75,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
-                                run_blast = FALSE, BPPARAM = NULL) {
+                                linked = NULL, run_blast = FALSE, BPPARAM = NULL) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   # optional per-variant weights (population allele frequency); absent -> all 1
@@ -117,6 +120,20 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   safe_dropout <- purrr::possibly(dropout_at, otherwise = NA_real_)
 
+  # co-segregating substitutions to bake into the ALT primer (see design_as_primers):
+  # positions in `linked$linked` that ride with `snp$pos`, mapped to template coords
+  linked_off <- NULL
+  if (!is.null(linked) && nrow(linked) && all(c("target", "linked") %in% names(linked))) {
+    lp <- linked$linked[linked$target == snp$pos]
+    li <- match(lp, vpos)
+    ok <- !is.na(li) & !is.na(valt[li])
+    if (any(ok)) {
+      cand <- tibble::tibble(offset = lp[ok] - off + 1L, alt = valt[li[ok]])
+      cand <- cand[cand$offset >= 1L & cand$offset <= length(tmpl$seq), , drop = FALSE]
+      if (nrow(cand)) linked_off <- cand
+    }
+  }
+
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
   # the REF AS primer's 3'-terminal base is the variant anchor for its strand
   anchor_of <- function(strand) as_anchor(snp$pos, ref_len, strand)
@@ -127,7 +144,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
     as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands
+      strands = strands, linked = linked_off
     ) |>
       dplyr::filter(
         dplyr::between(.data$gc, min_gc, max_gc),
@@ -396,7 +413,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     complementarity = dimer_thermo(primers),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
-    selection = list(relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated),
+    selection = list(relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated, linked = linked_off),
     blast = blast,
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
