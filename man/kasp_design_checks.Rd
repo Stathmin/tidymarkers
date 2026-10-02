@@ -12,7 +12,11 @@ kasp_design_checks(assay, limits = KASP_LIMITS)
 \item{limits}{list of thresholds; defaults to \code{KASP_LIMITS}.}
 }
 \value{
-tibble with \code{criterion}, \code{observed}, \code{limit} and \code{pass}.
+tibble with \code{criterion}, \code{observed}, \code{limit}, \code{pass} and \code{detail}
+(a human-readable value, e.g. the target's KASP class).  Criteria cover three
+levels: the target \emph{site} (class / ALT count / linked variants), each
+\emph{feature} oligo on its own, and the \emph{alignment} (how the primers sit
+together on the template).
 }
 \description{
 Turns the prose design manual into a tidy pass/fail table so "good" and
@@ -28,6 +32,8 @@ kasp_design_checks(assay)
 }
 \seealso{
 Other KASP checks:
-\code{\link[=passes_all]{passes_all()}}
+\code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
+\code{\link[=passes_all]{passes_all()}},
+\code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
 \concept{KASP checks}

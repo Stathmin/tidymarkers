@@ -123,15 +123,23 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # co-segregating substitutions to bake into the ALT primer (see design_as_primers):
   # positions in `linked$linked` that ride with `snp$pos`, mapped to template coords
   linked_off <- NULL
+  linked_skipped <- 0L
   if (!is.null(linked) && nrow(linked) && all(c("target", "linked") %in% names(linked))) {
     lp <- linked$linked[linked$target == snp$pos]
     li <- match(lp, vpos)
     ok <- !is.na(li) & !is.na(valt[li])
     if (any(ok)) {
-      cand <- tibble::tibble(offset = lp[ok] - off + 1L, alt = valt[li[ok]])
+      offset <- lp[ok] - off + 1L
+      cand <- tibble::tibble(
+        offset = offset,
+        ref = substring(as.character(tmpl$seq), offset, offset),
+        alt = valt[li[ok]]
+      )
       cand <- cand[cand$offset >= 1L & cand$offset <= length(tmpl$seq), , drop = FALSE]
       if (nrow(cand)) linked_off <- cand
     }
+    # linked entries that could not be baked (e.g. a length-changing indel)
+    linked_skipped <- length(lp) - (if (is.null(linked_off)) 0L else nrow(linked_off))
   }
 
   # all primer geometry comes from the shared helpers (plus-strand coordinates);
@@ -413,7 +421,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     complementarity = dimer_thermo(primers),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
-    selection = list(relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated, linked = linked_off),
+    selection = list(
+      relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated,
+      linked = linked_off, linked_skipped = linked_skipped
+    ),
     blast = blast,
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
@@ -428,6 +439,28 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       rlang::warn(glue::glue(gettext("genome ideogram failed: {conditionMessage(e)}")))
       NULL
     }
+  )
+  # the target site's KASP class (biallelic / degenerate / complementary / indel),
+  # from every ALT seen at the position in the variant table
+  site_alts <- snp$alt
+  if (!is.null(variants) && all(c("chrom", "pos") %in% names(variants))) {
+    rows <- variants[variants$chrom == snp$chrom & variants$pos == snp$pos, , drop = FALSE]
+    if (nrow(rows)) {
+      a <- if ("ref_genome" %in% names(rows)) {
+        unlist(as.character(rows$ref_genome))
+      } else if ("alt" %in% names(rows)) {
+        as.character(rows$alt)
+      } else {
+        character(0)
+      }
+      a <- a[nzchar(a) & grepl("^[ACGT]+$", a)]
+      if (length(a)) site_alts <- unique(c(snp$alt, a))
+    }
+  }
+  out$site <- kasp_site_class(snp$ref, site_alts)
+  # the selection policy as a graph, with this assay's runtime status stamped on
+  out$decision <- tryCatch(kasp_decision_graph(out),
+    error = function(e) NULL
   )
   structure(out, class = "kasp_assay")
 }

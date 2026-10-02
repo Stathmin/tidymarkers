@@ -47,6 +47,7 @@ Imports:
     jsonlite,
     fs,
     processx,
+    tidygraph,
     cli,
     withr,
     rlang,
@@ -54,6 +55,7 @@ Imports:
 Suggests:
     rmarkdown,
     knitr,
+    ggraph,
     VariantAnnotation,
     SummarizedExperiment,
     GenomicFeatures,

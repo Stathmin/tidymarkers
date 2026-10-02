@@ -21,7 +21,11 @@ longest_run <- function(seq) {
 #'
 #' @param assay result of [assemble_kasp_assay()].
 #' @param limits list of thresholds; defaults to `KASP_LIMITS`.
-#' @return tibble with `criterion`, `observed`, `limit` and `pass`.
+#' @return tibble with `criterion`, `observed`, `limit`, `pass` and `detail`
+#'   (a human-readable value, e.g. the target's KASP class).  Criteria cover three
+#'   levels: the target *site* (class / ALT count / linked variants), each
+#'   *feature* oligo on its own, and the *alignment* (how the primers sit
+#'   together on the template).
 #' @examples
 #' \dontrun{
 #' assay <- assemble_kasp_assay(genome, snp)
@@ -54,8 +58,17 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
     length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
   }
 
-  tibble::tibble(
+  # site-level facts: the target's KASP class (biallelic / degenerate / ...) and
+  # whether every co-segregating variant could be baked.  Absent on an older assay.
+  site <- assay$site
+  site_class <- if (is.null(site)) "biallelic" else as.character(site$class[1L])
+  site_disc <- if (is.null(site)) TRUE else isTRUE(site$disc[1L])
+  n_alt <- if (is.null(site)) 1L else as.integer(site$n_alt[1L])
+  linked_skipped <- as.integer(assay$selection$linked_skipped %||% 0L)
+
+  base <- tibble::tibble(
     criterion = c(
+      "target site class", "ALT alleles (n)", "linked variants skipped (n)",
       "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)",
       "COM Tm >= AS Tm", "AS GC", "COM GC",
       "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
@@ -66,12 +79,14 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       "discrimination", "in-silico PCR (REF 1 / ALT 0)"
     ),
     observed = c(
+      NA_real_, as.numeric(n_alt), as.numeric(linked_skipped),
       aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
       run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
       sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
       hair, cross, homo, aa$as_n_3p, aa$n_var, aa$as_dropout, aa$com_dropout, disc, amp_obs
     ),
     limit = c(
+      "discriminable", ">= 1", "0",
       glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
       glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
       glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
@@ -92,6 +107,7 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       "REF=1, ALT=0"
     ),
     pass = c(
+      site_disc, n_alt >= 1L, linked_skipped == 0L,
       dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
       dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
       dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),
@@ -110,6 +126,8 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
       is.na(aa$com_dropout) | aa$com_dropout <= tol,
       disc >= limits$discrimination,
       amp_pass
-    )
+    ),
+    detail = c(site_class, NA_character_, NA_character_, rep(NA_character_, 18L))
   )
+  base
 }

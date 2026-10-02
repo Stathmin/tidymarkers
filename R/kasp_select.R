@@ -23,14 +23,46 @@ KASP_RELAX_PAIR <- c(
   "gate_discrimination", "gate_com_footprint", "gate_as_window"
 )
 
-# Human-readable name for each gate, used in the relaxation warning.
+# The gate set is the same for both stages; grade_*() returns it in this order.
+KASP_GATES_PAIR <- c(
+  "gate_discrimination", "gate_structure", "gate_tm", "gate_amplicon",
+  "gate_com_footprint", "gate_as_window"
+)
+KASP_GATES_AS <- c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window")
+
+# The lexicographic tiers and their tie-breakers, named (label = meaning).  The
+# grade_*() functions and the decision graph both read these, so adding a tier or
+# changing the order shows up in the picture.
+KASP_TIERS_PAIR <- c(
+  tier1 = "discrimination", tier2 = "structure (hairpin / homodimer)",
+  tier3 = "Tm (COM vs AS / target)", tier4 = "amplicon length",
+  tier5 = "footprint load"
+)
+KASP_TIES_PAIR <- c("run", "ssr", "com_start")
+KASP_TIERS_AS <- c(
+  tier1 = "discrimination", tier2 = "Tm", tier3 = "3' stability", tier4 = "footprint load"
+)
+KASP_TIES_AS <- c("seed_hits", "as_length", "as_start")
+
+# Human-readable name for each gate, used in the relaxation warning and the
+# decision graph.
 KASP_GATE_LABEL <- c(
   gate_discrimination = "allele discrimination below min_disc",
   gate_structure = "strong COM hairpin / homodimer",
   gate_tm = "COM Tm below the AS Tm",
   gate_amplicon = "amplicon outside the accepted length window",
   gate_com_footprint = "known variant under the COM footprint",
-  gate_as_window = "known variant in the AS 3' window"
+  gate_as_window = "known variant in the AS 3' window",
+  gate_wobble = "wobble (G:T / A:C) mismatch at the 3' base",
+  gate_as_footprint = "known variant under the AS footprint"
+)
+
+# Short names for the decision graph (the warnings keep the full labels).
+KASP_GATE_SHORT <- c(
+  gate_discrimination = "discrimination", gate_structure = "structure",
+  gate_tm = "COM Tm >= AS Tm", gate_amplicon = "amplicon length",
+  gate_com_footprint = "COM footprint", gate_as_window = "AS 3' window",
+  gate_wobble = "wobble mismatch", gate_as_footprint = "AS footprint"
 )
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins
@@ -101,13 +133,10 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
     )
   list(
     data = d,
-    gates = c(
-      "gate_discrimination", "gate_structure", "gate_tm", "gate_amplicon",
-      "gate_com_footprint", "gate_as_window"
-    ),
-    tiers = c("tier1", "tier2", "tier3", "tier4", "tier5"),
+    gates = KASP_GATES_PAIR,
+    tiers = names(KASP_TIERS_PAIR),
     # tie-breakers, ascending (smaller is better)
-    ties = c("run", "ssr", "com_start"),
+    ties = KASP_TIES_PAIR,
     # the margin that measures each gate, so a relaxed gate can be minimised first
     gate_margin = c(
       gate_discrimination = "m_disc", gate_structure = "m_structure",
@@ -161,9 +190,9 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
     )
   list(
     data = d,
-    gates = c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window"),
-    tiers = c("tier1", "tier2", "tier3", "tier4"),
-    ties = c("seed_hits", "as_length", "as_start"),
+    gates = KASP_GATES_AS,
+    tiers = names(KASP_TIERS_AS),
+    ties = KASP_TIES_AS,
     gate_margin = c(
       gate_wobble = "m_wobble", gate_discrimination = "m_disc",
       gate_as_footprint = "m_footprint", gate_as_window = "m_window"

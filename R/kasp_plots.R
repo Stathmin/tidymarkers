@@ -63,6 +63,7 @@ KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
 #' @keywords internal
 #' @noRd
 check_level <- function(criterion) {
+  site <- c("target site class", "ALT alleles (n)", "linked variants skipped (n)")
   feature <- c(
     "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
     "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
@@ -71,7 +72,7 @@ check_level <- function(criterion) {
     "AS 3' window variants (n)", "COM footprint variants (n)",
     "AS 3' window dropout", "COM footprint dropout"
   )
-  ifelse(criterion %in% feature, "feature", "alignment")
+  ifelse(criterion %in% site, "site", ifelse(criterion %in% feature, "feature", "alignment"))
 }
 
 #' Short labels for the acceptance criteria (for the tumbler column)
@@ -79,6 +80,9 @@ check_level <- function(criterion) {
 #' @noRd
 check_short <- function(criterion) {
   dplyr::recode(criterion,
+    "target site class" = "site class",
+    "ALT alleles (n)" = "ALT n",
+    "linked variants skipped (n)" = "linked skip",
     "amplicon length (bp)" = "amplicon",
     "AS Tm (C)" = "AS Tm",
     "COM Tm (C)" = "COM Tm",
@@ -632,26 +636,83 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   win_status <- zone_status(aa[["as_dropout"]], aa$as_n_3p)
   com_status <- zone_status(aa[["com_dropout"]], aa$n_var)
 
-  # the local variants: a thin strip on the same x axis
-  p_var <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
+  # the local variants: a thin strip on the same x axis.  When the assay carries
+  # a linked haplotype, the target + its co-segregating bases are drawn as two
+  # parallel tracks (REF vs ALT haplotype), so the linkage is visible.
+  lk <- assay$selection$linked
+  has_link <- !is.null(lk) && nrow(lk) > 0
+  if (has_link) {
+    gp <- snp$pos - assay$template$snp_i + lk$offset
+    hap <- dplyr::bind_rows(
+      tibble::tibble(x = snp$pos, y = 1, base = snp$ref, kind = "ref_target"),
+      tibble::tibble(x = snp$pos, y = 2, base = snp$alt, kind = "alt_target"),
+      tibble::tibble(x = gp, y = 1, base = lk$ref, kind = "ref_linked"),
+      tibble::tibble(x = gp, y = 2, base = lk$alt, kind = "alt_linked")
+    )
+    hap_col <- c(
+      ref_target = KASP_STATUS[["neutral"]], alt_target = "#d7301f",
+      ref_linked = "grey62", alt_linked = "#e6ab02"
+    )
+    hap_face <- c(ref_target = "bold", alt_target = "bold", ref_linked = "plain", alt_linked = "bold")
+    ybreaks <- c(1, 2)
+    ylabs <- c("REF hap", "ALT hap")
+    zone <- c(0.5, 2.5)
+    tall <- c(0.28, 2.72)
+  } else {
+    ybreaks <- 1
+    ylabs <- "SNP"
+    zone <- c(0.6, 1.4)
+    tall <- c(0.22, 1.78)
+  }
+  ys <- ybreaks
+  shared <- tibble::tibble(
+    pos = rep(vw$pos, times = length(ys)),
+    y = rep(ys, each = nrow(vw))
+  )
+  foot_pts <- tibble::tibble(
+    pos = rep(foot$pos, times = length(ys)),
+    y = rep(ys, each = nrow(foot))
+  )
+  p_var <- ggplot2::ggplot() +
     ggplot2::annotate("rect",
       xmin = com_span[1] - 0.5, xmax = com_span[2] + 0.5,
-      ymin = 0.6, ymax = 1.4, fill = KASP_STATUS[[com_status]], alpha = 0.22
+      ymin = zone[1], ymax = zone[2], fill = KASP_STATUS[[com_status]], alpha = 0.22
     ) +
     # the AS 3' window is the discriminating side: drawn as a taller square so it
     # reads as the important zone, coloured by its own dropout
     ggplot2::annotate("rect",
       xmin = reg3p[1] - 0.5, xmax = reg3p[2] + 0.5,
-      ymin = 0.22, ymax = 1.78, fill = KASP_STATUS[[win_status]], alpha = 0.30
+      ymin = tall[1], ymax = tall[2], fill = KASP_STATUS[[win_status]], alpha = 0.30
     ) +
-    variant_points(vw, 1) +
-    ggplot2::geom_point(data = foot, ggplot2::aes(.data$pos, 1), shape = 1, colour = "black", size = 2.1) +
     ggplot2::geom_point(
-      data = snp, ggplot2::aes(.data$pos, 1),
-      shape = 21, fill = "firebrick", colour = "white", size = 2.4
+      data = shared, ggplot2::aes(.data$pos, .data$y),
+      colour = "grey70", size = 0.8
     ) +
-    ggplot2::scale_colour_brewer(palette = "Dark2", name = NULL) +
-    ggplot2::scale_y_continuous(breaks = 1, labels = "SNP") +
+    ggplot2::geom_point(data = foot_pts, ggplot2::aes(.data$pos, .data$y), shape = 1, colour = "black", size = 2.1)
+  if (has_link) {
+    p_var <- p_var +
+      ggplot2::geom_point(
+        data = hap[hap$kind %in% c("ref_target", "alt_target"), ],
+        ggplot2::aes(.data$x, .data$y, fill = .data$kind), shape = 21, colour = "white", size = 2.6
+      ) +
+      ggplot2::geom_text(
+        data = hap, ggplot2::aes(.data$x, .data$y, label = .data$base, colour = .data$kind, fontface = .data$kind),
+        vjust = -0.9, size = 2.3, family = "mono", show.legend = FALSE
+      ) +
+      ggplot2::scale_fill_manual(values = hap_col, guide = "none") +
+      ggplot2::scale_colour_manual(values = hap_col, guide = "none") +
+      ggplot2::scale_discrete_manual("fontface", values = hap_face, guide = "none")
+  } else {
+    p_var <- p_var +
+      variant_points(vw, 1) +
+      ggplot2::geom_point(
+        data = snp, ggplot2::aes(.data$pos, 1),
+        shape = 21, fill = "firebrick", colour = "white", size = 2.4
+      ) +
+      ggplot2::scale_colour_brewer(palette = "Dark2", name = NULL)
+  }
+  p_var <- p_var +
+    ggplot2::scale_y_continuous(breaks = ybreaks, labels = ylabs, limits = c(zone[1] - 0.15, zone[2] + 0.15)) +
     ggplot2::labs(x = NULL, y = NULL) +
     ggplot2::coord_cartesian(xlim = span) +
     ggplot2::theme_minimal(base_size = 8) +
@@ -689,13 +750,17 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
 #' @keywords internal
 #' @noRd
 format_check_value <- function(name, value) {
-  out <- dplyr::case_when(
-    name %in% c("AS GC", "COM GC", "discrim.", "AS drop", "COM drop") ~ sprintf("%.0f%%", 100 * value),
-    name %in% c("AS Tm", "COM Tm", "dimer", "homodimer", "hairpin", "COM\u2265AS Tm") ~ sprintf("%.1f", value),
-    abs(value) >= 1e6 ~ paste0(round(value / 1e6), "M"),
-    abs(value) >= 1e3 ~ paste0(round(value / 1e3), "K"),
-    TRUE ~ as.character(round(value))
-  )
+  out <- if (!is.numeric(value)) {
+    as.character(value)
+  } else {
+    dplyr::case_when(
+      name %in% c("AS GC", "COM GC", "discrim.", "AS drop", "COM drop") ~ sprintf("%.0f%%", 100 * value),
+      name %in% c("AS Tm", "COM Tm", "dimer", "homodimer", "hairpin", "COM\u2265AS Tm") ~ sprintf("%.1f", value),
+      abs(value) >= 1e6 ~ paste0(round(value / 1e6), "M"),
+      abs(value) >= 1e3 ~ paste0(round(value / 1e3), "K"),
+      TRUE ~ as.character(round(value))
+    )
+  }
   out[is.na(value)] <- "-"
   out
 }
@@ -704,9 +769,10 @@ format_check_value <- function(name, value) {
 #'
 #' Runs [kasp_design_checks()] and shows one named tumbler per criterion - a
 #' small green (ok) / red (broken) marker with its observed value and limit - in
-#' a single narrow column, faceted by the level judged: the *feature* level is
-#' one oligo on its own, the *alignment* level is how the primers sit together on
-#' the template.  Sits as a thin strip beside [plot_primers()].
+#' in a single narrow column, faceted by the level judged: the *site* level is
+#' the target itself (KASP class, ALT count, linked variants), the *feature*
+#' level is one oligo on its own, the *alignment* level is how the primers sit
+#' together on the template.  Sits as a thin strip beside [plot_primers()].
 #' @param assay assembled assay.
 #' @param limits thresholds (see `KASP_LIMITS`).
 #' @return a `ggplot` tumbler list.
@@ -719,10 +785,10 @@ format_check_value <- function(name, value) {
 plot_checks <- function(assay, limits = KASP_LIMITS) {
   chk <- kasp_design_checks(assay, limits) |>
     dplyr::mutate(
-      level = factor(check_level(.data$criterion), levels = c("feature", "alignment")),
+      level = factor(check_level(.data$criterion), levels = c("site", "feature", "alignment")),
       name = check_short(.data$criterion),
       status = ifelse(.data$pass, "ok", "broken"),
-      value = format_check_value(.data$name, .data$observed)
+      value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))
     )
   ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
