@@ -6,6 +6,10 @@
 #  sites can be eyeballed side by side (SNP / MNP / insertion / deletion /
 #  multi-allelic).  A locus the strict gates doom is reported, not fatal.
 #
+#  Loci are independent, so they are rendered across cores (fork on Unix); each
+#  assay is assembled serially (`cores = 1`) so cores are not oversubscribed.
+#  Set TIDYKASP_CORES to cap the worker count.
+#
 #  Run:  Rscript dev/render-targets.R
 # =============================================================================
 
@@ -23,14 +27,15 @@ out <- fs::path(root, "results", "plot-smoke")
 fs::dir_create(out)
 
 ex <- kasp_example()
-for (i in seq_len(nrow(ex))) {
+
+render_one <- function(i) {
   r <- ex[i, ]
   snp <- tibble::tibble(chrom = r$chrom, pos = as.integer(r$pos), ref = r$ref, alt = r$alt)
   tag <- gsub("[^A-Za-z0-9]+", "_", r$id)
   msg <- tryCatch(
     {
       a <- suppressWarnings(assemble_kasp_assay(genome, snp,
-        variants = variants, flank = 150L, strands = c("+", "-")
+        variants = variants, flank = 150L, strands = c("+", "-"), cores = 1L
       ))
       p <- plot_primers(a, variants, snp, genome = genome, features = gene)
       ggplot2::ggsave(fs::path(out, paste0("target_", tag, ".png")), p,
@@ -41,5 +46,17 @@ for (i in seq_len(nrow(ex))) {
     error = function(e) glue::glue("doomed: {conditionMessage(e)}")
   )
   cat(sprintf("%-22s %-6s %s:%s %s>%s -> %s\n", r$id, r$type, r$chrom, r$pos, r$ref, r$alt, msg))
+  invisible(NULL)
+}
+
+ncores <- min(
+  as.integer(Sys.getenv("TIDYKASP_CORES", unset = "1")),
+  nrow(ex)
+)
+if (ncores > 1L && .Platform$OS.type == "unix") {
+  bp <- BiocParallel::MulticoreParam(ncores)
+  invisible(BiocParallel::bplapply(seq_len(nrow(ex)), render_one, BPPARAM = bp))
+} else {
+  invisible(lapply(seq_len(nrow(ex)), render_one))
 }
 cat("wrote target_*.png into", out, "\n")

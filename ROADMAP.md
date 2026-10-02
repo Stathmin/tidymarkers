@@ -374,6 +374,27 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **Батч/параллель `OligoArrayAux`**: `dimer_thermo(BPPARAM=)` параллелит
       n(n+1)/2 пар (тесты serial == Multicore).
 
+### O1. Замер 2026: один ассей и батч (пул вместо повторов)  [сделано]
+
+Профиль одного локуса (FRI `Chr4:269666 G>A`, 16 ядер): 43.4 → 29.9 с серийно и
+→ 14.3 с (`options(tidykasp.cores = 8)`); батч 16 локусов 231 → 58 с
+(`design_kasp_markers(BPPARAM = MulticoreParam(8))`). Вердикты и числа
+идентичны серийным.
+
+- [x] **Единый knob** `cores = getOption("tidykasp.cores", 1L)` → `kasp_bpparam()`
+      (`NULL` при 1 ядре); `BPPARAM` задаёт бэкенд явно и главнее. Внутри внешнего
+      locus-пула `cores` форсится в 1 — вложенности нет.
+- [x] **Параллель подпроцессов**: карты OligoArrayAux (`oligo_dg_vec`,
+      `terminal_dg`, `primer_thermo`) и батч DECIPHER (`pcr_efficiency(cores=)`,
+      `design_as_primers*`).
+- [x] **Пул dropout-пар**: `zone_dropouts()` — один вызов `pcr_efficiency` на все
+      зоны ASS/COM вместо ~125; откат на построчный путь при ошибке.
+- [x] **Один скан генома на ассей**: `assay_pcr_products()` переиспользуется
+      счётчиками ампликонов и идеограммой; `primer_hits()` параллелен по хромосомам.
+- [ ] **Пул между локусами** (следующий шаг): для сотен SNP собрать сиды/праймеры
+      всех кандидатов и сканировать геном одним `PDict`/`specificity_seed`, а
+      виртуальную ПЦР — одним проходом на общий набор, а не по ассею.
+
 ## P. Экосистема R для KASP — что ещё взять  [почти закрыто]
 
 Уже взято: `Biostrings`, `IRanges`/`GenomicRanges`/`GenomeInfoDb`, `Rsamtools`,
