@@ -61,8 +61,8 @@ print.kasp_assay <- function(x, ...) {
 # =============================================================================
 
 #' Classify a variant by its REF/ALT strings
-#' @param ref,alt allele strings.
-#' @return a character string: `"SNP"`, `"MNP"`, `"insertion"` or `"deletion"`.
+#' @param ref,alt allele strings (recycled).
+#' @return a character vector: `"SNP"`, `"MNP"`, `"insertion"` or `"deletion"`.
 #' @examples
 #' variant_type("A", "G") # SNP
 #' variant_type("ACGT", "TCGA") # MNP
@@ -70,11 +70,11 @@ print.kasp_assay <- function(x, ...) {
 #' @family KASP design
 #' @export
 variant_type <- function(ref, alt) {
-  if (nchar(ref) == nchar(alt)) {
-    ifelse(nchar(ref) == 1L, "SNP", "MNP")
-  } else {
-    ifelse(nchar(alt) > nchar(ref), "insertion", "deletion")
-  }
+  dplyr::if_else(
+    nchar(ref) == nchar(alt),
+    dplyr::if_else(nchar(ref) == 1L, "SNP", "MNP"),
+    dplyr::if_else(nchar(alt) > nchar(ref), "insertion", "deletion")
+  )
 }
 
 #' Design KASP markers for a table of loci, with a per-locus verdict

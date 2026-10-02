@@ -192,20 +192,29 @@ mask_positions <- function(seq, positions) {
 
 #' Bundled example target variants (FRI / AT4G00650)
 #'
-#' A small table of real 1001-Genomes variants in *FRIGIDA*, handy for the
-#' `variant_id` argument of [pick_target_snp()] and for trying the pipeline
-#' without pulling data from Ensembl.
+#' A small, typed catalogue of real 1001-Genomes variants in *FRIGIDA*, one row
+#' per example target and at least one of each kind of site the designer handles:
+#' `"SNP"`, `"MNP"` (a contiguous substitution block), `"insertion"` and
+#' `"deletion"` (VCF-anchored), and a multi-allelic site with two ALTs (non-`NA`
+#' `alt2`) that one degenerate primer can cover ([kasp_site_class()]).  Handy for
+#' trying the pipeline without pulling data from Ensembl; `ref`/`alt` are the
+#' genomic alleles, so the table feeds [design_kasp_markers()] directly.
 #'
-#' @return tibble with `id`, `chrom`, `pos`, `ref`, `alt`, `consequence`,
-#'   `transition`.
+#' @param type optional `type` to keep (`"SNP"`, `"MNP"`, `"insertion"`,
+#'   `"deletion"`); `NULL` returns every example.
+#' @return tibble with `id`, `chrom`, `pos`, `ref`, `alt`, `alt2` (second ALT of a
+#'   multi-allelic site, `NA` otherwise), `type`, `consequence`, `transition`.
 #' @examples
 #' kasp_example()
+#' kasp_example("deletion")
 #' @family KASP input
 #' @export
-kasp_example <- function() {
+kasp_example <- function(type = NULL) {
   f <- system.file("extdata", "example_targets.csv", package = "tidykasp")
   if (!nzchar(f)) rlang::abort(gettext("Bundled example data not found."))
-  readr::read_csv(f, show_col_types = FALSE)
+  ex <- readr::read_csv(f, show_col_types = FALSE)
+  if (!is.null(type)) ex <- ex[ex$type %in% type, , drop = FALSE]
+  ex
 }
 
 #' Read an arbitrary genome FASTA, optionally normalising sequence names

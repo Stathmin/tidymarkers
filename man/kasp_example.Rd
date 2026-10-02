@@ -4,19 +4,28 @@
 \alias{kasp_example}
 \title{Bundled example target variants (FRI / AT4G00650)}
 \usage{
-kasp_example()
+kasp_example(type = NULL)
+}
+\arguments{
+\item{type}{optional \code{type} to keep (\code{"SNP"}, \code{"MNP"}, \code{"insertion"},
+\code{"deletion"}); \code{NULL} returns every example.}
 }
 \value{
-tibble with \code{id}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{consequence},
-\code{transition}.
+tibble with \code{id}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{alt2} (second ALT of a
+multi-allelic site, \code{NA} otherwise), \code{type}, \code{consequence}, \code{transition}.
 }
 \description{
-A small table of real 1001-Genomes variants in \emph{FRIGIDA}, handy for the
-\code{variant_id} argument of \code{\link[=pick_target_snp]{pick_target_snp()}} and for trying the pipeline
-without pulling data from Ensembl.
+A small, typed catalogue of real 1001-Genomes variants in \emph{FRIGIDA}, one row
+per example target and at least one of each kind of site the designer handles:
+\code{"SNP"}, \code{"MNP"} (a contiguous substitution block), \code{"insertion"} and
+\code{"deletion"} (VCF-anchored), and a multi-allelic site with two ALTs (non-\code{NA}
+\code{alt2}) that one degenerate primer can cover (\code{\link[=kasp_site_class]{kasp_site_class()}}).  Handy for
+trying the pipeline without pulling data from Ensembl; \code{ref}/\code{alt} are the
+genomic alleles, so the table feeds \code{\link[=design_kasp_markers]{design_kasp_markers()}} directly.
 }
 \examples{
 kasp_example()
+kasp_example("deletion")
 }
 \seealso{
 Other KASP input:

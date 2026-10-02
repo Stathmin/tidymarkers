@@ -60,7 +60,21 @@ test_that("complementary alleles have no usable placement", {
   comp <- as.character(Biostrings::complement(Biostrings::DNAString(ref))) # A<->T, C<->G
   vt <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = ref, alt = comp)
   sc <- screen_snp_targets(vt, genome)
+  expect_equal(sc$class, "complementary")
   expect_equal(sc$score, "0/0")
   expect_equal(sc$verdict, "doomed")
   expect_equal(sc$reasons, "not_discriminable")
+})
+
+test_that("a multi-allelic site is promising when one degenerate primer covers it", {
+  genome <- clean_genome(seed = 9L)
+  s <- as.character(genome[["Chr1"]])
+  # a REF A site whose first ALT (T) is complementary, but a second ALT (G) lets
+  # a degenerate 3'-terminal base (K = G/T) exclude REF - the Ensembl allele shape
+  i <- which(strsplit(s, "")[[1L]] == "A")[1L]
+  vt <- tibble::tibble(chrom = "Chr1", pos = i, ref_genome = list(c("A", "T", "G")))
+  sc <- screen_snp_targets(vt, genome)
+  expect_equal(sc$class, "degenerate")
+  expect_gt(sc$n_ok, 0L)
+  expect_equal(sc$verdict, "promising")
 })

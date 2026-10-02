@@ -141,3 +141,16 @@ test_that("read_genome_fasta map+index keeps only mapped, requested chroms", {
   expect_equal(names(g), "Chr2")
   expect_equal(as.character(g[["Chr2"]]), "TTTTGGGG")
 })
+
+test_that("kasp_example carries one of each target type", {
+  ex <- kasp_example()
+  expect_setequal(unique(ex$type), c("SNP", "MNP", "insertion", "deletion"))
+  expect_true(any(!is.na(ex$alt2))) # the multi-allelic example
+  expect_equal(nrow(kasp_example("deletion")), 1L)
+  # the labelled type matches variant_type() for every non-multi-allelic row
+  one <- ex[is.na(ex$alt2), ]
+  expect_equal(variant_type(one$ref, one$alt), one$type)
+  # the two ALTs of the multi-allelic row are degenerate-coverable
+  ma <- ex[!is.na(ex$alt2), ]
+  expect_true(kasp_site_class(ma$ref, c(ma$alt, ma$alt2))$disc)
+})

@@ -7,10 +7,10 @@
 variant_type(ref, alt)
 }
 \arguments{
-\item{ref, alt}{allele strings.}
+\item{ref, alt}{allele strings (recycled).}
 }
 \value{
-a character string: \code{"SNP"}, \code{"MNP"}, \code{"insertion"} or \code{"deletion"}.
+a character vector: \code{"SNP"}, \code{"MNP"}, \code{"insertion"} or \code{"deletion"}.
 }
 \description{
 Classify a variant by its REF/ALT strings
@@ -28,6 +28,7 @@ Other KASP design:
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
+\code{\link[=kasp_site_class]{kasp_site_class()}},
 \code{\link[=pick_target_snp]{pick_target_snp()}},
 \code{\link[=screen_snp_targets]{screen_snp_targets()}},
 \code{\link[=strand_gc_hint]{strand_gc_hint()}}

@@ -38,8 +38,9 @@ window.}
 \item{limits}{thresholds (see \code{KASP_LIMITS}).}
 }
 \value{
-one row per target SNP: \code{id}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{n_tried},
-\code{n_ok}, \code{score} (\code{"7/8"}), \code{verdict} and \code{reasons}.
+one row per target SNP: \code{id}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{class}
+(see \code{\link[=kasp_site_class]{kasp_site_class()}}), \code{n_tried}, \code{n_ok}, \code{score} (\code{"7/8"}), \code{verdict}
+and \code{reasons}.
 }
 \description{
 For each target SNP, counts how many of the canonical AS placements
@@ -62,6 +63,7 @@ Other KASP design:
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
+\code{\link[=kasp_site_class]{kasp_site_class()}},
 \code{\link[=pick_target_snp]{pick_target_snp()}},
 \code{\link[=strand_gc_hint]{strand_gc_hint()}},
 \code{\link[=variant_type]{variant_type()}}

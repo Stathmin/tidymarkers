@@ -37,8 +37,9 @@
 #'   known to co-segregate with a target; a variant there is forgiven in the 3'
 #'   window.
 #' @param limits thresholds (see `KASP_LIMITS`).
-#' @return one row per target SNP: `id`, `chrom`, `pos`, `ref`, `alt`, `n_tried`,
-#'   `n_ok`, `score` (`"7/8"`), `verdict` and `reasons`.
+#' @return one row per target SNP: `id`, `chrom`, `pos`, `ref`, `alt`, `class`
+#'   (see [kasp_site_class()]), `n_tried`, `n_ok`, `score` (`"7/8"`), `verdict`
+#'   and `reasons`.
 #' @examples
 #' \dontrun{
 #' screen_snp_targets(ensembl_variants("Chr4", 268901, 271503), ath_genome())
@@ -88,22 +89,29 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
   }
   cum_ban <- c(0L, cumsum(as.integer(banned)))
 
-  # --- derive ref/alt for the SNP targets -------------------------------------
+  # --- derive the allele set / REF for the targets ----------------------------
   alleles <- if ("ref_genome" %in% names(g)) g$ref_genome else NULL
   ref <- if ("ref" %in% names(g)) as.character(g$ref) else substring(s, g$pos - lo + 1L, g$pos - lo + 1L)
-  alt <- if ("alt" %in% names(g)) {
-    as.character(g$alt)
-  } else if (!is.null(alleles)) {
-    vapply(seq_along(ref), function(i) {
+  alt_sets <- if (!is.null(alleles)) {
+    lapply(seq_along(ref), function(i) {
       a <- setdiff(as.character(alleles[[i]]), ref[i])
-      a <- a[nzchar(a) & grepl("^[ACGTN]+$", a)]
-      if (length(a)) a[[1L]] else NA_character_
-    }, character(1))
+      a[nzchar(a) & grepl("^[ACGTN]+$", a)]
+    })
+  } else if ("alt" %in% names(g)) {
+    lapply(as.character(g$alt), function(a) a[nzchar(a) & grepl("^[ACGTN]+$", a)])
   } else {
-    rep(NA_character_, nrow(g))
+    rep(list(character()), length(ref))
   }
+  # a representative ALT for display: the first SNP if there is one
+  alt <- vapply(alt_sets, function(a) {
+    s <- a[nchar(a) == 1L & grepl("^[ACGT]$", a)]
+    if (length(s)) s[[1L]] else if (length(a)) a[[1L]] else NA_character_
+  }, character(1))
+  # per-site KASP class (biallelic / degenerate / complementary / indel); a
+  # multi-allelic site is designable when one degenerate ALT primer covers it
+  cls <- purrr::map2(ref, alt_sets, kasp_site_class)
   is_snp <- nchar(ref) == 1L & nchar(alt) == 1L
-  disc <- is_snp & !is.na(alt) & !paste0(pmin(ref, alt), pmax(ref, alt)) %in% c("AT", "CG")
+  disc <- is_snp & purrr::map_lgl(cls, "disc")
 
   # every variant on the chromosome is a subject for the variant-density tests
   vs_ir <- IRanges::IRanges(g$pos, g$pos)
@@ -161,6 +169,7 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
   out <- tibble::tibble(
     id = if ("id" %in% names(g)) as.character(g$id[which(is_snp)]) else NA_character_,
     chrom = chrom, pos = g$pos[which(is_snp)], ref = ref[which(is_snp)], alt = alt[which(is_snp)],
+    class = purrr::map_chr(cls, "class")[which(is_snp)],
     n_tried = n_tried, n_ok = rows$n_ok,
     score = paste0(rows$n_ok, "/", n_tried),
     verdict = ifelse(rows$n_ok > 0L, "promising", "doomed"),

@@ -28,6 +28,11 @@
   `k/16` (~3 ms/SNP). Фильтрует гены до `pick_target_snp()`/`assemble_kasp_assay()`/rBLAST.
 - `plot_snp_screen()` — по-вариантный профиль счёта по гену.
 - `linked=` в скрине прощает сцепленный (co-segregating) вариант в 3'-окне.
+- `kasp_site_class()` формализует мультиаллельные сайты: одиночный ALT → `biallelic`
+  (или `complementary`/`indel`), ≥2 SNP-ALT → `degenerate` (один AS-праймер с 3'-концевым
+  IUPAC-кодом объединения ALT, `iupac_code()`, исключает REF, покрывает все ALT одним KASP).
+  Скрин получил колонку `class`, поэтому мультиаллельный сайт с комплементарным первым
+  ALT больше не помечается `doomed`.
 
 ### Гигиена дерева
 - Внешние данные и индексы (геном, варианты, BLAST/FM) перенесены в пользовательский
@@ -78,6 +83,12 @@
   `as_anchor()` / `block_in_seg()`.
 - `design_as_primers_indel()` и SNP-путь унифицированы в `assemble_kasp_assay()`
   (пер-аллельный 3'-футпринт, ампликон — худший из двух аллелей).
+- Сцепленный вариант (`linked=`) «впечатывается» в ALT-гаплотип и ALT-праймер
+  (`Biostrings::replaceAt`), давая двойной мисматч к REF; REF-праймер не трогается,
+  сцепление хранится в `assay$selection$linked`.
+- `kasp_example(type=)` — типизированная фикстура мишеней из FRI (`inst/extdata/
+  example_targets.csv`): SNP, MNP, инсерция, делеция и мультиаллельный сайт с двумя
+  близкими ALT; `variant_type()` стал векторным.
 
 ### Специфичность
 - `specificity_seed()`: точный путь `PDict`/`vcountPDict`, мисматч-скан — параллель
