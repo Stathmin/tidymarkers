@@ -151,16 +151,18 @@ primer_tm <- function(seq, DMSO = PCR_COND$DMSO) {
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }
 
-#' Is OligoArrayAux (`hybrid-min`) available on the PATH?
+#' Is OligoArrayAux (`hybrid-min`) available?
 #'
-#' DECIPHER's thermodynamics runs through OligoArrayAux.
+#' DECIPHER's thermodynamics runs through OligoArrayAux.  It is looked up as
+#' `options(tidykasp.oligoarrayaux)`, a project `.tools/`, the user cache (see
+#' [kasp_install_tools()]) and finally the `PATH`.
 #'
 #' @return a single logical.
 #' @examples
 #' has_oligoarrayaux()
 #' @family KASP utilities
 #' @export
-has_oligoarrayaux <- function() nzchar(Sys.which("hybrid-min"))
+has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 
 #' Point OligoArrayAux at its data tables for the duration of `code`
 #'
@@ -205,12 +207,12 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
     rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
-      i = gettext("build it with data-raw/install-oligoarrayaux.R")
+      i = gettext("run kasp_install_tools(), or build it with data-raw/install-oligoarrayaux.R")
     ))
   }
-  as.numeric(DECIPHER::CalculateEfficiencyPCR(
+  with_oligoarrayaux(as.numeric(DECIPHER::CalculateEfficiencyPCR(
     primer = Biostrings::DNAStringSet(as.character(primers)),
     target = Biostrings::DNAStringSet(as.character(targets)),
     temp = temp, P = P, ions = ions, taqEfficiency = TRUE
-  ))
+  )))
 }

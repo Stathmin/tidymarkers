@@ -23,7 +23,7 @@ make_search_assay <- function(seed = 4L, n = 500L, pos = 250L, variants = NULL) 
 }
 
 test_that("design_search_frames walks the AS then COM search and ends accepted", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_search_assay()
   fr <- design_search_frames(m$assay, m$variants, m$snp)
 
@@ -45,7 +45,7 @@ test_that("design_search_frames walks the AS then COM search and ends accepted",
 })
 
 test_that("the animation's winner is the algorithm's winner (minimal 3' window)", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_search_assay(seed = 7L, n = 600L, pos = 300L)
   fr <- design_search_frames(m$assay, m$variants, m$snp)
   w <- m$assay$as_candidates
@@ -56,7 +56,7 @@ test_that("the animation's winner is the algorithm's winner (minimal 3' window)"
 })
 
 test_that("plot_design_search_step draws a panel for the first and last step", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_search_assay(seed = 11L, n = 400L, pos = 200L)
   fr <- design_search_frames(m$assay, m$variants, m$snp)
   expect_s3_class(plot_design_search_step(fr, 1L), "ggplot")

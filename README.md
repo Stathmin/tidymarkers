@@ -72,9 +72,11 @@ remotes::install_github("Stathmin/tidykasp")
 
 ```bash
 # 1. внешние инструменты
-#    a) OligoArrayAux для DECIPHER (термодинамика) — собираем из исходников,
-#       чистым R, в .tools/ (без conda)
+#    a) OligoArrayAux для DECIPHER (термодинамика). Для разработки — из исходников,
+#       чистым R, в .tools/ (без conda):
 Rscript data-raw/install-oligoarrayaux.R
+#       Пользователю достаточно установить пакет и запустить один раз:
+#       Rscript -e 'tidykasp::kasp_install_tools()'   # соберёт в пользовательский кэш
 #    b) cairo для gdtools/ggmsa
 sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreetype6-dev
 
@@ -85,7 +87,8 @@ Rscript -e 'renv::restore(prompt = FALSE)'
 # 3. установить сам пакет
 R CMD INSTALL .              # или: Rscript -e 'pkgload::load_all()' для разработки
 # когда пакет вынесен в свой репозиторий:
-#   remotes::install_github("<user>/tidykasp")
+#   pak::pak("Stathmin/tidykasp", sysreqs = TRUE)   # BLAST+/cairo системно
+#   remotes::install_github("Stathmin/tidykasp")
 
 # 4. прогон демо-пайплайна
 Rscript inst/scripts/run_kasp.R
@@ -118,11 +121,11 @@ sh lecture/render.sh                    # ставит OligoArrayAux на PATH �
 > и те же интервалы, а координаты спанов сохраняются в объекте теста — поэтому
 > рисунок не может разойтись с дизайном.
 
-> `DECIPHER` работает через системный вызов `hybrid-min`. Скрипт из шага 1 кладёт
-> бинарники в `.tools/bin`, а таблицы — в `.tools/share/oligoarrayaux`; укажите их
-> через `PATH` и `UNAFOLDDAT` (так делает `lecture/render.sh`, а тесты — через
-> `helper-oligoarrayaux.R`) либо оберните вызов в `with_unafloddat(...)`:
-> `export PATH="$PWD/.tools/bin:$PATH" UNAFOLDDAT="$PWD/.tools/share/oligoarrayaux"`.
+> `DECIPHER` работает через системный вызов `hybrid-min`. Пакет сам его находит:
+> `options(tidykasp.oligoarrayaux=)` → проектный `.tools/` → пользовательский кэш
+> (`kasp_install_tools()`) → `PATH`; `UNAFOLDDAT` подставляется на время вызова, ручной
+> `export` не нужен. Скрипт из шага 1 кладёт бинарники в `.tools/bin`, таблицы — в
+> `.tools/share/oligoarrayaux`; альтернатива — `with_unafloddat(...)`.
 
 Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.

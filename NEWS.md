@@ -40,6 +40,14 @@
 - Лекционный дек Quarto (`lecture/`) с `sh lecture/render.sh`; всё генерируемое — в
   `_site/`, в `lecture/` только исходники.
 
+### Внешние инструменты (OligoArrayAux, BLAST+)
+- Резолвер `R/kasp_tools.R`: тулы ищутся в `options(tidykasp.*)` → `.tools/` → кэш
+  пользователя → `PATH`; `UNAFOLDDAT`/`PATH` подставляются на время вызова
+  (`with_oligoarrayaux()`/`with_blast()`), ручной `export` больше не нужен.
+- `kasp_install_tools()` — сборка OligoArrayAux в пользовательский кэш
+  (согласие, sha256, дымовой тест, идемпотентно). `SystemRequirements` в `DESCRIPTION`;
+  тесты — на `skip_if_no_oligoarrayaux()`.
+
 
 ### Отбор AS-праймера
 - `assemble_kasp_assay()` добавил `seed_hits` (уникальность 3'-сида, обе цепи)

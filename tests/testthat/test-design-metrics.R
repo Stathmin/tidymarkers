@@ -12,7 +12,7 @@ test_that("wobble_mismatch flags the weak G:T and A:C pairs, symmetrically", {
 })
 
 test_that("terminal_dg is finite and rewards a 3' GC clamp", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   gc3 <- "ACGTACGTACGTACGCGG" # GC-rich 3' end
   at3 <- "ACGTACGTACGTACAAAA" # A/T-rich 3' end
   expect_true(is.finite(terminal_dg(gc3)))
@@ -21,7 +21,7 @@ test_that("terminal_dg is finite and rewards a 3' GC clamp", {
 })
 
 test_that("primer_thermo reports the terminal stability", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   th <- primer_thermo("ACGTACGTACGTACGCGG")
   expect_true(all(c("tm", "gc", "hairpin_dg", "terminal_dg") %in% names(th)))
   expect_true(is.finite(th$terminal_dg))

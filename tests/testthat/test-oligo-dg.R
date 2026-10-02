@@ -1,7 +1,7 @@
 # OligoArrayAux wrapper: the thermodynamics must be finite, physical, symmetric.
 
 test_that("oligo_dg returns a finite dG for normal oligos", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   s <- "ACGTACGTACGTACGTACGT"
   expect_length(oligo_dg(s, s), 1L)
   expect_true(is.finite(oligo_dg(s, s))) # duplex mode
@@ -9,7 +9,7 @@ test_that("oligo_dg returns a finite dG for normal oligos", {
 })
 
 test_that("a strand pairs far more strongly with its reverse complement", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   s <- "ACGTACGTACGTACGTACGT"
   rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(s)))
   unrelated <- "TTTTTTTTTTTTTTTTTTTT"
@@ -18,7 +18,7 @@ test_that("a strand pairs far more strongly with its reverse complement", {
 })
 
 test_that("duplex dG is symmetric in its two arguments", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   a <- "ACGTACGTACGTACGTACGT"
   b <- "TTTTGGGGCCCCAAAATTTT"
   expect_equal(oligo_dg(a, b), oligo_dg(b, a), tolerance = 1e-6)

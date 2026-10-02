@@ -80,7 +80,7 @@ test_that("weighted load ranks one common variant below three rare ones", {
 })
 
 test_that("primer_dropout is position- and frequency-aware", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   p <- "CCGACGACAACGAACTCCTT"
   flip <- function(i) setdiff(c("A", "C", "G", "T"), substr(p, i, i))[1L]
   # a variant at the primer's 3' end costs far more than one at its 5' end

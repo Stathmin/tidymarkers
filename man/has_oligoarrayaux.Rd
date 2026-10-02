@@ -2,7 +2,7 @@
 % Please edit documentation in R/kasp_thermo.R
 \name{has_oligoarrayaux}
 \alias{has_oligoarrayaux}
-\title{Is OligoArrayAux (\code{hybrid-min}) available on the PATH?}
+\title{Is OligoArrayAux (\code{hybrid-min}) available?}
 \usage{
 has_oligoarrayaux()
 }
@@ -10,7 +10,9 @@ has_oligoarrayaux()
 a single logical.
 }
 \description{
-DECIPHER's thermodynamics runs through OligoArrayAux.
+DECIPHER's thermodynamics runs through OligoArrayAux.  It is looked up as
+\code{options(tidykasp.oligoarrayaux)}, a project \verb{.tools/}, the user cache (see
+\code{\link[=kasp_install_tools]{kasp_install_tools()}}) and finally the \code{PATH}.
 }
 \examples{
 has_oligoarrayaux()
@@ -18,6 +20,7 @@ has_oligoarrayaux()
 \seealso{
 Other KASP utilities:
 \code{\link[=is_kasp_assay]{is_kasp_assay()}},
+\code{\link[=kasp_install_tools]{kasp_install_tools()}},
 \code{\link[=print.kasp_assay]{print.kasp_assay()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }

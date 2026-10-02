@@ -7,10 +7,11 @@
 has_blast()
 }
 \value{
-\code{TRUE} when both \code{blastn} and \code{makeblastdb} are found on the \code{PATH}.
+\code{TRUE} when both \code{blastn} and \code{makeblastdb} are found.
 }
 \description{
-Is NCBI BLAST+ available (for the indexed genome scan)?
+Looks for \code{blastn}/\code{makeblastdb} in \code{options(tidykasp.blast)}, a project
+\verb{.tools/}, the user cache and finally the \code{PATH}.
 }
 \examples{
 has_blast()

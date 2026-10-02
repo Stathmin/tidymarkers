@@ -1,7 +1,7 @@
 # Duplex free energies must form a symmetric matrix with a homodimer diagonal.
 
 test_that("dimer_thermo is symmetric and includes homodimers", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   p <- c(
     A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",
     C = "GGGGCCCCAAAATTTTACGT"
@@ -14,7 +14,7 @@ test_that("dimer_thermo is symmetric and includes homodimers", {
 })
 
 test_that("dimer_thermo is invariant to the parallel backend", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   skip_if_not_installed("BiocParallel")
   p <- c(
     A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT",

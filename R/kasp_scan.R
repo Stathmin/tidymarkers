@@ -14,12 +14,17 @@
 # =============================================================================
 
 #' Is NCBI BLAST+ available (for the indexed genome scan)?
-#' @return `TRUE` when both `blastn` and `makeblastdb` are found on the `PATH`.
+#'
+#' Looks for `blastn`/`makeblastdb` in `options(tidykasp.blast)`, a project
+#' `.tools/`, the user cache and finally the `PATH`.
+#' @return `TRUE` when both `blastn` and `makeblastdb` are found.
 #' @examples
 #' has_blast()
 #' @family KASP specificity
 #' @export
-has_blast <- function() nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb"))
+has_blast <- function() {
+  !is.null(blast_bin()) || (nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb")))
+}
 
 #' Build (once) a BLAST database for a genome
 #'
@@ -39,8 +44,8 @@ has_blast <- function() nzchar(Sys.which("blastn")) && nzchar(Sys.which("makebla
 kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_genome.fa")) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH."),
-      i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`).")
+    rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
+      i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`) or set options(tidykasp.blast = ).")
     ))
   }
   fasta <- if (inherits(genome, "kasp_genome")) {
@@ -50,7 +55,7 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
     Biostrings::writeXStringSet(genome, path)
     path
   }
-  rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE)
+  with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
   fasta
 }
 
@@ -78,8 +83,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     rlang::abort(c(
-      gettext("No NCBI BLAST+ on PATH (has_blast() is FALSE)."),
-      i = gettext("Install BLAST+, or use specificity_seed() on an in-memory genome.")
+      gettext("No NCBI BLAST+ found (has_blast() is FALSE)."),
+      i = gettext("Install BLAST+, set options(tidykasp.blast = ), or use specificity_seed() on an in-memory genome.")
     ))
   }
   seeds <- if (is.na(k)) {
@@ -92,7 +97,7 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   # `blastdbcmd -info`), so a missing or corrupt database surfaces there; we only
   # re-raise it with the pipeline's own hint instead of a hand-rolled .nsq probe.
   bl <- rlang::try_fetch(
-    rBLAST::blast(db_path, type = "blastn"),
+    with_blast(rBLAST::blast(db_path, type = "blastn")),
     error = function(e) {
       rlang::abort(
         glue::glue(gettext(
@@ -105,10 +110,10 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   run <- function(q) {
     # a SOCK worker is a fresh process: load rBLAST so predict.BLAST() dispatches
     requireNamespace("rBLAST", quietly = TRUE)
-    stats::predict(bl,
+    with_blast(stats::predict(bl,
       newdata = q,
       BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no")
-    )
+    ))
   }
   res <- if (is.null(BPPARAM)) {
     run(query)

@@ -20,7 +20,7 @@ test_that("allele_templates keeps the left flank and shifts the right one", {
 })
 
 test_that("the junction scan proposes discriminating primers for an insertion", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(rand_seq(160, 11))
   snp_i <- 80L
   ref <- as.character(Biostrings::subseq(W, snp_i, snp_i))
@@ -32,7 +32,7 @@ test_that("the junction scan proposes discriminating primers for an insertion", 
 })
 
 test_that("the junction scan proposes discriminating primers for a deletion", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(rand_seq(160, 13))
   snp_i <- 80L
   ref <- as.character(Biostrings::subseq(W, snp_i, snp_i + 2L))
@@ -48,7 +48,7 @@ test_that("design_as_primers_indel refuses equal-length alleles", {
 })
 
 test_that("assemble_kasp_assay designs an indel end-to-end", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(rand_seq(400, 4))
   # pick a locus whose neighbourhood has no long homopolymer (a real designer
   # would too - a run-rich junction is legitimately rejected by the checks)

@@ -55,7 +55,7 @@ make_plot_assay <- function(seed = 4L, n = 500L, pos = 250L) {
 }
 
 test_that("the assay plots render and carry the two-level vocabulary", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_plot_assay()
 
   feats <- primer_features(m$assay)
@@ -89,7 +89,7 @@ test_that("the assay plots render and carry the two-level vocabulary", {
 
 # the genome-wide ideogram (exact primer hits + in-silico PCR products)
 test_that("assay_ideogram marks primer hits and in-silico products", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_plot_assay()
   # the inputs are computed once and stored on the assay, so plotting needs no genome
   expect_s3_class(assay_ideogram(m$assay, m$snp), "ggplot")
@@ -114,7 +114,7 @@ test_that("assay_ideogram marks primer hits and in-silico products", {
 })
 
 test_that("the feature row draws annotation, or notes its absence", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   m <- make_plot_assay()
   # no annotation: the row says "no feature annotation", still a patchwork
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp), "patchwork")

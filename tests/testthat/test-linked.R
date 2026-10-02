@@ -1,7 +1,7 @@
 # Linked variants: a co-segregating substitution is baked into the ALT primer.
 
 test_that("a linked substitution raises ALT discrimination and leaves REF alone", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   withr::with_seed(3L, w <- paste(sample(c("A", "C", "G", "T"), 200L, TRUE), collapse = ""))
   W <- Biostrings::DNAString(w)
   v <- 100L

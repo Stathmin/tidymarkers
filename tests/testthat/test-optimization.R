@@ -3,7 +3,7 @@
 # off-target; and when there is no variant there is nothing to discriminate.
 
 test_that("design_as_primers ranks candidates and the top one is the best", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = "")) # 80 bp, SNP at 40 = T
   d <- design_as_primers(W, 40L,
     ref = "T", alt = "A",
@@ -17,7 +17,7 @@ test_that("design_as_primers ranks candidates and the top one is the best", {
 })
 
 test_that("with no variant (ref == alt) there is nothing to discriminate", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
   d <- design_as_primers(W, 40L,
     ref = "T", alt = "T",

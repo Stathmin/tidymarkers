@@ -26,7 +26,7 @@ test_that("make_as_primer inserts the whole MNP allele at the 3' end", {
 })
 
 test_that("design_as_primers discriminates a 3-nt substitution block", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = "")) # 80 bp
   d <- design_as_primers(W, 39L,
     ref = "GTA", alt = "ACG",

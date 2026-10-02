@@ -109,9 +109,11 @@ KASP_LIMITS <- list(
 #' @export
 oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   bin <- if (is.null(seq2)) "hybrid-ss-min" else "hybrid-min"
-  exe <- Sys.which(bin)
-  if (!nzchar(exe)) {
-    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') is not on the PATH.")))
+  paths <- oligoarrayaux_paths()
+  nm <- if (.Platform$OS.type == "windows") paste0(bin, ".exe") else bin
+  exe <- if (is.null(paths)) Sys.which(bin) else fs::path(paths$bin, nm)
+  if (!nzchar(exe) || !fs::file_exists(exe)) {
+    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') was not found.")))
     return(NA_real_)
   }
   args <- c(
@@ -121,7 +123,8 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   args <- if (is.null(seq2)) c(args, seq1) else c(args, seq1, seq2)
   # -q makes UNAFold print a single number; run via processx so a non-zero exit
   # or an unparsable result is an explicit failure, not a silent NA.
-  run <- tryCatch(processx::run(exe, args, error_on_status = FALSE),
+  env <- if (!is.null(paths) && !is.na(paths$dat)) c(UNAFOLDDAT = as.character(paths$dat))
+  run <- tryCatch(processx::run(exe, args, env = env, error_on_status = FALSE),
     error = function(e) e
   )
   if (inherits(run, "error")) {

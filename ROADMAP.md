@@ -25,7 +25,7 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 
-### A1. Внешние тулы у пользователя: «поставил одной строкой и работает»  [очередь]
+### A1. Внешние тулы у пользователя: «поставил одной строкой и работает»  [частично]
 
 Сейчас `hybrid-min`/`hybrid-ss-min` (OligoArrayAux — движок `DECIPHER`) и
 `blastn`/`makeblastdb` (NCBI BLAST+) ищутся **только** через `Sys.which()`, то есть по
@@ -34,30 +34,32 @@ A–P — реализовано или оценено; **Q** — локализ
 `remotes::install_github()`, тулов нет: термо/QC молча скипаются, BLAST-функции падают.
 Нужен тот же путь, но без ручного `export PATH/UNAFOLDDAT`.
 
-- [ ] **Слоистый резолвер** (внутр. `kasp_tool("oligoarrayaux"|"blast")`): порядок —
-      `options(tidykasp.*)`/явный путь → проектный `.tools/` (dev) → пользовательский кэш
-      `kasp_cache_dir()/tools` → системный `PATH`. Возвращает путь к exe (+ каталог
-      `UNAFOLDDAT`); `has_oligoarrayaux()`/`has_blast()`/`oligo_dg()` ходят только через
-      него, а `UNAFOLDDAT` ставят `withr::with_envvar()` на время вызова. Один код-путь
-      для dev-репозитория и для установленного пакета (нынешний `.tools` — частный случай).
-- [ ] **Рантайм-установщик** `kasp_install_tools()`: качает релизный тарбол OligoArrayAux,
+- [x] **Слоистый резолвер** (`R/kasp_tools.R`: `oligoarrayaux_paths()`, `blast_bin()`):
+      порядок — `options(tidykasp.*)` → проектный `.tools/` → пользовательский кэш
+      `kasp_cache_dir()/tools` → системный `PATH`. `has_oligoarrayaux()`/`has_blast()`
+      и `oligo_dg()` ходят через него; DECIPHER/rBLAST оборачиваются в
+      `with_oligoarrayaux()`/`with_blast()` (`withr`), так что `UNAFOLDDAT`/`PATH`
+      действуют только на время вызова. Проверено: `pcr_efficiency()`/`oligo_dg()`
+      работают без ручного `export`.
+- [x] **Рантайм-установщик** `kasp_install_tools()`: качает релизный тарбол OligoArrayAux,
       сверяет sha256, собирает (`make`), дымовой тест, кладёт в **`R_user_dir`** (не в
-      каталог пакета — он read-only), идемпотентно; согласие спрашивает один раз
-      (`cli`/`utils::askYesNo`), оффлайн — если уже собрано. Windows: `bash -lc` + Rtools
-      или предсобранный `.exe` в кэш. Прецеденты: `tinytex::install_tinytex()`,
+      каталог пакета — он read-only), идемпотентно; согласие `ask = interactive()`;
+      Windows — через `bash -lc`/Rtools. Проверено end-to-end (сборка в temp + ветка
+      `options(tidykasp.oligoarrayaux=)`). Прецеденты: `tinytex::install_tinytex()`,
       `webshot2`/`chromote` (Chrome в рантайме), `rnaturalearth`/`elevatr` (данные).
       BLAST+ есть в apt/conda (`ncbi-blast+`) — **не бандлим**, а советуем `pak` (ниже).
 - [ ] **Одна строка для пользователя**: `pak::pak("stathmin/tidykasp", sysreqs = TRUE)`
       (системные `ncbi-blast+`, cairo; `renv::sysreqs()` тоже умеет) →
       `tidykasp::kasp_install_tools()` → всё на месте. Первый вызов функции без тула даёт
-      `cli`-подсказку «запусти `kasp_install_tools()`», а не тихий `NA`.
-- [ ] **CRAN-рамки** (в `CONTRIBUTING`/доках): сеть и запись — только в рантайме, только в
-      `R_user_dir`/`tempdir`, с согласием; ничего не качать во время install/`R CMD check`;
-      `configure` — только детект, не загрузка; `SystemRequirements:` задокументированы,
-      отсутствие тула — корректный skip/warning (как сейчас).
-- [ ] Единый тест-хелпер `skip_if_no_oligoarrayaux()` вместо ad-hoc
-      `skip_if_not(nzchar(Sys.which("hybrid-min")))`; `helper-oligoarrayaux.R` читает и
-      пользовательский кэш, а не только `.tools/`.
+      `cli`-подсказку «запусти `kasp_install_tools()`», а не тихий `NA`; README — вариант
+      установки одной строкой.
+- [x] **CRAN-рамки**: `SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional)`
+      в `DESCRIPTION`; сеть и запись — только в рантайме, только в `R_user_dir`, с
+      согласием; `configure` не качает; отсутствие тула — корректный skip/warning.
+      Осталось закрепить словами в `CONTRIBUTING`.
+- [x] Единый тест-хелпер `skip_if_no_oligoarrayaux()` вместо ad-hoc
+      `skip_if_not(nzchar(Sys.which("hybrid-min")))` (24 замены в 12 файлах);
+      `helper-oligoarrayaux.R` ищет и `.tools/`, и пользовательский кэш.
 
 ## B. Вход и интероперабельность (`R/kasp_io.R`)
 - [x] Ensembl Plants REST: ген-модель и варианты 1001 Genomes, кэш на диск + retry

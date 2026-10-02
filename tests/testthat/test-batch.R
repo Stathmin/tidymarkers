@@ -12,7 +12,7 @@ test_that("variant_type labels SNV, MNP and indels", {
 })
 
 test_that("design_kasp_markers returns a tidy per-locus verdict without aborting", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   W <- Biostrings::DNAString(bseq(500, 4))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   cand <- seq(160L, 340L, by = 1L)
@@ -48,7 +48,7 @@ test_that("design_kasp_markers returns a tidy per-locus verdict without aborting
 })
 
 test_that("a BiocParallel backend gives the same batch verdicts", {
-  skip_if_not(nzchar(Sys.which("hybrid-min")), "OligoArrayAux not on PATH")
+  skip_if_no_oligoarrayaux()
   skip_if_not_installed("BiocParallel")
   W <- Biostrings::DNAString(bseq(400, 4))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
