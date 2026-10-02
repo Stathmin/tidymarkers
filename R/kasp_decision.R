@@ -91,7 +91,8 @@ kasp_decision_schema <- function() {
     push(node(
       ids$refine, st$id, "relax",
       paste0("refine: ", paste(KASP_GATE_SHORT[relax], collapse = " -> ")),
-      decision_order + 1L, x = 0.85,
+      decision_order + 1L,
+      x = 0.85,
       detail = paste0(KASP_GATE_SHORT[relax], " [", KASP_GATE_FLOOR_LABEL[relax], "]", collapse = "; ")
     ))
     merge_order <- decision_order + 2L
