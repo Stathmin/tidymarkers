@@ -287,13 +287,17 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     ) |>
     dplyr::ungroup() |>
     dplyr::mutate(dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM)) |>
-    dplyr::select(
-      "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
-      "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
-      "dg_3p", "tmpl_start", "tmpl_end"
-    ) |>
+    dplyr::select(dplyr::all_of(AS_PRIMER_COLS)) |>
     dplyr::arrange(dplyr::desc(.data$discrimination))
 }
+
+# The AS-candidate schema, one definition shared by the real table and its
+# zero-row twin (so a column added here cannot drift).
+AS_PRIMER_COLS <- c(
+  "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
+  "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
+  "dg_3p", "tmpl_start", "tmpl_end"
+)
 
 #' Zero-row `design_as_primers()` result, keeping the schema
 #' @keywords internal
@@ -305,7 +309,7 @@ empty_as_primers <- function() {
     ref_on = numeric(), ref_off = numeric(), alt_on = numeric(), alt_off = numeric(),
     discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
     tmpl_start = integer(), tmpl_end = integer()
-  )
+  )[AS_PRIMER_COLS]
 }
 
 

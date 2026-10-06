@@ -83,7 +83,7 @@ haplotype_variants <- function(haplotypes, snp) {
     }
   }
   list(
-    variants = variants, linked = linked,
+    variants = variants, linked = linked, haplotypes = h,
     alt = alt_hap, ref = setdiff(all_hap, alt_hap), freqs = freqs
   )
 }
@@ -101,10 +101,11 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
   freqs <- h |>
     dplyr::distinct(.data$haplotype, .data$freq) |>
     tibble::deframe()
+  footprint <- IRanges::IRanges(as_start, as_end)
   purrr::imap_dfr(freqs, function(f, nm) {
     carries_alt <- nm %in% alt_hap
     own <- h$pos[h$haplotype == nm & h$pos != snp$pos]
-    n_foot <- sum(own >= as_start & own <= as_end)
+    n_foot <- count_variants_in(footprint, own)
     tibble::tibble(
       haplotype = nm, freq = f,
       target_allele = if (carries_alt) snp$alt else snp$ref,

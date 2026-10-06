@@ -11,8 +11,8 @@
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1]])))) else getwd()
-setwd(root)
 suppressMessages(pkgload::load_all(root, quiet = TRUE))
+haplotype_variants <- getFromNamespace("haplotype_variants", "tidykasp")
 
 out <- fs::path("/tmp/kasp-hap")
 fs::dir_create(out)
@@ -53,7 +53,7 @@ haps <- dplyr::bind_rows(
 a <- suppressWarnings(assemble_kasp_assay(genome, snp, haplotypes = haps, flank = 150L, cores = 1L))
 saveRDS(list(assay = a, haplotypes = haps), fs::path(out, "panel.rds"))
 if (!inherits(a, "kasp_doomed")) {
-  v <- tidykasp:::haplotype_variants(haps, snp)$variants
+  v <- haplotype_variants(haps, snp)$variants
   p <- plot_primers(a, v, snp, genome = genome)
   ggplot2::ggsave(fs::path(out, "panel.png"), p, width = 11, height = 9, dpi = 100, bg = "white")
 }

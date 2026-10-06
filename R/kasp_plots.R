@@ -379,6 +379,38 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #  Gene / primer maps (gggenes)
 # =============================================================================
 
+#' Normalise an annotation table to the feature row's shape
+#'
+#' Accepts a data frame with `start`/`end` (and optional `strand`, `name`/`symbol`)
+#' or a gene record, keeps only features overlapping `span`, and returns
+#' `start`/`end`/`forward`/`name` (or `NULL`).  One place so the doomed and the
+#' designed views cannot drift.
+#' @keywords internal
+#' @noRd
+normalise_features <- function(features, span) {
+  if (is.null(features)) {
+    return(NULL)
+  }
+  features <- as.data.frame(features)
+  if (!nrow(features) || !all(c("start", "end") %in% names(features))) {
+    return(NULL)
+  }
+  nm <- if ("name" %in% names(features)) {
+    features$name
+  } else if ("symbol" %in% names(features)) {
+    features$symbol
+  } else {
+    NA_character_
+  }
+  feat <- tibble::tibble(
+    start = as.integer(features$start), end = as.integer(features$end),
+    forward = if ("strand" %in% names(features)) features$strand != "-" else TRUE,
+    name = nm
+  )
+  feat <- feat[feat$end >= span[1L] & feat$start <= span[2L], , drop = FALSE]
+  if (nrow(feat) == 0L) NULL else feat
+}
+
 #' Context plot for a doomed target
 #'
 #' A target no assay clears the gates for still deserves a picture: the local
@@ -388,8 +420,7 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #' @keywords internal
 #' @noRd
 plot_doomed_target <- function(assay, variants, snp, features = NULL) {
-  flank <- if (!is.null(assay$template)) (length(assay$template$seq) - 1L) %/% 2L else 150L
-  win <- c(snp$pos - flank, snp$pos + flank)
+  win <- design_window(assay, snp)
   vw <- variants[
     variants$chrom == snp$chrom & variants$pos >= win[1L] & variants$pos <= win[2L], ,
     drop = FALSE
@@ -401,25 +432,7 @@ plot_doomed_target <- function(assay, variants, snp, features = NULL) {
       ggplot2::aes(x = .data$x, xend = .data$xend, y = 1, yend = 1),
       colour = "grey72", linewidth = 0.3
     )
-  feat <- NULL
-  if (!is.null(features)) {
-    features <- as.data.frame(features)
-    if (nrow(features) && all(c("start", "end") %in% names(features))) {
-      nm <- if ("name" %in% names(features)) {
-        features$name
-      } else if ("symbol" %in% names(features)) {
-        features$symbol
-      } else {
-        NA_character_
-      }
-      feat <- tibble::tibble(
-        start = as.integer(features$start), end = as.integer(features$end),
-        name = nm
-      )
-      feat <- feat[feat$end >= win[1L] & feat$start <= win[2L], , drop = FALSE]
-      if (nrow(feat) == 0L) feat <- NULL
-    }
-  }
+  feat <- normalise_features(features, win)
   if (is.null(feat)) {
     p <- p + ggplot2::annotate("text",
       x = mean(win), y = 1, label = "no feature annotation",
@@ -597,27 +610,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
 
   # the annotated features on the same axis: a KASP marker should sit on a gene,
   # not in intergenic space, so if no (overlapping) annotation is given we say so
-  feat <- NULL
-  if (!is.null(features)) {
-    features <- as.data.frame(features)
-    if (nrow(features) && all(c("start", "end") %in% names(features))) {
-      nm <- if ("name" %in% names(features)) {
-        features$name
-      } else if ("symbol" %in% names(features)) {
-        features$symbol
-      } else {
-        NA_character_
-      }
-      feat <- tibble::tibble(
-        start = as.integer(features$start),
-        end = as.integer(features$end),
-        forward = if ("strand" %in% names(features)) features$strand != "-" else TRUE,
-        name = nm
-      )
-      feat <- feat[feat$end >= span[1] & feat$start <= span[2], ]
-      if (nrow(feat) == 0L) feat <- NULL
-    }
-  }
+  feat <- normalise_features(features, span)
 
   p_map <- ggplot2::ggplot() +
     gggenes::geom_gene_arrow(

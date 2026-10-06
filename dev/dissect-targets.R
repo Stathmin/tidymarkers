@@ -8,7 +8,6 @@
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1]])))) else getwd()
-setwd(root)
 suppressMessages(pkgload::load_all(root, quiet = TRUE))
 
 out <- fs::path("/tmp/kasp-dissect")
@@ -46,7 +45,9 @@ rows <- lapply(seq_len(nrow(ex)), function(i) {
   )
 })
 tab <- purrr::list_rbind(rows)
-readr::write_csv(tab, "results/plot-smoke/dissect.csv")
+csv <- fs::path(root, "results", "plot-smoke", "dissect.csv")
+fs::dir_create(fs::path_dir(csv))
+readr::write_csv(tab, csv)
 cat(sprintf(
   "%-20s %-8s %7s %5s %5s %6s %7s %6s\n",
   "id", "type", "pos", "winv", "n_as", "n_v0", "min_v", "disc"

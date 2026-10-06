@@ -130,6 +130,15 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
       ref = as.character(ref), alt = as.character(alt)
     )
     type <- variant_type(snp$ref, snp$alt)
+    # one schema for every verdict, so the doomed/ok/error rows cannot drift
+    row <- function(strand = NA_character_, amplicon = NA_integer_, discrimination = NA_real_,
+                    n_fail = NA_integer_, verdict = "fail", note = NA_character_) {
+      tibble::tibble(
+        chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+        strand = strand, amplicon = amplicon, discrimination = discrimination,
+        n_fail = n_fail, verdict = verdict, note = note
+      )
+    }
     cap <- new.env(parent = emptyenv())
     cap$warns <- character(0)
     dots <- rlang::list2(...)
@@ -139,16 +148,10 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
         {
           a <- rlang::exec(assemble_kasp_assay, genome, snp, variants = variants, !!!dots)
           if (is_kasp_doomed(a)) {
-            tibble::tibble(
-              chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
-              type = type, strand = NA_character_, amplicon = NA_integer_,
-              discrimination = NA_real_, n_fail = NA_integer_,
-              verdict = "fail", note = a$reason
-            )
+            row(note = a$reason)
           } else {
             chk <- kasp_design_checks(a)
-            tibble::tibble(
-              chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+            row(
               strand = a$strand, amplicon = a$assay$amplicon[1],
               discrimination = a$efficiency$discrimination[1],
               n_fail = sum(!chk$pass),
@@ -157,14 +160,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
             )
           }
         },
-        error = function(e) {
-          tibble::tibble(
-            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
-            type = type, strand = NA_character_, amplicon = NA_integer_,
-            discrimination = NA_real_, n_fail = NA_integer_,
-            verdict = "fail", note = conditionMessage(e)
-          )
-        }
+        error = function(e) row(note = conditionMessage(e))
       ),
       warning = function(w) {
         cap$warns <- c(cap$warns, conditionMessage(w))

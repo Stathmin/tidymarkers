@@ -227,15 +227,14 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   ref_primer/alt_primer, ref_on/ref_off/alt_on/alt_off, discrimination,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
-    as_cand <- design_as_primers(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
+    as_cand <- design_as_primers(
+      tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
       strands = strands, linked = linked_off,
       gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
     ) |>
-      dplyr::filter(
-        dplyr::between(.data$gc, min_gc, max_gc),
-        dplyr::between(.data$tm, tm_range[1], tm_range[2]),
-        !has_run(.data$ref_primer), !has_repeat(.data$ref_primer)
-      ) |>
+      # the GC/Tm window is already applied inside design_as_primers(); only the
+      # sequence-motif filters are left for here
+      dplyr::filter(!has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
       dplyr::mutate(
         as_start = .data$tmpl_start + off,
         as_end = .data$tmpl_end + off,
@@ -244,14 +243,11 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         wobble = wobble_mismatch(snp$ref, snp$alt)
       )
   } else {
-    ind <- design_as_primers_indel(tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
+    ind <- design_as_primers_indel(
+      tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
       strands = strands, gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
     ) |>
-      dplyr::filter(
-        dplyr::between(.data$gc, min_gc, max_gc),
-        dplyr::between(.data$tm, tm_range[1], tm_range[2]),
-        !has_run(.data$primer), !has_repeat(.data$primer)
-      )
+      dplyr::filter(!has_run(.data$primer), !has_repeat(.data$primer))
     if (nrow(ind) == 0L) {
       return(kasp_doomed(gettext("No indel AS primer passed the GC/Tm filter."), "as", snp, tmpl))
     }
@@ -518,7 +514,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       linked = linked_off, linked_skipped = linked_skipped
     ),
     blast = blast,
-    haplotypes = if (is.null(haplotypes)) NULL else normalise_haplotypes(haplotypes),
+    haplotypes = if (is.null(hap)) NULL else hap$haplotypes,
     haplotype_hits = if (is.null(hap)) {
       NULL
     } else {
