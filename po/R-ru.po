@@ -47,11 +47,11 @@ msgstr "Ни один внутренний аллель-специфичный �
 
 #: kasp_arms.R:67
 msgid "An inner primer is missing on one strand."
-msgstr "внутренний праймер отсутствует на одной из цепей."
+msgstr "Внутренний праймер отсутствует на одной из цепей."
 
 #: kasp_arms.R:74
 msgid "The two diagnostic bands are closer than `min_band_gap`."
-msgstr "две диагностические полосы ближе, чем `min_band_gap`."
+msgstr "Две диагностические полосы ближе, чем `min_band_gap`."
 
 #: kasp_arms.R:120
 msgid "to draw the ARMS gel"
@@ -117,14 +117,12 @@ msgstr ""
 #: kasp_assemble.R:425
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
-"AS-праймер перекрывает {best_as$n_var} других вариантов в своём футпринте.AS-"
-"праймер перекрывает {best_as$n_var} других вариант(ов) под своим футпринтом."
+"AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим футпринтом."
 
 #: kasp_assemble.R:426
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
-"ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации.Ни "
-"один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
+"Ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 
 #: kasp_assemble.R:432
 msgid ""
@@ -174,7 +172,7 @@ msgstr ""
 
 #: kasp_assemble.R:598
 msgid "in-silico PCR failed: {conditionMessage(e)}"
-msgstr "in-silico ПЦР не удалась: {conditionMessage(e)}"
+msgstr "ПЦР in silico не удалась: {conditionMessage(e)}"
 
 #: kasp_assemble.R:611
 msgid "FM scan failed: {conditionMessage(e)}"
@@ -214,7 +212,7 @@ msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
-"Выбранный тест не проходит структурные/специфичностные проверки: {paste(bad, "
+"Выбранный тест не проходит проверки структуры/специфичности: {paste(bad, "
 "collapse = '; ')}."
 
 #: kasp_assemble.R:720
@@ -231,7 +229,7 @@ msgstr "Встроенный каталог ферментов рестрикц�
 
 #: kasp_caps.R:178
 msgid "dCAPS scanning is implemented for single-base substitutions only."
-msgstr "поиск dCAPS реализован только для однонуклеотидных замен."
+msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
 
 #: kasp_caps.R:273
 msgid ""
@@ -244,7 +242,7 @@ msgstr ""
 #: kasp_caps.R:299
 msgid "No natural or primer-introduced (dCAPS) restriction marker here."
 msgstr ""
-"здесь нет ни природного, ни вносимого праймером (dCAPS) рестрикционного "
+"Здесь нет ни природного, ни вносимого праймером (dCAPS) рестрикционного "
 "маркера."
 
 #: kasp_caps.R:312
@@ -277,8 +275,7 @@ msgstr ""
 #: kasp_core.R:144
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
 msgstr ""
-"OligoArrayAux ('{bin}') не вернул разбираемый dG (получено "
-"'{tok}').OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено "
+"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено "
 "'{tok}')."
 
 #: kasp_core.R:508
@@ -337,8 +334,7 @@ msgstr ""
 #: kasp_design.R:501
 msgid "No indel AS-primer placement fit inside the design window."
 msgstr ""
-"ни одна посадка индел-AS-праймера не поместилась в окно дизайна.Ни одно "
-"размещение AS-праймера для индела не уместилось в окно дизайна."
+"Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
 
 #: kasp_duplex.R:137
 msgid "`loci` must have exactly two rows for a duplex assay."
@@ -412,9 +408,7 @@ msgstr "FASTA не найдена: {path}"
 #: kasp_io.R:163
 msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
 msgstr ""
-"распаковываю {.file {fs::path_file(path)}} для индексации "
-"(однократно).Распаковываю {.file {fs::path_file(path)}} для индексации "
-"(однократно)."
+"Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
 
 #: kasp_io.R:218
 msgid "Bundled example data not found."
@@ -435,9 +429,7 @@ msgstr "Увеличьте `stock_uM` или уменьшите целевые �
 #: kasp_mix.R:66
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
-"объём реакции превышает {reaction_uL} мкл; проверьте `dna_uL`/"
-"`reaction_uL`.Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/"
-"`reaction_uL`."
+"Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
 #: kasp_object.R:137
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
@@ -504,13 +496,11 @@ msgstr "У этого индексного генома нет прикрепл�
 #: kasp_scan.R:166
 msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
 msgstr ""
-"постройте его через kasp_blast_index(genome) и передайте как "
-"`blast_db=`.Постройте её через kasp_blast_index(genome) и передайте как "
-"`blast_db=`."
+"Постройте её через kasp_blast_index(genome) и передайте как `blast_db=`."
 
 #: kasp_schemes.R:106
 msgid "Unknown marker scheme {scheme}; see kasp_schemes()."
-msgstr "неизвестная схема маркера {scheme}; см. kasp_schemes()."
+msgstr "Неизвестная схема маркера {scheme}; см. kasp_schemes()."
 
 #: kasp_screen.R:54
 msgid "`variants` needs `chrom` and `pos` columns."
@@ -561,8 +551,7 @@ msgstr "specificity_seed() требует DNAStringSet в памяти."
 #: kasp_specificity.R:35
 msgid "For an indexed genome use specificity_of()/specificity_blast()."
 msgstr ""
-"для индексного генома используйте specificity_of()/specificity_blast().Для "
-"индексного генома используйте specificity_of()/specificity_blast()."
+"Для индексного генома используйте specificity_of()/specificity_blast()."
 
 #: kasp_specificity.R:228
 msgid "BLAST failed: {conditionMessage(e)}"
@@ -658,9 +647,8 @@ msgstr "Инструмент sha256 не найден; пропускаю про
 #: kasp_tools.R:242
 msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
 msgstr ""
-"несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено "
-"{got}).Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, "
-"получено {got})."
+"Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено "
+"{got})."
 
 #: kasp_tools.R:248
 msgid "Configuring and building OligoArrayAux (this takes a minute) ..."
