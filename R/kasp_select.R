@@ -56,6 +56,30 @@ KASP_TIERS_AS <- c(
 )
 KASP_TIES_AS <- c("seed_hits", "as_length", "as_start")
 
+# A duplex chemistry (dKASP / mxKASP / Multi-KASP) puts two loci in one tube, so
+# on top of the per-locus design it adds a compatibility stage.  The rules are
+# the published ones: Multi-KASP bans >= 6 bp inter-primer complementarity, keeps
+# every primer Tm in 59-65 C and each amplicon <= 150 bp; dKASP pairs homologous
+# genes, mxKASP non-homologous ones (zygosity then follows from the combination).
+# A shared refinement branch may widen the amplicon or the self-complementarity
+# cap, but never the cross-talk rules.  Readout may be two cassettes (co-dominant
+# per locus) or presence/absence (dominant) - see kasp_schemes().
+KASP_GATES_DUPLEX <- c(
+  "gate_duplex_targets", "gate_duplex_tm", "gate_duplex_complement",
+  "gate_duplex_selfcomp", "gate_duplex_amplicon"
+)
+KASP_RELAX_DUPLEX <- c("gate_duplex_amplicon", "gate_duplex_selfcomp")
+KASP_TIERS_DUPLEX <- c(
+  tier1 = "duplex pair compatibility", tier2 = "Tm window match", tier3 = "amplicon budget"
+)
+
+# ASQ / PACE: a different cassette readout (Kalendar 2022), up to 4-plex in one
+# real-time reaction.  The allele-specific core is the KASP one; the extra gates
+# are the cassette budget and the real-time resolution.
+KASP_GATES_ASQ <- c("gate_asq_cassette", "gate_asq_readout")
+KASP_RELAX_ASQ <- character(0)
+KASP_TIERS_ASQ <- c(tier1 = "allele discrimination", tier2 = "Tm")
+
 # Human-readable name for each gate, used in the relaxation warning and the
 # decision graph.
 KASP_GATE_LABEL <- c(
@@ -66,7 +90,14 @@ KASP_GATE_LABEL <- c(
   gate_com_footprint = "known variant under the COM footprint",
   gate_as_window = "known variant in the AS 3' window",
   gate_wobble = "wobble (G:T / A:C) mismatch at the 3' base",
-  gate_as_footprint = "AS footprint dropout above tolerance"
+  gate_as_footprint = "AS footprint dropout above tolerance",
+  gate_duplex_targets = "the two loci do not match the chosen readout",
+  gate_duplex_tm = "primers outside the shared Tm window",
+  gate_duplex_complement = "inter-pair primer complementarity",
+  gate_duplex_selfcomp = "primer self-complementarity above the duplex cap",
+  gate_duplex_amplicon = "a duplex amplicon above 150 bp",
+  gate_asq_cassette = "more targets than the ASQ cassette budget",
+  gate_asq_readout = "no allele resolution in real time"
 )
 
 # Short names for the decision graph (the warnings keep the full labels).
@@ -74,7 +105,12 @@ KASP_GATE_SHORT <- c(
   gate_discrimination = "discrimination", gate_structure = "structure",
   gate_tm = "COM Tm >= AS Tm", gate_amplicon = "amplicon length",
   gate_com_footprint = "COM footprint", gate_as_window = "AS 3' window",
-  gate_wobble = "wobble mismatch", gate_as_footprint = "AS footprint"
+  gate_wobble = "wobble mismatch", gate_as_footprint = "AS footprint",
+  gate_duplex_targets = "duplex targets", gate_duplex_tm = "Tm window (all primers)",
+  gate_duplex_complement = "inter-pair complementarity",
+  gate_duplex_selfcomp = "self-complementarity",
+  gate_duplex_amplicon = "amplicon <= 150 bp",
+  gate_asq_cassette = "ASQ cassette", gate_asq_readout = "real-time readout"
 )
 
 # Human-readable relaxation floor per soft gate (for the graph and text export).
@@ -84,13 +120,20 @@ KASP_GATE_FLOOR_LABEL <- c(
   gate_tm = "allow COM 2 C below AS",
   gate_com_footprint = "dropout up to 2x tolerance",
   gate_wobble = "one weak G:T / A:C 3' mismatch",
-  gate_as_footprint = "dropout up to 2x tolerance"
+  gate_as_footprint = "dropout up to 2x tolerance",
+  gate_duplex_amplicon = "allow up to 200 bp",
+  gate_duplex_selfcomp = "one extra self-complementary base"
 )
 
 # Why a gate is hard (never lowered).
 KASP_GATE_HARD_LABEL <- c(
   gate_discrimination = "no allele discrimination = no assay",
-  gate_as_window = "an unlinked variant in the AS 3' window destroys specificity"
+  gate_as_window = "an unlinked variant in the AS 3' window destroys specificity",
+  gate_duplex_targets = "the two loci must match the chosen readout",
+  gate_duplex_tm = "all primers must share the extension window",
+  gate_duplex_complement = "primer cross-talk defeats multiplexing",
+  gate_asq_cassette = "one cassette per target",
+  gate_asq_readout = "no allele resolution in real time = no assay"
 )
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins

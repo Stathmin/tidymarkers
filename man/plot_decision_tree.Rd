@@ -4,25 +4,29 @@
 \alias{plot_decision_tree}
 \title{Draw the selection decision tree}
 \usage{
-plot_decision_tree(x = NULL)
+plot_decision_tree(x = NULL, scheme = "snp")
 }
 \arguments{
 \item{x}{an assembled assay, a \code{kasp_decision_graph()} result, or \code{NULL}.}
+
+\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}) for the bare schema.}
 }
 \value{
 a \code{ggraph}/\code{ggplot} object.
 }
 \description{
 Renders the graph from \code{\link[=kasp_decision_graph]{kasp_decision_graph()}} with \code{ggraph}: the target-site
-checks, the two selection stages (hard gates never relaxed, the refinement
-ladder rejoining the ranking, a DOOMED terminal) and the assay acceptance
-checks ending in a verdict.  Hard limits are drawn with a \strong{bold border};
-with an assay the traversed nodes are coloured by outcome (green enforced,
-amber relaxed, red violated).
+checks, each selection stage (hard gates never relaxed, the refinement ladder
+rejoining the ranking, a DOOMED terminal) and the assay acceptance checks
+ending in a verdict.  Hard limits are drawn with a \strong{bold border}; with an
+assay the traversed nodes are coloured by outcome (green enforced, amber
+relaxed, red violated).  One marker chemistry is drawn at a time
+(\code{\link[=kasp_schemes]{kasp_schemes()}}).
 }
 \examples{
 \dontrun{
 plot_decision_tree() # the schema
+plot_decision_tree(scheme = "duplex") # the multiplex policy
 plot_decision_tree(assay) # this assay's traversal
 }
 }
@@ -32,6 +36,7 @@ Other KASP checks:
 \code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
 \code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
+\code{\link[=kasp_schemes]{kasp_schemes()}},
 \code{\link[=passes_all]{passes_all()}}
 }
 \concept{KASP checks}

@@ -4,31 +4,38 @@
 \alias{kasp_criteria}
 \title{The registry of every candidate evaluation}
 \usage{
-kasp_criteria(limits = KASP_LIMITS)
+kasp_criteria(limits = KASP_LIMITS, scheme = NULL)
 }
 \arguments{
 \item{limits}{thresholds (see \code{\link[=kasp_design_checks]{kasp_design_checks()}}).}
+
+\item{scheme}{optional scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}); when given, only the
+criteria that scheme serves are returned.}
 }
 \value{
 tibble with \code{stage}, \code{role} (\code{gate}/\code{tier}/\code{check}), \code{id}, \code{label},
 \code{level} (\code{site}/\code{feature}/\code{alignment}/\code{specificity}), \code{hard}, \code{limit},
-\code{order}.
+\code{order}, \code{schemes} (list-column of scheme ids).
 }
 \description{
 One row per criterion the pipeline applies: the selection gates and ranking
 tiers of each stage, and the acceptance checks (composition, structure,
 heteroduplexes, repeats, off-target specificity, in-silico PCR, site facts).
 This is the single vocabulary the selector, \code{\link[=kasp_design_checks]{kasp_design_checks()}}, the
-decision graph and \code{\link[=kasp_decision_text]{kasp_decision_text()}} all read.
+decision graph and \code{\link[=kasp_decision_text]{kasp_decision_text()}} all read.  Each row carries the
+marker \code{schemes} it serves (\code{\link[=kasp_schemes]{kasp_schemes()}}), so the same registry yields one
+decision schema per chemistry.
 }
 \examples{
 kasp_criteria()
+kasp_criteria(scheme = "duplex")
 }
 \seealso{
 Other KASP checks:
 \code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
 \code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
+\code{\link[=kasp_schemes]{kasp_schemes()}},
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }

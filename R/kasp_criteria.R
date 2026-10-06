@@ -21,7 +21,14 @@ KASP_GATE_LIMIT <- c(
   gate_com_footprint = "COM dropout <= tol",
   gate_as_window = "no unlinked variant in AS 3' window",
   gate_wobble = "no weak G:T / A:C 3' mismatch",
-  gate_as_footprint = "AS footprint dropout <= tol"
+  gate_as_footprint = "AS footprint dropout <= tol",
+  gate_duplex_targets = "homologous (dKASP) or non-homologous (mxKASP)",
+  gate_duplex_tm = "all primers Tm in [59, 65] C",
+  gate_duplex_complement = "no >= 6 bp inter-pair complementarity",
+  gate_duplex_selfcomp = "<= 5 self-complementary bases",
+  gate_duplex_amplicon = "each amplicon <= 150 bp",
+  gate_asq_cassette = "cassette per target (<= 4-plex)",
+  gate_asq_readout = "allele resolved in real time"
 )
 
 #' The registry of every candidate evaluation
@@ -30,29 +37,37 @@ KASP_GATE_LIMIT <- c(
 #' tiers of each stage, and the acceptance checks (composition, structure,
 #' heteroduplexes, repeats, off-target specificity, in-silico PCR, site facts).
 #' This is the single vocabulary the selector, [kasp_design_checks()], the
-#' decision graph and [kasp_decision_text()] all read.
+#' decision graph and [kasp_decision_text()] all read.  Each row carries the
+#' marker `schemes` it serves ([kasp_schemes()]), so the same registry yields one
+#' decision schema per chemistry.
 #' @param limits thresholds (see [kasp_design_checks()]).
+#' @param scheme optional scheme id (see [kasp_schemes()]); when given, only the
+#'   criteria that scheme serves are returned.
 #' @return tibble with `stage`, `role` (`gate`/`tier`/`check`), `id`, `label`,
 #'   `level` (`site`/`feature`/`alignment`/`specificity`), `hard`, `limit`,
-#'   `order`.
+#'   `order`, `schemes` (list-column of scheme ids).
 #' @examples
 #' kasp_criteria()
+#' kasp_criteria(scheme = "duplex")
 #' @family KASP checks
 #' @export
-kasp_criteria <- function(limits = KASP_LIMITS) {
+kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   tol <- limits$footprint_dropout %||% 0.05
-  stage_rows <- function(stage, gates, relax, tiers, level) {
+  stage_rows <- function(stage, gates, relax, tiers, level, schemes) {
+    n_gate <- length(gates)
+    n_tier <- length(tiers)
     dplyr::bind_rows(
       tibble::tibble(
         stage = stage, role = "gate", id = paste0(stage, ":gate:", gates),
         label = unname(KASP_GATE_SHORT[gates]), level = level,
         hard = !(gates %in% relax), limit = unname(KASP_GATE_LIMIT[gates]),
-        order = seq_along(gates)
+        order = seq_along(gates), schemes = rep(list(schemes), n_gate)
       ),
       tibble::tibble(
         stage = stage, role = "tier", id = paste0(stage, ":tier:", names(tiers)),
         label = unname(tiers), level = level, hard = FALSE,
-        limit = "maximise (per-tier bottleneck min)", order = seq_along(tiers)
+        limit = "maximise (per-tier bottleneck min)", order = seq_along(tiers),
+        schemes = rep(list(schemes), n_tier)
       )
     )
   }
@@ -106,11 +121,19 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
   )
   checks$id <- paste0("check:", gsub("[^a-z0-9]+", "_", tolower(checks$label)))
   checks$order <- seq_len(nrow(checks))
-  dplyr::bind_rows(
-    stage_rows("as", KASP_GATES_AS, KASP_RELAX_AS, KASP_TIERS_AS, "feature"),
-    stage_rows("pair", KASP_GATES_PAIR, KASP_RELAX_PAIR, KASP_TIERS_PAIR, "alignment"),
+  checks$schemes <- check_schemes(checks$label)
+  out <- dplyr::bind_rows(
+    stage_rows("as", KASP_GATES_AS, KASP_RELAX_AS, KASP_TIERS_AS, "feature", KASP_SCHEME_CORE),
+    stage_rows("pair", KASP_GATES_PAIR, KASP_RELAX_PAIR, KASP_TIERS_PAIR, "alignment", KASP_SCHEME_CORE),
+    stage_rows("duplex", KASP_GATES_DUPLEX, KASP_RELAX_DUPLEX, KASP_TIERS_DUPLEX, "alignment", "duplex"),
+    stage_rows("asq", KASP_GATES_ASQ, KASP_RELAX_ASQ, KASP_TIERS_ASQ, "alignment", "asq"),
     checks
   )
+  if (!is.null(scheme)) {
+    keep <- vapply(out$schemes, function(s) scheme %in% s, logical(1))
+    out <- out[keep, , drop = FALSE]
+  }
+  out
 }
 
 #' Evaluate every registered acceptance check on an assay, once

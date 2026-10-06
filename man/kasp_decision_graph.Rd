@@ -4,12 +4,15 @@
 \alias{kasp_decision_graph}
 \title{The decision tree as a \code{tidygraph}, annotated with an assay's outcome}
 \usage{
-kasp_decision_graph(assay = NULL)
+kasp_decision_graph(assay = NULL, scheme = "snp")
 }
 \arguments{
 \item{assay}{optional assembled assay; when given, gate nodes are stamped from
 \code{assay$selection} (\code{"relaxed"}/\code{"violated"}/\code{"ok"}) and check nodes from
 \code{assay$evaluation} (\code{"ok"}/\code{"violated"}).}
+
+\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}); ignored when \code{assay} carries
+its own \verb{$decision} graph.}
 }
 \value{
 a \code{tidygraph::tbl_graph}; nodes carry \code{name}, \code{stage}, \code{kind},
@@ -29,6 +32,7 @@ Other KASP checks:
 \code{\link[=kasp_criteria]{kasp_criteria()}},
 \code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
+\code{\link[=kasp_schemes]{kasp_schemes()}},
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }

@@ -21,19 +21,37 @@ crit_mock <- function() {
 test_that("kasp_criteria declares gates, tiers and checks with metadata", {
   crit <- kasp_criteria()
   expect_setequal(unique(crit$role), c("gate", "tier", "check"))
-  expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order") %in% names(crit)))
-  expect_true(all(crit$stage %in% c("site", "as", "pair", "assay")))
+  expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order", "schemes") %in% names(crit)))
+  expect_true(all(crit$stage %in% c("site", "as", "pair", "duplex", "asq", "assay")))
   expect_true(any(crit$hard))
+  # every criterion names at least one scheme, and all of them are registered
+  expect_true(all(lengths(crit$schemes) >= 1L))
+  expect_true(all(unlist(crit$schemes) %in% kasp_schemes()$scheme))
   # the gates are the constants, and the hard ones are exactly those off the ladder
   pgate <- crit$id[crit$role == "gate" & crit$stage == "pair"]
   expect_setequal(pgate, paste0("pair:gate:", KASP_GATES_PAIR))
   expect_setequal(
-    crit$id[crit$role == "gate" & crit$hard],
+    crit$id[crit$role == "gate" & crit$hard & crit$stage %in% c("as", "pair")],
     c(
       sprintf("as:gate:%s", setdiff(KASP_GATES_AS, KASP_RELAX_AS)),
       sprintf("pair:gate:%s", setdiff(KASP_GATES_PAIR, KASP_RELAX_PAIR))
     )
   )
+})
+
+test_that("a scheme filter keeps only the criteria that scheme serves", {
+  snp <- kasp_criteria(scheme = "snp")
+  primer <- kasp_criteria(scheme = "primer")
+  duplex <- kasp_criteria(scheme = "duplex")
+  # the allele-specific stages belong to every KASP-family scheme, not the primer
+  expect_true(all(c("as", "pair") %in% snp$stage))
+  expect_false(any(c("as", "pair") %in% primer$stage))
+  # the multiplex rules are duplex-only
+  expect_true(all(paste0("duplex:gate:", KASP_GATES_DUPLEX) %in% duplex$id))
+  expect_false(any(grepl("duplex", snp$id)))
+  # the primer scheme is exactly the marker-agnostic subset
+  expect_setequal(primer$label[primer$role == "check"], KASP_CHECK_PRIMER)
+  expect_false("in-silico PCR (REF 1 / ALT 0)" %in% primer$label)
 })
 
 test_that("kasp_design_checks returns exactly the registry's checks, in order", {

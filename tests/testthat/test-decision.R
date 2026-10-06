@@ -43,11 +43,42 @@ test_that("the decision text export names hard gates, floors and the doomed exit
   expect_true(any(grepl("relaxation ladder", txt)))
 })
 
+test_that("every scheme yields a downward-flowing DAG", {
+  for (sc in kasp_schemes()$scheme) {
+    s <- kasp_decision_schema(sc)
+    expect_true(all(s$edges$from %in% s$nodes$name), info = sc)
+    expect_true(all(s$edges$to %in% s$nodes$name), info = sc)
+    ord <- stats::setNames(s$nodes$order, s$nodes$name)
+    expect_true(all(ord[s$edges$to] > ord[s$edges$from]), info = sc)
+    expect_true("assay:verdict" %in% s$nodes$name, info = sc)
+  }
+})
+
+test_that("the multiplex and primer schemes carry their own stages, not the KASP core", {
+  dup <- kasp_decision_schema("duplex")
+  expect_true(all(paste0("duplex:gate:", KASP_GATES_DUPLEX) %in% dup$nodes$name))
+  expect_true("pair:best" %in% dup$nodes$name)
+  # a duplex stage whose gates are all hard routes its fail edge straight to DOOMED
+  asq <- kasp_decision_schema("asq")
+  expect_true(all(paste0("asq:gate:", KASP_GATES_ASQ) %in% asq$nodes$name))
+  expect_true("asq:decision" %in% asq$edges$from[asq$edges$kind == "doomed"])
+  # the bare primer scheme has no allele-specific stages and no DOOMED
+  pri <- kasp_decision_schema("primer")
+  expect_false(any(c("as", "pair") %in% pri$nodes$stage))
+  expect_false("doomed" %in% pri$nodes$name)
+  expect_setequal(pri$nodes$label[pri$nodes$kind == "check"], KASP_CHECK_PRIMER)
+})
+
+test_that("an unknown scheme is rejected by name", {
+  expect_error(kasp_scheme("nope"), "Unknown marker scheme")
+})
+
 test_that("the graph is a tidygraph and can be drawn", {
   g <- kasp_decision_graph()
   expect_s3_class(g, "tbl_graph")
   skip_if_not_installed("ggraph")
   expect_s3_class(plot_decision_tree(), "ggraph")
+  expect_s3_class(plot_decision_tree(scheme = "duplex"), "ggraph")
 })
 
 test_that("an assay's outcome is stamped on the gates", {
