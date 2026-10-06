@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 20:24+0300\n"
+"POT-Creation-Date: 2026-10-06 20:45+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -291,6 +291,10 @@ msgstr ""
 
 #: kasp_design.R:501
 msgid "No indel AS-primer placement fit inside the design window."
+msgstr ""
+
+#: kasp_duplex.R:137
+msgid "`loci` must have exactly two rows for a duplex assay."
 msgstr ""
 
 #: kasp_fm.R:35 kasp_fm.R:77

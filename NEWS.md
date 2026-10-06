@@ -86,6 +86,12 @@
   рядом с PNG.
 
 ### Другие PCR-маркеры и провенанс порогов
+- **Дуплексный движок** (`R/kasp_duplex.R`): `design_duplex()` собирает два локуса
+  ([assemble_kasp_assay()]) и считает **стадию совместимости** (`duplex_compatibility()`):
+  Tm-окно (59–65 °C), межпарная комплементарность (`complementary_run()` < 6 bp),
+  само-комплементарность (≤ 5 bp), бюджет ампликона (≤ 150 bp) — те же gate-id, что в
+  реестре. Ридаут co-dominant (dKASP, `homologous = TRUE`) vs presence/absence (Multi-KASP,
+  `homologous = FALSE`). Класс `kasp_duplex`.
 - **HRM** (`scheme = "hrm"`, `R/kasp_hrm.R`): `design_hrm_marker()` — одна фланкирующая пара
   поверх варианта, ампликон короткий (40–150 bp), без 3'-якоря и без гейта 3'-окна (соседи
   терпимы) — схема для локусов, которые KASP думит (вариант в AS 3'-окне, поли-A стык).

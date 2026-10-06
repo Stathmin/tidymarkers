@@ -49,6 +49,7 @@ Other KASP design:
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
+\code{\link[=design_duplex]{design_duplex()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=pick_target_snp]{pick_target_snp()}},
 \code{\link[=screen_snp_targets]{screen_snp_targets()}},
