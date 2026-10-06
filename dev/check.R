@@ -8,24 +8,27 @@
 #    2. R/ and tests/ are styler-clean and lintr-clean
 #    3. spelling -- only with `--spelling` (the prose is Russian, so an English
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
-#    4. figures -- regenerate every generated figure from the engine and fail if a
-#       committed one (man/figures) changed, so the diagrams never drift from the
-#       pipeline (see dev/render-all.R); skip with `--no-render`
+#    4. figures -- regenerate the figures from the engine and fail if a committed
+#       one (man/figures) changed, so the diagrams never drift from the pipeline
+#       (see dev/render-all.R).  By default only the fast, offline decision trees
+#       are refreshed; `--render` also redraws the heavy panels (target panel, FRI
+#       demo - need genome data/OligoArrayAux).  Skip the step with `--no-render`.
 #    5. install smoke -- R CMD INSTALL must succeed
 #    6. R CMD check -- only with `--full` (slow; builds and checks the tarball)
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
-#  Run:  Rscript dev/check.R [--full] [--spelling] [--no-render]
+#  Run:  Rscript dev/check.R [--full] [--spelling] [--render] [--no-render]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
 setwd(root)
 
-full     <- "--full" %in% commandArgs(trailingOnly = TRUE)
+full <- "--full" %in% commandArgs(trailingOnly = TRUE)
 spelling <- "--spelling" %in% commandArgs(trailingOnly = TRUE)
+render <- "--render" %in% commandArgs(trailingOnly = TRUE)
 no_render <- "--no-render" %in% commandArgs(trailingOnly = TRUE)
-failed   <- character()
+failed <- character()
 
 ok <- function(...) message("  ok   ", ...)
 
@@ -98,7 +101,10 @@ step("figures (auto-render)", function() {
   figs <- list.files("man/figures", pattern = "[.](png|svg)$", full.names = TRUE)
   md5 <- function() vapply(figs, function(f) unname(tools::md5sum(f)), character(1))
   before <- md5()
-  system2(file.path(R.home("bin"), "Rscript"), "dev/render-all.R")
+  # fast, offline default: the decision trees (README-facing) + their per-scheme
+  # siblings; `--render` adds the heavy panels and the demo traversal
+  args <- if (render) character() else c("--skip-heavy", "--skip-example")
+  system2(file.path(R.home("bin"), "Rscript"), c("dev/render-all.R", args))
   after <- md5()
   changed <- figs[is.na(before) | before != after]
   if (length(changed)) {
