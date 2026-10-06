@@ -83,7 +83,8 @@ tidy_as_candidates <- function(x) {
 #' @return a `kasp_assay` object: a list holding the `snp`, the template, the
 #'   chosen `strand`, ranked `assay`/`as_candidates` tibbles, `efficiency`,
 #'   `thermo`, `complementarity`, `specificity`, `amplicons`, `blast` results and
-#'   the tailed `tails` primers.  When no candidate clears the gates it returns a
+#'   the tailed `tails` primers (plus `haplotypes`/`haplotype_hits` when a
+#'   haplotype table was given).  When no candidate clears the gates it returns a
 #'   `kasp_doomed` object instead (the target, template, `reason`, `stage` and the
 #'   candidate table), so a batch or a plot can report the target rather than
 #'   abort.
@@ -102,6 +103,12 @@ tidy_as_candidates <- function(x) {
 #' @param linked optional two-column table (`target`, `linked` positions) of
 #'   co-segregating substitutions; those riding with `snp$pos` are baked into the
 #'   ALT primer so it mismatches REF twice (see [design_as_primers()]).
+#' @param haplotypes optional tidy haplotype table
+#'   (`haplotype`, `freq`, `chrom`, `pos`, `ref`, `alt`).  Its per-position
+#'   frequencies become the `pop_freq` weights and its co-segregating positions
+#'   the `linked` set (both derived, see `haplotype_variants()`); the object also
+#'   carries `haplotypes` and a per-haplotype `haplotype_hits` table (which AS
+#'   primer each is expected to bind).
 #' @param min_gc,max_gc accepted AS GC window.
 #' @family KASP design
 #' @export
@@ -111,10 +118,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 tm_range = c(56, 65), clean_3p = 5L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
-                                linked = NULL, run_blast = FALSE,
+                                linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
+  hap <- NULL
+  if (!is.null(haplotypes)) {
+    hap <- haplotype_variants(haplotypes, snp)
+    if (is.null(variants)) variants <- hap$variants
+    if (is.null(linked)) linked <- hap$linked
+  }
   vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
   # optional per-variant weights (population allele frequency); absent -> all 1
   vweight <- if (!is.null(variants) && "pop_freq" %in% names(variants)) {
@@ -505,6 +518,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       linked = linked_off, linked_skipped = linked_skipped
     ),
     blast = blast,
+    haplotypes = if (is.null(haplotypes)) NULL else normalise_haplotypes(haplotypes),
+    haplotype_hits = if (is.null(hap)) {
+      NULL
+    } else {
+      haplotype_hits(haplotypes, snp, best$as_start, best$as_end, hap$alt)
+    },
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),
       AS_alt = paste0(KASP_TAIL_HEX, best$as_alt),

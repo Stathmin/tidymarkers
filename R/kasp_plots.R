@@ -463,6 +463,60 @@ plot_doomed_target <- function(assay, variants, snp, features = NULL) {
     )
 }
 
+#' Layered haplotype track: one row per haplotype, its variants and frequency
+#'
+#' Drawn only when the assay carries a haplotype table.  Each row is a haplotype,
+#' labelled with its population frequency and the AS primer it is expected to
+#' bind; its own variants are marked (the target in red), so it is visible which
+#' haplotype a primer catches and which variant rides with it.
+#' @keywords internal
+#' @noRd
+haplotype_layers <- function(assay, snp, span) {
+  h <- assay$haplotypes
+  if (is.null(h) || !nrow(h)) {
+    return(NULL)
+  }
+  haps <- unique(h$haplotype)
+  h$y <- match(h$haplotype, haps)
+  vari <- h[h$pos != snp$pos, , drop = FALSE]
+  tgt <- tibble::tibble(x = snp$pos, y = seq_along(haps))
+  hits <- assay$haplotype_hits
+  lab <- if (is.null(hits)) {
+    haps
+  } else {
+    hits$y <- match(hits$haplotype, haps)
+    glue::glue("{hits$haplotype} {round(hits$freq, 2)} -> {hits$primer}")
+  }
+  base <- tibble::tibble(x = span[1L], xend = span[2L], y = seq_along(haps))
+  ggplot2::ggplot() +
+    ggplot2::geom_segment(
+      data = base,
+      ggplot2::aes(x = .data$x, xend = .data$xend, y = .data$y, yend = .data$y),
+      colour = "grey92"
+    ) +
+    ggplot2::geom_point(
+      data = vari, ggplot2::aes(.data$pos, .data$y),
+      shape = 21, fill = "#e6ab02", colour = "white", size = 1.8
+    ) +
+    ggplot2::geom_text(
+      data = vari, ggplot2::aes(.data$pos, .data$y, label = .data$alt),
+      vjust = -0.9, size = 1.9, family = "mono", colour = "#7f6000"
+    ) +
+    ggplot2::geom_point(
+      data = tgt, ggplot2::aes(.data$x, .data$y),
+      shape = 21, fill = "firebrick", colour = "white", size = 2.0
+    ) +
+    ggplot2::geom_vline(xintercept = snp$pos, linetype = "dashed", colour = "grey65") +
+    ggplot2::scale_y_reverse(breaks = seq_along(haps), labels = lab) +
+    ggplot2::coord_cartesian(xlim = span) +
+    ggplot2::labs(x = NULL, y = NULL, title = "haplotypes (freq -> AS primer)") +
+    ggplot2::theme_minimal(base_size = 8) +
+    ggplot2::theme(
+      panel.grid.major.y = ggplot2::element_blank(),
+      axis.text = ggplot2::element_text(colour = "black")
+    )
+}
+
 #' Local assay map: styled primers, Tm, and the acceptance checks
 #'
 #' The local view of the assay on the design window (genomic coordinates).  Each
@@ -664,7 +718,9 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   # a linked haplotype, the target + its co-segregating bases are drawn as two
   # parallel tracks (REF vs ALT haplotype), so the linkage is visible.
   lk <- assay$selection$linked
-  has_link <- !is.null(lk) && nrow(lk) > 0
+  # when a full haplotype table is present the dedicated layered track carries
+  # the linkage, so the two-row REF/ALT view is not drawn twice
+  has_link <- !is.null(lk) && nrow(lk) > 0 && is.null(assay$haplotypes)
   if (has_link) {
     gp <- snp$pos - assay$template$snp_i + lk$offset
     hap <- dplyr::bind_rows(
@@ -748,13 +804,20 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
 
   # genome-wide ideogram: where the primers hit and where in-silico PCR amplifies
   p_ideo <- assay_ideogram(assay, snp, genome)
+  p_hap <- haplotype_layers(assay, snp, span)
 
   # primer rows are packed tight; the feature row sits at the bottom
-  panels <- if (is.null(p_ideo)) {
-    patchwork::wrap_plots(p_map, p_var, ncol = 1, heights = c(2.3, 0.4))
-  } else {
-    patchwork::wrap_plots(p_map, p_var, p_ideo, ncol = 1, heights = c(2.3, 0.4, 3))
+  parts <- list(p_map, p_var)
+  heights <- c(2.3, 0.4)
+  if (!is.null(p_hap)) {
+    parts <- c(parts, list(p_hap))
+    heights <- c(heights, 0.22 * length(unique(assay$haplotypes$haplotype)))
   }
+  if (!is.null(p_ideo)) {
+    parts <- c(parts, list(p_ideo))
+    heights <- c(heights, 3)
+  }
+  panels <- patchwork::wrap_plots(parts, ncol = 1, heights = heights)
 
   patchwork::wrap_plots(panels, plot_checks(assay), widths = c(1, 0.12)) +
     patchwork::plot_annotation(

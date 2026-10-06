@@ -29,46 +29,39 @@ cat(sprintf(
   aa$as_start, aa$as_end, aa$com_start, aa$com_end, base$strand
 ))
 
-# three haplotypes over the ~100 bp around the target, at rising frequencies
-hap <- function(id, freq, pos, kind = c("snp", "indel")) {
-  kind <- match.arg(kind)
-  b <- substring(W, pos, pos)
-  alt <- if (kind == "snp") setdiff(c("A", "C", "G", "T"), b)[1L] else paste0(b, "TG")
+# three haplotypes over the ~100 bp around the target: a REF haplotype and two
+# ALT haplotypes, one rare variant sitting inside the AS footprint and one
+# variant co-segregating with the ALT allele (rides both ALT haplotypes).
+tgt <- snp$alt
+hap_row <- function(haplotype, freq, pos, alt = NULL) {
+  ref <- substring(W, pos, pos)
+  if (is.null(alt) || alt == ref) alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
   tibble::tibble(
-    haplotype = id, freq = freq, kind = kind, pos = pos,
-    ref = b, alt = alt, pop_freq = freq, chrom = "Chr1", consequence = "missense_variant"
+    haplotype = haplotype, freq = freq, chrom = "Chr1", pos = pos,
+    ref = ref, alt = alt
   )
 }
 haps <- dplyr::bind_rows(
-  hap("H1_rare_snp_in_AS", 0.01, aa$as_start + 8L, "snp"),
-  hap("H2_rare_indel_in_AS", 0.01, aa$as_start + 12L, "indel"),
-  hap("H3_common_indel_in_AS", 0.50, aa$as_start + 12L, "indel")
+  hap_row("H_ref", 0.70, 215L),
+  hap_row("H_alt1", 0.20, 250L, tgt),
+  hap_row("H_alt1", 0.20, 262L),
+  hap_row("H_alt2", 0.10, 250L, tgt),
+  hap_row("H_alt2", 0.10, 262L), # co-segregates with the ALT allele
+  hap_row("H_alt2", 0.10, aa$as_start + 9L) # rare variant inside the AS primer
 )
 
-rows <- lapply(seq_len(nrow(haps)), function(i) {
-  h <- haps[i, ]
-  variants <- dplyr::bind_rows(
-    tibble::tibble(
-      chrom = "Chr1", pos = 250L, consequence = "missense_variant"
-    ),
-    dplyr::select(h, "chrom", "pos", "ref", "alt", "pop_freq", "consequence")
-  )
-  a <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L, cores = 1L))
-  saveRDS(list(assay = a, haplotype = h), fs::path(out, paste0(h$haplotype, ".rds")))
-  if (!inherits(a, "kasp_doomed")) {
-    p <- plot_primers(a, variants, snp, genome = genome)
-    ggplot2::ggsave(fs::path(out, paste0(h$haplotype, ".png")), p,
-      width = 11, height = 8, dpi = 100, bg = "white"
-    )
-  }
-  tibble::tibble(
-    haplotype = h$haplotype, freq = h$freq, kind = h$kind,
-    verdict = if (inherits(a, "kasp_doomed")) "doomed" else "ok",
-    reported = if (inherits(a, "kasp_doomed")) NA_integer_ else a$assay$as_n_var[1L] + a$assay$n_var[1L],
-    foot_dropout = if (inherits(a, "kasp_doomed")) NA_real_ else round(a$assay$as_foot_dropout[1L], 4L),
-    reason = if (inherits(a, "kasp_doomed")) a$reason else NA_character_
-  )
-})
-tab <- purrr::list_rbind(rows)
-print(as.data.frame(tab), row.names = FALSE)
-cat("\ndumped", nrow(tab), "records into", out, "\n")
+a <- suppressWarnings(assemble_kasp_assay(genome, snp, haplotypes = haps, flank = 150L, cores = 1L))
+saveRDS(list(assay = a, haplotypes = haps), fs::path(out, "panel.rds"))
+if (!inherits(a, "kasp_doomed")) {
+  v <- tidykasp:::haplotype_variants(haps, snp)$variants
+  p <- plot_primers(a, v, snp, genome = genome)
+  ggplot2::ggsave(fs::path(out, "panel.png"), p, width = 11, height = 9, dpi = 100, bg = "white")
+}
+cat("\nverdict:", if (inherits(a, "kasp_doomed")) paste("DOOMED:", a$reason) else "ok", "\n")
+if (!inherits(a, "kasp_doomed")) {
+  cat("AS footprint variants:", a$assay$as_n_var[1L], " dropout:", round(a$assay$as_foot_dropout[1L], 4L), "\n")
+  gpos <- a$selection$linked$offset + snp$pos - 151L # template offset -> genomic
+  cat("linked (co-segregating) positions:", paste(gpos, collapse = ", "), "\n")
+  print(as.data.frame(a$haplotype_hits))
+}
+cat("\ndumped into", out, "\n")

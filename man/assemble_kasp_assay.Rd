@@ -18,6 +18,7 @@ assemble_kasp_assay(
   min_disc = 0.5,
   specificity_candidates = 10L,
   linked = NULL,
+  haplotypes = NULL,
   run_blast = FALSE,
   cores = getOption("tidykasp.cores", 1L),
   BPPARAM = NULL
@@ -55,6 +56,13 @@ positions in your own template if you need the literal \code{N}s.}
 co-segregating substitutions; those riding with \code{snp$pos} are baked into the
 ALT primer so it mismatches REF twice (see \code{\link[=design_as_primers]{design_as_primers()}}).}
 
+\item{haplotypes}{optional tidy haplotype table
+(\code{haplotype}, \code{freq}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}).  Its per-position
+frequencies become the \code{pop_freq} weights and its co-segregating positions
+the \code{linked} set (both derived, see \code{haplotype_variants()}); the object also
+carries \code{haplotypes} and a per-haplotype \code{haplotype_hits} table (which AS
+primer each is expected to bind).}
+
 \item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
 
 \item{cores}{processors for the per-SNP subprocess work (the DECIPHER PCR
@@ -71,7 +79,8 @@ subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
 a \code{kasp_assay} object: a list holding the \code{snp}, the template, the
 chosen \code{strand}, ranked \code{assay}/\code{as_candidates} tibbles, \code{efficiency},
 \code{thermo}, \code{complementarity}, \code{specificity}, \code{amplicons}, \code{blast} results and
-the tailed \code{tails} primers.  When no candidate clears the gates it returns a
+the tailed \code{tails} primers (plus \code{haplotypes}/\code{haplotype_hits} when a
+haplotype table was given).  When no candidate clears the gates it returns a
 \code{kasp_doomed} object instead (the target, template, \code{reason}, \code{stage} and the
 candidate table), so a batch or a plot can report the target rather than
 abort.
