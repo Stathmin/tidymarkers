@@ -127,15 +127,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
-  # one-line install UX: a missing tool is a hint, not a silent NA
-  if (!has_oligoarrayaux()) {
-    rlang::inform(
-      c(
-        gettext("OligoArrayAux was not found: thermodynamic and structural checks will be NA."),
-        i = gettext("run tidykasp::kasp_install_tools() once to build it.")
-      ),
-      .frequency = "once"
-    )
+  # one-line install UX: a missing tool is a hint (once per session), not a silent NA
+  if (!has_oligoarrayaux() && !isTRUE(getOption("tidykasp.tool_hint_shown"))) {
+    options(tidykasp.tool_hint_shown = TRUE)
+    cli::cli_inform(c(
+      gettext("OligoArrayAux was not found: thermodynamic and structural checks will be NA."),
+      i = gettext("run tidykasp::kasp_install_tools() once to build it.")
+    ))
   }
   # a target site may carry more than one ALT (a list-column `alt`, or an `alt2`
   # column): the *site class* must see them all (below), while the design builds
@@ -415,21 +413,21 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   as_cand <- tidy_as_candidates(rank_candidates(graded_as$data, graded_as$tiers, graded_as$ties))
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
-    rlang::warn(c(
+    cli::cli_warn(c(
       glue::glue(gettext(
         "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt."
       )),
-      i = glue::glue(gettext("Allele specificity on strand {best_as$strand} may not hold across accessions."))
+      i = gettext("Allele specificity on strand {best_as$strand} may not hold across accessions.")
     ))
   }
   if (!is.na(best_as$n_var) && best_as$n_var > 0L) {
-    rlang::warn(c(
-      glue::glue(gettext("AS primer overlaps {best_as$n_var} other variant(s) in its footprint.")),
+    cli::cli_warn(c(
+      gettext("AS primer overlaps {best_as$n_var} other variant(s) in its footprint."),
       i = gettext("No candidate with fewer passed the GC/Tm/discrimination filters.")
     ))
   }
   if (best_as$discrimination < min_disc) {
-    rlang::warn(c(
+    cli::cli_warn(c(
       glue::glue(gettext(
         "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}."
       )),
@@ -447,7 +445,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     n_link <- sum(in_3p | in_foot)
     linked_dependent <- n_link > 0L
     if (linked_dependent) {
-      rlang::warn(c(
+      cli::cli_warn(c(
         glue::glue(gettext(
           "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked variant(s) in the AS zone)."
         )),
@@ -565,7 +563,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     clean <- purrr::map_lgl(seq_len(n_screen), screen_pair)
     win <- which(clean)[1L]
     if (!is.na(win) && win > 1L) {
-      rlang::warn(c(
+      cli::cli_warn(c(
         glue::glue(gettext(
           "Top-ranked pairing failed genome-level checks; kept the next clean one ({win} of {n_screen} screened)."
         )),
@@ -597,7 +595,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   pcr_products <- tryCatch(
     assay_pcr_products(stub, genome, BPPARAM = BPPARAM),
     error = function(e) {
-      rlang::warn(glue::glue(gettext("in-silico PCR failed: {conditionMessage(e)}")))
+      cli::cli_warn(gettext("in-silico PCR failed: {conditionMessage(e)}"))
       NULL
     }
   )
@@ -610,13 +608,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     blast <- if (inherits(genome, "kasp_genome") && !is.null(genome$fm_index)) {
       tryCatch(specificity_fm(primers, genome$fm_index),
         error = function(e) {
-          rlang::warn(glue::glue(gettext("FM scan failed: {conditionMessage(e)}")))
+          cli::cli_warn(gettext("FM scan failed: {conditionMessage(e)}"))
           NULL
         }
       )
     } else {
       db <- tryCatch(build_blast_db(genome), error = function(e) {
-        rlang::warn(glue::glue(gettext("BLAST db unavailable: {conditionMessage(e)}")))
+        cli::cli_warn(gettext("BLAST db unavailable: {conditionMessage(e)}"))
         NULL
       })
       blast_primers(primers, db)
@@ -654,7 +652,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # object instead of rescanning the genome
   out$ideogram <- tryCatch(assay_ideogram_data(out, genome, BPPARAM = BPPARAM, products = pcr_products),
     error = function(e) {
-      rlang::warn(glue::glue(gettext("genome ideogram failed: {conditionMessage(e)}")))
+      cli::cli_warn(gettext("genome ideogram failed: {conditionMessage(e)}"))
       NULL
     }
   )
@@ -686,7 +684,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # covers the first ALT only - say so, do not pretend.
   if (out$site$n_alt[1L] > 1L) {
     if (degenerate) {
-      rlang::inform(c(
+      cli::cli_inform(c(
         glue::glue(gettext(
           "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
         )),
@@ -695,7 +693,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         ))
       ))
     } else {
-      rlang::warn(c(
+      cli::cli_warn(c(
         glue::glue(gettext(
           "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
         )),
@@ -715,7 +713,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     hit <- !out$evaluation$pass & out$evaluation$criterion %in% KASP_UNGATED_CHECKS
     bad <- out$evaluation$criterion[hit]
     if (length(bad)) {
-      rlang::warn(c(
+      cli::cli_warn(c(
         glue::glue(gettext(
           "The chosen assay fails structural/specificity checks: {paste(bad, collapse = '; ')}."
         )),

@@ -74,7 +74,7 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
     dplyr::arrange(abs(.data$com_tm - target_tm))
 
   if (nrow(cand) == 0L) {
-    rlang::abort(c(gettext("No common primer passed the filters."),
+    cli::cli_abort(c(gettext("No common primer passed the filters."),
       i = gettext("Widen `tm_range`/GC or increase `flank` in snp_template().")
     ))
   }
@@ -187,7 +187,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     return(empty_as_primers())
   }
   if (any(nchar(alts) != ref_len)) {
-    rlang::abort(gettext("every `alt` allele must be as long as `ref`"))
+    cli::cli_abort(gettext("every `alt` allele must be as long as `ref`"))
   }
   # linked variants (substitutions and indels co-segregating with the ALT
   # haplotype) are baked into the ALT template and the ALT primer, so it
@@ -440,7 +440,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
   ref_len <- nchar(ref)
   alt_len <- nchar(alt)
   if (ref_len == alt_len) {
-    rlang::abort(gettext(
+    cli::cli_abort(gettext(
       "design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."
     ))
   }
@@ -498,7 +498,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
     }
   ) |>
     purrr::list_rbind()
-  if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
+  if (nrow(cand) == 0L) cli::cli_abort(gettext("No indel AS-primer placement fit inside the design window."))
 
   # apply the caller's GC/Tm window before the DECIPHER calls (the caller drops
   # those rows afterwards anyway); an empty result is left for the caller

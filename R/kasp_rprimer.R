@@ -28,7 +28,7 @@
 #' @export
 alignment_from <- function(seqs) {
   if (length(unique(nchar(seqs))) != 1L) {
-    rlang::abort(gettext("`seqs` must be equal length (an ungapped alignment)."))
+    cli::cli_abort(gettext("`seqs` must be equal length (an ungapped alignment)."))
   }
   Biostrings::DNAMultipleAlignment(Biostrings::DNAStringSet(seqs))
 }

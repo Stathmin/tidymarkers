@@ -147,7 +147,7 @@ genome_length <- function(genome, chrom) {
     return(length(genome[[chrom]]))
   }
   len <- genome$lengths[[chrom]]
-  if (is.null(len)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
+  if (is.null(len)) cli::cli_abort(gettext("Unknown sequence: {chrom}"))
   len
 }
 
@@ -172,7 +172,7 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
     return(Biostrings::subseq(genome[[chrom]], start = start, end = end))
   }
   raw <- genome$seqnames[[chrom]]
-  if (is.null(raw)) rlang::abort(glue::glue(gettext("Unknown sequence: {chrom}")))
+  if (is.null(raw)) cli::cli_abort(gettext("Unknown sequence: {chrom}"))
   gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
   if (!is.null(genome$bsgenome)) {
     return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])

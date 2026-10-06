@@ -433,7 +433,7 @@ warn_relaxed <- function(violated) {
   }
   labels <- unname(KASP_GATE_LABEL[violated])
   labels[is.na(labels)] <- violated[is.na(labels)]
-  rlang::warn(c(
+  cli::cli_warn(c(
     gettext("No assay cleared every hard constraint; returned the least-bad after relaxing some."),
     rlang::set_names(gettext(labels), rep("*", length(labels)))
   ))

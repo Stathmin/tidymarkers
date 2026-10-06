@@ -46,7 +46,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   need <- c("id", "seq_region_name", "start", "end", "strand")
   missing <- setdiff(need, names(j))
   if (length(missing)) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       glue::glue(gettext(
         "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
       )),
@@ -96,7 +96,7 @@ ensembl_variants <- function(chrom, start, end,
   need <- c("id", "seq_region_name", "start", "alleles")
   missing <- setdiff(need, names(df))
   if (length(missing)) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       glue::glue(gettext(
         "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}."
       )),
@@ -301,7 +301,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
       stringr::str_detect(.data$ref, "^[ACGT]+$"),
       stringr::str_detect(.data$alt, "^[ACGT]+$")
     )
-  if (nrow(v) == 0L) rlang::abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
+  if (nrow(v) == 0L) cli::cli_abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
 
   # every variant of the gene (incl. indels): used to penalise targets whose AS
   # 3' neighbourhood is itself variable (breaks allele specificity across lines)
@@ -403,8 +403,8 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
       return(out)
     }
   }
-  rlang::warn(c(
-    glue::glue(gettext("No ranked target is designable for scheme {scheme} ({nrow(cand)} tried).")),
+  cli::cli_warn(c(
+    gettext("No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."),
     i = gettext("returning the best-ranked target, whose design may be doomed.")
   ))
   best

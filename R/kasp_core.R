@@ -114,7 +114,7 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   nm <- if (.Platform$OS.type == "windows") paste0(bin, ".exe") else bin
   exe <- if (is.null(paths)) Sys.which(bin) else fs::path(paths$bin, nm)
   if (!nzchar(exe) || !fs::file_exists(exe)) {
-    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') was not found.")))
+    cli::cli_warn(gettext("OligoArrayAux ('{bin}') was not found."))
     return(NA_real_)
   }
   args <- c(
@@ -129,11 +129,11 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     error = function(e) e
   )
   if (inherits(run, "error")) {
-    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}")))
+    cli::cli_warn(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"))
     return(NA_real_)
   }
   if (run$status != 0L) {
-    rlang::warn(glue::glue(gettext(
+    cli::cli_warn(glue::glue(gettext(
       "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
     )))
     return(NA_real_)
@@ -141,7 +141,7 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
   dg <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
-    rlang::warn(glue::glue(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}').")))
+    cli::cli_warn(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
     return(NA_real_)
   }
   dg
@@ -521,7 +521,7 @@ ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
   need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   missing <- setdiff(need, names(g))
   if (length(missing)) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       glue::glue(gettext(
         "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}."
       )),

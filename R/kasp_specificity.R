@@ -31,7 +31,7 @@
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
   if (inherits(genome, "kasp_genome")) {
-    rlang::abort(c(gettext("specificity_seed() needs an in-memory DNAStringSet."),
+    cli::cli_abort(c(gettext("specificity_seed() needs an in-memory DNAStringSet."),
       i = gettext("For an indexed genome use specificity_of()/specificity_blast().")
     ))
   }
@@ -225,7 +225,7 @@ blast_primers <- function(primers, db_path) {
       )
     },
     error = function(e) {
-      rlang::warn(glue::glue(gettext("BLAST failed: {conditionMessage(e)}")))
+      cli::cli_warn(gettext("BLAST failed: {conditionMessage(e)}"))
       NULL
     }
   )

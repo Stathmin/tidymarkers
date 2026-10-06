@@ -28,7 +28,7 @@
 #' @export
 restriction_enzymes <- function() {
   f <- system.file("extdata", "restriction_enzymes.csv", package = "tidykasp")
-  if (!nzchar(f)) rlang::abort(gettext("Bundled restriction-enzyme catalogue not found."))
+  if (!nzchar(f)) cli::cli_abort(gettext("Bundled restriction-enzyme catalogue not found."))
   readr::read_csv(f, show_col_types = FALSE)
 }
 
@@ -175,7 +175,7 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
-    rlang::inform(gettext("dCAPS scanning is implemented for single-base substitutions only."))
+    cli::cli_inform(gettext("dCAPS scanning is implemented for single-base substitutions only."))
     return(tibble::tibble())
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
@@ -270,7 +270,7 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
   hi <- max(cuts) + 1L
   primers <- design_site_pair(tmpl$seq, lo, hi)
   if (is.null(primers)) {
-    rlang::inform(gettext("A discriminating enzyme was found, but no flanking primer pair passed the Tm/GC filters."))
+    cli::cli_inform(gettext("A discriminating enzyme was found, but no flanking primer pair passed the Tm/GC filters."))
     return(NULL)
   }
   out <- list(
@@ -296,7 +296,7 @@ design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap) {
   d <- find_dcaps_enzymes(genome, snp, flank, enzymes, min_gap)
   d <- dplyr::filter(d, .data$resolvable)
   if (!nrow(d)) {
-    rlang::inform(gettext("No natural or primer-introduced (dCAPS) restriction marker here."))
+    cli::cli_inform(gettext("No natural or primer-introduced (dCAPS) restriction marker here."))
     return(NULL)
   }
   best <- d[1L, ]
@@ -309,7 +309,7 @@ design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap) {
   hi <- best$site_start + best$site_len - 1L
   primers <- design_site_pair(fixed, lo, hi)
   if (is.null(primers)) {
-    rlang::inform(gettext("A dCAPS site was found, but no primer pair passed the Tm/GC filters."))
+    cli::cli_inform(gettext("A dCAPS site was found, but no primer pair passed the Tm/GC filters."))
     return(NULL)
   }
   out <- list(
@@ -357,7 +357,7 @@ print.kasp_caps <- function(x, ...) {
 plot_caps_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the CAPS gel"))
   if (!inherits(marker, "kasp_caps")) {
-    rlang::abort(gettext("`marker` must be a kasp_caps object (see design_caps_marker())."))
+    cli::cli_abort(gettext("`marker` must be a kasp_caps object (see design_caps_marker())."))
   }
   shared <- intersect(marker$fragments_ref, marker$fragments_alt)
   bands <- tibble::tibble(

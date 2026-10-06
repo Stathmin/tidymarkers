@@ -44,7 +44,7 @@ has_blast <- function() {
 kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_genome.fa")) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
+    cli::cli_abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
       i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
       i = gettext("On Windows run the NCBI BLAST+ installer."),
       i = gettext("Or point the package at an existing build with options(tidykasp.blast = ).")
@@ -84,7 +84,7 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
 specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       gettext("No NCBI BLAST+ found (has_blast() is FALSE)."),
       i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
       i = gettext("On Windows run the NCBI BLAST+ installer."),
@@ -104,7 +104,7 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   bl <- rlang::try_fetch(
     with_blast(rBLAST::blast(db_path, type = "blastn")),
     error = function(e) {
-      rlang::abort(
+      cli::cli_abort(
         glue::glue(gettext(
           "Could not open a BLAST database at {db_path} (build it with kasp_blast_index())."
         )),
@@ -161,7 +161,7 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
   }
   db <- genome$blast_db
   if (is.null(db)) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       gettext("This indexed genome has no BLAST database attached."),
       i = gettext("Build one with kasp_blast_index(genome) and pass it as `blast_db=`.")
     ))

@@ -37,13 +37,13 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
-    rlang::inform(gettext("tetra-primer ARMS is implemented for single-base substitutions only."))
+    cli::cli_inform(gettext("tetra-primer ARMS is implemented for single-base substitutions only."))
     return(NULL)
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   outer <- design_flanking_pair(tmpl$seq, tmpl$snp_i, tmpl$snp_i)
   if (is.null(outer)) {
-    rlang::inform(gettext("No outer primer pair passed the Tm/GC filters."))
+    cli::cli_inform(gettext("No outer primer pair passed the Tm/GC filters."))
     return(NULL)
   }
   inner <- design_as_primers(tmpl$seq, tmpl$snp_i, ref, alt,
@@ -51,7 +51,7 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
     tm_range = KASP_LIMITS$as_tm, ...
   )
   if (!nrow(inner)) {
-    rlang::inform(gettext("No inner allele-specific primer passed the GC/Tm filter."))
+    cli::cli_inform(gettext("No inner allele-specific primer passed the GC/Tm filter."))
     return(NULL)
   }
   best <- function(st) {
@@ -64,14 +64,14 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   fwd <- best("+") # REF inner: forward, 3' base = REF
   rev <- best("-") # ALT inner: reverse, 3' base = ALT
   if (is.null(fwd) || is.null(rev)) {
-    rlang::inform(gettext("An inner primer is missing on one strand."))
+    cli::cli_inform(gettext("An inner primer is missing on one strand."))
     return(NULL)
   }
   # REF band: inner-forward .. outer-reverse; ALT band: outer-forward .. inner-reverse
   ref_size <- outer$end - fwd$tmpl_start + 1L
   alt_size <- rev$tmpl_end - outer$start + 1L
   if (abs(ref_size - alt_size) < min_band_gap) {
-    rlang::inform(gettext("The two diagnostic bands are closer than `min_band_gap`."))
+    cli::cli_inform(gettext("The two diagnostic bands are closer than `min_band_gap`."))
     return(NULL)
   }
   off <- snp$pos - tmpl$snp_i
@@ -119,7 +119,7 @@ print.kasp_arms <- function(x, ...) {
 plot_arms_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the ARMS gel"))
   if (!inherits(marker, "kasp_arms")) {
-    rlang::abort(gettext("`marker` must be a kasp_arms object (see design_arms_marker())."))
+    cli::cli_abort(gettext("`marker` must be a kasp_arms object (see design_arms_marker())."))
   }
   ctrl <- marker$bands$size[marker$bands$band == "control"]
   ref <- marker$bands$size[marker$bands$band == "REF"]

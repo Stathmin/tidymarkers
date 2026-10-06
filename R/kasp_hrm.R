@@ -50,7 +50,7 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
     tmpl$seq, si, si, lengths, min_product, max_product, tm_range, gc_range
   )
   if (is.null(primers)) {
-    rlang::inform(gettext("No short flanking primer pair passed the Tm/GC filters for HRM."))
+    cli::cli_inform(gettext("No short flanking primer pair passed the Tm/GC filters for HRM."))
     return(NULL)
   }
   out <- list(

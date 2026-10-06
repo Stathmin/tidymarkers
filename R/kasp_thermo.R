@@ -181,7 +181,7 @@ has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 #' @family KASP utilities
 #' @export
 with_unafloddat <- function(path, code) {
-  if (!fs::dir_exists(path)) rlang::abort(glue::glue(gettext("Directory not found: {path}")))
+  if (!fs::dir_exists(path)) cli::cli_abort(gettext("Directory not found: {path}"))
   withr::with_envvar(c(UNAFOLDDAT = path), code)
 }
 
@@ -255,7 +255,7 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
                            cores = getOption("tidykasp.cores", 1L)) {
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
-    rlang::abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
+    cli::cli_abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
       i = gettext("run kasp_install_tools(), or build it with data-raw/install-oligoarrayaux.R")
     ))
   }

@@ -41,7 +41,7 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   stock_share <- ratios / stock_uM # fraction of the mix
   water_share <- 1 - sum(stock_share)
   if (water_share < 0) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       glue::glue(gettext(
         "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} uM stock."
       )),
@@ -62,7 +62,7 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   master_per_rxn <- reaction_uL / master_mix_conc
   water_per_rxn <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
   if (water_per_rxn < 0) {
-    rlang::abort(glue::glue(gettext(
+    cli::cli_abort(glue::glue(gettext(
       "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
     )))
   }

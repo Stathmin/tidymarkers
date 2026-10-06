@@ -25,7 +25,7 @@ normalise_haplotypes <- function(haplotypes) {
   need <- c("haplotype", "freq", "chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(haplotypes))
   if (length(missing)) {
-    rlang::abort(glue::glue(gettext(
+    cli::cli_abort(glue::glue(gettext(
       "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
     )))
   }
@@ -42,7 +42,7 @@ normalise_haplotypes <- function(haplotypes) {
     dplyr::summarise(lo = min(.data$freq), hi = max(.data$freq), .by = "haplotype") |>
     dplyr::filter(.data$lo != .data$hi | .data$lo < 0 | .data$hi > 1)
   if (nrow(bad)) {
-    rlang::abort(glue::glue(gettext("`freq` must be one value in [0, 1] per haplotype.")))
+    cli::cli_abort(gettext("`freq` must be one value in [0, 1] per haplotype."))
   }
   h
 }

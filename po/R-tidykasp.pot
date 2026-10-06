@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 20:21+0300\n"
+"POT-Creation-Date: 2026-10-06 20:24+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,128 +67,128 @@ msgstr ""
 msgid "run tidykasp::kasp_install_tools() once to build it."
 msgstr ""
 
-#: kasp_assemble.R:277
+#: kasp_assemble.R:275
 msgid "No AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: kasp_assemble.R:291
+#: kasp_assemble.R:289
 msgid "No AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: kasp_assemble.R:299
+#: kasp_assemble.R:297
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: kasp_assemble.R:303
+#: kasp_assemble.R:301
 msgid "No indel AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: kasp_assemble.R:377
+#: kasp_assemble.R:375
 msgid ""
 "No AS primer survived the footprint cap (max_footprint_variants = "
 "{max_footprint_variants})."
 msgstr ""
 
-#: kasp_assemble.R:409
+#: kasp_assemble.R:407
 msgid "No AS primer survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:420
+#: kasp_assemble.R:418
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
 msgstr ""
 
-#: kasp_assemble.R:422
+#: kasp_assemble.R:420
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 
-#: kasp_assemble.R:427
+#: kasp_assemble.R:425
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 
-#: kasp_assemble.R:428
+#: kasp_assemble.R:426
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 
-#: kasp_assemble.R:434
+#: kasp_assemble.R:432
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
 msgstr ""
 
-#: kasp_assemble.R:436
+#: kasp_assemble.R:434
 msgid "Consider widening `strands` or `tm_range`."
 msgstr ""
 
-#: kasp_assemble.R:452
+#: kasp_assemble.R:450
 msgid ""
 "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
 "variant(s) in the AS zone)."
 msgstr ""
 
-#: kasp_assemble.R:454
+#: kasp_assemble.R:452
 msgid ""
 "The ALT primer is valid only in accessions carrying the linked haplotype."
 msgstr ""
 
-#: kasp_assemble.R:519
+#: kasp_assemble.R:517
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:570
+#: kasp_assemble.R:568
 msgid ""
 "Top-ranked pairing failed genome-level checks; kept the next clean one "
 "({win} of {n_screen} screened)."
 msgstr ""
 
-#: kasp_assemble.R:572
+#: kasp_assemble.R:570
 msgid ""
 "Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
 "are screened here."
 msgstr ""
 
-#: kasp_assemble.R:600
+#: kasp_assemble.R:598
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:613
+#: kasp_assemble.R:611
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:619
+#: kasp_assemble.R:617
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:657
+#: kasp_assemble.R:655
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:691 kasp_assemble.R:700
+#: kasp_assemble.R:689 kasp_assemble.R:698
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
 msgstr ""
 
-#: kasp_assemble.R:694
+#: kasp_assemble.R:692
 msgid ""
 "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
 "ALT but cannot tell them apart."
 msgstr ""
 
-#: kasp_assemble.R:703
+#: kasp_assemble.R:701
 msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr ""
 
-#: kasp_assemble.R:720
+#: kasp_assemble.R:718
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
 
-#: kasp_assemble.R:722
+#: kasp_assemble.R:720
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
