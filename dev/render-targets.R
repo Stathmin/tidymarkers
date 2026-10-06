@@ -30,7 +30,11 @@ ex <- kasp_example()
 
 render_one <- function(i) {
   r <- ex[i, ]
-  snp <- tibble::tibble(chrom = r$chrom, pos = as.integer(r$pos), ref = r$ref, alt = r$alt)
+  # carry the second ALT of a multi-allelic site through to the assay/plot, so the
+  # site class and the track read as multi-allelic (not just the first ALT)
+  snp <- tibble::tibble(
+    chrom = r$chrom, pos = as.integer(r$pos), ref = r$ref, alt = r$alt, alt2 = r$alt2
+  )
   tag <- gsub("[^A-Za-z0-9]+", "_", r$id)
   msg <- tryCatch(
     {
@@ -41,6 +45,10 @@ render_one <- function(i) {
       a <- suppressWarnings(assemble_kasp_assay(genome, snp,
         variants = variants, flank = 150L, strands = c("+", "-"), cores = 1L
       ))
+      # the full assay record next to the image, so its QC (inverted repeats,
+      # off-targets, footprints, the decision graph) can be dissected without
+      # re-running the design
+      saveRDS(a, fs::path(out, paste0("target_", tag, ".rds")))
       # a doomed target still gets its context plot, so the panel is complete
       p <- plot_primers(a, variants, snp, genome = genome, features = gene)
       ggplot2::ggsave(fs::path(out, paste0("target_", tag, ".png")), p,

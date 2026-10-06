@@ -19,6 +19,26 @@ assay_primers <- function(assay) {
   c(AS_ref = assay$assay$as_ref[1], AS_alt = assay$assay$as_alt[1], COM = assay$assay$com[1])
 }
 
+#' A target's allele set as a label (`REF>ALT` or `REF>ALT1/ALT2`)
+#'
+#' A multi-allelic target carries its extra ALTs in an `alt2` column (or a
+#' list-column `alt`), so the label - and the plot - show every allele, not just
+#' the one the ALT primer was built for.
+#' @keywords internal
+#' @noRd
+snp_alleles <- function(snp) {
+  extra <- if ("alt2" %in% names(snp)) as.character(snp$alt2) else character(0)
+  a <- unique(c(as.character(unlist(snp$alt)), extra))
+  a[!is.na(a) & nzchar(a)]
+}
+
+#' @keywords internal
+#' @noRd
+snp_label <- function(snp) {
+  a <- snp_alleles(snp)
+  glue::glue("{snp$ref[1L]}>{paste(a, collapse = '/')}")
+}
+
 #' Design window (plus-strand genomic coords) as c(start, end)
 #' @keywords internal
 #' @noRd
@@ -464,7 +484,7 @@ plot_doomed_target <- function(assay, variants, snp, features = NULL) {
     ggplot2::coord_cartesian(xlim = win, ylim = c(0.2, 1.25)) +
     ggplot2::labs(
       x = glue::glue("{snp$chrom} position (bp)"), y = NULL,
-      title = glue::glue("Doomed target {snp$chrom}:{snp$pos} {snp$ref}>{snp$alt}"),
+      title = glue::glue("Doomed target {snp$chrom}:{snp$pos} {snp_label(snp)}"),
       subtitle = glue::glue("no assay passed the gates - {assay$reason}")
     ) +
     ggplot2::theme_minimal(base_size = 9) +
@@ -783,6 +803,15 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
         shape = 21, fill = "firebrick", colour = "white", size = 2.4
       ) +
       ggplot2::scale_colour_brewer(palette = "Dark2", name = NULL)
+    # a multi-allelic target: name every ALT at the site, so the track reads as
+    # one *site* with several alleles, not one allele
+    aa <- snp_alleles(snp)
+    if (length(aa) > 1L) {
+      p_var <- p_var + ggplot2::annotate("text",
+        x = snp$pos, y = 1, label = paste(snp$ref[1L], paste(aa, collapse = "/"), sep = ">"),
+        vjust = 2.1, size = 2.2, family = "mono", colour = "black"
+      )
+    }
   }
   p_var <- p_var +
     ggplot2::scale_y_continuous(breaks = ybreaks, labels = ylabs, limits = c(zone[1] - 0.15, zone[2] + 0.15)) +
@@ -816,7 +845,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
     patchwork::plot_annotation(
       title = "KASP assay: local map + acceptance checks",
       subtitle = glue::glue(
-        "target {snp$chrom}:{snp$pos} ({snp$ref}>{snp$alt}) on strand {strand}"
+        "target {snp$chrom}:{snp$pos} ({snp_label(snp)}) on strand {strand}"
       )
     )
 }
@@ -915,9 +944,11 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
   v <- variants |>
     dplyr::mutate(consequence = forcats::fct_lump_n(.data$consequence, 6L))
   # label the target from the variant itself - a bare (chrom, pos, ref, alt)
-  # record carries no `id`, so the plot must not depend on one
+  # record carries no `id`, so the plot must not depend on one; a multi-allelic
+  # target shows every ALT
+  extra_alt <- if ("alt2" %in% names(snp) && !is.na(snp$alt2[1L])) paste0("/", snp$alt2) else ""
   snp <- snp |>
-    dplyr::mutate(label = glue::glue("{.data$chrom}:{.data$pos} {.data$ref}>{.data$alt}"))
+    dplyr::mutate(label = glue::glue("{.data$chrom}:{.data$pos} {.data$ref}>{.data$alt}{extra_alt}"))
 
   main <- ggplot2::ggplot() +
     gggenes::geom_gene_arrow(
