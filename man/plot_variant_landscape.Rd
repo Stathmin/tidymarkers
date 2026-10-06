@@ -2,7 +2,7 @@
 % Please edit documentation in R/kasp_plots.R
 \name{plot_variant_landscape}
 \alias{plot_variant_landscape}
-\title{Gene model with the 1001-Genomes variant track + inset of the target region}
+\title{Gene model with the variant track and a zoom on the design window}
 \usage{
 plot_variant_landscape(gene, variants, snp, assay)
 }
@@ -16,11 +16,14 @@ plot_variant_landscape(gene, variants, snp, assay)
 \item{assay}{assembled assay.}
 }
 \value{
-a \code{ggplot} object: the gene model and variant track with an inset of
-the target region.
+a \code{ggplot} object: the gene model and variant track, faceted by
+\code{ggforce::facet_zoom()} into the full view and a zoom on the design window.
 }
 \description{
-Gene model with the 1001-Genomes variant track + inset of the target region
+The context of the target: the gene model and the 1001-Genomes variant track,
+with \code{ggforce::facet_zoom()} adding a zoomed panel on the design window and
+boxing the zoomed area on the full view - the "where is this SNP" picture that
+sits above the local \code{\link[=plot_primers]{plot_primers()}} map.
 }
 \examples{
 \dontrun{

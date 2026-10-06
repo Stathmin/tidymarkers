@@ -187,6 +187,9 @@
   ≤ 4 символов (site class — код `bial`/`degn`/`comp`/`indl`).
 - **Удалены** `plot_alignment()`, `plot_dimer_qc()` (и `plot_discrimination()` ранее) —
   в текущем виде не нужны; `ggmsa` ушёл из `Imports`.
+- `plot_variant_landscape()` — контекст цели: модель гена (`gggenes`) и трек вариантов с
+  **зумом** на окно дизайна через `ggforce::facet_zoom()` (рамка зоны на полном виде),
+  вместо ручной врезки `patchwork`; `ggforce` добавлен в `Imports`.
 - **Структура олиго видна:** `plot_oligo_structure()` — три олиго рядом (буквы,
   SSR подчёркнуты красным, шпильки/инвертированные повторы — дугами над
   последовательностью); `plot_self_complementarity()` возвращён как честный

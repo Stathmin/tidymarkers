@@ -39,6 +39,7 @@ Imports:
     tibble,
     ggplot2,
     gggenes,
+    ggforce,
     ggrepel,
     forcats,
     patchwork,

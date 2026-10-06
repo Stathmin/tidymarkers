@@ -130,7 +130,10 @@ test_that("the variant landscape draws a bare target without an `id` column", {
   # a bare (chrom, pos, ref, alt) target carries no `id` - the label must come
   # from the variant itself, not a column the caller never supplies
   gene <- list(symbol = "GENE", chrom = "Chr1", start = 1L, end = 500L, strand = "+")
-  expect_s3_class(plot_variant_landscape(gene, m$variants, m$snp, m$assay), "ggplot")
+  p <- plot_variant_landscape(gene, m$variants, m$snp, m$assay)
+  expect_s3_class(p, "ggplot")
+  expect_s3_class(p$facet, "FacetZoom") # the zoom is facet_zoom(), not a manual inset
+  expect_silent(ggplot2::ggplot_build(p))
 })
 
 test_that("a doomed target is a classed object and still plots its context", {

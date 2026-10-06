@@ -1095,13 +1095,18 @@ plot_self_complementarity <- function(seq) {
     ggplot2::theme(panel.grid = ggplot2::element_blank())
 }
 
-#' Gene model with the 1001-Genomes variant track + inset of the target region
+#' Gene model with the variant track and a zoom on the design window
+#'
+#' The context of the target: the gene model and the 1001-Genomes variant track,
+#' with `ggforce::facet_zoom()` adding a zoomed panel on the design window and
+#' boxing the zoomed area on the full view - the "where is this SNP" picture that
+#' sits above the local [plot_primers()] map.
 #' @param gene gene record.
 #' @param variants variant table.
 #' @param snp target variant (one row).
 #' @param assay assembled assay.
-#' @return a `ggplot` object: the gene model and variant track with an inset of
-#'   the target region.
+#' @return a `ggplot` object: the gene model and variant track, faceted by
+#'   `ggforce::facet_zoom()` into the full view and a zoom on the design window.
 #' @examples
 #' \dontrun{
 #' plot_variant_landscape(gene, variants, snp, assay)
@@ -1121,8 +1126,9 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
   extra_alt <- if ("alt2" %in% names(snp) && !is.na(snp$alt2[1L])) paste0("/", snp$alt2) else ""
   snp <- snp |>
     dplyr::mutate(label = glue::glue("{.data$chrom}:{.data$pos} {.data$ref}>{.data$alt}{extra_alt}"))
+  win <- design_window(assay, snp)
 
-  main <- ggplot2::ggplot() +
+  ggplot2::ggplot() +
     gggenes::geom_gene_arrow(
       data = gene_df,
       ggplot2::aes(xmin = .data$start, xmax = .data$end, y = 1, forward = .data$strand > 0),
@@ -1144,28 +1150,10 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
     ) +
     ggplot2::labs(
       x = glue::glue("{gene$chrom} position (bp)"), y = NULL,
-      title = glue::glue("Variation across {gene$symbol} (1001 Genomes)")
+      title = glue::glue("Variation across {gene$symbol} (1001 Genomes), zoom on the design window")
     ) +
+    ggforce::facet_zoom(xlim = win, zoom.size = 1) +
     ggplot2::theme_minimal()
-
-  win <- design_window(assay, snp)
-  vw <- variants_in_window(variants, snp$chrom, win)
-  inset <- ggplot2::ggplot(vw, ggplot2::aes(.data$pos, 1)) +
-    variant_points(vw, 1) +
-    ggplot2::geom_point(
-      data = snp, ggplot2::aes(.data$pos, 1),
-      shape = 21, fill = "firebrick", colour = "white", size = 2
-    ) +
-    ggplot2::scale_colour_brewer(palette = "Dark2", guide = "none") +
-    ggplot2::scale_y_continuous(breaks = 1, labels = "variants") +
-    ggplot2::labs(
-      x = glue::glue("design window ({win[1]}-{win[2]} bp)"), y = NULL,
-      title = "target region"
-    ) +
-    ggplot2::theme_minimal(base_size = 8) +
-    ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white", colour = "grey70"))
-
-  main + patchwork::inset_element(inset, left = 0.53, bottom = 0.42, right = 1, top = 1)
 }
 
 
