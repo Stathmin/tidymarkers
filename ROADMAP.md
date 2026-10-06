@@ -221,7 +221,11 @@ A–P — реализовано или оценено; **Q** — локализ
       (`target site class`, `ALT alleles (n)`, `linked variants skipped (n)`) —
       вырожденные/мультиаллельные сайты и несшитые indel'ы видны в тумблерах;
       `plot_checks()` фасетит site/feature/alignment; `assemble_kasp_assay()` кладёт
-      в объект `assay$site` (`kasp_site_class`)
+      в объект `assay$site` (`kasp_site_class`). Плюс два новых site-критерия:
+      **«ALT primer covers all ALTs»** (вырожденный движок покрывает все ALT;
+      `site$alt_covered`) и **«design relies on linkage»** (дизайн держится только на
+      сцеплении) — видны и в тумблерах, и в дереве/тексте решения автоматически
+      (реестр один)
 - [x] **Дерево решения как данные:** `kasp_criteria()` (R/kasp_criteria.R) — единый реестр
       *всех* критериев (site-проверки, гейты и тиры отбора, приёмочные проверки). Из него
       генерируются узлы/рёбра (`kasp_decision_schema()`), граф (`kasp_decision_graph()`,

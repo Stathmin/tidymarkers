@@ -104,4 +104,7 @@ test_that("a multi-allelic SNP is designed as one degenerate ALT primer", {
   # export carries the degenerate oligo, not the concrete member
   tbl <- kasp_primer_table(a, list(symbol = "X"))
   expect_equal(tbl$seq_no_tail[tbl$oligo_id == "AS2_HEX"], a$assay$as_alt_degen[1])
+  # the ALT primer is recorded as covering every ALT (a first-class criterion)
+  chk <- kasp_design_checks(a)
+  expect_true(chk$pass[chk$criterion == "ALT primer covers all ALTs"])
 })

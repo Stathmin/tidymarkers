@@ -678,6 +678,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
   }
   out$site <- kasp_site_class(snp$ref, site_alts)
+  # how many of the site's ALTs the single ALT primer actually covers: all of them
+  # for a degenerate all-SNP site (one IUPAC primer), otherwise just the first
+  out$site$alt_covered <- if (degenerate) out$site$n_alt[[1L]] else 1L
   # a multi-allelic site is reported as such.  When it is all-SNP it is designed
   # as a degenerate primer covering every ALT; otherwise the ALT primer still
   # covers the first ALT only - say so, do not pretend.

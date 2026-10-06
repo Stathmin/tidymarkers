@@ -104,7 +104,10 @@ gel_plot <- function(bands, x_labels, y_label, title, subtitle) {
 #' @keywords internal
 #' @noRd
 check_level <- function(criterion) {
-  site <- c("target site class", "ALT alleles (n)", "linked variants skipped (n)")
+  site <- c(
+    "target site class", "ALT alleles (n)", "linked variants skipped (n)",
+    "ALT primer covers all ALTs", "design relies on linkage"
+  )
   specificity <- c("off-target exact primer hits (n)")
   feature <- c(
     "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
@@ -129,6 +132,8 @@ check_short <- function(criterion) {
     "target site class" = "site class",
     "ALT alleles (n)" = "ALT n",
     "linked variants skipped (n)" = "linked skip",
+    "ALT primer covers all ALTs" = "ALT cover",
+    "design relies on linkage" = "linkage",
     "off-target exact primer hits (n)" = "off-target",
     "amplicon length (bp)" = "amplicon",
     "AS Tm (C)" = "AS Tm",

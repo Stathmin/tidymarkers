@@ -68,9 +68,15 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
   site_disc <- if (is.null(site)) TRUE else isTRUE(site$disc[1L])
   n_alt <- if (is.null(site)) 1L else as.integer(site$n_alt[1L])
   linked_skipped <- as.integer(assay$selection$linked_skipped %||% 0L)
+  # how many of the site's ALTs the ALT primer actually covers, and whether the
+  # design holds only on linkage (both surfaced by the degenerate/linked engine)
+  alt_covered <- if (is.null(site) || !"alt_covered" %in% names(site)) n_alt else as.integer(site$alt_covered[1L])
+  n_uncovered <- max(0L, n_alt - alt_covered)
+  linked_dependent <- isTRUE(assay$selection$linked_dependent)
 
   obs <- c(
     NA_real_, as.numeric(n_alt), as.numeric(linked_skipped),
+    as.numeric(n_uncovered), as.numeric(linked_dependent),
     aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
     run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
     sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
@@ -80,6 +86,7 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
   )
   pass <- c(
     site_disc, n_alt >= 1L, linked_skipped == 0L,
+    n_uncovered == 0L, !linked_dependent,
     dplyr::between(aa$amplicon, limits$amplicon[1], limits$amplicon[2]),
     dplyr::between(as_tm, limits$as_tm[1], limits$as_tm[2]),
     dplyr::between(com_tm, limits$com_tm[1], limits$com_tm[2]),

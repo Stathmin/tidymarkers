@@ -88,10 +88,11 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     )
   }
   checks <- tibble::tibble(
-    stage = c(rep("site", 3L), rep("assay", 21L)),
+    stage = c(rep("site", 5L), rep("assay", 21L)),
     role = "check",
     label = c(
       "target site class", "ALT alleles (n)", "linked variants skipped (n)",
+      "ALT primer covers all ALTs", "design relies on linkage",
       "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)", "COM Tm >= AS Tm",
       "AS GC", "COM GC", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
       "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
@@ -101,7 +102,7 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
       "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)"
     ),
     level = c(
-      "site", "site", "site",
+      "site", "site", "site", "site", "site",
       check_level(c(
         "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)", "COM Tm >= AS Tm",
         "AS GC", "COM GC", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
@@ -113,11 +114,11 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
       ))
     ),
     hard = c(
-      TRUE, FALSE, FALSE,
+      TRUE, FALSE, FALSE, FALSE, FALSE,
       rep(FALSE, 21L)
     ),
     limit = c(
-      "discriminable", ">= 1", "0",
+      "discriminable", ">= 1", "0", "0", "0",
       glue::glue("[{limits$amplicon[1]}, {limits$amplicon[2]}]"),
       glue::glue("[{limits$as_tm[1]}, {limits$as_tm[2]}]"),
       glue::glue("[{limits$com_tm[1]}, {limits$com_tm[2]}]"),
