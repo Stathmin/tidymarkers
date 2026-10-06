@@ -61,7 +61,7 @@ KASP_CHECK_PRIMER <- c(
 #' @family KASP checks
 #' @export
 kasp_schemes <- function() {
-  tibble::tribble(
+  out <- tibble::tribble(
     ~scheme, ~family, ~label, ~discrimination, ~readout, ~zygosity, ~amplicon, ~loci, ~verdict,
     "primer", "primer", "any primer pair (marker-agnostic)",
     "none - not an allele assay", "gel / melt / any", "n/a", "bounded", 1L,
@@ -92,6 +92,9 @@ kasp_schemes <- function() {
     "amplicon melting curve (neighbour-tolerant)", "melt curve", "co-dominant",
     "short (<= 150 bp)", 1L, "usable HRM amplicon"
   )
+  # discovered schemes (R/kasp_<scheme>.R via scheme_def_*()) are appended here,
+  # so a new chemistry is one file, not an edit to this registry
+  dplyr::bind_rows(out, extra_scheme_rows())
 }
 
 #' One scheme's row, validated
@@ -112,7 +115,8 @@ kasp_scheme <- function(scheme = "snp") {
 #' @keywords internal
 #' @noRd
 check_schemes <- function(label) {
-  out <- rep(list(KASP_SCHEME_CORE), length(label))
-  out[label %in% KASP_CHECK_PRIMER] <- list(KASP_SCHEME_ALL)
+  extra <- names(extra_scheme_defs())
+  out <- rep(list(c(KASP_SCHEME_CORE, extra)), length(label))
+  out[label %in% KASP_CHECK_PRIMER] <- list(c(KASP_SCHEME_ALL, extra))
   out
 }

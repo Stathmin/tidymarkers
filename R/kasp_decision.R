@@ -67,6 +67,8 @@ kasp_decision_stages <- function(scheme = "snp") {
       gates = KASP_GATES_HRM, relax = KASP_RELAX_HRM, tiers = KASP_TIERS_HRM
     )
   }
+  # discovered schemes (R/kasp_<scheme>.R) contribute their own stage
+  stages <- c(stages, extra_decision_stages(scheme))
   stages
 }
 
@@ -130,8 +132,8 @@ kasp_decision_schema <- function(scheme = "snp") {
       best = paste0(st$id, ":best"),
       refine = paste0(st$id, ":refine")
     )
-    push(node(ids$gate, st$id, "gate", unname(KASP_GATE_SHORT[gates]), o + seq_along(gates),
-      hard = hard, detail = unname(KASP_GATE_LIMIT[gates])
+    push(node(ids$gate, st$id, "gate", scheme_label("short", gates), o + seq_along(gates),
+      hard = hard, detail = scheme_label("limit", gates)
     ))
     if (length(gates) > 1L) add_edge(chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"))
     add_edge(chain(entry, ids$gate[1L], "flow"))
@@ -148,10 +150,10 @@ kasp_decision_schema <- function(scheme = "snp") {
       # just duplicate the gate nodes)
       push(node(
         ids$refine, st$id, "relax",
-        paste0("refine: ", paste(KASP_GATE_SHORT[relax], collapse = " -> ")),
+        paste0("refine: ", paste(scheme_label("short", relax), collapse = " -> ")),
         decision_order + 1L,
         x = 0.85,
-        detail = paste0(KASP_GATE_SHORT[relax], " [", KASP_GATE_FLOOR_LABEL[relax], "]", collapse = "; ")
+        detail = paste0(scheme_label("short", relax), " [", scheme_label("floor", relax), "]", collapse = "; ")
       ))
       refine_ids <- c(refine_ids, ids$refine)
       merge_order <- decision_order + 2L
@@ -378,9 +380,8 @@ kasp_decision_text <- function(scheme = "snp") {
         seq_along(st$relax),
         function(i) {
           gl <- st$relax[i]
-          glue::glue(
-            "  {i}. {stringr::str_pad(KASP_GATE_SHORT[[gl]], 22, side = 'right')} floor: {KASP_GATE_FLOOR_LABEL[[gl]]}"
-          )
+          pad <- stringr::str_pad(scheme_label("short", gl), 22L, side = "right")
+          glue::glue("  {i}. {pad} floor: {scheme_label('floor', gl)}")
         }
       ))
     }

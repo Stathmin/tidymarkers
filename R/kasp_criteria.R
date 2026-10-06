@@ -149,7 +149,8 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     stage_rows("caps", KASP_GATES_CAPS, KASP_RELAX_CAPS, KASP_TIERS_CAPS, "alignment", "caps"),
     stage_rows("arms", KASP_GATES_ARMS, KASP_RELAX_ARMS, KASP_TIERS_ARMS, "alignment", "arms"),
     stage_rows("hrm", KASP_GATES_HRM, KASP_RELAX_HRM, KASP_TIERS_HRM, "alignment", "hrm"),
-    checks
+    checks,
+    extra_stage_rows()
   )
   if (!is.null(scheme)) {
     keep <- vapply(out$schemes, function(s) scheme %in% s, logical(1))

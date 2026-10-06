@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 21:14+0300\n"
+"POT-Creation-Date: 2026-10-06 21:55+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -224,6 +224,26 @@ msgstr ""
 msgid "`marker` must be a kasp_caps object (see design_caps_marker())."
 msgstr ""
 
+#: kasp_castpcr.R:126
+msgid "castPCR is implemented for single-base substitutions only."
+msgstr ""
+
+#: kasp_castpcr.R:139
+msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
+msgstr ""
+
+#: kasp_castpcr.R:157
+msgid "No room upstream of the allele-specific primer for a common primer."
+msgstr ""
+
+#: kasp_castpcr.R:168
+msgid "No common primer passed the Tm/GC filters within the castPCR amplicon."
+msgstr ""
+
+#: kasp_castpcr.R:177
+msgid "No hydrolysis probe covering the variant passed the Tm/GC filters."
+msgstr ""
+
 #: kasp_core.R:117
 msgid "OligoArrayAux ('{bin}') was not found."
 msgstr ""
@@ -263,11 +283,21 @@ msgstr ""
 msgid "Ensembl deflines may have changed."
 msgstr ""
 
-#: kasp_decision.R:224
+#: kasp_crispr.R:153
+msgid "No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."
+msgstr ""
+
+#: kasp_crispr.R:174
+msgid ""
+"A guide spacer was found, but no pre-amplification pair passed the Tm/GC "
+"filters."
+msgstr ""
+
+#: kasp_decision.R:226
 msgid "for the decision graph"
 msgstr ""
 
-#: kasp_decision.R:273
+#: kasp_decision.R:275
 msgid "to draw the decision tree"
 msgstr ""
 
@@ -291,6 +321,14 @@ msgstr ""
 
 #: kasp_design.R:501
 msgid "No indel AS-primer placement fit inside the design window."
+msgstr ""
+
+#: kasp_dpcr.R:86
+msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
+msgstr ""
+
+#: kasp_dpcr.R:91
+msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr ""
 
 #: kasp_duplex.R:137
@@ -341,6 +379,21 @@ msgstr ""
 msgid "`marker` must be a kasp_hrm object (see design_hrm_marker())."
 msgstr ""
 
+#: kasp_indel_size.R:71
+msgid "Not an InDel size polymorphism: `ref` and `alt` are the same length."
+msgstr ""
+
+#: kasp_indel_size.R:76
+msgid ""
+"The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a "
+"longer indel."
+msgstr ""
+
+#: kasp_indel_size.R:91
+msgid ""
+"No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
+msgstr ""
+
 #: kasp_io.R:62
 msgid "VCF not found: {path}"
 msgstr ""
@@ -373,6 +426,21 @@ msgstr ""
 msgid "Bundled example data not found."
 msgstr ""
 
+#: kasp_lamp.R:204
+msgid ""
+"No FIP/BIP inner primer pair passed the loop/Tm/structure filters for LAMP."
+msgstr ""
+
+#: kasp_lamp.R:219
+msgid ""
+"No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for "
+"LAMP."
+msgstr ""
+
+#: kasp_lamp.R:228
+msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
+msgstr ""
+
 #: kasp_mix.R:46
 msgid ""
 "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} "
@@ -395,12 +463,38 @@ msgstr ""
 msgid "Designing KASP markers"
 msgstr ""
 
+#: kasp_rpa.R:283
+msgid ""
+"RPA discrimination here is implemented for single-base substitutions only."
+msgstr ""
+
+#: kasp_rpa.R:294
+msgid "No RPA primer pair passed the length/GC/amplicon filters."
+msgstr ""
+
+#: kasp_rpa.R:298
+msgid "The RPA primer pair failed the structure/dimer filters."
+msgstr ""
+
+#: kasp_rpa.R:305
+msgid "No exo probe covering the variant passed the geometry filters."
+msgstr ""
+
 #: kasp_rprimer.R:31
 msgid "`seqs` must be equal length (an ungapped alignment)."
 msgstr ""
 
 #: kasp_rprimer.R:58
 msgid "for an independent oligo-design cross-check"
+msgstr ""
+
+#: kasp_sanger.R:111
+msgid "No flanking pair kept the variant clear of both read starts for Sanger."
+msgstr ""
+
+#: kasp_sanger.R:117
+msgid ""
+"The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
 msgstr ""
 
 #: kasp_scan.R:45 kasp_scan.R:85
@@ -448,7 +542,7 @@ msgstr ""
 msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
 msgstr ""
 
-#: kasp_schemes.R:106
+#: kasp_schemes.R:109
 msgid "Unknown marker scheme {scheme}; see kasp_schemes()."
 msgstr ""
 
@@ -489,6 +583,22 @@ msgid ""
 "relaxing some."
 msgstr ""
 
+#: kasp_snapshot.R:98
+msgid ""
+"SNaPshot single-base extension is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: kasp_snapshot.R:107
+msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
+msgstr ""
+
+#: kasp_snapshot.R:121
+msgid ""
+"No extension primer ended immediately 5' of the variant within the Tm/GC "
+"filters."
+msgstr ""
+
 #: kasp_specificity.R:34
 msgid "specificity_seed() needs an in-memory DNAStringSet."
 msgstr ""
@@ -499,6 +609,28 @@ msgstr ""
 
 #: kasp_specificity.R:228
 msgid "BLAST failed: {conditionMessage(e)}"
+msgstr ""
+
+#: kasp_ssr.R:116
+msgid "No SSR / microsatellite repeat found in the flanking window."
+msgstr ""
+
+#: kasp_ssr.R:129
+msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
+msgstr ""
+
+#: kasp_taqman.R:102
+msgid ""
+"TaqMan allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: kasp_taqman.R:111
+msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
+msgstr ""
+
+#: kasp_taqman.R:122
+msgid "No composition- and position-clean hydrolysis probe passed the filters."
 msgstr ""
 
 #: kasp_target.R:51

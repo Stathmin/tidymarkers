@@ -425,7 +425,11 @@ kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL,
     caps = design_caps_marker(genome, snp, ...),
     arms = design_arms_marker(genome, snp, ...),
     hrm = design_hrm_marker(genome, snp, ...),
-    NULL
+    {
+      # a discovered scheme (R/kasp_<scheme>.R) supplies its own designer
+      f <- extra_scheme_designer(scheme)
+      if (is.null(f)) NULL else rlang::exec(f, genome, snp, ...)
+    }
   )
 }
 
@@ -436,10 +440,9 @@ is_target_designable <- function(marker) {
   if (inherits(marker, "kasp_doomed")) {
     return(FALSE)
   }
-  inherits(marker, "kasp_assay") ||
-    inherits(marker, "kasp_caps") ||
-    inherits(marker, "kasp_arms") ||
-    inherits(marker, "kasp_hrm")
+  # kasp_assay / kasp_caps / kasp_arms / kasp_hrm and any discovered
+  # scheme's kasp_<scheme> class are designable
+  any(startsWith(class(marker), "kasp_"))
 }
 
 #' Design a marker with the first chemistry that works
