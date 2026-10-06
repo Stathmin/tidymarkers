@@ -135,6 +135,9 @@ kasp_decision_schema <- function(scheme = "snp") {
     ))
     if (length(gates) > 1L) add_edge(chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"))
     add_edge(chain(entry, ids$gate[1L], "flow"))
+    # the last gate flows into the decision node: without this the gate chain floats
+    # and the "all gates pass?" node is disconnected from the gates it summarises
+    add_edge(chain(ids$gate[length(gates)], ids$decision, "flow"))
     o <- o + length(gates)
     push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
     decision_order <- o
