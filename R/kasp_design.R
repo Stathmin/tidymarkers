@@ -136,8 +136,19 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' efficiency, averaged over the two primers.  `ref`/`alt` are strings, so the
 #' same engine handles SNP (`nchar == 1`) and substitution blocks / MNP (longer).
 #'
+#' When `alt` holds several alleles (a multi-allelic site), one physical ALT
+#' primer has to bind them all: the configuration is scored against every ALT and
+#' reduced conservatively - on-target efficiency is the *minimum* over the ALTs,
+#' off-target the *maximum*, and the REF primer likewise sees its worst ALT
+#' template.  `alt_primer` is reported as the worst-ALT member (a concrete
+#' sequence, feeding the thermostability/specificity machinery) and `alt_degen`
+#' as the IUPAC consensus over every ALT (the physical degenerate oligo, for
+#' display and ordering).
+#'
 #' @param v_start plus-strand start of the variant block (a single base for a SNP).
-#' @param ref,alt the two alleles as ACGT strings of equal length.
+#' @param ref,alt the alleles as ACGT strings of equal length.  `alt` may hold
+#'   more than one allele: a multi-allelic site is then scored against every ALT
+#'   and reduced conservatively (see Details).
 #' @param strands which strands to consider for the AS primer; `"+"` = forward
 #'   primer with the variant as its 3'-terminal block extending downstream, `"-"` =
 #'   the mirror-image primer extending upstream.  Both are valid KASP layouts.
@@ -170,6 +181,14 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
                               linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
+  alts <- unique(as.character(alt))
+  alts <- alts[!is.na(alts) & nzchar(alts)]
+  if (!length(alts)) {
+    return(empty_as_primers())
+  }
+  if (any(nchar(alts) != ref_len)) {
+    rlang::abort(gettext("every `alt` allele must be as long as `ref`"))
+  }
   # linked variants (substitutions and indels co-segregating with the ALT
   # haplotype) are baked into the ALT template and the ALT primer, so it
   # mismatches REF twice; REF is left untouched.  `ref`/`alt` are the template
@@ -231,55 +250,80 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     cfgs <- dplyr::filter(cfgs, dplyr::between(.data$gc, gc_range[1L], gc_range[2L]))
   }
   if (!is.null(tm_range)) {
-    cfgs <- dplyr::filter(cfgs, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]))
+    cfgs <- cfgs |>
+      dplyr::filter(dplyr::between(.data$tm, tm_range[1L], tm_range[2L]))
   }
   if (nrow(cfgs) == 0L) {
     return(empty_as_primers())
   }
-  cfgs$alt_primer <- purrr::pmap_chr(
-    list(cfgs$as_length, cfgs$strand, cfgs$stab_at, cfgs$stab_base),
-    function(L, st, k, b) {
-      make_as_primer(window_alt, anchor_alt(st), L, alt,
-        strand = st,
-        stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b
-      )
-    }
-  )
 
-  # the four on/off targets per configuration, scored in ONE batched DECIPHER call
-  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base, ref_primer, alt_primer, tm, gc) {
+  # the on/off targets per configuration and per ALT allele, scored in ONE
+  # batched DECIPHER call; a multi-allelic site is scored against every ALT and
+  # reduced conservatively below
+  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base, ref_primer, tm, gc) {
     L <- as_length
-    # binding window on the plus strand (REF), and the ALT haplotype carrying the
-    # linked substitutions as well
+    # binding window on the plus strand (REF), and each ALT haplotype carrying
+    # the linked substitutions as well
     seg_ref <- as_window(window, anchor_of(strand), L, strand)
-    seg_alt <- Biostrings::replaceAt(
-      as_window(window_alt, anchor_alt(strand), L, strand),
-      block_in_seg(ref_len, L, strand), alt
-    )
     t_ref <- as.character(as_target(seg_ref, strand))
-    t_alt <- as.character(as_target(seg_alt, strand))
-    # explicit on/off pairing: the "on" target carries the primer's own allele,
-    # the "off" target carries the other one.  Written out (not c()-positional)
-    # so a swap cannot silently invert the discrimination metric.
-    tibble::tibble(
-      which = c("ref_on", "ref_off", "alt_on", "alt_off"),
-      primer = c(ref_primer, ref_primer, alt_primer, alt_primer),
-      target = c(t_ref, t_alt, t_alt, t_ref),
-      strand = strand, as_length = L, stab_at = stab_at, stab_base = stab_base,
-      ref_primer = ref_primer, alt_primer = alt_primer, tm = tm, gc = gc
-    )
+    purrr::map(alts, function(a) {
+      alt_primer <- make_as_primer(window_alt, anchor_alt(strand), L, a,
+        strand = strand,
+        stab_at = if (is.na(stab_at)) NULL else stab_at,
+        stab_base = if (is.na(stab_base)) NULL else stab_base
+      )
+      seg_alt <- Biostrings::replaceAt(
+        as_window(window_alt, anchor_alt(strand), L, strand),
+        block_in_seg(ref_len, L, strand), a
+      )
+      t_alt <- as.character(as_target(seg_alt, strand))
+      # explicit on/off pairing: the "on" target carries the primer's own allele,
+      # the "off" target carries the other one.  Written out (not c()-positional)
+      # so a swap cannot silently invert the discrimination metric.
+      tibble::tibble(
+        which = c("ref_on", "ref_off", "alt_on", "alt_off"),
+        primer = c(ref_primer, ref_primer, alt_primer, alt_primer),
+        target = c(t_ref, t_alt, t_alt, t_ref),
+        strand = strand, as_length = L, stab_at = stab_at, stab_base = stab_base,
+        ref_primer = ref_primer, alt_primer = alt_primer, tm = tm, gc = gc
+      )
+    }) |>
+      purrr::list_rbind()
   }) |>
     purrr::list_rbind()
   pairs$eff <- pcr_efficiency(pairs$primer, pairs$target,
     temp = temp, P = P, ions = ions, cores = kasp_ncores(BPPARAM)
   )
 
+  # reduce each configuration over its ALT alleles: one physical primer must bind
+  # every ALT, so take the worst on-target (min) and the worst off-target (max);
+  # the REF primer likewise sees its worst ALT template.  A single-ALT site is
+  # unchanged.  `alt_primer` is the worst-ALT member (a concrete sequence, for
+  # the thermostability/specificity machinery); `alt_degen` is the IUPAC
+  # consensus over every ALT member - the physical degenerate oligo.
   wide <- pairs |>
-    dplyr::select(
-      "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
-      "tm", "gc", "which", "eff"
+    tidyr::pivot_wider(
+      id_cols = c(
+        "strand", "as_length", "stab_at", "stab_base",
+        "ref_primer", "alt_primer", "tm", "gc"
+      ),
+      names_from = "which", values_from = "eff"
     ) |>
-    tidyr::pivot_wider(names_from = "which", values_from = "eff") |>
+    dplyr::group_by(.data$strand, .data$as_length, .data$stab_at, .data$stab_base) |>
+    dplyr::summarise(
+      ref_primer = dplyr::first(.data$ref_primer),
+      # `alt_degen` must merge the ORIGINAL group column, so it is computed before
+      # `alt_primer` is (re)assigned below - later expressions see the new column
+      alt_degen = merge_iupac(.data$alt_primer),
+      alt_primer = .data$alt_primer[which.min(.data$alt_on)],
+      tm = dplyr::first(.data$tm),
+      gc = dplyr::first(.data$gc),
+      ref_on = dplyr::first(.data$ref_on),
+      ref_off = max(.data$ref_off),
+      alt_on = min(.data$alt_on),
+      alt_off = max(.data$alt_off),
+      .groups = "drop"
+    ) |>
     dplyr::mutate(discrimination = ((.data$ref_on - .data$ref_off) + (.data$alt_on - .data$alt_off)) / 2)
 
   # template-local footprint of the AS primer (genomic coords are added by the
@@ -305,7 +349,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 # The AS-candidate schema, one definition shared by the real table and its
 # zero-row twin (so a column added here cannot drift).
 AS_PRIMER_COLS <- c(
-  "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer",
+  "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer", "alt_degen",
   "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
   "dg_3p", "tmpl_start", "tmpl_end"
 )
@@ -317,6 +361,7 @@ empty_as_primers <- function() {
   tibble::tibble(
     strand = character(), as_length = integer(), stab_at = integer(),
     stab_base = character(), ref_primer = character(), alt_primer = character(),
+    alt_degen = character(),
     ref_on = numeric(), ref_off = numeric(), alt_on = numeric(), alt_off = numeric(),
     discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
     tmpl_start = integer(), tmpl_end = integer()

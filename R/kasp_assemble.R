@@ -139,6 +139,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     if ("alt2" %in% names(snp)) as.character(snp$alt2) else character(0)
   ))
   alts_in <- alts_in[!is.na(alts_in) & nzchar(alts_in)]
+  # a purely SNP row with >1 ALT is a degenerate site: one ALT primer whose 3'
+  # base is the IUPAC consensus covers them all, so every ALT goes to the engine.
+  # A mixed or non-SNP ALT keeps the single-allele path (first ALT) for now.
+  snp_alts <- unique(alts_in[nchar(alts_in) == 1L & grepl("^[ACGT]$", alts_in)])
+  degenerate <- length(snp_alts) > 1L && length(snp_alts) == length(alts_in)
+  alt_pass <- if (degenerate) snp_alts else alts_in[1L]
   if (length(alts_in) > 1L) snp$alt <- alts_in[1L]
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   hap <- NULL
@@ -257,7 +263,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
     raw_as <- design_as_primers(
-      tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
+      tmpl$seq, tmpl$snp_i, snp$ref, alt_pass,
       strands = strands, linked = linked_off,
       gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
     )
@@ -313,6 +319,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         as_length = .data$as_length_ref,
         ref_primer = .data$primer_ref,
         alt_primer = .data$primer_alt,
+        alt_degen = .data$primer_alt, # length-changing ALT: no IUPAC consensus
         ref_on = .data$on_eff_ref, ref_off = .data$off_eff_ref,
         alt_on = .data$on_eff_alt, alt_off = .data$off_eff_alt,
         discrimination = (.data$discrimination_ref + .data$discrimination_alt) / 2,
@@ -478,7 +485,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         .data$com, .data$com_start, .data$com_end,
         .data$strand != "+", .data$n_var, vblock
       ),
-      as_ref = best_as$ref_primer, as_alt = best_as$alt_primer, as_dropout = best_as$as_dropout,
+      as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
+      as_alt_degen = best_as$alt_degen, as_dropout = best_as$as_dropout,
       as_foot_dropout = best_as$as_foot_dropout,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
@@ -595,7 +603,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   )
   # the target site's KASP class (biallelic / degenerate / complementary / indel),
   # from every ALT seen at the position in the variant table
-  site_alts <- snp$alt
+  site_alts <- alts_in
   if (!is.null(variants) && all(c("chrom", "pos") %in% names(variants))) {
     rows <- variants[variants$chrom == snp$chrom & variants$pos == snp$pos, , drop = FALSE]
     if (nrow(rows)) {
@@ -609,21 +617,33 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         character(0)
       }
       a <- a[nzchar(a) & grepl("^[ACGT]+$", a)]
-      if (length(a)) site_alts <- unique(c(snp$alt, a))
+      if (length(a)) site_alts <- unique(c(site_alts, a))
     }
   }
   out$site <- kasp_site_class(snp$ref, site_alts)
-  # a multi-allelic site is reported as such, but the ALT primer still covers the
-  # first ALT only (degenerate-primer engine pending) - say so, do not pretend
+  # a multi-allelic site is reported as such.  When it is all-SNP it is designed
+  # as a degenerate primer covering every ALT; otherwise the ALT primer still
+  # covers the first ALT only - say so, do not pretend.
   if (out$site$n_alt[1L] > 1L) {
-    rlang::warn(c(
-      glue::glue(gettext(
-        "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
-      )),
-      i = glue::glue(gettext(
-        "The ALT primer is built for {snp$alt} only - a degenerate primer covering every ALT is not implemented yet."
+    if (degenerate) {
+      rlang::inform(c(
+        glue::glue(gettext(
+          "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
+        )),
+        i = glue::glue(gettext(
+          "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every ALT but cannot tell them apart."
+        ))
       ))
-    ))
+    } else {
+      rlang::warn(c(
+        glue::glue(gettext(
+          "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
+        )),
+        i = glue::glue(gettext(
+          "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
+        ))
+      ))
+    }
   }
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them

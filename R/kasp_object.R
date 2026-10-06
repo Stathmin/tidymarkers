@@ -27,6 +27,18 @@ passes_all <- function(assay, limits = KASP_LIMITS) {
   all(kasp_design_checks(assay, limits)$pass)
 }
 
+#' AS-alt oligo sequence as ordered (the degenerate consensus of a multi-allelic
+#' site), falling back to the concrete member for assays built before
+#' `as_alt_degen` existed.
+#' @param assay assembled assay.
+#' @return a single sequence string.
+#' @keywords internal
+#' @noRd
+as_alt_sequence <- function(assay) {
+  aa <- assay$assay
+  if ("as_alt_degen" %in% names(aa)) aa$as_alt_degen[1] else aa$as_alt[1]
+}
+
 #' Print a KASP assay
 #'
 #' Compact one-screen summary: target, the three oligos, amplicon size and
@@ -49,7 +61,7 @@ print.kasp_assay <- function(x, ...) {
     glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (strand {x$strand})"), "\n"
   )
   cat("  AS-ref ", a$as_ref, "\n")
-  cat("  AS-alt ", a$as_alt, "\n")
+  cat("  AS-alt ", as_alt_sequence(x), "\n")
   cat("  COM    ", a$com, "\n")
   cat(" ", glue::glue("amplicon {a$amplicon} bp | discrimination {round(x$efficiency$discrimination[1L], 3)}"), "\n")
   invisible(x)

@@ -26,7 +26,9 @@ design_as_primers(
 
 \item{v_start}{plus-strand start of the variant block (a single base for a SNP).}
 
-\item{ref, alt}{the two alleles as ACGT strings of equal length.}
+\item{ref, alt}{the alleles as ACGT strings of equal length.  \code{alt} may hold
+more than one allele: a multi-allelic site is then scored against every ALT
+and reduced conservatively (see Details).}
 
 \item{strands}{which strands to consider for the AS primer; \code{"+"} = forward
 primer with the variant as its 3'-terminal block extending downstream, \code{"-"} =
@@ -62,6 +64,16 @@ build the REF and ALT allele-anchored primers and predict the PCR efficiency of
 each on both alleles (DECIPHER).  Discrimination = on-target minus off-target
 efficiency, averaged over the two primers.  \code{ref}/\code{alt} are strings, so the
 same engine handles SNP (\code{nchar == 1}) and substitution blocks / MNP (longer).
+}
+\details{
+When \code{alt} holds several alleles (a multi-allelic site), one physical ALT
+primer has to bind them all: the configuration is scored against every ALT and
+reduced conservatively - on-target efficiency is the \emph{minimum} over the ALTs,
+off-target the \emph{maximum}, and the REF primer likewise sees its worst ALT
+template.  \code{alt_primer} is reported as the worst-ALT member (a concrete
+sequence, feeding the thermostability/specificity machinery) and \code{alt_degen}
+as the IUPAC consensus over every ALT (the physical degenerate oligo, for
+display and ordering).
 }
 \examples{
 W <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))

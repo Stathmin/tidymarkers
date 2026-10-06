@@ -202,6 +202,9 @@ primer_features <- function(assay, limits = KASP_LIMITS) {
     end = c(aa$as_end, aa$as_alt_end %||% aa$as_end, aa$com_end),
     forward = c(plus, plus, !plus),
     seq = c(p[["AS_ref"]], p[["AS_alt"]], p[["COM"]]),
+    # the drawn letters: the AS-alt oligo is the physical (possibly degenerate)
+    # primer; `seq` stays concrete so the SSR/palindrome QC below sees real bases
+    seq_disp = c(p[["AS_ref"]], as_alt_sequence(assay), p[["COM"]]),
     tm = c(as_tm, as_tm, aa$com_tm),
     gc = c(aa$as_gc, aa$as_gc, aa$com_gc)
   )
@@ -257,7 +260,8 @@ repeat_spans <- function(s, units = 2:4, min_copies = 3L) {
 primer_letters <- function(assay, clamp_n = 5L) {
   d <- primer_features(assay)
   rows <- lapply(seq_len(nrow(d)), function(i) {
-    s <- d$seq[i]
+    s <- d$seq[i] # concrete: the QC below (SSR / palindrome) needs real bases
+    s_disp <- d$seq_disp[i] # possibly degenerate, for the drawn letters
     L <- nchar(s)
     xs <- if (d$forward[i]) seq.int(d$start[i], length.out = L) else seq.int(d$end[i], by = -1L, length.out = L)
     face <- rep("plain", L)
@@ -278,7 +282,7 @@ primer_letters <- function(assay, clamp_n = 5L) {
       colour[idx[idx >= 1L & idx <= L]] <- "#d7191c"
     }
     tibble::tibble(
-      role = as.character(d$role[i]), x = xs, letter = strsplit(s, "")[[1L]],
+      role = as.character(d$role[i]), x = xs, letter = strsplit(s_disp, "")[[1L]],
       face = face, colour = colour
     )
   })
@@ -1116,7 +1120,9 @@ kasp_primer_table <- function(assay, gene) {
     role        = c("AS-ref (FAM)", "AS-alt (HEX/VIC)", "common (reverse)"),
     oligo_id    = c("AS1_FAM", "AS2_HEX", "COM"),
     tail        = c(KASP_TAIL_FAM, KASP_TAIL_HEX, ""),
-    seq_no_tail = c(assay$assay$as_ref[1], assay$assay$as_alt[1], assay$assay$com[1])
+    # the AS-alt oligo is the physical (possibly degenerate) primer, so it is the
+    # degenerate consensus that is ordered/carried here
+    seq_no_tail = c(assay$assay$as_ref[1], as_alt_sequence(assay), assay$assay$com[1])
   )
 
   assay$thermo |>
