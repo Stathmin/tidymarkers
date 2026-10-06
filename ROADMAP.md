@@ -19,9 +19,17 @@ A–P — реализовано или оценено; **Q** — локализ
       `PATH`/`UNAFOLDDAT`, а тесты подхватывают сборку через
       `tests/testthat/helper-oligoarrayaux.R`
 - [x] Раннер тестов: `tests/testthat.R` (`test_check()` по установленному пакету)
-- [x] Внутренние проверки и замеры: `dev/check.R` (доки, styler, lintr, spelling,
-      `--full` → `R CMD check`), `dev/bench.R` (время + память по функциям),
+- [x] Внутренние проверки и замеры: `dev/check.R` (доки, styler, lintr, фигуры,
+      spelling, `--full` → `R CMD check`), `dev/bench.R` (время + память по функциям),
       `dev/profile-gif.R` (профиль отрисовки GIF)
+- [x] **Фигуры как код, без дрейфа:** `dev/render-all.R` — один вход для всех
+      генерируемых картинок (деревья решений → `man/figures` + `results/plot-smoke`,
+      панель мишеней, plot-smoke, screen, FRI). Шаг «фигуры» в `dev/check.R`
+      вызывает его **на каждой приёмке** и падает, если перегенерированная
+      закоммиченная картинка (`man/figures`) отличается, — авто-синхрон c просьбой
+      закоммитить, без тихого дрейфа; `--no-render` пропускает шаг. Тяжёлые части
+      (панель, FRI) — сеть/`OligoArrayAux`: на голой машине скип сообщением, не падение.
+      `dev/render-decision.R` умеет `TIDYKASP_SKIP_EXAMPLE=1` (скип демо-разбора)
 - [x] `.gitignore` (кэш, results, .tools)
 - [x] Скрипты остаются скриптами, но с roxygen-заголовками — путь к реальному пакету (см. M)
 

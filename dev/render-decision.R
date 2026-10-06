@@ -48,18 +48,22 @@ ggplot2::ggsave(
 )
 cat("wrote man/figures/decision-multiplex.png\n")
 
-# an annotated example (a real assay's traversal) for eyeballing, git-ignored
-tryCatch(
-  {
-    genome <- ath_genome()
-    variants <- ensembl_variants("Chr4", 268901, 271503)
-    snp <- tibble::tibble(chrom = "Chr4", pos = 269666L, ref = "G", alt = "A")
-    assay <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L))
-    ggplot2::ggsave(
-      "results/plot-smoke/decision-fri.png", plot_decision_tree(assay),
-      width = 9, height = 13, dpi = 110, bg = "white"
-    )
-    cat("wrote results/plot-smoke/decision-fri.png\n")
-  },
-  error = function(e) cat("annotated example skipped:", conditionMessage(e), "\n")
-)
+# an annotated example (a real assay's traversal) for eyeballing, git-ignored.
+# Skipped with TIDYKASP_SKIP_EXAMPLE=1 (the auto-render in dev/check.R), so the
+# gate never needs the demo data.
+if (!nzchar(Sys.getenv("TIDYKASP_SKIP_EXAMPLE"))) {
+  tryCatch(
+    {
+      genome <- ath_genome()
+      variants <- ensembl_variants("Chr4", 268901, 271503)
+      snp <- tibble::tibble(chrom = "Chr4", pos = 269666L, ref = "G", alt = "A")
+      assay <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L))
+      ggplot2::ggsave(
+        "results/plot-smoke/decision-fri.png", plot_decision_tree(assay),
+        width = 9, height = 13, dpi = 110, bg = "white"
+      )
+      cat("wrote results/plot-smoke/decision-fri.png\n")
+    },
+    error = function(e) cat("annotated example skipped:", conditionMessage(e), "\n")
+  )
+}

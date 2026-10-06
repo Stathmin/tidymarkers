@@ -8,10 +8,14 @@
 #    2. R/ and tests/ are styler-clean and lintr-clean
 #    3. spelling -- only with `--spelling` (the prose is Russian, so an English
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
-#    4. R CMD check -- only with `--full` (slow; builds and checks the tarball)
+#    4. figures -- regenerate every generated figure from the engine and fail if a
+#       committed one (man/figures) changed, so the diagrams never drift from the
+#       pipeline (see dev/render-all.R); skip with `--no-render`
+#    5. install smoke -- R CMD INSTALL must succeed
+#    6. R CMD check -- only with `--full` (slow; builds and checks the tarball)
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
-#  Run:  Rscript dev/check.R [--full] [--spelling]
+#  Run:  Rscript dev/check.R [--full] [--spelling] [--no-render]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
@@ -20,6 +24,7 @@ setwd(root)
 
 full     <- "--full" %in% commandArgs(trailingOnly = TRUE)
 spelling <- "--spelling" %in% commandArgs(trailingOnly = TRUE)
+no_render <- "--no-render" %in% commandArgs(trailingOnly = TRUE)
 failed   <- character()
 
 ok <- function(...) message("  ok   ", ...)
@@ -82,7 +87,27 @@ step("spelling", function() {
   ok("no unknown words")
 })
 
-# 4. install smoke ----------------------------------------------------------
+# 4. figures ----------------------------------------------------------------
+step("figures (auto-render)", function() {
+  if (no_render) {
+    return(message("  skip (--no-render)"))
+  }
+  # the figures are code: regenerate every one from the engine, then fail only if a
+  # *committed* figure (man/figures) changed - so the update is deliberate and
+  # committed, never a silent drift
+  figs <- list.files("man/figures", pattern = "[.](png|svg)$", full.names = TRUE)
+  md5 <- function() vapply(figs, function(f) unname(tools::md5sum(f)), character(1))
+  before <- md5()
+  system2(file.path(R.home("bin"), "Rscript"), "dev/render-all.R")
+  after <- md5()
+  changed <- figs[is.na(before) | before != after]
+  if (length(changed)) {
+    stop("generated figures changed - review and commit ", paste(basename(changed), collapse = ", "))
+  }
+  ok("generated figures are in sync with the engine")
+})
+
+# 5. install smoke ----------------------------------------------------------
 step("install (smoke)", function() {
   lib <- tempfile("kasp-check-lib-")
   dir.create(lib)
@@ -98,7 +123,7 @@ step("install (smoke)", function() {
   ok("the package installs cleanly")
 })
 
-# 5. R CMD check ------------------------------------------------------------
+# 6. R CMD check ------------------------------------------------------------
 step("R CMD check", function() {
   if (!full) return(message("  skip (pass --full to build and check)"))
   status <- system2("R", c("CMD", "check", "--no-manual", "--as-cran", "."))

@@ -267,9 +267,16 @@
   подходит; `rprimer`/`pwalign`/`targets`/`biomaRt` — оценены.
 
 ### Инструменты разработчика
-- `dev/check.R` — локальный «CI» (доки ↔ roxygen, styler, lintr; `--full` →
-  `R CMD check`, `--spelling` → орфография); `dev/bench.R` — время и память по
-  функциям (`bench`/`Rprofmem`); `dev/profile-gif.R` — профиль отрисовки GIF.
+- `dev/check.R` — локальный «CI» (доки ↔ roxygen, styler, lintr, **фигуры**;
+  `--full` → `R CMD check`, `--spelling` → орфография, `--no-render` → пропустить
+  фигуры); `dev/bench.R` — время и память по функциям (`bench`/`Rprofmem`);
+  `dev/profile-gif.R` — профиль отрисовки GIF.
+- **Фигуры как код, без дрейфа:** `dev/render-all.R` — один вход для всех
+  генерируемых картинок (деревья решений → `man/figures`, панель мишеней,
+  plot-smoke, screen, FRI). Шаг «фигуры» в `dev/check.R` вызывает его на каждой
+  приёмке и падает, если перегенерированная *закоммиченная* картинка отличается, —
+  авто-синхрон без тихого расхождения; гитигноренные `results/plot-smoke/*.png`
+  просто перерисовываются. Тяжёлые шаги скипаются сообщением на голой машине.
 - Пакет стал lint-clean (`.lintr` в формате, понятном lintr 3.4); тесты можно
   гонять параллельно (`Config/testthat/parallel`).
 - `renv.lock` запинил инструменты разработки (`styler`, `lintr`, `spelling`, `bench`,
