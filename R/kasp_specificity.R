@@ -190,12 +190,13 @@ assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
 #' @keywords internal
 #' @noRd
 assay_amplicon_counts <- function(products) {
-  purrr::imap_dfr(products, function(prods, nm) {
+  purrr::imap(products, function(prods, nm) {
     tibble::tibble(
       primer = nm, n_products = nrow(prods),
       width = if (nrow(prods)) max(prods$width) else NA_integer_
     )
-  })
+  }) |>
+    purrr::list_rbind()
 }
 
 #' BLAST every primer against a local genome database (rBLAST, optional)

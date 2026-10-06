@@ -185,13 +185,13 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
   alt_chr <- as.character(Biostrings::replaceAt(
     tmpl$seq, IRanges::IRanges(snp_i, width = 1L), alt
   ))
-  purrr::pmap_dfr(enzymes, function(enzyme, site, cut) {
+  purrr::pmap(enzymes, function(enzyme, site, cut) {
     L <- nchar(site)
     starts <- seq.int(max(1L, snp_i - L + 1L), min(n - L + 1L, snp_i))
     if (!length(starts)) {
-      return(tibble::tibble())
+      return(NULL)
     }
-    purrr::map_dfr(starts, function(st) {
+    purrr::map(starts, function(st) {
       rw <- substr(ref_chr, st, st + L - 1L)
       aw <- substr(alt_chr, st, st + L - 1L)
       voff <- snp_i - st
@@ -205,7 +205,7 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
         NA_character_
       }
       if (is.na(allele)) {
-        return(tibble::tibble())
+        return(NULL)
       }
       mm <- if (allele == "ref") mr else ma
       fix <- substr(site, mm + 1L, mm + 1L)
@@ -222,8 +222,10 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
         mm_offset = mm, fix_base = fix,
         fragments_ref = list(fr), fragments_alt = list(fa), gap = digest_gap(fr, fa)
       )
-    })
+    }) |>
+      purrr::list_rbind()
   }) |>
+    purrr::list_rbind() |>
     dplyr::mutate(resolvable = .data$gap >= min_gap) |>
     dplyr::arrange(dplyr::desc(.data$gap))
 }

@@ -155,7 +155,7 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
 ath_chrom <- function(x) {
   key <- sub("^(chromosome|chr)", "", x, ignore.case = TRUE)
   out <- unname(ATH_CHROM_MAP[key])
-  ifelse(is.na(out), paste0("Chr", key), out)
+  dplyr::if_else(is.na(out), paste0("Chr", key), out)
 }
 
 #' Read one genomic region as a DNAString

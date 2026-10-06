@@ -213,14 +213,14 @@ primer_features <- function(assay, limits = KASP_LIMITS) {
   clean <- !vapply(d$seq, has_run, logical(1)) &
     !vapply(d$seq, has_repeat, logical(1)) &
     !vapply(d$seq, has_palindrome, logical(1))
-  d$status <- ifelse(tm_ok & dplyr::between(d$gc, limits$gc[1], limits$gc[2]) & clean, "ok", "broken")
+  d$status <- dplyr::if_else(tm_ok & dplyr::between(d$gc, limits$gc[1], limits$gc[2]) & clean, "ok", "broken")
   win <- Map(clamp_window, d$start, d$end, d$forward)
   d$cstart <- vapply(win, `[`, numeric(1), 1L)
   d$cend <- vapply(win, `[`, numeric(1), 2L)
   # the primer string is always 5'->3'; the 3' base is its last letter
   last <- nchar(d$seq)
-  d$three_x <- ifelse(d$forward, d$end, d$start)
-  d$clamp <- ifelse(substr(d$seq, last, last) %in% c("G", "C"), "ok", "broken")
+  d$three_x <- dplyr::if_else(d$forward, d$end, d$start)
+  d$clamp <- dplyr::if_else(substr(d$seq, last, last) %in% c("G", "C"), "ok", "broken")
   d$label <- glue::glue("{d$role} \u00b7 {round(d$tm)}C {round(100 * d$gc)}%")
   # the injected destabilising mismatch is not in the assay row; recover it from
   # the AS candidates (the chosen primer's own row)
@@ -307,9 +307,10 @@ assay_ideogram_data <- function(assay, genome, BPPARAM = NULL, hits = NULL, prod
   if (nrow(hits)) hits$signal <- roles[hits$primer]
   products <- products %||%
     assay_pcr_products(assay, genome, BPPARAM = BPPARAM)
-  prods <- purrr::imap_dfr(products, function(p, nm) {
+  prods <- purrr::imap(products, function(p, nm) {
     if (nrow(p)) dplyr::mutate(p, signal = roles[[nm]]) else NULL
-  })
+  }) |>
+    purrr::list_rbind()
   list(bars = bars, hits = hits, products = prods)
 }
 
@@ -322,7 +323,7 @@ primer_hits <- function(primers, genome, BPPARAM = NULL) {
   scan_one <- function(ch) {
     worker_biostrings()
     subject <- Biostrings::DNAStringSet(genome_seq(genome, ch))
-    purrr::imap_dfr(primers, function(p, nm) {
+    purrr::imap(primers, function(p, nm) {
       # a primer binds either strand: search the plus strand for the primer and
       # for its reverse complement, and report the plus-strand match starts
       pats <- unique(c(p, as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))))
@@ -333,7 +334,8 @@ primer_hits <- function(primers, genome, BPPARAM = NULL) {
         return(NULL)
       }
       tibble::tibble(primer = nm, chrom = ch, pos = sort(unique(pos)))
-    })
+    }) |>
+      purrr::list_rbind()
   }
   chroms <- genome_chroms(genome)
   if (is.null(BPPARAM)) {
@@ -619,10 +621,11 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   letters <- primer_letters(assay)
 
   # alignment-level arrow: the amplicon the placement buys, on its own row
+  amp_ok <- dplyr::between(aa$amplicon, KASP_LIMITS$amplicon[1], KASP_LIMITS$amplicon[2])
   amp <- tibble::tibble(
     role = factor("amplicon", levels = c(levels(d$role), "amplicon")),
     start = min(d$start), end = max(d$end), forward = plus,
-    status = ifelse(dplyr::between(aa$amplicon, KASP_LIMITS$amplicon[1], KASP_LIMITS$amplicon[2]), "ok", "broken")
+    status = dplyr::if_else(amp_ok, "ok", "broken")
   )
   # the amplicon's own sequence (plus strand) as letters on its row
   ti <- function(p) p - snp$pos + assay$template$snp_i
@@ -635,12 +638,12 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   # the Tm as a small number just past the 3' end, and its deviation from the
   # target as a green/red tumbler next to it
   lab <- d
-  lab$target <- ifelse(lab$role == "COM", COM_TM_TARGET, AS_TM_TARGET)
+  lab$target <- dplyr::if_else(lab$role == "COM", COM_TM_TARGET, AS_TM_TARGET)
   lab$dtm <- lab$tm - lab$target
-  lab$meas_x <- ifelse(lab$forward, lab$end + 1, lab$start - 1)
-  lab$hj <- ifelse(lab$forward, 0, 1)
-  lab$dtm_x <- ifelse(lab$forward, lab$meas_x + 4, lab$meas_x - 4)
-  lab$dtm_status <- ifelse(abs(lab$dtm) <= 3, "ok", "broken")
+  lab$meas_x <- dplyr::if_else(lab$forward, lab$end + 1, lab$start - 1)
+  lab$hj <- dplyr::if_else(lab$forward, 0, 1)
+  lab$dtm_x <- dplyr::if_else(lab$forward, lab$meas_x + 4, lab$meas_x - 4)
+  lab$dtm_status <- dplyr::if_else(abs(lab$dtm) <= 3, "ok", "broken")
 
   # pins: the 3' discriminating base of every oligo, and the injected
   # destabilising mismatch of the AS primers (if the placement carries one)
@@ -649,7 +652,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   if (nrow(asx)) {
     pins <- dplyr::bind_rows(pins, tibble::tibble(
       role = as.character(asx$role),
-      x = ifelse(asx$forward, asx$end - (asx$stab - 1L), asx$start + (asx$stab - 1L))
+      x = dplyr::if_else(asx$forward, asx$end - (asx$stab - 1L), asx$start + (asx$stab - 1L))
     ))
   }
 
@@ -924,7 +927,7 @@ plot_checks <- function(assay, limits = KASP_LIMITS) {
     dplyr::mutate(
       level = factor(.data$level, levels = c("site", "feature", "alignment", "specificity")),
       name = check_short(.data$criterion),
-      status = ifelse(.data$pass, "ok", "broken"),
+      status = dplyr::if_else(.data$pass, "ok", "broken"),
       value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))
     )
   # the site class is shown as a 4-char code (monospace column, max 4 wide)

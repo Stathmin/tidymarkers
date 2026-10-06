@@ -178,12 +178,13 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   if (is.null(BPPARAM)) {
     n <- nrow(loci)
     id <- cli::cli_progress_bar(gettext("Designing KASP markers"), total = n)
-    res <- purrr::imap_dfr(seq_len(n), function(i, ...) {
+    res <- purrr::imap(seq_len(n), function(i, ...) {
       cli::cli_progress_update(id = id)
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i],
         cores = getOption("tidykasp.cores", 1L)
       )
-    })
+    }) |>
+      purrr::list_rbind()
     cli::cli_progress_done(id = id)
     res
   } else {

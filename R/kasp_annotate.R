@@ -160,7 +160,7 @@ txdb_seqname_map <- function(chrom, txdb) {
   inv <- stats::setNames(names(ATH_CHROM_MAP), ATH_CHROM_MAP) # values back to names
   txlev <- GenomeInfoDb::seqlevels(txdb)
   mapped <- dplyr::coalesce(unname(inv[chrom]), chrom)
-  ifelse(mapped %in% txlev, mapped, chrom)
+  dplyr::if_else(mapped %in% txlev, mapped, chrom)
 }
 
 #' Annotate variants with a `TxDb` transcript model

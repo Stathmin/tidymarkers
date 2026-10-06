@@ -54,12 +54,13 @@ screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+
     rlang::abort(gettext("`variants` needs `chrom` and `pos` columns."))
   }
   chroms <- unique(v$chrom)
-  purrr::map_dfr(chroms, function(ch) {
+  purrr::map(chroms, function(ch) {
     screen_one_chrom(
       v[v$chrom == ch, , drop = FALSE], ch, genome,
       lengths, strands, clean_3p, hotzone, linked, limits
     )
-  })
+  }) |>
+    purrr::list_rbind()
 }
 
 #' Screen the target SNPs of one chromosome
@@ -125,10 +126,10 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
   grid <- tidyr::crossing(strand = strands, length = lengths) # canonical placements
   n_tried <- nrow(grid)
 
-  rows <- purrr::map_dfr(which(is_snp), function(i) {
+  rows <- purrr::map(which(is_snp), function(i) {
     p <- g$pos[i]
-    lt <- ifelse(grid$strand == "+", p - grid$length + 1L, p)
-    rt <- ifelse(grid$strand == "+", p, p + grid$length - 1L)
+    lt <- dplyr::if_else(grid$strand == "+", p - grid$length + 1L, p)
+    rt <- dplyr::if_else(grid$strand == "+", p, p + grid$length - 1L)
     ia <- lt - lo + 1L
     ib <- rt - lo + 1L
     ok_range <- ia >= 1L & ib <= n
@@ -139,8 +140,8 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
     ban_ok <- ok_range & (cum_ban[ib_c + 1L] - cum_ban[ia_c]) == 0L
     # 3'-terminal window; the target's own base is excluded (it is the anchor)
     w3 <- IRanges::IRanges(
-      ifelse(grid$strand == "+", p - clean_3p + 1L, p),
-      ifelse(grid$strand == "+", p, p + clean_3p - 1L)
+      dplyr::if_else(grid$strand == "+", p - clean_3p + 1L, p),
+      dplyr::if_else(grid$strand == "+", p, p + clean_3p - 1L)
     )
     n3 <- IRanges::countOverlaps(w3, vs_ir) - 1L
     link <- linked_ir(p)
@@ -161,7 +162,8 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
         collapse = ","
       )
     )
-  })
+  }) |>
+    purrr::list_rbind()
 
   if (nrow(rows) == 0L) {
     return(tibble::tibble())
@@ -172,7 +174,7 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
     class = purrr::map_chr(cls, "class")[which(is_snp)],
     n_tried = n_tried, n_ok = rows$n_ok,
     score = paste0(rows$n_ok, "/", n_tried),
-    verdict = ifelse(rows$n_ok > 0L, "promising", "doomed"),
+    verdict = dplyr::if_else(rows$n_ok > 0L, "promising", "doomed"),
     reasons = rows$reasons
   )
   # a discriminable SNP has real placements; a complementary one cannot be primed

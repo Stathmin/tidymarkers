@@ -440,7 +440,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
     )
   }
 
-  cand <- purrr::pmap_dfr(
+  cand <- purrr::pmap(
     tidyr::crossing(allele = c("ref", "alt"), strand = strands, as_length = lengths),
     function(allele, strand, as_length) {
       tmpl <- if (allele == "ref") at$ref else at$alt
@@ -448,9 +448,11 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
       blen <- if (allele == "ref") ref_len else alt_len
       # 3'-end placements: from one base before the block to one past its end
       ends <- seq.int(max(1L, snp_i - 1L), min(length(tmpl), snp_i + blen))
-      purrr::map_dfr(ends, function(e) build(allele, tmpl, oblk, blen, strand, as_length, e))
+      purrr::map(ends, function(e) build(allele, tmpl, oblk, blen, strand, as_length, e)) |>
+        purrr::list_rbind()
     }
-  )
+  ) |>
+    purrr::list_rbind()
   if (nrow(cand) == 0L) rlang::abort(gettext("No indel AS-primer placement fit inside the design window."))
 
   # apply the caller's GC/Tm window before the DECIPHER calls (the caller drops
