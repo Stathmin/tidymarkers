@@ -172,7 +172,7 @@ oligoarrayaux_works <- function(bin, dat) {
 run_step <- function(command, args = character(), dir = NULL) {
   status <- if (is.null(dir)) system2(command, args) else withr::with_dir(dir, system2(command, args))
   if (!identical(as.integer(status), 0L)) {
-    rlang::abort(glue::glue(gettext("'{command}' failed (status {status}).")))
+    cli::cli_abort(gettext("'{command}' failed (status {status})."))
   }
   invisible()
 }
@@ -215,13 +215,13 @@ kasp_install_tools <- function(dest = fs::path(kasp_cache_dir(), "tools"),
   }
   make <- if (.Platform$OS.type == "windows") Sys.which("make") else Sys.which("make")
   if (!nzchar(make)) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       gettext("'make' was not found on the PATH."),
       i = gettext("On Windows install Rtools; on Unix install your build tools.")
     ))
   }
   if (!any(nzchar(Sys.which(c("cc", "gcc", "clang"))))) {
-    rlang::abort(c(
+    cli::cli_abort(c(
       gettext("No C compiler (cc/gcc/clang) was found on the PATH."),
       i = gettext("On Windows install Rtools; on Unix install a compiler.")
     ))
@@ -239,7 +239,7 @@ kasp_install_tools <- function(dest = fs::path(kasp_cache_dir(), "tools"),
   if (is.na(got)) {
     cli::cli_alert_warning(gettext("No sha256 tool found; skipping the checksum."))
   } else if (!identical(tolower(got), sha256)) {
-    rlang::abort(glue::glue(gettext("Checksum mismatch for {tar} (expected {sha256}, got {got}).")))
+    cli::cli_abort(gettext("Checksum mismatch for {tar} (expected {sha256}, got {got})."))
   }
 
   src <- fs::path(dest, glue::glue("oligoarrayaux-{version}"))
@@ -249,7 +249,7 @@ kasp_install_tools <- function(dest = fs::path(kasp_cache_dir(), "tools"),
   if (.Platform$OS.type == "windows") {
     bash <- Sys.which("bash")
     if (!nzchar(bash)) {
-      rlang::abort(c(
+      cli::cli_abort(c(
         gettext("Building on Windows needs 'bash' (Rtools/MSYS2) on the PATH."),
         i = gettext("Install Rtools, or build OligoArrayAux by hand.")
       ))
@@ -266,7 +266,7 @@ kasp_install_tools <- function(dest = fs::path(kasp_cache_dir(), "tools"),
   }
 
   if (!oligoarrayaux_works(bin, dat)) {
-    rlang::abort(gettext("The build finished but hybrid-min did not return a dG."))
+    cli::cli_abort(gettext("The build finished but hybrid-min did not return a dG."))
   }
   cli::cli_alert_success(gettext("OligoArrayAux installed in {.path {dest}}."))
   invisible(dest)
