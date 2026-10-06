@@ -86,7 +86,7 @@ duplex_compatibility <- function(assays, readout = c("co-dominant", "presence-ab
     "gate_duplex_selfcomp", "gate_duplex_amplicon"
   )
   obs <- c(
-    ifelse(is.na(homologous), NA, as.numeric(homologous)), max(tm) - min(tm),
+    dplyr::if_else(is.na(homologous), NA_real_, as.numeric(homologous)), max(tm) - min(tm),
     max(cross), max(self), max(amp)
   )
   lim <- c(

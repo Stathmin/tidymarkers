@@ -133,9 +133,9 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     return(NA_real_)
   }
   if (run$status != 0L) {
-    cli::cli_warn(glue::glue(gettext(
+    cli::cli_warn(gettext(
       "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
-    )))
+    ))
     return(NA_real_)
   }
   tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
@@ -522,9 +522,9 @@ ath_genome <- function(cache = kasp_cache_dir(), release = 63L) {
   missing <- setdiff(need, names(g))
   if (length(missing)) {
     cli::cli_abort(c(
-      glue::glue(gettext(
+      gettext(
         "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}."
-      )),
+      ),
       i = gettext("Ensembl deflines may have changed.")
     ))
   }

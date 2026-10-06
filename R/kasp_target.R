@@ -47,9 +47,9 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   missing <- setdiff(need, names(j))
   if (length(missing)) {
     cli::cli_abort(c(
-      glue::glue(gettext(
+      gettext(
         "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
-      )),
+      ),
       i = gettext("The Ensembl REST schema may have changed.")
     ))
   }
@@ -97,9 +97,9 @@ ensembl_variants <- function(chrom, start, end,
   missing <- setdiff(need, names(df))
   if (length(missing)) {
     cli::cli_abort(c(
-      glue::glue(gettext(
+      gettext(
         "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}."
-      )),
+      ),
       i = gettext("The Ensembl REST schema may have changed.")
     ))
   }

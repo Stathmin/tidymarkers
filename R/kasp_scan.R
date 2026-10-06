@@ -105,9 +105,9 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
     with_blast(rBLAST::blast(db_path, type = "blastn")),
     error = function(e) {
       cli::cli_abort(
-        glue::glue(gettext(
+        gettext(
           "Could not open a BLAST database at {db_path} (build it with kasp_blast_index())."
-        )),
+        ),
         parent = e
       )
     }

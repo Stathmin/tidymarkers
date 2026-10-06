@@ -414,9 +414,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
     cli::cli_warn(c(
-      glue::glue(gettext(
+      gettext(
         "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt."
-      )),
+      ),
       i = gettext("Allele specificity on strand {best_as$strand} may not hold across accessions.")
     ))
   }
@@ -428,9 +428,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   if (best_as$discrimination < min_disc) {
     cli::cli_warn(c(
-      glue::glue(gettext(
+      gettext(
         "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}."
-      )),
+      ),
       i = gettext("Consider widening `strands` or `tm_range`.")
     ))
   }
@@ -446,9 +446,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     linked_dependent <- n_link > 0L
     if (linked_dependent) {
       cli::cli_warn(c(
-        glue::glue(gettext(
+        gettext(
           "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked variant(s) in the AS zone)."
-        )),
+        ),
         i = gettext("The ALT primer is valid only in accessions carrying the linked haplotype.")
       ))
     }
@@ -564,9 +564,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     win <- which(clean)[1L]
     if (!is.na(win) && win > 1L) {
       cli::cli_warn(c(
-        glue::glue(gettext(
+        gettext(
           "Top-ranked pairing failed genome-level checks; kept the next clean one ({win} of {n_screen} screened)."
-        )),
+        ),
         i = gettext("Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats are screened here.")
       ))
       ord <- c(win, setdiff(seq_len(nrow(assays)), win))
@@ -685,21 +685,21 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (out$site$n_alt[1L] > 1L) {
     if (degenerate) {
       cli::cli_inform(c(
-        glue::glue(gettext(
+        gettext(
           "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
-        )),
-        i = glue::glue(gettext(
+        ),
+        i = gettext(
           "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every ALT but cannot tell them apart."
-        ))
+        )
       ))
     } else {
       cli::cli_warn(c(
-        glue::glue(gettext(
+        gettext(
           "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
-        )),
-        i = glue::glue(gettext(
+        ),
+        i = gettext(
           "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
-        ))
+        )
       ))
     }
   }
@@ -714,9 +714,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     bad <- out$evaluation$criterion[hit]
     if (length(bad)) {
       cli::cli_warn(c(
-        glue::glue(gettext(
+        gettext(
           "The chosen assay fails structural/specificity checks: {paste(bad, collapse = '; ')}."
-        )),
+        ),
         i = gettext("Selection does not gate these yet - inspect assay$evaluation and consider a trade-off.")
       ))
     }

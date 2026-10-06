@@ -25,9 +25,9 @@ normalise_haplotypes <- function(haplotypes) {
   need <- c("haplotype", "freq", "chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(haplotypes))
   if (length(missing)) {
-    cli::cli_abort(glue::glue(gettext(
+    cli::cli_abort(gettext(
       "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-    )))
+    ))
   }
   h <- tibble::as_tibble(haplotypes) |>
     dplyr::transmute(
