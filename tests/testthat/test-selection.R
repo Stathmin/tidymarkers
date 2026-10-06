@@ -122,3 +122,37 @@ test_that("the dropout gate tolerates benign footprint variants (dropout <= tol)
   expect_true(g$data$gate_com_footprint[1])
   expect_false(g$data$gate_com_footprint[2])
 })
+
+test_that("the pair screen swaps a top pairing with an off-target duplicate for a clean sibling", {
+  skip_if_no_oligoarrayaux()
+  W <- bseq(600L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 300L, 300L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # the ranked winner with the screen off, so we know which COM to sabotage
+  base <- suppressWarnings(
+    assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L, pair_screen = 0L)
+  )
+  com0 <- base$assay$com[1L]
+  # duplicate the winner COM's exact site on a second chromosome: it now has an
+  # off-target exact hit, so the pair screen must prefer a clean sibling
+  genome2 <- Biostrings::DNAStringSet(c(
+    Chr1 = W,
+    Chr2 = paste0(strrep("A", 60L), com0, strrep("A", 60L))
+  ))
+  msgs <- character()
+  a <- withCallingHandlers(
+    assemble_kasp_assay(genome2, snp, flank = 150L, cores = 1L, pair_screen = 3L),
+    warning = function(w) {
+      msgs <<- c(msgs, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_false(inherits(a, "kasp_doomed"))
+  expect_true(any(grepl("Top-ranked pairing", msgs, fixed = TRUE)))
+  expect_false(identical(a$assay$com[1L], com0))
+  chk <- kasp_design_checks(a)
+  expect_true(chk$pass[chk$criterion == "off-target exact primer hits (n)"])
+})

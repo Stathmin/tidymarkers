@@ -17,6 +17,7 @@ assemble_kasp_assay(
   max_footprint_variants = Inf,
   min_disc = 0.5,
   specificity_candidates = 10L,
+  pair_screen = 3L,
   linked = NULL,
   haplotypes = NULL,
   run_blast = FALSE,
@@ -51,6 +52,12 @@ positions in your own template if you need the literal \code{N}s.}
 \item{specificity_candidates}{how many leading AS placements to screen for
 3'-seed genome-wide uniqueness when breaking ties (mirrors
 \code{\link[=pick_target_snp]{pick_target_snp()}}; \code{0} disables the screen).}
+
+\item{pair_screen}{how many leading pairings (by the genome-free ranking) to
+genome-screen for off-target exact primer hits, a second in-silico PCR
+product and an inverted repeat; the first clean one wins.  These need a
+genome/PCR pass, so only the leaders are screened (\code{0} disables; the ranked
+winner is then kept).}
 
 \item{linked}{optional two-column table (\code{target}, \code{linked} positions) of
 co-segregating substitutions; those riding with \code{snp$pos} are baked into the

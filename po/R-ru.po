@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-06 17:46+0300\n"
+"POT-Creation-Date: 2026-10-06 18:07+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -61,33 +61,33 @@ msgstr "для отрисовки геля ARMS"
 msgid "`marker` must be a kasp_arms object (see design_arms_marker())."
 msgstr "`marker` должен быть объектом kasp_arms (см. design_arms_marker())."
 
-#: kasp_assemble.R:128
+#: kasp_assemble.R:134
 msgid ""
 "OligoArrayAux was not found: thermodynamic and structural checks will be NA."
 msgstr ""
 "OligoArrayAux не найден: термодинамические и структурные проверки будут NA."
 
-#: kasp_assemble.R:129
+#: kasp_assemble.R:135
 msgid "run tidykasp::kasp_install_tools() once to build it."
 msgstr "выполните tidykasp::kasp_install_tools() один раз, чтобы собрать его."
 
-#: kasp_assemble.R:271
+#: kasp_assemble.R:277
 msgid "No AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер не прошёл фильтр GC/Tm."
 
-#: kasp_assemble.R:285
+#: kasp_assemble.R:291
 msgid "No AS primer passed the homopolymer/SSR filter."
 msgstr "Ни один AS-праймер не прошёл фильтр гомополимеров/SSR."
 
-#: kasp_assemble.R:293
+#: kasp_assemble.R:299
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр GC/Tm."
 
-#: kasp_assemble.R:297
+#: kasp_assemble.R:303
 msgid "No indel AS primer passed the homopolymer/SSR filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр гомополимеров/SSR."
 
-#: kasp_assemble.R:371
+#: kasp_assemble.R:377
 msgid ""
 "No AS primer survived the footprint cap (max_footprint_variants = "
 "{max_footprint_variants})."
@@ -95,11 +95,11 @@ msgstr ""
 "Ни один AS-праймер не выдержал лимит футпринта (max_footprint_variants = "
 "{max_footprint_variants})."
 
-#: kasp_assemble.R:403
+#: kasp_assemble.R:409
 msgid "No AS primer survived even the relaxed constraints."
 msgstr "Ни один AS-праймер не прошёл даже ослабленные ограничения."
 
-#: kasp_assemble.R:414
+#: kasp_assemble.R:420
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
@@ -107,26 +107,26 @@ msgstr ""
 "У целевого SNP {snp$chrom}:{snp$pos} в 3'-концевых {clean_3p} нт AS-праймера "
 "есть {best_as$n_3p} других вариант(ов)."
 
-#: kasp_assemble.R:416
+#: kasp_assemble.R:422
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 "Аллельная специфичность на цепи {best_as$strand} может не сохраняться между "
 "образцами."
 
-#: kasp_assemble.R:421
+#: kasp_assemble.R:427
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 "AS-праймер перекрывает {best_as$n_var} других вариантов в своём футпринте.AS-"
 "праймер перекрывает {best_as$n_var} других вариант(ов) под своим футпринтом."
 
-#: kasp_assemble.R:422
+#: kasp_assemble.R:428
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 "ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации.Ни "
 "один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 
-#: kasp_assemble.R:428
+#: kasp_assemble.R:434
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
@@ -134,11 +134,11 @@ msgstr ""
 "Дискриминация лучшего AS-праймера = {round(best_as$discrimination, 2)} ниже "
 "min_disc = {min_disc}."
 
-#: kasp_assemble.R:430
+#: kasp_assemble.R:436
 msgid "Consider widening `strands` or `tm_range`."
 msgstr "Рассмотрите расширение `strands` или `tm_range`."
 
-#: kasp_assemble.R:446
+#: kasp_assemble.R:452
 msgid ""
 "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
 "variant(s) in the AS zone)."
@@ -146,33 +146,49 @@ msgstr ""
 "Дизайн в {snp$chrom}:{snp$pos} держится на сцеплении ({n_link} сцепленных "
 "вариантов в зоне AS)."
 
-#: kasp_assemble.R:448
+#: kasp_assemble.R:454
 msgid ""
 "The ALT primer is valid only in accessions carrying the linked haplotype."
 msgstr ""
 "ALT-праймер действителен только в образцах с этим сцепленным гаплотипом."
 
-#: kasp_assemble.R:513
+#: kasp_assemble.R:519
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr "Ни один кандидатный ассей не прошёл даже ослабленные ограничения."
 
-#: kasp_assemble.R:543
+#: kasp_assemble.R:563
+msgid ""
+"Top-ranked pairing failed genome-level checks; kept the next clean one "
+"({win} of {n_screen} screened)."
+msgstr ""
+"Топовая пара не прошла геномные проверки; взята следующая чистая "
+"({win} из {n_screen} просмотренных)."
+
+#: kasp_assemble.R:565
+msgid ""
+"Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
+"are screened here."
+msgstr ""
+"Ранжирование не использует геном; здесь проверяются off-target хиты, "
+"ПЦР in silico и инвертированные повторы."
+
+#: kasp_assemble.R:593
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr "in-silico ПЦР не удалась: {conditionMessage(e)}"
 
-#: kasp_assemble.R:556
+#: kasp_assemble.R:606
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: kasp_assemble.R:562
+#: kasp_assemble.R:612
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr "BLAST-БД недоступна: {conditionMessage(e)}"
 
-#: kasp_assemble.R:600
+#: kasp_assemble.R:650
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
 
-#: kasp_assemble.R:631 kasp_assemble.R:640
+#: kasp_assemble.R:681 kasp_assemble.R:690
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
@@ -180,7 +196,7 @@ msgstr ""
 "Мишень {snp$chrom}:{snp$pos} мультиаллельная ({out$site$n_alt[1L]} ALT, "
 "класс {out$site$class[1L]})."
 
-#: kasp_assemble.R:634
+#: kasp_assemble.R:684
 msgid ""
 "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
 "ALT but cannot tell them apart."
@@ -188,13 +204,12 @@ msgstr ""
 "ALT-праймер вырожденный (3'-основание {out$site$code[1L]}): он покрывает все "
 "ALT, но не различает их."
 
-#: kasp_assemble.R:643
+#: kasp_assemble.R:693
 msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
-msgstr ""
-"ALT-праймер построен только для {snp$alt}; остальные ALT не покрыты."
+msgstr "ALT-праймер построен только для {snp$alt}; остальные ALT не покрыты."
 
-#: kasp_assemble.R:660
+#: kasp_assemble.R:710
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
@@ -202,7 +217,7 @@ msgstr ""
 "Выбранный тест не проходит структурные/специфичностные проверки: {paste(bad, "
 "collapse = '; ')}."
 
-#: kasp_assemble.R:662
+#: kasp_assemble.R:712
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
@@ -576,15 +591,15 @@ msgstr ""
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr "возвращаю лучшую по рангу мишень, дизайн которой может быть doomed."
 
-#: kasp_thermo.R:187
+#: kasp_thermo.R:184
 msgid "Directory not found: {path}"
 msgstr "Каталог не найден: {path}"
 
-#: kasp_thermo.R:261
+#: kasp_thermo.R:258
 msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
 
-#: kasp_thermo.R:262
+#: kasp_thermo.R:259
 msgid ""
 "run kasp_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
 msgstr ""

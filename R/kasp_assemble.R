@@ -71,6 +71,11 @@ tidy_as_candidates <- function(x) {
 #' @param specificity_candidates how many leading AS placements to screen for
 #'   3'-seed genome-wide uniqueness when breaking ties (mirrors
 #'   [pick_target_snp()]; `0` disables the screen).
+#' @param pair_screen how many leading pairings (by the genome-free ranking) to
+#'   genome-screen for off-target exact primer hits, a second in-silico PCR
+#'   product and an inverted repeat; the first clean one wins.  These need a
+#'   genome/PCR pass, so only the leaders are screened (`0` disables; the ranked
+#'   winner is then kept).
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
 #' @param cores processors for the per-SNP subprocess work (the DECIPHER PCR
 #'   efficiencies and the OligoArrayAux dG maps); `1` (the default, from
@@ -118,6 +123,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 tm_range = KASP_LIMITS$as_tm, clean_3p = 5L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
+                                pair_screen = 3L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
@@ -520,6 +526,57 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   assays <- assays[ord, , drop = FALSE]
   assays$rank <- seq_len(nrow(assays))
   warn_relaxed(pick$violated)
+
+  # The ladder ranks on genome-free margins, so a second in-silico PCR product, an
+  # off-target exact primer hit or an inverted repeat can still sit on the winner.
+  # Those cost a genome/PCR pass, so only the leading `pair_screen` pairings are
+  # screened; the first clean one wins (the ranked winner is kept when none is).
+  if (!is.null(genome) && pair_screen > 1L && nrow(assays) > 1L) {
+    n_screen <- min(as.integer(pair_screen), nrow(assays))
+    # the AS primers are shared by every pairing, so their exact hits are scanned
+    # once; only the COM primer (which varies) is rescanned per candidate
+    as_primers <- c(AS_ref = assays$as_ref[1L], AS_alt = assays$as_alt[1L])
+    as_hits <- tryCatch(primer_hits(as_primers, genome, BPPARAM = BPPARAM), error = function(e) NULL)
+    as_bad <- !is.null(as_hits) && nrow(as_hits) && max(table(as_hits$primer)) > 1L
+    screen_pair <- function(i) {
+      row <- assays[i, ]
+      if (as_bad || any(has_palindrome(c(as_primers, row$com)))) {
+        return(FALSE)
+      }
+      com_hits <- tryCatch(
+        primer_hits(c(COM = row$com), genome, BPPARAM = BPPARAM),
+        error = function(e) NULL
+      )
+      if (!is.null(com_hits) && nrow(com_hits) && max(table(com_hits$primer)) > 1L) {
+        return(FALSE)
+      }
+      prod <- tryCatch(
+        assay_pcr_products(list(assay = row, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
+        error = function(e) NULL
+      )
+      if (is.null(prod)) {
+        return(TRUE) # unknown -> do not block
+      }
+      cnt <- assay_amplicon_counts(prod)
+      ref <- cnt$n_products[cnt$primer == "AS_ref"]
+      alt <- cnt$n_products[cnt$primer == "AS_alt"]
+      length(ref) == 1L && length(alt) == 1L && ref == 1L && alt == 0L
+    }
+    clean <- purrr::map_lgl(seq_len(n_screen), screen_pair)
+    win <- which(clean)[1L]
+    if (!is.na(win) && win > 1L) {
+      rlang::warn(c(
+        glue::glue(gettext(
+          "Top-ranked pairing failed genome-level checks; kept the next clean one ({win} of {n_screen} screened)."
+        )),
+        i = gettext("Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats are screened here.")
+      ))
+      ord <- c(win, setdiff(seq_len(nrow(assays)), win))
+      assays <- assays[ord, , drop = FALSE]
+      assays$rank <- seq_len(nrow(assays))
+    }
+  }
+  best <- assays[1L, ]
   primers <- c(AS_ref = best$as_ref, AS_alt = best$as_alt, COM = best$com)
 
   # specificity uses the template-matched allele for the AS primers (no
