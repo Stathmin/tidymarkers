@@ -69,6 +69,7 @@ Suggests:
     bench,
     profmem,
     lobstr,
+    rprimer,
     spelling,
     styler,
     lintr,

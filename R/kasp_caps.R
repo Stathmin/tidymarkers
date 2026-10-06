@@ -120,6 +120,108 @@ find_caps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_e
   out[order(-out$gap), ]
 }
 
+#' IUPAC-aware mismatch offsets between a sequence window and an enzyme site
+#'
+#' A position is a mismatch when the base is not one of the site's IUPAC code
+#' members.  Returns 0-based offsets.
+#' @keywords internal
+#' @noRd
+site_mismatches <- function(window, site) {
+  w <- strsplit(window, "")[[1L]]
+  s <- strsplit(site, "")[[1L]]
+  k <- min(length(w), length(s))
+  w <- w[seq_len(k)]
+  s <- s[seq_len(k)]
+  bad <- which(!vapply(seq_len(k), function(i) {
+    grepl(w[i], Biostrings::IUPAC_CODE_MAP[[s[i]]], fixed = TRUE)
+  }, logical(1)))
+  bad - 1L
+}
+
+#' dCAPS: an enzyme the *primer* can turn on for one allele
+#'
+#' A natural CAPS site is absent at most variants, so dCAPS introduces one: a
+#' primer carries a single mismatch that completes the recognition site next to
+#' the variant, and the variant base itself is inside the site - so the site forms
+#' for one allele only.  For every enzyme this scans the windows that contain the
+#' variant, keeps those that are one (non-variant) mismatch short of the site for
+#' one allele while the other allele breaks it, applies the primer's base to both
+#' amplicons and digests.  Single-base substitutions only (a length-changing
+#' allele cannot be completed by a substitution primer).
+#' @param genome a `kasp_genome` or `DNAStringSet`.
+#' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
+#' @param flank window half-width.
+#' @param enzymes enzyme table (see [restriction_enzymes()]).
+#' @param min_gap minimal band separation to call it gel-resolvable.
+#' @return tidy tibble, one row per candidate: `enzyme`, `allele` (which allele the
+#'   primer completes the site for), `site_start` (template), `site_len`,
+#'   `mm_offset` (0-based, the base the primer introduces), `fix_base`, the two
+#'   digest `fragments_*`, `gap` and `resolvable`.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' find_dcaps_enzymes(genome, kasp_example("SNP")[1, ], flank = 250)
+#' }
+#' @family KASP CAPS
+#' @export
+find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
+                               min_gap = 50L) {
+  ref <- as.character(snp$ref)[1L]
+  alt <- as.character(snp$alt)[1L]
+  if (nchar(ref) != 1L || nchar(alt) != 1L) {
+    rlang::inform(gettext("dCAPS scanning is implemented for single-base substitutions only."))
+    return(tibble::tibble())
+  }
+  tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
+  ref_chr <- as.character(tmpl$seq)
+  snp_i <- tmpl$snp_i
+  n <- nchar(ref_chr)
+  alt_chr <- as.character(Biostrings::replaceAt(
+    tmpl$seq, IRanges::IRanges(snp_i, width = 1L), alt
+  ))
+  purrr::pmap_dfr(enzymes, function(enzyme, site, cut) {
+    L <- nchar(site)
+    starts <- seq.int(max(1L, snp_i - L + 1L), min(n - L + 1L, snp_i))
+    if (!length(starts)) {
+      return(tibble::tibble())
+    }
+    purrr::map_dfr(starts, function(st) {
+      rw <- substr(ref_chr, st, st + L - 1L)
+      aw <- substr(alt_chr, st, st + L - 1L)
+      voff <- snp_i - st
+      mr <- site_mismatches(rw, site)
+      ma <- site_mismatches(aw, site)
+      allele <- if (length(mr) == 1L && mr != voff && length(ma) >= 2L) {
+        "ref"
+      } else if (length(ma) == 1L && ma != voff && length(mr) >= 2L) {
+        "alt"
+      } else {
+        NA_character_
+      }
+      if (is.na(allele)) {
+        return(tibble::tibble())
+      }
+      mm <- if (allele == "ref") mr else ma
+      fix <- substr(site, mm + 1L, mm + 1L)
+      pos <- st + mm # 1-based template position the primer corrects
+      rf <- ref_chr
+      af <- alt_chr
+      substr(rf, pos, pos) <- fix
+      substr(af, pos, pos) <- fix
+      one <- enzymes[enzymes$enzyme == enzyme, ]
+      fr <- caps_fragments(rf, one)$fragments[[1L]]
+      fa <- caps_fragments(af, one)$fragments[[1L]]
+      tibble::tibble(
+        enzyme = enzyme, allele = allele, site_start = st, site_len = L,
+        mm_offset = mm, fix_base = fix,
+        fragments_ref = list(fr), fragments_alt = list(fa), gap = digest_gap(fr, fa)
+      )
+    })
+  }) |>
+    dplyr::mutate(resolvable = .data$gap >= min_gap) |>
+    dplyr::arrange(dplyr::desc(.data$gap))
+}
+
 #' Flanking primer pair around a restricted region
 #'
 #' A compact, GC/Tm-screened scan: forward primers from the left of `[lo, hi]`,
@@ -179,13 +281,101 @@ design_caps_primers <- function(seq, lo, hi, target_tm = AS_TM_TARGET,
   )
 }
 
+#' A dCAPS primer pair around a primer-introduced site
+#'
+#' The site-carrying primer covers `[lo, hi]` (with the introduced base already
+#' applied in `fixed`); the mate is a plain flanking primer on the other side.
+#' Both orientations are tried and the best Tm-balanced valid pair is returned.
+#' @keywords internal
+#' @noRd
+design_dcaps_primers <- function(fixed, lo, hi, target_tm = AS_TM_TARGET,
+                                 site_lengths = 18:32, mate_lengths = 18:25,
+                                 min_product = 120L, max_product = 1200L,
+                                 tm_range = KASP_LIMITS$as_tm, gc_range = KASP_LIMITS$gc) {
+  s <- fixed
+  n <- nchar(s)
+  if (lo <= 1L || hi >= n) {
+    return(NULL)
+  }
+  ok <- function(p) !has_run(p) & !has_repeat(p)
+  screen <- function(d) {
+    d$tm <- primer_tm(d$primer)
+    d$gc <- gc_frac(d$primer)
+    dplyr::filter(
+      d, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
+      dplyr::between(.data$gc, gc_range[1L], gc_range[2L])
+    )
+  }
+  # forward primers covering the site, and reverse mate to the right
+  site_f <- tidyr::crossing(p1 = seq.int(max(1L, lo - 14L), lo), len = site_lengths) |>
+    dplyr::filter(.data$p1 + .data$len - 1L >= hi, .data$p1 + .data$len - 1L <= n) |>
+    dplyr::mutate(primer = stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L)) |>
+    dplyr::filter(ok(.data$primer)) |>
+    screen()
+  mate_r <- tidyr::crossing(p1 = seq.int(hi + 1L, n), len = mate_lengths) |>
+    dplyr::filter(.data$p1 + .data$len - 1L <= n) |>
+    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
+      Biostrings::DNAStringSet(stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L))
+    ))) |>
+    dplyr::filter(ok(.data$primer)) |>
+    screen()
+  # reverse primers covering the site, and forward mate to the left
+  site_r <- tidyr::crossing(p1 = seq.int(max(1L, lo - 14L), lo), len = site_lengths) |>
+    dplyr::filter(.data$p1 + .data$len - 1L >= hi, .data$p1 + .data$len - 1L <= n) |>
+    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
+      Biostrings::DNAStringSet(stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L))
+    ))) |>
+    dplyr::filter(ok(.data$primer)) |>
+    screen()
+  mate_f <- tidyr::crossing(p1 = seq_len(max(1L, lo - 1L)), len = mate_lengths) |>
+    dplyr::filter(.data$p1 + .data$len - 1L < lo) |>
+    dplyr::mutate(primer = stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L)) |>
+    dplyr::filter(ok(.data$primer)) |>
+    screen()
+  pair_up <- function(site, mate, site_is_fwd) {
+    if (!nrow(site) || !nrow(mate)) {
+      return(NULL)
+    }
+    p <- dplyr::cross_join(site, mate, suffix = c("_s", "_m")) |>
+      dplyr::mutate(
+        product = if (site_is_fwd) {
+          .data$p1_m + .data$len_m - 1L - .data$p1_s + 1L
+        } else {
+          .data$p1_s + .data$len_s - 1L - .data$p1_m + 1L
+        }
+      ) |>
+      dplyr::filter(dplyr::between(.data$product, min_product, max_product))
+    if (!nrow(p)) {
+      return(NULL)
+    }
+    p[which.min(abs(p$tm_s - p$tm_m)), ]
+  }
+  cand <- dplyr::bind_rows(
+    pair_up(site_f, mate_r, TRUE),
+    pair_up(site_r, mate_f, FALSE)
+  )
+  if (is.null(cand) || !nrow(cand)) {
+    return(NULL)
+  }
+  best <- cand[1L, ]
+  list(
+    forward = if (best$p1_s <= best$p1_m) best$primer_s else best$primer_m,
+    reverse = if (best$p1_s <= best$p1_m) best$primer_m else best$primer_s,
+    start = min(best$p1_s, best$p1_m),
+    end = max(best$p1_s + best$len_s - 1L, best$p1_m + best$len_m - 1L),
+    product = best$product, tm_f = best$tm_s, tm_r = best$tm_m
+  )
+}
+
 #' Design a CAPS / dCAPS marker at a variant
 #'
 #' The CAPS analogue of [assemble_kasp_assay()]: find the enzyme whose digest
 #' separates the alleles (see [find_caps_enzymes()]), then design the flanking
-#' primer pair around the discriminating site.  Returns a `kasp_caps` object with
-#' the enzyme, both digest patterns and the primer pair - the restriction recipe
-#' travels with the marker, as the KASP mix recipe does.
+#' primer pair around the discriminating site.  When no natural site exists it
+#' falls back to dCAPS ([find_dcaps_enzymes()]): a primer introduces the site.
+#' Returns a `kasp_caps` object with the enzyme, both digest patterns and the
+#' primer pair - the restriction recipe travels with the marker, as the KASP mix
+#' recipe does.
 #' @param genome a `kasp_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank window half-width for the scan and primer design.
@@ -206,8 +396,7 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
   hits <- find_caps_enzymes(genome, snp, flank, enzymes, min_gap)
   hits <- dplyr::filter(hits, .data$resolvable)
   if (!nrow(hits)) {
-    rlang::inform(gettext("No enzyme separates the REF and ALT amplicons - no natural CAPS marker here."))
-    return(NULL)
+    return(design_dcaps_marker(genome, snp, flank, enzymes, min_gap))
   }
   best <- hits[1L, ]
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
@@ -233,10 +422,50 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
   structure(out, class = "kasp_caps")
 }
 
+#' Build a dCAPS marker from a primer-introduced site
+#'
+#' Takes the best [find_dcaps_enzymes()] candidate, applies the primer's base to
+#' the REF amplicon, designs the site-carrying primer + a flanking mate, and
+#' packages the restricted recipe as a `kasp_caps` object (`dcaps = TRUE`).
+#' @keywords internal
+#' @noRd
+design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap) {
+  d <- find_dcaps_enzymes(genome, snp, flank, enzymes, min_gap)
+  d <- dplyr::filter(d, .data$resolvable)
+  if (!nrow(d)) {
+    rlang::inform(gettext("No natural or primer-introduced (dCAPS) restriction marker here."))
+    return(NULL)
+  }
+  best <- d[1L, ]
+  tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
+  ref_chr <- as.character(tmpl$seq)
+  pos <- best$site_start + best$mm_offset # 1-based; the base the primer introduces
+  fixed <- ref_chr
+  substr(fixed, pos, pos) <- best$fix_base
+  lo <- best$site_start
+  hi <- best$site_start + best$site_len - 1L
+  primers <- design_dcaps_primers(fixed, lo, hi)
+  if (is.null(primers)) {
+    rlang::inform(gettext("A dCAPS site was found, but no primer pair passed the Tm/GC filters."))
+    return(NULL)
+  }
+  out <- list(
+    snp = snp, enzyme = best$enzyme, dcaps = TRUE,
+    fragments_ref = best$fragments_ref[[1L]], fragments_alt = best$fragments_alt[[1L]],
+    gap = best$gap, primers = primers,
+    amplicon = tibble::tibble(
+      start = snp$pos + primers$start - tmpl$snp_i,
+      end = snp$pos + primers$end - tmpl$snp_i
+    )
+  )
+  structure(out, class = "kasp_caps")
+}
+
 #' @export
 print.kasp_caps <- function(x, ...) {
   cat("<kasp_caps>", x$snp$chrom, ":", x$snp$pos, " ",
-    x$snp$ref, ">", x$snp$alt, " via ", x$enzyme, "\n",
+    x$snp$ref, ">", x$snp$alt, " via ", x$enzyme,
+    if (isTRUE(x$dcaps)) " (dCAPS)" else "", "\n",
     sep = ""
   )
   cat("  REF digest:", paste(x$fragments_ref, collapse = " + "), "bp\n")

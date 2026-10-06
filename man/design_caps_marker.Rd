@@ -31,9 +31,11 @@ separates the alleles.
 \description{
 The CAPS analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: find the enzyme whose digest
 separates the alleles (see \code{\link[=find_caps_enzymes]{find_caps_enzymes()}}), then design the flanking
-primer pair around the discriminating site.  Returns a \code{kasp_caps} object with
-the enzyme, both digest patterns and the primer pair - the restriction recipe
-travels with the marker, as the KASP mix recipe does.
+primer pair around the discriminating site.  When no natural site exists it
+falls back to dCAPS (\code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}}): a primer introduces the site.
+Returns a \code{kasp_caps} object with the enzyme, both digest patterns and the
+primer pair - the restriction recipe travels with the marker, as the KASP mix
+recipe does.
 }
 \examples{
 \dontrun{
@@ -45,6 +47,7 @@ design_caps_marker(genome, kasp_example("SNP")[1, ], flank = 250)
 Other KASP CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
+\code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
 \concept{KASP CAPS}

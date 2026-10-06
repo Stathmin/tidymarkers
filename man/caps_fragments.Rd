@@ -27,6 +27,7 @@ caps_fragments("GAATTCTTAAGGAATTC")
 Other KASP CAPS:
 \code{\link[=design_caps_marker]{design_caps_marker()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
+\code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
 \concept{KASP CAPS}

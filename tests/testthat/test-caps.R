@@ -32,6 +32,41 @@ test_that("design_caps_marker returns a classed marker whose pair spans the site
   expect_true(m$primers$product >= 120L)
 })
 
+test_that("find_dcaps_enzymes finds a site a primer can complete", {
+  withr::with_seed(3L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
+  substr(w, 300L, 305L) <- "GAGTTC" # one mismatch from EcoRI (G^AATTC) at offset 2
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 305L, ref = "C", alt = "A") # variant inside the site
+  d <- find_dcaps_enzymes(genome, snp, flank = 200L)
+  eco <- d[d$enzyme == "EcoRI", ]
+  expect_true(nrow(eco) >= 1L)
+  expect_equal(eco$allele[1L], "ref")
+  expect_equal(eco$mm_offset[1L], 2L)
+  expect_equal(eco$fix_base[1L], "A")
+  expect_true(eco$resolvable[1L])
+})
+
+test_that("dCAPS scanning declines non-substitution alleles", {
+  withr::local_envvar(LANGUAGE = "en")
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "A", alt = "AA")
+  expect_message(
+    suppressWarnings(find_dcaps_enzymes(genome, snp, flank = 15L)),
+    "single-base"
+  )
+})
+
+test_that("design_caps_marker falls back to dCAPS when no natural site exists", {
+  withr::with_seed(3L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
+  substr(w, 300L, 305L) <- "GAGTTC"
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 305L, ref = "C", alt = "A")
+  m <- design_caps_marker(genome, snp, flank = 200L)
+  expect_s3_class(m, "kasp_caps")
+  expect_true(isTRUE(m$dcaps))
+  expect_true(m$enzyme %in% restriction_enzymes()$enzyme)
+})
+
 test_that("the caps scheme is registered and yields a DAG with its own stage", {
   expect_true("caps" %in% kasp_schemes()$scheme)
   crit <- kasp_criteria(scheme = "caps")

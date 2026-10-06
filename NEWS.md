@@ -72,10 +72,14 @@
 - **CAPS/dCAPS-схема** (`R/kasp_caps.R`): `restriction_enzymes()` (курируемая таблица
   `inst/extdata/restriction_enzymes.csv`), `caps_fragments()` (IUPAC-aware сайты → длины
   фрагментов), `find_caps_enzymes()` (REF vs ALT-ампликон, gel-resolvability по разрыву полос),
-  `design_caps_marker()` (фермент + фланкирующая пара, класс `kasp_caps` с рецептом рестрикции).
-  Схема `caps` в `kasp_schemes()`/`kasp_criteria()`/`kasp_decision_stages()`: своя стадия
-  `gate_caps_*`, маркер-агностичные праймерные проверки, без KASP 3'-машинерии. **dCAPS**
-  (сайт, создаваемый праймером) — следующий шаг (см. ROADMAP §U).
+  `find_dcaps_enzymes()` (**dCAPS** — сайт, который доводит праймер: окно на один мисматч
+  короче сайта, база вносится праймером, вариант внутри сайта) и `design_caps_marker()`
+  (природный фермент или dCAPS-фолбэк + фланкирующая пара, класс `kasp_caps` с рецептом
+  рестрикции). Схема `caps` в `kasp_schemes()`/`kasp_criteria()`/`kasp_decision_stages()`:
+  своя стадия `gate_caps_*`, маркер-агностичные праймерные проверки, без KASP 3'-машинерии.
+- **Независимый валидатор rprimer** (`R/kasp_rprimer.R`, Bioc, `Suggests`): `alignment_from()`
+  строит выравнивание (REF/ALT, гаплотипы), `rprimer_assays()` запускает независимый дизайнер
+  + `checkMatch()` (on/off-target пропорции) — второй алгоритм о том же локусе.
 - **Провенанс порогов и термодинамическая сверка** (`R/kasp_priors.R`): `kasp_priors()` —
   таблица «параметр → значение → источник» (LGC/EasyKASP 2025 / primerblast-oss);
   `thermo_crosscheck()` — Tm одного набора олиго в нескольких NN-таблицах TmCalculator
