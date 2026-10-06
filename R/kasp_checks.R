@@ -74,7 +74,8 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
     aa$amplicon, as_tm, com_tm, com_tm - as_tm, aa$as_gc, aa$com_gc,
     run, sum(lengths(find_repeats(c(aa$as_ref, aa$com)))),
     sum(purrr::map_int(find_palindromes(c(aa$as_ref, aa$as_alt, aa$com)), nrow)),
-    hair, cross, homo, aa$as_n_3p, aa$n_var, aa$as_dropout, aa$com_dropout,
+    hair, cross, homo, aa$as_n_3p, aa$as_n_var, aa$n_var,
+    aa$as_dropout, aa$as_foot_dropout, aa$com_dropout,
     disc, amp_obs, ot_obs
   )
   pass <- c(
@@ -92,8 +93,10 @@ kasp_design_checks <- function(assay, limits = KASP_LIMITS) {
     cross >= limits$duplex_dg,
     homo >= limits$homodimer_dg,
     !is.na(aa$as_dropout) | aa$as_n_3p == 0L,
+    !is.na(aa$as_foot_dropout) | aa$as_n_var == 0L,
     !is.na(aa$com_dropout) | aa$n_var == 0L,
     is.na(aa$as_dropout) | aa$as_dropout <= tol,
+    is.na(aa$as_foot_dropout) | aa$as_foot_dropout <= tol,
     is.na(aa$com_dropout) | aa$com_dropout <= tol,
     disc >= limits$discrimination,
     amp_pass, ot_pass

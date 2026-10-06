@@ -64,8 +64,8 @@ check_level <- function(criterion) {
     "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
     "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
     "worst cross-dimer dG37", "worst homodimer dG37",
-    "AS 3' window variants (n)", "COM footprint variants (n)",
-    "AS 3' window dropout", "COM footprint dropout"
+    "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
+    "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout"
   )
   out <- rep("alignment", length(criterion))
   out[criterion %in% feature] <- "feature"
@@ -94,8 +94,10 @@ check_short <- function(criterion) {
     "worst cross-dimer dG37" = "dimer",
     "worst homodimer dG37" = "homodimer",
     "AS 3' window variants (n)" = "AS 3' var",
+    "AS footprint variants (n)" = "AS foot var",
     "COM footprint variants (n)" = "COM var",
-    "AS 3' window dropout" = "AS drop",
+    "AS 3' window dropout" = "AS 3' drop",
+    "AS footprint dropout" = "AS foot drop",
     "COM footprint dropout" = "COM drop",
     "discrimination" = "discrim.",
     "in-silico PCR (REF 1 / ALT 0)" = "PCR"

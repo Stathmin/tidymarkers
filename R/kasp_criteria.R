@@ -21,7 +21,7 @@ KASP_GATE_LIMIT <- c(
   gate_com_footprint = "COM dropout <= tol",
   gate_as_window = "no unlinked variant in AS 3' window",
   gate_wobble = "no weak G:T / A:C 3' mismatch",
-  gate_as_footprint = "no variant under the AS footprint"
+  gate_as_footprint = "AS footprint dropout <= tol"
 )
 
 #' The registry of every candidate evaluation
@@ -57,7 +57,7 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
     )
   }
   checks <- tibble::tibble(
-    stage = c(rep("site", 3L), rep("assay", 19L)),
+    stage = c(rep("site", 3L), rep("assay", 21L)),
     role = "check",
     label = c(
       "target site class", "ALT alleles (n)", "linked variants skipped (n)",
@@ -65,8 +65,8 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
       "AS GC", "COM GC", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
       "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
       "worst cross-dimer dG37", "worst homodimer dG37",
-      "AS 3' window variants (n)", "COM footprint variants (n)",
-      "AS 3' window dropout", "COM footprint dropout", "discrimination",
+      "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
+      "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout", "discrimination",
       "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)"
     ),
     level = c(
@@ -76,14 +76,14 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
         "AS GC", "COM GC", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
         "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
         "worst cross-dimer dG37", "worst homodimer dG37",
-        "AS 3' window variants (n)", "COM footprint variants (n)",
-        "AS 3' window dropout", "COM footprint dropout", "discrimination",
+        "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
+        "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout", "discrimination",
         "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)"
       ))
     ),
     hard = c(
       TRUE, FALSE, FALSE,
-      rep(FALSE, 19L)
+      rep(FALSE, 21L)
     ),
     limit = c(
       "discriminable", ">= 1", "0",
@@ -98,8 +98,8 @@ kasp_criteria <- function(limits = KASP_LIMITS) {
       glue::glue(">= {limits$hairpin_dg}"),
       glue::glue(">= {limits$duplex_dg}"),
       glue::glue(">= {limits$homodimer_dg}"),
-      "0", "0",
-      glue::glue("<= {tol}"), glue::glue("<= {tol}"),
+      "0", "0", "0",
+      glue::glue("<= {tol}"), glue::glue("<= {tol}"), glue::glue("<= {tol}"),
       glue::glue(">= {limits$discrimination}"),
       "REF=1, ALT=0", "1 locus"
     )

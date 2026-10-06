@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 13:10+0300\n"
+"POT-Creation-Date: 2026-10-06 13:52+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,66 +30,66 @@ msgstr ""
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr ""
 
-#: kasp_assemble.R:212
+#: kasp_assemble.R:243
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: kasp_assemble.R:277
+#: kasp_assemble.R:316
 msgid ""
 "No AS primer passed the GC/Tm filter (max_footprint_variants = "
 "{max_footprint_variants})."
 msgstr ""
 
-#: kasp_assemble.R:306
+#: kasp_assemble.R:348
 msgid "No AS primer survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:317
+#: kasp_assemble.R:359
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
 msgstr ""
 
-#: kasp_assemble.R:319
+#: kasp_assemble.R:361
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 
-#: kasp_assemble.R:324
+#: kasp_assemble.R:366
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 
-#: kasp_assemble.R:325
+#: kasp_assemble.R:367
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 
-#: kasp_assemble.R:331
+#: kasp_assemble.R:373
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
 msgstr ""
 
-#: kasp_assemble.R:333
+#: kasp_assemble.R:375
 msgid "Consider widening `strands` or `tm_range`."
 msgstr ""
 
-#: kasp_assemble.R:394
+#: kasp_assemble.R:438
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:423
+#: kasp_assemble.R:468
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:436
+#: kasp_assemble.R:481
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:442
+#: kasp_assemble.R:487
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:473
+#: kasp_assemble.R:518
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
@@ -232,11 +232,11 @@ msgstr ""
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 
-#: kasp_object.R:109
+#: kasp_object.R:125
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr ""
 
-#: kasp_object.R:159
+#: kasp_object.R:184
 msgid "Designing KASP markers"
 msgstr ""
 
@@ -316,7 +316,7 @@ msgstr ""
 msgid "ImageMagick failed: {res$stderr}"
 msgstr ""
 
-#: kasp_select.R:324
+#: kasp_select.R:345
 msgid ""
 "No assay cleared every hard constraint; returned the least-bad after "
 "relaxing some."

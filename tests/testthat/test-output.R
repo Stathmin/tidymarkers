@@ -12,7 +12,7 @@ test_that("write_kasp_results writes grouped files and order subsets", {
     assay = tibble::tibble(
       rank = 1L, strand = "+", as_ref = p[["AS_ref"]], as_alt = p[["AS_alt"]],
       com = p[["COM"]], discrimination = 0.9, as_gc = 0.5, amplicon = 90L,
-      as_len = 21L, as_n_var = 0L, as_n_3p = 0L, n_var = 0L
+      as_len = 21L, as_n_var = 0L, as_n_3p = 0L, n_var = 0L, as_foot_dropout = 0
     ),
     thermo = tibble::tibble(
       name = names(p), primer = unname(p), len = 21L,

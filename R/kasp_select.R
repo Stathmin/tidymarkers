@@ -66,7 +66,7 @@ KASP_GATE_LABEL <- c(
   gate_com_footprint = "known variant under the COM footprint",
   gate_as_window = "known variant in the AS 3' window",
   gate_wobble = "wobble (G:T / A:C) mismatch at the 3' base",
-  gate_as_footprint = "known variant under the AS footprint"
+  gate_as_footprint = "AS footprint dropout above tolerance"
 )
 
 # Short names for the decision graph (the warnings keep the full labels).
@@ -84,7 +84,7 @@ KASP_GATE_FLOOR_LABEL <- c(
   gate_tm = "allow COM 2 C below AS",
   gate_com_footprint = "dropout up to 2x tolerance",
   gate_wobble = "one weak G:T / A:C 3' mismatch",
-  gate_as_footprint = "one variant under the footprint"
+  gate_as_footprint = "dropout up to 2x tolerance"
 )
 
 # Why a gate is hard (never lowered).
@@ -202,18 +202,34 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
   } else {
     as_cand$n_3p == 0L
   }
+  # the whole-footprint rule: an unlinked variant under the AS primer is a sin
+  # only when it disrupts annealing, so gate on the expected dropout (position-
+  # and identity-aware) - exactly like the COM footprint - and fall back to the
+  # raw count only when DECIPHER is unavailable.  A linked variant is already
+  # excluded from the count (as_exclude), so linkage is honoured for free.
+  use_foot_drop <- "as_foot_dropout" %in% names(as_cand) && any(!is.na(as_cand$as_foot_dropout))
+  foot <- if (use_foot_drop) {
+    as.numeric(as_cand$as_foot_dropout)
+  } else {
+    as.numeric(as_cand$w_var)
+  }
+  gate_foot <- if (use_foot_drop) {
+    is.na(as_cand$as_foot_dropout) | as_cand$as_foot_dropout <= tol
+  } else {
+    as_cand$n_var == 0L
+  }
   d <- as_cand |>
     dplyr::mutate(
       as_row = dplyr::row_number(),
       m_disc = .data$discrimination - min_disc,
       m_tm = -abs(.data$tm - AS_TM_TARGET),
       m_stability = -as.numeric(.data$dg_3p),
-      m_footprint = -as.numeric(.data$w_var),
+      m_footprint = -foot,
       m_window = win_margin,
       m_wobble = -as.numeric(.data$wobble),
       gate_discrimination = .data$discrimination >= min_disc,
       gate_wobble = is.na(.data$wobble) | !.data$wobble,
-      gate_as_footprint = .data$n_var == 0L,
+      gate_as_footprint = gate_foot,
       gate_as_window = gate_win,
       tier1 = .data$m_disc,
       tier2 = .data$m_tm,
@@ -229,7 +245,12 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
       gate_wobble = "m_wobble", gate_discrimination = "m_disc",
       gate_as_footprint = "m_footprint", gate_as_window = "m_window"
     ),
-    gate_floor = KASP_GATE_FLOOR_AS
+    # footprint tolerance scales with the accepted dropout, like the pair stage
+    gate_floor = {
+      fl <- KASP_GATE_FLOOR_AS
+      fl["gate_as_footprint"] <- if (use_foot_drop) -2 * tol else -1
+      fl
+    }
   )
 }
 

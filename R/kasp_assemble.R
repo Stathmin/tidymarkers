@@ -296,6 +296,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       as_dropout = batch_or_safe(
         .data$ref_primer, .data$win3p_start, .data$win3p_end,
         .data$strand == "+", .data$n_3p, as_exclude
+      ),
+      # expected dropout of the whole AS footprint: a rare mid-body variant is
+      # cheap (Taq still extends from a matched 3' end), a 3'-terminal one costly
+      as_foot_dropout = batch_or_safe(
+        .data$ref_primer, .data$as_start, .data$as_end,
+        .data$strand == "+", .data$n_var, as_exclude
       )
     )
 
@@ -406,6 +412,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         .data$strand != "+", .data$n_var, vblock
       ),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer, as_dropout = best_as$as_dropout,
+      as_foot_dropout = best_as$as_foot_dropout,
       discrimination = best_as$discrimination, as_gc = best_as$gc,
       as_len = best_as$as_length, as_n_var = best_as$n_var, as_n_3p = best_as$n_3p,
       # worst-case product over both alleles (indels differ by delta)

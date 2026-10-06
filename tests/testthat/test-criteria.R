@@ -5,7 +5,8 @@ crit_mock <- function() {
   list(
     assay = tibble::tibble(
       amplicon = 90L, as_ref = p[[1]], as_alt = p[[2]], com = p[[3]], com_tm = 60,
-      as_gc = 0.5, com_gc = 0.5, n_var = 0L, as_n_3p = 0L, as_dropout = 0, com_dropout = 0
+      as_gc = 0.5, com_gc = 0.5, n_var = 0L, as_n_3p = 0L, as_n_var = 0L,
+      as_dropout = 0, as_foot_dropout = 0, com_dropout = 0
     ),
     thermo = tibble::tibble(name = names(p), tm = c(57, 57, 60), hairpin_dg = c(-1, -1, -1)),
     complementarity = tibble::tibble(
