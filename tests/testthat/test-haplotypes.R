@@ -25,11 +25,38 @@ test_that("haplotypes give per-position frequencies and co-segregation", {
   # the position at 260 is carried by H2+H3 -> freq 0.3 + 0.2
   expect_equal(hv$variants$pop_freq[hv$variants$pos == 260L], 0.5, tolerance = 1e-9)
   expect_equal(hv$variants$pop_freq[hv$variants$pos == 240L], 0.5, tolerance = 1e-9)
-  # 260 rides the ALT haplotypes exactly -> linked to the target; 240 does not
-  expect_equal(hv$linked$target, 250L)
-  expect_equal(hv$linked$linked, 260L)
+  # 260 rides the ALT haplotypes exactly -> linked to the target; 240 (H1) is not
+  # an ALT ride, and is reported per haplotype
+  expect_equal(unique(hv$linked$target), 250L)
+  expect_equal(unique(hv$linked$linked), 260L)
+  expect_setequal(hv$linked$haplotype, c("H2", "H3"))
+  expect_true(all(hv$linked$shared))
   expect_setequal(hv$alt, c("H2", "H3"))
   expect_equal(hv$ref, "H1")
+})
+
+test_that("only the ALT haplotypes' shared variants are baked", {
+  m <- hap_fixture()
+  b210 <- substring(m$genome[["Chr1"]], 210L, 210L)
+  haps <- dplyr::bind_rows(
+    m$haps,
+    tibble::tibble(haplotype = "H2", freq = 0.3, chrom = "Chr1", pos = 210L, ref = b210, alt = "A")
+  )
+  hv <- haplotype_variants(haps, m$snp)
+  # 260 is carried by both ALT haplotypes -> shared; 210 by H2 alone -> not
+  expect_true(all(hv$linked$shared[hv$linked$linked == 260L]))
+  expect_false(any(hv$linked$shared[hv$linked$linked == 210L]))
+})
+
+test_that("design_as_primers bakes a linked indel length-aware", {
+  skip_if_no_oligoarrayaux()
+  W <- Biostrings::DNAString(paste(rep("ACGT", 40L), collapse = ""))
+  plain <- design_as_primers(W, 40L, "T", "A", strands = "+", lengths = 22L, stab_ats = NA)
+  b <- as.character(Biostrings::subseq(W, 30L, 30L))
+  linked <- tibble::tibble(offset = 30L, ref = b, alt = "")
+  baked <- design_as_primers(W, 40L, "T", "A", strands = "+", lengths = 22L, stab_ats = NA, linked = linked)
+  expect_equal(nchar(baked$alt_primer), 22L)
+  expect_false(identical(baked$alt_primer, plain$alt_primer)) # the deletion shifted it
 })
 
 test_that("haplotype_hits says which AS primer each haplotype should bind", {

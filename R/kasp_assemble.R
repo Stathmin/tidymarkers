@@ -194,20 +194,30 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   linked_off <- NULL
   linked_skipped <- 0L
   if (!is.null(linked) && nrow(linked) && all(c("target", "linked") %in% names(linked))) {
-    lp <- linked$linked[linked$target == snp$pos]
+    lnk <- linked[linked$target == snp$pos, , drop = FALSE]
+    # a grouped (per-haplotype) linked table bakes only the positions shared by
+    # every ALT haplotype - a single ALT primer must bind them all; a flat
+    # (target, linked) table is taken as-is
+    if ("shared" %in% names(lnk)) lnk <- lnk[!is.na(lnk$shared) & lnk$shared, , drop = FALSE]
+    lp <- unique(lnk$linked)
     li <- match(lp, vpos)
     ok <- !is.na(li) & !is.na(valt[li])
     if (any(ok)) {
       offset <- lp[ok] - off + 1L
-      cand <- tibble::tibble(
-        offset = offset,
-        ref = substring(as.character(tmpl$seq), offset, offset),
-        alt = valt[li[ok]]
-      )
-      cand <- cand[cand$offset >= 1L & cand$offset <= length(tmpl$seq), , drop = FALSE]
+      # the full REF allele (1 base for a substitution, longer for an indel) so
+      # the ALT window can be rebuilt length-aware
+      ref_allele <- if (!is.null(vsub) && "ref" %in% names(vsub)) {
+        as.character(vsub$ref[li[ok]])
+      } else {
+        substring(as.character(tmpl$seq), offset, offset)
+      }
+      cand <- tibble::tibble(offset = offset, ref = ref_allele, alt = valt[li[ok]])
+      cand <- cand[
+        cand$offset >= 1L & (cand$offset + nchar(cand$ref) - 1L) <= length(tmpl$seq), ,
+        drop = FALSE
+      ]
       if (nrow(cand)) linked_off <- cand
     }
-    # linked entries that could not be baked (e.g. a length-changing indel)
     linked_skipped <- length(lp) - (if (is.null(linked_off)) 0L else nrow(linked_off))
   }
 

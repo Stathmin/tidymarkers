@@ -170,19 +170,30 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
                               linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
-  # linked variants (substitutions co-segregating with the ALT haplotype) are
-  # baked into the ALT template and the ALT primer, so it mismatches REF twice;
-  # REF is left untouched
-  window_alt <- if (is.null(linked) || nrow(linked) == 0L) {
-    window
+  # linked variants (substitutions and indels co-segregating with the ALT
+  # haplotype) are baked into the ALT template and the ALT primer, so it
+  # mismatches REF twice; REF is left untouched.  `ref`/`alt` are the template
+  # alleles, so a length change (indel) shifts every coordinate downstream of it
+  # - including the variant anchor when the edit is upstream of the block.
+  if (is.null(linked) || nrow(linked) == 0L) {
+    window_alt <- window
+    v_alt <- v_start
   } else {
-    Biostrings::replaceAt(
+    # `ref` is optional: a lone `(offset, alt)` row is a 1-base substitution
+    ref_w <- if ("ref" %in% names(linked)) nchar(as.character(linked$ref)) else rep(1L, nrow(linked))
+    ref_w[is.na(ref_w)] <- 1L
+    window_alt <- Biostrings::replaceAt(
       window,
-      IRanges::IRanges(as.integer(linked$offset), as.integer(linked$offset)),
+      IRanges::IRanges(as.integer(linked$offset), width = ref_w),
       as.character(linked$alt)
     )
+    delta <- nchar(as.character(linked$alt)) - ref_w
+    delta[is.na(delta)] <- 0L
+    before <- as.integer(linked$offset) < v_start
+    v_alt <- v_start + sum(delta[before])
   }
   anchor_of <- function(strand) as_anchor(v_start, ref_len, strand)
+  anchor_alt <- function(strand) as_anchor(v_alt, ref_len, strand)
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
   # the one the (perfectly matching) primer already carries there.
   mismatch_bases <- function(L, k, strand) {
@@ -228,7 +239,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   cfgs$alt_primer <- purrr::pmap_chr(
     list(cfgs$as_length, cfgs$strand, cfgs$stab_at, cfgs$stab_base),
     function(L, st, k, b) {
-      make_as_primer(window_alt, anchor_of(st), L, alt,
+      make_as_primer(window_alt, anchor_alt(st), L, alt,
         strand = st,
         stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b
       )
@@ -242,7 +253,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     # linked substitutions as well
     seg_ref <- as_window(window, anchor_of(strand), L, strand)
     seg_alt <- Biostrings::replaceAt(
-      as_window(window_alt, anchor_of(strand), L, strand),
+      as_window(window_alt, anchor_alt(strand), L, strand),
       block_in_seg(ref_len, L, strand), alt
     )
     t_ref <- as.character(as_target(seg_ref, strand))

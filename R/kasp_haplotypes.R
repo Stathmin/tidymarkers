@@ -64,22 +64,27 @@ haplotype_variants <- function(haplotypes, snp) {
   v$w <- unname(freqs[v$haplotype])
   agg <- v |>
     dplyr::group_by(.data$pos, .data$ref, .data$alt) |>
-    dplyr::summarise(
-      pop_freq = min(1, sum(.data$w)),
-      carriers = list(unique(.data$haplotype)),
-      .groups = "drop"
-    )
+    dplyr::summarise(pop_freq = min(1, sum(.data$w)), .groups = "drop")
   variants <- tibble::tibble(
     chrom = snp$chrom, pos = agg$pos, ref = agg$ref, alt = agg$alt,
     pop_freq = agg$pop_freq, consequence = NA_character_
   )
-  # a position co-segregates with the ALT target allele when exactly the ALT
-  # carriers (and no REF carrier) have it: it rides the same haplotype
+  # each ALT haplotype's own co-segregating positions; `shared` marks the ones
+  # carried by *every* ALT haplotype (the set a single ALT primer can bake)
   linked <- NULL
-  if (length(alt_hap) && nrow(agg)) {
-    ride <- vapply(agg$carriers, function(c) setequal(c, alt_hap), logical(1))
-    if (any(ride)) {
-      linked <- tibble::tibble(target = snp$pos, linked = agg$pos[ride])
+  if (length(alt_hap) && nrow(v)) {
+    linked <- purrr::list_rbind(lapply(alt_hap, function(hp) {
+      own <- v$pos[v$haplotype == hp]
+      if (!length(own)) {
+        return(NULL)
+      }
+      tibble::tibble(target = snp$pos, haplotype = hp, linked = own)
+    }))
+    if (!is.null(linked)) {
+      carrier_sets <- lapply(alt_hap, function(hp) v$pos[v$haplotype == hp])
+      linked$shared <- vapply(linked$linked, function(pos) {
+        all(vapply(carrier_sets, function(cs) pos %in% cs, logical(1)))
+      }, logical(1))
     }
   }
   list(
@@ -110,6 +115,7 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
       haplotype = nm, freq = f,
       target_allele = if (carries_alt) snp$alt else snp$ref,
       primer = if (carries_alt) "AS_alt" else "AS_ref",
+      n_variants = length(own),
       footprint_variants = n_foot,
       binds = n_foot == 0L
     )
