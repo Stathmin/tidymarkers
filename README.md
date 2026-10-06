@@ -53,7 +53,7 @@ remotes::install_github("Stathmin/tidykasp")
 | Специфичность (полно) | **`rBLAST`** | `blastn-short` по локальной БД (опция) |
 | Типы вариантов | свои примитивы + `DECIPHER` | SNP, MNP (замена блока) и InDel (аллельные шаблоны + скан стыка) |
 | Рецепт реакции | `kasp_mix_recipe()` | tidy-рецепт смеси праймеров (AS:AS:COM = 2:2:5) и сборки реакции |
-| Визуализация | `ggmsa`, `gggenes`, `ggrepel` | ДНК-выравнивания и логотип, карта праймеров и ген, тепловая карта димеров |
+| Визуализация | `gggenes`, `ggrepel`, `patchwork`, `ggforce` | карта праймеров и ген, подписи без наложений, зум-панели, композиция |
 | Заказ олиго | `export_primers()` + `readr` | tidy-таблица + sheets для IDT (bulk) и LGC/KASP |
 | Воспроизводимость | `renv` | лок-файл со всеми версиями |
 
@@ -66,8 +66,8 @@ remotes::install_github("Stathmin/tidykasp")
 
 ## 2. Установка и запуск
 
-Нужны: **R ≥ 4.5**, **OligoArrayAux** (`hybrid-min` — термодинамика для
-`DECIPHER`) и **cairo dev-заголовки** (для `gdtools` → `ggmsa`).
+Нужны: **R ≥ 4.5** и **OligoArrayAux** (`hybrid-min` — термодинамика для
+`DECIPHER`); **cairo** — опционально (для cairo-устройства PNG в примерах/виньетках).
 Опционально **NCBI BLAST+** для полного BLAST-шага.
 
 **Пользователю — одна строка** (ставит пакет и системные зависимости, потом одним
@@ -307,20 +307,34 @@ tidykasp/
 ├── DESCRIPTION              # зависимости (читает renv)
 ├── renv.lock                # зафиксированные версии (в т.ч. DECIPHER, TmCalculator)
 ├── ROADMAP.md               # инвентарь и очередь работ
-├── R/                       # дизайн, ввод-вывод, специфичность, графика
-│   ├── kasp_functions.R     # примитивы дизайна + QC
-│   ├── kasp_io.R            # чтение VCF (vroom) и FASTA (нормализация имён, IUPAC)
-│   ├── kasp_genome.R        # индексированный источник генома
-│   ├── kasp_scan.R          # BLAST-индекс специфичности
-│   ├── kasp_fm.R            # FM-индекс (Rsubread)
-│   ├── kasp_annotate.R      # аннотация вариантов (TxDb / BSgenome)
-│   ├── kasp_plots.R         # графика: раскладка, полиморфизмы, шпильки, матрица димеров
-│   └── kasp_search_anim.R   # анимация поиска (GIF)
+├── R/                       # ~30 файлов, по одному на слой пайплайна:
+│   ├── kasp_core.R          #   примитивы, геометрия, KASP_LIMITS, кэш
+│   ├── kasp_io.R            #   VCF (vroom) / FASTA, нормализация IUPAC
+│   ├── kasp_genome.R        #   индексированный источник генома (Rsamtools)
+│   ├── kasp_alleles.R       #   аллельные наборы, класс мультиаллельного сайта
+│   ├── kasp_design.R        #   дизайн AS- и общего праймера (+ индел-путь)
+│   ├── kasp_primer_pairs.R  #   общий скан фланкирующих/сайтовых пар
+│   ├── kasp_assemble.R      #   сборка и оценка одного ассея
+│   ├── kasp_select.R        #   гейты / тиры / лестница релаксации
+│   ├── kasp_criteria.R      #   единый реестр критериев
+│   ├── kasp_checks.R        #   приёмочные проверки
+│   ├── kasp_decision.R      #   схема / граф / текст дерева решения
+│   ├── kasp_schemes.R       #   реестр химий маркера (KASP/CAPS/ARMS/…)
+│   ├── kasp_risk.R          #   риск-вердикт low/medium/high
+│   ├── kasp_thermo.R        #   Tm, ΔG, шпильки/димеры, SSR, палиндромы
+│   ├── kasp_specificity.R   #   3'-сид, in-silico PCR, BLAST
+│   ├── kasp_target.R        #   pick_target_snp() и дизайнабельность
+│   ├── kasp_haplotypes.R    #   модель гаплотипов / сцепления
+│   ├── kasp_caps.R, kasp_arms.R   #   CAPS/dCAPS и tetra-primer ARMS
+│   ├── kasp_annotate.R      #   аннотация вариантов (TxDb / BSgenome)
+│   ├── kasp_plots.R         #   графика
+│   └── kasp_search_anim.R   #   анимация поиска (GIF)
 ├── report/kasp_report.Rmd   # нарративный отчёт
 ├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика
 ├── vignettes/               # kasp-intro, custom-genome, reading-results
 ├── inst/extdata/            # example_targets.csv (мишени всех типов маркеров, по генам)
 ├── inst/scripts/            # run_kasp.R, quickstart.R (демо)
+├── dev/                     # внутренние проверки/замеры (check.R, bench.R, render-*.R)
 ├── lecture/                 # Quarto-дек лекции (`sh lecture/render.sh`)
 └── results/                 # вывод (в .gitignore)
 ```

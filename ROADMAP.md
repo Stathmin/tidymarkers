@@ -57,11 +57,11 @@ A–P — реализовано или оценено; **Q** — локализ
       `options(tidykasp.oligoarrayaux=)`). Прецеденты: `tinytex::install_tinytex()`,
       `webshot2`/`chromote` (Chrome в рантайме), `rnaturalearth`/`elevatr` (данные).
       BLAST+ есть в apt/conda (`ncbi-blast+`) — **не бандлим**, а советуем `pak` (ниже).
-- [ ] **Одна строка для пользователя**: `pak::pak("stathmin/tidykasp", sysreqs = TRUE)`
-      (системные `ncbi-blast+`, cairo; `renv::sysreqs()` тоже умеет) →
-      `tidykasp::kasp_install_tools()` → всё на месте. Первый вызов функции без тула даёт
-      `cli`-подсказку «запусти `kasp_install_tools()`», а не тихий `NA`; README — вариант
-      установки одной строкой.
+- [x] **Одна строка для пользователя**: README (§0/§2) даёт `pak::pak("stathmin/tidykasp",
+      sysreqs = TRUE)` (системные `ncbi-blast+`, cairo; `renv::sysreqs()` тоже умеет) →
+      `tidykasp::kasp_install_tools()` → всё на месте. Первый вызов без тула не молчит:
+      `assemble_kasp_assay()` подсказывает `kasp_install_tools()` (сейчас `rlang::inform`,
+      `cli` — в §R), а не отдаёт тихий `NA`
 - [x] **CRAN-рамки**: `SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional)`
       в `DESCRIPTION`; сеть и запись — только в рантайме, только в `R_user_dir`, с
       согласием; `configure` не качает; отсутствие тула — корректный skip/warning.
