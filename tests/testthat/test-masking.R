@@ -31,11 +31,12 @@ test_that("max_footprint_variants enforces N-masking as a hard constraint", {
   a <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L))
   expect_true(all(a$as_candidates$n_var >= 1L)) # variants are seen under the footprint
 
-  expect_error(
-    suppressWarnings(assemble_kasp_assay(genome, snp,
-      variants = variants, flank = 150L,
-      max_footprint_variants = 0L
-    )),
-    "max_footprint_variants"
-  )
+  d <- suppressWarnings(assemble_kasp_assay(genome, snp,
+    variants = variants, flank = 150L,
+    max_footprint_variants = 0L
+  ))
+  # no error: a doomed target comes back as a classed partial record
+  expect_s3_class(d, "kasp_doomed")
+  expect_match(d$reason, "max_footprint_variants")
+  expect_equal(d$stage, "as")
 })

@@ -37,13 +37,18 @@ render_one <- function(i) {
       a <- suppressWarnings(assemble_kasp_assay(genome, snp,
         variants = variants, flank = 150L, strands = c("+", "-"), cores = 1L
       ))
+      # a doomed target still gets its context plot, so the panel is complete
       p <- plot_primers(a, variants, snp, genome = genome, features = gene)
       ggplot2::ggsave(fs::path(out, paste0("target_", tag, ".png")), p,
         width = 11, height = 9, dpi = 110, bg = "white"
       )
-      glue::glue("ok ({r$type}) strand {a$strand} disc {round(a$efficiency$discrimination[1], 2)}")
+      if (inherits(a, "kasp_doomed")) {
+        glue::glue("doomed ({r$type}) {a$reason}")
+      } else {
+        glue::glue("ok ({r$type}) strand {a$strand} disc {round(a$efficiency$discrimination[1], 2)}")
+      }
     },
-    error = function(e) glue::glue("doomed: {conditionMessage(e)}")
+    error = function(e) glue::glue("error: {conditionMessage(e)}")
   )
   cat(sprintf("%-22s %-6s %s:%s %s>%s -> %s\n", r$id, r$type, r$chrom, r$pos, r$ref, r$alt, msg))
   invisible(NULL)

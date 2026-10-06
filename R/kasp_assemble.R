@@ -5,6 +5,33 @@
 #  7. Assemble + score one complete assay
 # =============================================================================
 
+#' A target no assay clears the gates for (a partial design record)
+#'
+#' Returned by [assemble_kasp_assay()] instead of aborting when the strict gates
+#' leave no AS primer / no pairing.  It carries the target, the template and the
+#' reason (and the candidate table when one was built), so a caller can report or
+#' plot the doomed target rather than lose it to an error.
+#' @keywords internal
+#' @noRd
+kasp_doomed <- function(reason, stage, snp, template, as_candidates = NULL) {
+  structure(
+    list(snp = snp, template = template, reason = reason, stage = stage, as_candidates = as_candidates),
+    class = "kasp_doomed"
+  )
+}
+
+#' @keywords internal
+#' @noRd
+is_kasp_doomed <- function(x) inherits(x, "kasp_doomed")
+
+#' Drop the grader's helper columns from an AS candidate table
+#' @keywords internal
+#' @noRd
+tidy_as_candidates <- function(x) {
+  drop <- grep("^\\.neg_|^m_|^gate_|^tier|^as_row$", names(x), value = TRUE)
+  x[, setdiff(names(x), drop), drop = FALSE]
+}
+
 #' Assemble and score the best KASP assay for a target SNP
 #'
 #' When `variants` is supplied the selection is *variant-aware*: among primers
@@ -56,7 +83,10 @@
 #' @return a `kasp_assay` object: a list holding the `snp`, the template, the
 #'   chosen `strand`, ranked `assay`/`as_candidates` tibbles, `efficiency`,
 #'   `thermo`, `complementarity`, `specificity`, `amplicons`, `blast` results and
-#'   the tailed `tails` primers.
+#'   the tailed `tails` primers.  When no candidate clears the gates it returns a
+#'   `kasp_doomed` object instead (the target, template, `reason`, `stage` and the
+#'   candidate table), so a batch or a plot can report the target rather than
+#'   abort.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -209,7 +239,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         dplyr::between(.data$tm, tm_range[1], tm_range[2]),
         !has_run(.data$primer), !has_repeat(.data$primer)
       )
-    if (nrow(ind) == 0L) rlang::abort(gettext("No indel AS primer passed the GC/Tm filter."))
+    if (nrow(ind) == 0L) {
+      return(kasp_doomed(gettext("No indel AS primer passed the GC/Tm filter."), "as", snp, tmpl))
+    }
     # alt-template coordinate -> REF/genomic coordinate (block clamps to REF)
     alt_to_ref <- function(x) {
       dplyr::case_when(
@@ -273,9 +305,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     as_cand <- dplyr::filter(as_cand, .data$n_var <= max_footprint_variants)
   }
   if (nrow(as_cand) == 0L) {
-    rlang::abort(glue::glue(gettext(
-      "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants})."
-    )))
+    return(kasp_doomed(
+      glue::glue(gettext(
+        "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants})."
+      )),
+      "as", snp, tmpl, as_cand
+    ))
   }
 
   # prioritise with the shared grader: gate the grave sins (a wobble mismatch, a
@@ -303,13 +338,14 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     graded_as$tiers, graded_as$ties, graded_as$gate_margin, graded_as$gate_floor
   )
   if (is.null(pick_as$best)) {
-    rlang::abort(gettext("No AS primer survived even the relaxed constraints."))
+    return(kasp_doomed(
+      gettext("No AS primer survived even the relaxed constraints."), "as",
+      snp, tmpl, tidy_as_candidates(rank_candidates(graded_as$data, graded_as$tiers, graded_as$ties))
+    ))
   }
   best_as <- pick_as$best
   # the ranked candidate table for inspection, minus the grader's helper columns
-  as_cand <- rank_candidates(graded_as$data, graded_as$tiers, graded_as$ties)
-  drop <- grep("^\\.neg_|^m_|^gate_|^tier|^as_row$", names(as_cand), value = TRUE)
-  as_cand <- as_cand[, setdiff(names(as_cand), drop), drop = FALSE]
+  as_cand <- tidy_as_candidates(rank_candidates(graded_as$data, graded_as$tiers, graded_as$ties))
 
   if (!is.na(best_as$n_3p) && best_as$n_3p > 0L) {
     rlang::warn(c(
@@ -391,7 +427,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     graded$gate_margin, graded$gate_floor
   )
   if (is.null(pick$best)) {
-    rlang::abort(gettext("No candidate assay survived even the relaxed constraints."))
+    return(kasp_doomed(
+      gettext("No candidate assay survived even the relaxed constraints."), "pair", snp, tmpl, as_cand
+    ))
   }
   best <- pick$best
   # keep the chosen pairing first: the rest of the package (checks, plots) reads

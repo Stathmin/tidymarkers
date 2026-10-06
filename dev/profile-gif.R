@@ -29,7 +29,7 @@ make_assay <- function(seed = 4L, n = 500L, pos = 250L) {
                           alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error")) return(list(assay = a, snp = snp, variants = vs))
+    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) return(list(assay = a, snp = snp, variants = vs))
   }
   stop("no random genome assembled into an assay")
 }

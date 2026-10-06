@@ -377,6 +377,90 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #  Gene / primer maps (gggenes)
 # =============================================================================
 
+#' Context plot for a doomed target
+#'
+#' A target no assay clears the gates for still deserves a picture: the local
+#' window, its variants and the feature annotation, on the same x axis as
+#' [plot_primers()], with the reason it was doomed.  Drawn by [plot_primers()]
+#' when it is handed a `kasp_doomed` object.
+#' @keywords internal
+#' @noRd
+plot_doomed_target <- function(assay, variants, snp, features = NULL) {
+  flank <- if (!is.null(assay$template)) (length(assay$template$seq) - 1L) %/% 2L else 150L
+  win <- c(snp$pos - flank, snp$pos + flank)
+  vw <- variants[
+    variants$chrom == snp$chrom & variants$pos >= win[1L] & variants$pos <= win[2L], ,
+    drop = FALSE
+  ]
+
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_segment(
+      data = tibble::tibble(x = win[1L], xend = win[2L]),
+      ggplot2::aes(x = .data$x, xend = .data$xend, y = 1, yend = 1),
+      colour = "grey72", linewidth = 0.3
+    )
+  feat <- NULL
+  if (!is.null(features)) {
+    features <- as.data.frame(features)
+    if (nrow(features) && all(c("start", "end") %in% names(features))) {
+      nm <- if ("name" %in% names(features)) {
+        features$name
+      } else if ("symbol" %in% names(features)) {
+        features$symbol
+      } else {
+        NA_character_
+      }
+      feat <- tibble::tibble(
+        start = as.integer(features$start), end = as.integer(features$end),
+        name = nm
+      )
+      feat <- feat[feat$end >= win[1L] & feat$start <= win[2L], , drop = FALSE]
+      if (nrow(feat) == 0L) feat <- NULL
+    }
+  }
+  if (is.null(feat)) {
+    p <- p + ggplot2::annotate("text",
+      x = mean(win), y = 1, label = "no feature annotation",
+      size = 2.1, colour = "grey55", fontface = "italic"
+    )
+  } else {
+    p <- p + ggplot2::geom_rect(
+      data = feat,
+      ggplot2::aes(xmin = .data$start, xmax = .data$end, ymin = 0.9, ymax = 1.1),
+      fill = "grey72", colour = "grey40"
+    )
+    lab <- feat[!is.na(feat$name), , drop = FALSE]
+    if (nrow(lab)) {
+      lab$x <- (pmax(lab$start, win[1L]) + pmin(lab$end, win[2L])) / 2
+      p <- p + ggplot2::geom_text(
+        data = lab, ggplot2::aes(x = .data$x, y = 1, label = .data$name),
+        size = 2.1, colour = "black", fontface = "bold"
+      )
+    }
+  }
+
+  p +
+    ggplot2::geom_point(data = vw, ggplot2::aes(.data$pos, 0.45), colour = "grey65", size = 0.8) +
+    ggplot2::geom_point(
+      data = snp, ggplot2::aes(.data$pos, 0.45),
+      shape = 21, fill = "firebrick", colour = "white", size = 2.6
+    ) +
+    ggplot2::geom_vline(xintercept = snp$pos, linetype = "dashed", colour = "grey45") +
+    ggplot2::coord_cartesian(xlim = win, ylim = c(0.2, 1.25)) +
+    ggplot2::labs(
+      x = glue::glue("{snp$chrom} position (bp)"), y = NULL,
+      title = glue::glue("Doomed target {snp$chrom}:{snp$pos} {snp$ref}>{snp$alt}"),
+      subtitle = glue::glue("no assay passed the gates - {assay$reason}")
+    ) +
+    ggplot2::theme_minimal(base_size = 9) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(colour = "#d7301f", face = "bold"),
+      panel.grid.major.y = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank()
+    )
+}
+
 #' Local assay map: styled primers, Tm, and the acceptance checks
 #'
 #' The local view of the assay on the design window (genomic coordinates).  Each
@@ -388,7 +472,8 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #' track and a feature-annotation row (same x axis), then - when `genome` is
 #' given - a thin genome-wide ideogram (`assay_ideogram()`) of exact primer hits
 #' and in-silico PCR products.  Right: a thin column of per-criterion tumblers.
-#' @param assay assembled assay.
+#' @param assay assembled assay, or a `kasp_doomed` object (then only the target
+#'   context and the reason are drawn).
 #' @param variants variant table.
 #' @param snp target variant (one row).
 #' @param genome optional `kasp_genome` or `DNAStringSet`; when given, the
@@ -398,7 +483,8 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #'   [ensembl_gene()].  A KASP marker should sit on an annotated feature, so the
 #'   row says `"no feature annotation"` when nothing (or no overlap) is given.
 #' @return a `patchwork` object: the local map (primers over the variant track,
-#'   sharing an x axis) beside the tumbler list from [plot_checks()].
+#'   sharing an x axis) beside the tumbler list from [plot_checks()].  For a
+#'   `kasp_doomed` target, a single context plot with the reason instead.
 #' @examples
 #' \dontrun{
 #' plot_primers(assay, variants, snp)
@@ -406,6 +492,9 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 #' @family KASP plots
 #' @export
 plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
+  if (is_kasp_doomed(assay)) {
+    return(plot_doomed_target(assay, variants, snp, features))
+  }
   win <- design_window(assay, snp)
   aa <- assay$assay[1, ]
   strand <- aa$strand %||% "+"

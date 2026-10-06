@@ -55,6 +55,22 @@ print.kasp_assay <- function(x, ...) {
   invisible(x)
 }
 
+#' Print a doomed target
+#' @param x a `kasp_doomed` object (see [assemble_kasp_assay()]).
+#' @param ... unused.
+#' @return `x`, invisibly.
+#' @method print kasp_doomed
+#' @family KASP utilities
+#' @export
+print.kasp_doomed <- function(x, ...) {
+  cat(
+    "<kasp_doomed>",
+    glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (stage {x$stage})"), "\n"
+  )
+  cat(" ", x$reason, "\n")
+  invisible(x)
+}
+
 
 # =============================================================================
 #  7b. Batch design over many loci
@@ -122,15 +138,24 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
       tryCatch(
         {
           a <- rlang::exec(assemble_kasp_assay, genome, snp, variants = variants, !!!dots)
-          chk <- kasp_design_checks(a)
-          tibble::tibble(
-            chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
-            strand = a$strand, amplicon = a$assay$amplicon[1],
-            discrimination = a$efficiency$discrimination[1],
-            n_fail = sum(!chk$pass),
-            verdict = if (all(chk$pass)) "pass" else "warn",
-            note = paste(chk$criterion[!chk$pass], collapse = "; ")
-          )
+          if (is_kasp_doomed(a)) {
+            tibble::tibble(
+              chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
+              type = type, strand = NA_character_, amplicon = NA_integer_,
+              discrimination = NA_real_, n_fail = NA_integer_,
+              verdict = "fail", note = a$reason
+            )
+          } else {
+            chk <- kasp_design_checks(a)
+            tibble::tibble(
+              chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+              strand = a$strand, amplicon = a$assay$amplicon[1],
+              discrimination = a$efficiency$discrimination[1],
+              n_fail = sum(!chk$pass),
+              verdict = if (all(chk$pass)) "pass" else "warn",
+              note = paste(chk$criterion[!chk$pass], collapse = "; ")
+            )
+          }
         },
         error = function(e) {
           tibble::tibble(

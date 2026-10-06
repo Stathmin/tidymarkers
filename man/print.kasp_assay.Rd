@@ -28,6 +28,7 @@ Other KASP utilities:
 \code{\link[=has_oligoarrayaux]{has_oligoarrayaux()}},
 \code{\link[=is_kasp_assay]{is_kasp_assay()}},
 \code{\link[=kasp_install_tools]{kasp_install_tools()}},
+\code{\link[=print.kasp_doomed]{print.kasp_doomed()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }
 \concept{KASP utilities}

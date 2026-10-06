@@ -71,7 +71,10 @@ subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
 a \code{kasp_assay} object: a list holding the \code{snp}, the template, the
 chosen \code{strand}, ranked \code{assay}/\code{as_candidates} tibbles, \code{efficiency},
 \code{thermo}, \code{complementarity}, \code{specificity}, \code{amplicons}, \code{blast} results and
-the tailed \code{tails} primers.
+the tailed \code{tails} primers.  When no candidate clears the gates it returns a
+\code{kasp_doomed} object instead (the target, template, \code{reason}, \code{stage} and the
+candidate table), so a batch or a plot can report the target rather than
+abort.
 }
 \description{
 When \code{variants} is supplied the selection is \emph{variant-aware}: among primers

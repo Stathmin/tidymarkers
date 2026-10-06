@@ -7,7 +7,8 @@
 plot_primers(assay, variants, snp, genome = NULL, features = NULL)
 }
 \arguments{
-\item{assay}{assembled assay.}
+\item{assay}{assembled assay, or a \code{kasp_doomed} object (then only the target
+context and the reason are drawn).}
 
 \item{variants}{variant table.}
 
@@ -23,7 +24,8 @@ row says \code{"no feature annotation"} when nothing (or no overlap) is given.}
 }
 \value{
 a \code{patchwork} object: the local map (primers over the variant track,
-sharing an x axis) beside the tumbler list from \code{\link[=plot_checks]{plot_checks()}}.
+sharing an x axis) beside the tumbler list from \code{\link[=plot_checks]{plot_checks()}}.  For a
+\code{kasp_doomed} target, a single context plot with the reason instead.
 }
 \description{
 The local view of the assay on the design window (genomic coordinates).  Each
