@@ -68,6 +68,20 @@
 - **RDS рядом с картинкой:** `dev/render-targets.R` сохраняет `target_<id>.rds` (полный ассей)
   рядом с PNG.
 
+### Другие PCR-маркеры и провенанс порогов
+- **CAPS/dCAPS-схема** (`R/kasp_caps.R`): `restriction_enzymes()` (курируемая таблица
+  `inst/extdata/restriction_enzymes.csv`), `caps_fragments()` (IUPAC-aware сайты → длины
+  фрагментов), `find_caps_enzymes()` (REF vs ALT-ампликон, gel-resolvability по разрыву полос),
+  `design_caps_marker()` (фермент + фланкирующая пара, класс `kasp_caps` с рецептом рестрикции).
+  Схема `caps` в `kasp_schemes()`/`kasp_criteria()`/`kasp_decision_stages()`: своя стадия
+  `gate_caps_*`, маркер-агностичные праймерные проверки, без KASP 3'-машинерии. **dCAPS**
+  (сайт, создаваемый праймером) — следующий шаг (см. ROADMAP §U).
+- **Провенанс порогов и термодинамическая сверка** (`R/kasp_priors.R`): `kasp_priors()` —
+  таблица «параметр → значение → источник» (LGC/EasyKASP 2025 / primerblast-oss);
+  `thermo_crosscheck()` — Tm одного набора олиго в нескольких NN-таблицах TmCalculator
+  (SantaLucia 2004 vs Allawi/Sugimoto/Breslauer) с разбросом; `primer_tm(nn_table=)`.
+  `dev/compare-thermo.R` пишет `results/thermo-reconcile.csv`.
+
 ### Гигиена дерева
 - Внешние данные и индексы (геном, варианты, BLAST/FM) перенесены в пользовательский
   кэш `kasp_cache_dir()` (`tools::R_user_dir`), а не в проект; `data/` из проекта убран.

@@ -33,6 +33,7 @@ Other KASP checks:
 \code{\link[=kasp_decision_graph]{kasp_decision_graph()}},
 \code{\link[=kasp_decision_text]{kasp_decision_text()}},
 \code{\link[=kasp_design_checks]{kasp_design_checks()}},
+\code{\link[=kasp_priors]{kasp_priors()}},
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }

@@ -4,19 +4,24 @@
 \alias{primer_tm}
 \title{Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)}
 \usage{
-primer_tm(seq, DMSO = PCR_COND$DMSO)
+primer_tm(seq, DMSO = PCR_COND$DMSO, nn_table = NN_TABLE)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
 
 \item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.}
+
+\item{nn_table}{nearest-neighbour parameter table (see details).}
 }
 \value{
 a numeric vector of Tm (C), one per oligo.
 }
 \description{
 \code{res$gr} uses TmCalculator's \code{$} accessor for the result GRanges; \code{Tm} is a
-metadata column on it.
+metadata column on it.  \code{nn_table} selects the nearest-neighbour parameter set
+(TmCalculator ships several: SantaLucia 2004 is the package default, and
+Breslauer / Allawi / Sugimoto / Ghosh are available for an independent
+thermodynamic cross-check, see \code{\link[=thermo_crosscheck]{thermo_crosscheck()}}).
 }
 \examples{
 primer_tm("GAAGGTGACCAAGTTCATGCT")
@@ -29,6 +34,7 @@ Other KASP thermodynamics:
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},
 \code{\link[=terminal_dg]{terminal_dg()}},
+\code{\link[=thermo_crosscheck]{thermo_crosscheck()}},
 \code{\link[=wobble_mismatch]{wobble_mismatch()}}
 }
 \concept{KASP thermodynamics}

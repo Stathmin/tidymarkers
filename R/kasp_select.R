@@ -80,6 +80,15 @@ KASP_GATES_ASQ <- c("gate_asq_cassette", "gate_asq_readout")
 KASP_RELAX_ASQ <- character(0)
 KASP_TIERS_ASQ <- c(tier1 = "allele discrimination", tier2 = "Tm")
 
+# CAPS / dCAPS: the variant is read by a restriction digest (R/kasp_caps.R), so
+# selection is "is there an enzyme that separates the alleles, and does the pair
+# amplify the site cleanly" - none of the KASP 3'-terminal machinery applies.
+KASP_GATES_CAPS <- c("gate_caps_site", "gate_caps_resolvable", "gate_caps_amplicon", "gate_caps_tm")
+KASP_RELAX_CAPS <- c("gate_caps_amplicon", "gate_caps_tm", "gate_caps_resolvable")
+KASP_TIERS_CAPS <- c(
+  tier1 = "band gap (gel resolvability)", tier2 = "Tm balance", tier3 = "amplicon length"
+)
+
 # Human-readable name for each gate, used in the relaxation warning and the
 # decision graph.
 KASP_GATE_LABEL <- c(
@@ -97,7 +106,11 @@ KASP_GATE_LABEL <- c(
   gate_duplex_selfcomp = "primer self-complementarity above the duplex cap",
   gate_duplex_amplicon = "a duplex amplicon above 150 bp",
   gate_asq_cassette = "more targets than the ASQ cassette budget",
-  gate_asq_readout = "no allele resolution in real time"
+  gate_asq_readout = "no allele resolution in real time",
+  gate_caps_site = "no enzyme separates the REF and ALT amplicons",
+  gate_caps_resolvable = "the diagnostic bands are too close on a gel",
+  gate_caps_amplicon = "the CAPS amplicon is outside the accepted window",
+  gate_caps_tm = "a flanking primer Tm is outside the window"
 )
 
 # Short names for the decision graph (the warnings keep the full labels).
@@ -110,7 +123,9 @@ KASP_GATE_SHORT <- c(
   gate_duplex_complement = "inter-pair complementarity",
   gate_duplex_selfcomp = "self-complementarity",
   gate_duplex_amplicon = "amplicon <= 150 bp",
-  gate_asq_cassette = "ASQ cassette", gate_asq_readout = "real-time readout"
+  gate_asq_cassette = "ASQ cassette", gate_asq_readout = "real-time readout",
+  gate_caps_site = "restriction site", gate_caps_resolvable = "band gap",
+  gate_caps_amplicon = "amplicon length (CAPS)", gate_caps_tm = "primer Tm (CAPS)"
 )
 
 # Human-readable relaxation floor per soft gate (for the graph and text export).
@@ -122,7 +137,10 @@ KASP_GATE_FLOOR_LABEL <- c(
   gate_wobble = "one weak G:T / A:C 3' mismatch",
   gate_as_footprint = "dropout up to 2x tolerance",
   gate_duplex_amplicon = "allow up to 200 bp",
-  gate_duplex_selfcomp = "one extra self-complementary base"
+  gate_duplex_selfcomp = "one extra self-complementary base",
+  gate_caps_amplicon = "widen the amplicon window",
+  gate_caps_resolvable = "allow a 30 bp band gap",
+  gate_caps_tm = "widen the Tm window"
 )
 
 # Why a gate is hard (never lowered).
@@ -133,7 +151,8 @@ KASP_GATE_HARD_LABEL <- c(
   gate_duplex_tm = "all primers must share the extension window",
   gate_duplex_complement = "primer cross-talk defeats multiplexing",
   gate_asq_cassette = "one cassette per target",
-  gate_asq_readout = "no allele resolution in real time = no assay"
+  gate_asq_readout = "no allele resolution in real time = no assay",
+  gate_caps_site = "no discriminating enzyme = no CAPS marker"
 )
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins

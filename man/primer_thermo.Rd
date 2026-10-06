@@ -31,6 +31,7 @@ Other KASP thermodynamics:
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_tm]{primer_tm()}},
 \code{\link[=terminal_dg]{terminal_dg()}},
+\code{\link[=thermo_crosscheck]{thermo_crosscheck()}},
 \code{\link[=wobble_mismatch]{wobble_mismatch()}}
 }
 \concept{KASP thermodynamics}

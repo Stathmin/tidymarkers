@@ -28,7 +28,11 @@ KASP_GATE_LIMIT <- c(
   gate_duplex_selfcomp = "<= 5 self-complementary bases",
   gate_duplex_amplicon = "each amplicon <= 150 bp",
   gate_asq_cassette = "cassette per target (<= 4-plex)",
-  gate_asq_readout = "allele resolved in real time"
+  gate_asq_readout = "allele resolved in real time",
+  gate_caps_site = "an enzyme separates the REF and ALT amplicons",
+  gate_caps_resolvable = "closest diagnostic bands >= 50 bp apart",
+  gate_caps_amplicon = "amplicon within [120, 1200]",
+  gate_caps_tm = "both primers Tm within [lo, hi]"
 )
 
 #' The registry of every candidate evaluation
@@ -127,6 +131,7 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     stage_rows("pair", KASP_GATES_PAIR, KASP_RELAX_PAIR, KASP_TIERS_PAIR, "alignment", KASP_SCHEME_CORE),
     stage_rows("duplex", KASP_GATES_DUPLEX, KASP_RELAX_DUPLEX, KASP_TIERS_DUPLEX, "alignment", "duplex"),
     stage_rows("asq", KASP_GATES_ASQ, KASP_RELAX_ASQ, KASP_TIERS_ASQ, "alignment", "asq"),
+    stage_rows("caps", KASP_GATES_CAPS, KASP_RELAX_CAPS, KASP_TIERS_CAPS, "alignment", "caps"),
     checks
   )
   if (!is.null(scheme)) {

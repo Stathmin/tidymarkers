@@ -133,19 +133,23 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)
 #'
 #' `res$gr` uses TmCalculator's `$` accessor for the result GRanges; `Tm` is a
-#' metadata column on it.
+#' metadata column on it.  `nn_table` selects the nearest-neighbour parameter set
+#' (TmCalculator ships several: SantaLucia 2004 is the package default, and
+#' Breslauer / Allawi / Sugimoto / Ghosh are available for an independent
+#' thermodynamic cross-check, see [thermo_crosscheck()]).
 #' @param seq oligo(s) 5'->3'.
 #' @param DMSO DMSO concentration (%), as in a KASP master mix; it lowers Tm.
+#' @param nn_table nearest-neighbour parameter table (see details).
 #' @return a numeric vector of Tm (C), one per oligo.
 #' @examples
 #' primer_tm("GAAGGTGACCAAGTTCATGCT")
 #' primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
 #' @family KASP thermodynamics
 #' @export
-primer_tm <- function(seq, DMSO = PCR_COND$DMSO) {
+primer_tm <- function(seq, DMSO = PCR_COND$DMSO, nn_table = NN_TABLE) {
   gr <- TmCalculator::to_genomic_ranges(as.character(seq))
   res <- TmCalculator::tm_calculate(gr,
-    method = "tm_nn", nn_table = NN_TABLE,
+    method = "tm_nn", nn_table = nn_table,
     Na = PCR_COND$Na, Mg = PCR_COND$Mg, dNTPs = PCR_COND$dNTPs, DMSO = DMSO
   )
   as.numeric(S4Vectors::mcols(res$gr)$Tm)

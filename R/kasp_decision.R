@@ -49,6 +49,12 @@ kasp_decision_stages <- function(scheme = "snp") {
       gates = KASP_GATES_ASQ, relax = KASP_RELAX_ASQ, tiers = KASP_TIERS_ASQ
     )
   }
+  if (info$family == "caps") {
+    stages$caps <- list(
+      id = "caps", label = "CAPS digest",
+      gates = KASP_GATES_CAPS, relax = KASP_RELAX_CAPS, tiers = KASP_TIERS_CAPS
+    )
+  }
   stages
 }
 

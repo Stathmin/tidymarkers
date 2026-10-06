@@ -22,7 +22,7 @@ test_that("kasp_criteria declares gates, tiers and checks with metadata", {
   crit <- kasp_criteria()
   expect_setequal(unique(crit$role), c("gate", "tier", "check"))
   expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order", "schemes") %in% names(crit)))
-  expect_true(all(crit$stage %in% c("site", "as", "pair", "duplex", "asq", "assay")))
+  expect_true(all(crit$stage %in% c("site", "as", "pair", "duplex", "asq", "caps", "assay")))
   expect_true(any(crit$hard))
   # every criterion names at least one scheme, and all of them are registered
   expect_true(all(lengths(crit$schemes) >= 1L))

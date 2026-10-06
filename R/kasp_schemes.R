@@ -21,8 +21,9 @@
 # (any PCR primer pair); the rest are allele-specific assays that inherit it.
 KASP_SCHEME_PRIMER <- "primer"
 KASP_SCHEME_KASP <- c("snp", "indel", "multi")
+KASP_SCHEME_CAPS <- "caps"
 KASP_SCHEME_CORE <- c(KASP_SCHEME_KASP, "duplex", "asq")
-KASP_SCHEME_ALL <- c(KASP_SCHEME_PRIMER, KASP_SCHEME_CORE)
+KASP_SCHEME_ALL <- c(KASP_SCHEME_PRIMER, KASP_SCHEME_CORE, KASP_SCHEME_CAPS)
 
 # The acceptance checks that are true of any primer pair, KASP or not.  Their
 # complement is the allele-specific machinery (discrimination, the hierarchical
@@ -75,7 +76,10 @@ kasp_schemes <- function() {
     "usable duplex assay",
     "asq", "asq", "ASQ / PACE",
     "allele-specific real-time extension", "real-time, up to 4-plex", "co-dominant", "bounded", 1L,
-    "usable ASQ assay"
+    "usable ASQ assay",
+    "caps", "caps", "CAPS / dCAPS (restriction marker)",
+    "the allele creates or destroys a restriction site", "gel fragment lengths", "co-dominant",
+    "bounded", 1L, "usable CAPS marker"
   )
 }
 
