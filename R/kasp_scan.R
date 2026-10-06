@@ -45,7 +45,9 @@ kasp_blast_index <- function(genome, path = fs::path(fs::path_temp(), "kasp_geno
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     rlang::abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
-      i = gettext("install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`) or set options(tidykasp.blast = ).")
+      i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
+      i = gettext("On Windows run the NCBI BLAST+ installer."),
+      i = gettext("Or point the package at an existing build with options(tidykasp.blast = ).")
     ))
   }
   fasta <- if (inherits(genome, "kasp_genome")) {
@@ -84,7 +86,10 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   if (!has_blast()) {
     rlang::abort(c(
       gettext("No NCBI BLAST+ found (has_blast() is FALSE)."),
-      i = gettext("Install BLAST+, set options(tidykasp.blast = ), or use specificity_seed() on an in-memory genome.")
+      i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
+      i = gettext("On Windows run the NCBI BLAST+ installer."),
+      i = gettext("Or use specificity_seed() on an in-memory genome."),
+      i = gettext("Or point the package at an existing build with options(tidykasp.blast = ).")
     ))
   }
   seeds <- if (is.na(k)) {

@@ -11,8 +11,8 @@
 #       Taq-based discrimination (DECIPHER) and specificity (Biostrings/BLAST)
 #    4. write results/ (consolidated csv, rds, png) for the report to consume
 #
-#  External tool required: OligoArrayAux (`hybrid-min`) for DECIPHER, e.g.
-#     conda install -c bioconda oligoarrayaux
+#  External tool required: OligoArrayAux (`hybrid-min`) for DECIPHER; install it
+#  from within R with `tidykasp::kasp_install_tools()` (builds it from source).
 #  Optional: NCBI BLAST+ for the (slow) genome-wide BLAST step; a cached
 #  Rsubread FM-index is the index-based alternative and is built once.
 # =============================================================================
@@ -31,9 +31,9 @@ RUN_BLAST <- FALSE
 RUN_FM <- TRUE
 
 if (!has_oligoarrayaux()) {
-  rlang::abort(c("OligoArrayAux ('hybrid-min') not found on PATH.",
-                 i = "conda install -c bioconda oligoarrayaux",
-                 i = "or build it from UNAFold and put it on PATH."))
+  rlang::abort(c("OligoArrayAux ('hybrid-min') not found.",
+                 i = "install it from within R with tidykasp::kasp_install_tools()",
+                 i = "or put an existing build on PATH (see ?kasp_install_tools)."))
 }
 
 # --- 1. genome + gene --------------------------------------------------------

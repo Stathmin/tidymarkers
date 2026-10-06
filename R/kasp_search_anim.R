@@ -329,7 +329,8 @@ assemble_gif <- function(pngs, path, delay_cs = 25L) {
   if (is.null(tool)) {
     rlang::abort(c(
       gettext("No GIF assembler available (ImageMagick not found)."),
-      i = gettext("Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski).")
+      i = gettext("Install it: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS)."),
+      i = gettext("Or assemble the `pngs` yourself (e.g. with gifski).")
     ))
   }
   res <- processx::run(tool$exe, c(

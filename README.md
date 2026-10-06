@@ -78,7 +78,10 @@ Rscript data-raw/install-oligoarrayaux.R
 #       Пользователю достаточно установить пакет и запустить один раз:
 #       Rscript -e 'tidykasp::kasp_install_tools()'   # соберёт в пользовательский кэш
 #    b) cairo для gdtools/ggmsa
-sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreetype6-dev
+#       Linux:  sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreetype6-dev
+#       macOS:  brew install cairo pkg-config freetype
+#       Windows: cairo идёт с Rtools; либо pak::pak("tidykasp", sysreqs = TRUE)
+#       (кроссплатформенно: pak сам ставит системные библиотеки)
 
 # 2. R-окружение из лочки
 Rscript -e 'if (!requireNamespace("renv")) install.packages("renv")'

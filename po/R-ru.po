@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-01 17:03+0300\n"
+"POT-Creation-Date: 2026-10-06 13:10+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -13,159 +13,31 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: kasp_annotate.R:28
+#: kasp_annotate.R:32
 msgid "for structured variant annotation"
 msgstr "для структурированной аннотации вариантов"
 
-#: kasp_annotate.R:63
+#: kasp_annotate.R:71
 msgid "for codon-level annotation"
 msgstr "для аннотации на уровне кодонов"
 
-#: kasp_annotate.R:89
+#: kasp_annotate.R:101
 msgid "for an EnsDb gene model"
 msgstr "для генной модели EnsDb"
 
-#: kasp_annotate.R:98
+#: kasp_annotate.R:110
 msgid "Downloading the Ensembl Plants GTF into {.path {cache}}."
 msgstr "Скачиваю GTF Ensembl Plants в {.path {cache}}."
 
-#: kasp_annotate.R:104
+#: kasp_annotate.R:116
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr "Собираю EnsDb (однократно) из {.file {fs::path_file(gtf)}}."
 
-#: kasp_fm.R:31 kasp_fm.R:68
-msgid "for the FM-index genome scan"
-msgstr "для сканирования генома по FM-индексу"
-
-#: kasp_fm.R:34
-msgid "Reusing the existing FM-index at {.path {basename}}."
-msgstr "Использую существующий FM-индекс в {.path {basename}}."
-
-#: kasp_fm.R:45
-msgid "Building a Subread FM-index at {.path {basename}} (one-off)."
-msgstr "Строю FM-индекс Subread в {.path {basename}} (однократно)."
-
-#: kasp_fm.R:69
-msgid "to read the alignments"
-msgstr "для чтения выравниваний"
-
-#: kasp_functions.R:103
-msgid "OligoArrayAux ('{bin}') is not on the PATH."
-msgstr "OligoArrayAux ('{bin}') не найден в PATH."
-
-#: kasp_functions.R:117
-msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
-msgstr "OligoArrayAux ('{bin}') не удалось запустить: {conditionMessage(run)}"
-
-#: kasp_functions.R:122
-msgid ""
-"OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
-msgstr ""
-"OligoArrayAux ('{bin}') завершился со статусом {run$status}: "
-"{trimws(run$stderr)}"
-
-#: kasp_functions.R:129
-msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
-msgstr ""
-"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
-
-#: kasp_functions.R:288
-msgid ""
-"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
-"{cache}} ..."
-msgstr "Скачиваю геном TAIR10 (~35 МБ) из Ensembl Plants в {.path {cache}} ..."
-
-#: kasp_functions.R:296
-msgid ""
-"Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val "
-"{utils::head(dropped, 3L)}}."
-msgstr ""
-"Отбрасываю {length(dropped)} нехромосомную(ые) последовательность(и), напр. "
-"{.val {utils::head(dropped, 3L)}}."
-
-#: kasp_functions.R:306
-msgid ""
-"ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
-"collapse = ', ')}."
-msgstr ""
-"ath_genome(): в FASTA TAIR10 нет хромосом: {paste(missing, collapse = ', ')}."
-
-#: kasp_functions.R:308
-msgid "Ensembl deflines may have changed."
-msgstr "Возможно, изменились дефлайны Ensembl."
-
-#: kasp_functions.R:356
-msgid ""
-"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
-msgstr ""
-"ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
-
-#: kasp_functions.R:358 kasp_functions.R:402
-msgid "The Ensembl REST schema may have changed."
-msgstr "Возможно, изменилась схема Ensembl REST."
-
-#: kasp_functions.R:400
-msgid ""
-"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
-"', ')}."
-msgstr ""
-"ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
-
-#: kasp_functions.R:578
-msgid "No usable substitution variant (SNP/MNP) left after filtering."
-msgstr "После фильтрации не осталось пригодных замен (SNP/MNP)."
-
-#: kasp_functions.R:793
-msgid "Directory not found: {path}"
-msgstr "Каталог не найден: {path}"
-
-#: kasp_functions.R:814
-msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
-msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
-
-#: kasp_functions.R:815
-msgid "build it with data-raw/install-oligoarrayaux.R"
-msgstr "соберите его скриптом data-raw/install-oligoarrayaux.R"
-
-#: kasp_functions.R:893
-msgid "No common primer passed the filters."
-msgstr "Ни один общий праймер не прошёл фильтры."
-
-#: kasp_functions.R:894
-msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
-msgstr "Расширьте `tm_range`/GC или увеличьте `flank` в snp_template()."
-
-#: kasp_functions.R:1128
-msgid ""
-"design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
-"a substitution."
-msgstr ""
-"design_as_primers_indel() требует аллели разной длины; для замены "
-"используйте design_as_primers()."
-
-#: kasp_functions.R:1183
-msgid "No indel AS-primer placement fit inside the design window."
-msgstr ""
-"Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
-
-#: kasp_functions.R:1314
-msgid "specificity_seed() needs an in-memory DNAStringSet."
-msgstr "specificity_seed() требует DNAStringSet в памяти."
-
-#: kasp_functions.R:1315
-msgid "For an indexed genome use specificity_of()/specificity_blast()."
-msgstr ""
-"Для индексного генома используйте specificity_of()/specificity_blast()."
-
-#: kasp_functions.R:1461
-msgid "BLAST failed: {conditionMessage(e)}"
-msgstr "BLAST не удался: {conditionMessage(e)}"
-
-#: kasp_functions.R:1593
+#: kasp_assemble.R:212
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр GC/Tm."
 
-#: kasp_functions.R:1650
+#: kasp_assemble.R:277
 msgid ""
 "No AS primer passed the GC/Tm filter (max_footprint_variants = "
 "{max_footprint_variants})."
@@ -173,7 +45,11 @@ msgstr ""
 "Ни один AS-праймер не прошёл фильтр GC/Tm (max_footprint_variants = "
 "{max_footprint_variants})."
 
-#: kasp_functions.R:1690
+#: kasp_assemble.R:306
+msgid "No AS primer survived even the relaxed constraints."
+msgstr "Ни один AS-праймер не прошёл даже ослабленные ограничения."
+
+#: kasp_assemble.R:317
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
@@ -181,25 +57,25 @@ msgstr ""
 "У целевого SNP {snp$chrom}:{snp$pos} в 3'-концевых {clean_3p} нт AS-праймера "
 "есть {best_as$n_3p} других вариант(ов)."
 
-#: kasp_functions.R:1692
+#: kasp_assemble.R:319
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 "Аллельная специфичность на цепи {best_as$strand} может не сохраняться между "
 "образцами."
 
-#: kasp_functions.R:1697
+#: kasp_assemble.R:324
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 "AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим "
 "футпринтом."
 
-#: kasp_functions.R:1698
+#: kasp_assemble.R:325
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 "Ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 
-#: kasp_functions.R:1704
+#: kasp_assemble.R:331
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
@@ -207,31 +83,166 @@ msgstr ""
 "Дискриминация лучшего AS-праймера = {round(best_as$discrimination, 2)} ниже "
 "min_disc = {min_disc}."
 
-#: kasp_functions.R:1706
+#: kasp_assemble.R:333
 msgid "Consider widening `strands` or `tm_range`."
 msgstr "Рассмотрите расширение `strands` или `tm_range`."
 
-#: kasp_functions.R:1779
+#: kasp_assemble.R:394
+msgid "No candidate assay survived even the relaxed constraints."
+msgstr "Ни один кандидатный ассей не прошёл даже ослабленные ограничения."
+
+#: kasp_assemble.R:423
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr "in-silico ПЦР не удалась: {conditionMessage(e)}"
 
-#: kasp_functions.R:1791
+#: kasp_assemble.R:436
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: kasp_functions.R:1797
+#: kasp_assemble.R:442
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr "BLAST-БД недоступна: {conditionMessage(e)}"
 
-#: kasp_functions.R:1907
-msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
+#: kasp_assemble.R:473
+msgid "genome ideogram failed: {conditionMessage(e)}"
+msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
 
-#: kasp_functions.R:1954
-msgid "Designing KASP markers"
-msgstr "Дизайн KASP-маркеров"
+#: kasp_core.R:116
+msgid "OligoArrayAux ('{bin}') was not found."
+msgstr "OligoArrayAux ('{bin}') не найден."
 
-#: kasp_functions.R:2013
+#: kasp_core.R:131
+msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+msgstr "OligoArrayAux ('{bin}') не удалось запустить: {conditionMessage(run)}"
+
+#: kasp_core.R:136
+msgid ""
+"OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+msgstr ""
+"OligoArrayAux ('{bin}') завершился со статусом {run$status}: "
+"{trimws(run$stderr)}"
+
+#: kasp_core.R:143
+msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
+msgstr ""
+"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
+
+#: kasp_core.R:496
+msgid ""
+"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
+"{cache}} ..."
+msgstr "Скачиваю геном TAIR10 (~35 МБ) из Ensembl Plants в {.path {cache}} ..."
+
+#: kasp_core.R:504
+msgid ""
+"Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val "
+"{utils::head(dropped, 3L)}}."
+msgstr ""
+"Отбрасываю {length(dropped)} нехромосомную(ые) последовательность(и), напр. "
+"{.val {utils::head(dropped, 3L)}}."
+
+#: kasp_core.R:514
+msgid ""
+"ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
+"collapse = ', ')}."
+msgstr ""
+"ath_genome(): в FASTA TAIR10 нет хромосом: {paste(missing, collapse = ', ')}."
+
+#: kasp_core.R:516
+msgid "Ensembl deflines may have changed."
+msgstr "Возможно, изменились дефлайны Ensembl."
+
+#: kasp_decision.R:148
+msgid "for the decision graph"
+msgstr "для графа решения"
+
+#: kasp_decision.R:194
+msgid "to draw the decision tree"
+msgstr "для отрисовки дерева решений"
+
+#: kasp_design.R:77
+msgid "No common primer passed the filters."
+msgstr "Ни один общий праймер не прошёл фильтры."
+
+#: kasp_design.R:78
+msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
+msgstr "Расширьте `tm_range`/GC или увеличьте `flank` в snp_template()."
+
+#: kasp_design.R:384
+msgid ""
+"design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
+"a substitution."
+msgstr ""
+"design_as_primers_indel() требует аллели разной длины; для замены "
+"используйте design_as_primers()."
+
+#: kasp_design.R:439
+msgid "No indel AS-primer placement fit inside the design window."
+msgstr ""
+"Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
+
+#: kasp_fm.R:35 kasp_fm.R:77
+msgid "for the FM-index genome scan"
+msgstr "для сканирования генома по FM-индексу"
+
+#: kasp_fm.R:38
+msgid "Reusing the existing FM-index at {.path {basename}}."
+msgstr "Использую существующий FM-индекс в {.path {basename}}."
+
+#: kasp_fm.R:49
+msgid "Building a Subread FM-index at {.path {basename}} (one-off)."
+msgstr "Строю FM-индекс Subread в {.path {basename}} (однократно)."
+
+#: kasp_fm.R:78
+msgid "to read the alignments"
+msgstr "для чтения выравниваний"
+
+#: kasp_genome.R:75
+msgid "for a BSgenome genome source"
+msgstr "для источника генома BSgenome"
+
+#: kasp_genome.R:77
+msgid "for the BSgenome genome source"
+msgstr "для источника генома BSgenome"
+
+#: kasp_genome.R:150 kasp_genome.R:175
+msgid "Unknown sequence: {chrom}"
+msgstr "Неизвестная последовательность: {chrom}"
+
+#: kasp_io.R:62
+msgid "VCF not found: {path}"
+msgstr "VCF не найден: {path}"
+
+#: kasp_io.R:91
+msgid "to read large VCF files"
+msgstr "для чтения больших VCF"
+
+#: kasp_io.R:94
+msgid "{path} has no '#CHROM' header line."
+msgstr "В {path} нет строки заголовка '#CHROM'."
+
+#: kasp_io.R:120
+msgid "for the readVcf backend"
+msgstr "для бэкенда readVcf"
+
+#: kasp_io.R:159
+msgid "for indexed FASTA random access"
+msgstr "для произвольного доступа к индексированной FASTA"
+
+#: kasp_io.R:160 kasp_io.R:240
+msgid "FASTA not found: {path}"
+msgstr "FASTA не найдена: {path}"
+
+#: kasp_io.R:163
+msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
+msgstr ""
+"Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
+
+#: kasp_io.R:214
+msgid "Bundled example data not found."
+msgstr "Встроенные примеры данных не найдены."
+
+#: kasp_mix.R:46
 msgid ""
 "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} "
 "uM stock."
@@ -239,82 +250,55 @@ msgstr ""
 "Запрошенная рабочая смесь ({as_uM}/{as_uM}/{com_uM} мкМ) превышает исходный "
 "раствор {stock_uM} мкМ."
 
-#: kasp_functions.R:2015
+#: kasp_mix.R:48
 msgid "Raise `stock_uM` or lower the targets."
 msgstr "Увеличьте `stock_uM` или уменьшите целевые концентрации."
 
-#: kasp_functions.R:2033
+#: kasp_mix.R:66
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 "Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
-#: kasp_genome.R:71
-msgid "for a BSgenome genome source"
-msgstr "для источника генома BSgenome"
+#: kasp_object.R:109
+msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
-#: kasp_genome.R:73
-msgid "for the BSgenome genome source"
-msgstr "для источника генома BSgenome"
+#: kasp_object.R:159
+msgid "Designing KASP markers"
+msgstr "Дизайн KASP-маркеров"
 
-#: kasp_genome.R:131 kasp_genome.R:151
-msgid "Unknown sequence: {chrom}"
-msgstr "Неизвестная последовательность: {chrom}"
-
-#: kasp_io.R:51
-msgid "VCF not found: {path}"
-msgstr "VCF не найден: {path}"
-
-#: kasp_io.R:80
-msgid "to read large VCF files"
-msgstr "для чтения больших VCF"
-
-#: kasp_io.R:83
-msgid "{path} has no '#CHROM' header line."
-msgstr "В {path} нет строки заголовка '#CHROM'."
-
-#: kasp_io.R:109
-msgid "for the readVcf backend"
-msgstr "для бэкенда readVcf"
-
-#: kasp_io.R:143
-msgid "for indexed FASTA random access"
-msgstr "для произвольного доступа к индексированной FASTA"
-
-#: kasp_io.R:144 kasp_io.R:203
-msgid "FASTA not found: {path}"
-msgstr "FASTA не найдена: {path}"
-
-#: kasp_io.R:147
-msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
-msgstr ""
-"Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
-
-#: kasp_io.R:186
-msgid "Bundled example data not found."
-msgstr "Встроенные примеры данных не найдены."
-
-#: kasp_scan.R:33 kasp_scan.R:66
+#: kasp_scan.R:45 kasp_scan.R:85
 msgid "for the indexed genome scan"
 msgstr "для индексного сканирования генома"
 
-#: kasp_scan.R:35
-msgid "NCBI BLAST+ ('blastn'/'makeblastdb') not found on the PATH."
-msgstr "NCBI BLAST+ ('blastn'/'makeblastdb') не найден в PATH."
+#: kasp_scan.R:47
+msgid "NCBI BLAST+ ('blastn'/'makeblastdb') was not found."
+msgstr "NCBI BLAST+ ('blastn'/'makeblastdb') не найден."
 
-#: kasp_scan.R:36
-msgid "install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`)."
-msgstr "установите NCBI BLAST+ (напр. `apt-get install ncbi-blast+`)."
+#: kasp_scan.R:48 kasp_scan.R:89
+msgid ""
+"Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast "
+"(macOS)."
+msgstr "Установите его: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."
 
-#: kasp_scan.R:69
-msgid "No NCBI BLAST+ on PATH (has_blast() is FALSE)."
-msgstr "Нет NCBI BLAST+ в PATH (has_blast() возвращает FALSE)."
+#: kasp_scan.R:49 kasp_scan.R:90
+msgid "On Windows run the NCBI BLAST+ installer."
+msgstr "В Windows запустите установщик NCBI BLAST+."
 
-#: kasp_scan.R:70
-msgid "Install BLAST+, or use specificity_seed() on an in-memory genome."
-msgstr ""
-"Установите BLAST+ или используйте specificity_seed() на геноме в памяти."
+#: kasp_scan.R:50 kasp_scan.R:92
+msgid ""
+"Or point the package at an existing build with options(tidykasp.blast = )."
+msgstr "Либо укажите пакету существующую сборку через options(tidykasp.blast = )."
 
-#: kasp_scan.R:87
+#: kasp_scan.R:88
+msgid "No NCBI BLAST+ found (has_blast() is FALSE)."
+msgstr "NCBI BLAST+ не найден (has_blast() возвращает FALSE)."
+
+#: kasp_scan.R:91
+msgid "Or use specificity_seed() on an in-memory genome."
+msgstr "Либо используйте specificity_seed() на геноме в памяти."
+
+#: kasp_scan.R:109
 msgid ""
 "Could not open a BLAST database at {db_path} (build it with "
 "kasp_blast_index())."
@@ -322,30 +306,163 @@ msgstr ""
 "Не удалось открыть BLAST-БД по пути {db_path} (постройте её через "
 "kasp_blast_index())."
 
-#: kasp_scan.R:138
+#: kasp_scan.R:165
 msgid "This indexed genome has no BLAST database attached."
 msgstr "У этого индексного генома нет прикреплённой BLAST-БД."
 
-#: kasp_scan.R:139
+#: kasp_scan.R:166
 msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
 msgstr ""
 "Постройте её через kasp_blast_index(genome) и передайте как `blast_db=`."
 
-#: kasp_search_anim.R:275
+#: kasp_screen.R:54
+msgid "`variants` needs `chrom` and `pos` columns."
+msgstr "`variants` требует колонки `chrom` и `pos`."
+
+#: kasp_screen.R:202
+msgid "`screen` is empty."
+msgstr "`screen` пуст."
+
+#: kasp_search_anim.R:299
 msgid ""
 "Design-search animation written to {.path {path}} ({length(pngs)} frames)."
 msgstr ""
 "Анимация поиска дизайна записана в {.path {path}} ({length(pngs)} кадр(ов))."
 
-#: kasp_search_anim.R:305
+#: kasp_search_anim.R:331
 msgid "No GIF assembler available (ImageMagick not found)."
 msgstr "Нет сборщика GIF (ImageMagick не найден)."
 
-#: kasp_search_anim.R:306
+#: kasp_search_anim.R:332
 msgid ""
-"Install ImageMagick, or assemble the `pngs` yourself (e.g. with gifski)."
-msgstr "Установите ImageMagick или соберите `pngs` сами (напр. через gifski)."
+"Install it: apt-get install imagemagick (Debian/Ubuntu), brew install "
+"imagemagick (macOS)."
+msgstr "Установите его: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS)."
 
-#: kasp_search_anim.R:316
+#: kasp_search_anim.R:333
+msgid "Or assemble the `pngs` yourself (e.g. with gifski)."
+msgstr "Либо соберите `pngs` сами (например, через gifski)."
+
+#: kasp_search_anim.R:343
 msgid "ImageMagick failed: {res$stderr}"
 msgstr "ImageMagick завершился с ошибкой: {res$stderr}"
+
+#: kasp_select.R:324
+msgid ""
+"No assay cleared every hard constraint; returned the least-bad after "
+"relaxing some."
+msgstr "Ни один ассей не прошёл все жёсткие ограничения; возвращён наименее плохой после ослабления части."
+
+#: kasp_specificity.R:34
+msgid "specificity_seed() needs an in-memory DNAStringSet."
+msgstr "specificity_seed() требует DNAStringSet в памяти."
+
+#: kasp_specificity.R:35
+msgid "For an indexed genome use specificity_of()/specificity_blast()."
+msgstr ""
+"Для индексного генома используйте specificity_of()/specificity_blast()."
+
+#: kasp_specificity.R:227
+msgid "BLAST failed: {conditionMessage(e)}"
+msgstr "BLAST не удался: {conditionMessage(e)}"
+
+#: kasp_target.R:51
+msgid ""
+"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
+msgstr ""
+"ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
+
+#: kasp_target.R:53 kasp_target.R:103
+msgid "The Ensembl REST schema may have changed."
+msgstr "Возможно, изменилась схема Ensembl REST."
+
+#: kasp_target.R:101
+msgid ""
+"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
+"', ')}."
+msgstr ""
+"ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
+
+#: kasp_target.R:295
+msgid "No usable substitution variant (SNP/MNP) left after filtering."
+msgstr "После фильтрации не осталось пригодных замен (SNP/MNP)."
+
+#: kasp_thermo.R:183
+msgid "Directory not found: {path}"
+msgstr "Каталог не найден: {path}"
+
+#: kasp_thermo.R:257
+msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
+msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
+
+#: kasp_thermo.R:258
+msgid ""
+"run kasp_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
+msgstr "запустите kasp_install_tools() или соберите его скриптом data-raw/install-oligoarrayaux.R"
+
+#: kasp_tools.R:175
+msgid "'{command}' failed (status {status})."
+msgstr "'{command}' завершилась с ошибкой (статус {status})."
+
+#: kasp_tools.R:209
+msgid "OligoArrayAux is already installed in {.path {dest}}."
+msgstr "OligoArrayAux уже установлен в {.path {dest}}."
+
+#: kasp_tools.R:212
+msgid "Download and build OligoArrayAux into the user cache?"
+msgstr "Скачать и собрать OligoArrayAux в пользовательский кэш?"
+
+#: kasp_tools.R:213
+msgid "Cancelled; nothing was downloaded."
+msgstr "Отменено; ничего не скачано."
+
+#: kasp_tools.R:219
+msgid "'make' was not found on the PATH."
+msgstr "'make' не найден в PATH."
+
+#: kasp_tools.R:220
+msgid "On Windows install Rtools; on Unix install your build tools."
+msgstr "В Windows установите Rtools; в Unix — инструменты сборки."
+
+#: kasp_tools.R:225
+msgid "No C compiler (cc/gcc/clang) was found on the PATH."
+msgstr "Компилятор C (cc/gcc/clang) не найден в PATH."
+
+#: kasp_tools.R:226
+msgid "On Windows install Rtools; on Unix install a compiler."
+msgstr "В Windows установите Rtools; в Unix — компилятор."
+
+#: kasp_tools.R:235
+msgid "Downloading OligoArrayAux {version} ..."
+msgstr "Скачиваю OligoArrayAux {version} ..."
+
+#: kasp_tools.R:240
+msgid "No sha256 tool found; skipping the checksum."
+msgstr "Инструмент sha256 не найден; пропускаю проверку контрольной суммы."
+
+#: kasp_tools.R:242
+msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
+msgstr "Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено {got})."
+
+#: kasp_tools.R:248
+msgid "Configuring and building OligoArrayAux (this takes a minute) ..."
+msgstr "Настраиваю и собираю OligoArrayAux (это займёт минуту) ..."
+
+#: kasp_tools.R:253
+msgid "Building on Windows needs 'bash' (Rtools/MSYS2) on the PATH."
+msgstr "Для сборки в Windows нужен 'bash' (Rtools/MSYS2) в PATH."
+
+#: kasp_tools.R:254
+msgid "Install Rtools, or build OligoArrayAux by hand."
+msgstr "Установите Rtools или соберите OligoArrayAux вручную."
+
+#: kasp_tools.R:269
+msgid "The build finished but hybrid-min did not return a dG."
+msgstr "Сборка завершилась, но hybrid-min не вернул dG."
+
+#: kasp_tools.R:271
+msgid "OligoArrayAux installed in {.path {dest}}."
+msgstr "OligoArrayAux установлен в {.path {dest}}."
+
+#~ msgid "install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`)."
+#~ msgstr "установите NCBI BLAST+ (напр. `apt-get install ncbi-blast+`)."
