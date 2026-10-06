@@ -27,6 +27,7 @@ test_that("in_silico_pcr is invariant to the parallel backend", {
   )
   expect_equal(par, serial)
   skip_on_os("windows")
+  skip_if_stale_install()
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
   on.exit(BiocParallel::bpstop(bp), add = TRUE)
   mc <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome,

@@ -23,6 +23,7 @@ test_that("dimer_thermo is invariant to the parallel backend", {
   s <- dimer_thermo(p)
   expect_equal(dimer_thermo(p, BPPARAM = BiocParallel::SerialParam()), s)
   skip_on_os("windows")
+  skip_if_stale_install()
   # SOCK workers (a real second process) also exercise worker_biostrings();
   # bpstop() reaps them so the session exits cleanly
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
