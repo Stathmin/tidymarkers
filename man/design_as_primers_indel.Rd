@@ -10,7 +10,7 @@ design_as_primers_indel(
   ref,
   alt,
   strands = c("+", "-"),
-  lengths = 20:27,
+  lengths = 18:32,
   temp = PCR_EFF$temp,
   P = PCR_EFF$P,
   ions = PCR_EFF$ions,

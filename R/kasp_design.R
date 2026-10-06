@@ -389,7 +389,7 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #' @family KASP design
 #' @export
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
-                                    strands = c("+", "-"), lengths = 20:27,
+                                    strands = c("+", "-"), lengths = 18:32,
                                     temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
                                     gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)
