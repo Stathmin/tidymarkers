@@ -914,6 +914,10 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
   )
   v <- variants |>
     dplyr::mutate(consequence = forcats::fct_lump_n(.data$consequence, 6L))
+  # label the target from the variant itself - a bare (chrom, pos, ref, alt)
+  # record carries no `id`, so the plot must not depend on one
+  snp <- snp |>
+    dplyr::mutate(label = glue::glue("{.data$chrom}:{.data$pos} {.data$ref}>{.data$alt}"))
 
   main <- ggplot2::ggplot() +
     gggenes::geom_gene_arrow(
@@ -927,7 +931,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
       shape = 21, fill = "firebrick", colour = "white", size = 3
     ) +
     ggrepel::geom_text_repel(
-      data = snp, ggplot2::aes(.data$pos, 2, label = .data$id),
+      data = snp, ggplot2::aes(.data$pos, 2, label = .data$label),
       size = 2.6, nudge_y = 0.6, min.segment.length = 0
     ) +
     ggplot2::scale_colour_brewer(palette = "Dark2", name = "consequence") +

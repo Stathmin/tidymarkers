@@ -124,6 +124,15 @@ test_that("the feature row draws annotation, or notes its absence", {
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp, features = gene), "patchwork")
 })
 
+test_that("the variant landscape draws a bare target without an `id` column", {
+  skip_if_no_oligoarrayaux()
+  m <- make_plot_assay()
+  # a bare (chrom, pos, ref, alt) target carries no `id` - the label must come
+  # from the variant itself, not a column the caller never supplies
+  gene <- list(symbol = "GENE", chrom = "Chr1", start = 1L, end = 500L, strand = "+")
+  expect_s3_class(plot_variant_landscape(gene, m$variants, m$snp, m$assay), "ggplot")
+})
+
 test_that("a doomed target is a classed object and still plots its context", {
   skip_if_no_oligoarrayaux()
   m <- make_plot_assay()

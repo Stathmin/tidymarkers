@@ -22,9 +22,12 @@ fs::dir_create("man/figures")
 p <- plot_decision_tree() # the bare schema: the policy, not one assay's luck
 ggplot2::ggsave("man/figures/decision-tree.png", p, width = 9, height = 13, dpi = 110, bg = "white")
 cat("wrote man/figures/decision-tree.png\n")
+# the same schema in the git-ignored smoke dir, next to the annotated example
+fs::dir_create("results/plot-smoke")
+ggplot2::ggsave("results/plot-smoke/decision-schema.png", p, width = 9, height = 13, dpi = 110, bg = "white")
+cat("wrote results/plot-smoke/decision-schema.png\n")
 
 # an annotated example (a real assay's traversal) for eyeballing, git-ignored
-fs::dir_create("results/plot-smoke")
 tryCatch(
   {
     genome <- ath_genome()
