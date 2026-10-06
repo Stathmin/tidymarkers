@@ -255,18 +255,56 @@ seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
 #'   candidates (by the other criteria) are checked; set `0` to skip it.
 #' @param BPPARAM optional `BiocParallel` backend for the seed scan (split by
 #'   chromosome, see [specificity_seed()]).
+#' @param scheme optional marker scheme to require (see [kasp_schemes()]).  When
+#'   given, ranked candidates are designed one by one with that scheme's engine
+#'   ([kasp_design_at()]) and the first *designable* one is returned - "doomed"
+#'   depends on the marker type, so a KASP-doomed locus may still make a CAPS or
+#'   ARMS marker.  `NULL` keeps the plain best-by-criteria pick.
+#' @param max_tries how many ranked candidates to try when `scheme` is given.
 #' @return a one-row tibble for the chosen variant (`id`, `chrom`, `pos`,
-#'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`).
+#'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`);
+#'   with `scheme`, the designed marker is attached as the `"marker"` attribute.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
 #' v <- ensembl_variants("Chr4", 268901, 271503)
 #' pick_target_snp(v, genome, ensembl_gene("AT4G00650"))
+#' # a target that designs specifically as a CAPS marker:
+#' pick_target_snp(v, genome, ensembl_gene("AT4G00650"), scheme = "caps")
 #' }
 #' @family KASP design
 #' @export
+#' Design a target with one scheme's engine (for designability checks)
+#'
+#' "Doomed" is not one thing: a SNP may be undesignable as a KASP but fine as a
+#' CAPS or ARMS marker.  This dispatches to the scheme's designer so
+#' [pick_target_snp()] can walk candidates until one actually designs.
+#' @keywords internal
+#' @noRd
+kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL) {
+  switch(scheme,
+    snp = ,
+    indel = ,
+    multi = assemble_kasp_assay(genome, snp, variants = variants, BPPARAM = BPPARAM),
+    caps = design_caps_marker(genome, snp),
+    arms = design_arms_marker(genome, snp),
+    NULL
+  )
+}
+
+#' Did a scheme's designer return a usable marker? (see [kasp_design_at()])
+#' @keywords internal
+#' @noRd
+is_target_designable <- function(marker) {
+  if (inherits(marker, "kasp_doomed")) {
+    return(FALSE)
+  }
+  inherits(marker, "kasp_assay") || inherits(marker, "kasp_caps") || inherits(marker, "kasp_arms")
+}
+
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
-                            specificity_candidates = 10L, BPPARAM = NULL) {
+                            specificity_candidates = 10L, BPPARAM = NULL,
+                            scheme = NULL, max_tries = 10L) {
   if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
 
   # REF length comes from the VCF (its first allele); the reference bases are
@@ -327,48 +365,75 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     ) |>
     dplyr::arrange(.data$n_3p, .data$rank, dplyr::desc(.data$transition), dplyr::desc(.data$maf), .data$pos)
 
-  if (specificity_candidates <= 0L) {
-    return(ranked |> dplyr::slice(1L) |> dplyr::select(-"rank", -"ref_genome", -"maf"))
-  }
-
   # among the best candidates, prefer the most specific AS 3'-seed (best of the
   # two strands).  The genome-wide scan is one [specificity_seed()] call over
   # both strands' seeds of the whole shortlist, so it can fan out by chromosome.
-  short <- dplyr::slice_head(ranked, n = specificity_candidates) |>
-    dplyr::mutate(candidate = dplyr::row_number())
-  # one seed per candidate per strand; a stable key carries it through the scan
-  seed_tbl <- tidyr::crossing(candidate = short$candidate, strand = c("+", "-")) |>
-    dplyr::mutate(
-      seed = purrr::pmap_chr(
-        list(
-          short$chrom[.data$candidate], short$pos[.data$candidate],
-          short$ref_len[.data$candidate], .data$strand
+  short <- dplyr::slice_head(ranked, n = max(1L, specificity_candidates))
+  if (specificity_candidates > 0L) {
+    short <- dplyr::mutate(short, candidate = dplyr::row_number())
+    # one seed per candidate per strand; a stable key carries it through the scan
+    seed_tbl <- tidyr::crossing(candidate = short$candidate, strand = c("+", "-")) |>
+      dplyr::mutate(
+        seed = purrr::pmap_chr(
+          list(
+            short$chrom[.data$candidate], short$pos[.data$candidate],
+            short$ref_len[.data$candidate], .data$strand
+          ),
+          function(ch, p, rl, st) seed_seq(genome, ch, p, rl, st)
         ),
-        function(ch, p, rl, st) seed_seq(genome, ch, p, rl, st)
-      ),
-      key = paste0(.data$candidate, .data$strand)
-    ) |>
-    dplyr::filter(!is.na(.data$seed))
-  if (nrow(seed_tbl) > 0L) {
-    seed_tbl <- specificity_of(stats::setNames(seed_tbl$seed, seed_tbl$key), genome,
-      BPPARAM = BPPARAM
-    ) |>
-      dplyr::select(key = "primer", "hits") |>
-      dplyr::right_join(seed_tbl, by = "key")
+        key = paste0(.data$candidate, .data$strand)
+      ) |>
+      dplyr::filter(!is.na(.data$seed))
+    if (nrow(seed_tbl) > 0L) {
+      seed_tbl <- specificity_of(stats::setNames(seed_tbl$seed, seed_tbl$key), genome,
+        BPPARAM = BPPARAM
+      ) |>
+        dplyr::select(key = "primer", "hits") |>
+        dplyr::right_join(seed_tbl, by = "key")
+    } else {
+      seed_tbl$hits <- integer()
+    }
+    # seed specificity breaks ties among otherwise comparable loci (it does not
+    # outrank the biological/chemical preferences above); best of the two strands
+    short <- seed_tbl |>
+      dplyr::summarise(seed_hits = min(.data$hits), .by = "candidate") |>
+      dplyr::right_join(short, by = "candidate")
   } else {
-    seed_tbl$hits <- integer()
+    short$candidate <- seq_len(nrow(short))
+    short$seed_hits <- NA_integer_
   }
-  # seed specificity breaks ties among otherwise comparable loci (it does not
-  # outrank the biological/chemical preferences above); best of the two strands
-  short <- seed_tbl |>
-    dplyr::summarise(seed_hits = min(.data$hits), .by = "candidate") |>
-    dplyr::right_join(short, by = "candidate")
-
-  short |>
-    dplyr::arrange(
-      .data$n_3p, .data$rank, dplyr::desc(.data$transition),
-      dplyr::desc(.data$maf), .data$seed_hits, .data$pos
-    ) |>
+  short <- dplyr::arrange(
+    short,
+    .data$n_3p, .data$rank, dplyr::desc(.data$transition),
+    dplyr::desc(.data$maf), .data$seed_hits, .data$pos
+  )
+  best <- short |>
     dplyr::slice(1L) |>
     dplyr::select(-"rank", -"ref_genome", -"maf", -"candidate")
+  if (is.null(scheme)) {
+    return(best)
+  }
+  # "doomed" depends on the marker type: walk the ranked candidates until the
+  # scheme can actually design one (an assay, a CAPS or an ARMS marker each have
+  # their own way of failing)
+  cand <- dplyr::slice_head(short, n = max(1L, as.integer(max_tries)))
+  for (i in seq_len(nrow(cand))) {
+    snp <- tibble::tibble(
+      chrom = cand$chrom[i], pos = cand$pos[i], ref = cand$ref[i], alt = cand$alt[i]
+    )
+    marker <- tryCatch(
+      suppressWarnings(kasp_design_at(genome, snp, scheme, variants = variants, BPPARAM = BPPARAM)),
+      error = function(e) NULL
+    )
+    if (is_target_designable(marker)) {
+      out <- dplyr::select(cand[i, ], -"rank", -"ref_genome", -"maf", -"candidate")
+      attr(out, "marker") <- marker
+      return(out)
+    }
+  }
+  rlang::warn(c(
+    glue::glue(gettext("No ranked target is designable for scheme {scheme} ({nrow(cand)} tried).")),
+    i = gettext("returning the best-ranked target, whose design may be doomed.")
+  ))
+  best
 }
