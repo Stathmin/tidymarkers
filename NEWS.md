@@ -86,6 +86,11 @@
   рядом с PNG.
 
 ### Другие PCR-маркеры и провенанс порогов
+- **Ладдер химий — KASP не единственный путь:** `design_marker()` перебирает KASP → CAPS →
+  ARMS → HRM и возвращает первую годную химию, отдавая tidy-вердикт по каждой; панель
+  мишеней (`dev/render-targets.R`) рисует альтернативу там, где KASP думит
+  (`plot_caps_gel`/`plot_arms_gel`/`plot_hrm_amplicon`). На курированном наборе MNP спасает
+  HRM; поли-A инсерция и делеция — ни одной химией (`NO marker`).
 - **Дуплексный движок** (`R/kasp_duplex.R`): `design_duplex()` собирает два локуса
   ([assemble_kasp_assay()]) и считает **стадию совместимости** (`duplex_compatibility()`):
   Tm-окно (59–65 °C), межпарная комплементарность (`complementary_run()` < 6 bp),
