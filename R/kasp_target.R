@@ -417,14 +417,14 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' [pick_target_snp()] can walk candidates until one actually designs.
 #' @keywords internal
 #' @noRd
-kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL) {
+kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL, ...) {
   switch(scheme,
     snp = ,
     indel = ,
-    multi = assemble_kasp_assay(genome, snp, variants = variants, BPPARAM = BPPARAM),
-    caps = design_caps_marker(genome, snp),
-    arms = design_arms_marker(genome, snp),
-    hrm = design_hrm_marker(genome, snp),
+    multi = assemble_kasp_assay(genome, snp, variants = variants, BPPARAM = BPPARAM, ...),
+    caps = design_caps_marker(genome, snp, ...),
+    arms = design_arms_marker(genome, snp, ...),
+    hrm = design_hrm_marker(genome, snp, ...),
     NULL
   )
 }
@@ -440,4 +440,42 @@ is_target_designable <- function(marker) {
     inherits(marker, "kasp_caps") ||
     inherits(marker, "kasp_arms") ||
     inherits(marker, "kasp_hrm")
+}
+
+#' Design a marker with the first chemistry that works
+#'
+#' A locus KASP dooms is not a dead end: it may still make a CAPS/dCAPS, ARMS or
+#' HRM marker (see [kasp_schemes()]).  This walks the schemes in order, designing
+#' each in turn, and returns the first usable one together with a tidy verdict for
+#' every scheme it tried - "which chemistry takes this target", in one call.
+#' @param genome a `kasp_genome` or `DNAStringSet`.
+#' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`; an `alt2` list-column
+#'   is honoured by the KASP scheme).
+#' @param schemes scheme ids to try, in order (see [kasp_schemes()]).
+#' @param ... passed to the per-scheme designer (e.g. `flank`).
+#' @return a list: `snp`, `scheme` (the winner, or `NA`), `marker` (the winning
+#'   object, or `NULL`), and `tried` (a tibble `scheme`, `ok`, `marker`).
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' design_marker(genome, kasp_example("SNP")[1, ])
+#' }
+#' @family KASP design
+#' @export
+design_marker <- function(genome, snp, schemes = c("snp", "caps", "arms", "hrm"), ...) {
+  tried <- purrr::map(schemes, function(sc) {
+    m <- tryCatch(
+      suppressWarnings(kasp_design_at(genome, snp, sc, ...)),
+      error = function(e) NULL
+    )
+    tibble::tibble(scheme = sc, ok = is_target_designable(m), marker = list(m))
+  }) |>
+    purrr::list_rbind()
+  win <- tried[tried$ok, , drop = FALSE]
+  scheme <- if (nrow(win)) win$scheme[1L] else NA_character_
+  list(
+    snp = snp, scheme = scheme,
+    marker = if (is.na(scheme)) NULL else win$marker[[1L]],
+    tried = tried
+  )
 }

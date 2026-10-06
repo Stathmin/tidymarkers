@@ -25,3 +25,16 @@ test_that("the hrm scheme is registered with its own decision stage and is desig
   expect_true("hrm" %in% s$nodes$stage)
   expect_true(is_target_designable(structure(list(), class = "kasp_hrm")))
 })
+
+test_that("plot_hrm_amplicon draws the marker and rejects other objects", {
+  skip_if_no_oligoarrayaux()
+  W <- bseq(600L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 300L, 300L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  m <- design_hrm_marker(genome, snp, flank = 150L)
+  expect_s3_class(plot_hrm_amplicon(m), "ggplot")
+  expect_error(plot_hrm_amplicon(list()))
+})

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-06 20:45+0300\n"
+"POT-Creation-Date: 2026-10-06 21:14+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -117,7 +117,8 @@ msgstr ""
 #: kasp_assemble.R:425
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
-"AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим футпринтом."
+"AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим "
+"футпринтом."
 
 #: kasp_assemble.R:426
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
@@ -275,8 +276,7 @@ msgstr ""
 #: kasp_core.R:144
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
 msgstr ""
-"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено "
-"'{tok}')."
+"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
 
 #: kasp_core.R:508
 msgid ""
@@ -303,11 +303,11 @@ msgstr ""
 msgid "Ensembl deflines may have changed."
 msgstr "Возможно, изменились дефлайны Ensembl."
 
-#: kasp_decision.R:221
+#: kasp_decision.R:224
 msgid "for the decision graph"
 msgstr "для графа решения"
 
-#: kasp_decision.R:270
+#: kasp_decision.R:273
 msgid "to draw the decision tree"
 msgstr "для отрисовки дерева решений"
 
@@ -380,6 +380,10 @@ msgstr "`freq` должен быть одним значением в [0, 1] н�
 msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgstr ""
 "Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+
+#: kasp_hrm.R:94
+msgid "`marker` must be a kasp_hrm object (see design_hrm_marker())."
+msgstr "`marker` должен быть объектом kasp_hrm (см. design_hrm_marker())."
 
 #: kasp_io.R:62
 msgid "VCF not found: {path}"

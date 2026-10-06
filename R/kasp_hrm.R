@@ -74,3 +74,54 @@ print.kasp_hrm <- function(x, ...) {
   cat("  F:", x$primers$forward, "\n  R:", x$primers$reverse, "\n")
   invisible(x)
 }
+
+#' Map an HRM amplicon
+#'
+#' The HRM analogue of a gel: the short amplicon as a bar, the two flanking
+#' primers on it and the variant at the centre of the melt domain.  There is no
+#' melt curve to draw here (we do not simulate it), so this shows *where* the
+#' amplicon sits rather than how it melts.
+#' @param marker a `kasp_hrm` marker (see [design_hrm_marker()]).
+#' @return a `ggplot`.
+#' @examples
+#' \dontrun{
+#' plot_hrm_amplicon(design_hrm_marker(genome, snp))
+#' }
+#' @family KASP HRM
+#' @export
+plot_hrm_amplicon <- function(marker) {
+  if (!inherits(marker, "kasp_hrm")) {
+    cli::cli_abort(gettext("`marker` must be a kasp_hrm object (see design_hrm_marker())."))
+  }
+  amp <- marker$amplicon
+  pr <- marker$primers
+  primers <- tibble::tibble(
+    x = c(amp$start, amp$end - nchar(pr$reverse) + 1L),
+    xend = c(amp$start + nchar(pr$forward) - 1L, amp$end)
+  )
+  ggplot2::ggplot() +
+    ggplot2::geom_segment(
+      data = tibble::tibble(x = amp$start, xend = amp$end),
+      ggplot2::aes(x = .data$x, xend = .data$xend, y = 1, yend = 1),
+      linewidth = 3, colour = "grey80", lineend = "round"
+    ) +
+    ggplot2::geom_segment(
+      data = primers,
+      ggplot2::aes(x = .data$x, xend = .data$xend, y = 1.3, yend = 1.3),
+      linewidth = 2.2, colour = "#4477aa", lineend = "round"
+    ) +
+    ggplot2::geom_segment(
+      data = tibble::tibble(x = marker$snp$pos),
+      ggplot2::aes(x = .data$x, xend = .data$x, y = 0.65, yend = 1.35),
+      colour = "firebrick", linewidth = 0.5
+    ) +
+    ggplot2::labs(
+      x = glue::glue("{marker$snp$chrom} position (bp)"), y = NULL,
+      title = "HRM amplicon (melt domain)"
+    ) +
+    ggplot2::theme_minimal(base_size = 8) +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_blank()
+    )
+}

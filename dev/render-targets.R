@@ -42,27 +42,37 @@ render_one <- function(i) {
       gene <- tryCatch(ensembl_gene(r$gene), error = function(e) NULL)
       win <- if (!is.null(gene)) c(gene$start - 500L, gene$end + 500L) else c(snp$pos - 1000L, snp$pos + 1000L)
       variants <- ensembl_variants(r$chrom, max(1L, win[1L]), win[2L])
-      a <- suppressWarnings(assemble_kasp_assay(genome, snp,
-        variants = variants, flank = 150L, strands = c("+", "-"), cores = 1L
-      ))
-      # the full assay record next to the image, so its QC (inverted repeats,
-      # off-targets, footprints, the decision graph) can be dissected without
-      # re-running the design
-      saveRDS(a, fs::path(out, paste0("target_", tag, ".rds")))
-      # a doomed target still gets its context plot, so the panel is complete
-      p <- plot_primers(a, variants, snp, genome = genome, features = gene)
+      # KASP first; when it dooms, the ladder falls through to CAPS/ARMS/HRM, so a
+      # locus no KASP takes still gets a marker of some chemistry
+      d <- design_marker(genome, snp, variants = variants, flank = 150L)
+      # the whole ladder (every scheme's attempt + verdict) next to the image, so
+      # the fallback is dissectable without re-running the design
+      saveRDS(d, fs::path(out, paste0("target_", tag, ".rds")))
+      p <- if (is.na(d$scheme)) {
+        # nothing works: show the KASP attempt's context, so the reason is visible
+        plot_primers(d$tried$marker[[1L]], variants, snp, genome = genome, features = gene)
+      } else {
+        switch(d$scheme,
+          snp = ,
+          indel = ,
+          multi = plot_primers(d$marker, variants, snp, genome = genome, features = gene),
+          caps = plot_caps_gel(d$marker),
+          arms = plot_arms_gel(d$marker),
+          hrm = plot_hrm_amplicon(d$marker)
+        )
+      }
       ggplot2::ggsave(fs::path(out, paste0("target_", tag, ".png")), p,
         width = 11, height = 9, dpi = 110, bg = "white"
       )
-      if (inherits(a, "kasp_doomed")) {
-        glue::glue("doomed ({r$type}) {a$reason}")
+      if (is.na(d$scheme)) {
+        glue::glue("NO marker ({r$type}); kasp: {d$tried$marker[[1L]]$reason}")
       } else {
-        glue::glue("ok ({r$type}) strand {a$strand} disc {round(a$efficiency$discrimination[1], 2)}")
+        glue::glue("best = {d$scheme} ({r$type}); {paste(d$tried$scheme, d$tried$ok, sep = '=', collapse = ', ')}")
       }
     },
     error = function(e) glue::glue("error: {conditionMessage(e)}")
   )
-  cat(sprintf("%-22s %-6s %s:%s %s>%s -> %s\n", r$id, r$type, r$chrom, r$pos, r$ref, r$alt, msg))
+  cat(sprintf("%-22s %-9s %s:%s %s>%s -> %s\n", r$id, r$type, r$chrom, r$pos, r$ref, r$alt, msg))
   invisible(NULL)
 }
 

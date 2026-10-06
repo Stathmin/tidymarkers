@@ -31,3 +31,20 @@ test_that("pick_target_snp with a scheme warns and returns the best when none de
   # without a scheme the same locus is the plain pick
   expect_equal(pick_target_snp(variants, genome, gene)$id, "v")
 })
+
+test_that("design_marker walks the chemistries and returns the first that works", {
+  skip_if_no_oligoarrayaux()
+  W <- bseq(600L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 300L, 300L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  d <- suppressWarnings(design_marker(genome, snp, flank = 150L))
+  expect_setequal(d$tried$scheme, c("snp", "caps", "arms", "hrm"))
+  expect_true(d$scheme %in% c("snp", "caps", "arms", "hrm"))
+  expect_true(is_target_designable(d$marker))
+  # restricted to HRM, it reports HRM (or nothing) and says so
+  h <- suppressWarnings(design_marker(genome, snp, schemes = "hrm", flank = 150L))
+  expect_equal(h$tried$scheme, "hrm")
+})

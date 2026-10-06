@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 20:45+0300\n"
+"POT-Creation-Date: 2026-10-06 21:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -263,11 +263,11 @@ msgstr ""
 msgid "Ensembl deflines may have changed."
 msgstr ""
 
-#: kasp_decision.R:221
+#: kasp_decision.R:224
 msgid "for the decision graph"
 msgstr ""
 
-#: kasp_decision.R:270
+#: kasp_decision.R:273
 msgid "to draw the decision tree"
 msgstr ""
 
@@ -335,6 +335,10 @@ msgstr ""
 
 #: kasp_hrm.R:53
 msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
+msgstr ""
+
+#: kasp_hrm.R:94
+msgid "`marker` must be a kasp_hrm object (see design_hrm_marker())."
 msgstr ""
 
 #: kasp_io.R:62

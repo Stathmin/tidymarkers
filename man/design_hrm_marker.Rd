@@ -50,4 +50,8 @@ genome <- ath_genome()
 design_hrm_marker(genome, kasp_example("SNP")[1, ])
 }
 }
+\seealso{
+Other KASP HRM:
+\code{\link[=plot_hrm_amplicon]{plot_hrm_amplicon()}}
+}
 \concept{KASP HRM}
