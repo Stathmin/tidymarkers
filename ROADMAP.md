@@ -773,9 +773,14 @@ A–P — реализовано или оценено; **Q** — локализ
       - Обзорные сравнения: *Anal. Chim. Acta* 2025 (rs9939609 T>A: ARMS vs PIRA vs TaqMan
         vs CADMA+HRM vs HRM-snapback, Sanger gold) — карта «какой метод на какой SNP»;
         **KASP vs T-ARMS** (MDPI 2026) — флуоресцентный против гель-ридаута
-- [ ] **Приоры в код:** вынести пороги в один «профиль приоров» (Primer3 NN, EasyKASP
-      KASP-окна, primerblast-oss офф-таргет/dimer/gel) и сравнивать; сделать `min_disc`
-      *вероятностью* + риск-скор (low/med/high), а не жёстким 0.5
+- [x] **Приоры в код:** `kasp_priors()` — единый провенанс порогов (значение → источник:
+      LGC/EasyKASP 2025, primerblast-oss, TmCalculator), сверка термодинамики —
+      `thermo_crosscheck()`. **`min_disc` градирован, а не бинарен:** `discrimination_band()`
+      (R/kasp_risk.R) отображает наблюдаемый margin в low/medium/high, привязанный к
+      `min_disc` + `discrimination_margin` (0.1) — без подогнанной вероятности, для которой
+      нет данных о калибровке; `kasp_risk()` возвращает `discrimination` и `disc_risk`.
+      Гейт отбора остаётся жёстким («no allele discrimination = no assay»), градируется
+      *вердикт*, а не приём
 - [~] **Провенанс порогов + термодинамическая сверка (без новых зависимостей).**
       `kasp_priors()` — таблица «параметр → значение → источник» (LGC/EasyKASP 2025 /
       primerblast-oss), аудит для `kasp_design_checks()`. `thermo_crosscheck()` прогоняет
@@ -791,7 +796,8 @@ A–P — реализовано или оценено; **Q** — локализ
       S4-классы rprimer заперты, *свои* праймеры в `checkMatch` не вставить (валидируется
       локус/выравнивание, не готовый ассей). **Сделано также:** `kasp_risk()` —
       experimenter-facing риск `low/medium/high` (grave-провал → high) с причинами
-      (R/kasp_risk.R). **Осталось:** сделать `min_disc` *вероятностью* (не жёстким 0.5)
+      (R/kasp_risk.R). **Сделано:** `min_disc` градирован (`discrimination_band()` +
+      `disc_risk` в `kasp_risk()`), а не бинарен — см. «Приоры в код» выше
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

@@ -19,3 +19,22 @@ test_that("kasp_risk returns the failed criteria and handles a missing evaluatio
   expect_setequal(r$failed[[1L]], c("AS GC", "discrimination"))
   expect_true(is.na(kasp_risk(list())$risk))
 })
+
+test_that("kasp_risk grades discrimination from its margin, not a bare fail", {
+  ev <- function(disc) {
+    list(evaluation = tibble::tibble(
+      criterion = c("discrimination", "AS GC"),
+      observed = c(disc, 0.5),
+      pass = c(disc >= KASP_LIMITS$discrimination, TRUE)
+    ))
+  }
+  # >= min_disc: low, even though we do not use the pass column here
+  expect_equal(as.character(kasp_risk(ev(0.7))$disc_risk), "low")
+  expect_equal(as.character(kasp_risk(ev(0.7))$risk), "low")
+  # just below min_disc (within the margin): medium, not high
+  expect_equal(as.character(kasp_risk(ev(0.45))$disc_risk), "medium")
+  expect_equal(as.character(kasp_risk(ev(0.45))$risk), "medium")
+  # well below: high
+  expect_equal(as.character(kasp_risk(ev(0.2))$disc_risk), "high")
+  expect_equal(as.character(kasp_risk(ev(0.2))$risk), "high")
+})

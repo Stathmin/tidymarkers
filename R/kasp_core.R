@@ -83,6 +83,7 @@ KASP_LIMITS <- list(
   duplex_dg = -9, # cross-dimer dG37; must be >= this
   homodimer_dg = -9, # self-dimer dG37; must be >= this
   discrimination = 0.5, # Taq on- minus off-target efficiency
+  discrimination_margin = 0.1, # near-miss band: [min_disc - margin, min_disc) reads as medium risk
   footprint_dropout = 0.10 # expected fraction of templates lost to footprint variants
 )
 

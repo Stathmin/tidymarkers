@@ -102,6 +102,11 @@
   именем проваленной структурно/специфичной проверки (inverted repeat / in-silico PCR /
   off-target — `KASP_UNGATED_CHECKS`), а `kasp_risk()` сворачивает все проверки в
   `low`/`medium`/`high` с причинами (grave-провал → high).
+- **`min_disc` градирован, а не бинарен:** `kasp_risk()` возвращает наблюдаемый
+  `discrimination` и его `disc_risk` (low/medium/high) через `discrimination_band()`,
+  привязанный к `min_disc` + `discrimination_margin` (0.1): near-miss читается как
+  medium, а не бинарный провал. Гейт *отбора* остаётся жёстким; `kasp_priors()` несёт
+  провенанс нового порога.
 - **CAPS:** `site_change` (CAPS — это смена *сайта*, а не тривиальная разница длин индела)
   и виртуальный гель `plot_caps_gel()`.
 - **Tetra-primer ARMS** (`scheme = "arms"`, `R/kasp_arms.R`): `design_arms_marker()` —

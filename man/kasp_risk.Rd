@@ -14,15 +14,18 @@ whose partial \code{evaluation} is used when present).}
 }
 \value{
 a one-row tibble: \code{risk} (ordered factor \code{low} < \code{medium} < \code{high}),
-\code{n_failed} and \code{failed} (list-column of the failed criteria).
+\code{discrimination} (the observed margin), \code{disc_risk} (the graded band of that
+margin), \code{n_failed} and \code{failed} (list-column of the failed criteria).
 }
 \description{
 Collapses \code{\link[=kasp_design_checks]{kasp_design_checks()}} into one \code{low} / \code{medium} / \code{high} verdict
-with the reasons.  A failure of a \emph{grave} check (no discrimination, an
-off-target product, a variant in the AS 3' window, a saturated footprint,
-an unusable site) is \code{high}; any other failure (composition, structure, a
-milder footprint or PCR deviation) is \code{medium}; all passing is \code{low}.  This
-is a roll-up for a decision, not a probability of genotyping success.
+with the reasons.  A failure of a \emph{grave} check (an off-target product, a
+variant in the AS 3' window, a saturated footprint, an unusable site) is
+\code{high}; any other failure (composition, structure, a milder footprint or PCR
+deviation) is \code{medium}; all passing is \code{low}.  \emph{Discrimination} is treated as a
+continuous margin, not a bare pass/fail: \code{disc_risk} grades it against
+\code{min_disc} and its margin, so a near-miss reads as \code{medium}.  This is a roll-up
+for a decision, not a calibrated probability of genotyping success.
 }
 \examples{
 \dontrun{

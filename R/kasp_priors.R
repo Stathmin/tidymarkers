@@ -33,6 +33,7 @@ kasp_priors <- function() {
     "duplex_dg", as.character(KASP_LIMITS$duplex_dg), "primerblast-oss dimer warn (dG -8)",
     "homodimer_dg", as.character(KASP_LIMITS$homodimer_dg), "primerblast-oss dimer warn (dG -8)",
     "discrimination", as.character(KASP_LIMITS$discrimination), "DECIPHER Taq-aware efficiency model",
+    "discrimination margin", as.character(KASP_LIMITS$discrimination_margin), "local: min_disc near-miss band",
     "footprint_dropout", as.character(KASP_LIMITS$footprint_dropout), "local policy (frequency-weighted)",
     "clean_3p (nt)", "5", "primerblast-oss 3' window",
     "as_tm target (C)", as.character(AS_TM_TARGET), "LGC/EasyKASP (AS below the COM)",
