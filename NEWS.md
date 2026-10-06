@@ -69,8 +69,9 @@
   рядом с PNG.
 
 ### Другие PCR-маркеры и провенанс порогов
-- **CAPS/dCAPS-схема** (`R/kasp_caps.R`): `restriction_enzymes()` (курируемая таблица
-  `inst/extdata/restriction_enzymes.csv`), `caps_fragments()` (IUPAC-aware сайты → длины
+- **CAPS/dCAPS-схема** (`R/kasp_caps.R`): `restriction_enzymes()` (данные из **REBASE
+  bionet**, ~1200 палиндромных Type II, регенерация `dev/fetch-rebase.R` — не руками),
+  `caps_fragments()` (IUPAC-aware сайты → длины
   фрагментов), `find_caps_enzymes()` (REF vs ALT-ампликон, gel-resolvability по разрыву полос),
   `find_dcaps_enzymes()` (**dCAPS** — сайт, который доводит праймер: окно на один мисматч
   короче сайта, база вносится праймером, вариант внутри сайта) и `design_caps_marker()`

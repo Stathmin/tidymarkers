@@ -70,6 +70,17 @@ remotes::install_github("Stathmin/tidykasp")
 `DECIPHER`) и **cairo dev-заголовки** (для `gdtools` → `ggmsa`).
 Опционально **NCBI BLAST+** для полного BLAST-шага.
 
+**Пользователю — одна строка** (ставит пакет и системные зависимости, потом одним
+вызовом собирает внешние тулы в кэш):
+
+```r
+pak::pak("Stathmin/tidykasp", sysreqs = TRUE)   # BLAST+/cairo системно
+tidykasp::kasp_install_tools()                  # OligoArrayAux в кэш, один раз
+```
+
+Первый вызов функции без тула не молчит: `assemble_kasp_assay()` подсказывает
+`kasp_install_tools()`, а не отдаёт тихий `NA`.
+
 ```bash
 # 1. внешние инструменты
 #    a) OligoArrayAux для DECIPHER (термодинамика). Для разработки — из исходников,

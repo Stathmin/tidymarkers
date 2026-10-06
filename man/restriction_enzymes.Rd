@@ -10,12 +10,13 @@ restriction_enzymes()
 tibble with \code{enzyme}, \code{site}, \code{cut}.
 }
 \description{
-A small, curated table of common, \strong{palindromic} restriction enzymes: the
-recognised site (IUPAC) and the top-strand cut position (bases from the 5' end
-of the site, 0 = before the first base).  Palindromic sites are read on the
-plus strand alone, so one match per site is enough.  The catalogue is data
-(\code{inst/extdata/restriction_enzymes.csv}), not code, so it can be extended
-without touching the engine.
+The recognition site (IUPAC) and the top-strand cut position (bases from the
+5' end of the site) for \strong{palindromic} Type II restriction enzymes, sourced
+from the REBASE \emph{bionet} catalogue and regenerated deterministically by
+\code{dev/fetch-rebase.R} (never typed by hand).  Palindromic sites are read on the
+plus strand alone, so one match per site is enough.  Non-palindromic and
+Type IIS enzymes (which cut outside/asymmetrically) are deliberately excluded -
+the fragment model here takes a single top-strand offset.
 }
 \examples{
 head(restriction_enzymes())

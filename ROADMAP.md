@@ -690,8 +690,9 @@ A–P — реализовано или оценено; **Q** — локализ
 (gold standard в сравнении 2025 г.).
 
 - [~] **CAPS/dCAPS как вторая схема.** Прототип есть: `R/kasp_caps.R` —
-      `restriction_enzymes()` (курируемая таблица `inst/extdata/restriction_enzymes.csv`, ~32
-      палиндромных фермента), `caps_fragments()` (IUPAC-aware сайты → длины фрагментов),
+      `restriction_enzymes()` (**данные из REBASE *bionet*, ~1200 палиндромных Type II**,
+      не руками; регенерация `dev/fetch-rebase.R`), `caps_fragments()` (IUPAC-aware сайты →
+      длины фрагментов),
       `find_caps_enzymes()` (REF vs ALT-ампликон, «gel resolvability» по разрыву полос,
       дефолт 50 bp) и `design_caps_marker()` (выбор фермента + фланкирующая пара с Tm/GC-скрином,
       возвращает класс `kasp_caps` с рецептом рестрикции). Схема `caps` зарегистрирована в
@@ -703,8 +704,9 @@ A–P — реализовано или оценено; **Q** — локализ
       `design_dcaps_marker()` — фолбэк `design_caps_marker()`. **Сделано также:**
       (б-гейт) `site_change` — CAPS-вызов требует смены *сайта*, а не тривиальной разницы
       длин индела (иначе 1-bp индел «различался» бы всеми ферментами с gap=1);
-      (в) виртуальный гель `plot_caps_gel()`. **Осталось:** (б) расширить каталог
-      (REBASE-выгрузка); (г) `@examples`/виньетка.
+      (в) виртуальный гель `plot_caps_gel()`; (б) каталог расширен: REBASE bionet, ~1200
+      палиндромных Type II (`dev/fetch-rebase.R`; непалиндромные и Type IIS исключены —
+      фрагментная модель берёт один топ-страндовый разрез). **Осталось:** (г) `@examples`/виньетка.
       FOSS-ориентиры: dCAPS Finder 2.0 (Neff 2002), indCAPS (Kieber lab), SNP2CAPS,
       primerblast-oss. **Эмпирика:** на 3 «капризных» локусах (MNP GA>AA, insertion A>AA,
       deletion TT>T) природного CAPS-маркера в каталоге нет (0 сайтов; у длинных делеций/

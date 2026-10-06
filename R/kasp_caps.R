@@ -14,12 +14,13 @@
 
 #' Bundled restriction-enzyme catalogue (name, site, cut)
 #'
-#' A small, curated table of common, **palindromic** restriction enzymes: the
-#' recognised site (IUPAC) and the top-strand cut position (bases from the 5' end
-#' of the site, 0 = before the first base).  Palindromic sites are read on the
-#' plus strand alone, so one match per site is enough.  The catalogue is data
-#' (`inst/extdata/restriction_enzymes.csv`), not code, so it can be extended
-#' without touching the engine.
+#' The recognition site (IUPAC) and the top-strand cut position (bases from the
+#' 5' end of the site) for **palindromic** Type II restriction enzymes, sourced
+#' from the REBASE *bionet* catalogue and regenerated deterministically by
+#' `dev/fetch-rebase.R` (never typed by hand).  Palindromic sites are read on the
+#' plus strand alone, so one match per site is enough.  Non-palindromic and
+#' Type IIS enzymes (which cut outside/asymmetrically) are deliberately excluded -
+#' the fragment model here takes a single top-strand offset.
 #' @return tibble with `enzyme`, `site`, `cut`.
 #' @examples
 #' head(restriction_enzymes())

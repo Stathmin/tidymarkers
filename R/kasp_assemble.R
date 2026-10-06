@@ -121,6 +121,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
+  # one-line install UX: a missing tool is a hint, not a silent NA
+  if (!has_oligoarrayaux()) {
+    rlang::inform(
+      c(
+        gettext("OligoArrayAux was not found: thermodynamic and structural checks will be NA."),
+        i = gettext("run tidykasp::kasp_install_tools() once to build it.")
+      ),
+      .frequency = "once"
+    )
+  }
   # a target site may carry more than one ALT (a list-column `alt`, or an `alt2`
   # column): the *site class* must see them all (below), while the design builds
   # one AS primer - for the first ALT until the degenerate-primer engine lands.
