@@ -96,10 +96,7 @@ kasp_scheme <- function(scheme = "snp") {
   s <- kasp_schemes()
   i <- match(scheme, s$scheme)
   if (is.na(i)) {
-    rlang::abort(gettextf(
-      "Unknown marker scheme %s; see kasp_schemes().",
-      encodeString(as.character(scheme), quote = '"')
-    ))
+    rlang::abort(glue::glue(gettext("Unknown marker scheme {scheme}; see kasp_schemes().")))
   }
   s[i, , drop = FALSE]
 }

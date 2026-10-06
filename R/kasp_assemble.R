@@ -256,13 +256,17 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   #   ref_primer/alt_primer, ref_on/ref_off/alt_on/alt_off, discrimination,
   #   tm, gc, as_length, strand, and genomic footprints as_* and as_alt_*
   if (!is_indel) {
-    as_cand <- design_as_primers(
+    raw_as <- design_as_primers(
       tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
       strands = strands, linked = linked_off,
       gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
-    ) |>
-      # the GC/Tm window is already applied inside design_as_primers(); only the
-      # sequence-motif filters are left for here
+    )
+    if (nrow(raw_as) == 0L) {
+      return(kasp_doomed(gettext("No AS primer passed the GC/Tm filter."), "as", snp, tmpl))
+    }
+    # the GC/Tm window is already applied inside design_as_primers(); only the
+    # sequence-motif filters are left for here
+    as_cand <- raw_as |>
       dplyr::filter(!has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
       dplyr::mutate(
         as_start = .data$tmpl_start + off,
@@ -271,14 +275,20 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         as_alt_end = .data$as_end,
         wobble = wobble_mismatch(snp$ref, snp$alt)
       )
+    if (nrow(as_cand) == 0L) {
+      return(kasp_doomed(gettext("No AS primer passed the homopolymer/SSR filter."), "as", snp, tmpl))
+    }
   } else {
     ind <- design_as_primers_indel(
       tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
       strands = strands, gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
-    ) |>
-      dplyr::filter(!has_run(.data$primer), !has_repeat(.data$primer))
+    )
     if (nrow(ind) == 0L) {
       return(kasp_doomed(gettext("No indel AS primer passed the GC/Tm filter."), "as", snp, tmpl))
+    }
+    ind <- dplyr::filter(ind, !has_run(.data$primer), !has_repeat(.data$primer))
+    if (nrow(ind) == 0L) {
+      return(kasp_doomed(gettext("No indel AS primer passed the homopolymer/SSR filter."), "as", snp, tmpl))
     }
     # alt-template coordinate -> REF/genomic coordinate (block clamps to REF)
     alt_to_ref <- function(x) {
@@ -351,7 +361,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (nrow(as_cand) == 0L) {
     return(kasp_doomed(
       glue::glue(gettext(
-        "No AS primer passed the GC/Tm filter (max_footprint_variants = {max_footprint_variants})."
+        "No AS primer survived the footprint cap (max_footprint_variants = {max_footprint_variants})."
       )),
       "as", snp, tmpl, as_cand
     ))

@@ -34,6 +34,7 @@ Other KASP design:
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=kasp_site_class]{kasp_site_class()}},
+\code{\link[=pick_target_snp]{pick_target_snp()}},
 \code{\link[=screen_snp_targets]{screen_snp_targets()}},
 \code{\link[=strand_gc_hint]{strand_gc_hint()}},
 \code{\link[=variant_type]{variant_type()}}

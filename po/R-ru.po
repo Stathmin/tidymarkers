@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-06 13:52+0300\n"
+"POT-Creation-Date: 2026-10-06 17:18+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -33,23 +33,70 @@ msgstr "Скачиваю GTF Ensembl Plants в {.path {cache}}."
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr "Собираю EnsDb (однократно) из {.file {fs::path_file(gtf)}}."
 
-#: kasp_assemble.R:243
+#: kasp_arms.R:40
+msgid "tetra-primer ARMS is implemented for single-base substitutions only."
+msgstr "тетра-праймерный ARMS реализован только для однонуклеотидных замен."
+
+#: kasp_arms.R:46
+msgid "No outer primer pair passed the Tm/GC filters."
+msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+
+#: kasp_arms.R:54
+msgid "No inner allele-specific primer passed the GC/Tm filter."
+msgstr "Ни один внутренний аллель-специфичный праймер не прошёл фильтр GC/Tm."
+
+#: kasp_arms.R:67
+msgid "An inner primer is missing on one strand."
+msgstr "внутренний праймер отсутствует на одной из цепей."
+
+#: kasp_arms.R:74
+msgid "The two diagnostic bands are closer than `min_band_gap`."
+msgstr "две диагностические полосы ближе, чем `min_band_gap`."
+
+#: kasp_arms.R:120
+msgid "to draw the ARMS gel"
+msgstr "для отрисовки геля ARMS"
+
+#: kasp_arms.R:122
+msgid "`marker` must be a kasp_arms object (see design_arms_marker())."
+msgstr "`marker` должен быть объектом kasp_arms (см. design_arms_marker())."
+
+#: kasp_assemble.R:128
+msgid ""
+"OligoArrayAux was not found: thermodynamic and structural checks will be NA."
+msgstr "OligoArrayAux не найден: термодинамические и структурные проверки будут NA."
+
+#: kasp_assemble.R:129
+msgid "run tidykasp::kasp_install_tools() once to build it."
+msgstr "выполните tidykasp::kasp_install_tools() один раз, чтобы собрать его."
+
+#: kasp_assemble.R:265
+msgid "No AS primer passed the GC/Tm filter."
+msgstr "Ни один AS-праймер не прошёл фильтр GC/Tm."
+
+#: kasp_assemble.R:279
+msgid "No AS primer passed the homopolymer/SSR filter."
+msgstr "Ни один AS-праймер не прошёл фильтр гомополимеров/SSR."
+
+#: kasp_assemble.R:287
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр GC/Tm."
 
-#: kasp_assemble.R:316
-msgid ""
-"No AS primer passed the GC/Tm filter (max_footprint_variants = "
-"{max_footprint_variants})."
-msgstr ""
-"Ни один AS-праймер не прошёл фильтр GC/Tm (max_footprint_variants = "
-"{max_footprint_variants})."
+#: kasp_assemble.R:291
+msgid "No indel AS primer passed the homopolymer/SSR filter."
+msgstr "Ни один AS-праймер для индела не прошёл фильтр гомополимеров/SSR."
 
-#: kasp_assemble.R:348
+#: kasp_assemble.R:364
+msgid ""
+"No AS primer survived the footprint cap (max_footprint_variants = "
+"{max_footprint_variants})."
+msgstr "Ни один AS-праймер не выдержал лимит футпринта (max_footprint_variants = {max_footprint_variants})."
+
+#: kasp_assemble.R:396
 msgid "No AS primer survived even the relaxed constraints."
 msgstr "Ни один AS-праймер не прошёл даже ослабленные ограничения."
 
-#: kasp_assemble.R:359
+#: kasp_assemble.R:407
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
@@ -57,25 +104,25 @@ msgstr ""
 "У целевого SNP {snp$chrom}:{snp$pos} в 3'-концевых {clean_3p} нт AS-праймера "
 "есть {best_as$n_3p} других вариант(ов)."
 
-#: kasp_assemble.R:361
+#: kasp_assemble.R:409
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 "Аллельная специфичность на цепи {best_as$strand} может не сохраняться между "
 "образцами."
 
-#: kasp_assemble.R:366
+#: kasp_assemble.R:414
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
-msgstr ""
+msgstr "AS-праймер перекрывает {best_as$n_var} других вариантов в своём футпринте."
 "AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим "
 "футпринтом."
 
-#: kasp_assemble.R:367
+#: kasp_assemble.R:415
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
-msgstr ""
+msgstr "ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 "Ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 
-#: kasp_assemble.R:373
+#: kasp_assemble.R:421
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
@@ -83,29 +130,83 @@ msgstr ""
 "Дискриминация лучшего AS-праймера = {round(best_as$discrimination, 2)} ниже "
 "min_disc = {min_disc}."
 
-#: kasp_assemble.R:375
+#: kasp_assemble.R:423
 msgid "Consider widening `strands` or `tm_range`."
 msgstr "Рассмотрите расширение `strands` или `tm_range`."
 
-#: kasp_assemble.R:438
+#: kasp_assemble.R:486
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr "Ни один кандидатный ассей не прошёл даже ослабленные ограничения."
 
-#: kasp_assemble.R:468
+#: kasp_assemble.R:516
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr "in-silico ПЦР не удалась: {conditionMessage(e)}"
 
-#: kasp_assemble.R:481
+#: kasp_assemble.R:529
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: kasp_assemble.R:487
+#: kasp_assemble.R:535
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr "BLAST-БД недоступна: {conditionMessage(e)}"
 
-#: kasp_assemble.R:518
+#: kasp_assemble.R:572
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
+
+#: kasp_assemble.R:601
+msgid ""
+"Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
+"class {out$site$class[1L]})."
+msgstr "Мишень {snp$chrom}:{snp$pos} мультиаллельная ({out$site$n_alt[1L]} ALT, класс {out$site$class[1L]})."
+
+#: kasp_assemble.R:604
+msgid ""
+"The ALT primer is built for {snp$alt} only - a degenerate primer covering "
+"every ALT is not implemented yet."
+msgstr "ALT-праймер построен только для {snp$alt} — вырожденный праймер, покрывающий все ALT, пока не реализован."
+
+#: kasp_assemble.R:620
+msgid ""
+"The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
+"'; ')}."
+msgstr "Выбранный тест не проходит структурные/специфичностные проверки: {paste(bad, collapse = '; ')}."
+
+#: kasp_assemble.R:622
+msgid ""
+"Selection does not gate these yet - inspect assay$evaluation and consider a "
+"trade-off."
+msgstr "Отбор их пока не гейтит — посмотрите assay$evaluation и рассмотрите компромисс."
+
+#: kasp_caps.R:31
+msgid "Bundled restriction-enzyme catalogue not found."
+msgstr "Встроенный каталог ферментов рестрикции не найден."
+
+#: kasp_caps.R:178
+msgid "dCAPS scanning is implemented for single-base substitutions only."
+msgstr "поиск dCAPS реализован только для однонуклеотидных замен."
+
+#: kasp_caps.R:273
+msgid ""
+"A discriminating enzyme was found, but no flanking primer pair passed the Tm/"
+"GC filters."
+msgstr "Различающий фермент найден, но ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC."
+
+#: kasp_caps.R:299
+msgid "No natural or primer-introduced (dCAPS) restriction marker here."
+msgstr "здесь нет ни природного, ни вносимого праймером (dCAPS) рестрикционного маркера."
+
+#: kasp_caps.R:312
+msgid "A dCAPS site was found, but no primer pair passed the Tm/GC filters."
+msgstr "Сайт dCAPS найден, но ни одна пара праймеров не прошла фильтры Tm/GC."
+
+#: kasp_caps.R:358
+msgid "to draw the CAPS gel"
+msgstr "для отрисовки геля CAPS"
+
+#: kasp_caps.R:360
+msgid "`marker` must be a kasp_caps object (see design_caps_marker())."
+msgstr "`marker` должен быть объектом kasp_caps (см. design_caps_marker())."
 
 #: kasp_core.R:116
 msgid "OligoArrayAux ('{bin}') was not found."
@@ -124,16 +225,16 @@ msgstr ""
 
 #: kasp_core.R:143
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
-msgstr ""
+msgstr "OligoArrayAux ('{bin}') не вернул разбираемый dG (получено '{tok}')."
 "OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
 
-#: kasp_core.R:496
+#: kasp_core.R:507
 msgid ""
 "Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
 "{cache}} ..."
 msgstr "Скачиваю геном TAIR10 (~35 МБ) из Ensembl Plants в {.path {cache}} ..."
 
-#: kasp_core.R:504
+#: kasp_core.R:515
 msgid ""
 "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val "
 "{utils::head(dropped, 3L)}}."
@@ -141,22 +242,22 @@ msgstr ""
 "Отбрасываю {length(dropped)} нехромосомную(ые) последовательность(и), напр. "
 "{.val {utils::head(dropped, 3L)}}."
 
-#: kasp_core.R:514
+#: kasp_core.R:525
 msgid ""
 "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
 "collapse = ', ')}."
 msgstr ""
 "ath_genome(): в FASTA TAIR10 нет хромосом: {paste(missing, collapse = ', ')}."
 
-#: kasp_core.R:516
+#: kasp_core.R:527
 msgid "Ensembl deflines may have changed."
 msgstr "Возможно, изменились дефлайны Ensembl."
 
-#: kasp_decision.R:148
+#: kasp_decision.R:215
 msgid "for the decision graph"
 msgstr "для графа решения"
 
-#: kasp_decision.R:194
+#: kasp_decision.R:264
 msgid "to draw the decision tree"
 msgstr "для отрисовки дерева решений"
 
@@ -168,7 +269,7 @@ msgstr "Ни один общий праймер не прошёл фильтры
 msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
 msgstr "Расширьте `tm_range`/GC или увеличьте `flank` в snp_template()."
 
-#: kasp_design.R:384
+#: kasp_design.R:399
 msgid ""
 "design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
 "a substitution."
@@ -176,9 +277,9 @@ msgstr ""
 "design_as_primers_indel() требует аллели разной длины; для замены "
 "используйте design_as_primers()."
 
-#: kasp_design.R:439
+#: kasp_design.R:456
 msgid "No indel AS-primer placement fit inside the design window."
-msgstr ""
+msgstr "ни одна посадка индел-AS-праймера не поместилась в окно дизайна."
 "Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
 
 #: kasp_fm.R:35 kasp_fm.R:77
@@ -209,6 +310,14 @@ msgstr "для источника генома BSgenome"
 msgid "Unknown sequence: {chrom}"
 msgstr "Неизвестная последовательность: {chrom}"
 
+#: kasp_haplotypes.R:29
+msgid "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#: kasp_haplotypes.R:45
+msgid "`freq` must be one value in [0, 1] per haplotype."
+msgstr "`freq` должен быть одним значением в [0, 1] на гаплотип."
+
 #: kasp_io.R:62
 msgid "VCF not found: {path}"
 msgstr "VCF не найден: {path}"
@@ -229,16 +338,16 @@ msgstr "для бэкенда readVcf"
 msgid "for indexed FASTA random access"
 msgstr "для произвольного доступа к индексированной FASTA"
 
-#: kasp_io.R:160 kasp_io.R:240
+#: kasp_io.R:160 kasp_io.R:244
 msgid "FASTA not found: {path}"
 msgstr "FASTA не найдена: {path}"
 
 #: kasp_io.R:163
 msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
-msgstr ""
+msgstr "распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
 "Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
 
-#: kasp_io.R:214
+#: kasp_io.R:218
 msgid "Bundled example data not found."
 msgstr "Встроенные примеры данных не найдены."
 
@@ -256,16 +365,24 @@ msgstr "Увеличьте `stock_uM` или уменьшите целевые �
 
 #: kasp_mix.R:66
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
-msgstr ""
+msgstr "объём реакции превышает {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 "Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
 #: kasp_object.R:125
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
-#: kasp_object.R:184
+#: kasp_object.R:180
 msgid "Designing KASP markers"
 msgstr "Дизайн KASP-маркеров"
+
+#: kasp_rprimer.R:31
+msgid "`seqs` must be equal length (an ungapped alignment)."
+msgstr "`seqs` должны быть одинаковой длины (выравнивание без гэпов)."
+
+#: kasp_rprimer.R:58
+msgid "for an independent oligo-design cross-check"
+msgstr "для независимой кросс-проверки дизайна олиго"
 
 #: kasp_scan.R:45 kasp_scan.R:85
 msgid "for the indexed genome scan"
@@ -315,14 +432,18 @@ msgstr "У этого индексного генома нет прикрепл�
 
 #: kasp_scan.R:166
 msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
-msgstr ""
+msgstr "постройте его через kasp_blast_index(genome) и передайте как `blast_db=`."
 "Постройте её через kasp_blast_index(genome) и передайте как `blast_db=`."
+
+#: kasp_schemes.R:99
+msgid "Unknown marker scheme {scheme}; see kasp_schemes()."
+msgstr "неизвестная схема маркера {scheme}; см. kasp_schemes()."
 
 #: kasp_screen.R:54
 msgid "`variants` needs `chrom` and `pos` columns."
 msgstr "`variants` требует колонки `chrom` и `pos`."
 
-#: kasp_screen.R:202
+#: kasp_screen.R:204
 msgid "`screen` is empty."
 msgstr "`screen` пуст."
 
@@ -352,7 +473,7 @@ msgstr "Либо соберите `pngs` сами (например, через 
 msgid "ImageMagick failed: {res$stderr}"
 msgstr "ImageMagick завершился с ошибкой: {res$stderr}"
 
-#: kasp_select.R:345
+#: kasp_select.R:423
 msgid ""
 "No assay cleared every hard constraint; returned the least-bad after "
 "relaxing some."
@@ -366,10 +487,10 @@ msgstr "specificity_seed() требует DNAStringSet в памяти."
 
 #: kasp_specificity.R:35
 msgid "For an indexed genome use specificity_of()/specificity_blast()."
-msgstr ""
+msgstr "для индексного генома используйте specificity_of()/specificity_blast()."
 "Для индексного генома используйте specificity_of()/specificity_blast()."
 
-#: kasp_specificity.R:227
+#: kasp_specificity.R:228
 msgid "BLAST failed: {conditionMessage(e)}"
 msgstr "BLAST не удался: {conditionMessage(e)}"
 
@@ -390,19 +511,28 @@ msgid ""
 msgstr ""
 "ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
 
-#: kasp_target.R:295
+#: kasp_target.R:332
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr "После фильтрации не осталось пригодных замен (SNP/MNP)."
 
-#: kasp_thermo.R:183
+#: kasp_target.R:435
+msgid ""
+"No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
+msgstr "Ни одна мишень по рангу не дизайнится для схемы {scheme} ({nrow(cand)} испробовано)."
+
+#: kasp_target.R:436
+msgid "returning the best-ranked target, whose design may be doomed."
+msgstr "возвращаю лучшую по рангу мишень, дизайн которой может быть doomed."
+
+#: kasp_thermo.R:187
 msgid "Directory not found: {path}"
 msgstr "Каталог не найден: {path}"
 
-#: kasp_thermo.R:257
+#: kasp_thermo.R:261
 msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
 
-#: kasp_thermo.R:258
+#: kasp_thermo.R:262
 msgid ""
 "run kasp_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
 msgstr ""
@@ -451,7 +581,7 @@ msgstr "Инструмент sha256 не найден; пропускаю про
 
 #: kasp_tools.R:242
 msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
-msgstr ""
+msgstr "несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено {got})."
 "Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено "
 "{got})."
 

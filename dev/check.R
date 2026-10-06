@@ -44,6 +44,11 @@ step("documentation in sync", function() {
   before <- snapshot()
   suppressMessages(roxygen2::roxygenise())
   if (!identical(before, snapshot())) stop("stale NAMESPACE/man - run roxygen2::roxygenise() and commit")
+  # a quoted export means a non-syntactic name got in - almost always a roxygen
+  # tag whose value swallowed prose (the bug that once broke R CMD INSTALL)
+  if (any(grepl('export("', readLines("NAMESPACE", warn = FALSE), fixed = TRUE))) {
+    stop("NAMESPACE has quoted exports - a roxygen tag likely swallowed text")
+  }
   ok("NAMESPACE and man/ match the roxygen comments")
 })
 
@@ -77,7 +82,23 @@ step("spelling", function() {
   ok("no unknown words")
 })
 
-# 4. R CMD check ------------------------------------------------------------
+# 4. install smoke ----------------------------------------------------------
+step("install (smoke)", function() {
+  lib <- tempfile("kasp-check-lib-")
+  dir.create(lib)
+  on.exit(unlink(lib, recursive = TRUE), add = TRUE)
+  out <- suppressWarnings(system2("R",
+    c("CMD", "INSTALL", "--no-docs", "--no-help", "-l", shQuote(lib), "."),
+    stdout = TRUE, stderr = TRUE
+  ))
+  if (!identical(attr(out, "status"), NULL) && !identical(as.integer(attr(out, "status")), 0L)) {
+    cat(out, sep = "\n")
+    stop("R CMD INSTALL failed - the package does not build/load")
+  }
+  ok("the package installs cleanly")
+})
+
+# 5. R CMD check ------------------------------------------------------------
 step("R CMD check", function() {
   if (!full) return(message("  skip (pass --full to build and check)"))
   status <- system2("R", c("CMD", "check", "--no-manual", "--as-cran", "."))
