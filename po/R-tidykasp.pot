@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 17:18+0300\n"
+"POT-Creation-Date: 2026-10-06 17:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -122,45 +122,56 @@ msgstr ""
 msgid "Consider widening `strands` or `tm_range`."
 msgstr ""
 
-#: kasp_assemble.R:486
+#: kasp_assemble.R:439
+msgid ""
+"Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
+"variant(s) in the AS zone)."
+msgstr ""
+
+#: kasp_assemble.R:441
+msgid ""
+"The ALT primer is valid only in accessions carrying the linked haplotype."
+msgstr ""
+
+#: kasp_assemble.R:505
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:516
+#: kasp_assemble.R:535
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:529
+#: kasp_assemble.R:548
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:535
+#: kasp_assemble.R:554
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:572
+#: kasp_assemble.R:592
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:601
+#: kasp_assemble.R:621
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
 msgstr ""
 
-#: kasp_assemble.R:604
+#: kasp_assemble.R:624
 msgid ""
 "The ALT primer is built for {snp$alt} only - a degenerate primer covering "
 "every ALT is not implemented yet."
 msgstr ""
 
-#: kasp_assemble.R:620
+#: kasp_assemble.R:640
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
 
-#: kasp_assemble.R:622
+#: kasp_assemble.R:642
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
@@ -472,16 +483,16 @@ msgid ""
 "', ')}."
 msgstr ""
 
-#: kasp_target.R:332
+#: kasp_target.R:304
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr ""
 
-#: kasp_target.R:435
+#: kasp_target.R:407
 msgid ""
 "No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
 msgstr ""
 
-#: kasp_target.R:436
+#: kasp_target.R:408
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr ""
 

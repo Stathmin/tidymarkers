@@ -1,9 +1,5 @@
 # Batch design: one row per locus with a verdict; a bad locus must not abort.
 
-bseq <- function(n, seed) {
-  withr::with_seed(seed, paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = ""))
-}
-
 test_that("variant_type labels SNV, MNP and indels", {
   expect_equal(variant_type("A", "G"), "SNP")
   expect_equal(variant_type("AC", "GT"), "MNP")

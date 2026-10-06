@@ -423,6 +423,25 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       i = gettext("Consider widening `strands` or `tm_range`.")
     ))
   }
+  # a design can hold *only* because co-segregating variants were excluded: they
+  # ride with the ALT haplotype (baked into the ALT primer), so the AS 3' window
+  # and footprint look clean without them.  That is valid only where the linked
+  # haplotype is present - say so rather than pass in silence.
+  linked_dependent <- FALSE
+  if (length(link_pos)) {
+    in_3p <- link_pos >= best_as$win3p_start & link_pos <= best_as$win3p_end
+    in_foot <- link_pos >= best_as$as_start & link_pos <= best_as$as_end
+    n_link <- sum(in_3p | in_foot)
+    linked_dependent <- n_link > 0L
+    if (linked_dependent) {
+      rlang::warn(c(
+        glue::glue(gettext(
+          "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked variant(s) in the AS zone)."
+        )),
+        i = gettext("The ALT primer is valid only in accessions carrying the linked haplotype.")
+      ))
+    }
+  }
 
   # COM: design on the SAME strand as the winning AS primer so the amplicon
   # closes.  design_common_primers() works in TEMPLATE coordinates, so its
@@ -550,7 +569,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     amplicons = amplicons,
     selection = list(
       relaxed = pick$relaxed, violated = pick$violated, as = pick_as$violated,
-      linked = linked_off, linked_skipped = linked_skipped
+      linked = linked_off, linked_skipped = linked_skipped,
+      linked_dependent = linked_dependent
     ),
     blast = blast,
     haplotypes = if (is.null(hap)) NULL else hap$haplotypes,
