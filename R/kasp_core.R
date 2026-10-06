@@ -300,7 +300,7 @@ variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer
   w <- if (is.null(vweight)) rep(1, length(vpos)) else as.numeric(vweight)
   w <- w[keep]
   hits <- IRanges::findOverlaps(IRanges::IRanges(v, v), interval)
-  sum(w[as.matrix(hits)[, 1L]])
+  sum(w[S4Vectors::queryHits(hits)])
 }
 
 #' Expected dropout under a primer's binding window (DECIPHER: hybridisation + Taq)
@@ -451,7 +451,7 @@ zone_dropouts <- function(primers, starts, ends, forwards, n_vars, tmpl, off, vp
 #' Per-user cache directory for downloads and indices
 #'
 #' Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST
-#' and FM indices) lives here — in the OS user cache, not in the project tree — so
+#' and FM indices) lives here -- in the OS user cache, not in the project tree -- so
 #' the working directory stays clean and the cache is shared across projects.
 #' @return the cache directory path (created if needed).
 #' @examples

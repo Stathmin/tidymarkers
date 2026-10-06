@@ -18,7 +18,7 @@
 #' 2. fewest other variants under the primer footprint (`n_var`);
 #' 3. highest discrimination (DECIPHER);
 #' 4. not a weak G:T / A:C wobble mismatch;
-#' 5. quieter 3'-seed genome-wide (`seed_hits`, best of the two strands) — a
+#' 5. quieter 3'-seed genome-wide (`seed_hits`, best of the two strands) -- a
 #'    specificity tie-break computed only for the top `specificity_candidates`
 #'    placements, mirroring [pick_target_snp()];
 #' 6. then `|Tm - target|`, 3'-stability and length.

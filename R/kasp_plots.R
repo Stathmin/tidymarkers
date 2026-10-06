@@ -824,11 +824,11 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' Instead of many tiny CSVs, the outputs are grouped by what they describe and
 #' the per-consumer formats are column subsets of the same data:
 #'
-#' * `kasp_design.csv` — candidate assays (one row per common-primer placement);
-#' * `kasp_primer_qc.csv` — one row per primer: Tm/GC/hairpin/3'-stability +
+#' * `kasp_design.csv` -- candidate assays (one row per common-primer placement);
+#' * `kasp_primer_qc.csv` -- one row per primer: Tm/GC/hairpin/3'-stability +
 #'   3'-seed specificity + in-silico PCR products;
-#' * `kasp_dimer_dg.csv` — duplex dG37 per primer pair (long);
-#' * `{base}_tidy.csv` / `_idt.csv` / `_lgc.csv` — the order table and its
+#' * `kasp_dimer_dg.csv` -- duplex dG37 per primer pair (long);
+#' * `{base}_tidy.csv` / `_idt.csv` / `_lgc.csv` -- the order table and its
 #'   IDT / LGC column subsets (see [export_primers()]).
 #'
 #' @return character vector of the written paths (invisibly).

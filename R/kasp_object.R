@@ -114,7 +114,8 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
       ref = as.character(ref), alt = as.character(alt)
     )
     type <- variant_type(snp$ref, snp$alt)
-    warns <- character(0)
+    cap <- new.env(parent = emptyenv())
+    cap$warns <- character(0)
     dots <- rlang::list2(...)
     dots$cores <- cores
     res <- withCallingHandlers(
@@ -141,14 +142,14 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
         }
       ),
       warning = function(w) {
-        warns <<- c(warns, conditionMessage(w))
+        cap$warns <- c(cap$warns, conditionMessage(w))
         invokeRestart("muffleWarning")
       }
     )
     # surface any assembly warnings on an otherwise built assay
-    if (res$verdict != "fail" && length(warns)) {
+    if (res$verdict != "fail" && length(cap$warns)) {
       res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
-      res$note <- paste(c(res$note, warns), collapse = "; ")
+      res$note <- paste(c(res$note, cap$warns), collapse = "; ")
     }
     res
   }

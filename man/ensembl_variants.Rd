@@ -23,7 +23,7 @@ a tibble of variants (\code{id}, \code{chrom}, \code{pos}, \code{ref_genome},
 }
 \description{
 Returns \code{id}, \code{chrom}, \code{pos}, \code{ref_genome} (the allele vector) and
-\code{consequence} — the Ensembl/Sequence-Ontology term(s).  The \code{overlap/region}
+\code{consequence} -- the Ensembl/Sequence-Ontology term(s).  The \code{overlap/region}
 endpoint does \strong{not} provide a VEP \code{impact} column, so \code{\link[=pick_target_snp]{pick_target_snp()}}
 ranks on the SO terms; a table you build yourself with an \code{impact} column is
 also accepted.

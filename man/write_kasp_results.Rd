@@ -22,11 +22,11 @@ the per-consumer formats are column subsets of the same data:
 }
 \details{
 \itemize{
-\item \code{kasp_design.csv} — candidate assays (one row per common-primer placement);
-\item \code{kasp_primer_qc.csv} — one row per primer: Tm/GC/hairpin/3'-stability +
+\item \code{kasp_design.csv} -- candidate assays (one row per common-primer placement);
+\item \code{kasp_primer_qc.csv} -- one row per primer: Tm/GC/hairpin/3'-stability +
 3'-seed specificity + in-silico PCR products;
-\item \code{kasp_dimer_dg.csv} — duplex dG37 per primer pair (long);
-\item \verb{\{base\}_tidy.csv} / \verb{_idt.csv} / \verb{_lgc.csv} — the order table and its
+\item \code{kasp_dimer_dg.csv} -- duplex dG37 per primer pair (long);
+\item \verb{\{base\}_tidy.csv} / \verb{_idt.csv} / \verb{_lgc.csv} -- the order table and its
 IDT / LGC column subsets (see \code{\link[=export_primers]{export_primers()}}).
 }
 }

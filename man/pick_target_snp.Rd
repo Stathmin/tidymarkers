@@ -50,12 +50,12 @@ forced into a substitution.
 Among the designable substitutions the best one is picked by, in order:
 \enumerate{
 \item the cleanest AS 3' window (\code{n_3p}, best of the two orientations);
-\item consequence severity — the Ensembl VEP \code{impact} column if the table has it,
+\item consequence severity -- the Ensembl VEP \code{impact} column if the table has it,
 otherwise the canonical SO terms in \code{SO_TERM_RANK} (\code{missense_variant}, ...);
 \item a transition (A>G / C>T) over a transversion;
 \item 3'-seed specificity (\code{seed_hits}, best of the two strands);
 \item the leftmost position.
-SNPs with complementary alleles (A/T, C/G) are skipped — a 3'-terminal base
+SNPs with complementary alleles (A/T, C/G) are skipped -- a 3'-terminal base
 cannot tell them apart.  The genome-wide seed scan runs only on the best
 \code{specificity_candidates} loci.
 }

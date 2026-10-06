@@ -87,7 +87,7 @@ The AS placement is chosen lexicographically by:
 \item fewest other variants under the primer footprint (\code{n_var});
 \item highest discrimination (DECIPHER);
 \item not a weak G:T / A:C wobble mismatch;
-\item quieter 3'-seed genome-wide (\code{seed_hits}, best of the two strands) — a
+\item quieter 3'-seed genome-wide (\code{seed_hits}, best of the two strands) -- a
 specificity tie-break computed only for the top \code{specificity_candidates}
 placements, mirroring \code{\link[=pick_target_snp]{pick_target_snp()}};
 \item then \verb{|Tm - target|}, 3'-stability and length.

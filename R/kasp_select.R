@@ -292,7 +292,7 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties,
     if (any(passes())) break
     if (floors[[g]] >= 0) next # hard
     m <- data[[gate_margin[[g]]]]
-    best_achievable <- suppressWarnings(max(m, na.rm = TRUE))
+    best_achievable <- if (any(!is.na(m))) max(m, na.rm = TRUE) else -Inf
     if (is.finite(best_achievable) && best_achievable < 0) {
       bars[[g]] <- max(floors[[g]], best_achievable)
     }

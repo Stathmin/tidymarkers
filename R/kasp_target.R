@@ -65,7 +65,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
 #' Natural variants overlapping a region, from Ensembl Plants (1001 Genomes)
 #'
 #' Returns `id`, `chrom`, `pos`, `ref_genome` (the allele vector) and
-#' `consequence` — the Ensembl/Sequence-Ontology term(s).  The `overlap/region`
+#' `consequence` -- the Ensembl/Sequence-Ontology term(s).  The `overlap/region`
 #' endpoint does **not** provide a VEP `impact` column, so [pick_target_snp()]
 #' ranks on the SO terms; a table you build yourself with an `impact` column is
 #' also accepted.
@@ -230,12 +230,12 @@ seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
 #' @section Selection policy:
 #' Among the designable substitutions the best one is picked by, in order:
 #' 1. the cleanest AS 3' window (`n_3p`, best of the two orientations);
-#' 2. consequence severity — the Ensembl VEP `impact` column if the table has it,
+#' 2. consequence severity -- the Ensembl VEP `impact` column if the table has it,
 #'    otherwise the canonical SO terms in `SO_TERM_RANK` (`missense_variant`, ...);
 #' 3. a transition (A>G / C>T) over a transversion;
 #' 4. 3'-seed specificity (`seed_hits`, best of the two strands);
 #' 5. the leftmost position.
-#' SNPs with complementary alleles (A/T, C/G) are skipped — a 3'-terminal base
+#' SNPs with complementary alleles (A/T, C/G) are skipped -- a 3'-terminal base
 #' cannot tell them apart.  The genome-wide seed scan runs only on the best
 #' `specificity_candidates` loci.
 #'

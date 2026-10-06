@@ -35,14 +35,14 @@ iupac_code <- function(bases) {
 #' Decides whether a variant site is designable despite its ALT roster, so a
 #' multi-allelic site is not discarded just because a single ALT cannot be told
 #' from the reference.  The classes are:
-#' * `"biallelic"` — a single usable ALT whose base is not complementary to REF;
-#' * `"degenerate"` — two or more distinct SNP ALTs: one AS primer whose
+#' * `"biallelic"` -- a single usable ALT whose base is not complementary to REF;
+#' * `"degenerate"` -- two or more distinct SNP ALTs: one AS primer whose
 #'   3'-terminal base is the IUPAC consensus [`iupac_code()`] of the ALT set
 #'   matches all of them and mismatches REF (the degenerate-primer option);
-#' * `"complementary"` — a single ALT that is the Watson-Crick complement of REF
+#' * `"complementary"` -- a single ALT that is the Watson-Crick complement of REF
 #'   (A/T or C/G), which a 3'-terminal base cannot separate;
-#' * `"indel"` — only non-SNP ALTs (handled by the indel-junction path);
-#' * `"none"` — no usable ALT.
+#' * `"indel"` -- only non-SNP ALTs (handled by the indel-junction path);
+#' * `"none"` -- no usable ALT.
 #'
 #' At a single site the ALTs differ only in the variant base, so a degenerate
 #' code over them always excludes REF; the criterion therefore only bites when

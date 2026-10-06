@@ -11,7 +11,7 @@ the cache directory path (created if needed).
 }
 \description{
 Everything heavy that the package fetches or builds (Ensembl FASTA/JSON, BLAST
-and FM indices) lives here — in the OS user cache, not in the project tree — so
+and FM indices) lives here -- in the OS user cache, not in the project tree -- so
 the working directory stays clean and the cache is shared across projects.
 }
 \examples{

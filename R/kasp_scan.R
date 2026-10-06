@@ -118,13 +118,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   res <- if (is.null(BPPARAM)) {
     run(query)
   } else {
-    nw <- max(1L, BiocParallel::bpnworkers(BPPARAM))
-    idx <- split(seq_along(query), cut(seq_along(query), breaks = nw))
-    purrr::list_rbind(BiocParallel::bplapply(
-      idx, function(ii) run(query[ii]),
-      BPPARAM = BPPARAM,
-      BPOPTIONS = BiocParallel::bpoptions(progressbar = interactive())
-    ))
+    # let BiocParallel partition the queries across workers
+    purrr::list_rbind(bp_lapply(seq_along(query), function(i) run(query[i]), BPPARAM))
   }
   cnt <- if (is.null(res) || nrow(res) == 0L) integer(0) else table(res$qseqid)
   hits <- as.integer(cnt[names(primers)])
