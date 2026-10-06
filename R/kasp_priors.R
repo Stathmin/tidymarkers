@@ -65,11 +65,10 @@ thermo_crosscheck <- function(seq,
                                 "DNA_NN_Sugimoto_1996", "DNA_NN_Breslauer_1986"
                               ),
                               ...) {
-  out <- tibble::tibble(seq = as.character(seq))
-  for (tb in nn_tables) out[[tb]] <- primer_tm(seq, nn_table = tb, ...)
-  cols <- unname(out[nn_tables])
-  out$tm_min <- do.call(pmin, c(cols, list(na.rm = TRUE)))
-  out$tm_max <- do.call(pmax, c(cols, list(na.rm = TRUE)))
+  cols <- purrr::map(nn_tables, function(tb) primer_tm(seq, nn_table = tb, ...))
+  out <- tibble::tibble(seq = as.character(seq), !!!rlang::set_names(cols, nn_tables))
+  out$tm_min <- rlang::exec(pmin, !!!cols, na.rm = TRUE)
+  out$tm_max <- rlang::exec(pmax, !!!cols, na.rm = TRUE)
   out$spread <- out$tm_max - out$tm_min
   out
 }

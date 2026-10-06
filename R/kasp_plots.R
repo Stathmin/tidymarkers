@@ -217,7 +217,7 @@ primer_features <- function(assay, limits = KASP_LIMITS) {
     !vapply(d$seq, has_repeat, logical(1)) &
     !vapply(d$seq, has_palindrome, logical(1))
   d$status <- dplyr::if_else(tm_ok & dplyr::between(d$gc, limits$gc[1], limits$gc[2]) & clean, "ok", "broken")
-  win <- Map(clamp_window, d$start, d$end, d$forward)
+  win <- purrr::pmap(list(d$start, d$end, d$forward), clamp_window)
   d$cstart <- vapply(win, `[`, numeric(1), 1L)
   d$cend <- vapply(win, `[`, numeric(1), 2L)
   # the primer string is always 5'->3'; the 3' base is its last letter
@@ -240,13 +240,9 @@ primer_features <- function(assay, limits = KASP_LIMITS) {
 #' @keywords internal
 #' @noRd
 repeat_spans <- function(s, units = 2:4, min_copies = 3L) {
-  spans <- matrix(integer(0), ncol = 2L)
-  for (u in units) {
-    pat <- glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
-    m <- stringr::str_locate_all(s, pat)[[1L]]
-    if (nrow(m)) spans <- rbind(spans, m)
-  }
-  spans
+  repeat_pattern <- function(u) glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
+  spans <- purrr::map(units, function(u) stringr::str_locate_all(s, repeat_pattern(u))[[1L]])
+  purrr::reduce(spans, rbind, .init = matrix(integer(0), ncol = 2L))
 }
 
 #' Per-base letters of the assay primers, styled for KASP
@@ -278,7 +274,7 @@ primer_letters <- function(assay, clamp_n = 5L) {
     pal <- find_palindromes(s)[[1L]]
     if (nrow(pal)) sp <- rbind(sp, as.matrix(pal[, c("start", "end")]))
     if (nrow(sp)) {
-      idx <- unique(unlist(lapply(seq_len(nrow(sp)), function(j) sp[j, 1L]:sp[j, 2L])))
+      idx <- unique(purrr::list_c(purrr::map(seq_len(nrow(sp)), function(j) sp[j, 1L]:sp[j, 2L])))
       colour[idx[idx >= 1L & idx <= L]] <- "#d7191c"
     }
     tibble::tibble(
@@ -331,7 +327,7 @@ primer_hits <- function(primers, genome, BPPARAM = NULL) {
       # a primer binds either strand: search the plus strand for the primer and
       # for its reverse complement, and report the plus-strand match starts
       pats <- unique(c(p, as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))))
-      pos <- unlist(lapply(pats, function(pt) {
+      pos <- purrr::list_c(purrr::map(pats, function(pt) {
         IRanges::start(Biostrings::vmatchPattern(Biostrings::DNAString(pt), subject, max.mismatch = 0L)[[1L]])
       }))
       if (!length(pos)) {
@@ -444,7 +440,7 @@ normalise_features <- function(features, span) {
   if (is.null(features)) {
     return(NULL)
   }
-  features <- as.data.frame(features)
+  features <- tibble::as_tibble(features)
   if (!nrow(features) || !all(c("start", "end") %in% names(features))) {
     return(NULL)
   }

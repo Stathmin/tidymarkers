@@ -81,7 +81,7 @@ specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthread
   reads <- file.path(td, "reads.fa")
   bam <- file.path(td, "hits.bam")
   Biostrings::writeXStringSet(
-    Biostrings::DNAStringSet(stats::setNames(as.character(primers), names(primers))), reads
+    Biostrings::DNAStringSet(rlang::set_names(as.character(primers), names(primers))), reads
   )
   # Rsubread prints a progress report to stdout with no quiet switch; the result
   # is the alignment file, so the chit-chat is discarded

@@ -375,9 +375,9 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties,
   if (!nrow(data)) {
     return(list(best = NULL, relaxed = character(0), violated = character(0)))
   }
-  floors <- stats::setNames(rep(0, length(gates)), gates)
+  floors <- rlang::set_names(rep(0, length(gates)), gates)
   floors[names(gate_floor)] <- gate_floor
-  bars <- stats::setNames(rep(0, length(gates)), gates)
+  bars <- rlang::set_names(rep(0, length(gates)), gates)
   passes <- function() {
     ok <- rep(TRUE, nrow(data))
     for (g in gates) {
@@ -421,7 +421,7 @@ warn_relaxed <- function(violated) {
   labels[is.na(labels)] <- violated[is.na(labels)]
   rlang::warn(c(
     gettext("No assay cleared every hard constraint; returned the least-bad after relaxing some."),
-    stats::setNames(gettext(labels), rep("*", length(labels)))
+    rlang::set_names(gettext(labels), rep("*", length(labels)))
   ))
   invisible(NULL)
 }

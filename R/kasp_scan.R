@@ -97,7 +97,7 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   } else {
     unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   }
-  query <- Biostrings::DNAStringSet(stats::setNames(seeds, names(primers)))
+  query <- Biostrings::DNAStringSet(rlang::set_names(seeds, names(primers)))
   # rBLAST::blast() validates the database itself (globs the index files and runs
   # `blastdbcmd -info`), so a missing or corrupt database surfaces there; we only
   # re-raise it with the pipeline's own hint instead of a hand-rolled .nsq probe.

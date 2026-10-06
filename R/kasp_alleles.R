@@ -31,30 +31,21 @@ iupac_code <- function(bases) {
 
 #' Degenerate consensus of equal-length sequences
 #'
-#' Column-wise consensus: a position that is constant keeps its base, a
-#' variable one becomes the IUPAC code of the bases seen there.  Used to render
-#' the physical degenerate ALT primer of a multi-allelic site (its 3'-terminal
-#' base is the IUPAC code over every ALT).
+#' Column-wise consensus, delegated to [`Biostrings::consensusString()`]: a
+#' position that is constant keeps its base, a variable one becomes the IUPAC code
+#' of the bases seen there.  Used to render the physical degenerate ALT primer of
+#' a multi-allelic site (its 3'-terminal base is the IUPAC code over every ALT).
 #' @param seqs character vector of equal-length sequences.
 #' @return a single consensus string.
 #' @keywords internal
 #' @noRd
 merge_iupac <- function(seqs) {
   seqs <- unique(as.character(seqs))
+  seqs <- seqs[!is.na(seqs) & nzchar(seqs)]
   if (!length(seqs)) {
     return(NA_character_)
   }
-  if (length(seqs) == 1L) {
-    return(seqs)
-  }
-  m <- do.call(rbind, strsplit(seqs, "", fixed = TRUE))
-  paste(
-    vapply(seq_len(ncol(m)), function(j) {
-      u <- unique(m[, j])
-      if (length(u) == 1L) u else iupac_code(u)
-    }, character(1)),
-    collapse = ""
-  )
+  as.character(Biostrings::consensusString(Biostrings::DNAStringSet(seqs)))
 }
 
 #' Classify a site's allele set for KASP design

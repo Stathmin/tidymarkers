@@ -56,14 +56,11 @@ bp_lapply <- function(X, FUN, BPPARAM) {
 #' @family KASP QC
 #' @export
 find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
+  repeat_pattern <- function(u) glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
   purrr::map(seq, function(s) {
-    hits <- character(0)
-    for (u in units) {
-      pat <- glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
-      m <- stringr::str_match_all(s, pat)[[1L]]
-      if (nrow(m)) hits <- c(hits, m[, 2L])
-    }
-    unique(hits)
+    purrr::map(units, function(u) stringr::str_match_all(s, repeat_pattern(u))[[1L]][, 2L]) |>
+      purrr::list_c() |>
+      unique()
   })
 }
 
@@ -113,7 +110,7 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
       width = as.integer(IRanges::width(h))
     )
   })
-  stats::setNames(hits, nm)
+  rlang::set_names(hits, nm)
 }
 
 #' Does a primer contain an inverted repeat? (see [find_palindromes()])
@@ -228,7 +225,7 @@ oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL) {
   if (is.null(BPPARAM)) {
     vapply(seq_len(n), one, numeric(1))
   } else {
-    unlist(bp_lapply(seq_len(n), one, BPPARAM), use.names = FALSE)
+    purrr::list_c(bp_lapply(seq_len(n), one, BPPARAM))
   }
 }
 

@@ -384,7 +384,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   if (specificity_candidates > 0L && !inherits(genome, "kasp_genome")) {
     short <- rank_candidates(graded_as$data, graded_as$tiers, setdiff(graded_as$ties, "seed_hits")) |>
       dplyr::slice_head(n = specificity_candidates)
-    seeds <- stats::setNames(
+    seeds <- rlang::set_names(
       substr(short$ref_primer, nchar(short$ref_primer) - SEED_K + 1L, nchar(short$ref_primer)),
       short$as_row
     )

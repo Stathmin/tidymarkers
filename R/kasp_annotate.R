@@ -157,7 +157,7 @@ LOCATION_TO_SO <- c(
 #' @keywords internal
 #' @noRd
 txdb_seqname_map <- function(chrom, txdb) {
-  inv <- stats::setNames(names(ATH_CHROM_MAP), ATH_CHROM_MAP) # values back to names
+  inv <- rlang::set_names(names(ATH_CHROM_MAP), ATH_CHROM_MAP) # values back to names
   txlev <- GenomeInfoDb::seqlevels(txdb)
   mapped <- dplyr::coalesce(unname(inv[chrom]), chrom)
   dplyr::if_else(mapped %in% txlev, mapped, chrom)
@@ -226,7 +226,7 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
   loc <- suppressWarnings(suppressMessages(
     VariantAnnotation::locateVariants(gr, txdb, VariantAnnotation::AllVariants())
   ))
-  loc <- tibble::as_tibble(as.data.frame(loc)) |>
+  loc <- tibble::as_tibble(loc) |>
     dplyr::mutate(
       query = as.integer(.data$QUERYID),
       LOCATION = as.character(.data$LOCATION),
@@ -256,7 +256,7 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
         varAllele = Biostrings::DNAStringSet(alts)
       )
     ))
-    coding <- tibble::as_tibble(as.data.frame(pc)) |>
+    coding <- tibble::as_tibble(pc) |>
       dplyr::mutate(
         query = as.integer(.data$QUERYID),
         CONSEQUENCE = as.character(.data$CONSEQUENCE)

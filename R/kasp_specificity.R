@@ -73,7 +73,7 @@ exact_seed_counts <- function(seeds, genome) {
   keep <- !duplicated(pats)
   # vcountPDict returns one row per dictionary element, in the given order
   m <- Biostrings::vcountPDict(Biostrings::PDict(pats[keep]), genome)
-  cnt <- stats::setNames(as.integer(rowSums(m)), pats[keep])
+  cnt <- rlang::set_names(as.integer(rowSums(m)), pats[keep])
   as.integer(cnt[seeds] + cnt[rc])
 }
 
@@ -215,7 +215,7 @@ blast_primers <- function(primers, db_path) {
     return(NULL)
   }
   rlang::check_installed("rBLAST")
-  query <- Biostrings::DNAStringSet(stats::setNames(primers, names(primers)))
+  query <- Biostrings::DNAStringSet(rlang::set_names(primers, names(primers)))
   out <- tryCatch(
     {
       bl <- rBLAST::blast(db_path, type = "blastn")

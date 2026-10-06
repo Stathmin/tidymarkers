@@ -68,13 +68,12 @@ rprimer_assays <- function(alignment, check = TRUE, ...) {
     gc = purrr::map_dbl(oligos$gcContent, 1L)
   )
   if (check && nrow(out)) {
-    md <- as.data.frame(rprimer::checkMatch(oligos, target = alignment))
-    for (col in c(
+    md <- tibble::as_tibble(rprimer::checkMatch(oligos, target = alignment))
+    cols <- c(
       "perfectMatch", "oneMismatch", "twoMismatches", "threeMismatches",
       "fourOrMoreMismatches", "offTargetMatch"
-    )) {
-      out[[col]] <- md[[col]]
-    }
+    )
+    out <- dplyr::bind_cols(out, md[cols])
   }
   out
 }

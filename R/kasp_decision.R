@@ -338,59 +338,75 @@ kasp_decision_text <- function(scheme = "snp") {
   s <- kasp_decision_schema(scheme)
   n <- s$nodes
   e <- s$edges
-  lab <- stats::setNames(n$label, n$name)
-  out <- c(
-    paste0(info$label, " - decision tree"), "",
-    sprintf(
-      "discrimination: %s | readout: %s | zygosity: %s | loci: %d | amplicon: %s",
-      info$discrimination, info$readout, info$zygosity, info$loci, info$amplicon
-    ), ""
-  )
-  section <- function(stage, title, kind) {
-    cc <- crit[crit$stage == stage, ]
-    res <- paste0("== ", title, " ==")
-    if (kind == "check" && nrow(cc)) {
-      for (i in seq_len(nrow(cc))) {
-        mark <- if (cc$hard[i]) "! HARD" else "check"
-        res <- c(res, sprintf("  %-7s %-34s %s", mark, cc$label[i], cc$limit[i]))
+  lab <- rlang::set_names(n$label, n$name)
+
+  # one formatted line per check: a hard marker (or `soft`) then label and limit
+  check_lines <- function(cc, width, soft = "check") {
+    purrr::pmap_chr(
+      list(cc$hard, cc$label, cc$limit),
+      function(hard, label, limit) {
+        mark <- if (hard) "! HARD" else soft
+        glue::glue(
+          "  {stringr::str_pad(mark, 7, side = 'right')} {stringr::str_pad(label, width, side = 'right')} {limit}"
+        )
       }
-    }
-    res
+    )
   }
-  if (any(crit$stage == "site")) {
-    out <- c(out, section("site", "target site checks", "check"), "")
+  section <- function(stage, title) {
+    cc <- crit[crit$stage == stage, ]
+    c(glue::glue("== {title} =="), check_lines(cc, 34L))
   }
-  for (st in kasp_decision_stages(scheme)) {
+  stage_block <- function(st) {
     cc <- crit[crit$stage == st$id, ]
     gate <- cc[cc$role == "gate", ]
-    out <- c(out, paste0("== stage ", st$id, " (", st$label, ") =="))
-    out <- c(out, "gates (hard = never relaxed):")
-    for (i in seq_len(nrow(gate))) {
-      mark <- if (gate$hard[i]) "! HARD" else "- soft"
-      out <- c(out, sprintf("  %-7s %-22s %s", mark, gate$label[i], gate$limit[i]))
-    }
+    res <- c(
+      glue::glue("== stage {st$id} ({st$label}) =="),
+      "gates (hard = never relaxed):",
+      check_lines(gate, 22L, soft = "- soft")
+    )
     if (length(st$relax)) {
-      out <- c(out, "relaxation ladder (least grave first):")
-      for (i in seq_along(st$relax)) {
-        gl <- st$relax[i]
-        out <- c(out, sprintf("  %d. %-22s floor: %s", i, KASP_GATE_SHORT[[gl]], KASP_GATE_FLOOR_LABEL[[gl]]))
-      }
+      res <- c(res, "relaxation ladder (least grave first):", purrr::map_chr(
+        seq_along(st$relax),
+        function(i) {
+          gl <- st$relax[i]
+          glue::glue(
+            "  {i}. {stringr::str_pad(KASP_GATE_SHORT[[gl]], 22, side = 'right')} floor: {KASP_GATE_FLOOR_LABEL[[gl]]}"
+          )
+        }
+      ))
     }
     if (length(st$tiers)) {
-      out <- c(out, "tiers (lexicographic, per-tier bottleneck min):")
-      for (i in seq_along(st$tiers)) out <- c(out, sprintf("  %d. %s", i, unname(st$tiers[i])))
+      res <- c(res, "tiers (lexicographic, per-tier bottleneck min):", purrr::map_chr(
+        seq_along(st$tiers), function(i) glue::glue("  {i}. {unname(st$tiers[i])}")
+      ))
     }
-    out <- c(out, "edges:")
     ids <- n$name[n$stage == st$id]
     ee <- e[e$from %in% ids, ]
-    for (i in seq_len(nrow(ee))) {
-      from <- lab[[ee$from[i]]] %||% ee$from[i]
-      to <- lab[[ee$to[i]]] %||% ee$to[i]
-      out <- c(out, sprintf("  %-24s -%-6s-> %s", from, ee$kind[i], to))
-    }
-    out <- c(out, "")
+    edges <- purrr::pmap_chr(list(ee$from, ee$to, ee$kind), function(from, to, kind) {
+      f <- lab[[from]] %||% from
+      t <- lab[[to]] %||% to
+      glue::glue(
+        "  {stringr::str_pad(f, 24, side = 'right')} -{stringr::str_pad(kind, 6, side = 'right')}-> {t}"
+      )
+    })
+    c(res, "edges:", edges, "")
   }
-  out <- c(out, section("assay", "assay acceptance checks", "check"))
-  out <- c(out, "", "DOOMED: a hard gate blocked, or every soft floor is exhausted.")
-  c(out, paste0("verdict: all checks pass -> ", info$verdict, "; else see the failing node"))
+
+  out <- c(
+    glue::glue("{info$label} - decision tree"), "",
+    glue::glue(
+      "discrimination: {info$discrimination} | readout: {info$readout}",
+      " | zygosity: {info$zygosity} | loci: {info$loci} | amplicon: {info$amplicon}"
+    ), ""
+  )
+  if (any(crit$stage == "site")) {
+    out <- c(out, section("site", "target site checks"), "")
+  }
+  out <- c(out, purrr::map(kasp_decision_stages(scheme), stage_block) |> purrr::list_c())
+  out <- c(
+    out, section("assay", "assay acceptance checks"), "",
+    "DOOMED: a hard gate blocked, or every soft floor is exhausted.",
+    glue::glue("verdict: all checks pass -> {info$verdict}; else see the failing node")
+  )
+  as.character(out)
 }

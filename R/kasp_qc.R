@@ -51,10 +51,10 @@ terminal_dg <- function(primer, n = 5L, BPPARAM = NULL) {
   mer <- substr(s, nchar(s) - n + 1L, nchar(s))
   mer[nchar(s) < n] <- NA_character_
   um <- unique(mer[!is.na(mer)])
-  dg <- stats::setNames(rep(NA_real_, length(um)), um)
+  dg <- rlang::set_names(rep(NA_real_, length(um)), um)
   if (length(um)) {
     rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(um)))
-    dg <- stats::setNames(oligo_dg_vec(um, rc, BPPARAM = BPPARAM), um)
+    dg <- rlang::set_names(oligo_dg_vec(um, rc, BPPARAM = BPPARAM), um)
   }
   unname(dg[mer])
 }
@@ -111,7 +111,7 @@ dimer_thermo <- function(primers, BPPARAM = NULL) {
   keys$dg <- if (is.null(BPPARAM)) {
     purrr::map_dbl(seq_len(nrow(keys)), one)
   } else {
-    unlist(bp_lapply(seq_len(nrow(keys)), one, BPPARAM))
+    purrr::list_c(bp_lapply(seq_len(nrow(keys)), one, BPPARAM))
   }
   grid |>
     dplyr::left_join(keys, by = c("lo", "hi")) |>

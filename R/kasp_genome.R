@@ -51,14 +51,14 @@ kasp_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
   fa <- Rsamtools::FaFile(plain)
   si <- GenomeInfoDb::seqinfo(fa) # names + lengths from the .fai
   raw <- as.character(GenomeInfoDb::seqnames(si))
-  len <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
+  len <- rlang::set_names(as.integer(GenomeInfoDb::seqlengths(si)), raw)
   norm <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
   keep <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
-  seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
+  seqnames <- rlang::set_names(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
   structure(
     list(
       path = plain, fa = fa, seqnames = seqnames,
-      lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
+      lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
       blast_db = blast_db, fm_index = fm_index
     ),
     class = "kasp_genome"
@@ -79,14 +79,14 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
   }
   si <- GenomeInfoDb::seqinfo(bsgenome) # names + lengths, no DNA
   raw <- as.character(GenomeInfoDb::seqnames(si))
-  len <- stats::setNames(as.integer(GenomeInfoDb::seqlengths(si)), raw)
+  len <- rlang::set_names(as.integer(GenomeInfoDb::seqlengths(si)), raw)
   norm <- if (!is.null(chrom_map)) unname(chrom_map[raw]) else raw
   keep <- if (!is.null(chrom_map)) !is.na(norm) else rep(TRUE, length(raw))
-  seqnames <- stats::setNames(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
+  seqnames <- rlang::set_names(raw[keep], (if (!is.null(chrom_map)) norm else raw)[keep])
   structure(
     list(
       path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
-      lengths = stats::setNames(unname(len[raw[keep]]), names(seqnames)),
+      lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
       blast_db = blast_db, fm_index = fm_index
     ),
     class = "kasp_genome"

@@ -140,7 +140,7 @@ sha256_of <- function(path) {
       system2(probe[[1L]], probe[-1L], stdout = TRUE, stderr = FALSE),
       error = function(e) character()
     ))
-    tok <- unlist(regmatches(out, gregexpr("[0-9a-f]{64}", out)))
+    tok <- purrr::list_c(stringr::str_extract_all(out, "[0-9a-f]{64}"))
     if (length(tok)) {
       return(tok[[1L]])
     }

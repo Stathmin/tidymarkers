@@ -262,7 +262,7 @@ render_design_search <- function(assay, variants, snp,
 
   # linger on the two winners and the final frame
   winners <- dplyr::filter(frames$notes, .data$key)$step
-  steps <- unlist(purrr::map(seq_len(n), function(s) c(s, rep(s, if (s %in% winners) hold else 0L))))
+  steps <- purrr::list_c(purrr::map(seq_len(n), function(s) c(s, rep(s, if (s %in% winners) hold else 0L))))
 
   td <- fs::path_temp("kasp_anim")
   fs::dir_create(td)

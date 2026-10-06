@@ -357,7 +357,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
       ) |>
       dplyr::filter(!is.na(.data$seed))
     if (nrow(seed_tbl) > 0L) {
-      seed_tbl <- specificity_of(stats::setNames(seed_tbl$seed, seed_tbl$key), genome,
+      seed_tbl <- specificity_of(rlang::set_names(seed_tbl$seed, seed_tbl$key), genome,
         BPPARAM = BPPARAM
       ) |>
         dplyr::select(key = "primer", "hits") |>
