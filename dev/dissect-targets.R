@@ -14,17 +14,16 @@ out <- fs::path("/tmp/kasp-dissect")
 fs::dir_create(out)
 
 genome <- ath_genome()
-gene <- ensembl_gene("AT4G00650")
-variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 ex <- kasp_example()
-
-cat("variants in gene:", nrow(variants), "over", diff(range(variants$pos)), "bp;",
-    round(nrow(variants) / diff(range(variants$pos)) * 100, 1), "per 100 bp\n\n")
 
 rows <- lapply(seq_len(nrow(ex)), function(i) {
   r <- ex[i, ]
   snp <- tibble::tibble(chrom = r$chrom, pos = as.integer(r$pos), ref = r$ref, alt = r$alt)
   tag <- gsub("[^A-Za-z0-9]+", "_", r$id)
+  # per-locus neighbourhood now that the targets span genes and chromosomes
+  gene <- tryCatch(ensembl_gene(r$gene), error = function(e) NULL)
+  win <- if (!is.null(gene)) c(gene$start - 500L, gene$end + 500L) else c(snp$pos - 1000L, snp$pos + 1000L)
+  variants <- ensembl_variants(r$chrom, max(1L, win[1L]), win[2L])
   a <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = variants, flank = 150L, cores = 1L))
   saveRDS(a, fs::path(out, paste0(tag, ".rds")))
 

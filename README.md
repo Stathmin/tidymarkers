@@ -308,7 +308,7 @@ tidykasp/
 ├── report/kasp_report.Rmd   # нарративный отчёт
 ├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика
 ├── vignettes/               # kasp-intro, custom-genome, reading-results
-├── inst/extdata/            # example_targets.csv (реальные SNP-мишени FRI)
+├── inst/extdata/            # example_targets.csv (мишени всех типов маркеров, по генам)
 ├── inst/scripts/            # run_kasp.R, quickstart.R (демо)
 ├── lecture/                 # Quarto-дек лекции (`sh lecture/render.sh`)
 └── results/                 # вывод (в .gitignore)

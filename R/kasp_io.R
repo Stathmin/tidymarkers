@@ -190,20 +190,24 @@ mask_positions <- function(seq, positions) {
   Biostrings::replaceAt(s, IRanges::IRanges(positions, positions), "N")
 }
 
-#' Bundled example target variants (FRI / AT4G00650)
+#' Bundled example target variants (one per marker type)
 #'
-#' A small, typed catalogue of real 1001-Genomes variants in *FRIGIDA*, one row
-#' per example target and at least one of each kind of site the designer handles:
-#' `"SNP"`, `"MNP"` (a contiguous substitution block), `"insertion"` and
-#' `"deletion"` (VCF-anchored), and a multi-allelic site with two ALTs (non-`NA`
-#' `alt2`) that one degenerate primer can cover ([kasp_site_class()]).  Handy for
-#' trying the pipeline without pulling data from Ensembl; `ref`/`alt` are the
-#' genomic alleles, so the table feeds [design_kasp_markers()] directly.
+#' A small, typed catalogue of real 1001-Genomes variants, one target per marker
+#' type and spread across chromosomes and genes: biallelic `"SNP"` (transition
+#' and transversion), a multi-allelic site with two ALTs (non-`NA` `alt2`) that
+#' one degenerate primer covers ([kasp_site_class()]), `"MNP"` (a contiguous
+#' substitution block), and VCF-anchored `"insertion"`/`"deletion"`.  Each locus
+#' was chosen for the lowest local variant load in a real gene rather than dumped
+#' from one hyper-variable region, and the SNP rows are verified to design (see
+#' `dev/render-targets.R`).  Handy for trying the pipeline without pulling data
+#' from Ensembl; `ref`/`alt` are the genomic alleles, so the table feeds
+#' [design_kasp_markers()] directly.
 #'
 #' @param type optional `type` to keep (`"SNP"`, `"MNP"`, `"insertion"`,
 #'   `"deletion"`); `NULL` returns every example.
 #' @return tibble with `id`, `chrom`, `pos`, `ref`, `alt`, `alt2` (second ALT of a
-#'   multi-allelic site, `NA` otherwise), `type`, `consequence`, `transition`.
+#'   multi-allelic site, `NA` otherwise), `type`, `consequence`, `transition`,
+#'   `gene` (the AGI locus the target sits in).
 #' @examples
 #' kasp_example()
 #' kasp_example("deletion")

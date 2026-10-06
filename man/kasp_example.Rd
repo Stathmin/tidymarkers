@@ -2,7 +2,7 @@
 % Please edit documentation in R/kasp_io.R
 \name{kasp_example}
 \alias{kasp_example}
-\title{Bundled example target variants (FRI / AT4G00650)}
+\title{Bundled example target variants (one per marker type)}
 \usage{
 kasp_example(type = NULL)
 }
@@ -12,16 +12,20 @@ kasp_example(type = NULL)
 }
 \value{
 tibble with \code{id}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{alt2} (second ALT of a
-multi-allelic site, \code{NA} otherwise), \code{type}, \code{consequence}, \code{transition}.
+multi-allelic site, \code{NA} otherwise), \code{type}, \code{consequence}, \code{transition},
+\code{gene} (the AGI locus the target sits in).
 }
 \description{
-A small, typed catalogue of real 1001-Genomes variants in \emph{FRIGIDA}, one row
-per example target and at least one of each kind of site the designer handles:
-\code{"SNP"}, \code{"MNP"} (a contiguous substitution block), \code{"insertion"} and
-\code{"deletion"} (VCF-anchored), and a multi-allelic site with two ALTs (non-\code{NA}
-\code{alt2}) that one degenerate primer can cover (\code{\link[=kasp_site_class]{kasp_site_class()}}).  Handy for
-trying the pipeline without pulling data from Ensembl; \code{ref}/\code{alt} are the
-genomic alleles, so the table feeds \code{\link[=design_kasp_markers]{design_kasp_markers()}} directly.
+A small, typed catalogue of real 1001-Genomes variants, one target per marker
+type and spread across chromosomes and genes: biallelic \code{"SNP"} (transition
+and transversion), a multi-allelic site with two ALTs (non-\code{NA} \code{alt2}) that
+one degenerate primer covers (\code{\link[=kasp_site_class]{kasp_site_class()}}), \code{"MNP"} (a contiguous
+substitution block), and VCF-anchored \code{"insertion"}/\code{"deletion"}.  Each locus
+was chosen for the lowest local variant load in a real gene rather than dumped
+from one hyper-variable region, and the SNP rows are verified to design (see
+\code{dev/render-targets.R}).  Handy for trying the pipeline without pulling data
+from Ensembl; \code{ref}/\code{alt} are the genomic alleles, so the table feeds
+\code{\link[=design_kasp_markers]{design_kasp_markers()}} directly.
 }
 \examples{
 kasp_example()

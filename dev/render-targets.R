@@ -4,7 +4,9 @@
 #  The CSV of typed example targets (inst/extdata/example_targets.csv) is our
 #  test set; this renders the same `plot_primers()` view for each locus, so the
 #  sites can be eyeballed side by side (SNP / MNP / insertion / deletion /
-#  multi-allelic).  A locus the strict gates doom is reported, not fatal.
+#  multi-allelic).  The targets now span genes and chromosomes, so each locus
+#  pulls its own neighbourhood variants and gene model (from the `gene` column);
+#  a locus the strict gates doom is reported, not fatal.
 #
 #  Loci are independent, so they are rendered across cores (fork on Unix); each
 #  assay is assembled serially (`cores = 1`) so cores are not oversubscribed.
@@ -21,8 +23,6 @@ suppressMessages(pkgload::load_all(root, quiet = TRUE))
 if (!nzchar(Sys.which("hybrid-min"))) stop("OligoArrayAux not on PATH - see data-raw/install-oligoarrayaux.R")
 
 genome <- ath_genome()
-gene <- ensembl_gene("AT4G00650")
-variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 out <- fs::path(root, "results", "plot-smoke")
 fs::dir_create(out)
 
@@ -34,6 +34,10 @@ render_one <- function(i) {
   tag <- gsub("[^A-Za-z0-9]+", "_", r$id)
   msg <- tryCatch(
     {
+      # the gene model and the neighbourhood variants are per-locus now
+      gene <- tryCatch(ensembl_gene(r$gene), error = function(e) NULL)
+      win <- if (!is.null(gene)) c(gene$start - 500L, gene$end + 500L) else c(snp$pos - 1000L, snp$pos + 1000L)
+      variants <- ensembl_variants(r$chrom, max(1L, win[1L]), win[2L])
       a <- suppressWarnings(assemble_kasp_assay(genome, snp,
         variants = variants, flank = 150L, strands = c("+", "-"), cores = 1L
       ))
