@@ -35,7 +35,9 @@ KASP_GATE_LIMIT <- c(
   gate_caps_tm = "both primers Tm within [lo, hi]",
   gate_arms_disc = "inner 3' base matches the allele",
   gate_arms_bands = "diagnostic bands >= 20 bp apart",
-  gate_arms_outer = "outer primers Tm-balanced"
+  gate_arms_outer = "outer primers Tm-balanced",
+  gate_hrm_amplicon = "amplicon within the short HRM window",
+  gate_hrm_tm = "both flanking primers Tm within the window"
 )
 
 # Acceptance checks the *selection* does not gate (they need the genome or an
@@ -146,6 +148,7 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     stage_rows("asq", KASP_GATES_ASQ, KASP_RELAX_ASQ, KASP_TIERS_ASQ, "alignment", "asq"),
     stage_rows("caps", KASP_GATES_CAPS, KASP_RELAX_CAPS, KASP_TIERS_CAPS, "alignment", "caps"),
     stage_rows("arms", KASP_GATES_ARMS, KASP_RELAX_ARMS, KASP_TIERS_ARMS, "alignment", "arms"),
+    stage_rows("hrm", KASP_GATES_HRM, KASP_RELAX_HRM, KASP_TIERS_HRM, "alignment", "hrm"),
     checks
   )
   if (!is.null(scheme)) {

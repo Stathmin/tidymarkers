@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 18:07+0300\n"
+"POT-Creation-Date: 2026-10-06 20:14+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -137,58 +137,58 @@ msgstr ""
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: kasp_assemble.R:563
+#: kasp_assemble.R:570
 msgid ""
 "Top-ranked pairing failed genome-level checks; kept the next clean one "
 "({win} of {n_screen} screened)."
 msgstr ""
 
-#: kasp_assemble.R:565
+#: kasp_assemble.R:572
 msgid ""
 "Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
 "are screened here."
 msgstr ""
 
-#: kasp_assemble.R:593
+#: kasp_assemble.R:600
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:606
+#: kasp_assemble.R:613
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:612
+#: kasp_assemble.R:619
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:650
+#: kasp_assemble.R:657
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
-#: kasp_assemble.R:681 kasp_assemble.R:690
+#: kasp_assemble.R:691 kasp_assemble.R:700
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
 msgstr ""
 
-#: kasp_assemble.R:684
+#: kasp_assemble.R:694
 msgid ""
 "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
 "ALT but cannot tell them apart."
 msgstr ""
 
-#: kasp_assemble.R:693
+#: kasp_assemble.R:703
 msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr ""
 
-#: kasp_assemble.R:710
+#: kasp_assemble.R:720
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
 
-#: kasp_assemble.R:712
+#: kasp_assemble.R:722
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
@@ -224,50 +224,50 @@ msgstr ""
 msgid "`marker` must be a kasp_caps object (see design_caps_marker())."
 msgstr ""
 
-#: kasp_core.R:116
+#: kasp_core.R:117
 msgid "OligoArrayAux ('{bin}') was not found."
 msgstr ""
 
-#: kasp_core.R:131
+#: kasp_core.R:132
 msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
 msgstr ""
 
-#: kasp_core.R:136
+#: kasp_core.R:137
 msgid ""
 "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
 msgstr ""
 
-#: kasp_core.R:143
+#: kasp_core.R:144
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
 msgstr ""
 
-#: kasp_core.R:507
+#: kasp_core.R:508
 msgid ""
 "Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
 "{cache}} ..."
 msgstr ""
 
-#: kasp_core.R:515
+#: kasp_core.R:516
 msgid ""
 "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::"
 "head(dropped, 3L)}}."
 msgstr ""
 
-#: kasp_core.R:525
+#: kasp_core.R:526
 msgid ""
 "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
 "collapse = ', ')}."
 msgstr ""
 
-#: kasp_core.R:527
+#: kasp_core.R:528
 msgid "Ensembl deflines may have changed."
 msgstr ""
 
-#: kasp_decision.R:215
+#: kasp_decision.R:221
 msgid "for the decision graph"
 msgstr ""
 
-#: kasp_decision.R:264
+#: kasp_decision.R:270
 msgid "to draw the decision tree"
 msgstr ""
 
@@ -327,6 +327,10 @@ msgstr ""
 
 #: kasp_haplotypes.R:45
 msgid "`freq` must be one value in [0, 1] per haplotype."
+msgstr ""
+
+#: kasp_hrm.R:53
+msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgstr ""
 
 #: kasp_io.R:62
@@ -436,7 +440,7 @@ msgstr ""
 msgid "Build one with kasp_blast_index(genome) and pass it as `blast_db=`."
 msgstr ""
 
-#: kasp_schemes.R:99
+#: kasp_schemes.R:106
 msgid "Unknown marker scheme {scheme}; see kasp_schemes()."
 msgstr ""
 
@@ -471,7 +475,7 @@ msgstr ""
 msgid "ImageMagick failed: {res$stderr}"
 msgstr ""
 
-#: kasp_select.R:423
+#: kasp_select.R:437
 msgid ""
 "No assay cleared every hard constraint; returned the least-bad after "
 "relaxing some."

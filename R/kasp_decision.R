@@ -61,6 +61,12 @@ kasp_decision_stages <- function(scheme = "snp") {
       gates = KASP_GATES_ARMS, relax = KASP_RELAX_ARMS, tiers = KASP_TIERS_ARMS
     )
   }
+  if (info$family == "hrm") {
+    stages$hrm <- list(
+      id = "hrm", label = "HRM amplicon",
+      gates = KASP_GATES_HRM, relax = KASP_RELAX_HRM, tiers = KASP_TIERS_HRM
+    )
+  }
   stages
 }
 

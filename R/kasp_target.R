@@ -424,6 +424,7 @@ kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL)
     multi = assemble_kasp_assay(genome, snp, variants = variants, BPPARAM = BPPARAM),
     caps = design_caps_marker(genome, snp),
     arms = design_arms_marker(genome, snp),
+    hrm = design_hrm_marker(genome, snp),
     NULL
   )
 }
@@ -435,5 +436,8 @@ is_target_designable <- function(marker) {
   if (inherits(marker, "kasp_doomed")) {
     return(FALSE)
   }
-  inherits(marker, "kasp_assay") || inherits(marker, "kasp_caps") || inherits(marker, "kasp_arms")
+  inherits(marker, "kasp_assay") ||
+    inherits(marker, "kasp_caps") ||
+    inherits(marker, "kasp_arms") ||
+    inherits(marker, "kasp_hrm")
 }

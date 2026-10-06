@@ -23,8 +23,12 @@ KASP_SCHEME_PRIMER <- "primer"
 KASP_SCHEME_KASP <- c("snp", "indel", "multi")
 KASP_SCHEME_CAPS <- "caps"
 KASP_SCHEME_ARMS <- "arms"
+KASP_SCHEME_HRM <- "hrm"
 KASP_SCHEME_CORE <- c(KASP_SCHEME_KASP, "duplex", "asq")
-KASP_SCHEME_ALL <- c(KASP_SCHEME_PRIMER, KASP_SCHEME_CORE, KASP_SCHEME_CAPS, KASP_SCHEME_ARMS)
+KASP_SCHEME_ALL <- c(
+  KASP_SCHEME_PRIMER, KASP_SCHEME_CORE,
+  KASP_SCHEME_CAPS, KASP_SCHEME_ARMS, KASP_SCHEME_HRM
+)
 
 # The acceptance checks that are true of any primer pair, KASP or not.  Their
 # complement is the allele-specific machinery (discrimination, the hierarchical
@@ -83,7 +87,10 @@ kasp_schemes <- function() {
     "bounded", 1L, "usable CAPS marker",
     "arms", "arms", "tetra-primer ARMS-PCR",
     "allele-specific inner primers, sized gel bands", "agarose band sizes (AA/AB/BB)",
-    "co-dominant", "bounded", 1L, "usable ARMS marker"
+    "co-dominant", "bounded", 1L, "usable ARMS marker",
+    "hrm", "hrm", "HRM (high-resolution melting)",
+    "amplicon melting curve (neighbour-tolerant)", "melt curve", "co-dominant",
+    "short (<= 150 bp)", 1L, "usable HRM amplicon"
   )
 }
 

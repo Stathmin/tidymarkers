@@ -97,6 +97,15 @@ KASP_TIERS_ARMS <- c(
   tier1 = "inner discrimination", tier2 = "band separation", tier3 = "outer Tm balance"
 )
 
+# HRM: the variant is read from the melting curve of a *short* amplicon, so there
+# is no allele-specific primer - one flanking pair straddles the variant, which
+# sits in the melt domain and under neither primer.  The gates are the amplicon
+# budget and the pair's Tm balance; neighbouring variants are tolerated (the curve
+# separates them), so there is no 3'-window gate.
+KASP_GATES_HRM <- c("gate_hrm_amplicon", "gate_hrm_tm")
+KASP_RELAX_HRM <- c("gate_hrm_amplicon")
+KASP_TIERS_HRM <- c(tier1 = "short amplicon", tier2 = "Tm balance")
+
 # Human-readable name for each gate, used in the relaxation warning and the
 # decision graph.
 KASP_GATE_LABEL <- c(
@@ -121,7 +130,9 @@ KASP_GATE_LABEL <- c(
   gate_caps_tm = "a flanking primer Tm is outside the window",
   gate_arms_disc = "an inner primer does not discriminate the allele",
   gate_arms_bands = "the diagnostic bands are too close to resolve",
-  gate_arms_outer = "the outer control pair is unbalanced"
+  gate_arms_outer = "the outer control pair is unbalanced",
+  gate_hrm_amplicon = "the HRM amplicon is outside the short window",
+  gate_hrm_tm = "a flanking primer Tm is outside the window"
 )
 
 # Short names for the decision graph (the warnings keep the full labels).
@@ -138,7 +149,8 @@ KASP_GATE_SHORT <- c(
   gate_caps_site = "restriction site", gate_caps_resolvable = "band gap",
   gate_caps_amplicon = "amplicon length (CAPS)", gate_caps_tm = "primer Tm (CAPS)",
   gate_arms_disc = "inner specificity", gate_arms_bands = "band gap",
-  gate_arms_outer = "outer pair"
+  gate_arms_outer = "outer pair",
+  gate_hrm_amplicon = "amplicon length (HRM)", gate_hrm_tm = "primer Tm (HRM)"
 )
 
 # Human-readable relaxation floor per soft gate (for the graph and text export).
@@ -155,7 +167,8 @@ KASP_GATE_FLOOR_LABEL <- c(
   gate_caps_resolvable = "allow a 30 bp band gap",
   gate_caps_tm = "widen the Tm window",
   gate_arms_bands = "allow a 20 bp band gap",
-  gate_arms_outer = "allow a 2 C Tm drift"
+  gate_arms_outer = "allow a 2 C Tm drift",
+  gate_hrm_amplicon = "widen the amplicon window"
 )
 
 # Why a gate is hard (never lowered).
@@ -168,7 +181,8 @@ KASP_GATE_HARD_LABEL <- c(
   gate_asq_cassette = "one cassette per target",
   gate_asq_readout = "no allele resolution in real time = no assay",
   gate_caps_site = "no discriminating enzyme = no CAPS marker",
-  gate_arms_disc = "no allele-specific inner primer = no ARMS assay"
+  gate_arms_disc = "no allele-specific inner primer = no ARMS assay",
+  gate_hrm_tm = "a Tm-balanced flanking pair is required"
 )
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins
