@@ -536,7 +536,10 @@ A–P — реализовано или оценено; **Q** — локализ
       `cli`-векторов — по элементу) → `potools::po_compile()`, затем прогнать i18n
       end-to-end (`LANGUAGE=ru`). Диагностики `check_cracked_messages()`,
       `check_untranslated_cat()`, `check_untranslated_src()`. Начать с самого
-      user-facing: валидация аргументов и подсказки установки тулов (`kasp_install_tools()`)
+      user-facing: валидация аргументов и подсказки установки тулов (`kasp_install_tools()`).
+      **Статус:** каталог уже полон и синхронизирован (`po_extract()` → `po_update()` →
+      `po_compile()`; 97 сообщений, 0 untranslated/fuzzy; проверено `LANGUAGE=ru`/`en`),
+      так что осталась только миграция на `cli` + правка стиля.
 - [x] `BiocParallel`: общий `bp_lapply()` ставит `progressbar` через `BPOPTIONS`;
       `RNGseed` — на BPPARAM (`MulticoreParam(RNGseed=)`; `bpoptions` его не принимает),
       а ядра дизайна детерминированы, сеять нечего
@@ -560,9 +563,10 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **sha256 и пробелы:** `sha256_of()` пробует `sha256sum`/`shasum`/`openssl`;
       `UNAFOLDDAT`/`--prefix` кавычатся; компилятор ищется как `cc`/`gcc`/`clang`
 - [x] **`.gitattributes`:** `* text=auto eol=lf`, `*.mo`/`*.rds`/`*.png`/`*.gif` — бинарные
-- [ ] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
-      Windows/macOS, `sh` только из Git-Bash/Rtools; `apt-get`-хинты (напр.
-      `R/kasp_scan.R`) дополнить кроссплатформенными
+- [x] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
+      Windows/macOS (pak `sysreqs` / brew / Rtools), запуск `sh` на Windows из
+      Git-Bash/Rtools; `apt-get`-хинты в сообщениях (`R/kasp_scan.R`,
+      `R/kasp_search_anim.R`) дополнены macOS/Windows
 - [x] **Форк:** `render_design_search()` больше не зовёт `parallel::mclapply` (Unix-only,
       и `parallel` не был в `Imports`); теперь `BiocParallel` — `MulticoreParam` (форк) на
       Unix, `SnowParam` иначе, через общий `bp_lapply()`. Проверено на Linux (кадры в
