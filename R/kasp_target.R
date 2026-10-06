@@ -235,8 +235,11 @@ seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
 #' 3. a transition (A>G / C>T) over a transversion;
 #' 4. 3'-seed specificity (`seed_hits`, best of the two strands);
 #' 5. the leftmost position.
-#' SNPs with complementary alleles (A/T, C/G) are skipped -- a 3'-terminal base
-#' cannot tell them apart.  The genome-wide seed scan runs only on the best
+#' Every substitution is separable by its 3'-terminal base, including the
+#' transversions A/T and C/G (their wrong-template mismatch is a strong
+#' *same-base* pair).  The weak case is the G:T / A:C *wobble* (transitions), a
+#' soft penalty carried by [wobble_mismatch()], not a reason to skip a site.
+#' The genome-wide seed scan runs only on the best
 #' `specificity_candidates` loci.
 #'
 #' @param variants variant table (Ensembl REST shape).
@@ -286,11 +289,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     dplyr::filter(
       !is.na(.data$alt),
       stringr::str_detect(.data$ref, "^[ACGT]+$"),
-      stringr::str_detect(.data$alt, "^[ACGT]+$"),
-      # a SNP whose alleles are complementary (A/T, C/G) cannot be told
-      # apart by a 3'-terminal base (one allele's primer pairs the other
-      # allele's template), so KASP discrimination collapses - skip them
-      !(.data$ref_len == 1L & paste0(pmin(.data$ref, .data$alt), pmax(.data$ref, .data$alt)) %in% c("AT", "CG"))
+      stringr::str_detect(.data$alt, "^[ACGT]+$")
     )
   if (nrow(v) == 0L) rlang::abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
 

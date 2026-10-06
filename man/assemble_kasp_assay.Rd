@@ -12,7 +12,7 @@ assemble_kasp_assay(
   strands = c("+", "-"),
   min_gc = 0.35,
   max_gc = 0.7,
-  tm_range = c(56, 65),
+  tm_range = KASP_LIMITS$as_tm,
   clean_3p = 5L,
   max_footprint_variants = Inf,
   min_disc = 0.5,

@@ -53,24 +53,25 @@ test_that("a linked 3' variant is forgiven, an unlinked one is not", {
   expect_gte(soft_t$n_ok, hard_t$n_ok)
 })
 
-test_that("complementary alleles have no usable placement", {
+test_that("an A/T (complementary) SNP is designable, not skipped", {
   genome <- clean_genome(seed = 9L)
   s <- as.character(genome[["Chr1"]])
   ref <- substr(s, 100L, 100L)
   comp <- as.character(Biostrings::complement(Biostrings::DNAString(ref))) # A<->T, C<->G
   vt <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = ref, alt = comp)
   sc <- screen_snp_targets(vt, genome)
-  expect_equal(sc$class, "complementary")
-  expect_equal(sc$score, "0/0")
-  expect_equal(sc$verdict, "doomed")
-  expect_equal(sc$reasons, "not_discriminable")
+  # a 3' base separates A/T (the wrong-template mismatch is a strong same-base
+  # pair), so the site gets the full placement set - same as any other SNP
+  expect_equal(sc$class, "biallelic")
+  expect_equal(sc$n_tried, 16L)
+  expect_match(sc$score, "^[0-9]+/16$")
 })
 
 test_that("a multi-allelic site is promising when one degenerate primer covers it", {
   genome <- clean_genome(seed = 9L)
   s <- as.character(genome[["Chr1"]])
-  # a REF A site whose first ALT (T) is complementary, but a second ALT (G) lets
-  # a degenerate 3'-terminal base (K = G/T) exclude REF - the Ensembl allele shape
+  # a REF A site with two SNP ALTs: a degenerate 3'-terminal base (K = G/T)
+  # excludes REF - the Ensembl allele shape
   i <- which(strsplit(s, "")[[1L]] == "A")[1L]
   vt <- tibble::tibble(chrom = "Chr1", pos = i, ref_genome = list(c("A", "T", "G")))
   sc <- screen_snp_targets(vt, genome)

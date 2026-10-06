@@ -115,12 +115,21 @@ tidy_as_candidates <- function(x) {
 assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 strands = c("+", "-"),
                                 min_gc = 0.35, max_gc = 0.70,
-                                tm_range = c(56, 65), clean_3p = 5L,
+                                tm_range = KASP_LIMITS$as_tm, clean_3p = 5L,
                                 max_footprint_variants = Inf,
                                 min_disc = 0.5, specificity_candidates = 10L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
+  # a target site may carry more than one ALT (a list-column `alt`, or an `alt2`
+  # column): the *site class* must see them all (below), while the design builds
+  # one AS primer - for the first ALT until the degenerate-primer engine lands.
+  alts_in <- unique(c(
+    as.character(unlist(snp$alt)),
+    if ("alt2" %in% names(snp)) as.character(snp$alt2) else character(0)
+  ))
+  alts_in <- alts_in[!is.na(alts_in) & nzchar(alts_in)]
+  if (length(alts_in) > 1L) snp$alt <- alts_in[1L]
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   hap <- NULL
   if (!is.null(haplotypes)) {
@@ -551,7 +560,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     rows <- variants[variants$chrom == snp$chrom & variants$pos == snp$pos, , drop = FALSE]
     if (nrow(rows)) {
       a <- if ("ref_genome" %in% names(rows)) {
-        unlist(as.character(rows$ref_genome))
+        # `ref_genome` is a LIST column (one allele vector per variant): unlist
+        # first - `as.character()` on a list would stringify the whole vector
+        as.character(unlist(rows$ref_genome, use.names = FALSE))
       } else if ("alt" %in% names(rows)) {
         as.character(rows$alt)
       } else {
@@ -562,6 +573,18 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
   }
   out$site <- kasp_site_class(snp$ref, site_alts)
+  # a multi-allelic site is reported as such, but the ALT primer still covers the
+  # first ALT only (degenerate-primer engine pending) - say so, do not pretend
+  if (out$site$n_alt[1L] > 1L) {
+    rlang::warn(c(
+      glue::glue(gettext(
+        "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
+      )),
+      i = glue::glue(gettext(
+        "The ALT primer is built for {snp$alt} only - a degenerate primer covering every ALT is not implemented yet."
+      ))
+    ))
+  }
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them
   out$evaluation <- tryCatch(kasp_design_checks(out), error = function(e) NULL)

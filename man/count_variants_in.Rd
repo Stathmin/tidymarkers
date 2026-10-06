@@ -17,7 +17,10 @@ count_variants_in(interval, vpos, exclude = NA_integer_)
 a single integer count (\code{NA_integer_} when \code{vpos} is \code{NULL}).
 }
 \description{
-\code{exclude} drops positions (typically the target SNP) from the count.
+\code{exclude} drops positions (typically the target SNP) from the count.  One
+\emph{site} is one position however many ALT records it carries (a multi-allelic
+VCF row is split into one row per allele upstream), so positions are
+de-duplicated before counting - a site with two ALTs is not two variants.
 }
 \examples{
 count_variants_in(IRanges::IRanges(10, 20), c(5L, 12L, 18L))

@@ -42,6 +42,14 @@ test_that("count_variants_in counts points and drops the excluded SNP", {
   expect_equal(count_variants_in(iv, NULL), NA_integer_)
 })
 
+test_that("a split multi-allelic site counts (and weighs) as one variant", {
+  iv <- IRanges::IRanges(996L, 999L)
+  # a VCF multi-allelic row arrives as one row per ALT: same position, two ALTs
+  expect_equal(count_variants_in(iv, c(997L, 997L, 998L)), 2L)
+  # the site's weights sum, so its total non-reference frequency is counted once
+  expect_equal(variant_load_in(iv, c(997L, 997L, 998L), c(0.1, 0.2, 1)), 1.3)
+})
+
 test_that("strand_gc_hint reports the GC of each flank", {
   genome <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 25L), "T", strrep("G", 25L))))
   h <- strand_gc_hint(genome, "chr1", 26L, flank = 25L)

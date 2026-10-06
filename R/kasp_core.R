@@ -259,7 +259,10 @@ block_in_seg <- function(ref_len, primer_len, strand) {
 
 #' Count variant positions inside an interval (IRanges)
 #'
-#' `exclude` drops positions (typically the target SNP) from the count.
+#' `exclude` drops positions (typically the target SNP) from the count.  One
+#' *site* is one position however many ALT records it carries (a multi-allelic
+#' VCF row is split into one row per allele upstream), so positions are
+#' de-duplicated before counting - a site with two ALTs is not two variants.
 #' @param interval an `IRanges` interval.
 #' @param vpos integer vector of variant positions (or `NULL`).
 #' @param exclude positions to drop (typically the target variant).
@@ -272,7 +275,7 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
   if (is.null(vpos)) {
     return(NA_integer_)
   }
-  v <- vpos[!is.na(vpos) & !(vpos %in% exclude)]
+  v <- unique(vpos[!is.na(vpos) & !(vpos %in% exclude)])
   if (!length(v)) {
     return(0L)
   }
@@ -285,7 +288,9 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
 #' primer; not all variants are equally bad, so when the variant table carries an
 #' optional `pop_freq` (population allele frequency) we sum those instead of
 #' counting.  Absent weights every variant counts 1, so the load degrades
-#' gracefully to the plain count.
+#' gracefully to the plain count.  One *site* is one position: the ALT records
+#' sharing a position (a split multi-allelic row) have their weights summed, so a
+#' site's total non-reference frequency is counted once.
 #' @keywords internal
 #' @noRd
 variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer_) {
@@ -299,8 +304,11 @@ variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer
   }
   w <- if (is.null(vweight)) rep(1, length(vpos)) else as.numeric(vweight)
   w <- w[keep]
-  hits <- IRanges::findOverlaps(IRanges::IRanges(v, v), interval)
-  sum(w[S4Vectors::queryHits(hits)])
+  # one site = one position: collapse the ALT rows sharing a position
+  site <- tapply(w, v, sum)
+  pos <- as.numeric(names(site))
+  hits <- IRanges::findOverlaps(IRanges::IRanges(pos, pos), interval)
+  sum(site[S4Vectors::queryHits(hits)])
 }
 
 #' Expected dropout under a primer's binding window (DECIPHER: hybridisation + Taq)
@@ -381,6 +389,8 @@ zone_dropout <- function(primer, start, end, forward, n_var, tmpl, off, vpos, vb
     return(0)
   }
   idx <- which(vpos >= start & vpos <= end & !(vpos %in% vblock))
+  # one (position, ALT) unit each: a split multi-allelic row is not double-counted
+  idx <- idx[!duplicated(paste(vpos[idx], valt[idx]))]
   if (!length(idx)) {
     return(0)
   }
@@ -419,6 +429,7 @@ zone_dropouts <- function(primers, starts, ends, forwards, n_vars, tmpl, off, vp
   for (i in seq_len(n)) {
     if (is.na(n_vars[i]) || n_vars[i] == 0L) next
     idx <- which(vpos >= starts[i] & vpos <= ends[i] & !(vpos %in% vblock))
+    idx <- idx[!duplicated(paste(vpos[idx], valt[idx]))]
     if (!length(idx)) next
     i1 <- max(starts[i] - off + 1L, 1L)
     i2 <- min(ends[i] - off + 1L, span)

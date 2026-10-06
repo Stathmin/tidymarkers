@@ -20,12 +20,12 @@ Decides whether a variant site is designable despite its ALT roster, so a
 multi-allelic site is not discarded just because a single ALT cannot be told
 from the reference.  The classes are:
 \itemize{
-\item \code{"biallelic"} -- a single usable ALT whose base is not complementary to REF;
+\item \code{"biallelic"} -- a single SNP ALT (any base, including the complement: an
+A/T or C/G transversion mismatches the wrong template by a strong \emph{same-base}
+pair, so it discriminates as well as any other SNP);
 \item \code{"degenerate"} -- two or more distinct SNP ALTs: one AS primer whose
 3'-terminal base is the IUPAC consensus \code{\link[=iupac_code]{iupac_code()}} of the ALT set
 matches all of them and mismatches REF (the degenerate-primer option);
-\item \code{"complementary"} -- a single ALT that is the Watson-Crick complement of REF
-(A/T or C/G), which a 3'-terminal base cannot separate;
 \item \code{"indel"} -- only non-SNP ALTs (handled by the indel-junction path);
 \item \code{"none"} -- no usable ALT.
 }
@@ -33,11 +33,14 @@ matches all of them and mismatches REF (the degenerate-primer option);
 \details{
 At a single site the ALTs differ only in the variant base, so a degenerate
 code over them always excludes REF; the criterion therefore only bites when
-the ALT set is not encodable or when an ALT is not a SNP.
+the ALT set is not encodable or when an ALT is not a SNP.  The weak 3'
+mismatch is the G:T / A:C \emph{wobble} (see \code{\link[=wobble_mismatch]{wobble_mismatch()}}, the soft
+\code{gate_wobble}) - a per-allele penalty, not a site class.
 }
 \examples{
+kasp_site_class("A", "G") # biallelic (transition: a wobble on one side)
+kasp_site_class("A", "T") # biallelic (A/T is a strong same-base mismatch)
 kasp_site_class("T", c("G", "C")) # degenerate over S = C/G, T left out
-kasp_site_class("A", "T") # complementary, doomed
 }
 \seealso{
 Other KASP design:

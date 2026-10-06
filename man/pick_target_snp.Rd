@@ -55,8 +55,11 @@ otherwise the canonical SO terms in \code{SO_TERM_RANK} (\code{missense_variant}
 \item a transition (A>G / C>T) over a transversion;
 \item 3'-seed specificity (\code{seed_hits}, best of the two strands);
 \item the leftmost position.
-SNPs with complementary alleles (A/T, C/G) are skipped -- a 3'-terminal base
-cannot tell them apart.  The genome-wide seed scan runs only on the best
+Every substitution is separable by its 3'-terminal base, including the
+transversions A/T and C/G (their wrong-template mismatch is a strong
+\emph{same-base} pair).  The weak case is the G:T / A:C \emph{wobble} (transitions), a
+soft penalty carried by \code{\link[=wobble_mismatch]{wobble_mismatch()}}, not a reason to skip a site.
+The genome-wide seed scan runs only on the best
 \code{specificity_candidates} loci.
 }
 }

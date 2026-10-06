@@ -20,10 +20,12 @@ test_that("kasp_site_class names the designable and the hopeless sites", {
   expect_true(d$disc)
   expect_equal(d$code, "K")
 
-  # a lone Watson-Crick complement cannot be split by a 3'-terminal base
+  # a lone SNP ALT is always separable, including the A/T and C/G transversions
+  # (a strong same-base mismatch on the wrong template)
   c1 <- kasp_site_class("A", "T")
-  expect_equal(c1$class, "complementary")
-  expect_false(c1$disc)
+  expect_equal(c1$class, "biallelic")
+  expect_true(c1$disc)
+  expect_equal(kasp_site_class("C", "G")$class, "biallelic")
 
   # non-SNP ALTs are the indel path's business; a lone REF is nothing
   expect_equal(kasp_site_class("A", "AT")$class, "indel")
