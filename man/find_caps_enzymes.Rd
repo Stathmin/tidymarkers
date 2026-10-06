@@ -24,8 +24,10 @@ find_caps_enzymes(
 \item{min_gap}{minimal band separation to call the digest gel-resolvable.}
 }
 \value{
-tidy tibble, one row per enzyme with \code{fragments_ref}, \code{fragments_alt},
-\code{gap} and \code{resolvable}, sorted by decreasing \code{gap}.
+tidy tibble, one row per enzyme with \code{n_sites_ref}, \code{n_sites_alt},
+\code{fragments_ref}, \code{fragments_alt}, \code{site_change} (a recognition site is
+gained/lost, not just a length shift), \code{gap} and \code{resolvable}, sorted by
+decreasing \code{resolvable} then \code{gap}.
 }
 \description{
 Copies the target into a window, builds the two allele amplicons (REF vs ALT),
@@ -46,6 +48,7 @@ Other KASP CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=design_caps_marker]{design_caps_marker()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
+\code{\link[=plot_caps_gel]{plot_caps_gel()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
 \concept{KASP CAPS}

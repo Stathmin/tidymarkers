@@ -48,6 +48,7 @@ Other KASP CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
+\code{\link[=plot_caps_gel]{plot_caps_gel()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
 \concept{KASP CAPS}

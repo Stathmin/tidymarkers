@@ -35,6 +35,15 @@ KASP_GATE_LIMIT <- c(
   gate_caps_tm = "both primers Tm within [lo, hi]"
 )
 
+# Acceptance checks the *selection* does not gate (they need the genome or an
+# in-silico PCR pass, computed only after the pair is chosen).  A failed one is
+# reported as a warning by assemble_kasp_assay(), not returned in silence.
+KASP_UNGATED_CHECKS <- c(
+  "inverted repeat (arms>=4, loop<=6)",
+  "in-silico PCR (REF 1 / ALT 0)",
+  "off-target exact primer hits (n)"
+)
+
 #' The registry of every candidate evaluation
 #'
 #' One row per criterion the pipeline applies: the selection gates and ranking

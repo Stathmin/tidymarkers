@@ -67,6 +67,23 @@ test_that("design_caps_marker falls back to dCAPS when no natural site exists", 
   expect_true(m$enzyme %in% restriction_enzymes()$enzyme)
 })
 
+test_that("a resolvable CAPS call needs a site change, not just a length shift", {
+  withr::with_seed(5L, w <- paste(sample(c("A", "C", "G", "T"), 300L, TRUE), collapse = ""))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  ins <- tibble::tibble(chrom = "Chr1", pos = 150L, ref = "A", alt = "AA") # 1-bp insertion
+  h <- find_caps_enzymes(genome, ins, flank = 100L)
+  if (nrow(h)) expect_false(any(h$resolvable & !h$site_change))
+})
+
+test_that("plot_caps_gel draws the two-lane readout", {
+  withr::with_seed(2L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
+  substr(w, 300L, 305L) <- "GAATTC"
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
+  m <- design_caps_marker(genome, snp, flank = 250L)
+  expect_s3_class(plot_caps_gel(m), "ggplot")
+})
+
 test_that("the caps scheme is registered and yields a DAG with its own stage", {
   expect_true("caps" %in% kasp_schemes()$scheme)
   crit <- kasp_criteria(scheme = "caps")

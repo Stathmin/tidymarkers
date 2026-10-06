@@ -588,6 +588,21 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them
   out$evaluation <- tryCatch(kasp_design_checks(out), error = function(e) NULL)
+  # structural / specificity checks that the selection gates do not cover (they
+  # need the genome or a PCR pass, computed only after the pair is chosen):
+  # rather than return an ugly assay in silence, name the failures
+  if (!is.null(out$evaluation)) {
+    hit <- !out$evaluation$pass & out$evaluation$criterion %in% KASP_UNGATED_CHECKS
+    bad <- out$evaluation$criterion[hit]
+    if (length(bad)) {
+      rlang::warn(c(
+        glue::glue(gettext(
+          "The chosen assay fails structural/specificity checks: {paste(bad, collapse = '; ')}."
+        )),
+        i = gettext("Selection does not gate these yet - inspect assay$evaluation and consider a trade-off.")
+      ))
+    }
+  }
   # the selection policy as a graph, with this assay's runtime status stamped on
   out$decision <- tryCatch(kasp_decision_graph(out),
     error = function(e) NULL

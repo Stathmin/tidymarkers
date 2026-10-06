@@ -89,8 +89,10 @@ digest_gap <- function(a, b) {
 #' @param flank window half-width (the prospective amplicon).
 #' @param enzymes enzyme table (see [restriction_enzymes()]).
 #' @param min_gap minimal band separation to call the digest gel-resolvable.
-#' @return tidy tibble, one row per enzyme with `fragments_ref`, `fragments_alt`,
-#'   `gap` and `resolvable`, sorted by decreasing `gap`.
+#' @return tidy tibble, one row per enzyme with `n_sites_ref`, `n_sites_alt`,
+#'   `fragments_ref`, `fragments_alt`, `site_change` (a recognition site is
+#'   gained/lost, not just a length shift), `gap` and `resolvable`, sorted by
+#'   decreasing `resolvable` then `gap`.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -114,10 +116,13 @@ find_caps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_e
     dplyr::rename(fa, n_sites_alt = "n_sites", cuts_alt = "cuts", fragments_alt = "fragments"),
     by = "enzyme"
   )
+  # a CAPS call is a *site* change (gain/loss of a recognition site), not the
+  # trivial length difference an indel leaves in every enzyme's digest
+  out$site_change <- out$n_sites_ref != out$n_sites_alt
   out$gap <- purrr::map2_dbl(out$fragments_ref, out$fragments_alt, digest_gap)
-  out$resolvable <- is.finite(out$gap) & out$gap >= min_gap
+  out$resolvable <- out$site_change & is.finite(out$gap) & out$gap >= min_gap
   out <- dplyr::filter(out, is.finite(.data$gap))
-  out[order(-out$gap), ]
+  dplyr::arrange(out, dplyr::desc(.data$resolvable), dplyr::desc(.data$gap))
 }
 
 #' IUPAC-aware mismatch offsets between a sequence window and an enzyme site
@@ -473,4 +478,59 @@ print.kasp_caps <- function(x, ...) {
   cat("  amplicon:", x$primers$product, "bp (gap", x$gap, "bp)\n")
   cat("  F:", x$primers$forward, "\n  R:", x$primers$reverse, "\n")
   invisible(x)
+}
+
+#' Draw the expected CAPS / dCAPS gel
+#'
+#' A two-lane schematic gel (REF and ALT) with a band for every restriction
+#' fragment length, the diagnostic bands highlighted - so the readout is visible
+#' without running the digest.  Bands shared by both alleles are grey;
+#' allele-diagnostic bands take the allele colour.
+#' @param marker a `kasp_caps` object (see [design_caps_marker()]).
+#' @return a `ggplot`.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' m <- design_caps_marker(genome, kasp_example("SNP")[1, ], flank = 250)
+#' plot_caps_gel(m)
+#' }
+#' @family KASP CAPS
+#' @export
+plot_caps_gel <- function(marker) {
+  rlang::check_installed("ggplot2", reason = gettext("to draw the CAPS gel"))
+  if (!inherits(marker, "kasp_caps")) {
+    rlang::abort(gettext("`marker` must be a kasp_caps object (see design_caps_marker())."))
+  }
+  bands <- tibble::tibble(
+    allele = rep(c("REF", "ALT"), times = c(length(marker$fragments_ref), length(marker$fragments_alt))),
+    size = c(marker$fragments_ref, marker$fragments_alt)
+  )
+  shared <- intersect(marker$fragments_ref, marker$fragments_alt)
+  bands$diagnostic <- !bands$size %in% shared
+  bands$x <- as.numeric(factor(bands$allele, levels = c("REF", "ALT")))
+  bands$col <- ifelse(
+    bands$diagnostic,
+    ifelse(bands$allele == "REF", "#4477aa", "#d7301f"), "grey65"
+  )
+  ggplot2::ggplot(bands) +
+    ggplot2::geom_segment(
+      ggplot2::aes(
+        x = .data$x - 0.32, xend = .data$x + 0.32,
+        y = .data$size, yend = .data$size
+      ),
+      linewidth = 2.4, lineend = "round", colour = bands$col
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = 1:2, labels = c("REF", "ALT"),
+      limits = c(0.4, 2.6)
+    ) +
+    ggplot2::scale_y_reverse() +
+    ggplot2::labs(
+      x = NULL, y = "fragment length (bp)",
+      title = glue::glue("CAPS gel: {marker$snp$chrom}:{marker$snp$pos} via {marker$enzyme}"),
+      subtitle = glue::glue(
+        "REF: {paste(marker$fragments_ref, collapse = '+')}  |  ALT: {paste(marker$fragments_alt, collapse = '+')} bp"
+      )
+    ) +
+    ggplot2::theme_minimal(base_size = 10)
 }

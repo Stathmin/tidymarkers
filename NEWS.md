@@ -80,6 +80,12 @@
 - **Независимый валидатор rprimer** (`R/kasp_rprimer.R`, Bioc, `Suggests`): `alignment_from()`
   строит выравнивание (REF/ALT, гаплотипы), `rprimer_assays()` запускает независимый дизайнер
   + `checkMatch()` (on/off-target пропорции) — второй алгоритм о том же локусе.
+- **Прозрачность «уродливых» проверок:** `assemble_kasp_assay()` теперь **предупреждает**
+  именем проваленной структурно/специфичной проверки (inverted repeat / in-silico PCR /
+  off-target — `KASP_UNGATED_CHECKS`), а `kasp_risk()` сворачивает все проверки в
+  `low`/`medium`/`high` с причинами (grave-провал → high).
+- **CAPS:** `site_change` (CAPS — это смена *сайта*, а не тривиальная разница длин индела)
+  и виртуальный гель `plot_caps_gel()`.
 - **Провенанс порогов и термодинамическая сверка** (`R/kasp_priors.R`): `kasp_priors()` —
   таблица «параметр → значение → источник» (LGC/EasyKASP 2025 / primerblast-oss);
   `thermo_crosscheck()` — Tm одного набора олиго в нескольких NN-таблицах TmCalculator

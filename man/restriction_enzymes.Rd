@@ -25,6 +25,7 @@ Other KASP CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=design_caps_marker]{design_caps_marker()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
-\code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}}
+\code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
+\code{\link[=plot_caps_gel]{plot_caps_gel()}}
 }
 \concept{KASP CAPS}
