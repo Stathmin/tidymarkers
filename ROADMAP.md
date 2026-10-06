@@ -709,12 +709,18 @@ A–P — реализовано или оценено; **Q** — локализ
       primerblast-oss. **Эмпирика:** на 3 «капризных» локусах (MNP GA>AA, insertion A>AA,
       deletion TT>T) природного CAPS-маркера в каталоге нет (0 сайтов; у длинных делеций/
       инсерций gap=1) — им нужен dCAPS или больший каталог ферментов
-- [ ] **Tetra-primer ARMS / AS-PCR.** `scheme = "arms"`: внешняя пара (контроль) + две
-      внутренние аллель-специфичные; ридаут — размеры полос, а не FRET. FOSS: Primer1
-      (Ye 2001/2012), WASP (2007), ARMSprimer3 (2025), primerblast-oss
+- [~] **Tetra-primer ARMS / AS-PCR.** `scheme = "arms"` реализован (`R/kasp_arms.R`):
+      `design_arms_marker()` — внешняя контрольная пара (`design_flanking_pair()`) + две
+      внутренние аллель-специфичные на противоположных цепях (`design_as_primers()`, тот же
+      3'-концевой якорь), дающие полосы REF/ALT *разных* размеров (AA/AB/BB); валидация
+      разрыва полос, класс `kasp_arms`, `plot_arms_gel()`. Схема зарегистрирована (стадия
+      `gate_arms_*`). **Осталось:** усиление мисматчей -2/-3 (как ARMSprimer3), учёт
+      off-target/специфичности; FOSS: Primer1 (Ye 2001/2012), WASP (2007), ARMSprimer3 (2025),
+      primerblast-oss
 - [ ] **HRM.** `scheme = "hrm"`: короткий ампликон вокруг варианта, различение по кривой
       плавления (терпит соседей). FOSS: uMELT/PolyMelt, SNPgen (2024)
-- [ ] **PIRA-PCR** — частный случай CAPS (интро-праймер создаёт сайт)
+- [x] **PIRA-PCR** — частный случай CAPS (интро-праймер создаёт сайт): покрыт
+      `find_dcaps_enzymes()` (тот же приём — сайт вносит праймер)
 - [ ] **Дальние методы** — держать в уме под задачи, а не в ядро: SNaPshot / single-base
       extension, ампликонное/Sanger-секвенирование (фолбэк + аттестация), digital PCR
       (низкое обилие), LAMP/RPA + CRISPR (SHIELD/SHERLOCK/DETECTR) — изотермические полевые

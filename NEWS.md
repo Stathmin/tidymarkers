@@ -86,6 +86,9 @@
   `low`/`medium`/`high` с причинами (grave-провал → high).
 - **CAPS:** `site_change` (CAPS — это смена *сайта*, а не тривиальная разница длин индела)
   и виртуальный гель `plot_caps_gel()`.
+- **Tetra-primer ARMS** (`scheme = "arms"`, `R/kasp_arms.R`): `design_arms_marker()` —
+  внешняя контрольная пара + две внутренние аллель-специфичные на разных цепях, полосы
+  REF/ALT разного размера (AA/AB/BB); `plot_arms_gel()`. Схема в реестре (стадия `gate_arms_*`).
 - **Провенанс порогов и термодинамическая сверка** (`R/kasp_priors.R`): `kasp_priors()` —
   таблица «параметр → значение → источник» (LGC/EasyKASP 2025 / primerblast-oss);
   `thermo_crosscheck()` — Tm одного набора олиго в нескольких NN-таблицах TmCalculator

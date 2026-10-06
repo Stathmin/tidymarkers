@@ -55,6 +55,12 @@ kasp_decision_stages <- function(scheme = "snp") {
       gates = KASP_GATES_CAPS, relax = KASP_RELAX_CAPS, tiers = KASP_TIERS_CAPS
     )
   }
+  if (info$family == "arms") {
+    stages$arms <- list(
+      id = "arms", label = "ARMS bands",
+      gates = KASP_GATES_ARMS, relax = KASP_RELAX_ARMS, tiers = KASP_TIERS_ARMS
+    )
+  }
   stages
 }
 

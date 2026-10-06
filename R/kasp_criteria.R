@@ -32,7 +32,10 @@ KASP_GATE_LIMIT <- c(
   gate_caps_site = "an enzyme separates the REF and ALT amplicons",
   gate_caps_resolvable = "closest diagnostic bands >= 50 bp apart",
   gate_caps_amplicon = "amplicon within [120, 1200]",
-  gate_caps_tm = "both primers Tm within [lo, hi]"
+  gate_caps_tm = "both primers Tm within [lo, hi]",
+  gate_arms_disc = "inner 3' base matches the allele",
+  gate_arms_bands = "diagnostic bands >= 20 bp apart",
+  gate_arms_outer = "outer primers Tm-balanced"
 )
 
 # Acceptance checks the *selection* does not gate (they need the genome or an
@@ -141,6 +144,7 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     stage_rows("duplex", KASP_GATES_DUPLEX, KASP_RELAX_DUPLEX, KASP_TIERS_DUPLEX, "alignment", "duplex"),
     stage_rows("asq", KASP_GATES_ASQ, KASP_RELAX_ASQ, KASP_TIERS_ASQ, "alignment", "asq"),
     stage_rows("caps", KASP_GATES_CAPS, KASP_RELAX_CAPS, KASP_TIERS_CAPS, "alignment", "caps"),
+    stage_rows("arms", KASP_GATES_ARMS, KASP_RELAX_ARMS, KASP_TIERS_ARMS, "alignment", "arms"),
     checks
   )
   if (!is.null(scheme)) {
