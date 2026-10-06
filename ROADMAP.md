@@ -663,6 +663,67 @@ A–P — реализовано или оценено; **Q** — локализ
       License+LICENSE, URL/BugReports, `Encoding`, `|>`/`.data$`, `rlang`/`cli`,
       `@family`/`@noRd`, тесты edition 3 без сети/снапшотов, поставка `po/` + `.mo`
 
+## U. Другие PCR-маркеры и внешние приоры (2025–2026)
+
+Три «капризных» локуса из фикстуры (вариант в AS 3'-окне; поли-А стык; `disc = 0.497`)
+— не провал, а сигнал: KASP — не единственная PCR-химия. У KASP три врождённых
+ограничения: (1) аллель различается **3'-основанием** праймера — ампликон < 100 bp,
+`Tm_COM > Tm_AS`, ~45% GC у варианта, праймер в 20–30 bp от варианта (EasyKASP 2025);
+(2) различение — это **разница эффективностей** (порог `min_disc`), не бинарный признак;
+(3) вариант якорится в **праймере**, а не в ампликоне.
+
+Карта «почему локус провалился → чем его взять»:
+
+| Провал (наш локус) | Причина | Чем взять |
+|---|---|---|
+| вариант в 3'-окне (MNP GA>AA) | нужен чистый 3'-торец | **CAPS/dCAPS/PIRA** (вариант внутри ампликона, различение — рестрикция), **HRM**, ампликонное секвенирование |
+| AT-rich / поли-А стык (A>AA) | нет 20–27mer с `Tm ≥ 56` / `GC ≥ 0.35` | **CAPS/dCAPS** (праймеры в GC-богатых флангах), фрагментный анализ (SSR/indel), секвенирование; KASP — только с расширенным окном Tm/GC |
+| `disc < 0.5` (TT>T) | слабая разница эффективностей | **CAPS/dCAPS** (бинарный разрез), **HRM** (короткий ампликон), **tetra-primer ARMS** (полосы по размеру), секвенирование |
+
+Общий вывод: **CAPS/dCAPS (и PIRA-PCR)** — рабочая лошадка там, где вариант — плохой
+якорь для праймера: он якорится в **ампликоне**, а различение — бинарная рестрикция.
+**HRM** терпит соседей и слабую дискриминацию на коротком ампликоне (слаб в AT-богатом).
+**Tetra-primer ARMS** даёт гель-ридаут (две аллельные полосы + контроль), но разделяет
+те же 3'-ограничения KASP. **Ампликонное/Sanger-секвенирование** — универсальный фолбэк
+(gold standard в сравнении 2025 г.).
+
+- [ ] **CAPS/dCAPS как вторая схема.** `scheme = "caps"` в `kasp_schemes()`: праймеры в
+      флангах, различение по сайту рестрикции; подбор ферментов (учёт сайтов, *создаваемых*
+      праймером в dCAPS), «gel resolvability» (разница фрагментов ≥ ~50 bp), виртуальный гель.
+      FOSS-ориентиры: dCAPS Finder 2.0 (Neff 2002), indCAPS (Kieber lab), SNP2CAPS,
+      primerblast-oss
+- [ ] **Tetra-primer ARMS / AS-PCR.** `scheme = "arms"`: внешняя пара (контроль) + две
+      внутренние аллель-специфичные; ридаут — размеры полос, а не FRET. FOSS: Primer1
+      (Ye 2001/2012), WASP (2007), ARMSprimer3 (2025), primerblast-oss
+- [ ] **HRM.** `scheme = "hrm"`: короткий ампликон вокруг варианта, различение по кривой
+      плавления (терпит соседей). FOSS: uMELT/PolyMelt, SNPgen (2024)
+- [ ] **PIRA-PCR** — частный случай CAPS (интро-праймер создаёт сайт)
+- [ ] **Дальние методы** — держать в уме под задачи, а не в ядро: SNaPshot / single-base
+      extension, ампликонное/Sanger-секвенирование (фолбэк + аттестация), digital PCR
+      (низкое обилие), LAMP/RPA + CRISPR (SHIELD/SHERLOCK/DETECTR) — изотермические полевые
+- [ ] **Внешние FOSS для параметров/методов/приоров:**
+      - **Primer3 / primer3-py** — NN-термодинамика (SantaLucia), соль-коррекция,
+        hairpin/dimer; независимая сверка наших ΔG (у нас TmCalculator + OligoArrayAux).
+        `Primer3_masker` — маскирование
+      - **primerblast-oss (2026, MIT)** — офлайн-аналог Primer-BLAST: 3'-end-aware модель
+        прайминга (**3'-окно 5 bp, ≤1 мисматч в нём, ≤4 всего, терминальное основание
+        совпадает**), термодинамический гейт (**anneal Tm ≥ 40, 3'-ΔG ≥ -5**), dimer-приоры
+        (**ΔG ≥ -8 / Tm ≥ 45**), **gel resolvability** (разрыв ≥ 50 bp), CAPS/dCAPS +
+        AS-PCR/tetra-ARMS + **multiplex-set design** (один совместимый праймер на мишень),
+        risk-скор. Наши пороги (homodimer/duplex ≥ -9, `clean_3p = 5`) — рядом; выровнять
+      - **PrimerServer2** — strand-aware pairing BLAST-хитов, `--use-3-end`, мультипоточность
+      - **polyMarker (2015)** — KASP для полиплоидов (локальные выравнивания)
+      - **WASP (2007)** — batch AS-PCR с намеренными мисматчами (у нас `stab_ats`)
+      - **FastPCR / PrimerDigital** — suite (KASP/PACE/ASQ, CAPS, STR, SNaPshot); платная,
+        но пороги читаемы; **KASPioneer (2025, PyPI)** — свежий KASP-дизайнер, сверить приоры
+      - **KASPspoon (2019)** — in-silico PCR для KASP
+      - Обзорные сравнения: *Anal. Chim. Acta* 2025 (rs9939609 T>A: ARMS vs PIRA vs TaqMan
+        vs CADMA+HRM vs HRM-snapback, Sanger gold) — карта «какой метод на какой SNP»;
+        **KASP vs T-ARMS** (MDPI 2026) — флуоресцентный против гель-ридаута
+- [ ] **Приоры в код:** вынести пороги в один «профиль приоров» (Primer3 NN, EasyKASP
+      KASP-окна, primerblast-oss офф-таргет/dimer/gel) и сравнивать; сделать `min_disc`
+      *вероятностью* + риск-скор (low/med/high), а не жёстким 0.5
+
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).
 - Zhang, Yang & Wen, *BMC Bioinformatics* 2025, **26**:292
@@ -674,3 +735,13 @@ A–P — реализовано или оценено; **Q** — локализ
   подготовка переводов), §1.1.1 (`Language`), §2.14 (кодировки).
 - `potools` (CRAN; Chirico & Wickham) — виньетки developers/translators: `po_extract()`,
   `translate_package()`, диагностики сообщений.
+- Другие PCR-маркеры (см. §U): dCAPS Finder 2.0 (Neff 2002); indCAPS (Kieber lab);
+  SNP2CAPS (Thiel 2004); Primer1 (Ye 2001; Collins 2012) и ARMSprimer3 (2025) для tetra-primer
+  ARMS; WASP (Wangkumhang 2007); polyMarker (Ramirez-Gonzalez 2015); KASPspoon (Alsamman 2019);
+  EasyKASP (Zhang 2025); KASPioneer (2025); FastPCR / PrimerDigital.
+- FOSS-ориентиры по параметрам: **Primer3** (Untergasser 2012) и primer3-py; **PrimerServer2**;
+  **primerblast-oss** (2026, MIT) — 3'-end-aware прайминг (окно 5 bp, ≤1 мисматч, ≤4 всего),
+  термогейт (anneal Tm ≥ 40, 3'-ΔG ≥ -5), dimer (ΔG ≥ -8 / Tm ≥ 45), gel resolvability ≥ 50 bp.
+- Сравнения методов: *Anal. Chim. Acta* 2025, doi:10.1016/j.aca.2025.343994 (rs9939609 T>A:
+  ARMS / PIRA / TaqMan / CADMA+HRM / HRM-snapback, Sanger gold); KASP vs T-ARMS (MDPI 2026);
+  SNPgen (2024) — веб-портал ARMS + HRM.
