@@ -266,7 +266,15 @@ assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
 его (`ggraph`), а собранный тест несёт граф в `assay$decision` со статусом узлов
 (зелёный — сработал, янтарный — снят, красный — нарушен).
 
-<img src="man/figures/decision-tree.png" width="560" alt="KASP selection decision tree" />
+**Схемы по химии маркера.** KASP — это семейство, а не один тест. `kasp_schemes()`
+объявляет химии, а единый реестр критериев помечает каждую проверку своими схемами,
+так что `plot_decision_tree(scheme = )` рисует дерево для SNP/indel/мультиаллельного
+KASP, **дуплексных** химий (dKASP, mxKASP, Multi-KASP: два локуса в одной пробирке +
+стадия совместимости) и **ASQ/PACE**, а также голый subset **«любая пара праймеров»**
+(маркер-агностичные проверки: состав, структура, повторы, off-target).
+
+<img src="man/figures/decision-tree.png" width="470" alt="KASP selection decision tree" />
+<img src="man/figures/decision-multiplex.png" width="470" alt="duplex KASP decision tree" />
 
 ## 5. Ограничения (честно)
 
