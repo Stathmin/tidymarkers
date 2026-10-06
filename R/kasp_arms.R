@@ -11,62 +11,6 @@
 #  a plain flanking pair.
 # =============================================================================
 
-#' A flanking primer pair with both primers outside a region
-#'
-#' The generic outer pair: a forward primer ending before `lo` and a reverse
-#' primer starting after `hi`, spanning an amplicon in the product window with
-#' balanced Tm.  Used by [design_arms_marker()].
-#' @keywords internal
-#' @noRd
-design_flanking_pair <- function(seq, lo, hi, lengths = 18:25,
-                                 min_product = 200L, max_product = 800L,
-                                 tm_range = KASP_LIMITS$com_tm, gc_range = KASP_LIMITS$gc) {
-  s <- as.character(seq)
-  n <- nchar(s)
-  if (lo <= 1L || hi >= n) {
-    return(NULL)
-  }
-  ok <- function(p) !has_run(p) & !has_repeat(p)
-  screen <- function(d) {
-    d$tm <- primer_tm(d$primer)
-    d$gc <- gc_frac(d$primer)
-    dplyr::filter(
-      d, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
-      dplyr::between(.data$gc, gc_range[1L], gc_range[2L])
-    )
-  }
-  fwd <- tidyr::crossing(p1 = seq_len(max(1L, lo - 1L)), len = lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L < lo) |>
-    dplyr::mutate(primer = stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L)) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  rev <- tidyr::crossing(p1 = seq.int(hi + 1L, n), len = lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L <= n) |>
-    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
-      Biostrings::DNAStringSet(stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L))
-    ))) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  if (!nrow(fwd) || !nrow(rev)) {
-    return(NULL)
-  }
-  pairs <- dplyr::cross_join(fwd, rev, suffix = c("_f", "_r")) |>
-    dplyr::mutate(
-      product = .data$p1_r + .data$len_r - 1L - .data$p1_f + 1L,
-      dtm = abs(.data$tm_f - .data$tm_r)
-    ) |>
-    dplyr::filter(dplyr::between(.data$product, min_product, max_product))
-  if (!nrow(pairs)) {
-    return(NULL)
-  }
-  b <- pairs[which.min(pairs$dtm), ]
-  list(
-    forward = b$primer_f, reverse = b$primer_r,
-    start = b$p1_f, end = b$p1_r + b$len_r - 1L, product = b$product,
-    tm_f = b$tm_f, tm_r = b$tm_r
-  )
-}
-
 #' Design a tetra-primer ARMS-PCR marker at a variant
 #'
 #' The gel-readout allele-specific assay: an outer control pair plus two inner
@@ -184,20 +128,18 @@ plot_arms_gel <- function(marker) {
     allele = c("REF", "REF", "ALT", "ALT"),
     size = c(ctrl, ref, ctrl, alt),
     diagnostic = c(FALSE, TRUE, FALSE, TRUE)
+  ) |>
+    dplyr::mutate(
+      x = as.numeric(factor(.data$allele, levels = c("REF", "ALT"))),
+      col = dplyr::case_when(
+        !.data$diagnostic ~ "grey65",
+        .data$allele == "REF" ~ KASP_STATUS[["neutral"]],
+        TRUE ~ KASP_STATUS[["broken"]]
+      )
+    )
+  gel_plot(
+    bands, c("REF/REF", "ALT/ALT"), "band size (bp)",
+    glue::glue("ARMS gel: {marker$snp$chrom}:{marker$snp$pos}"),
+    glue::glue("control {ctrl} bp | REF {ref} bp | ALT {alt} bp")
   )
-  bands$x <- as.numeric(factor(bands$allele, levels = c("REF", "ALT")))
-  bands$col <- ifelse(bands$diagnostic, ifelse(bands$allele == "REF", "#4477aa", "#d7301f"), "grey65")
-  ggplot2::ggplot(bands) +
-    ggplot2::geom_segment(
-      ggplot2::aes(x = .data$x - 0.32, xend = .data$x + 0.32, y = .data$size, yend = .data$size),
-      linewidth = 2.4, lineend = "round", colour = bands$col
-    ) +
-    ggplot2::scale_x_continuous(breaks = 1:2, labels = c("REF/REF", "ALT/ALT"), limits = c(0.4, 2.6)) +
-    ggplot2::scale_y_reverse() +
-    ggplot2::labs(
-      x = NULL, y = "band size (bp)",
-      title = glue::glue("ARMS gel: {marker$snp$chrom}:{marker$snp$pos}"),
-      subtitle = glue::glue("control {ctrl} bp | REF {ref} bp | ALT {alt} bp")
-    ) +
-    ggplot2::theme_minimal(base_size = 10)
 }

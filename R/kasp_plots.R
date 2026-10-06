@@ -73,6 +73,33 @@ variants_in_window <- function(variants, chrom, win) {
 
 KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
 
+#' A two-lane schematic gel (shared by the CAPS / ARMS readouts)
+#'
+#' Bands are horizontal marks at their fragment size; the caller supplies the
+#' per-band colour (diagnostic vs shared) so the two marker families render the
+#' same way.  Internal - the exported accessors are [plot_caps_gel()] and
+#' [plot_arms_gel()].
+#' @param bands tibble with `x` (numeric lane), `size` (bp) and `col`.
+#' @param x_labels lane labels.
+#' @param y_label y-axis label.
+#' @param title,subtitle plot text.
+#' @keywords internal
+#' @noRd
+gel_plot <- function(bands, x_labels, y_label, title, subtitle) {
+  ggplot2::ggplot(bands) +
+    ggplot2::geom_segment(
+      ggplot2::aes(x = .data$x - 0.32, xend = .data$x + 0.32, y = .data$size, yend = .data$size),
+      linewidth = 2.4, lineend = "round", colour = bands$col
+    ) +
+    ggplot2::scale_x_continuous(
+      breaks = seq_along(x_labels), labels = x_labels,
+      limits = c(0.4, length(x_labels) + 0.6)
+    ) +
+    ggplot2::scale_y_reverse() +
+    ggplot2::labs(x = NULL, y = y_label, title = title, subtitle = subtitle) +
+    ggplot2::theme_minimal(base_size = 10)
+}
+
 #' Feature-level acceptance criteria (everything else is alignment-level)
 #' @keywords internal
 #' @noRd

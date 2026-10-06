@@ -228,151 +228,6 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
     dplyr::arrange(dplyr::desc(.data$gap))
 }
 
-#' Flanking primer pair around a restricted region
-#'
-#' A compact, GC/Tm-screened scan: forward primers from the left of `[lo, hi]`,
-#' reverse primers to the right, both clear of the site, spanning an amplicon in
-#' `[min_product, max_product]` with balanced Tm.  Reuses the package's Tm/GC/run
-#' primitives; no restriction logic here.
-#' @keywords internal
-#' @noRd
-design_caps_primers <- function(seq, lo, hi, target_tm = AS_TM_TARGET,
-                                lengths = 18:25, min_product = 120L, max_product = 1000L,
-                                tm_range = KASP_LIMITS$as_tm, gc_range = KASP_LIMITS$gc) {
-  s <- as.character(seq)
-  n <- nchar(s)
-  if (lo <= 1L || hi >= n) {
-    return(NULL)
-  }
-  fwd <- tidyr::crossing(start = seq_len(max(1L, lo - 1L)), length = lengths) |>
-    dplyr::filter(.data$start + .data$length - 1L < lo) |>
-    dplyr::mutate(primer = stringr::str_sub(s, .data$start, .data$start + .data$length - 1L)) |>
-    dplyr::filter(!has_run(.data$primer), !has_repeat(.data$primer))
-  rev <- tidyr::crossing(end = seq.int(hi + 1L, n), length = lengths) |>
-    dplyr::filter(.data$end - .data$length + 1L > hi) |>
-    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
-      Biostrings::DNAStringSet(stringr::str_sub(s, .data$end - .data$length + 1L, .data$end))
-    ))) |>
-    dplyr::filter(!has_run(.data$primer), !has_repeat(.data$primer))
-  if (!nrow(fwd) || !nrow(rev)) {
-    return(NULL)
-  }
-  fwd$tm <- primer_tm(fwd$primer)
-  fwd$gc <- gc_frac(fwd$primer)
-  rev$tm <- primer_tm(rev$primer)
-  rev$gc <- gc_frac(rev$primer)
-  fwd <- dplyr::filter(
-    fwd, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
-    dplyr::between(.data$gc, gc_range[1L], gc_range[2L])
-  )
-  rev <- dplyr::filter(
-    rev, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
-    dplyr::between(.data$gc, gc_range[1L], gc_range[2L])
-  )
-  if (!nrow(fwd) || !nrow(rev)) {
-    return(NULL)
-  }
-  pairs <- dplyr::cross_join(fwd, rev, suffix = c("_f", "_r")) |>
-    dplyr::mutate(product = .data$end - .data$start + 1L, dtm = abs(.data$tm_f - .data$tm_r)) |>
-    dplyr::filter(dplyr::between(.data$product, min_product, max_product)) |>
-    dplyr::arrange(.data$dtm, .data$product)
-  if (!nrow(pairs)) {
-    return(NULL)
-  }
-  best <- pairs[1L, ]
-  list(
-    forward = best$primer_f, reverse = best$primer_r,
-    start = best$start, end = best$end,
-    product = best$product, tm_f = best$tm_f, tm_r = best$tm_r
-  )
-}
-
-#' A dCAPS primer pair around a primer-introduced site
-#'
-#' The site-carrying primer covers `[lo, hi]` (with the introduced base already
-#' applied in `fixed`); the mate is a plain flanking primer on the other side.
-#' Both orientations are tried and the best Tm-balanced valid pair is returned.
-#' @keywords internal
-#' @noRd
-design_dcaps_primers <- function(fixed, lo, hi, target_tm = AS_TM_TARGET,
-                                 site_lengths = 18:32, mate_lengths = 18:25,
-                                 min_product = 120L, max_product = 1200L,
-                                 tm_range = KASP_LIMITS$as_tm, gc_range = KASP_LIMITS$gc) {
-  s <- fixed
-  n <- nchar(s)
-  if (lo <= 1L || hi >= n) {
-    return(NULL)
-  }
-  ok <- function(p) !has_run(p) & !has_repeat(p)
-  screen <- function(d) {
-    d$tm <- primer_tm(d$primer)
-    d$gc <- gc_frac(d$primer)
-    dplyr::filter(
-      d, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
-      dplyr::between(.data$gc, gc_range[1L], gc_range[2L])
-    )
-  }
-  # forward primers covering the site, and reverse mate to the right
-  site_f <- tidyr::crossing(p1 = seq.int(max(1L, lo - 14L), lo), len = site_lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L >= hi, .data$p1 + .data$len - 1L <= n) |>
-    dplyr::mutate(primer = stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L)) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  mate_r <- tidyr::crossing(p1 = seq.int(hi + 1L, n), len = mate_lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L <= n) |>
-    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
-      Biostrings::DNAStringSet(stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L))
-    ))) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  # reverse primers covering the site, and forward mate to the left
-  site_r <- tidyr::crossing(p1 = seq.int(max(1L, lo - 14L), lo), len = site_lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L >= hi, .data$p1 + .data$len - 1L <= n) |>
-    dplyr::mutate(primer = as.character(Biostrings::reverseComplement(
-      Biostrings::DNAStringSet(stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L))
-    ))) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  mate_f <- tidyr::crossing(p1 = seq_len(max(1L, lo - 1L)), len = mate_lengths) |>
-    dplyr::filter(.data$p1 + .data$len - 1L < lo) |>
-    dplyr::mutate(primer = stringr::str_sub(s, .data$p1, .data$p1 + .data$len - 1L)) |>
-    dplyr::filter(ok(.data$primer)) |>
-    screen()
-  pair_up <- function(site, mate, site_is_fwd) {
-    if (!nrow(site) || !nrow(mate)) {
-      return(NULL)
-    }
-    p <- dplyr::cross_join(site, mate, suffix = c("_s", "_m")) |>
-      dplyr::mutate(
-        product = if (site_is_fwd) {
-          .data$p1_m + .data$len_m - 1L - .data$p1_s + 1L
-        } else {
-          .data$p1_s + .data$len_s - 1L - .data$p1_m + 1L
-        }
-      ) |>
-      dplyr::filter(dplyr::between(.data$product, min_product, max_product))
-    if (!nrow(p)) {
-      return(NULL)
-    }
-    p[which.min(abs(p$tm_s - p$tm_m)), ]
-  }
-  cand <- dplyr::bind_rows(
-    pair_up(site_f, mate_r, TRUE),
-    pair_up(site_r, mate_f, FALSE)
-  )
-  if (is.null(cand) || !nrow(cand)) {
-    return(NULL)
-  }
-  best <- cand[1L, ]
-  list(
-    forward = if (best$p1_s <= best$p1_m) best$primer_s else best$primer_m,
-    reverse = if (best$p1_s <= best$p1_m) best$primer_m else best$primer_s,
-    start = min(best$p1_s, best$p1_m),
-    end = max(best$p1_s + best$len_s - 1L, best$p1_m + best$len_m - 1L),
-    product = best$product, tm_f = best$tm_s, tm_r = best$tm_m
-  )
-}
-
 #' Design a CAPS / dCAPS marker at a variant
 #'
 #' The CAPS analogue of [assemble_kasp_assay()]: find the enzyme whose digest
@@ -411,7 +266,7 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
   if (!length(cuts)) cuts <- setdiff(best$cuts_alt[[1L]], best$cuts_ref[[1L]])
   lo <- min(cuts) + 1L
   hi <- max(cuts) + 1L
-  primers <- design_caps_primers(tmpl$seq, lo, hi)
+  primers <- design_site_pair(tmpl$seq, lo, hi)
   if (is.null(primers)) {
     rlang::inform(gettext("A discriminating enzyme was found, but no flanking primer pair passed the Tm/GC filters."))
     return(NULL)
@@ -450,7 +305,7 @@ design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap) {
   substr(fixed, pos, pos) <- best$fix_base
   lo <- best$site_start
   hi <- best$site_start + best$site_len - 1L
-  primers <- design_dcaps_primers(fixed, lo, hi)
+  primers <- design_site_pair(fixed, lo, hi)
   if (is.null(primers)) {
     rlang::inform(gettext("A dCAPS site was found, but no primer pair passed the Tm/GC filters."))
     return(NULL)
@@ -502,36 +357,25 @@ plot_caps_gel <- function(marker) {
   if (!inherits(marker, "kasp_caps")) {
     rlang::abort(gettext("`marker` must be a kasp_caps object (see design_caps_marker())."))
   }
+  shared <- intersect(marker$fragments_ref, marker$fragments_alt)
   bands <- tibble::tibble(
     allele = rep(c("REF", "ALT"), times = c(length(marker$fragments_ref), length(marker$fragments_alt))),
     size = c(marker$fragments_ref, marker$fragments_alt)
-  )
-  shared <- intersect(marker$fragments_ref, marker$fragments_alt)
-  bands$diagnostic <- !bands$size %in% shared
-  bands$x <- as.numeric(factor(bands$allele, levels = c("REF", "ALT")))
-  bands$col <- ifelse(
-    bands$diagnostic,
-    ifelse(bands$allele == "REF", "#4477aa", "#d7301f"), "grey65"
-  )
-  ggplot2::ggplot(bands) +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = .data$x - 0.32, xend = .data$x + 0.32,
-        y = .data$size, yend = .data$size
-      ),
-      linewidth = 2.4, lineend = "round", colour = bands$col
-    ) +
-    ggplot2::scale_x_continuous(
-      breaks = 1:2, labels = c("REF", "ALT"),
-      limits = c(0.4, 2.6)
-    ) +
-    ggplot2::scale_y_reverse() +
-    ggplot2::labs(
-      x = NULL, y = "fragment length (bp)",
-      title = glue::glue("CAPS gel: {marker$snp$chrom}:{marker$snp$pos} via {marker$enzyme}"),
-      subtitle = glue::glue(
-        "REF: {paste(marker$fragments_ref, collapse = '+')}  |  ALT: {paste(marker$fragments_alt, collapse = '+')} bp"
+  ) |>
+    dplyr::mutate(
+      diagnostic = !.data$size %in% shared,
+      x = as.numeric(factor(.data$allele, levels = c("REF", "ALT"))),
+      col = dplyr::case_when(
+        !.data$diagnostic ~ "grey65",
+        .data$allele == "REF" ~ KASP_STATUS[["neutral"]],
+        TRUE ~ KASP_STATUS[["broken"]]
       )
-    ) +
-    ggplot2::theme_minimal(base_size = 10)
+    )
+  ref_txt <- paste(marker$fragments_ref, collapse = "+")
+  alt_txt <- paste(marker$fragments_alt, collapse = "+")
+  gel_plot(
+    bands, c("REF", "ALT"), "fragment length (bp)",
+    glue::glue("CAPS gel: {marker$snp$chrom}:{marker$snp$pos} via {marker$enzyme}"),
+    glue::glue("REF: {ref_txt}  |  ALT: {alt_txt} bp")
+  )
 }

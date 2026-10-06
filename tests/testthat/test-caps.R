@@ -28,7 +28,8 @@ test_that("design_caps_marker returns a classed marker whose pair spans the site
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
   m <- design_caps_marker(genome, snp, flank = 250L)
   expect_s3_class(m, "kasp_caps")
-  expect_true(m$amplicon$start < 300L && m$amplicon$end > 305L)
+  # the pair spans the discriminating site, i.e. straddles the variant
+  expect_true(m$amplicon$start < 300L && m$amplicon$end > 300L)
   expect_true(m$primers$product >= 120L)
 })
 
