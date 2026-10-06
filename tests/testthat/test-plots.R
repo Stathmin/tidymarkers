@@ -152,3 +152,22 @@ test_that("a doomed target is a classed object and still plots its context", {
   p <- plot_primers(d, variants, m$snp)
   expect_s3_class(p, "ggplot")
 })
+
+test_that("plot_oligo_structure renders the primers' hairpin/SSR structure", {
+  skip_if_no_oligoarrayaux()
+  m <- make_plot_assay()
+  p <- plot_oligo_structure(m$assay)
+  expect_s3_class(p, "ggplot")
+  # one facet per oligo (its strip labels the hairpin/SSR counts)
+  expect_equal(nlevels(p$data$panel), 3L)
+  # it must actually build (a 0-column layer would fail only at build time)
+  expect_silent(ggplot2::ggplot_build(p))
+})
+
+test_that("plot_self_complementarity marks every Watson-Crick pairing", {
+  s <- "GAAGGTGACCAAGTTCATGCT"
+  p <- plot_self_complementarity(s)
+  expect_s3_class(p, "ggplot")
+  b <- strsplit(s, "")[[1L]]
+  expect_equal(nrow(p$data), sum(outer(b, chartr("ACGT", "TGCA", b), "==")))
+})

@@ -185,8 +185,13 @@
   3'-основание, Tm числом и ΔTm-тумблером; справа — тонкая колонка тумблеров
   `plot_checks()` с фасетом site/feature/alignment/specificity; в тумблерах значение
   ≤ 4 символов (site class — код `bial`/`degn`/`comp`/`indl`).
-- **Удалены** `plot_alignment()`, `plot_self_complementarity()`, `plot_dimer_qc()`
-  (и `plot_discrimination()` ранее) — в текущем виде не нужны; `ggmsa` ушёл из `Imports`.
+- **Удалены** `plot_alignment()`, `plot_dimer_qc()` (и `plot_discrimination()` ранее) —
+  в текущем виде не нужны; `ggmsa` ушёл из `Imports`.
+- **Структура олиго видна:** `plot_oligo_structure()` — три олиго рядом (буквы,
+  SSR подчёркнуты красным, шпильки/инвертированные повторы — дугами над
+  последовательностью); `plot_self_complementarity()` возвращён как честный
+  dot-plot self×self (i спаривается с j, когда основание i — комплемент j), а не
+  прежний шумный MSA×revcomp.
 - `off-target` теперь считается по **точным** совпадениям праймера в геноме (из идеограммы),
   а не по 3'-сиду с 1 мисматчем (тот в 100+ Мб геноме шумит); порог футпринта
   `footprint_dropout` 5% → 10%.

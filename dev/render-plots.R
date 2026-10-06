@@ -26,7 +26,9 @@ make_assay <- function(seed = 4L, n = 20000L, pos = 10000L) {
     )
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) return(list(assay = a, snp = snp, variants = vs, genome = genome))
+    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) {
+      return(list(assay = a, snp = snp, variants = vs, genome = genome))
+    }
   }
   stop("no random genome assembled into an assay")
 }
@@ -48,4 +50,6 @@ save <- function(name, plot) {
 
 save("primers", plot_primers(m$assay, m$variants, m$snp, genome = m$genome))
 save("checks", plot_checks(m$assay))
+save("oligo_structure", plot_oligo_structure(m$assay))
+save("self_complementarity", plot_self_complementarity(m$assay$assay$as_ref[1L]))
 cat("done\n")

@@ -29,7 +29,9 @@ plot_design_search_step(frames, 1)
 Other KASP plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_checks]{plot_checks()}},
+\code{\link[=plot_oligo_structure]{plot_oligo_structure()}},
 \code{\link[=plot_primers]{plot_primers()}},
+\code{\link[=plot_self_complementarity]{plot_self_complementarity()}},
 \code{\link[=plot_snp_screen]{plot_snp_screen()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
 \code{\link[=render_design_search]{render_design_search()}}

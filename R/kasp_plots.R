@@ -958,6 +958,143 @@ plot_checks <- function(assay, limits = KASP_LIMITS) {
     )
 }
 
+#' Points of a constant-height arc (bump) spanning `[a, b]` above `y0`
+#' @keywords internal
+#' @noRd
+bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
+  t <- seq(0, pi, length.out = n)
+  tibble::tibble(
+    x = (a + b) / 2 + (b - a) / 2 * cos(t),
+    y = y0 + h * sin(t)
+  )
+}
+
+#' Hairpins, inverted repeats and SSRs within the assay oligos
+#'
+#' The sequence-level structure of the three primers side by side: each oligo's
+#' bases, its SSR spans underlined in red, and its inverted-repeat / hairpin stems
+#' drawn as arcs above the sequence.  The visual twin of the thermodynamic
+#' hairpin/SSR screen, so a primer that folds is seen, not merely scored.  Arcs
+#' are constant-height bumps (`geom_path()` over computed points) rather than
+#' `ggforce::geom_arc()` semicircles: a semicircle's height grows with the stem,
+#' which would dominate a compact strip, while the horizontal span already shows
+#' the stem length.
+#' @param assay assembled assay.
+#' @param min_armlength,max_looplength passed to [find_palindromes()].
+#' @return a `ggplot` faceted by oligo.
+#' @examples
+#' \dontrun{
+#' plot_oligo_structure(assay)
+#' }
+#' @family KASP plots
+#' @export
+plot_oligo_structure <- function(assay, min_armlength = 4L, max_looplength = 6L) {
+  p <- assay_primers(assay)
+  oligos <- tibble::tibble(oligo = names(p), seq = unname(p), L = nchar(unname(p)))
+  pals <- purrr::map(oligos$seq, function(s) {
+    find_palindromes(s, min_armlength, max_looplength)[[1L]]
+  })
+  ssrs <- purrr::map(oligos$seq, repeat_spans)
+  lab <- glue::glue(
+    "{oligos$oligo}  {purrr::map_int(pals, nrow)} hairpin / {purrr::map_int(ssrs, nrow)} SSR"
+  )
+  panel_of <- function(oligo) lab[match(oligo, oligos$oligo)]
+
+  # one row of letters per oligo, red where an SSR span sits
+  letters <- purrr::pmap(oligos, function(oligo, seq, L) {
+    colour <- rep("grey45", L)
+    sp <- repeat_spans(seq)
+    if (nrow(sp)) {
+      idx <- unique(purrr::list_c(purrr::map(seq_len(nrow(sp)), function(j) sp[j, 1L]:sp[j, 2L])))
+      colour[idx[idx >= 1L & idx <= L]] <- "#d7191c"
+    }
+    tibble::tibble(
+      panel = panel_of(oligo), oligo = oligo, x = seq_len(L),
+      letter = strsplit(seq, "")[[1L]], colour = colour
+    )
+  }) |>
+    purrr::list_rbind()
+  letters$panel <- factor(letters$panel, levels = lab)
+
+  ssr <- purrr::imap(ssrs, function(sp, i) {
+    if (!nrow(sp)) {
+      return(NULL)
+    }
+    tibble::tibble(panel = lab[i], x = sp[, 1L], xend = sp[, 2L])
+  }) |>
+    purrr::list_rbind()
+
+  arcs <- purrr::imap(pals, function(h, i) {
+    if (!nrow(h)) {
+      return(NULL)
+    }
+    purrr::pmap(h, function(start, end, width) {
+      dplyr::mutate(bump_points(start, end), panel = lab[i], arc = paste(lab[i], start, end))
+    }) |>
+      purrr::list_rbind()
+  }) |>
+    purrr::list_rbind()
+
+  gg <- ggplot2::ggplot(letters, ggplot2::aes(
+    x = .data$x, y = 0, label = .data$letter, colour = .data$colour
+  )) +
+    ggplot2::geom_text(family = "mono", size = 2.0) +
+    ggplot2::scale_colour_identity()
+  if (nrow(ssr)) {
+    gg <- gg + ggplot2::geom_segment(
+      data = ssr,
+      ggplot2::aes(x = .data$x - 0.45, xend = .data$xend + 0.45, y = -0.45, yend = -0.45),
+      colour = "#d7191c", linewidth = 1.5
+    )
+  }
+  if (nrow(arcs)) {
+    gg <- gg + ggplot2::geom_path(
+      data = arcs,
+      ggplot2::aes(x = .data$x, y = .data$y, group = .data$arc),
+      colour = "#4477aa", alpha = 0.75, linewidth = 0.4
+    )
+  }
+  gg +
+    ggplot2::facet_grid(panel ~ ., scales = "free_x") +
+    ggplot2::scale_x_continuous(breaks = NULL) +
+    ggplot2::scale_y_continuous(limits = c(-0.9, 2.2), breaks = NULL) +
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme_minimal(base_size = 7) +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      strip.text.y = ggplot2::element_text(angle = 0, size = 6.5)
+    )
+}
+
+#' Self-complementarity dot-plot of one oligo
+#'
+#' Plots every position pair that can Watson-Crick pair inside the same oligo
+#' (`i` pairs `j` when base `i` is the complement of base `j`).  A hairpin shows
+#' as an off-diagonal block; the closer the block sits to the main diagonal, the
+#' tighter its stem/loop.  Sequence-level, so it complements the thermodynamic
+#' hairpin free energy with the raw pairing pattern.
+#' @param seq one oligo, 5'->3'.
+#' @return a `ggplot` dot-plot.
+#' @examples
+#' plot_self_complementarity("GAAGGTGACCAAGTTCATGCT")
+#' @family KASP plots
+#' @export
+plot_self_complementarity <- function(seq) {
+  seq <- as.character(seq)[1L]
+  b <- strsplit(seq, "")[[1L]]
+  # i pairs j when base i is the complement of base j
+  good <- outer(b, chartr("ACGT", "TGCA", b), "==")
+  hit <- which(good, arr.ind = TRUE)
+  n <- length(b)
+  ggplot2::ggplot(tibble::tibble(x = hit[, 1L], y = hit[, 2L]), ggplot2::aes(x = .data$x, y = .data$y)) +
+    ggplot2::geom_tile(width = 0.9, height = 0.9, fill = "#4477aa") +
+    ggplot2::geom_abline(slope = 1, intercept = 0, colour = "grey70", linewidth = 0.2) +
+    ggplot2::coord_equal(xlim = c(0.5, n + 0.5), ylim = c(0.5, n + 0.5)) +
+    ggplot2::labs(x = "position", y = "position") +
+    ggplot2::theme_minimal(base_size = 7) +
+    ggplot2::theme(panel.grid = ggplot2::element_blank())
+}
+
 #' Gene model with the 1001-Genomes variant track + inset of the target region
 #' @param gene gene record.
 #' @param variants variant table.
