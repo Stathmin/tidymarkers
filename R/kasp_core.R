@@ -87,6 +87,11 @@ KASP_LIMITS <- list(
   footprint_dropout = 0.10 # expected fraction of templates lost to footprint variants
 )
 
+# The AS-primer lengths the KASP engine designs (design_as_primers()'s default).
+# The largest is the greatest reach a primer can have from the target - the
+# half-width of the "primer window" haplotype_groups() keys on.
+KASP_AS_LENGTHS <- 20:27L
+
 #' OligoArrayAux duplex / hairpin free energy
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or

@@ -58,6 +58,7 @@ hp$haplotypes
 Other KASP haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=kasp_chunk]{kasp_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},

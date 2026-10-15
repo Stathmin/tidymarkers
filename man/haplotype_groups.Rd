@@ -4,7 +4,7 @@
 \alias{haplotype_groups}
 \title{Group haplotypes by the alleles within a window around the target}
 \usage{
-haplotype_groups(haplotypes, snp, window = 30L)
+haplotype_groups(haplotypes, snp, window = NULL)
 }
 \arguments{
 \item{haplotypes}{a tidy haplotype table (\code{haplotype}, \code{freq}, \code{chrom}, \code{pos},
@@ -12,7 +12,8 @@ haplotype_groups(haplotypes, snp, window = 30L)
 
 \item{snp}{one-row target (\code{pos}).}
 
-\item{window}{half-width (bp) of the primer window around the target.}
+\item{window}{half-width (bp) of the primer window around the target; \code{NULL}
+uses the longest KASP AS primer (\link{KASP_AS_LENGTHS}).}
 }
 \value{
 a tibble \code{haplotype}, \code{group} (the group's allele signature).
@@ -34,6 +35,7 @@ haplotype_groups(haplotypes, snp)
 Other KASP haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
 \code{\link[=kasp_chunk]{kasp_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},

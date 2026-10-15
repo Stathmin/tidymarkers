@@ -75,53 +75,25 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   }
   strand <- base$strand
   h <- hv$haplotypes
-  # pass 1: ALT haplotypes that carry the same alleles in the primer window are
-  # the same template - design once per window group
-  hg <- haplotype_groups(h, snp, window = 30L)
-  hg <- hg[hg$haplotype %in% alt_hap, , drop = FALSE]
-  sigs <- unique(hg$group)
-  rep_hap <- vapply(sigs, function(g) hg$haplotype[hg$group == g][1L], character(1))
-  designs <- purrr::map(seq_along(sigs), function(i) {
-    hpk <- rep_hap[i]
-    lk <- NULL
-    if (!is.null(hv$linked)) {
+  # the shared two-pass engine: one ALT primer per primer-window group, merged by
+  # the footprint each primer actually covers (see haplotype_cover())
+  cover <- haplotype_cover(h, snp, function(hpk) {
+    lk <- if (!is.null(hv$linked)) {
       d <- hv$linked[hv$linked$haplotype == hpk, c("target", "linked"), drop = FALSE]
-      if (nrow(d)) lk <- d
+      if (nrow(d)) d else NULL
+    } else {
+      NULL
     }
     suppressWarnings(assemble_kasp_assay(
       genome, snp,
       variants = hv$variants, linked = lk, strands = strand, ...
     ))
   })
-  keep <- vapply(designs, is_target_designable, logical(1))
-  designs <- designs[keep]
-  reps <- rep_hap[keep]
-  # pass 2: a designed primer covers every ALT haplotype with the same variants
-  # *under its footprint* - so haplotypes that differ only outside the primer
-  # share one primer (the primer-window equivalence, not the whole window)
-  group_of <- vapply(alt_hap, function(hp) {
-    for (k in seq_along(designs)) {
-      aa <- designs[[k]]$assay[1L, ]
-      s <- hap_signature(h, hp, snp, aa$as_start, aa$as_end)
-      if (identical(s, hap_signature(h, reps[k], snp, aa$as_start, aa$as_end))) {
-        return(s)
-      }
-    }
-    NA_character_
-  }, character(1))
-  names(group_of) <- alt_hap
   alt_primers <- stats::setNames(
-    vapply(alt_hap, function(hp) {
-      for (k in seq_along(designs)) {
-        aa <- designs[[k]]$assay[1L, ]
-        s <- hap_signature(h, hp, snp, aa$as_start, aa$as_end)
-        if (identical(s, hap_signature(h, reps[k], snp, aa$as_start, aa$as_end))) {
-          return(aa$as_alt[1L])
-        }
-      }
-      NA_character_
+    vapply(cover$groups$design, function(d) {
+      if (is.null(d)) NA_character_ else d$assay$as_alt[1L]
     }, character(1)),
-    alt_hap
+    cover$groups$haplotype
   )
   ok <- !is.na(alt_primers)
   # the *joint* pool: the shared REF primer + COM + one ALT primer per group
@@ -134,7 +106,7 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   pool_ok <- is.null(compat) || all(compat$pass)
   out <- list(
     snp = snp, haplotypes = h, alt = alt_hap, base = base,
-    haplotype_groups = tibble::tibble(group = unname(group_of), haplotype = alt_hap),
+    haplotype_groups = tibble::tibble(group = cover$groups$group, haplotype = cover$groups$haplotype),
     alt_primers = alt_primers, pool = prim, compatibility = compat,
     verdict = if (any(ok) && pool_ok) "pass" else if (any(ok)) "warn" else "fail"
   )

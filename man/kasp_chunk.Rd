@@ -34,6 +34,7 @@ chunk_variants(ch)
 Other KASP haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
 \code{\link[=plot_alignment]{plot_alignment()}},

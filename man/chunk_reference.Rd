@@ -38,6 +38,7 @@ chunk_variants(kasp_chunk(hp, from = 350, to = 550))
 \seealso{
 Other KASP haplotypes:
 \code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
 \code{\link[=kasp_chunk]{kasp_chunk()}},

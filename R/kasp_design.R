@@ -177,7 +177,7 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @family KASP design
 #' @export
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
-                              lengths = 20:27, stab_ats = c(NA, 2L, 3L),
+                              lengths = KASP_AS_LENGTHS, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
                               linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
   ref_len <- nchar(ref)

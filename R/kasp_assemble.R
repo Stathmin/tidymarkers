@@ -754,7 +754,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     haplotype_hits = if (is.null(hap)) {
       NULL
     } else {
-      haplotype_hits(haplotypes, snp, best$as_start, best$as_end, hap$alt)
+      haplotype_hits(
+        haplotypes, snp, best$as_start, best$as_end,
+        alt_hap = hap$alt,
+        alt_start = best$as_alt_start, alt_end = best$as_alt_end,
+        alt_baked = lo$link_pos
+      )
     },
     tails = c(
       AS_ref = paste0(KASP_TAIL_FAM, best$as_ref),

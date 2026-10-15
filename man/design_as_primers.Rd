@@ -10,7 +10,7 @@ design_as_primers(
   ref,
   alt,
   strands = c("+", "-"),
-  lengths = 20:27,
+  lengths = KASP_AS_LENGTHS,
   stab_ats = c(NA, 2L, 3L),
   temp = PCR_EFF$temp,
   P = PCR_EFF$P,
