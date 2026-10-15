@@ -81,7 +81,7 @@ kasp_variant_alleles <- function(variants, snp, seq, off) {
       bi <- p - off + 1L
       ok <- !is.na(bi) & bi >= 1L & bi <= length(seq)
       base <- rep(NA_character_, nrow(vsub))
-      base[ok] <- substring(as.character(seq), bi[ok], bi[ok])
+      if (any(ok)) base[ok] <- substring(as.character(seq), bi[ok], bi[ok])
       valt <- purrr::map2_chr(vsub$ref_genome, base, function(al, b) {
         a <- setdiff(as.character(al), b)
         a <- a[nzchar(a) & grepl("^[ACGTNacgtn]+$", a)]

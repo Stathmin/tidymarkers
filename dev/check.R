@@ -70,6 +70,12 @@ step("style (styler)", function() {
 
 step("lintr", function() {
   if (!requireNamespace("lintr", quietly = TRUE)) return(message("  skip (lintr not installed)"))
+  # object_usage_linter resolves package-internal symbols from a *loaded* build,
+  # and this step runs before the install smoke; without loading the source a
+  # stale/absent install floods every internal call with "no visible binding"
+  if (requireNamespace("pkgload", quietly = TRUE)) {
+    suppressMessages(pkgload::load_all(quiet = TRUE))
+  }
   l <- lintr::lint_package()
   if (length(l)) {
     print(l)

@@ -932,6 +932,27 @@ A–P — реализовано или оценено; **Q** — локализ
   (Современный эквивалент — `withr::local_envvar(..., .local_envir = teardown_env())`, но
   текущее поведение корректно.)
 
+## X. Слой плана: `kasp_plan()` -> `kasp_solve()` -> `kasp_tubes()` -> export  [сделано]
+
+Пользовательский фасад над движком — «грамматика» в духе ggplot (слои складываются `+`,
+`kasp_solve()` — глагол-вычислитель):
+- **target layer:** `kasp_plan(genome)` + `kasp_targets(data | chrom,pos,ref,alt)`
+  (панель `kasp_example()` несёт `id`→label и `alt2`) + `kasp_context(variants, haplotypes)`.
+- **tech layer:** `kasp_tech(schemes|preset|exclude, costs = kasp_costs(...))` — пресеты
+  `kasp/gel/lab/field`; схема стоимостей (KASP=1, фрагмент=10…) задаёт порядок обхода;
+  кастомная `design_<m>_marker()` + `scheme_def_<m>()` подхватывается автоматически.
+- **solver layer:** `kasp_solve(plan, ..., cache=, all=)` — обходит схемы от дешёвой к
+  дорогой и **останавливается** на первой годной (KASP выйграл ⇒ фрагмент не запускается);
+  memo-кэш по (target, scheme, knobs); tidy `report` + `attempts`.
+- **tube layer:** `kasp_tubes(solved)` — `marker_primers()` (S3 над всеми классами) +
+  `primer_set_compatibility()` по всем парам МЕЖДУ маркерами (кросс-димеры; self — свойство
+  одного праймера и уже проверено при дизайне).
+- **viz/export:** `kasp_plot(solved)` (плитки target×chemistry), `kasp_export(dir)`.
+- Демо: `inst/scripts/pipeline.R`; тесты `test-plan.R` на реальной панели `kasp_example()`.
+- Попутно исправлено: `print.kasp_lax` (no-haplotype форма), `assemble_kasp_assay()` падал
+  на variants другого хромосома (`substring(integer(0))`), `dev/check.R` lintr теперь
+  `load_all()`-ит исходник (иначе «no visible binding» из-за неустановленного пакета).
+
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).
 - Zhang, Yang & Wen, *BMC Bioinformatics* 2025, **26**:292

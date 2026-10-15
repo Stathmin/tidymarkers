@@ -112,13 +112,17 @@ print.kasp_lax <- function(x, ...) {
     " | ", length(x$alt), " ALT haplotype(s) | verdict ", x$verdict, "\n",
     sep = ""
   )
-  for (hp in x$alt) {
-    p <- x$alt_primers[[hp]]
-    cat("  haplotype ", hp, " ALT primer ",
-      if (is.na(p)) "not designed" else p,
-      "\n",
-      sep = ""
-    )
+  if (is.null(x$alt_primers)) {
+    cat("  plain ALT primer (no haplotype table given)\n")
+  } else {
+    for (hp in x$alt) {
+      p <- x$alt_primers[[hp]]
+      cat("  haplotype ", hp, " ALT primer ",
+        if (is.null(p) || is.na(p)) "not designed" else p,
+        "\n",
+        sep = ""
+      )
+    }
   }
   if (!is.null(x$pool)) {
     cat("  shared: REF ", x$pool[["AS_ref"]], " COM ", x$pool[["COM"]], "\n", sep = "")
