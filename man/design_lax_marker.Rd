@@ -19,11 +19,12 @@ a single pure-KASP primer (no linked variants).}
 }
 \value{
 a \code{kasp_lax} list: \code{snp}, \code{haplotypes}, \code{alt} (the ALT haplotype
-names), \code{assays} (one assembled assay per ALT haplotype), \code{designed} (those
-that designed), \code{pool} + \code{compatibility} (the \emph{joint} check of every primer
-that would share the tube, see \code{\link[=primer_set_compatibility]{primer_set_compatibility()}}) and \code{verdict}
-(\code{"pass"} only when every per-haplotype primer designs \emph{and} the joint pool
-is free of dimers/hairpins).
+names), \code{base} (the shared backbone - one ordinary KASP assembly whose REF
+primer and COM are reused), \code{alt_primers} (one ALT primer per haplotype, on
+the base's strand; \code{NA} when a haplotype did not design), \code{pool} +
+\code{compatibility} (the \emph{joint} check of the shared REF + shared COM + every ALT
+primer, see \code{\link[=primer_set_compatibility]{primer_set_compatibility()}}) and \code{verdict} (\code{"pass"} only when
+at least one haplotype designs \emph{and} the joint pool is free of dimers).
 }
 \description{
 The haplotype-aware member of the KASP family.  Given a tidy haplotype table

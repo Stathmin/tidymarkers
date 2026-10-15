@@ -29,22 +29,21 @@ test_that("design_lax_marker designs one ALT primer per ALT haplotype", {
   m <- lax_fixture()
   x <- suppressWarnings(design_lax_marker(m$genome, m$snp, m$haps, flank = 150L, cores = 1L))
   expect_s3_class(x, "kasp_lax")
-  # two ALT haplotypes, each with its own assembled assay
+  # two ALT haplotypes, one ALT primer each, on the shared backbone
   expect_setequal(x$alt, c("H1", "H2"))
-  expect_length(x$assays, 2L)
-  expect_true(all(x$designed %in% x$alt))
+  expect_length(x$alt_primers, 2L)
+  expect_true(any(!is.na(x$alt_primers)))
   expect_output(print(x), "kasp_lax")
-  # the joint pool of every primer is checked for dimers/hairpins, not just each
-  # haplotype's own triplet
+  # one shared REF primer and one shared COM - the haplotypes vary only the ALT
+  expect_equal(sum(names(x$pool) == "AS_ref"), 1L)
+  expect_equal(sum(names(x$pool) == "COM"), 1L)
+  expect_lte(length(x$pool), 4L) # REF + COM + up to two ALT primers
+  # the joint pool of every primer is checked for dimers/hairpins
   expect_true(is.data.frame(x$compatibility))
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(x$compatibility)))
-  expect_true(length(x$pool) >= length(x$designed))
-  # each assay baked *its own* linked variant into the ALT primer, so the two ALT
-  # primers are not the same sequence
-  if (length(x$designed) == 2L) {
-    p1 <- x$assays[["H1"]]$assay$as_alt[1L]
-    p2 <- x$assays[["H2"]]$assay$as_alt[1L]
-    expect_false(identical(p1, p2))
+  # each designed ALT primer carries *its own* linked variant, so they differ
+  if (sum(!is.na(x$alt_primers)) == 2L) {
+    expect_false(identical(x$alt_primers[["H1"]], x$alt_primers[["H2"]]))
   }
 })
 

@@ -32,11 +32,12 @@
 #'   a single pure-KASP primer (no linked variants).
 #' @param ... passed to [assemble_kasp_assay()].
 #' @return a `kasp_lax` list: `snp`, `haplotypes`, `alt` (the ALT haplotype
-#'   names), `assays` (one assembled assay per ALT haplotype), `designed` (those
-#'   that designed), `pool` + `compatibility` (the *joint* check of every primer
-#'   that would share the tube, see [primer_set_compatibility()]) and `verdict`
-#'   (`"pass"` only when every per-haplotype primer designs *and* the joint pool
-#'   is free of dimers/hairpins).
+#'   names), `base` (the shared backbone - one ordinary KASP assembly whose REF
+#'   primer and COM are reused), `alt_primers` (one ALT primer per haplotype, on
+#'   the base's strand; `NA` when a haplotype did not design), `pool` +
+#'   `compatibility` (the *joint* check of the shared REF + shared COM + every ALT
+#'   primer, see [primer_set_compatibility()]) and `verdict` (`"pass"` only when
+#'   at least one haplotype designs *and* the joint pool is free of dimers).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -61,36 +62,45 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
     cli::cli_inform(gettext("No ALT haplotype carries the target allele; nothing to design."))
     return(NULL)
   }
-  assays <- purrr::map(alt_hap, function(hp) {
+  # one shared backbone for the whole tube: the REF primer and the COM come from a
+  # single ordinary KASP assembly, and only the ALT primer varies per haplotype.
+  # Forcing every ALT primer onto the base's strand keeps them compatible with the
+  # shared COM (they are the forward/reverse partner of the same reverse primer).
+  base <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = hv$variants, ...))
+  if (!is_target_designable(base)) {
+    return(structure(list(
+      snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, base = base,
+      alt_primers = NULL, pool = NULL, compatibility = NULL, verdict = "fail"
+    ), class = "kasp_lax"))
+  }
+  strand <- base$strand
+  alt_primers <- purrr::map(alt_hap, function(hp) {
     lk <- NULL
     if (!is.null(hv$linked)) {
       d <- hv$linked[hv$linked$haplotype == hp, c("target", "linked"), drop = FALSE]
       if (nrow(d)) lk <- d
     }
-    suppressWarnings(assemble_kasp_assay(genome, snp, variants = hv$variants, linked = lk, ...))
+    a <- suppressWarnings(assemble_kasp_assay(
+      genome, snp,
+      variants = hv$variants, linked = lk, strands = strand, ...
+    ))
+    if (!is_target_designable(a)) NA_character_ else a$assay$as_alt[1L]
   })
-  names(assays) <- alt_hap
-  ok <- vapply(assays, is_target_designable, logical(1))
-  # the *joint* pool: every primer that would sit in the one tube (the shared REF
-  # primer, each haplotype's ALT primer and each COM) must also be free of dimers
-  # and hairpins - a per-haplotype assay is blind to the rest of the pool
-  prim <- unlist(lapply(names(assays), function(hp) {
-    a <- assays[[hp]]
-    if (inherits(a, "kasp_doomed")) {
-      return(NULL)
-    }
-    stats::setNames(
-      c(a$assay$as_ref[1L], a$assay$as_alt[1L], a$assay$com[1L]),
-      c(paste0("AS_ref_", hp), paste0("AS_alt_", hp), paste0("COM_", hp))
-    )
-  }), use.names = TRUE)
-  prim <- prim[!duplicated(prim)] # the shared REF/COM primers appear once
+  names(alt_primers) <- alt_hap
+  ok <- !is.na(alt_primers)
+  # the *joint* pool: the shared REF primer + shared COM + one ALT primer per
+  # haplotype - the only primers that would sit in the one tube
+  prim <- c(
+    AS_ref = base$assay$as_ref[1L], COM = base$assay$com[1L],
+    stats::setNames(alt_primers[ok], paste0("AS_alt_", alt_hap[ok]))
+  )
+  prim <- prim[!duplicated(prim)]
   compat <- if (length(prim) > 1L) primer_set_compatibility(prim) else NULL
   pool_ok <- is.null(compat) || all(compat$pass)
   out <- list(
-    snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, assays = assays,
-    designed = alt_hap[ok], pool = prim, compatibility = compat,
-    verdict = if (all(ok) && pool_ok) "pass" else if (any(ok)) "warn" else "fail"
+    snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, base = base,
+    alt_primers = alt_primers, pool = prim, compatibility = compat,
+    verdict = if (any(ok) && pool_ok) "pass" else if (any(ok)) "warn" else "fail"
   )
   structure(out, class = "kasp_lax")
 }
@@ -103,12 +113,15 @@ print.kasp_lax <- function(x, ...) {
     sep = ""
   )
   for (hp in x$alt) {
-    a <- x$assays[[hp]]
-    cat("  haplotype ", hp, " -> ",
-      if (inherits(a, "kasp_doomed")) paste("doomed:", a$reason) else "ok",
+    p <- x$alt_primers[[hp]]
+    cat("  haplotype ", hp, " ALT primer ",
+      if (is.na(p)) "not designed" else p,
       "\n",
       sep = ""
     )
+  }
+  if (!is.null(x$pool)) {
+    cat("  shared: REF ", x$pool[["AS_ref"]], " COM ", x$pool[["COM"]], "\n", sep = "")
   }
   if (!is.null(x$compatibility)) {
     bad <- x$compatibility[!x$compatibility$pass, , drop = FALSE]
