@@ -45,6 +45,7 @@ Other KASP design:
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=design_lax_marker]{design_lax_marker()}},
 \code{\link[=design_marker]{design_marker()}},
+\code{\link[=kasp_readout]{kasp_readout()}},
 \code{\link[=kasp_site_class]{kasp_site_class()}},
 \code{\link[=pick_target_snp]{pick_target_snp()}},
 \code{\link[=rescue_strategy]{rescue_strategy()}},

@@ -43,8 +43,9 @@ design_taqman_marker(
 \value{
 a \code{kasp_taqman} list (\code{snp}, \code{primers}, \code{probes} - one row per allele -,
 \code{amplicon}, \code{compatibility} - the joint dimer/hairpin screen over the pair and
-both probes), or \code{NULL} (with a message) when no pair or probe passes the
-filters.
+both probes, and \code{readout} - the per-allele probe discrimination when
+OligoArrayAux is available, see \code{\link[=kasp_readout]{kasp_readout()}}), or \code{NULL} (with a message)
+when no pair or probe passes the filters.
 }
 \description{
 A single flanking primer pair amplifies a short amplicon and \strong{two

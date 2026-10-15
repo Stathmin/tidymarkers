@@ -66,8 +66,9 @@
 #'   8 is used as the floor).
 #' @return a `kasp_dpcr` list (`snp`, `primers`, `probes` - one allele-specific
 #'   probe per allele - `amplicon`, `compatibility` - the joint dimer/hairpin
-#'   screen over the pair and both probes), or `NULL` (with a message) when no
-#'   primer pair / probe passes the filters.
+#'   screen over the pair and both probes, and `readout` - the per-allele probe
+#'   discrimination when OligoArrayAux is available, see [kasp_readout()]), or
+#'   `NULL` (with a message) when no primer pair / probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -144,6 +145,21 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
     probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
   ))
+  # the readout this scheme *does* model: per-allele probe discrimination
+  if (has_oligoarrayaux()) {
+    p_start <- probe$start
+    p_end <- probe$end
+    p_strand <- probe$strand
+    p_ref <- probe$primer
+    out$readout <- probe_discrimination(
+      tmpl$seq, si,
+      tibble::tibble(
+        allele = c("REF", "ALT"), probe = c(p_ref, alt_probe),
+        start = p_start, end = p_end, strand = p_strand
+      ),
+      alt
+    )
+  }
   structure(out, class = "kasp_dpcr")
 }
 

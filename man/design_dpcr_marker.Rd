@@ -41,8 +41,9 @@ design_dpcr_marker(
 \value{
 a \code{kasp_dpcr} list (\code{snp}, \code{primers}, \code{probes} - one allele-specific
 probe per allele - \code{amplicon}, \code{compatibility} - the joint dimer/hairpin
-screen over the pair and both probes), or \code{NULL} (with a message) when no
-primer pair / probe passes the filters.
+screen over the pair and both probes, and \code{readout} - the per-allele probe
+discrimination when OligoArrayAux is available, see \code{\link[=kasp_readout]{kasp_readout()}}), or
+\code{NULL} (with a message) when no primer pair / probe passes the filters.
 }
 \description{
 The digital-PCR analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: one flanking pair plus

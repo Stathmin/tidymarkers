@@ -82,8 +82,9 @@ taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
 #' @param ... reserved for future design options.
 #' @return a `kasp_taqman` list (`snp`, `primers`, `probes` - one row per allele -,
 #'   `amplicon`, `compatibility` - the joint dimer/hairpin screen over the pair and
-#'   both probes), or `NULL` (with a message) when no pair or probe passes the
-#'   filters.
+#'   both probes, and `readout` - the per-allele probe discrimination when
+#'   OligoArrayAux is available, see [kasp_readout()]), or `NULL` (with a message)
+#'   when no pair or probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -154,6 +155,17 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
     probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
   ))
+  # the readout this scheme *does* model: per-allele probe discrimination
+  if (has_oligoarrayaux()) {
+    out$readout <- probe_discrimination(
+      tmpl$seq, si,
+      tibble::tibble(
+        allele = c("REF", "ALT"), probe = c(ref_probe, alt_probe),
+        start = best$start, end = best$end, strand = "+"
+      ),
+      alt
+    )
+  }
   structure(out, class = "kasp_taqman")
 }
 
