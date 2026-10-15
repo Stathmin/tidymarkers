@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-15 12:20+0300\n"
+"POT-Creation-Date: 2026-10-15 12:30+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -323,11 +323,17 @@ msgstr ""
 msgid "No indel AS-primer placement fit inside the design window."
 msgstr ""
 
-#: kasp_dpcr.R:87
+#: kasp_dpcr.R:86
+msgid ""
+"dPCR allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: kasp_dpcr.R:99
 msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
 msgstr ""
 
-#: kasp_dpcr.R:92
+#: kasp_dpcr.R:104
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr ""
 

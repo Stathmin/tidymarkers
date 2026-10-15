@@ -39,16 +39,20 @@ design_dpcr_marker(
 8 is used as the floor).}
 }
 \value{
-a \code{kasp_dpcr} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},
-\code{compatibility} - the joint dimer/hairpin screen over the pair and the probe),
-or \code{NULL} (with a message) when no primer pair / probe passes the filters.
+a \code{kasp_dpcr} list (\code{snp}, \code{primers}, \code{probes} - one allele-specific
+probe per allele - \code{amplicon}, \code{compatibility} - the joint dimer/hairpin
+screen over the pair and both probes), or \code{NULL} (with a message) when no
+primer pair / probe passes the filters.
 }
 \description{
-The digital-PCR analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: one flanking pair plus a
-single fluorescent hydrolysis probe that spans the variant between the
-primers, so a droplet counts as positive when the target molecule is present.
-The design optimises the probe's constraints - a short amplicon that still
-leaves room for the probe, and a probe Tm about 8-10 C above the primers.
+The digital-PCR analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: one flanking pair plus
+\strong{two allele-specific hydrolysis probes} (one per allele, different dyes -
+FAM/HEX) that span the variant between the primers, so a droplet's dye colour
+reads the allele (co-dominant).  A single generic probe would only report the
+locus's presence, not the genotype.  The design optimises the probe's
+constraints - a short amplicon that still leaves room for the probe, and a
+probe Tm about 8-10 C above the primers - then swaps the variant base to build
+the ALT probe from the REF one.
 }
 \details{
 The probe is a hydrolysis (TaqMan-style) probe: the polymerase 5'->3'

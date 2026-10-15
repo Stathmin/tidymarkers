@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-15 11:35+0300\n"
+"POT-Creation-Date: 2026-10-15 12:30+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -33,31 +33,31 @@ msgstr "Скачиваю GTF Ensembl Plants в {.path {cache}}."
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr "Собираю EnsDb (однократно) из {.file {fs::path_file(gtf)}}."
 
-#: kasp_arms.R:40
+#: kasp_arms.R:41
 msgid "tetra-primer ARMS is implemented for single-base substitutions only."
 msgstr "тетра-праймерный ARMS реализован только для однонуклеотидных замен."
 
-#: kasp_arms.R:46
+#: kasp_arms.R:47
 msgid "No outer primer pair passed the Tm/GC filters."
 msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
 
-#: kasp_arms.R:54
+#: kasp_arms.R:55
 msgid "No inner allele-specific primer passed the GC/Tm filter."
 msgstr "Ни один внутренний аллель-специфичный праймер не прошёл фильтр GC/Tm."
 
-#: kasp_arms.R:67
+#: kasp_arms.R:68
 msgid "An inner primer is missing on one strand."
 msgstr "Внутренний праймер отсутствует на одной из цепей."
 
-#: kasp_arms.R:74
+#: kasp_arms.R:75
 msgid "The two diagnostic bands are closer than `min_band_gap`."
 msgstr "Две диагностические полосы ближе, чем `min_band_gap`."
 
-#: kasp_arms.R:120
+#: kasp_arms.R:126
 msgid "to draw the ARMS gel"
 msgstr "для отрисовки геля ARMS"
 
-#: kasp_arms.R:122
+#: kasp_arms.R:128
 msgid "`marker` must be a kasp_arms object (see design_arms_marker())."
 msgstr "`marker` должен быть объектом kasp_arms (см. design_arms_marker())."
 
@@ -258,25 +258,29 @@ msgstr "для отрисовки геля CAPS"
 msgid "`marker` must be a kasp_caps object (see design_caps_marker())."
 msgstr "`marker` должен быть объектом kasp_caps (см. design_caps_marker())."
 
-#: kasp_castpcr.R:126
+#: kasp_castpcr.R:130
 msgid "castPCR is implemented for single-base substitutions only."
 msgstr "castPCR реализован только для однонуклеотидных замен."
 
-#: kasp_castpcr.R:139
+#: kasp_castpcr.R:143
 msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
-msgstr "Ни один аллель-специфичный праймер не прошёл фильтры GC/Tm для castPCR."
+msgstr ""
+"Ни один аллель-специфичный праймер не прошёл фильтры GC/Tm для castPCR."
 
-#: kasp_castpcr.R:157
+#: kasp_castpcr.R:161
 msgid "No room upstream of the allele-specific primer for a common primer."
-msgstr "Недостаточно места выше по последовательности от аллель-специфичного праймера для общего праймера."
+msgstr ""
+"Недостаточно места выше по последовательности от аллель-специфичного "
+"праймера для общего праймера."
 
-#: kasp_castpcr.R:168
+#: kasp_castpcr.R:172
 msgid "No common primer passed the Tm/GC filters within the castPCR amplicon."
 msgstr "Ни один общий праймер не прошёл фильтры Tm/GC в ампликоне castPCR."
 
-#: kasp_castpcr.R:177
+#: kasp_castpcr.R:181
 msgid "No hydrolysis probe covering the variant passed the Tm/GC filters."
-msgstr "Ни одна гидролизующая проба, покрывающая вариант, не прошла фильтры Tm/GC."
+msgstr ""
+"Ни одна гидролизующая проба, покрывающая вариант, не прошла фильтры Tm/GC."
 
 #: kasp_core.R:117
 msgid "OligoArrayAux ('{bin}') was not found."
@@ -325,9 +329,10 @@ msgstr "Возможно, изменились дефлайны Ensembl."
 
 #: kasp_crispr.R:153
 msgid "No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."
-msgstr "Ни один спейсер гайда не прошёл фильтры PAM/GC для этого CRISPR-Dx-маркера."
+msgstr ""
+"Ни один спейсер гайда не прошёл фильтры PAM/GC для этого CRISPR-Dx-маркера."
 
-#: kasp_crispr.R:174
+#: kasp_crispr.R:169
 msgid ""
 "A guide spacer was found, but no pre-amplification pair passed the Tm/GC "
 "filters."
@@ -369,10 +374,17 @@ msgstr ""
 "Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
 
 #: kasp_dpcr.R:86
+msgid ""
+"dPCR allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+"Аллельная дискриминация dPCR реализована только для однонуклеотидных замен."
+
+#: kasp_dpcr.R:99
 msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
 msgstr "Ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC для dPCR."
 
-#: kasp_dpcr.R:91
+#: kasp_dpcr.R:104
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr "Ни одна гидролизующая проба не прошла фильтры состава/Tm для dPCR."
 
@@ -477,14 +489,14 @@ msgstr ""
 msgid "Bundled example data not found."
 msgstr "Встроенные примеры данных не найдены."
 
-#: kasp_lamp.R:204
+#: kasp_lamp.R:206
 msgid ""
 "No FIP/BIP inner primer pair passed the loop/Tm/structure filters for LAMP."
 msgstr ""
-"Ни одна внутренняя пара праймеров FIP/BIP не прошла фильтры "
-"петли/Tm/структуры для LAMP."
+"Ни одна внутренняя пара праймеров FIP/BIP не прошла фильтры петли/Tm/"
+"структуры для LAMP."
 
-#: kasp_lamp.R:219
+#: kasp_lamp.R:221
 msgid ""
 "No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for "
 "LAMP."
@@ -492,11 +504,11 @@ msgstr ""
 "Ни одна внешняя пара F3/B3 не прошла фильтры Tm/GC, структуры и ампликона "
 "для LAMP."
 
-#: kasp_lamp.R:228
+#: kasp_lamp.R:230
 msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
 msgstr "Вариант не попадает между F2 и B2 (петлевая область LAMP)."
 
-#: kasp_lax.R:58
+#: kasp_lax.R:62
 msgid "No ALT haplotype carries the target allele; nothing to design."
 msgstr "Ни один ALT-гаплотип не несёт целевой аллель; проектировать нечего."
 
@@ -517,7 +529,7 @@ msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 "Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
-#: kasp_object.R:137 kasp_strategy.R:72
+#: kasp_object.R:137 kasp_strategy.R:91
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
@@ -525,22 +537,21 @@ msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}
 msgid "Designing KASP markers"
 msgstr "Дизайн KASP-маркеров"
 
-#: kasp_rpa.R:283
+#: kasp_rpa.R:284
 msgid ""
 "RPA discrimination here is implemented for single-base substitutions only."
 msgstr ""
-"Различение аллелей методом RPA реализовано только для однонуклеотидных "
-"замен."
+"Различение аллелей методом RPA реализовано только для однонуклеотидных замен."
 
-#: kasp_rpa.R:294
+#: kasp_rpa.R:295
 msgid "No RPA primer pair passed the length/GC/amplicon filters."
 msgstr "Ни одна пара праймеров RPA не прошла фильтры длины/GC/ампликона."
 
-#: kasp_rpa.R:298
+#: kasp_rpa.R:299
 msgid "The RPA primer pair failed the structure/dimer filters."
 msgstr "Пара праймеров RPA не прошла фильтры структуры/димеров."
 
-#: kasp_rpa.R:305
+#: kasp_rpa.R:306
 msgid "No exo probe covering the variant passed the geometry filters."
 msgstr "Ни одна exo-проба, покрывающая вариант, не прошла фильтры геометрии."
 
@@ -562,8 +573,8 @@ msgstr ""
 msgid ""
 "The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
 msgstr ""
-"Пара для Sanger не даёт уникальный ампликон ({nrow(hits)} продуктов "
-"in-silico ПЦР)."
+"Пара для Sanger не даёт уникальный ампликон ({nrow(hits)} продуктов in-"
+"silico ПЦР)."
 
 #: kasp_scan.R:45 kasp_scan.R:85
 msgid "for the indexed genome scan"
@@ -662,7 +673,7 @@ msgstr ""
 "Ни один ассей не прошёл все жёсткие ограничения; возвращён наименее плохой "
 "после ослабления части."
 
-#: kasp_snapshot.R:98
+#: kasp_snapshot.R:100
 msgid ""
 "SNaPshot single-base extension is implemented for single-base substitutions "
 "only."
@@ -670,12 +681,12 @@ msgstr ""
 "Однонуклеотидное удлинение SNaPshot реализовано только для однонуклеотидных "
 "замен."
 
-#: kasp_snapshot.R:107
+#: kasp_snapshot.R:109
 msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
 msgstr ""
 "Ни одна пара для амплификации не прошла фильтры Tm/GC и длины ампликона."
 
-#: kasp_snapshot.R:121
+#: kasp_snapshot.R:123
 msgid ""
 "No extension primer ended immediately 5' of the variant within the Tm/GC "
 "filters."
@@ -705,7 +716,7 @@ msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
 msgstr ""
 "Ни одна фланкирующая пара праймеров вне повтора не прошла фильтры Tm/GC."
 
-#: kasp_strategy.R:36
+#: kasp_strategy.R:55
 msgid ""
 "Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see "
 "kasp_schemes()."
@@ -713,21 +724,20 @@ msgstr ""
 "Неизвестная схема(ы) маркера: {paste(unknown, collapse = ', ')}; см. "
 "kasp_schemes()."
 
-#: kasp_taqman.R:102
+#: kasp_taqman.R:108
 msgid ""
 "TaqMan allelic discrimination is implemented for single-base substitutions "
 "only."
 msgstr ""
-"Аллельная дискриминация TaqMan реализована только для однонуклеотидных "
-"замен."
+"Аллельная дискриминация TaqMan реализована только для однонуклеотидных замен."
 
-#: kasp_taqman.R:111
+#: kasp_taqman.R:117
 msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
 msgstr ""
 "Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для "
 "TaqMan."
 
-#: kasp_taqman.R:122
+#: kasp_taqman.R:128
 msgid "No composition- and position-clean hydrolysis probe passed the filters."
 msgstr ""
 "Ни одна гидролизующая проба, чистая по составу и положению, не прошла "

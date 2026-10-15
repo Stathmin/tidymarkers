@@ -10,13 +10,15 @@
 #  guidelines (Huggett et al., Clin Chem 2013, 59:892-902), referenced there.
 #
 #  This scheme models the hydrolysis (TaqMan-style) probe assay: ONE flanking
-#  primer pair plus ONE fluorescent probe that anneals *between* the primers and
-#  is cleaved by the polymerase 5'->3' exonuclease during extension, separating a
-#  5' reporter dye from a 3' quencher (Thermo Fisher, "How TaqMan Assays Work",
+#  primer pair plus TWO allele-specific fluorescent probes (one per allele,
+#  different dyes - FAM/HEX) that anneal *between* the primers and are cleaved by
+#  the polymerase 5'->3' exonuclease during extension, separating a 5' reporter
+#  dye from a 3' quencher (Thermo Fisher, "How TaqMan Assays Work",
 #  https://www.thermofisher.com/us/en/home/life-science/pcr/real-time-pcr/
 #  real-time-pcr-learning-center/real-time-pcr-basics/how-taqman-assays-work.html).
-#  Because the readout is end-point fluorescence, the assay is co-dominant, but
-#  the design constraints are the probe's:
+#  A single generic probe would only report presence/absence of the locus, not the
+#  allele; two allele-specific probes make the call co-dominant, as dMIQE/standard
+#  ddPCR SNP assays require.
 #
 #    * amplicon kept SHORT (the probe must fit between the primers) - ~60-120 bp,
 #      typically <= 150 bp;
@@ -37,11 +39,14 @@
 
 #' Design a dPCR hydrolysis-probe marker at a variant
 #'
-#' The digital-PCR analogue of [assemble_kasp_assay()]: one flanking pair plus a
-#' single fluorescent hydrolysis probe that spans the variant between the
-#' primers, so a droplet counts as positive when the target molecule is present.
-#' The design optimises the probe's constraints - a short amplicon that still
-#' leaves room for the probe, and a probe Tm about 8-10 C above the primers.
+#' The digital-PCR analogue of [assemble_kasp_assay()]: one flanking pair plus
+#' **two allele-specific hydrolysis probes** (one per allele, different dyes -
+#' FAM/HEX) that span the variant between the primers, so a droplet's dye colour
+#' reads the allele (co-dominant).  A single generic probe would only report the
+#' locus's presence, not the genotype.  The design optimises the probe's
+#' constraints - a short amplicon that still leaves room for the probe, and a
+#' probe Tm about 8-10 C above the primers - then swaps the variant base to build
+#' the ALT probe from the REF one.
 #'
 #' The probe is a hydrolysis (TaqMan-style) probe: the polymerase 5'->3'
 #' exonuclease cleaves it during extension, releasing a 5' reporter from a 3'
@@ -59,9 +64,10 @@
 #' @param probe_gc accepted probe GC window.
 #' @param probe_tm_margin minimal probe Tm above the primers (the ~8-10 C rule;
 #'   8 is used as the floor).
-#' @return a `kasp_dpcr` list (`snp`, `primers`, `probe`, `amplicon`,
-#'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe),
-#'   or `NULL` (with a message) when no primer pair / probe passes the filters.
+#' @return a `kasp_dpcr` list (`snp`, `primers`, `probes` - one allele-specific
+#'   probe per allele - `amplicon`, `compatibility` - the joint dimer/hairpin
+#'   screen over the pair and both probes), or `NULL` (with a message) when no
+#'   primer pair / probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -74,6 +80,12 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
                                tm_range = c(44, 50), gc_range = c(0.40, 0.60),
                                probe_lengths = 18:25, probe_gc = c(0.40, 0.60),
                                probe_tm_margin = 8) {
+  ref <- as.character(snp$ref)[1L]
+  alt <- as.character(snp$alt)[1L]
+  if (nchar(ref) != 1L || nchar(alt) != 1L) {
+    cli::cli_inform(gettext("dPCR allelic discrimination is implemented for single-base substitutions only."))
+    return(NULL)
+  }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   # the probe spans the variant between the primers, so keep the pair at least
@@ -95,20 +107,42 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
   off <- snp$pos - si
   primers$start <- primers$start + off
   primers$end <- primers$end + off
+  # the selected probe is built from the reference; the ALT probe is the same
+  # window with the variant base swapped, so the two dyes report the allele
+  vpos <- if (identical(probe$strand, "+")) si - probe$start + 1L else probe$end - si + 1L
+  alt_base <- if (identical(probe$strand, "+")) {
+    alt
+  } else {
+    as.character(Biostrings::complement(Biostrings::DNAString(alt)))
+  }
+  alt_probe <- as.character(Biostrings::replaceAt(
+    Biostrings::DNAString(probe$primer),
+    IRanges::IRanges(vpos, vpos), alt_base
+  ))
+  # hoist the scalar probe fields: a tibble() column evaluates sequentially, so a
+  # column named `probe` would shadow the `probe` row for the later columns
+  p_start <- probe$start + off
+  p_end <- probe$end + off
+  p_tm <- probe$tm
+  p_gc <- probe$gc
+  p_strand <- probe$strand
+  probes <- tibble::tibble(
+    allele = c("REF", "ALT"),
+    fluorophore = c("FAM", "HEX"),
+    probe = c(probe$primer, alt_probe),
+    start = p_start, end = p_end,
+    tm = p_tm, gc = p_gc, strand = p_strand, variant_pos = vpos
+  )
   out <- list(
     snp = snp,
     primers = primers,
-    probe = list(
-      sequence = probe$primer,
-      start = probe$start + off, end = probe$end + off,
-      tm = probe$tm, gc = probe$gc, strand = probe$strand
-    ),
+    probes = probes,
     amplicon = tibble::tibble(start = primers$start, end = primers$end)
   )
-  # pair plus the hydrolysis probe share the droplet: joint screen
+  # pair plus both allele-specific probes share the droplet: joint screen
   out$compatibility <- tube_compatibility(c(
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
-    probe = out$probe$sequence
+    probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
   ))
   structure(out, class = "kasp_dpcr")
 }
@@ -154,10 +188,10 @@ print.kasp_dpcr <- function(x, ...) {
   cat("  amplicon:", x$primers$product, "bp\n")
   cat("  F:", x$primers$forward, "(Tm", round(x$primers$tm_f, 1), "C)\n")
   cat("  R:", x$primers$reverse, "(Tm", round(x$primers$tm_r, 1), "C)\n")
-  cat(
-    "  probe:", x$probe$sequence, "(Tm", round(x$probe$tm, 1), "C,",
-    "probe-primer dTm", round(x$probe$tm - max(x$primers$tm_f, x$primers$tm_r), 1), "C)\n"
-  )
+  cat(glue::glue(
+    "  {x$probes$allele} ({x$probes$fluorophore}): {x$probes$probe} (Tm {round(x$probes$tm, 1)} C)"
+  ), sep = "\n")
+  cat("\n")
   invisible(x)
 }
 
@@ -179,7 +213,7 @@ scheme_def_dpcr <- function() {
     scheme = "dpcr",
     family = "dpcr",
     label = "dPCR hydrolysis-probe (droplet digital)",
-    discrimination = "allele-specific hydrolysis probe",
+    discrimination = "allele-specific hydrolysis probes (FAM/HEX)",
     readout = "end-point droplet fluorescence (Poisson counting)",
     zygosity = "co-dominant",
     amplicon = "short (<= 150 bp)",
