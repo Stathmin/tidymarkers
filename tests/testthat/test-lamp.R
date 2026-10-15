@@ -11,6 +11,13 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant in th
   m <- design_lamp_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "kasp_lamp")
   expect_named(m$primers, c("F3", "B3", "FIP", "BIP"))
+  # inner (two-arm fusion) primers are long, the outer F3/B3 short (LAMP rule)
+  expect_gte(nchar(m$primers$FIP), 40L)
+  expect_lte(nchar(m$primers$FIP), 50L)
+  expect_gte(nchar(m$primers$BIP), 40L)
+  expect_lte(nchar(m$primers$BIP), 50L)
+  expect_gte(nchar(m$primers$F3), 21L)
+  expect_lte(nchar(m$primers$F3), 24L)
   # the four primers are screened jointly, not each one alone
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_true(all(grepl("^[ACGT]+$", unlist(m$primers))))

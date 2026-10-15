@@ -8,7 +8,8 @@ design_lamp_marker(
   genome,
   snp,
   flank = 150L,
-  arm_lengths = 18:22,
+  arm_lengths = 20:24,
+  outer_lengths = 21:24,
   outer_tm = c(55, 62),
   inner_tm = c(60, 65),
   gc_range = KASP_LIMITS$gc,
@@ -23,7 +24,11 @@ design_lamp_marker(
 
 \item{flank}{template half-width.}
 
-\item{arm_lengths}{outer / inner arm lengths to try.}
+\item{arm_lengths}{inner (FIP/BIP) arm lengths to try; each inner primer is a
+two-arm fusion, so this yields 40-48 nt inner primers by default (the
+published inner window is 45-49 nt), and widens only with \code{flank}.}
+
+\item{outer_lengths}{F3/B3 outer primer lengths to try (21-24 nt by default).}
 
 \item{outer_tm}{accepted F3/B3 Tm window (C).}
 

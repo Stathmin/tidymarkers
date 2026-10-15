@@ -20,8 +20,9 @@
 #      NEB quotes a 80-250 nt target and 4-6 primers
 #      (https://www.neb.com/.../loop-mediated-isothermal-amplification-lamp).
 #    * isothermal 60-65 C; inner FIP/BIP bind two distant sites and are longer
-#      (45-49 bp) than the outer F3/B3 (21-24 bp); the primers must not form a
-#      stable double strand at that temperature
+#      (45-49 bp; our default arm window 20:24 yields 40-48 nt, and the designer
+#      lands on the long end) than the outer F3/B3 (21-24 bp); the primers must
+#      not form a stable double strand at that temperature
 #      (Soroka, Wasowicz & Rymaszewska 2021, Cells 10(8):1931, PMC8393631;
 #      Notomi et al. 2000; Nagamine et al. 2002 for loop primers).
 #    * the variant is placed at the 5'/3' ends of the inner primers (and the 3'
@@ -177,7 +178,10 @@ lamp_fusion <- function(seq, q, side, lengths, tm_range, gc_range, target_tm) {
 #' @param genome a `kasp_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
-#' @param arm_lengths outer / inner arm lengths to try.
+#' @param arm_lengths inner (FIP/BIP) arm lengths to try; each inner primer is a
+#'   two-arm fusion, so this yields 40-48 nt inner primers by default (the
+#'   published inner window is 45-49 nt), and widens only with `flank`.
+#' @param outer_lengths F3/B3 outer primer lengths to try (21-24 nt by default).
 #' @param outer_tm accepted F3/B3 Tm window (C).
 #' @param inner_tm accepted inner binding-arm Tm window (C).
 #' @param gc_range accepted GC fraction window (both arm classes).
@@ -192,7 +196,8 @@ lamp_fusion <- function(seq, q, side, lengths, tm_range, gc_range, target_tm) {
 #' }
 #' @family KASP LAMP
 #' @export
-design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 18:22,
+design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
+                               outer_lengths = 21:24,
                                outer_tm = c(55, 62), inner_tm = c(60, 65),
                                gc_range = KASP_LIMITS$gc,
                                min_product = 120L, max_product = 300L) {
@@ -212,9 +217,9 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 18:22,
   lo <- fip$dist[1L]
   hi <- bip$dist[2L]
   n <- nchar(as.character(tmpl$seq))
-  fwd <- primer_candidates(tmpl$seq, seq_len(lo - 1L), arm_lengths, "+", outer_tm, gc_range) |>
+  fwd <- primer_candidates(tmpl$seq, seq_len(lo - 1L), outer_lengths, "+", outer_tm, gc_range) |>
     dplyr::filter(.data$end < lo, !has_palindrome(.data$primer))
-  rev <- primer_candidates(tmpl$seq, seq.int(hi + 1L, n), arm_lengths, "-", outer_tm, gc_range) |>
+  rev <- primer_candidates(tmpl$seq, seq.int(hi + 1L, n), outer_lengths, "-", outer_tm, gc_range) |>
     dplyr::filter(!has_palindrome(.data$primer))
   pair <- pick_primer_pair(fwd, rev, min_product, max_product)
   if (is.null(pair)) {
