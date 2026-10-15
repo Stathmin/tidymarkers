@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidykasp/issues\n"
-"POT-Creation-Date: 2026-10-06 22:16+0300\n"
+"POT-Creation-Date: 2026-10-15 11:35+0300\n"
 "PO-Revision-Date: 2026-10-01 15:25+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -511,6 +511,10 @@ msgstr "Ни одна внешняя пара праймеров не прошл
 
 #: kasp_lamp.R:228
 msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
+msgstr ""
+
+#: kasp_lax.R:58
+msgid "No ALT haplotype carries the target allele; nothing to design."
 msgstr ""
 
 #: kasp_mix.R:46

@@ -70,6 +70,7 @@ Other KASP design:
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_duplex]{design_duplex()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
+\code{\link[=design_lax_marker]{design_lax_marker()}},
 \code{\link[=design_marker]{design_marker()}},
 \code{\link[=design_markers]{design_markers()}},
 \code{\link[=kasp_site_class]{kasp_site_class()}},

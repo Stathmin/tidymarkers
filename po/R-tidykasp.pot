@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 22:16+0300\n"
+"POT-Creation-Date: 2026-10-15 11:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -439,6 +439,10 @@ msgstr ""
 
 #: kasp_lamp.R:228
 msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
+msgstr ""
+
+#: kasp_lax.R:58
+msgid "No ALT haplotype carries the target allele; nothing to design."
 msgstr ""
 
 #: kasp_mix.R:46

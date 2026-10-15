@@ -119,3 +119,11 @@ extra_scheme_designer <- function(scheme) {
   nm <- paste0("design_", scheme, "_marker")
   if (exists(nm, envir = ns, inherits = FALSE)) get(nm, envir = ns) else NULL
 }
+
+#' Discovered scheme ids whose `family` matches (e.g. the extra KASP-family ones)
+#' @keywords internal
+#' @noRd
+extra_family_schemes <- function(family) {
+  defs <- extra_scheme_defs()
+  names(defs)[vapply(defs, function(d) identical(d$family, family), logical(1))]
+}

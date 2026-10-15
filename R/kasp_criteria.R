@@ -141,9 +141,10 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   checks$id <- paste0("check:", gsub("[^a-z0-9]+", "_", tolower(checks$label)))
   checks$order <- seq_len(nrow(checks))
   checks$schemes <- check_schemes(checks$label)
+  kasp_core <- c(KASP_SCHEME_CORE, extra_family_schemes("kasp"))
   out <- dplyr::bind_rows(
-    stage_rows("as", KASP_GATES_AS, KASP_RELAX_AS, KASP_TIERS_AS, "feature", KASP_SCHEME_CORE),
-    stage_rows("pair", KASP_GATES_PAIR, KASP_RELAX_PAIR, KASP_TIERS_PAIR, "alignment", KASP_SCHEME_CORE),
+    stage_rows("as", KASP_GATES_AS, KASP_RELAX_AS, KASP_TIERS_AS, "feature", kasp_core),
+    stage_rows("pair", KASP_GATES_PAIR, KASP_RELAX_PAIR, KASP_TIERS_PAIR, "alignment", kasp_core),
     stage_rows("duplex", KASP_GATES_DUPLEX, KASP_RELAX_DUPLEX, KASP_TIERS_DUPLEX, "alignment", "duplex"),
     stage_rows("asq", KASP_GATES_ASQ, KASP_RELAX_ASQ, KASP_TIERS_ASQ, "alignment", "asq"),
     stage_rows("caps", KASP_GATES_CAPS, KASP_RELAX_CAPS, KASP_TIERS_CAPS, "alignment", "caps"),
