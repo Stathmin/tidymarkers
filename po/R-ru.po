@@ -259,32 +259,24 @@ msgid "`marker` must be a kasp_caps object (see design_caps_marker())."
 msgstr "`marker` должен быть объектом kasp_caps (см. design_caps_marker())."
 
 #: kasp_castpcr.R:126
-#, fuzzy
-#| msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgid "castPCR is implemented for single-base substitutions only."
-msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
+msgstr "castPCR реализован только для однонуклеотидных замен."
 
 #: kasp_castpcr.R:139
-#, fuzzy
-#| msgid "No inner allele-specific primer passed the GC/Tm filter."
 msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
-msgstr "Ни один внутренний аллель-специфичный праймер не прошёл фильтр GC/Tm."
+msgstr "Ни один аллель-специфичный праймер не прошёл фильтры GC/Tm для castPCR."
 
 #: kasp_castpcr.R:157
 msgid "No room upstream of the allele-specific primer for a common primer."
-msgstr ""
+msgstr "Недостаточно места выше по последовательности от аллель-специфичного праймера для общего праймера."
 
 #: kasp_castpcr.R:168
-#, fuzzy
-#| msgid "No common primer passed the filters."
 msgid "No common primer passed the Tm/GC filters within the castPCR amplicon."
-msgstr "Ни один общий праймер не прошёл фильтры."
+msgstr "Ни один общий праймер не прошёл фильтры Tm/GC в ампликоне castPCR."
 
 #: kasp_castpcr.R:177
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid "No hydrolysis probe covering the variant passed the Tm/GC filters."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr "Ни одна гидролизующая проба, покрывающая вариант, не прошла фильтры Tm/GC."
 
 #: kasp_core.R:117
 msgid "OligoArrayAux ('{bin}') was not found."
@@ -332,19 +324,16 @@ msgid "Ensembl deflines may have changed."
 msgstr "Возможно, изменились дефлайны Ensembl."
 
 #: kasp_crispr.R:153
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid "No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."
-msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+msgstr "Ни один спейсер гайда не прошёл фильтры PAM/GC для этого CRISPR-Dx-маркера."
 
 #: kasp_crispr.R:174
-#, fuzzy
-#| msgid "A dCAPS site was found, but no primer pair passed the Tm/GC filters."
 msgid ""
 "A guide spacer was found, but no pre-amplification pair passed the Tm/GC "
 "filters."
-msgstr "Сайт dCAPS найден, но ни одна пара праймеров не прошла фильтры Tm/GC."
+msgstr ""
+"Спейсер гайда найден, но ни одна пара для предварительной амплификации не "
+"прошла фильтры Tm/GC."
 
 #: kasp_decision.R:226
 msgid "for the decision graph"
@@ -380,18 +369,12 @@ msgstr ""
 "Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
 
 #: kasp_dpcr.R:86
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
-msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+msgstr "Ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC для dPCR."
 
 #: kasp_dpcr.R:91
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
-msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+msgstr "Ни одна гидролизующая проба не прошла фильтры состава/Tm для dPCR."
 
 #: kasp_duplex.R:137
 msgid "`loci` must have exactly two rows for a duplex assay."
@@ -444,21 +427,22 @@ msgstr "`marker` должен быть объектом kasp_hrm (см. design_h
 
 #: kasp_indel_size.R:71
 msgid "Not an InDel size polymorphism: `ref` and `alt` are the same length."
-msgstr ""
+msgstr "Это не полиморфизм длины индела: `ref` и `alt` одной длины."
 
 #: kasp_indel_size.R:76
 msgid ""
 "The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a "
 "longer indel."
 msgstr ""
+"Разница размеров REF/ALT меньше `min_gap`; используйте капиллярный "
+"электрофорез/ПААГ или более длинный индел."
 
 #: kasp_indel_size.R:91
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid ""
 "No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
 msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+"Ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC/ампликон для "
+"этого индела."
 
 #: kasp_io.R:62
 msgid "VCF not found: {path}"
@@ -494,28 +478,27 @@ msgid "Bundled example data not found."
 msgstr "Встроенные примеры данных не найдены."
 
 #: kasp_lamp.R:204
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid ""
 "No FIP/BIP inner primer pair passed the loop/Tm/structure filters for LAMP."
 msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+"Ни одна внутренняя пара праймеров FIP/BIP не прошла фильтры "
+"петли/Tm/структуры для LAMP."
 
 #: kasp_lamp.R:219
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid ""
 "No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for "
 "LAMP."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr ""
+"Ни одна внешняя пара F3/B3 не прошла фильтры Tm/GC, структуры и ампликона "
+"для LAMP."
 
 #: kasp_lamp.R:228
 msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
-msgstr ""
+msgstr "Вариант не попадает между F2 и B2 (петлевая область LAMP)."
 
 #: kasp_lax.R:58
 msgid "No ALT haplotype carries the target allele; nothing to design."
-msgstr ""
+msgstr "Ни один ALT-гаплотип не несёт целевой аллель; проектировать нечего."
 
 #: kasp_mix.R:46
 msgid ""
@@ -543,29 +526,23 @@ msgid "Designing KASP markers"
 msgstr "Дизайн KASP-маркеров"
 
 #: kasp_rpa.R:283
-#, fuzzy
-#| msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgid ""
 "RPA discrimination here is implemented for single-base substitutions only."
-msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
+msgstr ""
+"Различение аллелей методом RPA реализовано только для однонуклеотидных "
+"замен."
 
 #: kasp_rpa.R:294
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid "No RPA primer pair passed the length/GC/amplicon filters."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr "Ни одна пара праймеров RPA не прошла фильтры длины/GC/ампликона."
 
 #: kasp_rpa.R:298
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid "The RPA primer pair failed the structure/dimer filters."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr "Пара праймеров RPA не прошла фильтры структуры/димеров."
 
 #: kasp_rpa.R:305
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid "No exo probe covering the variant passed the geometry filters."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr "Ни одна exo-проба, покрывающая вариант, не прошла фильтры геометрии."
 
 #: kasp_rprimer.R:31
 msgid "`seqs` must be equal length (an ungapped alignment)."
@@ -578,11 +555,15 @@ msgstr "для независимой кросс-проверки дизайна
 #: kasp_sanger.R:109
 msgid "No flanking pair kept the variant clear of both read starts for Sanger."
 msgstr ""
+"Ни одна фланкирующая пара не оставила вариант в стороне от обоих начал "
+"считывания для Sanger."
 
 #: kasp_sanger.R:115
 msgid ""
 "The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
 msgstr ""
+"Пара для Sanger не даёт уникальный ампликон ({nrow(hits)} продуктов "
+"in-silico ПЦР)."
 
 #: kasp_scan.R:45 kasp_scan.R:85
 msgid "for the indexed genome scan"
@@ -682,24 +663,25 @@ msgstr ""
 "после ослабления части."
 
 #: kasp_snapshot.R:98
-#, fuzzy
-#| msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgid ""
 "SNaPshot single-base extension is implemented for single-base substitutions "
 "only."
-msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
+msgstr ""
+"Однонуклеотидное удлинение SNaPshot реализовано только для однонуклеотидных "
+"замен."
 
 #: kasp_snapshot.R:107
-#, fuzzy
-#| msgid "No outer primer pair passed the Tm/GC filters."
 msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
-msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
+msgstr ""
+"Ни одна пара для амплификации не прошла фильтры Tm/GC и длины ампликона."
 
 #: kasp_snapshot.R:121
 msgid ""
 "No extension primer ended immediately 5' of the variant within the Tm/GC "
 "filters."
 msgstr ""
+"Ни один праймер удлинения не закончился непосредственно перед вариантом (5') "
+"в пределах фильтров Tm/GC."
 
 #: kasp_specificity.R:34
 msgid "specificity_seed() needs an in-memory DNAStringSet."
@@ -716,43 +698,40 @@ msgstr "BLAST не удался: {conditionMessage(e)}"
 
 #: kasp_ssr.R:116
 msgid "No SSR / microsatellite repeat found in the flanking window."
-msgstr ""
+msgstr "В фланкирующем окне не найден SSR/микросателлитный повтор."
 
 #: kasp_ssr.R:129
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
 msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+"Ни одна фланкирующая пара праймеров вне повтора не прошла фильтры Tm/GC."
 
 #: kasp_strategy.R:36
-#, fuzzy
-#| msgid "Unknown marker scheme {scheme}; see kasp_schemes()."
 msgid ""
 "Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see "
 "kasp_schemes()."
-msgstr "Неизвестная схема маркера {scheme}; см. kasp_schemes()."
+msgstr ""
+"Неизвестная схема(ы) маркера: {paste(unknown, collapse = ', ')}; см. "
+"kasp_schemes()."
 
 #: kasp_taqman.R:102
-#, fuzzy
-#| msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgid ""
 "TaqMan allelic discrimination is implemented for single-base substitutions "
 "only."
-msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
+msgstr ""
+"Аллельная дискриминация TaqMan реализована только для однонуклеотидных "
+"замен."
 
 #: kasp_taqman.R:111
-#, fuzzy
-#| msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
 msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
 msgstr ""
-"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для "
+"TaqMan."
 
 #: kasp_taqman.R:122
-#, fuzzy
-#| msgid "No common primer passed the filters."
 msgid "No composition- and position-clean hydrolysis probe passed the filters."
-msgstr "Ни один общий праймер не прошёл фильтры."
+msgstr ""
+"Ни одна гидролизующая проба, чистая по составу и положению, не прошла "
+"фильтры."
 
 #: kasp_target.R:51
 msgid ""
@@ -866,6 +845,3 @@ msgstr "Сборка завершилась, но hybrid-min не вернул d
 #: kasp_tools.R:271
 msgid "OligoArrayAux installed in {.path {dest}}."
 msgstr "OligoArrayAux установлен в {.path {dest}}."
-
-#~ msgid "install NCBI BLAST+ (e.g. `apt-get install ncbi-blast+`)."
-#~ msgstr "установите NCBI BLAST+ (напр. `apt-get install ncbi-blast+`)."

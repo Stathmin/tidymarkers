@@ -558,10 +558,11 @@ A–P — реализовано или оценено; **Q** — локализ
 
 ## Q. Локализация (i18n) — сообщения и документация  [сообщения — сделано; справка — очередь]
 
-- [ ] **Перевод-проход по `po` (текущее состояние):** 21 fuzzy + 8 untranslated —
-      сообщения новых схем (§U: sanger/dpcr/taqman/castpcr/snapshot/lamp/rpa/crispr/ssr/
-      indel_size) и служебные; заполнить `msgstr`, снять `#, fuzzy` (`potools::po_extract()`
-      → `po_update()` → `po_compile()`), прогнать `LANGUAGE=ru`. До релиза — 0 fuzzy/untranslated.
+- [x] **Перевод-проход по `po`:** завершён — **167 сообщений переведено, 0 fuzzy,
+      0 untranslated, 0 obsolete** (`msgfmt --statistics`). Сообщения новых схем (§U:
+      sanger/dpcr/taqman/castpcr/snapshot/lamp/rpa/crispr/ssr/indel_size) и служебные
+      переведены, `#, fuzzy` снят, `potools::po_extract()` → `po_compile()`
+      (`msgfmt -c`, 167 сообщений), проверено `LANGUAGE=ru` end-to-end (en — английский).
 
 Разбор + реализация: все пользовательские сообщения обёрнуты в `gettext()` и переведены
 (`po/R-ru.po`, 64 строки; проверено end-to-end — `gettext` + `potools` → `LANGUAGE=ru`
@@ -868,7 +869,7 @@ A–P — реализовано или оценено; **Q** — локализ
       NAMESPACE ↔ man/ sync, `renv.lock` без мёртвого веса, `Rbuildignore`
 - [ ] **«дерево == код»:** гейты/тиры/пороги в дереве равны константам селектора для **каждой**
       схемы (проверено скриптом), плюс полнота `gate_labels` (нет `NA`)
-- [ ] **i18n-паритет:** 0 fuzzy/untranslated (см. §Q)
+- [x] **i18n-паритет:** 0 fuzzy/untranslated/obsolete (см. §Q) — 167 переведённых
 - [ ] **«мокрые» принципы:** биофиз. допущения каждой химии задокументированы и не выдаются
       за симуляцию (см. §V); пороги сверить с литературой 2025–2026
 - [ ] Встроить аудит в `dev/check.R` как регулярный шаг (рутина, а не разовый заход)
