@@ -36,6 +36,7 @@ plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
 Other KASP haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
 \code{\link[=kasp_chunk]{kasp_chunk()}},
 \code{\link[=read_transcripts]{read_transcripts()}}

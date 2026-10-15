@@ -93,6 +93,46 @@ haplotype_variants <- function(haplotypes, snp) {
   )
 }
 
+#' Group haplotypes by the alleles within a window around the target
+#'
+#' Two haplotypes that carry the *same* alleles around the target are the same
+#' primer template: one ALT primer can bind both.  This groups a tidy haplotype
+#' table by each haplotype's own variants within `window` bp of the target (either
+#' side), so a designer designs one primer per *group* rather than one per
+#' haplotype.  Chemistry-agnostic - it is the primer-template equivalence any
+#' scheme (KASP, lax, indel, ...) can key on.
+#' @param haplotypes a tidy haplotype table (`haplotype`, `freq`, `chrom`, `pos`,
+#'   `ref`, `alt`).
+#' @param snp one-row target (`pos`).
+#' @param window half-width (bp) of the primer window around the target.
+#' @return a tibble `haplotype`, `group` (the group's allele signature).
+#' @examples
+#' \dontrun{
+#' haplotype_groups(haplotypes, snp)
+#' }
+#' @family KASP haplotypes
+#' @export
+haplotype_groups <- function(haplotypes, snp, window = 30L) {
+  h <- normalise_haplotypes(haplotypes)
+  hp <- unique(h$haplotype)
+  sig <- vapply(hp, function(x) {
+    hap_signature(h, x, snp, snp$pos - window, snp$pos + window)
+  }, character(1))
+  tibble::tibble(haplotype = hp, group = sig)
+}
+
+#' A haplotype's own variants (`pos:ref:alt`) within a reference span
+#'
+#' The primer-template signature: two haplotypes with the same signature over a
+#' primer's footprint are bound by the same primer.  The target base itself is
+#' excluded (every ALT haplotype carries it).
+#' @keywords internal
+#' @noRd
+hap_signature <- function(h, haplotype, snp, a, b) {
+  d <- h[h$haplotype == haplotype & h$pos != snp$pos & h$pos >= a & h$pos <= b, , drop = FALSE]
+  paste(sort(paste(d$pos, d$ref, d$alt, sep = ":")), collapse = ";")
+}
+
 #' Which primer each haplotype is expected to bind
 #'
 #' For every haplotype: its allele at the target (REF/ALT), the AS primer that
