@@ -46,6 +46,26 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
   )
 }
 
+#' A GC/Tm-screened grid of plus-strand probes spanning a position
+#'
+#' The shared enumeration behind the hydrolysis-probe schemes (TaqMan, castPCR):
+#' every (start, length) plus-strand window whose span covers `snp_i`, GC/Tm/
+#' composition-screened by [primer_candidates()].  Callers add their own extra
+#' filters (e.g. no 5'-G) and ranking.
+#' @param seq the template (plus strand).
+#' @param snp_i 1-based variant position on `seq`.
+#' @param lengths probe lengths to try.
+#' @param tm_range,gc_range accepted windows.
+#' @return a tibble (see [primer_candidates()]), possibly zero rows.
+#' @keywords internal
+#' @noRd
+spanning_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
+  n <- nchar(as.character(seq))
+  starts <- seq.int(max(1L, snp_i - max(lengths) + 1L), min(n, snp_i))
+  primer_candidates(seq, starts, lengths, "+", tm_range, gc_range) |>
+    dplyr::filter(.data$start <= snp_i, .data$end >= snp_i)
+}
+
 #' The best Tm-balanced forward x reverse pair in a product window
 #'
 #' `fwd` must be a `"+"` candidate set, `rev` a `"-"` set (plus-strand

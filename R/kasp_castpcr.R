@@ -71,9 +71,7 @@ KASP_TIERS_CASTPCR <- c(
 #' @keywords internal
 #' @noRd
 castpcr_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
-  starts <- seq.int(max(1L, snp_i - max(lengths) + 1L), snp_i)
-  cand <- primer_candidates(seq, starts, lengths, "+", tm_range, gc_range) |>
-    dplyr::filter(.data$end >= snp_i)
+  cand <- spanning_probe_candidates(seq, snp_i, lengths, tm_range, gc_range)
   if (!nrow(cand)) {
     return(cand)
   }

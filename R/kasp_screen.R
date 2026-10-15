@@ -79,8 +79,8 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
   cum_gc <- c(0L, cumsum(as.integer(gc)))
   banned <- rep(FALSE, n)
   pats <- c(
-    paste0("([ACGT])\\1{", max(limits$max_run - 1L, 1L), ",}"), # homopolymers
-    vapply(2:4, function(u) paste0("([ACGT]{", u, "})\\1{2,}"), character(1)) # SSRs
+    repeat_regex(1L, max(limits$max_run, 2L)), # homopolymers
+    vapply(2:4, repeat_regex, character(1), min_copies = 3L) # SSRs
   )
   for (pat in pats) {
     m <- stringr::str_locate_all(s, pat)[[1L]]

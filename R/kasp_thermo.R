@@ -9,7 +9,18 @@
 #' @keywords internal
 #' @noRd
 gc_frac <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
-has_run <- function(seq, n = 4L) stringr::str_detect(seq, glue::glue("([ACGT])\\1{{{n - 1L},}}"))
+
+#' Regex for a tandem repeat of `unit`-length units, at least `min_copies` times
+#'
+#' The one place the homopolymer / SSR pattern is built, so the run screen, the
+#' SSR screen and the screening scan all agree.
+#' @keywords internal
+#' @noRd
+repeat_regex <- function(unit, min_copies = 3L) {
+  glue::glue("([ACGT]{{{unit}}})\\1{{{min_copies - 1L},}}")
+}
+
+has_run <- function(seq, n = 4L) stringr::str_detect(seq, repeat_regex(1L, n))
 
 #' Make a parallel worker able to dispatch on Biostrings objects
 #'
@@ -56,9 +67,8 @@ bp_lapply <- function(X, FUN, BPPARAM) {
 #' @family KASP QC
 #' @export
 find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
-  repeat_pattern <- function(u) glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
   purrr::map(seq, function(s) {
-    purrr::map(units, function(u) stringr::str_match_all(s, repeat_pattern(u))[[1L]][, 2L]) |>
+    purrr::map(units, function(u) stringr::str_match_all(s, repeat_regex(u, min_copies))[[1L]][, 2L]) |>
       purrr::list_c() |>
       unique()
   })

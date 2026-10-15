@@ -907,11 +907,15 @@ A–P — реализовано или оценено; **Q** — локализ
   расходится (NEB vs Soroka), уточнить по источникам перед введением, чтобы не сделать хуже.
 - **indel_size** — `min_gap = 5` bp агарозой не разрешается (≥10 или PAGE/капилляр);
   заголовок это признаёт, дефолт — нет.
-- **Дубли:** probe-candidates (`taqman` ≡ `castpcr` ≡ `rpa`), homopolymer/SSR-regex (4 места),
-  guard «single-base only» (~10 дизайнеров; **меняет msgid** → один проход с §Q/§T).
-- **`assemble_kasp_assay()` 609 строк** — вынести этапы в приватные хелперы.
-- `render_design_search()` экспортирован, без теста, течёт temp-PNG; `Sys.setenv` в
-  `helper-oligoarrayaux.R` — заменить на `withr::local_envvar`.
+- [x] **Дубли:** `spanning_probe_candidates()` (`R/kasp_primer_pairs.R`) — одна
+  энумерация пробы для `taqman`/`castpcr` (RPA-проба — своя THF-геометрия);
+  `repeat_regex()` (`R/kasp_thermo.R`) — одно homopolymer/SSR-правило для `has_run`/
+  `find_repeats`/`repeat_spans`/`kasp_screen`.
+- [ ] **guard «single-base only»** (~10 дизайнеров) — свести к одному хелперу; **меняет
+  msgid** → одним проходом с `po`.
+- [ ] **`assemble_kasp_assay()` 609 строк** — вынести этапы в приватные хелперы.
+- [ ] `render_design_search()` экспортирован, без теста, течит temp-PNG; `Sys.setenv` в
+  `helper-oligoarrayaux.R` — на `withr::local_envvar`.
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

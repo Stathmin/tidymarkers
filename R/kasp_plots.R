@@ -245,8 +245,7 @@ primer_features <- function(assay, limits = KASP_LIMITS) {
 #' @keywords internal
 #' @noRd
 repeat_spans <- function(s, units = 2:4, min_copies = 3L) {
-  repeat_pattern <- function(u) glue::glue("([ACGT]{{{u}}})\\1{{{min_copies - 1L},}}")
-  spans <- purrr::map(units, function(u) stringr::str_locate_all(s, repeat_pattern(u))[[1L]])
+  spans <- purrr::map(units, function(u) stringr::str_locate_all(s, repeat_regex(u, min_copies))[[1L]])
   purrr::reduce(spans, rbind, .init = matrix(integer(0), ncol = 2L))
 }
 

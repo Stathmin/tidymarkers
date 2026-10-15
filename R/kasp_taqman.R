@@ -54,13 +54,8 @@
 #' @keywords internal
 #' @noRd
 taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
-  n <- nchar(as.character(seq))
-  starts <- seq.int(max(1L, snp_i - max(lengths) + 1L), min(n, snp_i))
-  primer_candidates(seq, starts, lengths, "+", tm_range, gc_range) |>
-    dplyr::filter(
-      .data$start <= snp_i, .data$end >= snp_i,
-      stringr::str_sub(.data$primer, 1L, 1L) != "G"
-    ) |>
+  spanning_probe_candidates(seq, snp_i, lengths, tm_range, gc_range) |>
+    dplyr::filter(stringr::str_sub(.data$primer, 1L, 1L) != "G") |>
     dplyr::mutate(
       variant_pos = snp_i - .data$start + 1L,
       centrality = 1 - abs(.data$variant_pos - (.data$len + 1L) / 2) / ((.data$len - 1L) / 2)
