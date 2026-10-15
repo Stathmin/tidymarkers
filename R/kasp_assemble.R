@@ -128,8 +128,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
   # one-line install UX: a missing tool is a hint (once per session), not a silent NA
-  if (!has_oligoarrayaux() && !isTRUE(getOption("tidykasp.tool_hint_shown"))) {
-    options(tidykasp.tool_hint_shown = TRUE)
+  if (!has_oligoarrayaux() && !isTRUE(.kasp_state$tool_hint_shown)) {
+    .kasp_state$tool_hint_shown <- TRUE
     cli::cli_inform(c(
       gettext("OligoArrayAux was not found: thermodynamic and structural checks will be NA."),
       i = gettext("run tidykasp::kasp_install_tools() once to build it.")

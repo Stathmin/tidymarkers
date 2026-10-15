@@ -435,6 +435,8 @@ is_target_designable <- function(marker) {
 #' @param genome a `kasp_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`; an `alt2` list-column
 #'   is honoured by the KASP scheme).
+#' @param strategy a [rescue_strategy()] object; its `tried` rows give the order.
+#'   `NULL` (with `schemes = NULL`) uses the default per-locus ladder.
 #' @param schemes scheme ids to try, in order (see [kasp_schemes()]).
 #' @param ... passed to the per-scheme designer (e.g. `flank`).
 #' @return a list: `snp`, `scheme` (the winner, or `NA`), `marker` (the winning

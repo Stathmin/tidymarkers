@@ -8,14 +8,32 @@
 #  inspected, filtered, reordered or restricted like any other tibble.
 # =============================================================================
 
+#' Scheme ids a single locus can actually be taken by
+#'
+#' The default rescue ladder walks one locus at a time, so it can only contain
+#' schemes that have a per-locus designer.  That excludes a duplex chemistry
+#' (`loci = 2`, it needs two loci) and any registered scheme without a
+#' `design_<scheme>_marker()` engine (`asq`, the marker-agnostic `primer` row).
+#' @return a character vector of scheme ids, in registry order.
+#' @keywords internal
+#' @noRd
+per_locus_schemes <- function() {
+  base <- c("snp", "indel", "multi", "caps", "arms", "hrm")
+  disc <- names(extra_scheme_defs())
+  disc <- disc[!vapply(disc, function(s) is.null(extra_scheme_designer(s)), logical(1))]
+  intersect(kasp_schemes()$scheme, c(base, disc))
+}
+
 #' The rescue policy: which chemistries to try, in order
 #'
 #' A marker is not one chemistry.  When KASP fails a locus another may take it
 #' (see [kasp_schemes()]), so the "try in turn" order is an object here rather
-#' than a vector buried in [design_marker()].  Steps can be dropped or reordered:
+#' than a vector buried in [design_marker()].  The default ladder holds only the
+#' schemes that can be tried *one locus at a time* (see [kasp_schemes()]'s `loci`;
+#' a duplex needs two).  Steps can be dropped or reordered:
 #' `rescue_strategy(c("hrm", "caps"))`, or filtered by family.
 #' @param schemes scheme ids in order (see [kasp_schemes()]).  Default: KASP
-#'   (`"snp"`) first, then every other registered scheme in registry order.
+#'   (`"snp"`) first, then every other per-locus scheme in registry order.
 #' @return a one-row-per-step tibble: `order`, `tried`, then the [kasp_schemes()]
 #'   columns (`scheme`, `family`, `label`, `discrimination`, `readout`,
 #'   `zygosity`, `amplicon`, `loci`, `verdict`).
@@ -25,10 +43,11 @@
 #' @family KASP design
 #' @export
 rescue_strategy <- function(schemes = NULL) {
-  all <- kasp_schemes()$scheme
+  ladder <- per_locus_schemes()
   if (is.null(schemes)) {
-    schemes <- c(intersect("snp", all), setdiff(all, "snp"))
+    schemes <- c(intersect("snp", ladder), setdiff(ladder, "snp"))
   }
+  all <- kasp_schemes()$scheme
   i <- match(schemes, all)
   unknown <- schemes[is.na(i)]
   if (length(unknown)) {

@@ -8,7 +8,7 @@ rescue_strategy(schemes = NULL)
 }
 \arguments{
 \item{schemes}{scheme ids in order (see \code{\link[=kasp_schemes]{kasp_schemes()}}).  Default: KASP
-(\code{"snp"}) first, then every other registered scheme in registry order.}
+(\code{"snp"}) first, then every other per-locus scheme in registry order.}
 }
 \value{
 a one-row-per-step tibble: \code{order}, \code{tried}, then the \code{\link[=kasp_schemes]{kasp_schemes()}}
@@ -18,7 +18,9 @@ columns (\code{scheme}, \code{family}, \code{label}, \code{discrimination}, \cod
 \description{
 A marker is not one chemistry.  When KASP fails a locus another may take it
 (see \code{\link[=kasp_schemes]{kasp_schemes()}}), so the "try in turn" order is an object here rather
-than a vector buried in \code{\link[=design_marker]{design_marker()}}.  Steps can be dropped or reordered:
+than a vector buried in \code{\link[=design_marker]{design_marker()}}.  The default ladder holds only the
+schemes that can be tried \emph{one locus at a time} (see \code{\link[=kasp_schemes]{kasp_schemes()}}'s \code{loci};
+a duplex needs two).  Steps can be dropped or reordered:
 \code{rescue_strategy(c("hrm", "caps"))}, or filtered by family.
 }
 \examples{

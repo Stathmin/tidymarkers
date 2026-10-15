@@ -134,7 +134,7 @@ print.kasp_lax <- function(x, ...) {
   invisible(x)
 }
 
-#' The lax-KASP scheme spec (see [kasp_scheme_registry()])
+#' The lax-KASP scheme spec (discovered by the shared registry, see [kasp_schemes()])
 #' @keywords internal
 #' @noRd
 scheme_def_lax <- function() {

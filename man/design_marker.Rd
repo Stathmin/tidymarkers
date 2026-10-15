@@ -12,6 +12,9 @@ design_marker(genome, snp, strategy = NULL, schemes = NULL, ...)
 \item{snp}{one-row target (\code{chrom}, \code{pos}, \code{ref}, \code{alt}; an \code{alt2} list-column
 is honoured by the KASP scheme).}
 
+\item{strategy}{a \code{\link[=rescue_strategy]{rescue_strategy()}} object; its \code{tried} rows give the order.
+\code{NULL} (with \code{schemes = NULL}) uses the default per-locus ladder.}
+
 \item{schemes}{scheme ids to try, in order (see \code{\link[=kasp_schemes]{kasp_schemes()}}).}
 
 \item{...}{passed to the per-scheme designer (e.g. \code{flank}).}

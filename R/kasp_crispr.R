@@ -155,21 +155,16 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
   }
   off <- snp$pos - tmpl$snp_i
   # design pre-amplification pairs best-guide-first, stopping at the first that works
-  pick <- local({
-    found <- NULL
-    purrr::detect(seq_len(nrow(cand)), function(i) {
-      amp <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
-        min_product = min_product, max_product = max_product
-      )
-      if (is.null(amp)) {
-        FALSE
-      } else {
-        found <<- list(row = cand[i, ], amp = amp)
-        TRUE
-      }
-    })
-    found
-  })
+  pick <- NULL
+  for (i in seq_len(nrow(cand))) {
+    amp <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
+      min_product = min_product, max_product = max_product
+    )
+    if (!is.null(amp)) {
+      pick <- list(row = cand[i, ], amp = amp)
+      break
+    }
+  }
   if (is.null(pick)) {
     cli::cli_inform(gettext("A guide spacer was found, but no pre-amplification pair passed the Tm/GC filters."))
     return(NULL)
@@ -211,8 +206,8 @@ print.kasp_crispr <- function(x, ...) {
 #' The CRISPR-Dx scheme definition (internal)
 #'
 #' The registry entry the shared decision schema consumes, one marker chemistry
-#' per call.  Exported routes wire this into the scheme registry; it is kept
-#' internal until then.
+#' per call.  It is discovered automatically (one file per scheme, see
+#' `R/kasp_scheme_registry.R`), so it is kept internal.
 #' @return a list with the scheme identity, readout, gates, relax set, tiers and
 #'   the label / limit lookups the decision graph and text export need.
 #' @keywords internal
