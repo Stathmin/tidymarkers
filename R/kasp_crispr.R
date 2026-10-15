@@ -25,6 +25,10 @@
 #     Gootenberg JS et al. (2018) Science 360:439-444, doi:10.1126/science.aaq0179
 #     (SHERLOCKv2, 20-28 nt spacers).  Addgene CRISPR Guide (Cas13 targets RNA,
 #     no PAM): https://www.addgene.org/guides/crispr/
+#   * Cas13 cleaves ssRNA, so its guide must match the *transcribed* strand (the
+#     one the T7 promoter turns into the target RNA), not the genomic plus strand
+#     automatically; guides are searched on both strands unless `strand=` restricts
+#     them, and the caller validates the choice against the T7 orientation.
 #   * The pre-amplification literature works best on short amplicons; we accept a
 #     bounded window (80-250 bp) rather than a single value.
 #
@@ -47,11 +51,13 @@
 #' @param cas `"cas12a"` or `"cas13"`.
 #' @param spacer_lengths spacer lengths to try.
 #' @param gc_range accepted guide GC window.
+#' @param strands strands the guide may be placed on (`"+"`/`"-"`).
 #' @return a tibble (`start`, `end`, `len`, `strand`, `spacer`, `pam`, `gc`,
 #'   `v_off`), plus-strand coordinates, or zero rows.
 #' @keywords internal
 #' @noRd
-crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range) {
+crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, strands = c("+", "-")) {
+  strands <- match.arg(strands, c("+", "-"), several.ok = TRUE)
   s <- as.character(seq)
   n <- nchar(s)
   seed_len <- 8L # Cas12a PAM-proximal seed; also the length of the offsets tried
@@ -65,7 +71,7 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range) {
   plus <- dplyr::mutate(grid, strand = "+", start = snp_i - .data$v_off, end = .data$start + .data$len - 1L)
   minus <- dplyr::mutate(grid, strand = "-", end = snp_i + .data$v_off, start = .data$end - .data$len + 1L)
   cand <- dplyr::bind_rows(plus, minus) |>
-    dplyr::filter(.data$start >= 1L, .data$end <= n) |>
+    dplyr::filter(.data$strand %in% strands, .data$start >= 1L, .data$end <= n) |>
     dplyr::mutate(
       pam_lo = dplyr::if_else(.data$strand == "+", .data$start - 4L, .data$end + 1L),
       pam_hi = dplyr::if_else(.data$strand == "+", .data$start - 1L, .data$end + 4L)
@@ -121,6 +127,11 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range) {
 #' @param flank template half-width.
 #' @param cas `"cas12a"` (DETECTR; needs a PAM) or `"cas13"` (SHERLOCK;
 #'   PAM-free).
+#' @param strand guide placement: `"both"` (default), or `"+"`/`"-"`.  Cas13
+#'   cleaves ssRNA, so its guide must match the *transcribed* strand (the one the
+#'   pre-amplification's T7 promoter turns into the target RNA); pass `strand`
+#'   when that orientation is known, otherwise both are tried and the choice is
+#'   the caller's to validate.
 #' @param spacer_lengths guide spacer lengths to try (default: 20-23 nt for
 #'   Cas12a, 22-28 nt for Cas13).
 #' @param gc_range accepted guide GC window.
@@ -138,9 +149,12 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range) {
 #' @family KASP CRISPR
 #' @export
 design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "cas13"),
+                                 strand = c("both", "+", "-"),
                                  spacer_lengths = NULL, gc_range = NULL,
                                  min_product = 80L, max_product = 250L, ...) {
   cas <- match.arg(cas)
+  strand <- match.arg(strand)
+  strands <- if (identical(strand, "both")) c("+", "-") else strand
   if (is.null(spacer_lengths)) {
     spacer_lengths <- if (identical(cas, "cas12a")) 20:23 else 22:28
   }
@@ -148,7 +162,7 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
     gc_range <- c(0.35, 0.65)
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
-  cand <- crispr_guide_candidates(tmpl$seq, tmpl$snp_i, cas, spacer_lengths, gc_range)
+  cand <- crispr_guide_candidates(tmpl$seq, tmpl$snp_i, cas, spacer_lengths, gc_range, strands)
   if (!nrow(cand)) {
     cli::cli_inform(gettext("No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."))
     return(NULL)

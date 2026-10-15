@@ -45,6 +45,18 @@ test_that("design_crispr_marker informs and returns NULL when no guide passes", 
   expect_null(m)
 })
 
+test_that("crispr_guide_candidates honours the strand restriction", {
+  W <- bseq(300L, 3L)
+  args <- list(seq = W, snp_i = 150L, cas = "cas13", spacer_lengths = 22:28, gc_range = c(0.35, 0.65))
+  both <- do.call(crispr_guide_candidates, args)
+  plus <- do.call(crispr_guide_candidates, c(args, list(strands = "+")))
+  minus <- do.call(crispr_guide_candidates, c(args, list(strands = "-")))
+  expect_setequal(both$strand, c("+", "-"))
+  expect_true(all(plus$strand == "+"))
+  expect_true(all(minus$strand == "-"))
+  expect_equal(nrow(plus) + nrow(minus), nrow(both))
+})
+
 test_that("scheme_def_crispr declares its prefixed gates, tiers and lookups", {
   def <- scheme_def_crispr()
   expect_equal(def$scheme, "crispr")

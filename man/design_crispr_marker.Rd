@@ -9,6 +9,7 @@ design_crispr_marker(
   snp,
   flank = 200L,
   cas = c("cas12a", "cas13"),
+  strand = c("both", "+", "-"),
   spacer_lengths = NULL,
   gc_range = NULL,
   min_product = 80L,
@@ -25,6 +26,12 @@ design_crispr_marker(
 
 \item{cas}{\code{"cas12a"} (DETECTR; needs a PAM) or \code{"cas13"} (SHERLOCK;
 PAM-free).}
+
+\item{strand}{guide placement: \code{"both"} (default), or \code{"+"}/\code{"-"}.  Cas13
+cleaves ssRNA, so its guide must match the \emph{transcribed} strand (the one the
+pre-amplification's T7 promoter turns into the target RNA); pass \code{strand}
+when that orientation is known, otherwise both are tried and the choice is
+the caller's to validate.}
 
 \item{spacer_lengths}{guide spacer lengths to try (default: 20-23 nt for
 Cas12a, 22-28 nt for Cas13).}
