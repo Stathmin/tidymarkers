@@ -158,16 +158,3 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   }
   out
 }
-
-#' Evaluate every registered acceptance check on an assay, once
-#'
-#' The single entry point behind [kasp_design_checks()]: runs the registry's
-#' `role == "check"` rows and returns one tidy row per criterion (`stage`,
-#' `criterion`, `observed`, `limit`, `pass`, `detail`, `level`, `hard`).  Called
-#' once at design time and stored on the assay (`assay$evaluation`), so plots and
-#' reports read the results instead of recomputing them.
-#' @keywords internal
-#' @noRd
-evaluate_assay <- function(assay, limits = KASP_LIMITS) {
-  kasp_design_checks(assay, limits)
-}

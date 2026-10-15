@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidykasp 0.3.0\n"
-"POT-Creation-Date: 2026-10-06 21:55+0300\n"
+"POT-Creation-Date: 2026-10-06 22:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -455,7 +455,7 @@ msgstr ""
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 
-#: kasp_object.R:137
+#: kasp_object.R:137 kasp_strategy.R:72
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr ""
 
@@ -488,11 +488,11 @@ msgstr ""
 msgid "for an independent oligo-design cross-check"
 msgstr ""
 
-#: kasp_sanger.R:111
+#: kasp_sanger.R:109
 msgid "No flanking pair kept the variant clear of both read starts for Sanger."
 msgstr ""
 
-#: kasp_sanger.R:117
+#: kasp_sanger.R:115
 msgid ""
 "The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
 msgstr ""
@@ -619,6 +619,12 @@ msgstr ""
 msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
 msgstr ""
 
+#: kasp_strategy.R:36
+msgid ""
+"Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see "
+"kasp_schemes()."
+msgstr ""
+
 #: kasp_taqman.R:102
 msgid ""
 "TaqMan allelic discrimination is implemented for single-base substitutions "
@@ -648,16 +654,16 @@ msgid ""
 "', ')}."
 msgstr ""
 
-#: kasp_target.R:304
+#: kasp_target.R:285
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr ""
 
-#: kasp_target.R:407
+#: kasp_target.R:388
 msgid ""
 "No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
 msgstr ""
 
-#: kasp_target.R:408
+#: kasp_target.R:389
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr ""
 

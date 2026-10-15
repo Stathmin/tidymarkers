@@ -67,14 +67,6 @@ test_that("so_rank matches canonical SO terms, comma lists and VEP impact", {
   )
 })
 
-test_that("seed_hits_at counts a repeated seed, and is NA off the start", {
-  rep30 <- "ACGTTGCAAGTCCTAGGCATCGATTCGGAT"
-  genome <- Biostrings::DNAStringSet(c(Chr1 = paste0("GCGCGCGCGCGCGCGCGCGC", rep30, rep30, rep30)))
-  expect_gt(seed_hits_at(genome, "Chr1", 80L, 1L, "+"), 1L) # last 15 nt of rep30 -> 3 copies
-  expect_gt(seed_hits_at(genome, "Chr1", 80L, 1L, "-"), 1L)
-  expect_true(is.na(seed_hits_at(genome, "Chr1", 5L, 1L, "+"))) # runs off the start
-})
-
 test_that("pick_target_snp prefers the locus with a unique 3'-seed", {
   rep30 <- "ACGTTGCAAGTCCTAGGCATCGATTCGGAT"
   pad <- "GCGCGCGCGCGCGCGCGCGC"

@@ -200,25 +200,6 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
   }
 }
 
-#' 3'-seed specificity of a would-be AS primer anchored at a variant
-#'
-#' The seed is the `k` 3'-terminal bases of the AS primer: `[anchor-k+1, anchor]`
-#' on the plus strand, or the reverse complement of `[anchor, anchor+k-1]` on the
-#' minus strand (see [as_anchor()]).  Counted over the whole genome, both
-#' strands, like [specificity_seed()].  `NA` if the seed runs off the sequence.
-#' @keywords internal
-#' @noRd
-seed_hits_at <- function(genome, chrom, pos, ref_len, strand,
-                         k = SEED_K, max_mismatch = SEED_MISMATCH, BPPARAM = NULL) {
-  s <- seed_seq(genome, chrom, pos, ref_len, strand, k)
-  if (is.na(s)) {
-    return(NA_integer_)
-  }
-  specificity_of(c(seed = s), genome,
-    k = k, max_mismatch = max_mismatch,
-    BPPARAM = BPPARAM
-  )$hits
-}
 
 #' Choose a designable target variant from a variant table
 #'
@@ -465,7 +446,12 @@ is_target_designable <- function(marker) {
 #' }
 #' @family KASP design
 #' @export
-design_marker <- function(genome, snp, schemes = c("snp", "caps", "arms", "hrm"), ...) {
+design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...) {
+  # the order to try is the rescue policy (see rescue_strategy()); a plain vector
+  # keeps the historical KASP -> CAPS -> ARMS -> HRM ladder
+  if (is.null(schemes)) {
+    schemes <- if (is.null(strategy)) c("snp", "caps", "arms", "hrm") else strategy$scheme[strategy$tried]
+  }
   tried <- purrr::map(schemes, function(sc) {
     m <- tryCatch(
       suppressWarnings(kasp_design_at(genome, snp, sc, ...)),

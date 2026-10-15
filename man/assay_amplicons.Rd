@@ -48,6 +48,7 @@ Other KASP specificity:
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=kasp_blast_index]{kasp_blast_index()}},
 \code{\link[=kasp_fm_index]{kasp_fm_index()}},
+\code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
