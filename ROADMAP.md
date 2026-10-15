@@ -952,6 +952,12 @@ A–P — реализовано или оценено; **Q** — локализ
 - Попутно исправлено: `print.kasp_lax` (no-haplotype форма), `assemble_kasp_assay()` падал
   на variants другого хромосома (`substring(integer(0))`), `dev/check.R` lintr теперь
   `load_all()`-ит исходник (иначе «no visible binding» из-за неустановленного пакета).
+- **Хаплотипы из выравнивания:** `read_transcripts()` (FASTA/seqdump; склейка
+  coordinate-range записей по accession) + `haplotypes_from_alignment()` (`DECIPHER::AlignSeqs`,
+  вариант-коллы против референса — SNP и инделы в reference coords) → `$genome` (одна
+  последовательность-«хромосома») + `$haplotypes` (для `kasp_context(haplotypes=)`).
+  Оффлайн-фикстура: `inst/extdata/sat2_transcripts.fa` (11 транскриптов SAT2, 256 вариантов),
+  тест `test-alignment.R` (без сети).
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).
