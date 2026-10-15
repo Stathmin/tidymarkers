@@ -913,7 +913,11 @@ A–P — реализовано или оценено; **Q** — локализ
   `find_repeats`/`repeat_spans`/`kasp_screen`.
 - [ ] **guard «single-base only»** (~10 дизайнеров) — свести к одному хелперу; **меняет
   msgid** → одним проходом с `po`.
-- [ ] **`assemble_kasp_assay()` 609 строк** — вынести этапы в приватные хелперы.
+- [x] **`assemble_kasp_assay()` 609 → 361 строк** — этапы вынесены в приватные хелперы
+  (`kasp_snp_alts`, `kasp_variant_alleles`, `kasp_linked_offsets`, `kasp_dropout_batch`,
+  `kasp_as_candidates`, `kasp_as_zone_metrics`, `kasp_pick_as`, `kasp_as_warnings`),
+  поведение не менялось (полный набор тестов зелёный: 1009 pass).
+  **Осталось:** вынести COM-блок, скрин пар и финализацию вывода (стр. ~450-729).
 - [x] `render_design_search()` — промежуточные PNG в `withr::local_tempdir()` (чистятся).
 - [ ] `render_design_search()` — покрыть тестом (сейчас только в `inst/scripts`).
 - [x] `Sys.setenv` в `helper-oligoarrayaux.R` оставлен **сознательно**: это session-setup
