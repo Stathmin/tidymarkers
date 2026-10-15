@@ -914,8 +914,12 @@ A–P — реализовано или оценено; **Q** — локализ
 - [ ] **guard «single-base only»** (~10 дизайнеров) — свести к одному хелперу; **меняет
   msgid** → одним проходом с `po`.
 - [ ] **`assemble_kasp_assay()` 609 строк** — вынести этапы в приватные хелперы.
-- [ ] `render_design_search()` экспортирован, без теста, течит temp-PNG; `Sys.setenv` в
-  `helper-oligoarrayaux.R` — на `withr::local_envvar`.
+- [x] `render_design_search()` — промежуточные PNG в `withr::local_tempdir()` (чистятся).
+- [ ] `render_design_search()` — покрыть тестом (сейчас только в `inst/scripts`).
+- [x] `Sys.setenv` в `helper-oligoarrayaux.R` оставлен **сознательно**: это session-setup
+  в `local({})`, а `withr::local_envvar` снял бы env по выходу и сломал бы тесты.
+  (Современный эквивалент — `withr::local_envvar(..., .local_envir = teardown_env())`, но
+  текущее поведение корректно.)
 
 ## Ссылки
 - LGC/KBioscience KASP manual — методичка производителя (пороги, рецепт смеси).

@@ -264,8 +264,9 @@ render_design_search <- function(assay, variants, snp,
   winners <- dplyr::filter(frames$notes, .data$key)$step
   steps <- purrr::list_c(purrr::map(seq_len(n), function(s) c(s, rep(s, if (s %in% winners) hold else 0L))))
 
-  td <- fs::path_temp("kasp_anim")
-  fs::dir_create(td)
+  # a private scratch dir for the per-step PNGs, removed on exit (only the GIF
+  # survives); `withr` cleans it even on error
+  td <- withr::local_tempdir("kasp_anim-")
 
   # One PNG per *distinct* step (the `hold` repeats reuse the file); the ragg
   # device is faster to draw with when available, and the frames are
@@ -290,7 +291,7 @@ render_design_search <- function(assay, variants, snp,
     }
     bp_lapply(seq_along(uniq), draw, bp)
   } else {
-    lapply(seq_along(uniq), draw)
+    purrr::map(seq_along(uniq), draw)
   }
   pngs <- files[match(steps, uniq)]
 
