@@ -45,8 +45,10 @@ melt above the primer); defaults to \code{CASTPCR_PROBE_MARGIN}.}
 \item{gc_range}{accepted GC window for every oligo.}
 }
 \value{
-a \code{kasp_castpcr} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon}), or
-\code{NULL} (with a message) when no AS primer, mate or probe passes the filters.
+a \code{kasp_castpcr} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},
+\code{compatibility} - the joint dimer/hairpin screen over the AS primer, its mate
+and the probe), or \code{NULL} (with a message) when no AS primer, mate or probe
+passes the filters.
 }
 \description{
 The real-time analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: one allele-specific primer

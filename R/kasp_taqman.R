@@ -30,9 +30,13 @@
 #  Assumption on the Tm scale: TmCalculator's nearest-neighbour model at the
 #  package PCR conditions returns values below the vendor numbers, so the default
 #  probe window (`probe_tm = c(56, 72)`) is set on that model rather than the
-#  literal 68-70 C band; the "probe above primer" ordering is the second tier in
-#  the probe ranking.  The amplicon is kept short (~60-150 bp) as in the usual
-#  TaqMan SNP-genotyping assays.
+#  literal 68-70 C band.  The vendor ordering rule ("probe Tm 8-10 C above the
+#  primers") is NOT enforced as a hard gate: on this compressed scale even a
+#  30-mer probe reaches only ~+4 C over the primers, so a fixed 8 C margin would
+#  doom every design.  The ordering is kept as a *ranking* preference (tier2: the
+#  probe should be the hottest oligo in the tube), and a true margin gate is
+#  queued in the roadmap pending a vendor-scale Tm.  The amplicon is kept short
+#  (~60-150 bp) as in the usual TaqMan SNP-genotyping assays.
 # =============================================================================
 
 #' Probe candidates centred over a variant
@@ -81,8 +85,9 @@ taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
 #' @param gc_range accepted GC window (primers and probes).
 #' @param min_centrality least variant centrality within each probe (`[0, 1]`).
 #' @param ... reserved for future design options.
-#' @return a `kasp_taqman` list (`snp`, `primers`, `probes` - one row per allele -
-#'   and `amplicon`), or `NULL` (with a message) when no pair or probe passes the
+#' @return a `kasp_taqman` list (`snp`, `primers`, `probes` - one row per allele -,
+#'   `amplicon`, `compatibility` - the joint dimer/hairpin screen over the pair and
+#'   both probes), or `NULL` (with a message) when no pair or probe passes the
 #'   filters.
 #' @examples
 #' \dontrun{
@@ -94,7 +99,8 @@ taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
 design_taqman_marker <- function(genome, snp, flank = 150L,
                                  min_product = 60L, max_product = 150L,
                                  primer_lengths = 18:25, probe_lengths = 18:25,
-                                 primer_tm = KASP_LIMITS$com_tm, probe_tm = c(56, 72),
+                                 primer_tm = KASP_LIMITS$com_tm,
+                                 probe_tm = c(56, 72),
                                  gc_range = KASP_LIMITS$gc, min_centrality = 0.5, ...) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
@@ -122,8 +128,11 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     cli::cli_inform(gettext("No composition- and position-clean hydrolysis probe passed the filters."))
     return(NULL)
   }
-  # most central mismatch first, then the higher probe Tm (probe over primers)
-  best <- cand[order(-cand$centrality, -cand$tm), ][1L, ]
+  # tier1: the most central mismatch (maximal destabilisation); tier2: the probe
+  # being the hottest oligo in the tube (the ordering rule, see the header caveat)
+  primer_hot <- max(primers$tm_f, primers$tm_r)
+  cand$ordered <- cand$tm >= primer_hot
+  best <- cand[order(-cand$centrality, -cand$ordered, -cand$tm), ][1L, ]
   ref_probe <- best$primer
   alt_probe <- as.character(Biostrings::replaceAt(
     Biostrings::DNAString(ref_probe),
@@ -145,6 +154,11 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     snp = snp, primers = primers, probes = probes,
     amplicon = tibble::tibble(start = primers$start, end = primers$end, product = primers$product)
   )
+  # pair plus both allele-specific probes share the tube: joint screen
+  out$compatibility <- tube_compatibility(c(
+    primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
+    probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
+  ))
   structure(out, class = "kasp_taqman")
 }
 
@@ -166,7 +180,8 @@ print.kasp_taqman <- function(x, ...) {
 #' The declarative row the shared scheme registry will consume: the assay's
 #' discrimination/readout, its selection gates and ranking tiers, and the gate
 #' labels/limits that the decision graph and text export render.  Kept here so the
-#' TaqMan chemistry stays self-contained until it is wired into the registry.
+#' TaqMan chemistry stays self-contained; it is discovered automatically (one file
+#' per scheme, see `R/kasp_scheme_registry.R`).
 #' @return a named list with the scheme row fields plus the gate/tier vocabulary.
 #' @keywords internal
 #' @noRd
@@ -201,7 +216,7 @@ scheme_def_taqman <- function() {
     gate_limit = c(
       gate_taqman_amplicon = "amplicon within [60, 150]",
       gate_taqman_primer_tm = "both primers Tm within [58, 63] C",
-      gate_taqman_probe_tm = "both probes Tm within [56, 72] C",
+      gate_taqman_probe_tm = "probe Tm the hottest in the tube (ranking)",
       gate_taqman_centrality = "variant within the probe central window",
       gate_taqman_probe_comp = "GC 40-60%, no 5'-G, no run / SSR"
     ),

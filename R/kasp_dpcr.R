@@ -59,8 +59,9 @@
 #' @param probe_gc accepted probe GC window.
 #' @param probe_tm_margin minimal probe Tm above the primers (the ~8-10 C rule;
 #'   8 is used as the floor).
-#' @return a `kasp_dpcr` list (`snp`, `primers`, `probe`, `amplicon`), or `NULL`
-#'   (with a message) when no primer pair / probe passes the filters.
+#' @return a `kasp_dpcr` list (`snp`, `primers`, `probe`, `amplicon`,
+#'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe),
+#'   or `NULL` (with a message) when no primer pair / probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -104,6 +105,11 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
     ),
     amplicon = tibble::tibble(start = primers$start, end = primers$end)
   )
+  # pair plus the hydrolysis probe share the droplet: joint screen
+  out$compatibility <- tube_compatibility(c(
+    primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
+    probe = out$probe$sequence
+  ))
   structure(out, class = "kasp_dpcr")
 }
 

@@ -23,17 +23,19 @@
 #     Delta-Ct (mutant assay - gene reference assay).
 #  Design thresholds that the method papers do not state numerically are taken
 #  from the package's own KASP limits where they coincide (AS Tm, GC) and from
-#  the standard hydrolysis-probe rule of thumb - probe Tm ~8-10 C above the
-#  primers, short amplicon - which is stated as an ASSUMPTION below and is a
-#  parameter the caller can override.
+#  the standard hydrolysis-probe rule of thumb - probe Tm above the primers, short
+#  amplicon - which is stated as an ASSUMPTION below and is a parameter the caller
+#  can override.  That vendor rule (~8-10 C) is not reachable on the package's
+#  compressed NN Tm scale, so `probe_margin` is a smaller practical floor.
 # =============================================================================
 
-# Hydrolysis-probe rule of thumb (ASSUMPTION, not stated numerically in the
-# castPCR papers): a TaqMan/MGB probe must melt well above the primers, classically
-# ~8-10 C higher, so the probe carries the real-time readout.  We require the naked
-# oligo's NN Tm to exceed the AS primer's by at least `CASTPCR_PROBE_MARGIN` and cap
-# it at `CASTPCR_PROBE_TM_MAX`; an MGB modification raises the effective Tm further,
-# so this lower margin is conservative for the unmodified oligo.
+# Hydrolysis-probe rule of thumb: a TaqMan/MGB probe must melt above the primers,
+# classically ~8-10 C higher on the vendor Tm scale, so the probe carries the
+# real-time readout.  The package's NN Tm at PCR conditions is compressed (see the
+# TaqMan module), so a literal 8-10 C margin is not reachable here; the practical
+# floor is `CASTPCR_PROBE_MARGIN` (a few degrees), capped at `CASTPCR_PROBE_TM_MAX`.
+# An MGB modification raises the effective Tm further, so this lower margin is
+# conservative for the unmodified oligo.
 CASTPCR_PROBE_MARGIN <- 4
 CASTPCR_PROBE_TM_MAX <- 80
 
@@ -103,8 +105,10 @@ castpcr_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
 #' @param min_product,max_product the accepted amplicon window.
 #' @param tm_range accepted AS primer Tm window.
 #' @param gc_range accepted GC window for every oligo.
-#' @return a `kasp_castpcr` list (`snp`, `primers`, `probe`, `amplicon`), or
-#'   `NULL` (with a message) when no AS primer, mate or probe passes the filters.
+#' @return a `kasp_castpcr` list (`snp`, `primers`, `probe`, `amplicon`,
+#'   `compatibility` - the joint dimer/hairpin screen over the AS primer, its mate
+#'   and the probe), or `NULL` (with a message) when no AS primer, mate or probe
+#'   passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -194,6 +198,11 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
     ),
     amplicon = tibble::tibble(start = pair$start + off, end = pair$end + off)
   )
+  # AS primer + common mate + hydrolysis probe share the tube: joint screen
+  out$compatibility <- tube_compatibility(c(
+    as_primer = out$primers$as_primer, common = out$primers$forward,
+    mate = out$primers$reverse, probe = out$probe$sequence
+  ))
   structure(out, class = "kasp_castpcr")
 }
 
@@ -219,7 +228,8 @@ print.kasp_castpcr <- function(x, ...) {
 #' A self-describing definition of the castPCR chemistry in the shape the marker
 #' registry expects (scheme/family/label/readout, the gate/tier vocabulary and the
 #' per-gate human-readable labels).  Kept beside the designer so the chemistry and
-#' its thresholds travel together; the registry is wired by the caller.
+#' its thresholds travel together; it is discovered automatically (one file per
+#' scheme, see `R/kasp_scheme_registry.R`).
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd

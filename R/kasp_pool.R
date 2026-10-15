@@ -57,3 +57,28 @@ primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp =
   d$pass <- dplyr::if_else(d$kind == "self", d$run <= max_selfcomp, d$run < min_cross_run)
   dplyr::select(d, "a", "b", "kind", "run", "dg", "pass")
 }
+
+#' Joint compatibility of everything that shares one tube
+#'
+#' A scheme that puts more than one pair in a reaction (a LAMP set, a
+#' tetra-primer ARMS, an SNaPshot primer plus its pair, a hydrolysis probe
+#' alongside its primers) must screen the *final* oligo set as a whole - a dimer
+#' between two of them fails the tube even when every pair passes on its own.
+#' This is the one-liner those designers call: it pools the named oligos, drops
+#' empties and duplicates, and returns [primer_set_compatibility()] over them.
+#' Non-ACGT marks (a probe's THF abasic site, a modified base) are treated as `N`,
+#' since the run screen is a heuristic.
+#' @param oligos a named character vector, or a list of them (pooled).
+#' @return a tibble (see [primer_set_compatibility()]), or `NULL` when fewer than
+#'   two distinct oligos are present.
+#' @keywords internal
+#' @noRd
+tube_compatibility <- function(oligos) {
+  oligos <- unlist(oligos, use.names = TRUE)
+  oligos <- oligos[!is.na(oligos) & nzchar(oligos)]
+  oligos <- oligos[!duplicated(oligos)]
+  if (length(oligos) < 2L) {
+    return(NULL)
+  }
+  primer_set_compatibility(gsub("[^ACGTNacgtn]", "N", toupper(oligos)))
+}

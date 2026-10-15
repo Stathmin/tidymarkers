@@ -34,7 +34,8 @@ design_lamp_marker(
 \item{min_product, max_product}{accepted amplicon window (bp).}
 }
 \value{
-a \code{kasp_lamp} list (\code{snp}, \code{primers}, \code{amplicon}, \code{loop}, \code{tm}), or
+a \code{kasp_lamp} list (\code{snp}, \code{primers}, \code{amplicon}, \code{loop}, \code{tm},
+\code{compatibility} - the joint dimer/hairpin screen over all four primers), or
 \code{NULL} (with a message) when no primer set passes the filters.
 }
 \description{

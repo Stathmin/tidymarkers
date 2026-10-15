@@ -38,8 +38,9 @@
 #    * GC 40-60 % and "no run >= 4 / no SSR" are the primer-agnostic KASP limits
 #      (KASP_LIMITS), reused unchanged (see kasp_primer_pairs.R).
 #    * the structural screen is sequence-level (no inverted repeat), reusing
-#      has_palindrome(); a full dG37 dimer screen reuses oligo_dg_vec()/dimer_thermo()
-#      in the shared QC (not run here, so the designer stays OligoArrayAux-free).
+#      has_palindrome(); the whole four-primer set is then screened jointly for
+#      cross-dimers/hairpins by tube_compatibility() (sequence-level run screen,
+#      no OligoArrayAux needed).
 # =============================================================================
 
 # The LAMP decision stage, declared here so scheme_def_lamp() is self-contained.
@@ -181,7 +182,8 @@ lamp_fusion <- function(seq, q, side, lengths, tm_range, gc_range, target_tm) {
 #' @param inner_tm accepted inner binding-arm Tm window (C).
 #' @param gc_range accepted GC fraction window (both arm classes).
 #' @param min_product,max_product accepted amplicon window (bp).
-#' @return a `kasp_lamp` list (`snp`, `primers`, `amplicon`, `loop`, `tm`), or
+#' @return a `kasp_lamp` list (`snp`, `primers`, `amplicon`, `loop`, `tm`,
+#'   `compatibility` - the joint dimer/hairpin screen over all four primers), or
 #'   `NULL` (with a message) when no primer set passes the filters.
 #' @examples
 #' \dontrun{
@@ -235,6 +237,9 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 18:22,
     loop = tibble::tibble(start = loop_start + off, end = loop_end + off),
     tm = c(F3 = outer$tm_f, B3 = outer$tm_r, FIP = fip$tm, BIP = bip$tm)
   )
+  # the four primers share one tube, so screen the *joint* set (cross-dimers and
+  # hairpins between them), not each primer alone
+  out$compatibility <- tube_compatibility(out$primers)
   structure(out, class = "kasp_lamp")
 }
 

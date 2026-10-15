@@ -9,6 +9,7 @@ test_that("design_taqman_marker returns a short pair with two allele-specific pr
 
   m <- design_taqman_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "kasp_taqman")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   # a short amplicon straddling the variant
   expect_lte(m$amplicon$product, 150L)
   expect_lt(m$amplicon$start, 300L)

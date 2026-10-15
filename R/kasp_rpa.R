@@ -258,8 +258,9 @@ rpa_probe <- function(seq, si, pair, probe_len, gc_range) {
 #' @param tm_range accepted primer Tm window; open by default (Tm is not the RPA
 #'   gate) and only used by the shared candidate screener.
 #' @param BPPARAM optional `BiocParallel` backend for the dimer filter.
-#' @return a `kasp_rpa` list (`snp`, `primers`, `probe`, `amplicon`), or `NULL`
-#'   (with a message) when no pair or probe passes the filters.
+#' @return a `kasp_rpa` list (`snp`, `primers`, `probe`, `amplicon`,
+#'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe),
+#'   or `NULL` (with a message) when no pair or probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -328,6 +329,12 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
     probe = probe,
     amplicon = tibble::tibble(start = pair$start + off, end = pair$end + off)
   )
+  # the pair and the exo probe share the tube: joint screen (the probe's THF base
+  # is treated as N by tube_compatibility)
+  out$compatibility <- tube_compatibility(c(
+    forward = out$primers$forward, reverse = out$primers$reverse,
+    probe = out$probe$sequence
+  ))
   structure(out, class = "kasp_rpa")
 }
 
@@ -357,7 +364,8 @@ print.kasp_rpa <- function(x, ...) {
 #' A self-describing definition of the RPA chemistry in the shape the marker
 #' registry expects (scheme/family/label/readout, the gate/tier vocabulary and the
 #' per-gate human-readable labels).  Kept beside the designer so the chemistry and
-#' its thresholds travel together; the registry is wired by the caller.
+#' its thresholds travel together; it is discovered automatically (one file per
+#' scheme, see `R/kasp_scheme_registry.R`).
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd

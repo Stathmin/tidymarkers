@@ -9,6 +9,7 @@ test_that("design_castpcr_marker returns an AS primer, a probe and a short ampli
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
   m <- design_castpcr_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "kasp_castpcr")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
 
   # one AS primer whose 3' base sits on the variant base
   as <- m$primers$as_primer

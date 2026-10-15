@@ -17,6 +17,7 @@ test_that("the extension primer's 3' end sits one base 5' of the variant", {
   skip_if_no_oligoarrayaux()
   m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank)
   expect_s3_class(m, "kasp_snapshot")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_equal(m$extension$placement, 1L)
   expect_match(m$extension$primer, "^[ACGT]+$")
   expect_gte(nchar(m$extension$primer), 18L)

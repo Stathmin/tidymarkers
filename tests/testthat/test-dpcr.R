@@ -10,6 +10,7 @@ test_that("design_dpcr_marker returns a short amplicon with a hydrolysis probe o
   )
   m <- design_dpcr_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "kasp_dpcr")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   # a short amplicon with the probe between the primers and over the variant
   expect_gte(m$primers$product, 60L)
   expect_lte(m$primers$product, 150L)

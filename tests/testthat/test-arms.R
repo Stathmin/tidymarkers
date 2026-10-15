@@ -18,6 +18,7 @@ test_that("design_arms_marker gives two resolvable, different-sized diagnostic b
   )
   m <- design_arms_marker(genome, snp, flank = 250L)
   expect_s3_class(m, "kasp_arms")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   b <- m$bands
   expect_setequal(b$band, c("control", "REF", "ALT"))
   expect_gte(abs(b$size[b$band == "REF"] - b$size[b$band == "ALT"]), 20L)

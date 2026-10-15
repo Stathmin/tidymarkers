@@ -18,7 +18,8 @@ design_arms_marker(genome, snp, flank = 300L, min_band_gap = 20L, ...)
 \item{...}{passed to \code{\link[=design_as_primers]{design_as_primers()}} (e.g. \code{stab_ats}, \code{BPPARAM}).}
 }
 \value{
-a \code{kasp_arms} list (\code{snp}, \code{outer}, \code{inner}, \code{bands}, \code{amplicon}), or
+a \code{kasp_arms} list (\code{snp}, \code{outer}, \code{inner}, \code{bands}, \code{amplicon},
+\code{compatibility} - the joint dimer/hairpin screen over all four primers), or
 \code{NULL} (with a message) when a pair cannot be built.
 }
 \description{

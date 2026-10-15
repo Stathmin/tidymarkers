@@ -24,7 +24,8 @@
 #' @param flank window half-width for the outer pair.
 #' @param min_band_gap minimal size difference between the two diagnostic bands.
 #' @param ... passed to [design_as_primers()] (e.g. `stab_ats`, `BPPARAM`).
-#' @return a `kasp_arms` list (`snp`, `outer`, `inner`, `bands`, `amplicon`), or
+#' @return a `kasp_arms` list (`snp`, `outer`, `inner`, `bands`, `amplicon`,
+#'   `compatibility` - the joint dimer/hairpin screen over all four primers), or
 #'   `NULL` (with a message) when a pair cannot be built.
 #' @examples
 #' \dontrun{
@@ -91,6 +92,11 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
     ),
     amplicon = tibble::tibble(start = outer$start + off, end = outer$end + off)
   )
+  # all four primers share the tube: screen the joint set, not just the pair
+  out$compatibility <- tube_compatibility(c(
+    outer_forward = out$outer$forward, outer_reverse = out$outer$reverse,
+    AS_ref = out$inner$ref$primer, AS_alt = out$inner$alt$primer
+  ))
   structure(out, class = "kasp_arms")
 }
 

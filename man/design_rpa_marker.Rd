@@ -42,8 +42,9 @@ gate) and only used by the shared candidate screener.}
 \item{BPPARAM}{optional \code{BiocParallel} backend for the dimer filter.}
 }
 \value{
-a \code{kasp_rpa} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon}), or \code{NULL}
-(with a message) when no pair or probe passes the filters.
+a \code{kasp_rpa} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},
+\code{compatibility} - the joint dimer/hairpin screen over the pair and the probe),
+or \code{NULL} (with a message) when no pair or probe passes the filters.
 }
 \description{
 The isothermal analogue of a plain PCR pair: two LONG primers (default 30-35

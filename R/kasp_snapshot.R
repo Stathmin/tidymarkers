@@ -74,7 +74,9 @@ SNAPSHOT_EXT_GC <- c(0.30, 0.70)
 #' @param limits thresholds list (see `KASP_LIMITS`); its `hairpin_dg` /
 #'   `homodimer_dg` floor the structure gate.
 #' @return a `kasp_snapshot` list (`snp`, `amplification`, `extension`,
-#'   `amplicon`), or `NULL` (with a message) when no pair/primer passes.
+#'   `amplicon`, `compatibility` - the joint dimer/hairpin screen over the pair
+#'   and the extension primer), or `NULL` (with a message) when no pair/primer
+#'   passes.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -138,6 +140,11 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
     ),
     amplicon = tibble::tibble(start = amp$start + off, end = amp$end + off)
   )
+  # pair plus extension primer share the tube: screen the joint set
+  out$compatibility <- tube_compatibility(c(
+    amp_forward = out$amplification$forward, amp_reverse = out$amplification$reverse,
+    extension = out$extension$primer
+  ))
   structure(out, class = "kasp_snapshot")
 }
 

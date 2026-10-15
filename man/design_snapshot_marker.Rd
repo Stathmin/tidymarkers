@@ -44,7 +44,9 @@ candidate clears it (see the file header).}
 }
 \value{
 a \code{kasp_snapshot} list (\code{snp}, \code{amplification}, \code{extension},
-\code{amplicon}), or \code{NULL} (with a message) when no pair/primer passes.
+\code{amplicon}, \code{compatibility} - the joint dimer/hairpin screen over the pair
+and the extension primer), or \code{NULL} (with a message) when no pair/primer
+passes.
 }
 \description{
 The minisequencing analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a flanking pair makes

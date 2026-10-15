@@ -41,8 +41,9 @@ design_taqman_marker(
 \item{...}{reserved for future design options.}
 }
 \value{
-a \code{kasp_taqman} list (\code{snp}, \code{primers}, \code{probes} - one row per allele -
-and \code{amplicon}), or \code{NULL} (with a message) when no pair or probe passes the
+a \code{kasp_taqman} list (\code{snp}, \code{primers}, \code{probes} - one row per allele -,
+\code{amplicon}, \code{compatibility} - the joint dimer/hairpin screen over the pair and
+both probes), or \code{NULL} (with a message) when no pair or probe passes the
 filters.
 }
 \description{

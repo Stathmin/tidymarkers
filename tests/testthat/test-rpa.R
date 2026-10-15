@@ -10,6 +10,7 @@ test_that("design_rpa_marker returns long primers and a short amplicon", {
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
   m <- design_rpa_marker(genome, snp, flank = 200L)
   expect_s3_class(m, "kasp_rpa")
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
 
   # RPA needs a long recombinase filament: both primers are in the length window
   expect_true(grepl("^[ACGT]+$", m$primers$forward) && grepl("^[ACGT]+$", m$primers$reverse))

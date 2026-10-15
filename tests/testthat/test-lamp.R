@@ -11,6 +11,8 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant in th
   m <- design_lamp_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "kasp_lamp")
   expect_named(m$primers, c("F3", "B3", "FIP", "BIP"))
+  # the four primers are screened jointly, not each one alone
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_true(all(grepl("^[ACGT]+$", unlist(m$primers))))
   # amplicon within the LAMP window and straddling the variant
   product <- m$amplicon$end - m$amplicon$start + 1L
