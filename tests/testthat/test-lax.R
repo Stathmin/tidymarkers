@@ -34,6 +34,11 @@ test_that("design_lax_marker designs one ALT primer per ALT haplotype", {
   expect_length(x$assays, 2L)
   expect_true(all(x$designed %in% x$alt))
   expect_output(print(x), "kasp_lax")
+  # the joint pool of every primer is checked for dimers/hairpins, not just each
+  # haplotype's own triplet
+  expect_true(is.data.frame(x$compatibility))
+  expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(x$compatibility)))
+  expect_true(length(x$pool) >= length(x$designed))
   # each assay baked *its own* linked variant into the ALT primer, so the two ALT
   # primers are not the same sequence
   if (length(x$designed) == 2L) {

@@ -33,7 +33,10 @@
 #' @param ... passed to [assemble_kasp_assay()].
 #' @return a `kasp_lax` list: `snp`, `haplotypes`, `alt` (the ALT haplotype
 #'   names), `assays` (one assembled assay per ALT haplotype), `designed` (those
-#'   that designed) and `verdict`.
+#'   that designed), `pool` + `compatibility` (the *joint* check of every primer
+#'   that would share the tube, see [primer_set_compatibility()]) and `verdict`
+#'   (`"pass"` only when every per-haplotype primer designs *and* the joint pool
+#'   is free of dimers/hairpins).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -68,10 +71,26 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   })
   names(assays) <- alt_hap
   ok <- vapply(assays, is_target_designable, logical(1))
+  # the *joint* pool: every primer that would sit in the one tube (the shared REF
+  # primer, each haplotype's ALT primer and each COM) must also be free of dimers
+  # and hairpins - a per-haplotype assay is blind to the rest of the pool
+  prim <- unlist(lapply(names(assays), function(hp) {
+    a <- assays[[hp]]
+    if (inherits(a, "kasp_doomed")) {
+      return(NULL)
+    }
+    stats::setNames(
+      c(a$assay$as_ref[1L], a$assay$as_alt[1L], a$assay$com[1L]),
+      c(paste0("AS_ref_", hp), paste0("AS_alt_", hp), paste0("COM_", hp))
+    )
+  }), use.names = TRUE)
+  prim <- prim[!duplicated(prim)] # the shared REF/COM primers appear once
+  compat <- if (length(prim) > 1L) primer_set_compatibility(prim) else NULL
+  pool_ok <- is.null(compat) || all(compat$pass)
   out <- list(
     snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, assays = assays,
-    designed = alt_hap[ok],
-    verdict = if (all(ok)) "pass" else if (any(ok)) "warn" else "fail"
+    designed = alt_hap[ok], pool = prim, compatibility = compat,
+    verdict = if (all(ok) && pool_ok) "pass" else if (any(ok)) "warn" else "fail"
   )
   structure(out, class = "kasp_lax")
 }
@@ -87,6 +106,14 @@ print.kasp_lax <- function(x, ...) {
     a <- x$assays[[hp]]
     cat("  haplotype ", hp, " -> ",
       if (inherits(a, "kasp_doomed")) paste("doomed:", a$reason) else "ok",
+      "\n",
+      sep = ""
+    )
+  }
+  if (!is.null(x$compatibility)) {
+    bad <- x$compatibility[!x$compatibility$pass, , drop = FALSE]
+    cat("  pool (", nrow(x$compatibility), " pairs): ",
+      if (nrow(bad)) paste("failed", paste(paste(bad$a, bad$b, sep = "-"), collapse = ", ")) else "clean",
       "\n",
       sep = ""
     )
