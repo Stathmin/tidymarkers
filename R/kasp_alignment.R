@@ -117,11 +117,17 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
 #' @param reference index or name of the reference sequence (default: the first).
 #' @param chrom the chromosome name to give the reference (the haplotype table's
 #'   `chrom`, and the genome's name).
-#' @param freq optional haplotype frequencies (a named vector, a single number, or
-#'   `NULL` for equal frequencies) - the `pop_freq` weights of the design.
+#' @param freq haplotype frequencies: `NULL` (equal), a single number, a named
+#'   vector, or a two-column table (`haplotype`, `freq`) - the per-haplotype
+#'   weights whose carrier sums give each variant's `pop_freq`.
+#' @param maf optional per-variant minor-allele-frequency table (`chrom`?, `pos`,
+#'   `ref`, `alt`, and `maf`/`freq`) used to override the haplotype-derived
+#'   `pop_freq` of the matching variants in `$variants`.
 #' @param ... passed to [DECIPHER::AlignSeqs()].
 #' @return a list: `reference` (a `DNAString`), `genome` (a one-sequence
-#'   `DNAStringSet` named `chrom`), `haplotypes` (the tidy table), `alignment` (a
+#'   `DNAStringSet` named `chrom`), `haplotypes` (the tidy table), `variants`
+#'   (`chrom`, `pos`, `ref`, `alt`, `pop_freq`, `consequence` - the table
+#'   [assemble_kasp_assay()] weights variants by), `alignment` (a
 #'   `DNAMultipleAlignment`) and `reference_name`.
 #' @examples
 #' seqs <- c(
@@ -133,7 +139,7 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
 #' @family KASP haplotypes
 #' @export
 haplotypes_from_alignment <- function(seqs, reference = 1L, chrom = "SAT2",
-                                      freq = NULL, ...) {
+                                      freq = NULL, maf = NULL, ...) {
   if (is.character(seqs)) seqs <- Biostrings::DNAStringSet(seqs)
   if (!inherits(seqs, "DNAStringSet")) {
     cli::cli_abort(gettext("`seqs` must be a DNAStringSet or a character vector."))
@@ -161,23 +167,128 @@ haplotypes_from_alignment <- function(seqs, reference = 1L, chrom = "SAT2",
     call_haplotype_variants(a[[ref_name]], a[[h]], ref_seq, chrom, h)
   }) |>
     purrr::list_rbind()
-  if (is.null(freq)) {
-    f <- rep(1 / length(a), length(a))
-  } else if (length(freq) == 1L) {
-    f <- rep(freq, length(a))
-  } else {
-    f <- unname(freq[names(a)])
-  }
+  f <- normalise_hap_freq(freq, names(a))
   hap_tbl <- tibble::tibble(
     haplotype = variants$haplotype,
-    freq = f[match(variants$haplotype, names(a))],
+    freq = unname(f[variants$haplotype]),
     chrom = variants$chrom, pos = variants$pos, ref = variants$ref, alt = variants$alt
   )
   list(
     reference = Biostrings::DNAString(ref_seq),
     genome = Biostrings::DNAStringSet(stats::setNames(ref_seq, chrom)),
     haplotypes = hap_tbl,
+    variants = variants_from_haplotypes(hap_tbl, maf = maf),
     alignment = Biostrings::DNAMultipleAlignment(aln),
     reference_name = ref_name
   )
+}
+
+#' Normalise a haplotype-frequency input to one value per sequence
+#' @keywords internal
+#' @noRd
+normalise_hap_freq <- function(freq, nms) {
+  n <- length(nms)
+  if (is.null(freq)) {
+    return(stats::setNames(rep(1 / n, n), nms))
+  }
+  if (is.data.frame(freq)) {
+    if (!all(c("haplotype", "freq") %in% names(freq))) {
+      cli::cli_abort(gettext("A `freq` table needs `haplotype` and `freq` columns."))
+    }
+    v <- stats::setNames(as.numeric(freq$freq), as.character(freq$haplotype))
+    out <- v[nms]
+    out[is.na(out)] <- 0
+    return(out)
+  }
+  if (length(freq) == 1L) {
+    return(stats::setNames(rep(as.numeric(freq), n), nms))
+  }
+  if (is.null(names(freq))) {
+    cli::cli_abort(gettext("A `freq` vector must be named by haplotype."))
+  }
+  v <- stats::setNames(as.numeric(freq), names(freq))
+  out <- v[nms]
+  out[is.na(out)] <- 0
+  out
+}
+
+#' Each variant's pop_freq from a haplotype table (with optional MAF overrides)
+#'
+#' A variant's weight is the summed frequency of the haplotypes that carry it
+#' (capped at 1); an optional `maf` table replaces it for the matching `(chrom,
+#' pos, ref, alt)` rows - so real minor-allele frequencies win over the count
+#' implied by the alignment.
+#' @keywords internal
+#' @noRd
+variants_from_haplotypes <- function(hap_tbl, maf = NULL) {
+  v <- hap_tbl |>
+    dplyr::group_by(.data$chrom, .data$pos, .data$ref, .data$alt) |>
+    dplyr::summarise(pop_freq = min(1, sum(.data$freq)), .groups = "drop")
+  v$consequence <- NA_character_
+  if (!is.null(maf)) {
+    m <- tibble::as_tibble(maf)
+    fcol <- intersect(c("maf", "freq"), names(m))[1L]
+    if (!all(c("pos", "ref", "alt") %in% names(m)) || is.na(fcol)) {
+      cli::cli_abort(gettext("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."))
+    }
+    m <- m[, c(intersect("chrom", names(m)), "pos", "ref", "alt", fcol)]
+    names(m)[names(m) == fcol] <- "maf"
+    by <- intersect(c("chrom", "pos", "ref", "alt"), names(m))
+    v <- dplyr::left_join(v, m, by = by, suffix = c("", "_maf"))
+    v$pop_freq <- dplyr::coalesce(v$maf, v$pop_freq)
+    v$maf <- NULL
+  }
+  v[, c("chrom", "pos", "ref", "alt", "pop_freq", "consequence")]
+}
+
+# nucleotide fill for the alignment view
+.aln_base_colours <- c(A = "#4daf4a", C = "#377eb8", G = "#ff7f00", T = "#e41a1c", "-" = "grey88", N = "grey70")
+
+#' Plot an alignment of the haplotypes (a base x sequence matrix)
+#'
+#' A compact view of [haplotypes_from_alignment()]: one row per haplotype (the
+#' reference first), one column per site, filled by the base - so SNPs, MNPs and
+#' indels read at a glance.  `type = "variants"` (default) keeps only the columns
+#' that differ from the reference; `type = "all"` plots the whole alignment.
+#' @param hp a list from [haplotypes_from_alignment()].
+#' @param type `"variants"` (only the variant columns) or `"all"`.
+#' @param ... reserved for future options.
+#' @return a `ggplot`.
+#' @examples
+#' \dontrun{
+#' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidykasp")
+#' plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
+#' }
+#' @family KASP haplotypes
+#' @export
+plot_alignment <- function(hp, type = c("variants", "all"), ...) {
+  rlang::check_installed("ggplot2", reason = gettext("to plot an alignment"))
+  if (!is.list(hp) || is.null(hp$alignment)) {
+    cli::cli_abort(gettext("`hp` must come from haplotypes_from_alignment()."))
+  }
+  type <- match.arg(type)
+  A <- as.character(hp$alignment)
+  m <- do.call(rbind, strsplit(A, "", fixed = TRUE))
+  rownames(m) <- names(A)
+  ref_row <- m[hp$reference_name, ]
+  ref_mat <- matrix(ref_row, nrow = nrow(m), ncol = ncol(m), byrow = TRUE)
+  variant_cols <- which(colSums(m != ref_mat) > 0L)
+  cols <- if (identical(type, "variants")) variant_cols else seq_len(ncol(m))
+  d <- tibble::tibble(
+    haplotype = factor(
+      rep(rownames(m), times = length(cols)),
+      levels = c(hp$reference_name, setdiff(rownames(m), hp$reference_name))
+    ),
+    col = rep(cols, each = nrow(m)),
+    base = as.vector(m[, cols, drop = FALSE])
+  )
+  ggplot2::ggplot(d, ggplot2::aes(x = .data$col, y = .data$haplotype, fill = .data$base)) +
+    ggplot2::geom_tile() +
+    ggplot2::scale_fill_manual(values = .aln_base_colours, na.value = "white", name = "base") +
+    ggplot2::labs(
+      x = "alignment column", y = NULL,
+      title = glue::glue("SAT2 haplotype alignment ({length(variant_cols)} variant columns)")
+    ) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(panel.grid = ggplot2::element_blank())
 }

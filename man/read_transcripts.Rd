@@ -29,6 +29,7 @@ read_transcripts(f)
 }
 \seealso{
 Other KASP haplotypes:
-\code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}}
+\code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
+\code{\link[=plot_alignment]{plot_alignment()}}
 }
 \concept{KASP haplotypes}

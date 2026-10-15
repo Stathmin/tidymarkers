@@ -9,6 +9,7 @@ haplotypes_from_alignment(
   reference = 1L,
   chrom = "SAT2",
   freq = NULL,
+  maf = NULL,
   ...
 )
 }
@@ -20,14 +21,21 @@ haplotypes_from_alignment(
 \item{chrom}{the chromosome name to give the reference (the haplotype table's
 \code{chrom}, and the genome's name).}
 
-\item{freq}{optional haplotype frequencies (a named vector, a single number, or
-\code{NULL} for equal frequencies) - the \code{pop_freq} weights of the design.}
+\item{freq}{haplotype frequencies: \code{NULL} (equal), a single number, a named
+vector, or a two-column table (\code{haplotype}, \code{freq}) - the per-haplotype
+weights whose carrier sums give each variant's \code{pop_freq}.}
+
+\item{maf}{optional per-variant minor-allele-frequency table (\code{chrom}?, \code{pos},
+\code{ref}, \code{alt}, and \code{maf}/\code{freq}) used to override the haplotype-derived
+\code{pop_freq} of the matching variants in \verb{$variants}.}
 
 \item{...}{passed to \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}.}
 }
 \value{
 a list: \code{reference} (a \code{DNAString}), \code{genome} (a one-sequence
-\code{DNAStringSet} named \code{chrom}), \code{haplotypes} (the tidy table), \code{alignment} (a
+\code{DNAStringSet} named \code{chrom}), \code{haplotypes} (the tidy table), \code{variants}
+(\code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{pop_freq}, \code{consequence} - the table
+\code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} weights variants by), \code{alignment} (a
 \code{DNAMultipleAlignment}) and \code{reference_name}.
 }
 \description{
@@ -48,6 +56,7 @@ hp$haplotypes
 }
 \seealso{
 Other KASP haplotypes:
+\code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
 \concept{KASP haplotypes}

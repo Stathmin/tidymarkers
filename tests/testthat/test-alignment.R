@@ -85,3 +85,36 @@ test_that("the plan layer carries haplotype context", {
   expect_equal(nrow(plan$targets), 1L)
   expect_equal(nrow(plan$haplotypes), nrow(sat2_hp$haplotypes))
 })
+
+test_that("variants carry pop_freq, and a MAF table overrides it", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  v <- sat2_hp$variants
+  expect_true(all(c("chrom", "pos", "ref", "alt", "pop_freq", "consequence") %in% names(v)))
+  expect_true(all(v$pop_freq > 0 & v$pop_freq <= 1))
+  # the reference haplotype carries nothing, so equal 1/11 freqs give k/11 weights
+  expect_true(any(abs(v$pop_freq - round(v$pop_freq * 11) / 11) < 1e-9))
+  # an explicit MAF wins for the matching variant
+  target <- v[!duplicated(v[, c("pos", "ref", "alt")]), ][1L, ]
+  hp2 <- haplotypes_from_alignment(
+    read_transcripts(sat2_path),
+    chrom = "SAT2",
+    maf = tibble::tibble(pos = target$pos, ref = target$ref, alt = target$alt, maf = 0.02)
+  )
+  hit <- hp2$variants[hp2$variants$pos == target$pos & hp2$variants$alt == target$alt, ]
+  expect_equal(hit$pop_freq, 0.02, tolerance = 1e-9)
+})
+
+test_that("haplotype frequencies may be given as a table", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  nms <- names(read_transcripts(sat2_path))
+  tab <- tibble::tibble(haplotype = nms, freq = seq_along(nms) / sum(seq_along(nms)))
+  hp3 <- haplotypes_from_alignment(read_transcripts(sat2_path), chrom = "SAT2", freq = tab)
+  expect_true(all(unique(hp3$haplotypes$freq) %in% tab$freq))
+})
+
+test_that("plot_alignment returns a ggplot", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  skip_if_not_installed("ggplot2")
+  expect_s3_class(plot_alignment(sat2_hp), "ggplot")
+  expect_s3_class(plot_alignment(sat2_hp, type = "all"), "ggplot")
+})
