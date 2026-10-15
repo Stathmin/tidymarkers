@@ -33,9 +33,9 @@ weights whose carrier sums give each variant's \code{pop_freq}.}
 }
 \value{
 a list: \code{reference} (a \code{DNAString}), \code{genome} (a one-sequence
-\code{DNAStringSet} named \code{chrom}), \code{haplotypes} (the tidy table), \code{variants}
-(\code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{pop_freq}, \code{consequence} - the table
-\code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} weights variants by), \code{alignment} (a
+\code{DNAStringSet} named \code{chrom}), \code{reference_length}, \code{haplotypes} (the tidy
+table), \code{variants} (\code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{pop_freq}, \code{consequence} -
+the table \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} weights variants by), \code{alignment} (a
 \code{DNAMultipleAlignment}) and \code{reference_name}.
 }
 \description{
@@ -56,6 +56,9 @@ hp$haplotypes
 }
 \seealso{
 Other KASP haplotypes:
+\code{\link[=chunk_reference]{chunk_reference()}},
+\code{\link[=chunk_weight]{chunk_weight()}},
+\code{\link[=kasp_chunk]{kasp_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }

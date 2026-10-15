@@ -125,9 +125,9 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
 #'   `pop_freq` of the matching variants in `$variants`.
 #' @param ... passed to [DECIPHER::AlignSeqs()].
 #' @return a list: `reference` (a `DNAString`), `genome` (a one-sequence
-#'   `DNAStringSet` named `chrom`), `haplotypes` (the tidy table), `variants`
-#'   (`chrom`, `pos`, `ref`, `alt`, `pop_freq`, `consequence` - the table
-#'   [assemble_kasp_assay()] weights variants by), `alignment` (a
+#'   `DNAStringSet` named `chrom`), `reference_length`, `haplotypes` (the tidy
+#'   table), `variants` (`chrom`, `pos`, `ref`, `alt`, `pop_freq`, `consequence` -
+#'   the table [assemble_kasp_assay()] weights variants by), `alignment` (a
 #'   `DNAMultipleAlignment`) and `reference_name`.
 #' @examples
 #' seqs <- c(
@@ -175,6 +175,8 @@ haplotypes_from_alignment <- function(seqs, reference = 1L, chrom = "SAT2",
   )
   list(
     reference = Biostrings::DNAString(ref_seq),
+    reference_length = nchar(ref_seq),
+    chrom = chrom,
     genome = Biostrings::DNAStringSet(stats::setNames(ref_seq, chrom)),
     haplotypes = hap_tbl,
     variants = variants_from_haplotypes(hap_tbl, maf = maf),
@@ -225,20 +227,28 @@ variants_from_haplotypes <- function(hap_tbl, maf = NULL) {
     dplyr::group_by(.data$chrom, .data$pos, .data$ref, .data$alt) |>
     dplyr::summarise(pop_freq = min(1, sum(.data$freq)), .groups = "drop")
   v$consequence <- NA_character_
-  if (!is.null(maf)) {
-    m <- tibble::as_tibble(maf)
-    fcol <- intersect(c("maf", "freq"), names(m))[1L]
-    if (!all(c("pos", "ref", "alt") %in% names(m)) || is.na(fcol)) {
-      cli::cli_abort(gettext("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."))
-    }
-    m <- m[, c(intersect("chrom", names(m)), "pos", "ref", "alt", fcol)]
-    names(m)[names(m) == fcol] <- "maf"
-    by <- intersect(c("chrom", "pos", "ref", "alt"), names(m))
-    v <- dplyr::left_join(v, m, by = by, suffix = c("", "_maf"))
-    v$pop_freq <- dplyr::coalesce(v$maf, v$pop_freq)
-    v$maf <- NULL
+  apply_maf(v, maf)[, c("chrom", "pos", "ref", "alt", "pop_freq", "consequence")]
+}
+
+#' Override a variants table's pop_freq from a MAF table
+#' @keywords internal
+#' @noRd
+apply_maf <- function(v, maf = NULL) {
+  if (is.null(maf)) {
+    return(v)
   }
-  v[, c("chrom", "pos", "ref", "alt", "pop_freq", "consequence")]
+  m <- tibble::as_tibble(maf)
+  fcol <- intersect(c("maf", "freq"), names(m))[1L]
+  if (!all(c("pos", "ref", "alt") %in% names(m)) || is.na(fcol)) {
+    cli::cli_abort(gettext("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."))
+  }
+  m <- m[, c(intersect("chrom", names(m)), "pos", "ref", "alt", fcol)]
+  names(m)[names(m) == fcol] <- "maf"
+  by <- intersect(c("chrom", "pos", "ref", "alt"), names(m))
+  v <- dplyr::left_join(v, m, by = by, suffix = c("", "_maf"))
+  v$pop_freq <- dplyr::coalesce(v$maf, v$pop_freq)
+  v$maf <- NULL
+  v
 }
 
 # nucleotide fill for the alignment view
@@ -252,6 +262,9 @@ variants_from_haplotypes <- function(hap_tbl, maf = NULL) {
 #' that differ from the reference; `type = "all"` plots the whole alignment.
 #' @param hp a list from [haplotypes_from_alignment()].
 #' @param type `"variants"` (only the variant columns) or `"all"`.
+#' @param features optional feature table (`start`, `end` in reference
+#'   coordinates; optional `name`/`symbol`, `strand`) drawn as a `feature` track
+#'   under the alignment (e.g. the GenBank `gene`/`CDS` of the reference).
 #' @param ... reserved for future options.
 #' @return a `ggplot`.
 #' @examples
@@ -261,7 +274,7 @@ variants_from_haplotypes <- function(hap_tbl, maf = NULL) {
 #' }
 #' @family KASP haplotypes
 #' @export
-plot_alignment <- function(hp, type = c("variants", "all"), ...) {
+plot_alignment <- function(hp, type = c("variants", "all"), features = NULL, ...) {
   rlang::check_installed("ggplot2", reason = gettext("to plot an alignment"))
   if (!is.list(hp) || is.null(hp$alignment)) {
     cli::cli_abort(gettext("`hp` must come from haplotypes_from_alignment()."))
@@ -274,21 +287,53 @@ plot_alignment <- function(hp, type = c("variants", "all"), ...) {
   ref_mat <- matrix(ref_row, nrow = nrow(m), ncol = ncol(m), byrow = TRUE)
   variant_cols <- which(colSums(m != ref_mat) > 0L)
   cols <- if (identical(type, "variants")) variant_cols else seq_len(ncol(m))
+  lv <- c(hp$reference_name, setdiff(rownames(m), hp$reference_name))
+  # the feature track sits below the sequences
+  feat <- normalise_features(features, c(1L, hp$reference_length))
+  if (!is.null(feat)) lv <- c(lv, "feature")
   d <- tibble::tibble(
-    haplotype = factor(
-      rep(rownames(m), times = length(cols)),
-      levels = c(hp$reference_name, setdiff(rownames(m), hp$reference_name))
-    ),
+    haplotype = factor(rep(rownames(m), times = length(cols)), levels = lv),
     col = rep(cols, each = nrow(m)),
     base = as.vector(m[, cols, drop = FALSE])
   )
-  ggplot2::ggplot(d, ggplot2::aes(x = .data$col, y = .data$haplotype, fill = .data$base)) +
+  p <- ggplot2::ggplot(d, ggplot2::aes(x = .data$col, y = .data$haplotype, fill = .data$base)) +
     ggplot2::geom_tile() +
     ggplot2::scale_fill_manual(values = .aln_base_colours, na.value = "white", name = "base") +
     ggplot2::labs(
       x = "alignment column", y = NULL,
-      title = glue::glue("SAT2 haplotype alignment ({length(variant_cols)} variant columns)")
+      title = glue::glue("Haplotype alignment ({length(variant_cols)} variant columns)")
     ) +
     ggplot2::theme_minimal() +
     ggplot2::theme(panel.grid = ggplot2::element_blank())
+  if (!is.null(feat)) {
+    # the alignment axis is *columns*, so map each feature's reference span onto
+    # the reference row's non-gap columns, then clamp to the drawn columns
+    cols_of_ref <- which(ref_row != "-")
+    nref <- length(cols_of_ref)
+    feat$c1 <- cols_of_ref[pmax(pmin(feat$start, nref), 1L)]
+    feat$c2 <- cols_of_ref[pmax(pmin(feat$end, nref), 1L)]
+    keep <- feat$c2 >= min(cols) & feat$c1 <= max(cols)
+    feat <- feat[keep, , drop = FALSE]
+    feat$c1 <- pmax(feat$c1, min(cols))
+    feat$c2 <- pmin(feat$c2, max(cols))
+    if (nrow(feat)) {
+      yf <- length(lv)
+      p <- p + ggplot2::geom_rect(
+        data = feat,
+        ggplot2::aes(
+          xmin = .data$c1 - 0.5, xmax = .data$c2 + 0.5,
+          ymin = yf - 0.42, ymax = yf + 0.42
+        ),
+        inherit.aes = FALSE, fill = "grey72", colour = "grey40"
+      )
+      if (any(!is.na(feat$name))) {
+        p <- p + ggplot2::geom_text(
+          data = feat[!is.na(feat$name), ],
+          ggplot2::aes(x = (.data$c1 + .data$c2) / 2, y = yf, label = .data$name),
+          inherit.aes = FALSE, size = 2.1, fontface = "bold"
+        )
+      }
+    }
+  }
+  p
 }

@@ -4,12 +4,16 @@
 \alias{plot_alignment}
 \title{Plot an alignment of the haplotypes (a base x sequence matrix)}
 \usage{
-plot_alignment(hp, type = c("variants", "all"), ...)
+plot_alignment(hp, type = c("variants", "all"), features = NULL, ...)
 }
 \arguments{
 \item{hp}{a list from \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}}.}
 
 \item{type}{\code{"variants"} (only the variant columns) or \code{"all"}.}
+
+\item{features}{optional feature table (\code{start}, \code{end} in reference
+coordinates; optional \code{name}/\code{symbol}, \code{strand}) drawn as a \code{feature} track
+under the alignment (e.g. the GenBank \code{gene}/\code{CDS} of the reference).}
 
 \item{...}{reserved for future options.}
 }
@@ -30,7 +34,10 @@ plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
 }
 \seealso{
 Other KASP haplotypes:
+\code{\link[=chunk_reference]{chunk_reference()}},
+\code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
+\code{\link[=kasp_chunk]{kasp_chunk()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
 \concept{KASP haplotypes}

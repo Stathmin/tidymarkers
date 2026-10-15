@@ -192,8 +192,8 @@ kasp_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_r
     as_cand <- raw_as |>
       dplyr::filter(!has_run(.data$ref_primer), !has_repeat(.data$ref_primer)) |>
       dplyr::mutate(
-        as_start = .data$tmpl_start + off,
-        as_end = .data$tmpl_end + off,
+        as_start = .data$tmpl_start + off - 1L,
+        as_end = .data$tmpl_end + off - 1L,
         as_alt_start = .data$as_start,
         as_alt_end = .data$as_end,
         wobble = wobble_mismatch(snp$ref, snp$alt)
@@ -243,10 +243,10 @@ kasp_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_r
         tm = .data$tm_ref, gc = .data$gc_ref,
         dg_3p = terminal_dg(.data$primer_ref),
         wobble = NA, # undefined for length-changing alleles
-        as_start = .data$as_start_ref + off,
-        as_end = .data$as_end_ref + off,
-        as_alt_start = alt_to_ref(.data$as_start_alt) + off,
-        as_alt_end = alt_to_ref(.data$as_end_alt) + off
+        as_start = .data$as_start_ref + off - 1L,
+        as_end = .data$as_end_ref + off - 1L,
+        as_alt_start = alt_to_ref(.data$as_start_alt) + off - 1L,
+        as_alt_end = alt_to_ref(.data$as_end_alt) + off - 1L
       )
   }
   as_cand

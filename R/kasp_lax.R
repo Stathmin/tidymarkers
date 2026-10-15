@@ -74,10 +74,20 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
     ), class = "kasp_lax"))
   }
   strand <- base$strand
-  alt_primers <- purrr::map(alt_hap, function(hp) {
+  # ALT haplotypes that carry the *same* variants around the target produce the
+  # same ALT primer, so group them and design once per distinct group - cheaper,
+  # and one primer serves several haplotypes
+  h <- hv$haplotypes
+  sig <- vapply(alt_hap, function(hp) {
+    d <- h[h$haplotype == hp & h$pos != snp$pos, , drop = FALSE]
+    paste(sort(paste(d$pos, d$ref, d$alt, sep = ":")), collapse = ";")
+  }, character(1))
+  groups <- split(alt_hap, sig)
+  group_primers <- purrr::map_chr(groups, function(hps) {
+    hpk <- hps[1L]
     lk <- NULL
     if (!is.null(hv$linked)) {
-      d <- hv$linked[hv$linked$haplotype == hp, c("target", "linked"), drop = FALSE]
+      d <- hv$linked[hv$linked$haplotype == hpk, c("target", "linked"), drop = FALSE]
       if (nrow(d)) lk <- d
     }
     a <- suppressWarnings(assemble_kasp_assay(
@@ -86,10 +96,12 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
     ))
     if (!is_target_designable(a)) NA_character_ else a$assay$as_alt[1L]
   })
-  names(alt_primers) <- alt_hap
+  grp <- rep(names(groups), lengths(groups))
+  names(grp) <- unlist(groups, use.names = FALSE)
+  alt_primers <- stats::setNames(unname(group_primers[grp[alt_hap]]), alt_hap)
   ok <- !is.na(alt_primers)
-  # the *joint* pool: the shared REF primer + shared COM + one ALT primer per
-  # haplotype - the only primers that would sit in the one tube
+  # the *joint* pool: the shared REF primer + COM + one ALT primer per group - the
+  # only primers that would sit in the one tube
   prim <- c(
     AS_ref = base$assay$as_ref[1L], COM = base$assay$com[1L],
     stats::setNames(alt_primers[ok], paste0("AS_alt_", alt_hap[ok]))
@@ -99,6 +111,7 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   pool_ok <- is.null(compat) || all(compat$pass)
   out <- list(
     snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, base = base,
+    haplotype_groups = tibble::tibble(group = unname(grp[alt_hap]), haplotype = alt_hap),
     alt_primers = alt_primers, pool = prim, compatibility = compat,
     verdict = if (any(ok) && pool_ok) "pass" else if (any(ok)) "warn" else "fail"
   )

@@ -118,3 +118,69 @@ test_that("plot_alignment returns a ggplot", {
   expect_s3_class(plot_alignment(sat2_hp), "ggplot")
   expect_s3_class(plot_alignment(sat2_hp, type = "all"), "ggplot")
 })
+
+test_that("plot_alignment draws a feature track", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  skip_if_not_installed("ggplot2")
+  feats <- tibble::tibble(
+    start = c(1L, 54L), end = c(1209L, 1067L), strand = "+", name = c("SAT2", "CDS")
+  )
+  expect_s3_class(plot_alignment(sat2_hp, features = feats), "ggplot")
+  expect_s3_class(plot_alignment(sat2_hp, type = "all", features = feats), "ggplot")
+})
+
+test_that("an AS primer's genomic interval matches the genome (no off-by-one)", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  skip_if_no_oligoarrayaux()
+  snp <- tibble::tibble(chrom = "SAT2", pos = 431L, ref = "A", alt = "G")
+  a <- suppressWarnings(assemble_kasp_assay(sat2_hp$genome, snp, flank = 150L, cores = 1L))
+  skip_if(!inherits(a, "kasp_assay"), "SAT2:431 did not design here")
+  aa <- a$assay[1L, ]
+  ref <- as.character(sat2_hp$reference)
+  rc <- function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAString(x)))
+  # the AS primer spells exactly the genome it covers (its strand), and its 3' base
+  # sits on the variant - the interval must not be shifted by one
+  seg <- substr(ref, aa$as_start, aa$as_end)
+  expect_equal(if (identical(aa$strand, "+")) seg else rc(seg), aa$as_ref)
+  expect_equal(nchar(aa$as_ref), aa$as_end - aa$as_start + 1L)
+  three <- if (identical(aa$strand, "+")) aa$as_end else aa$as_start
+  expect_equal(three, snp$pos)
+})
+
+test_that("kasp_chunk slices a haplotype set to a local, window-local chunk", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
+  expect_s3_class(ch, "kasp_chunk")
+  expect_equal(ch$reference_length, 301L)
+  expect_identical(names(chunk_genome(ch)), "SAT2")
+  expect_equal(
+    as.character(chunk_reference(ch)),
+    as.character(Biostrings::subseq(sat2_hp$genome[[1L]], 281L, 581L))
+  )
+  v <- chunk_variants(ch)
+  expect_true(all(v$pos >= 1L & v$pos <= 301L)) # window-local
+  expect_s4_class(chunk_alignment(ch), "DNAMultipleAlignment")
+  expect_output(print(ch), "kasp_chunk")
+})
+
+test_that("a chunk round-trips between the representations", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
+  # alignment -> (variants, haplotypes): both derived, and consistent
+  h <- chunk_haplotypes(ch)
+  expect_gte(nrow(h), 1L)
+  expect_equal(nrow(chunk_variants(ch)), nrow(variants_from_haplotypes(h)))
+  # haplotypes -> a variants-only chunk: its haplotypes are honestly absent
+  ch2 <- kasp_chunk(as.data.frame(chunk_variants(ch)), reference = chunk_reference(ch), chrom = "SAT2")
+  expect_null(chunk_haplotypes(ch2))
+  expect_equal(nrow(chunk_variants(ch2)), nrow(chunk_variants(ch)))
+})
+
+test_that("chunk_weight applies MAF-style weights", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
+  t1 <- chunk_variants(ch)[1L, ]
+  ch2 <- chunk_weight(ch, tibble::tibble(pos = t1$pos, ref = t1$ref, alt = t1$alt, maf = 0.02))
+  got <- chunk_variants(ch2)
+  expect_equal(got$pop_freq[got$pos == t1$pos & got$alt == t1$alt][[1L]], 0.02)
+})

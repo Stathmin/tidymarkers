@@ -39,12 +39,18 @@ cat("reference:", hp$reference_name, "|", length(hp$reference), "bp\n")
 cat("haplotypes:", length(unique(hp$haplotypes$haplotype)), "| variants:", nrow(hp$variants), "\n")
 print(utils::head(dplyr::arrange(hp$variants, .data$pop_freq), 5L)) # the rare ones (MAF-weighted)
 
-# --- 2. the alignment view ----------------------------------------------------
-ggsave(fs::path(out_dir, "alignment.png"), plot_alignment(hp),
-  width = 10, height = 4, dpi = 110, bg = "white"
+# the reference's GenBank annotation (JX896657.1): gene 1..1209, CDS 54..1067
+features <- tibble::tibble(
+  start = c(1L, 54L), end = c(1209L, 1067L),
+  strand = "+", name = c("SAT2", "CDS")
 )
-ggsave(fs::path(out_dir, "alignment_all.png"), plot_alignment(hp, type = "all"),
-  width = 12, height = 4, dpi = 110, bg = "white"
+
+# --- 2. the alignment view ----------------------------------------------------
+ggsave(fs::path(out_dir, "alignment.png"), plot_alignment(hp, features = features),
+  width = 10, height = 4.4, dpi = 110, bg = "white"
+)
+ggsave(fs::path(out_dir, "alignment_all.png"), plot_alignment(hp, type = "all", features = features),
+  width = 12, height = 4.4, dpi = 110, bg = "white"
 )
 
 # --- 3. design a KASP at a haplotype variant ----------------------------------
@@ -59,7 +65,7 @@ print(assay)
 
 # --- 4. the assay's primer plot ----------------------------------------------
 ggsave(fs::path(out_dir, "primers.png"),
-  plot_primers(assay, hp$variants, snp, genome = hp$genome),
+  plot_primers(assay, hp$variants, snp, genome = hp$genome, features = features),
   width = 11, height = 8, dpi = 110, bg = "white"
 )
 
