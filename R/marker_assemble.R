@@ -498,6 +498,11 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   product and an inverted repeat; the first clean one wins.  These need a
 #'   genome/PCR pass, so only the leaders are screened (`0` disables; the ranked
 #'   winner is then kept).
+#' @param on_offtarget the specificity policy (roadmap Y3): `"doom"` - a pairing
+#'   that fails the genome-level screen is not returned, the target is doomed with
+#'   the reason; `"warn"` - keep the warned ranked leader.  `NULL` (default)
+#'   follows the scheme's own policy ([kasp_specificity()]): `unique` /
+#'   `homeolog-aware` doom, the tolerant default `multicopy` / `off` warn.
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
 #' @param cores processors for the per-SNP subprocess work (the DECIPHER PCR
 #'   efficiencies and the OligoArrayAux dG maps); `1` (the default, from
@@ -551,9 +556,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 min_disc = 0.5, specificity_candidates = 10L,
                                 pair_screen = 3L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
-                                scheme = "snp",
+                                scheme = "snp", on_offtarget = NULL,
                                 cores = getOption("tidymarkers.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
+  # Y3: the specificity policy.  A `unique` chemistry never returns a marker whose
+  # leading pairing fails the genome-level screen - it is doomed with the reason
+  # (no silent warn-and-return); `multicopy`/`off`/`homeolog-aware` keep the
+  # warned leader.  `on_offtarget` overrides the scheme's own policy.
+  on_offtarget <- on_offtarget %||%
+    if (kasp_specificity(scheme) %in% KASP_SPECIFICITY_STRICT) "doom" else "warn"
+  on_offtarget <- match.arg(on_offtarget, c("warn", "doom"))
   # one-line install UX: a missing tool is a hint (once per session), not a silent NA
   if (!has_oligoarrayaux() && !isTRUE(.marker_state$tool_hint_shown)) {
     .marker_state$tool_hint_shown <- TRUE
@@ -744,6 +756,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
     clean <- purrr::map_lgl(seq_len(n_screen), screen_pair)
     win <- which(clean)[1L]
+    if (is.na(win) && identical(on_offtarget, "doom")) {
+      return(marker_doomed(
+        gettext("No screened pairing is genome-specific (an off-target hit, a second product or an inverted repeat)."),
+        "pair", snp, tmpl, as_cand
+      ))
+    }
     if (!is.na(win) && win > 1L) {
       cli::cli_warn(c(
         gettext(

@@ -157,6 +157,48 @@ test_that("the pair screen swaps a top pairing with an off-target duplicate for 
   expect_true(chk$pass[chk$criterion == "off-target exact primer hits (n)"])
 })
 
+test_that("a strict specificity policy dooms instead of returning an off-target marker (Y3)", {
+  skip_if_no_oligoarrayaux()
+  W <- bseq(600L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 300L, 300L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # the AS oligo of the ranked winner (screen off), then duplicate its exact site
+  # on a second chromosome: every pairing now has an off-target exact hit
+  base <- suppressWarnings(
+    assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L, pair_screen = 0L)
+  )
+  as0 <- base$assay$as_ref[1L]
+  genome2 <- Biostrings::DNAStringSet(c(
+    Chr1 = W,
+    Chr2 = paste0(strrep("A", 60L), as0, strrep("A", 60L))
+  ))
+  # an explicit strict policy -> no clean pairing -> DOOMED with the reason
+  d <- suppressWarnings(
+    assemble_kasp_assay(genome2, snp,
+      flank = 150L, cores = 1L, pair_screen = 3L,
+      on_offtarget = "doom"
+    )
+  )
+  expect_true(inherits(d, "marker_doomed"))
+  expect_match(d$reason, "off-target")
+  # the default policy is tolerant ("don't be heavy-handed"): the warned leader
+  # is kept, not doomed
+  a <- suppressWarnings(
+    assemble_kasp_assay(genome2, snp, flank = 150L, cores = 1L, pair_screen = 3L)
+  )
+  expect_false(inherits(a, "marker_doomed"))
+})
+
+test_that("kasp_specificity reads the scheme policy, tolerant by default (Y3)", {
+  expect_identical(kasp_specificity("snp"), "multicopy")
+  expect_true(kasp_specificity("crispr") %in% KASP_SPECIFICITY_MODES)
+  expect_setequal(KASP_SPECIFICITY_STRICT, c("unique", "homeolog-aware"))
+  expect_false("multicopy" %in% KASP_SPECIFICITY_STRICT)
+})
+
 test_that("the two declared orders are separate and explicit (C6)", {
   # gate order = how the method applies the gates (grave / cheap first); relax
   # order = how the ladder lowers them (least grave first).  They need not agree.

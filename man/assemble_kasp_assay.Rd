@@ -22,6 +22,7 @@ assemble_kasp_assay(
   haplotypes = NULL,
   run_blast = FALSE,
   scheme = "snp",
+  on_offtarget = NULL,
   cores = getOption("tidymarkers.cores", 1L),
   BPPARAM = NULL
 )
@@ -77,6 +78,12 @@ primer each is expected to bind).}
 \code{\link[=marker_schemes]{marker_schemes()}}): stored on the object, and used to build the matching
 decision graph and to grade the acceptance checks, so a scheme never shows
 (or is graded by) another chemistry's tree (C12).}
+
+\item{on_offtarget}{the specificity policy (roadmap Y3): \code{"doom"} - a pairing
+that fails the genome-level screen is not returned, the target is doomed with
+the reason; \code{"warn"} - keep the warned ranked leader.  \code{NULL} (default)
+follows the scheme's own policy (\code{\link[=kasp_specificity]{kasp_specificity()}}): \code{unique} /
+\code{homeolog-aware} doom, the tolerant default \code{multicopy} / \code{off} warn.}
 
 \item{cores}{processors for the per-SNP subprocess work (the DECIPHER PCR
 efficiencies and the OligoArrayAux dG maps); \code{1} (the default, from

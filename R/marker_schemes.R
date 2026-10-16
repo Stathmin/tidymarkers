@@ -97,6 +97,37 @@ KASP_FAMILY_CHECKS <- list(
   taqman = character(0)
 )
 
+# The specificity policy of a chemistry (roadmap Y3): how strictly a genome-level
+# off-target is treated.  The default is `multicopy` - tolerant: a pairing that
+# fails the genome-level screen (an off-target exact hit, a second in-silico PCR
+# product or an inverted repeat) is warned and the ranked leader is kept (qPCR and
+# deliberately multi-copy / CNV loci are legitimate; "don't be heavy-handed").
+# `unique` / `homeolog-aware` are strict: the marker is NOT returned, the target is
+# doomed with the reason - for chemistries where an off-target is fatal (e.g. a
+# homoeolog-specific AS primer in wheat A/B/D).  `off` is the explicit no-op.
+KASP_SPECIFICITY_MODES <- c("unique", "homeolog-aware", "multicopy", "off")
+
+# Modes that doom instead of warning.
+KASP_SPECIFICITY_STRICT <- c("unique", "homeolog-aware")
+
+#' A scheme's specificity policy (roadmap Y3)
+#'
+#' The mode [assemble_kasp_assay()] uses to decide whether a pairing that fails
+#' the genome-level screen is doomed or merely warned.  Read from the scheme's
+#' `scheme_def_<scheme>()$specificity` when set, else the tolerant `"multicopy"`
+#' (an off-target is reported, not fatal - "don't be heavy-handed").
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return one of `KASP_SPECIFICITY_MODES`.
+#' @keywords internal
+#' @noRd
+kasp_specificity <- function(scheme = "snp") {
+  mode <- extra_scheme_defs()[[scheme]]$specificity %||% "multicopy"
+  if (!mode %in% KASP_SPECIFICITY_MODES) {
+    cli::cli_abort(gettext("Unknown specificity mode {mode} for scheme {scheme}."))
+  }
+  mode
+}
+
 #' The marker chemistries this package can describe
 #'
 #' One row per chemistry: how it tells the alleles apart, how the signal is read,
