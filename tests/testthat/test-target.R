@@ -2,15 +2,15 @@
 
 test_that("is_target_designable covers every marker class", {
   expect_false(is_target_designable(NULL))
-  expect_false(is_target_designable(structure(list(), class = "kasp_doomed")))
-  expect_true(is_target_designable(structure(list(), class = "kasp_assay")))
-  expect_true(is_target_designable(structure(list(), class = "kasp_caps")))
-  expect_true(is_target_designable(structure(list(), class = "kasp_arms")))
+  expect_false(is_target_designable(structure(list(), class = "marker_doomed")))
+  expect_true(is_target_designable(structure(list(), class = "marker_assay")))
+  expect_true(is_target_designable(structure(list(), class = "marker_caps")))
+  expect_true(is_target_designable(structure(list(), class = "marker_arms")))
 })
 
-test_that("kasp_design_at dispatches by scheme and is NULL for unsupported ones", {
-  expect_null(kasp_design_at(NULL, NULL, "asq"))
-  expect_null(kasp_design_at(NULL, NULL, "primer"))
+test_that("marker_design_at dispatches by scheme and is NULL for unsupported ones", {
+  expect_null(marker_design_at(NULL, NULL, "asq"))
+  expect_null(marker_design_at(NULL, NULL, "primer"))
 })
 
 test_that("pick_target_snp with a scheme warns and returns the best when none designs", {

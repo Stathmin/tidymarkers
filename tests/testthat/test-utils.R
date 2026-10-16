@@ -26,13 +26,13 @@ mk_assay <- function() {
     ),
     efficiency = tibble::tibble(discrimination = 0.9),
     specificity = tibble::tibble(primer = names(p), seed = "ACGT", hits = 1L)
-  ), class = "kasp_assay")
+  ), class = "marker_assay")
 }
 
-test_that("is_kasp_assay recognises the class", {
-  expect_true(is_kasp_assay(mk_assay()))
-  expect_false(is_kasp_assay(list()))
-  expect_false(is_kasp_assay(NULL))
+test_that("is_marker_assay recognises the class", {
+  expect_true(is_marker_assay(mk_assay()))
+  expect_false(is_marker_assay(list()))
+  expect_false(is_marker_assay(NULL))
 })
 
 test_that("passes_all reflects the acceptance checks", {

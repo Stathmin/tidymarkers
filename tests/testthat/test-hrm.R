@@ -1,6 +1,6 @@
 # HRM as a marker scheme: one flanking pair over a short amplicon.
 #
-# Design rules (see R/kasp_hrm.R): the short, single-domain amplicon is HRM's
+# Design rules (see R/marker_hrm.R): the short, single-domain amplicon is HRM's
 # *core* requirement (Liew et al., Clin Chem 2004, 50:1156-64, "small
 # amplicons"; Reed & Wittwer, Clin Chem 2004, 50:1748-54), so its gate is HARD
 # and its window is exactly the marker-agnostic amplicon check's window (C5).
@@ -25,7 +25,7 @@ test_that("design_hrm_marker returns a short flanking pair with the variant insi
   skip_if_no_oligoarrayaux()
   f <- hrm_fixture()
   m <- design_hrm_marker(f$genome, f$snp, flank = 150L)
-  expect_s3_class(m, "kasp_hrm")
+  expect_s3_class(m, "marker_hrm")
   # the variant is inside the amplicon and under neither primer (structural):
   # the forward primer ends before it, the reverse primer starts after it
   # (`$primers$start/end` are template coordinates; the genomic footprint follows
@@ -44,7 +44,7 @@ test_that("design_hrm_marker returns a short flanking pair with the variant insi
   expect_equal(m$selection$relaxed, character(0))
   # the marker carries its scheme, so a graph/report rebuilds the right tree (C12)
   expect_equal(m$scheme, "hrm")
-  expect_output(print(m), "kasp_hrm")
+  expect_output(print(m), "marker_hrm")
 })
 
 test_that("the amplicon gate is hard and the Tm balance is the ladder's only rung", {
@@ -52,14 +52,14 @@ test_that("the amplicon gate is hard and the Tm balance is the ladder's only run
   # the HARD gate, the Tm balance the soft one
   expect_equal(KASP_GATES_HRM, c("gate_hrm_amplicon", "gate_hrm_tm"))
   expect_equal(KASP_RELAX_HRM, "gate_hrm_tm")
-  s <- kasp_decision_schema("hrm")
+  s <- marker_decision_schema("hrm")
   hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
   expect_equal(hard, "hrm:gate:gate_hrm_amplicon")
   # a failed hard amplicon gate dooms directly (C4)
   expect_true(any(s$edges$kind == "doomed" & s$edges$from == "hrm:gate:gate_hrm_amplicon"))
   # the amplicon gate's window is the acceptance check's window, so a marker the
   # gate admits is never rejected by the check (C5)
-  crit <- kasp_criteria(scheme = "hrm")
+  crit <- marker_criteria(scheme = "hrm")
   lim <- crit$limit[crit$id == "hrm:gate:gate_hrm_amplicon"]
   expect_match(lim, "\\[50, 100\\] bp")
   # the gate order is the declared application order (grave / cheap first): the
@@ -76,7 +76,7 @@ test_that("the HRM ladder widens the Tm window and reports it", {
   # a one-degree Tm window admits no pair, so the ladder must widen it by
   # HRM_TM_FLOOR and record the relaxation (the gate is evaluated, not decorative)
   m <- design_hrm_marker(f$genome, f$snp, flank = 150L, tm_range = c(63, 63))
-  expect_s3_class(m, "kasp_hrm")
+  expect_s3_class(m, "marker_hrm")
   expect_equal(m$selection$relaxed, "gate_hrm_tm")
   # the hard amplicon gate is never relaxed: an impossible window dooms the design
   expect_message(
@@ -86,10 +86,10 @@ test_that("the HRM ladder widens the Tm window and reports it", {
 })
 
 test_that("the hrm scheme is registered with its own decision stage and is designable", {
-  expect_true("hrm" %in% kasp_schemes()$scheme)
-  s <- kasp_decision_schema("hrm")
+  expect_true("hrm" %in% marker_schemes()$scheme)
+  s <- marker_decision_schema("hrm")
   expect_true("hrm" %in% s$nodes$stage)
-  expect_true(is_target_designable(structure(list(), class = "kasp_hrm")))
+  expect_true(is_target_designable(structure(list(), class = "marker_hrm")))
 })
 
 test_that("the hrm DAG obeys the contract", {

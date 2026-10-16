@@ -12,7 +12,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 ```{r}
-library(tidykasp)
+library(tidymarkers)
 library(knitr)
 ```
 
@@ -35,7 +35,7 @@ KASP (Kompetitive Allele-Specific PCR) — точечный тест: два а�
 Пример таблицы мишеней идёт в комплекте — без сети и без генома:
 
 ```{r}
-kasp_example()
+marker_example()
 ```
 
 Рецепт реакции (`AS:AS:COM = 2:2:5`) — чистая арифметика:
@@ -70,7 +70,7 @@ assay <- assemble_kasp_assay(genome, snp, variants = variants,
                              strands = c("+", "-"), tm_range = c(58, 64))
 assay                                                   # печатает сводку
 passes_all(assay)                                       # TRUE / FALSE
-kasp_design_checks(assay)                               # построчно, что и почему
+marker_design_checks(assay)                               # построчно, что и почему
 ```
 
 Свой FASTA/VCF — так же, но через читатели ввода:
@@ -85,15 +85,15 @@ variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1")        # vroom, по�
 Для сотен локусов — таблица с вердиктом на локус (один плохой локус не роняет прогон):
 
 ```{r, eval = FALSE}
-loci <- kasp_example()[c("chrom", "pos", "ref", "alt")]
+loci <- marker_example()[c("chrom", "pos", "ref", "alt")]
 design_kasp_markers(genome, loci)   # pass / warn / fail + причина
 ```
 
 ## Результаты и заказ
 
 ```{r, eval = FALSE}
-write_kasp_results(assay, gene)     # kasp_design.csv, kasp_primer_qc.csv, kasp_dimer_dg.csv,
+write_kasp_results(assay, gene)     # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
                                     # + IDT/LGC/tidy как подмножества колонок
 ```
 
-См. также `?kasp_design_checks`, `?assemble_kasp_assay`, `?kasp_mix_recipe`.
+См. также `?marker_design_checks`, `?assemble_kasp_assay`, `?kasp_mix_recipe`.

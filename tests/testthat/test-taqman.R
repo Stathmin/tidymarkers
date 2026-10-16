@@ -17,7 +17,7 @@ test_that("design_taqman_marker returns a short pair with two allele-specific pr
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
 
   m <- design_taqman_marker(genome, snp, flank = 150L)
-  expect_s3_class(m, "kasp_taqman")
+  expect_s3_class(m, "marker_taqman")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   # a short amplicon straddling the variant
   expect_lte(m$amplicon$product, 150L)
@@ -38,12 +38,12 @@ test_that("design_taqman_marker returns a short pair with two allele-specific pr
   expect_true(all(grepl("^[ACGT]+$", m$probes$probe)))
   expect_true(all(substr(m$probes$probe, 1L, 1L) != "G"))
   expect_true(all(m$probes$start >= m$amplicon$start & m$probes$end <= m$amplicon$end))
-  expect_output(print(m), "kasp_taqman")
+  expect_output(print(m), "marker_taqman")
   # the method itself (generic dispatch needs the package NAMESPACE, regenerated
   # by roxygen once the scheme is wired in)
-  expect_output(print.kasp_taqman(m), "<kasp_taqman>")
-  expect_output(print.kasp_taqman(m), "FAM")
-  expect_output(print.kasp_taqman(m), "HEX")
+  expect_output(print.marker_taqman(m), "<marker_taqman>")
+  expect_output(print.marker_taqman(m), "FAM")
+  expect_output(print.marker_taqman(m), "HEX")
 })
 
 test_that("every declared TaqMan gate is evaluated by the designer (C7)", {
@@ -76,7 +76,7 @@ test_that("the centrality soft gate relaxes to its interior floor, never past it
   # demand a centrality the locus cannot quite reach: the winner sits inside the
   # floor and the ladder records the rung instead of failing silently
   m <- design_taqman_marker(genome, snp, flank = 150L, min_centrality = 0.99)
-  expect_s3_class(m, "kasp_taqman")
+  expect_s3_class(m, "marker_taqman")
   expect_lt(m$probes$centrality[1L], 0.99)
   expect_true("gate_taqman_centrality" %in% m$selection$relaxed)
   # past the floor the design is refused, so the rung is bounded
@@ -135,7 +135,7 @@ test_that("the taqman scheme definition has the gates, tiers and labels wired", 
 })
 
 test_that("the TaqMan DAG shows the gates in application order, ordering only as a tier", {
-  s <- kasp_decision_schema("taqman")
+  s <- marker_decision_schema("taqman")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(diff(ord[paste0("taqman:gate:", taqman_gates)]) > 0L))
   hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
@@ -144,6 +144,6 @@ test_that("the TaqMan DAG shows the gates in application order, ordering only as
   expect_match(unname(scheme_def_taqman()$tiers[2L]), "Tm ordering")
   expect_true(any(grepl(
     "relaxation ladder \\(least grave first\\)",
-    kasp_decision_text("taqman")
+    marker_decision_text("taqman")
   )))
 })

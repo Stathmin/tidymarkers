@@ -9,7 +9,7 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
     chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_lamp_marker(genome, snp, flank = 150L)
-  expect_s3_class(m, "kasp_lamp")
+  expect_s3_class(m, "marker_lamp")
   expect_true(all(c("F3", "B3", "FIP", "BIP") %in% names(m$primers)))
   # inner (two-arm fusion) primers are long, the outer F3/B3 short (LAMP rule)
   expect_gte(nchar(m$primers$FIP), 40L)
@@ -33,11 +33,11 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   # the inner primers are two-arm fusions, longer than the outer arms
   expect_gt(nchar(m$primers$FIP), nchar(m$primers$F3))
   expect_gt(nchar(m$primers$BIP), nchar(m$primers$B3))
-  expect_output(print.kasp_lamp(m), "kasp_lamp")
-  expect_output(print.kasp_lamp(m), "FIP:")
+  expect_output(print.marker_lamp(m), "marker_lamp")
+  expect_output(print.marker_lamp(m), "FIP:")
 })
 
-test_that("print.kasp_lamp names the four primers and the loop", {
+test_that("print.marker_lamp names the four primers and the loop", {
   skip_if_no_oligoarrayaux()
   W <- bseq(600L, 2L)
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
@@ -46,9 +46,9 @@ test_that("print.kasp_lamp names the four primers and the loop", {
     chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_lamp_marker(genome, snp, flank = 150L)
-  expect_output(print.kasp_lamp(m), "variant at the FIP 3' end")
-  expect_output(print.kasp_lamp(m), "B3:")
-  expect_output(print.kasp_lamp(m), "BIP:")
+  expect_output(print.marker_lamp(m), "variant at the FIP 3' end")
+  expect_output(print.marker_lamp(m), "B3:")
+  expect_output(print.marker_lamp(m), "BIP:")
 })
 
 test_that("scheme_def_lamp declares the LAMP stage consistently", {

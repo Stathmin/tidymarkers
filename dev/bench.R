@@ -62,7 +62,7 @@ tab <- do.call(rbind, lapply(names(cases), function(nm) {
 tab <- tab[order(tab$fn), ]
 
 # --- report -----------------------------------------------------------------
-cat("tidykasp function benchmark (bench)\n")
+cat("tidymarkers function benchmark (bench)\n")
 if (!nzchar(Sys.which("hybrid-min"))) cat("note: OligoArrayAux not on PATH - thermodynamic rows skipped\n")
 cat("\n")
 

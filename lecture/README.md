@@ -1,7 +1,7 @@
 # Лекция: подбор KASP-маркеров на R — сквозной разбор по методике
 
 `kasp-slides.qmd` — дек Quarto (reveal.js). Это **live-прогон**: при рендере он
-реально запускает пайплайн пакета `tidykasp` на локусе FRI (*Arabidopsis
+реально запускает пайплайн пакета `tidymarkers` на локусе FRI (*Arabidopsis
 thaliana*, `AT4G00650`) и на каждом этапе показывает код, таблицу и число.
 
 ## Как показать
@@ -23,7 +23,7 @@ sh lecture/render.sh          # = quarto render lecture/kasp-slides.qmd + OligoA
 
 Требуется: `quarto` CLI (≥ 1.4), восстановленный `renv` + установленный пакет,
 `OligoArrayAux` на PATH (его выставляет `render.sh`), и один раз — сеть/кэш
-(геном TAIR10, варианты Ensembl, FM-индекс; всё в `kasp_cache_dir()`, не в проекте).
+(геном TAIR10, варианты Ensembl, FM-индекс; всё в `marker_cache_dir()`, не в проекте).
 
 ## Структура (по этапам методички)
 

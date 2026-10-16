@@ -24,7 +24,7 @@ snap_snp <- tibble::tibble(
 test_that("the extension primer's 3' end sits one base 5' of the variant", {
   skip_if_no_oligoarrayaux()
   m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank)
-  expect_s3_class(m, "kasp_snapshot")
+  expect_s3_class(m, "marker_snapshot")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_equal(m$extension$placement, 1L)
   expect_match(m$extension$primer, "^[ACGT]+$")
@@ -45,7 +45,7 @@ test_that("the extension primer's 3' end sits one base 5' of the variant", {
   }
   # the extension Tm lands in the declared window (or its bounded floor)
   expect_true(m$extension$tm >= 45 && m$extension$tm <= 60)
-  expect_output(print(m), "kasp_snapshot")
+  expect_output(print(m), "marker_snapshot")
 })
 
 test_that("every declared SNaPshot gate is evaluated by the designer (C7)", {
@@ -62,7 +62,7 @@ test_that("the extension-Tm soft gate relaxes to its floor, never past it (C8)",
   # ask for a Tm window below the declared one: the winner's Tm is inside the
   # requested window but outside the gate's, so the ladder records the rung
   m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(45, 47))
-  expect_s3_class(m, "kasp_snapshot")
+  expect_s3_class(m, "marker_snapshot")
   expect_true("gate_snapshot_tm" %in% m$selection$relaxed)
   # past the floor the design is refused, so the rung is bounded
   expect_null(suppressMessages(
@@ -125,7 +125,7 @@ test_that("scheme_def_snapshot describes the SNaPshot scheme and its gates", {
 })
 
 test_that("the SNaPshot DAG shows no tier restating a hard gate, and its orders are declared", {
-  s <- kasp_decision_schema("snapshot")
+  s <- marker_decision_schema("snapshot")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   d <- scheme_def_snapshot()
   expect_true(all(diff(ord[paste0("snapshot:gate:", snapshot_gates)]) > 0L))
@@ -133,7 +133,7 @@ test_that("the SNaPshot DAG shows no tier restating a hard gate, and its orders 
   expect_setequal(hard, paste0("snapshot:gate:", setdiff(snapshot_gates, snapshot_soft)))
   # C14: tier1 no longer restates the hard placement gate
   expect_false(grepl("placement", unname(d$tiers[1L]), fixed = TRUE))
-  txt <- kasp_decision_text("snapshot")
+  txt <- marker_decision_text("snapshot")
   expect_true(any(grepl("relaxation ladder \\(least grave first\\)", txt)))
   expect_true(any(grepl("in application order \\(grave / cheap first\\)", txt)))
 })

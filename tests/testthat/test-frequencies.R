@@ -29,12 +29,12 @@ test_that("a rare variant under a primer is reported but not fatal", {
   skip_if_no_oligoarrayaux()
   for (kind in c("snp", "indel")) {
     m <- freq_fixture(0.01, kind)
-    expect_false(inherits(m$assay, "kasp_doomed"))
+    expect_false(inherits(m$assay, "marker_doomed"))
     a <- m$assay$assay[1L, ]
     expect_equal(a$as_n_var, 1L) # the variant IS seen under the footprint
     expect_lt(a$as_foot_dropout, KASP_LIMITS$footprint_dropout)
     # ... and it is surfaced in the acceptance checks, not hidden
-    ch <- kasp_design_checks(m$assay)
+    ch <- marker_design_checks(m$assay)
     expect_gt(ch$observed[ch$criterion == "AS footprint variants (n)"], 0)
   }
 })
@@ -43,7 +43,7 @@ test_that("the footprint cost scales with the population frequency", {
   skip_if_no_oligoarrayaux()
   rare <- freq_fixture(0.01)
   common <- freq_fixture(1.00)
-  expect_false(inherits(rare$assay, "kasp_doomed"))
-  expect_false(inherits(common$assay, "kasp_doomed")) # a single mid-body variant is still tolerable
+  expect_false(inherits(rare$assay, "marker_doomed"))
+  expect_false(inherits(common$assay, "marker_doomed")) # a single mid-body variant is still tolerable
   expect_lt(rare$assay$assay$as_foot_dropout[1L], common$assay$assay$as_foot_dropout[1L])
 })

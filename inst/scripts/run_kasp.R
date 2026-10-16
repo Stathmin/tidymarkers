@@ -12,13 +12,13 @@
 #    4. write results/ (consolidated csv, rds, png) for the report to consume
 #
 #  External tool required: OligoArrayAux (`hybrid-min`) for DECIPHER; install it
-#  from within R with `tidykasp::kasp_install_tools()` (builds it from source).
+#  from within R with `tidymarkers::marker_install_tools()` (builds it from source).
 #  Optional: NCBI BLAST+ for the (slow) genome-wide BLAST step; a cached
 #  Rsubread FM-index is the index-based alternative and is built once.
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(tidykasp)
+  library(tidymarkers)
   library(here)
   library(dplyr)
   library(ggplot2)
@@ -32,8 +32,8 @@ RUN_FM <- TRUE
 
 if (!has_oligoarrayaux()) {
   rlang::abort(c("OligoArrayAux ('hybrid-min') not found.",
-                 i = "install it from within R with tidykasp::kasp_install_tools()",
-                 i = "or put an existing build on PATH (see ?kasp_install_tools)."))
+                 i = "install it from within R with tidymarkers::marker_install_tools()",
+                 i = "or put an existing build on PATH (see ?marker_install_tools)."))
 }
 
 # --- 1. genome + gene --------------------------------------------------------
@@ -42,9 +42,9 @@ gene_id <- "AT4G00650"           # FRI (FRIGIDA): the textbook flowering-time lo
 
 # An FM-index of the genome, built once and reused on later runs (Rsubread).
 # This is the index-based alternative to BLAST for the whole-primer scan below;
-# `kasp_genome(..., fm_index = )` would let `assemble_kasp_assay(run_blast = TRUE)`
+# `marker_genome(..., fm_index = )` would let `assemble_kasp_assay(run_blast = TRUE)`
 # use it too.
-fm_index <- if (RUN_FM) kasp_fm_index(genome, basename = fs::path(kasp_cache_dir(), "tair10_fm"))
+fm_index <- if (RUN_FM) marker_fm_index(genome, basename = fs::path(marker_cache_dir(), "tair10_fm"))
 
 gene <- ensembl_gene(gene_id)
 print(gene)
@@ -99,8 +99,8 @@ if (!is.null(assay$blast)) {
   print(utils::head(dplyr::arrange(assay$blast, .data$evalue), 10))
 }
 
-cat("\nAcceptance checks (kasp_design_checks):\n")
-checks <- kasp_design_checks(assay)
+cat("\nAcceptance checks (marker_design_checks):\n")
+checks <- marker_design_checks(assay)
 print(checks)
 if (!all(checks$pass)) {
   rlang::warn(glue::glue("Assay fails {sum(!checks$pass)} acceptance criterion/criteria."))
@@ -108,10 +108,10 @@ if (!all(checks$pass)) {
 
 # --- 5-6. persist (consolidated: design / primer QC / dimers + order subsets) -
 fs::dir_create(here::here("results"))
-saveRDS(assay, here::here("results", "kasp_assay.rds"))
-write_kasp_results(assay, gene, dir = here::here("results")) # kasp_design.csv, kasp_primer_qc.csv, ...
+saveRDS(assay, here::here("results", "marker_assay.rds"))
+write_kasp_results(assay, gene, dir = here::here("results")) # marker_design.csv, marker_primer_qc.csv, ...
 
-# --- 7. library-driven views (see R/kasp_plots.R) ---------------------------
+# --- 7. library-driven views (see R/marker_plots.R) ---------------------------
 ggsave(here::here("results", "plot_primers.png"),    plot_primers(assay, variants, snp, genome = genome, features = gene), width = 10, height = 7.5)
 ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gene, variants, snp, assay), width = 8, height = 3.5)
 
@@ -120,7 +120,7 @@ ggsave(here::here("results", "plot_variants.png"),    plot_variant_landscape(gen
 render_design_search(assay, variants, snp, path = here::here("results", "design_search.gif"))
 
 # --- 8. oligo ordering sheet (the IDT/LGC files are column subsets of it) ----
-primers <- kasp_primer_table(assay, gene)
+primers <- marker_primer_table(assay, gene)
 cat("\nOrder sheet:\n"); print(primers)
 
-message("\nDone. See results/ and knit report/kasp_report.Rmd for the narrative.")
+message("\nDone. See results/ and knit report/marker_report.Rmd for the narrative.")

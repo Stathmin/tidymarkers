@@ -46,7 +46,7 @@ rungs <- sprintf(
   xL[ri], yy[ri], xR[ri], yy[ri], unname(bases[base]))
 
 svg <- c(
-  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidykasp">', W, H, W, H),
+  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarkers">', W, H, W, H),
   '<style>text{font-family:Inter,Helvetica,Arial,sans-serif;}</style>',
   sprintf('<polygon points="%s" fill="#fffdf7" stroke="%s" stroke-width="7" stroke-linejoin="round"/>', hex_pts, ink),
   paste0(rungs, collapse = ""),

@@ -1,7 +1,7 @@
 # Threshold provenance and the cross-table Tm check.
 
-test_that("kasp_priors names every threshold and its source", {
-  p <- kasp_priors()
+test_that("marker_priors names every threshold and its source", {
+  p <- marker_priors()
   expect_true(all(c("parameter", "value", "source") %in% names(p)))
   expect_true("as_tm (C)" %in% p$parameter)
   expect_true("Tm model" %in% p$parameter)

@@ -1,23 +1,23 @@
-<img src="man/figures/logo.png" align="right" width="150" alt="tidykasp logo" />
+<img src="man/figures/logo.png" align="right" width="150" alt="tidymarkers logo" />
 
-# tidykasp — tidy-дизайн и QC KASP-маркеров
+# tidymarkers — tidy-дизайн и QC KASP-маркеров
 
 <!-- badges: start -->
-[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-OK-success.svg)](https://github.com/Stathmin/tidykasp/actions)
+[![R-CMD-check](https://img.shields.io/badge/R--CMD--check-OK-success.svg)](https://github.com/Stathmin/tidymarkers/actions)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- badges: end -->
 
 Воспроизводимый инструмент **на чистом R** для подбора и контроля качества
 KASP-тестов. Он **геном-агностичен**: подайте референс (FASTA, индексированный
-`kasp_genome()`, `DNAStringSet` или Bioconductor `BSgenome`) и варианты (VCF или
+`marker_genome()`, `DNAStringSet` или Bioconductor `BSgenome`) и варианты (VCF или
 tidy-таблицу) — инструмент проектирует аллель-специфичные и общий праймеры на
 обеих цепях и оценивает их.
 
 В комплекте — воспроизводимое **демо** на *Arabidopsis thaliana*: локус времени
 цветения **FRI / AT4G00650**, реальные SNP из проекта *1001 Genomes*, геном TAIR10
 (Ensembl Plants). Другой референс/вариация — так же, обёртками
-`kasp_genome()`/`read_variants_vcf()` (см. `vignette("custom-genome")`).
+`marker_genome()`/`read_variants_vcf()` (см. `vignette("custom-genome")`).
 
 Никаких прыжков между Python и R: вся логика — R, а тяжёлая физика делегирована
 пакетам.
@@ -26,7 +26,7 @@ tidy-таблицу) — инструмент проектирует аллел�
 
 ```r
 # с GitHub (нужен remotes; при желании — build_vignettes = FALSE, чтобы не собирать виньетки)
-remotes::install_github("Stathmin/tidykasp")
+remotes::install_github("Stathmin/tidymarkers")
 
 # из локальной копии
 # remotes::install_local(".")
@@ -74,12 +74,12 @@ remotes::install_github("Stathmin/tidykasp")
 вызовом собирает внешние тулы в кэш):
 
 ```r
-pak::pak("Stathmin/tidykasp", sysreqs = TRUE)   # BLAST+/cairo системно
-tidykasp::kasp_install_tools()                  # OligoArrayAux в кэш, один раз
+pak::pak("Stathmin/tidymarkers", sysreqs = TRUE)   # BLAST+/cairo системно
+tidymarkers::marker_install_tools()                  # OligoArrayAux в кэш, один раз
 ```
 
 Первый вызов функции без тула не молчит: `assemble_kasp_assay()` подсказывает
-`kasp_install_tools()`, а не отдаёт тихий `NA`.
+`marker_install_tools()`, а не отдаёт тихий `NA`.
 
 ```bash
 # 1. внешние инструменты
@@ -87,11 +87,11 @@ tidykasp::kasp_install_tools()                  # OligoArrayAux в кэш, од�
 #       чистым R, в .tools/ (без conda):
 Rscript data-raw/install-oligoarrayaux.R
 #       Пользователю достаточно установить пакет и запустить один раз:
-#       Rscript -e 'tidykasp::kasp_install_tools()'   # соберёт в пользовательский кэш
+#       Rscript -e 'tidymarkers::marker_install_tools()'   # соберёт в пользовательский кэш
 #    b) cairo для gdtools/ggmsa
 #       Linux:  sudo apt-get update && sudo apt-get install -y libcairo2-dev pkg-config libfreetype6-dev
 #       macOS:  brew install cairo pkg-config freetype
-#       Windows: cairo идёт с Rtools; либо pak::pak("tidykasp", sysreqs = TRUE)
+#       Windows: cairo идёт с Rtools; либо pak::pak("tidymarkers", sysreqs = TRUE)
 #       (кроссплатформенно: pak сам ставит системные библиотеки)
 
 # 2. R-окружение из лочки
@@ -101,14 +101,14 @@ Rscript -e 'renv::restore(prompt = FALSE)'
 # 3. установить сам пакет
 R CMD INSTALL .              # или: Rscript -e 'pkgload::load_all()' для разработки
 # когда пакет вынесен в свой репозиторий:
-#   pak::pak("Stathmin/tidykasp", sysreqs = TRUE)   # BLAST+/cairo системно
-#   remotes::install_github("Stathmin/tidykasp")
+#   pak::pak("Stathmin/tidymarkers", sysreqs = TRUE)   # BLAST+/cairo системно
+#   remotes::install_github("Stathmin/tidymarkers")
 
 # 4. прогон демо-пайплайна
 Rscript inst/scripts/run_kasp.R
 
 # 5. отчёт
-Rscript -e 'rmarkdown::render("report/kasp_report.Rmd")'
+Rscript -e 'rmarkdown::render("report/marker_report.Rmd")'
 
 # 6. тесты (инварианты ядра дизайна)
 Rscript -e 'testthat::test_local()'    # грузит пакет из исходников (pkgload)
@@ -117,10 +117,10 @@ Rscript -e 'testthat::test_local()'    # грузит пакет из исход
 sh lecture/render.sh                    # ставит OligoArrayAux на PATH и рендерит
 ```
 
-Результаты в `results/` (консолидировано): `kasp_design.csv` (кандидаты-тесты),
-`kasp_primer_qc.csv` (на праймер: Tm/GC/шпилька/3'-стабильность + сид-специфичность
-+ продукты in-silico PCR), `kasp_dimer_dg.csv` (dG дуплексов), `kasp_assay.rds`,
-панели `plot_*.png` и **файлы заказа** `kasp_<ген>_<chr>_<pos>_{idt,lgc,tidy}.csv`
+Результаты в `results/` (консолидировано): `marker_design.csv` (кандидаты-тесты),
+`marker_primer_qc.csv` (на праймер: Tm/GC/шпилька/3'-стабильность + сид-специфичность
++ продукты in-silico PCR), `marker_dimer_dg.csv` (dG дуплексов), `marker_assay.rds`,
+панели `plot_*.png` и **файлы заказа** `marker_<ген>_<chr>_<pos>_{idt,lgc,tidy}.csv`
 (последние — подмножества колонок одной таблицы заказа).
 
 > Панели рисуют библиотеки, а не ручные геомы: выравнивание и логотип — `ggmsa`
@@ -136,8 +136,8 @@ sh lecture/render.sh                    # ставит OligoArrayAux на PATH �
 > рисунок не может разойтись с дизайном.
 
 > `DECIPHER` работает через системный вызов `hybrid-min`. Пакет сам его находит:
-> `options(tidykasp.oligoarrayaux=)` → проектный `.tools/` → пользовательский кэш
-> (`kasp_install_tools()`) → `PATH`; `UNAFOLDDAT` подставляется на время вызова, ручной
+> `options(tidymarkers.oligoarrayaux=)` → проектный `.tools/` → пользовательский кэш
+> (`marker_install_tools()`) → `PATH`; `UNAFOLDDAT` подставляется на время вызова, ручной
 > `export` не нужен. Скрипт из шага 1 кладёт бинарники в `.tools/bin`, таблицы — в
 > `.tools/share/oligoarrayaux`; альтернатива — `with_unafloddat(...)`.
 
@@ -216,7 +216,7 @@ Zhang, Yang & Wen, *BMC Bioinformatics* 2025, 26:292, doi:10.1186/s12859-025-063
   флуоресценции FAM vs HEX относительно контролей.
 
 **Критерии приёмки → код.** Сводка выше превращена в проверяемую таблицу
-`kasp_design_checks()` с порогами `KASP_LIMITS` (ампликон 50–100, Tm-окна,
+`marker_design_checks()` с порогами `KASP_LIMITS` (ампликон 50–100, Tm-окна,
 `COM Tm ≥ AS Tm`, GC, гомополимеры, шпильки/димеры, дискриминация). Так «хороший»
 и «плохой» тест оцениваются одинаково и это покрыто тестами.
 
@@ -225,7 +225,7 @@ Zhang, Yang & Wen, *BMC Bioinformatics* 2025, 26:292, doi:10.1186/s12859-025-063
 ## 4. Что считает пайплайн
 
 1. `ensembl_gene()` / `ensembl_variants()` — ген-модель и SNP из 1001 Genomes
-   (Ensembl Plants REST, с кэшем в пользовательском кэше `kasp_cache_dir()` и retry).
+   (Ensembl Plants REST, с кэшем в пользовательском кэше `marker_cache_dir()` и retry).
 2. `pick_target_snp()` — отбор пригодной замены (SNP/MNP): референс из генома; сначала
    предпочитаем «чистую» 3'-зону AS (нет других вариантов в последних 5 нт,
    метрика `n_3p`, лучшая из двух цепей), затем missense > splice > synonymous >
@@ -244,7 +244,7 @@ Zhang, Yang & Wen, *BMC Bioinformatics* 2025, 26:292, doi:10.1186/s12859-025-063
    виртуальная амплификация (уникальность и размер продукта), BLAST.
 7. `assemble_kasp_assay()` — сборка теста для SNP/MNP/InDel; `design_kasp_markers()`
    — батч по таблице локусов с вердиктом `pass`/`warn`/`fail` на локус.
-8. `kasp_design_checks()` — проверка теста по критериям приёмки (`KASP_LIMITS`);
+8. `marker_design_checks()` — проверка теста по критериям приёмки (`KASP_LIMITS`);
    `kasp_mix_recipe()` — рецепт смеси и реакции.
 
 Два проектных «рычага» вынесены в реальные аргументы (а не в константы):
@@ -271,13 +271,13 @@ assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
 не прошёл, гейты снимаются по одному (от мягкого к серьёзному) и возвращается «наименее
 плохой» с предупреждением на каждый нарушенный гейт.
 
-Политика записана **данными**: `kasp_decision_schema()` читает те же константы, что и
+Политика записана **данными**: `marker_decision_schema()` читает те же константы, что и
 движок (`KASP_GATES_*`, `KASP_RELAX_*`, `KASP_TIERS_*`), поэтому граф не может разойтись
 с кодом — новый гейт, тир или ступень лестницы сразу видны. `plot_decision_tree()` рисует
 его (`ggraph`), а собранный тест несёт граф в `assay$decision` со статусом узлов
 (зелёный — сработал, янтарный — снят, красный — нарушен).
 
-**Схемы по химии маркера.** KASP — это семейство, а не один тест. `kasp_schemes()`
+**Схемы по химии маркера.** KASP — это семейство, а не один тест. `marker_schemes()`
 объявляет химии, а единый реестр критериев помечает каждую проверку своими схемами,
 так что `plot_decision_tree(scheme = )` рисует дерево для SNP/indel/мультиаллельного
 KASP, **дуплексных** химий (dKASP, mxKASP, Multi-KASP: два локуса в одной пробирке +
@@ -303,33 +303,33 @@ KASP, **дуплексных** химий (dKASP, mxKASP, Multi-KASP: два л�
 ## 6. Структура
 
 ```
-tidykasp/
+tidymarkers/
 ├── DESCRIPTION              # зависимости (читает renv)
 ├── renv.lock                # зафиксированные версии (в т.ч. DECIPHER, TmCalculator)
 ├── ROADMAP.md               # инвентарь и очередь работ
 ├── R/                       # ~30 файлов, по одному на слой пайплайна:
-│   ├── kasp_core.R          #   примитивы, геометрия, KASP_LIMITS, кэш
-│   ├── kasp_io.R            #   VCF (vroom) / FASTA, нормализация IUPAC
-│   ├── kasp_genome.R        #   индексированный источник генома (Rsamtools)
-│   ├── kasp_alleles.R       #   аллельные наборы, класс мультиаллельного сайта
-│   ├── kasp_design.R        #   дизайн AS- и общего праймера (+ индел-путь)
-│   ├── kasp_primer_pairs.R  #   общий скан фланкирующих/сайтовых пар
-│   ├── kasp_assemble.R      #   сборка и оценка одного ассея
-│   ├── kasp_select.R        #   гейты / тиры / лестница релаксации
-│   ├── kasp_criteria.R      #   единый реестр критериев
-│   ├── kasp_checks.R        #   приёмочные проверки
-│   ├── kasp_decision.R      #   схема / граф / текст дерева решения
-│   ├── kasp_schemes.R       #   реестр химий маркера (KASP/CAPS/ARMS/…)
-│   ├── kasp_risk.R          #   риск-вердикт low/medium/high
-│   ├── kasp_thermo.R        #   Tm, ΔG, шпильки/димеры, SSR, палиндромы
-│   ├── kasp_specificity.R   #   3'-сид, in-silico PCR, BLAST
-│   ├── kasp_target.R        #   pick_target_snp() и дизайнабельность
-│   ├── kasp_haplotypes.R    #   модель гаплотипов / сцепления
-│   ├── kasp_caps.R, kasp_arms.R   #   CAPS/dCAPS и tetra-primer ARMS
-│   ├── kasp_annotate.R      #   аннотация вариантов (TxDb / BSgenome)
-│   ├── kasp_plots.R         #   графика
-│   └── kasp_search_anim.R   #   анимация поиска (GIF)
-├── report/kasp_report.Rmd   # нарративный отчёт
+│   ├── marker_core.R          #   примитивы, геометрия, KASP_LIMITS, кэш
+│   ├── marker_io.R            #   VCF (vroom) / FASTA, нормализация IUPAC
+│   ├── marker_genome.R        #   индексированный источник генома (Rsamtools)
+│   ├── marker_alleles.R       #   аллельные наборы, класс мультиаллельного сайта
+│   ├── marker_design.R        #   дизайн AS- и общего праймера (+ индел-путь)
+│   ├── marker_primer_pairs.R  #   общий скан фланкирующих/сайтовых пар
+│   ├── marker_assemble.R      #   сборка и оценка одного ассея
+│   ├── marker_select.R        #   гейты / тиры / лестница релаксации
+│   ├── marker_criteria.R      #   единый реестр критериев
+│   ├── marker_checks.R        #   приёмочные проверки
+│   ├── marker_decision.R      #   схема / граф / текст дерева решения
+│   ├── marker_schemes.R       #   реестр химий маркера (KASP/CAPS/ARMS/…)
+│   ├── marker_risk.R          #   риск-вердикт low/medium/high
+│   ├── marker_thermo.R        #   Tm, ΔG, шпильки/димеры, SSR, палиндромы
+│   ├── marker_specificity.R   #   3'-сид, in-silico PCR, BLAST
+│   ├── marker_target.R        #   pick_target_snp() и дизайнабельность
+│   ├── marker_haplotypes.R    #   модель гаплотипов / сцепления
+│   ├── marker_caps.R, marker_arms.R   #   CAPS/dCAPS и tetra-primer ARMS
+│   ├── marker_annotate.R      #   аннотация вариантов (TxDb / BSgenome)
+│   ├── marker_plots.R         #   графика
+│   └── marker_search_anim.R   #   анимация поиска (GIF)
+├── report/marker_report.Rmd   # нарративный отчёт
 ├── tests/testthat/          # инварианты ядра + критерии приёмки + термодинамика
 ├── vignettes/               # kasp-intro, custom-genome, reading-results
 ├── inst/extdata/            # example_targets.csv (мишени всех типов маркеров, по генам)
@@ -340,7 +340,7 @@ tidykasp/
 ```
 
 Внешние данные и индексы (геном, варианты, BLAST/FM-индексы) живут в
-пользовательском кэше `kasp_cache_dir()` (`tools::R_user_dir`), а не в проекте.
+пользовательском кэше `marker_cache_dir()` (`tools::R_user_dir`), а не в проекте.
 
 ---
 

@@ -3,7 +3,7 @@
 # Under `test_local()`/`devtools::test()` the package is `pkgload::load_all()`ed,
 # so the master process runs the source.  A SnowParam/SOCK worker, however, is a
 # fresh R process: it resolves the package by name and loads the *installed*
-# `tidykasp`.  If that install is older than the working tree, the SOCK tests
+# `tidymarkers`.  If that install is older than the working tree, the SOCK tests
 # silently exercise old code and can pass while the source is broken.
 #
 # So, in a dev session, refresh the install once when the source is newer.  A
@@ -14,13 +14,13 @@
 # SOCK tests call `skip_if_stale_install()` and skip loudly rather than test a
 # stale build.
 
-kasp_dev_session <- function() {
+marker_dev_session <- function() {
   requireNamespace("pkgload", quietly = TRUE) &&
     !is.null(tryCatch(pkgload::pkg_path(), error = function(e) NULL))
 }
 
 # mtime of the files a build would pick up
-kasp_source_mtime <- function(root) {
+marker_source_mtime <- function(root) {
   files <- c(
     list.files(file.path(root, "R"), pattern = "[.]R$", full.names = TRUE),
     file.path(root, "DESCRIPTION"),
@@ -31,10 +31,10 @@ kasp_source_mtime <- function(root) {
 }
 
 # the installed copy: `find.package()` returns the *source* under load_all, so
-# scan the libraries for a tidykasp that is not the working tree
-kasp_installed_path <- function(root) {
+# scan the libraries for a tidymarkers that is not the working tree
+marker_installed_path <- function(root) {
   for (lib in .libPaths()) {
-    p <- file.path(lib, "tidykasp")
+    p <- file.path(lib, "tidymarkers")
     if (!file.exists(file.path(p, "DESCRIPTION"))) next
     if (identical(normalizePath(p, mustWork = FALSE), normalizePath(root, mustWork = FALSE))) next
     return(p)
@@ -42,20 +42,20 @@ kasp_installed_path <- function(root) {
   NULL
 }
 
-kasp_refresh_install <- function() {
-  if (!kasp_dev_session()) {
+marker_refresh_install <- function() {
+  if (!marker_dev_session()) {
     # R CMD check installed the package from this very source tree
-    options(tidykasp.tests.fresh = TRUE)
+    options(tidymarkers.tests.fresh = TRUE)
     return(invisible(TRUE))
   }
   root <- tryCatch(pkgload::pkg_path(), error = function(e) NULL)
-  installed <- if (is.null(root)) NULL else kasp_installed_path(root)
+  installed <- if (is.null(root)) NULL else marker_installed_path(root)
   if (is.null(root) || is.null(installed)) {
-    options(tidykasp.tests.fresh = FALSE)
+    options(tidymarkers.tests.fresh = FALSE)
     return(invisible(FALSE))
   }
 
-  cache <- tools::R_user_dir("tidykasp", "cache")
+  cache <- tools::R_user_dir("tidymarkers", "cache")
   fs::dir_create(cache)
   marker <- file.path(cache, ".tests-install-mtime")
   fresh <- function() {
@@ -64,10 +64,10 @@ kasp_refresh_install <- function() {
     }
     # +1 s absorbs the as.character() rounding of the fractional POSIX mtime
     built <- suppressWarnings(as.numeric(readLines(marker, warn = FALSE)[1L]))
-    !is.na(built) && !is.na(kasp_source_mtime(root)) && kasp_source_mtime(root) <= built + 1
+    !is.na(built) && !is.na(marker_source_mtime(root)) && marker_source_mtime(root) <= built + 1
   }
   if (fresh()) {
-    options(tidykasp.tests.fresh = TRUE)
+    options(tidymarkers.tests.fresh = TRUE)
     return(invisible(TRUE))
   }
 
@@ -77,20 +77,20 @@ kasp_refresh_install <- function() {
     if (dir.create(lock, showWarnings = FALSE)) break
     Sys.sleep(0.5)
     if (fresh()) { # another process refreshed it
-      options(tidykasp.tests.fresh = TRUE)
+      options(tidymarkers.tests.fresh = TRUE)
       return(invisible(TRUE))
     }
   }
   if (!dir.exists(lock)) {
-    options(tidykasp.tests.fresh = FALSE)
+    options(tidymarkers.tests.fresh = FALSE)
     return(invisible(FALSE))
   }
   on.exit(unlink(lock, recursive = TRUE), add = TRUE)
 
   if (!fresh()) {
-    message("tidykasp: refreshing the installed build so parallel tests use the current source ...")
+    message("tidymarkers: refreshing the installed build so parallel tests use the current source ...")
     # our own lock already serialises installs, so any R lock dir is stale
-    unlink(file.path(.libPaths()[1L], "00LOCK-tidykasp"), recursive = TRUE)
+    unlink(file.path(.libPaths()[1L], "00LOCK-tidymarkers"), recursive = TRUE)
     status <- system2(
       file.path(R.home("bin"), "R"),
       c(
@@ -100,19 +100,19 @@ kasp_refresh_install <- function() {
       stdout = FALSE, stderr = FALSE
     )
     if (identical(as.integer(status), 0L)) {
-      writeLines(as.character(kasp_source_mtime(root)), marker)
+      writeLines(as.character(marker_source_mtime(root)), marker)
     }
   }
-  options(tidykasp.tests.fresh = fresh())
+  options(tidymarkers.tests.fresh = fresh())
   invisible(fresh())
 }
 
-kasp_refresh_install()
+marker_refresh_install()
 
 # For tests that spin up a real second process (SnowParam/SOCK).
 skip_if_stale_install <- function() {
-  if (isTRUE(getOption("tidykasp.tests.fresh"))) {
+  if (isTRUE(getOption("tidymarkers.tests.fresh"))) {
     return(invisible(TRUE))
   }
-  testthat::skip("the installed tidykasp could not be refreshed to the current source")
+  testthat::skip("the installed tidymarkers could not be refreshed to the current source")
 }

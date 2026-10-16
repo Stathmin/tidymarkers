@@ -15,7 +15,7 @@ testthat::test_local()
 roxygen2::roxygenise()
 
 # полная проверка
-#   R CMD build . && R CMD check --no-manual tidykasp_*.tar.gz
+#   R CMD build . && R CMD check --no-manual tidymarkers_*.tar.gz
 ```
 
 ## Стиль
@@ -35,6 +35,6 @@ roxygen2::roxygenise()
 
 ## Модель для правок
 
-`tidykasp` — обычный каталог R-пакета (`DESCRIPTION`, `R/`, `man/`, `vignettes/`,
+`tidymarkers` — обычный каталог R-пакета (`DESCRIPTION`, `R/`, `man/`, `vignettes/`,
 `tests/`). CI в пакет не входит; при выделении в отдельный репозиторий настройте его
 в корне репозитория.

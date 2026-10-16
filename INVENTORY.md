@@ -1,4 +1,4 @@
-# tidykasp — инвентарь (архив)
+# tidymarkers — инвентарь (архив)
 
 Ретроспективный инвентарь: что уже есть и оценено (с обоснованиями и ссылками).
 **Открытая очередь — в `ROADMAP.md`; история изменений — в `NEWS.md`.** Метод **не упрощаем**: где у нас пакетная
@@ -43,24 +43,24 @@ A–P — реализовано или оценено; **Q** — локализ
 `remotes::install_github()`, тулов нет: термо/QC молча скипаются, BLAST-функции падают.
 Нужен тот же путь, но без ручного `export PATH/UNAFOLDDAT`.
 
-- [x] **Слоистый резолвер** (`R/kasp_tools.R`: `oligoarrayaux_paths()`, `blast_bin()`):
-      порядок — `options(tidykasp.*)` → проектный `.tools/` → пользовательский кэш
-      `kasp_cache_dir()/tools` → системный `PATH`. `has_oligoarrayaux()`/`has_blast()`
+- [x] **Слоистый резолвер** (`R/marker_tools.R`: `oligoarrayaux_paths()`, `blast_bin()`):
+      порядок — `options(tidymarkers.*)` → проектный `.tools/` → пользовательский кэш
+      `marker_cache_dir()/tools` → системный `PATH`. `has_oligoarrayaux()`/`has_blast()`
       и `oligo_dg()` ходят через него; DECIPHER/rBLAST оборачиваются в
       `with_oligoarrayaux()`/`with_blast()` (`withr`), так что `UNAFOLDDAT`/`PATH`
       действуют только на время вызова. Проверено: `pcr_efficiency()`/`oligo_dg()`
       работают без ручного `export`.
-- [x] **Рантайм-установщик** `kasp_install_tools()`: качает релизный тарбол OligoArrayAux,
+- [x] **Рантайм-установщик** `marker_install_tools()`: качает релизный тарбол OligoArrayAux,
       сверяет sha256, собирает (`make`), дымовой тест, кладёт в **`R_user_dir`** (не в
       каталог пакета — он read-only), идемпотентно; согласие `ask = interactive()`;
       Windows — через `bash -lc`/Rtools. Проверено end-to-end (сборка в temp + ветка
-      `options(tidykasp.oligoarrayaux=)`). Прецеденты: `tinytex::install_tinytex()`,
+      `options(tidymarkers.oligoarrayaux=)`). Прецеденты: `tinytex::install_tinytex()`,
       `webshot2`/`chromote` (Chrome в рантайме), `rnaturalearth`/`elevatr` (данные).
       BLAST+ есть в apt/conda (`ncbi-blast+`) — **не бандлим**, а советуем `pak` (ниже).
-- [x] **Одна строка для пользователя**: README (§0/§2) даёт `pak::pak("stathmin/tidykasp",
+- [x] **Одна строка для пользователя**: README (§0/§2) даёт `pak::pak("stathmin/tidymarkers",
       sysreqs = TRUE)` (системные `ncbi-blast+`, cairo; `renv::sysreqs()` тоже умеет) →
-      `tidykasp::kasp_install_tools()` → всё на месте. Первый вызов без тула не молчит:
-      `assemble_kasp_assay()` подсказывает `kasp_install_tools()` (сейчас `rlang::inform`,
+      `tidymarkers::marker_install_tools()` → всё на месте. Первый вызов без тула не молчит:
+      `assemble_kasp_assay()` подсказывает `marker_install_tools()` (сейчас `rlang::inform`,
       `cli` — в §R), а не отдаёт тихий `NA`
 - [x] **CRAN-рамки**: `SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional)`
       в `DESCRIPTION`; сеть и запись — только в рантайме, только в `R_user_dir`, с
@@ -70,7 +70,7 @@ A–P — реализовано или оценено; **Q** — локализ
       `skip_if_not(nzchar(Sys.which("hybrid-min")))` (24 замены в 12 файлах);
       `helper-oligoarrayaux.R` ищет и `.tools/`, и пользовательский кэш.
 
-## B. Вход и интероперабельность (`R/kasp_io.R`)
+## B. Вход и интероперабельность (`R/marker_io.R`)
 - [x] Ensembl Plants REST: ген-модель и варианты 1001 Genomes, кэш на диск + retry
 - [x] `read_variants_vcf()`: потоково через `vroom` (memory-mapped), `.vcf.gz` без распаковки
 - [x] Мультиаллельный ALT → строки; символические аллели (`<DEL>`, `*`, `.`) отброшены
@@ -114,7 +114,7 @@ A–P — реализовано или оценено; **Q** — локализ
       хромосомам (`BiocParallel`); `in_silico_pcr` тоже параллелен (см. O)
 - [x] `in_silico_pcr()` через `matchProbePair`: REF → 1 продукт, ALT → 0
 - [x] Опциональный BLAST (`rBLAST`, `blastn-short`)
-- [x] Индексный скан генома: `kasp_genome()` + `specificity_blast()` + диспетчер
+- [x] Индексный скан генома: `marker_genome()` + `specificity_blast()` + диспетчер
       `specificity_of()` (BLAST-индекс); регионный доступ без ДНК в RAM (см. O)
 - [x] `strand_gc_hint()` — направление по GC флангов (EasyKASP)
 
@@ -125,7 +125,7 @@ A–P — реализовано или оценено; **Q** — локализ
       цепей) как критерий среди топ-`specificity_candidates`. **Исправлено:** A/T и C/G
       больше не пропускаются — само-пары T·T/A·A — сильнейший 3'-мисматч; слабый — G:T/A:C
       wobble (транзиции), он ловится мягким `gate_wobble`, а не классом сайта
-- [x] `KASP_LIMITS` + `kasp_design_checks()` — tidy `criterion/observed/limit/pass`, пороги LGC/EasyKASP
+- [x] `KASP_LIMITS` + `marker_design_checks()` — tidy `criterion/observed/limit/pass`, пороги LGC/EasyKASP
 - [x] Отказ от чужой эмпирической формулы Tm (EasyKASP) в пользу NN-термодинамики
 - [x] Отбор пар — «гейт серьёзного, скор минорного»: жёсткие гейты (дискриминация,
       структура, `Tm_COM >= Tm_AS`, ампликон, вариант под COM-футпринтом, вариант в
@@ -148,7 +148,7 @@ A–P — реализовано или оценено; **Q** — локализ
       `MAF`/`minor_allele` = `null`, `populations` пуст (127 SNP) — 1001 Genomes
       отдаётся как источник без частот. Значит `pop_freq` — только явный/
       пользовательский; реальные MAF дал бы только сырой VCF 1001 Genomes (крупно)
-- [x] **Модель гаплотипов** (`R/kasp_haplotypes.R`): вход
+- [x] **Модель гаплотипов** (`R/marker_haplotypes.R`): вход
       `assemble_kasp_assay(haplotypes=)` — таблица (`haplotype`, `freq`, `chrom`,
       `pos`, `ref`, `alt`). Из неё выводятся (а) `pop_freq` на позицию (сумма
       частот носителей) → веса футпринта; (б) сцепленные позиции (едут с ALT-аллелем
@@ -182,7 +182,7 @@ A–P — реализовано или оценено; **Q** — локализ
       без термодинамики/BLAST/геномных сканов — GC, run/SSR, хотзона вариантов, вариант
       в 3'-окне; вердикт «promising/doomed» и счёт `k/16` (strand x length). ~3 ms/SNP,
       фильтрует гены до `pick_target_snp()`/`assemble_kasp_assay()`/rBLAST; `plot_snp_screen()`
-- [x] Мультиаллельные сайты и вырожденные праймеры: `kasp_site_class()` формализует
+- [x] Мультиаллельные сайты и вырожденные праймеры: `marker_site_class()` формализует
       критерий «сайт с >2 гаплотипами, всё ещё годными для одного KASP»: одиночный
       SNP-ALT (включая A/T, C/G — см. исправление выше) → `biallelic`; ≥2 SNP-ALT → `degenerate`
       (один AS-праймер с 3'-концевым IUPAC-кодом объединения ALT, `iupac_code()` из
@@ -190,7 +190,7 @@ A–P — реализовано или оценено; **Q** — локализ
       не-SNP ALT → `indel` (свой путь). `screen_snp_targets()` получил колонку `class`,
       поэтому мультиаллельный сайт больше не помечается `doomed`. Фикстура разных типов
       (SNP, MNP, инсерция/делеция, два близких ALT) — `inst/extdata/example_targets.csv`,
-      `kasp_example(type=)`: по одной мишени на тип маркера, разбросанных по генам и
+      `marker_example(type=)`: по одной мишени на тип маркера, разбросанных по генам и
       хромосомам, отобраны по *наименьшей
       местной нагрузке вариантов* (а не свалены из одного гипер-вариабельного региона);
       колонка `gene` — AGI-локус для карты фичи. SNP-строки проверены на дизайнабельность.
@@ -203,7 +203,7 @@ A–P — реализовано или оценено; **Q** — локализ
       `alt_degen` — IUPAC-консенсус по всем ALT (физический вырожденный олиго).
       `assemble_kasp_assay()` для all-SNP мультиаллельного сайта гонит все ALT в движок,
       кладёт `as_alt` (конкретный, внутренний) и `as_alt_degen` (заказной); экспорт
-      (`kasp_primer_table()`/`export_primers()`), `print()` и подписи на графике берут
+      (`marker_primer_table()`/`export_primers()`), `print()` и подписи на графике берут
       вырожденный; специфичность/термо/`find_palindromes` остаются на конкретном, поэтому
       IUPAC в них не протекает. Проверено: `test-as-primer.R` (движок + сборка, код S/M/K)
 - [x] **Уродливые QC гейтят отбор:** приёмка ловит inverted repeat, второй продукт
@@ -214,39 +214,39 @@ A–P — реализовано или оценено; **Q** — локализ
       и предупреждает (как раньше). Хиты общих AS-праймеров сканируются один раз, только
       COM — по кандидату; ПЦР-пассы по паре. `pair_screen = 0` выключает. Покрыто
       `test-selection.R` (дубль сайта COM на второй хромосоме → свап на чистую сестру).
-      Проверки остаются в `kasp_design_checks()`/`KASP_UNGATED_CHECKS` и в `kasp_risk()`
+      Проверки остаются в `marker_design_checks()`/`KASP_UNGATED_CHECKS` и в `marker_risk()`
 - [x] **RDS рядом с картинкой:** `dev/render-targets.R` сохраняет `target_<id>.rds`
       (полный ассей: праймеры, тумблеры, off-target, граф) рядом с PNG — разбор без пересчёта
-- [x] **Проверки уровня сайта:** `kasp_design_checks()` получил уровень *site*
+- [x] **Проверки уровня сайта:** `marker_design_checks()` получил уровень *site*
       (`target site class`, `ALT alleles (n)`, `linked variants skipped (n)`) —
       вырожденные/мультиаллельные сайты и несшитые indel'ы видны в тумблерах;
       `plot_checks()` фасетит site/feature/alignment; `assemble_kasp_assay()` кладёт
-      в объект `assay$site` (`kasp_site_class`). Плюс два новых site-критерия:
+      в объект `assay$site` (`marker_site_class`). Плюс два новых site-критерия:
       **«ALT primer covers all ALTs»** (вырожденный движок покрывает все ALT;
       `site$alt_covered`) и **«design relies on linkage»** (дизайн держится только на
       сцеплении) — видны и в тумблерах, и в дереве/тексте решения автоматически
       (реестр один)
-- [x] **Дерево решения как данные:** `kasp_criteria()` (R/kasp_criteria.R) — единый реестр
+- [x] **Дерево решения как данные:** `marker_criteria()` (R/marker_criteria.R) — единый реестр
       *всех* критериев (site-проверки, гейты и тиры отбора, приёмочные проверки). Из него
-      генерируются узлы/рёбра (`kasp_decision_schema()`), граф (`kasp_decision_graph()`,
-      `tidygraph`), текст (`kasp_decision_text()`) и проверки (`kasp_design_checks()` —
+      генерируются узлы/рёбра (`marker_decision_schema()`), граф (`marker_decision_graph()`,
+      `tidygraph`), текст (`marker_decision_text()`) и проверки (`marker_design_checks()` —
       `role=="check"`), поэтому новый критерий появляется и в дереве, и в результатах сразу.
       DAG сверху вниз: site → AS → ASxCOM → приёмочные проверки → verdict; жёсткие лимиты
       рисуются **жирной рамкой**, мягкие спускаются по лестнице релаксации и возвращаются в
       главный путь, есть терминал `DOOMED`. `assay$decision` — граф в объекте,
       `assay$evaluation` — вычисленные проверки (без пересчёта при отрисовке).
-- [x] **Схемы по химии маркера:** `kasp_schemes()` (R/kasp_schemes.R) — реестр химий
-      (family, дискриминация, ридаут, зиготность, число локусов). `kasp_criteria()` помечает
+- [x] **Схемы по химии маркера:** `marker_schemes()` (R/marker_schemes.R) — реестр химий
+      (family, дискриминация, ридаут, зиготность, число локусов). `marker_criteria()` помечает
       каждую проверку своими схемами, поэтому один реестр даёт деревья для SNP/indel/
       мультиаллельного KASP, **дуплексных** химий (dKASP Jiang 2023, mxKASP Meilink 2025,
       Multi-KASP Wang 2025 — два локуса в одной пробирке + стадия совместимости: Tm-окно
       всех праймеров, запрет ≥6 bp inter-pair комплементарности, ≤5 self-comp, ампликон
       ≤150 bp) и **ASQ/PACE** (Kalendar 2022), плюс голый subset **«любая пара праймеров»**
       (маркер-агностичные проверки: состав/структура/повторы/off-target — не KASP).
-      `kasp_criteria(scheme=)`, `kasp_decision_schema/graph/plot_decision_tree/decision_text`
+      `marker_criteria(scheme=)`, `marker_decision_schema/graph/plot_decision_tree/decision_text`
       принимают scheme; стадия со всеми жёсткими гейтами ведёт провал прямо в `DOOMED`.
       `dev/render-decision.R` рисует по картинке на химию
-- [~] **Движок под дуплексные химии:** `R/kasp_duplex.R` — `design_duplex(genome, loci,
+- [~] **Движок под дуплексные химии:** `R/marker_duplex.R` — `design_duplex(genome, loci,
       readout, homologous)` собирает каждый локус сам ([assemble_kasp_assay()]) и считает
       **стадию совместимости** ([duplex_compatibility()]) по всем праймерам обоих локусов:
       Tm-окно (59-65 °C), межпарная комплементарность (`complementary_run()` < 6 bp — правило
@@ -254,14 +254,14 @@ A–P — реализовано или оценено; **Q** — локализ
       (≤ 5 bp) и бюджет ампликона (≤ 150 bp); те же gate-id, что в реестре (`KASP_GATES_DUPLEX`).
       Ридаут co-dominant (dKASP: кассета на локус, `homologous = TRUE`) vs presence/absence
       (Multi-KASP: доминантный вызов из комбинации, `homologous = FALSE`), гейт `gate_duplex_targets`
-      связывает одно с другим; класс `kasp_duplex` + печать. **Осталось:** (в) ASQ/PACE как
+      связывает одно с другим; класс `marker_duplex` + печать. **Осталось:** (в) ASQ/PACE как
       отдельная cassette-химия
 - [x] **Релаксация с границами, а не снятие гейта:** `select_with_ladder()` опускает порог
       мягкого гейта только до лучшего достижимого значения (не до `-Inf`) и не ниже floor;
       жёсткие гейты (дискриминация, вариант в AS 3'-окне) не опускаются вообще. Сцепленный
       вариант в AS 3'-окне не считается нарушением (исключён из счётчиков AS-зоны).
 - [x] **Doomed-aware отбор мишени:** `pick_target_snp(scheme=, max_tries=)` перебирает
-      ранжированных кандидатов и дизайнит их движком схемы (`kasp_design_at()` →
+      ранжированных кандидатов и дизайнит их движком схемы (`marker_design_at()` →
       KASP/CAPS/ARMS), возвращая первого *дизайнабельного* — «doomed» зависит от типа
       маркера, так что KASP-провал может пройти CAPS/ARMS. Дизайн едет в атрибуте `marker`;
       когда ничего не дизайнится — предупреждение и лучший по рангу (`31259d6`)
@@ -275,7 +275,7 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] `variant_type()` — SNP / MNP / insertion / deletion
 - [x] `BPPARAM` — параллель по локусам
 
-## J. Визуализация (`R/kasp_plots.R`, `R/kasp_search_anim.R`, пакетные библиотеки)
+## J. Визуализация (`R/marker_plots.R`, `R/marker_search_anim.R`, пакетные библиотеки)
 - [x] `plot_primers()` — локальная карта ассая: буквы последовательностей (нейтрально
       чёрные), **жирные** — 3' GC-clamp, **красные** — основания SSR/шпильки; кольцо =
       мисматч/дискриминирующее 3'-основание; Tm числом + ΔTm-тумблер; дорожка вариантов
@@ -317,14 +317,14 @@ A–P — реализовано или оценено; **Q** — локализ
       затем COM, каждое с причиной отказа, до принятого теста; статичная дорожка
       вариантов. Кадры — обычные ggplots, сборка GIF через ImageMagick `convert`
       (gganimate требует `transformr`→`sf`/GDAL). Рисуются только различные кадры
-      (`hold` переиспользует файл); `cores > 1` (или `options(tidykasp.cores=)`)
+      (`hold` переиспользует файл); `cores > 1` (или `options(tidymarkers.cores=)`)
       распараллеливает отрисовку на Unix — ~2× (замер: 9→5 с, `dev/profile-gif.R`).
 
 ## K. Вывод и заказ
 - [x] `export_primers()` — tidy + sheets для IDT (bulk) и LGC/KASP
-- [x] `kasp_primer_table()` — join-таблица олиго с хвостами
+- [x] `marker_primer_table()` — join-таблица олиго с хвостами
 - [x] `kasp_mix_recipe()` — рецепт смеси (AS:AS:COM = 2:2:5) и реакции
-- [x] `report/kasp_report.Rmd` — нарративный отчёт (квейзи-виньетка)
+- [x] `report/marker_report.Rmd` — нарративный отчёт (квейзи-виньетка)
 
 ## L. Гигиена
 - [x] Идиоматический tidyverse-стайл: `list_rbind`/`crossing`/`.data` вместо `*_dfr`/`expand.grid`
@@ -342,21 +342,21 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] `DESCRIPTION` с `Imports`/`Suggests` и `Config/testthat/edition: 3`
 - [x] roxygen-заголовки: `@export`, `@param` (все аргументы), `@return` на публичных
 - [x] Собрать настоящий пакет: `NAMESPACE` + `man/` из roxygen (`roxygen2::roxygenise()`),
-      `R CMD check` — **Status: OK** (0 ERROR / 0 WARNING / 0 NOTE); `library(tidykasp)`
+      `R CMD check` — **Status: OK** (0 ERROR / 0 WARNING / 0 NOTE); `library(tidymarkers)`
 - [x] `@family`-теги по подтипам (geometry / input / design / thermodynamics /
       specificity / QC / checks / output / plots / utilities) — собираются в «See also»
 - [x] `@examples` на публичных функциях (сетевые/геномные — в `\dontrun{}`)
 
 ### M2. Виньетки
-- [x] Нарративный отчёт (`report/kasp_report.Rmd`) как прообраз виньетки
+- [x] Нарративный отчёт (`report/marker_report.Rmd`) как прообраз виньетки
 - [x] `vignettes/kasp-intro.Rmd` — быстрый старт, карта библиотек, тяжёлые шаги как код
 - [x] `vignettes/custom-genome.Rmd` — свой FASTA/VCF, не Arabidopsis
-- [x] `vignettes/reading-results.Rmd` — как читать `kasp_design_checks()` и файлы/графики
+- [x] `vignettes/reading-results.Rmd` — как читать `marker_design_checks()` и файлы/графики
 
 ### M3. Хелперы и подсказки
-- [x] `print()`-метод для объекта теста (класс `kasp_assay`) — человекочитаемая сводка
-- [x] Предикаты-хелперы: `is_kasp_assay()`, `passes_all()`
-- [x] Функция-«быстрый старт»: `kasp_example()` — пример таблицы мишеней из коробки
+- [x] `print()`-метод для объекта теста (класс `marker_assay`) — человекочитаемая сводка
+- [x] Предикаты-хелперы: `is_marker_assay()`, `passes_all()`
+- [x] Функция-«быстрый старт»: `marker_example()` — пример таблицы мишеней из коробки
 - [x] `cli`-сообщения: загрузка генома, распаковка для индекса, прогресс батча
       (`cli_progress_bar` в `design_kasp_markers()`)
 - [x] `@section`-подсказки в докстрингах (кэш генома, шаги дизайна, `UNAFOLDDAT`)
@@ -408,7 +408,7 @@ A–P — реализовано или оценено; **Q** — локализ
 
 - [x] `design_as_primers()`/`design_as_primers_indel()` — сетка + вовлечение физики
       `DECIPHER`; `openPrimeR`/`primeR` сняты, готового KASP-пакета нет — это наш слой.
-- [x] `KASP_LIMITS`/`kasp_design_checks()` — пороги LGC/EasyKASP, специфика KASP.
+- [x] `KASP_LIMITS`/`marker_design_checks()` — пороги LGC/EasyKASP, специфика KASP.
 - [x] `primer_interval()`/`as_anchor()` — арифметика интервалов на `IRanges`.
 - [x] `find_repeats()`/`has_run()` — SSR/гомополимеры регулярками (в нашем стеке
       библиотечного аналога нет).
@@ -441,7 +441,7 @@ A–P — реализовано или оценено; **Q** — локализ
       тяжёлый. `pick_target_snp()` использует `impact`, если он есть в таблице.
 - [x] Тесты: канонические термы, comma-списки, fallback на неизвестном терме,
       приоритет impact и выбор более тяжёлого варианта в `pick_target_snp()`.
-- [x] **Настоящая аннотация** (`R/kasp_annotate.R`): `annotate_variants()` берёт
+- [x] **Настоящая аннотация** (`R/marker_annotate.R`): `annotate_variants()` берёт
       consequence из транскрипционной модели (`VariantAnnotation::locateVariants()`,
       плюс `predictCoding()` с `seqsource`), а не из строки входного файла;
       словари `LOCATION_TO_SO`/`VA_TO_SO` сводят оба словаря к тем же SO-термам,
@@ -462,12 +462,12 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **VCF**: region-стриминг `ScanVcfParam(which=)` для `VariantAnnotation`
       (контиги заголовка сопоставляются через `ath_chrom()`).
 - [x] **FASTA**: `fasta_index()` — доступ к регионам без загрузки всего генома.
-- [x] **Геном как `FaFile`-источник**: `kasp_genome()` + `genome_seq()`/
+- [x] **Геном как `FaFile`-источник**: `marker_genome()` + `genome_seq()`/
       `genome_chroms()`/`genome_length()`. Функции дизайна (`snp_template()`,
       `strand_gc_hint()`, поиск референса в `pick_target_snp()`) читают только нужный
       регион; `in_silico_pcr()` идёт по хромосомам по одной. Оба представления
       (индекс и `DNAStringSet`) взаимозаменяемы — через `genome_seq()`.
-- [x] **Индексный скан генома**: `kasp_blast_index()` (NCBI BLAST+ строит свой индекс)
+- [x] **Индексный скан генома**: `marker_blast_index()` (NCBI BLAST+ строит свой индекс)
       + `specificity_blast()`; диспетчер `specificity_of()` сам выбирает путь
       (в памяти → `specificity_seed`, индекс → BLAST). `Rsubread`/`gmapR` — опция.
 - [x] **Батч/параллель `OligoArrayAux`**: `dimer_thermo(BPPARAM=)` параллелит
@@ -476,11 +476,11 @@ A–P — реализовано или оценено; **Q** — локализ
 ### O1. Замер 2026: один ассей и батч (пул вместо повторов)  [сделано]
 
 Профиль одного локуса (FRI `Chr4:269666 G>A`, 16 ядер): 43.4 → 29.9 с серийно и
-→ 14.3 с (`options(tidykasp.cores = 8)`); батч 16 локусов 231 → 58 с
+→ 14.3 с (`options(tidymarkers.cores = 8)`); батч 16 локусов 231 → 58 с
 (`design_kasp_markers(BPPARAM = MulticoreParam(8))`). Вердикты и числа
 идентичны серийным.
 
-- [x] **Единый knob** `cores = getOption("tidykasp.cores", 1L)` → `kasp_bpparam()`
+- [x] **Единый knob** `cores = getOption("tidymarkers.cores", 1L)` → `marker_bpparam()`
       (`NULL` при 1 ядре); `BPPARAM` задаёт бэкенд явно и главнее. Внутри внешнего
       locus-пула `cores` форсится в 1 — вложенности нет.
 - [x] **Параллель подпроцессов**: карты OligoArrayAux (`oligo_dg_vec`,
@@ -515,7 +515,7 @@ A–P — реализовано или оценено; **Q** — локализ
       `TxDb.Athaliana.BioMart.plantsmart28` — `annotate_variants()` (см. N4) заменяет
       словарь `so_rank()` настоящей аннотацией. Принято.
 - [x] **`BSgenome`-аннотации** (`BSgenome.Athaliana.TAIR.TAIR9`) — геном как
-      Bioconductor-объект: `kasp_genome(bsgenome = ...)` читает регионы через
+      Bioconductor-объект: `marker_genome(bsgenome = ...)` читает регионы через
       `BSgenome::getSeq()`, без FASTA на диске. Принято.
 - [x] **`Biostrings::findPalindromes()`** — инвертированные повторы/шпильки как
       библиотечный QC-скрин (`find_palindromes()`/`has_palindrome()`, 14-й критерий
@@ -538,9 +538,9 @@ A–P — реализовано или оценено; **Q** — локализ
 - [~] **`biomaRt`** — канонический R-интерфейс к Ensembl, но variation-overlap
       (`overlap/region`) он не умеет → наш `httr2`/`jsonlite` остаётся оправданным.
       Не принято (функционально ничего не добавляет).
-- [x] **FM-индекс** (`Rsubread`) — `kasp_fm_index()` строит индекс (`buildindex`),
+- [x] **FM-индекс** (`Rsubread`) — `marker_fm_index()` строит индекс (`buildindex`),
       `specificity_fm()` считает локъ-хиты картой целого праймера (`align`,
-      многопточно, геном не грузится в память). `kasp_genome(fm_index = )` —
+      многопточно, геном не грузится в память). `marker_genome(fm_index = )` —
       индекс прикрепляется, `assemble_kasp_assay(run_blast = TRUE)` использует его
       вместо BLAST. Принято. `gmapR` не берём (нужны внешние Gmap/Gsnap).
 - [~] **`ensembldb`** — **не как бэкенд аннотации**: пресобранного EnsDb для
@@ -548,7 +548,7 @@ A–P — реализовано или оценено; **Q** — локализ
       `EnsDb` не приводится к `TxDb`; мост через `txdbmaker::makeTxDbFromGRanges()`
       **теряет CDS** (проверено: транскрипты есть, CDS — нет). Значит
       consequence-аннотация остаётся на `TxDb` (N4). Наш вклад:
-      `kasp_ensdb()` — собранный/кэшированный `EnsDb` из GTF Ensembl Plants
+      `marker_ensdb()` — собранный/кэшированный `EnsDb` из GTF Ensembl Plants
       (актуальная модель как источник для запросов генов/транскриптов).
 
 Оценено и **не подходит**: `DECIPHER::DesignPrimers` (нужны `tiles`/группы, см. N2);
@@ -572,7 +572,7 @@ A–P — реализовано или оценено; **Q** — локализ
 
 - [x] **1. Сообщения во время выполнения — только gettext, не хардкод.** Исходники
       пишем на одном языке (английский), переводы — в `po/R-ru.po` (домен
-      `R-tidykasp`), компиляция в `.mo` при установке; R выбирает по локали/`LANGUAGE`.
+      `R-tidymarkers`), компиляция в `.mo` при установке; R выбирает по локали/`LANGUAGE`.
       Строки в `stop()`/`warning()`/`message()`/`packageStartupMessage()` переводятся
       автоматически; остальное помечаем `gettext()`/`gettextf()`/`ngettext()`;
       `cat()` **не** переводится. «Ветвиться по `Sys.getlocale()`» — неверный путь.
@@ -641,13 +641,13 @@ A–P — реализовано или оценено; **Q** — локализ
       `cli`-векторов — по элементу) → `potools::po_compile()`, затем прогнать i18n
       end-to-end (`LANGUAGE=ru`). Диагностики `check_cracked_messages()`,
       `check_untranslated_cat()`, `check_untranslated_src()`. Начать с самого
-      user-facing: валидация аргументов и подсказки установки тулов (`kasp_install_tools()`).
+      user-facing: валидация аргументов и подсказки установки тулов (`marker_install_tools()`).
       **Статус:** каталог полон и синхронизирован. **Найдено:** миграция на `cli`
       **msgid-сохраняющая** — достаточно заменить `rlang::abort/warn/inform` на
       `cli::cli_abort/cli_warn/cli_inform` и убрать обёртку `glue::glue()` (cli сам
       интерполирует `{}`), **не трогая текст внутри `gettext()`**: `po` при этом не меняется
       (проверено — `po_extract`, msgid идентичны; `po/R-ru.po` не изменился). **Сделано:**
-      тулы/установка + валидация ввода (`R/kasp_tools.R`, `R/kasp_io.R` — 11 сообщений).
+      тулы/установка + валидация ввода (`R/marker_tools.R`, `R/marker_io.R` — 11 сообщений).
       **Осталось:** ничего — миграция завершена тем же механическим приёмом (все
       `rlang::abort/warn/inform` → `cli::cli_abort/cli_warn/cli_inform`); `po` не трогался.
 - [x] `BiocParallel`: общий `bp_lapply()` ставит `progressbar` через `BPOPTIONS`;
@@ -667,7 +667,7 @@ A–P — реализовано или оценено; **Q** — локализ
       так что термотесты на Windows не скипаются молча
 - [ ] **Windows: сборка OligoArrayAux + R-hub.** Задокументировать сборку на Windows
       (Rtools/MSYS2/UCRT64, запуск через `bash -lc`; см. установщик A1) и проверить на
-      живом Windows/R-hub: `kasp_install_tools()` под Windows, паритет `-q`-вывода
+      живом Windows/R-hub: `marker_install_tools()` под Windows, паритет `-q`-вывода
       `hybrid-min.exe`, `PATHEXT`/processx, cairo, CRLF у `vroom`. **Нужен
       Windows-раннер** — в текущей (Linux) среде не воспроизводится.
 - [x] **sha256 и пробелы:** `sha256_of()` пробует `sha256sum`/`shasum`/`openssl`;
@@ -675,8 +675,8 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **`.gitattributes`:** `* text=auto eol=lf`, `*.mo`/`*.rds`/`*.png`/`*.gif` — бинарные
 - [x] **Инструкции/шелл:** README и `lecture/render.sh` — варианты cairo для
       Windows/macOS (pak `sysreqs` / brew / Rtools), запуск `sh` на Windows из
-      Git-Bash/Rtools; `apt-get`-хинты в сообщениях (`R/kasp_scan.R`,
-      `R/kasp_search_anim.R`) дополнены macOS/Windows
+      Git-Bash/Rtools; `apt-get`-хинты в сообщениях (`R/marker_scan.R`,
+      `R/marker_search_anim.R`) дополнены macOS/Windows
 - [x] **Форк:** `render_design_search()` больше не зовёт `parallel::mclapply` (Unix-only,
       и `parallel` не был в `Imports`); теперь `BiocParallel` — `MulticoreParam` (форк) на
       Unix, `SnowParam` иначе, через общий `bp_lapply()`. Проверено на Linux (кадры в
@@ -694,8 +694,8 @@ A–P — реализовано или оценено; **Q** — локализ
 - [x] **Запись вне `tempdir()`:** дефолты `write_kasp_results()`/`export_primers()`/
       `render_design_search()` → `tempdir()`; `here` ушёл из `Imports` в `Suggests`
       (нужен только `inst/scripts`)
-- [~] **Стиль сообщений** против Q1 (заглавная/точка, напр. `kasp_io.R`,
-      `kasp_scan.R`): механизм доставлен — все сообщения идут через `cli` (§R), — но
+- [~] **Стиль сообщений** против Q1 (заглавная/точка, напр. `marker_io.R`,
+      `marker_scan.R`): механизм доставлен — все сообщения идут через `cli` (§R), — но
       перерегистр ~70 текстов нашёл бы ~70 переводов *fuzzy* ради косметики, поэтому тексты
       намеренно оставлены в текущем виде (полные предложения с заглавной и точкой). base R
       пишет строчными без точки; расхождение осознанное — сохранённые переводы важнее
@@ -736,14 +736,14 @@ A–P — реализовано или оценено; **Q** — локализ
 те же 3'-ограничения KASP. **Ампликонное/Sanger-секвенирование** — универсальный фолбэк
 (gold standard в сравнении 2025 г.).
 
-- [~] **CAPS/dCAPS как вторая схема.** Прототип есть: `R/kasp_caps.R` —
+- [~] **CAPS/dCAPS как вторая схема.** Прототип есть: `R/marker_caps.R` —
       `restriction_enzymes()` (**данные из REBASE *bionet*, ~1200 палиндромных Type II**,
       не руками; регенерация `dev/fetch-rebase.R`), `caps_fragments()` (IUPAC-aware сайты →
       длины фрагментов),
       `find_caps_enzymes()` (REF vs ALT-ампликон, «gel resolvability» по разрыву полос,
       дефолт 50 bp) и `design_caps_marker()` (выбор фермента + фланкирующая пара с Tm/GC-скрином,
-      возвращает класс `kasp_caps` с рецептом рестрикции). Схема `caps` зарегистрирована в
-      `kasp_schemes()`/`kasp_criteria()`/`kasp_decision_stages()` (своя стадия `gate_caps_*`,
+      возвращает класс `marker_caps` с рецептом рестрикции). Схема `caps` зарегистрирована в
+      `marker_schemes()`/`marker_criteria()`/`marker_decision_stages()` (своя стадия `gate_caps_*`,
       маркер-агностичные праймерные проверки, без KASP 3'-машинерии); дерево рисуется.
       **Сделано:** (а) **dCAPS** — сайт, *создаваемый* праймером: `find_dcaps_enzymes()`
       ищет окна вокруг варианта, которые на один (не-вариативный) мисматч короче сайта для
@@ -758,26 +758,26 @@ A–P — реализовано или оценено; **Q** — локализ
       primerblast-oss. **Эмпирика:** на 3 «капризных» локусах (MNP GA>AA, insertion A>AA,
       deletion TT>T) природного CAPS-маркера в каталоге нет (0 сайтов; у длинных делеций/
       инсерций gap=1) — им нужен dCAPS или больший каталог ферментов
-- [~] **Tetra-primer ARMS / AS-PCR.** `scheme = "arms"` реализован (`R/kasp_arms.R`):
+- [~] **Tetra-primer ARMS / AS-PCR.** `scheme = "arms"` реализован (`R/marker_arms.R`):
       `design_arms_marker()` — внешняя контрольная пара (`design_flanking_pair()`) + две
       внутренние аллель-специфичные на противоположных цепях (`design_as_primers()`, тот же
       3'-концевой якорь), дающие полосы REF/ALT *разных* размеров (AA/AB/BB); валидация
-      разрыва полос, класс `kasp_arms`, `plot_arms_gel()`. Схема зарегистрирована (стадия
+      разрыва полос, класс `marker_arms`, `plot_arms_gel()`. Схема зарегистрирована (стадия
       `gate_arms_*`). **Осталось:** усиление мисматчей -2/-3 (как ARMSprimer3), учёт
       off-target/специфичности; FOSS: Primer1 (Ye 2001/2012), WASP (2007), ARMSprimer3 (2025),
       primerblast-oss
-- [x] **HRM** (`scheme = "hrm"`, `R/kasp_hrm.R`): `design_hrm_marker()` — одна фланкирующая
+- [x] **HRM** (`scheme = "hrm"`, `R/marker_hrm.R`): `design_hrm_marker()` — одна фланкирующая
       пара поверх варианта (вариант в домене плавления, под праймером не сидит), ампликон
       **короткий** (40–150 bp; короткий домен — резче кривую, Premier Biosoft / Thermo Fisher),
       пара Tm-сбалансирована; соседи терпимы (нет гейта 3'-окна) — поэтому HRM берёт
       локусы, которые KASP думит (вариант в AS 3'-окне, поли-A стык). Схема
-      зарегистрирована (`kasp_schemes`/`kasp_criteria`/`kasp_decision_stages`, стадия `hrm`),
-      класс `kasp_hrm`, диспетчер `kasp_design_at("hrm")`. **Честно:** кривая плавления *не*
+      зарегистрирована (`marker_schemes`/`marker_criteria`/`marker_decision_stages`, стадия `hrm`),
+      класс `marker_hrm`, диспетчер `marker_design_at("hrm")`. **Честно:** кривая плавления *не*
       моделируется (нужны uMELT/PolyMelt-модели) — возвращается корректный ампликон, не профиль.
       FOSS-ориентиры: uMELT/PolyMelt, SNPgen (2024)
 - [x] **«Ладдер» химий — KASP не единственный путь:** `design_marker(genome, snp, schemes)`
       перебирает химии по очереди (KASP → CAPS → ARMS → HRM) и возвращает первую годную
-      (диспатч `kasp_design_at()` + `is_target_designable()`), отдавая tidy-вердикт по
+      (диспатч `marker_design_at()` + `is_target_designable()`), отдавая tidy-вердикт по
       каждой (`tried`). `dev/render-targets.R` теперь гоняет весь ладдер на каждой мишени
       панели: где KASP думит, рисуется альтернатива (`plot_caps_gel`/`plot_arms_gel`/
       `plot_hrm_amplicon`). **На курированном наборе (9 локусов):** 7 дизайнятся KASP;
@@ -808,17 +808,17 @@ A–P — реализовано или оценено; **Q** — локализ
       - Обзорные сравнения: *Anal. Chim. Acta* 2025 (rs9939609 T>A: ARMS vs PIRA vs TaqMan
         vs CADMA+HRM vs HRM-snapback, Sanger gold) — карта «какой метод на какой SNP»;
         **KASP vs T-ARMS** (MDPI 2026) — флуоресцентный против гель-ридаута
-- [x] **Приоры в код:** `kasp_priors()` — единый провенанс порогов (значение → источник:
+- [x] **Приоры в код:** `marker_priors()` — единый провенанс порогов (значение → источник:
       LGC/EasyKASP 2025, primerblast-oss, TmCalculator), сверка термодинамики —
       `thermo_crosscheck()`. **`min_disc` градирован, а не бинарен:** `discrimination_band()`
-      (R/kasp_risk.R) отображает наблюдаемый margin в low/medium/high, привязанный к
+      (R/marker_risk.R) отображает наблюдаемый margin в low/medium/high, привязанный к
       `min_disc` + `discrimination_margin` (0.1) — без подогнанной вероятности, для которой
-      нет данных о калибровке; `kasp_risk()` возвращает `discrimination` и `disc_risk`.
+      нет данных о калибровке; `marker_risk()` возвращает `discrimination` и `disc_risk`.
       Гейт отбора остаётся жёстким («no allele discrimination = no assay»), градируется
       *вердикт*, а не приём
 - [~] **Провенанс порогов + термодинамическая сверка (без новых зависимостей).**
-      `kasp_priors()` — таблица «параметр → значение → источник» (LGC/EasyKASP 2025 /
-      primerblast-oss), аудит для `kasp_design_checks()`. `thermo_crosscheck()` прогоняет
+      `marker_priors()` — таблица «параметр → значение → источник» (LGC/EasyKASP 2025 /
+      primerblast-oss), аудит для `marker_design_checks()`. `thermo_crosscheck()` прогоняет
       олиго через несколько публичных NN-наборов TmCalculator (SantaLucia 2004 — наш
       дефолт — vs Allawi 1998 / Sugimoto 1996 / Breslauer 1986) и отдаёт разброс Tm:
       подтверждает, что окно `as_tm` (10 °C) шире межмодельного разброса. `primer_tm(nn_table=)`.
@@ -826,13 +826,13 @@ A–P — реализовано или оценено; **Q** — локализ
       бинаря/пакета `primer3` в среде нет (README:63); наша Tm — это и есть NN-модель
       семейства Primer3/oligotm, так что «independent ΔG cross-check» — это NN-таблицы,
       а ΔG остаётся за OligoArrayAux. **Сделано:** `rprimer` подключён (Bioc, Suggests) —
-      `R/kasp_rprimer.R`: `alignment_from()` строит выравнивание, `rprimer_assays()` -
+      `R/marker_rprimer.R`: `alignment_from()` строит выравнивание, `rprimer_assays()` -
       независимый дизайнер + `checkMatch()` (on/off-target пропорции). Честное ограничение:
       S4-классы rprimer заперты, *свои* праймеры в `checkMatch` не вставить (валидируется
-      локус/выравнивание, не готовый ассей). **Сделано также:** `kasp_risk()` —
+      локус/выравнивание, не готовый ассей). **Сделано также:** `marker_risk()` —
       experimenter-facing риск `low/medium/high` (grave-провал → high) с причинами
-      (R/kasp_risk.R). **Сделано:** `min_disc` градирован (`discrimination_band()` +
-      `disc_risk` в `kasp_risk()`), а не бинарен — см. «Приоры в код» выше
+      (R/marker_risk.R). **Сделано:** `min_disc` градирован (`discrimination_band()` +
+      `disc_risk` в `marker_risk()`), а не бинарен — см. «Приоры в код» выше
 
 ## V. Модели считывания (readout simulation)  [начато]
 
@@ -841,13 +841,13 @@ A–P — реализовано или оценено; **Q** — локализ
 («мокрый») вывод остаётся за человеком, а обещание пакета — «tidy-дизайн и QC» — без модели
 считывания неполно. Добавлено в очередь, по химии:
 - [x] **TaqMan / dPCR — гидролизующая проба, аллельная дискриминация (DECIPHER).**
-      `probe_discrimination()` (`R/kasp_readout.R`): для каждой аллель-специфичной пробы
+      `probe_discrimination()` (`R/marker_readout.R`): для каждой аллель-специфичной пробы
       считается on/off-эффективность гибридизации+расщепления (`pcr_efficiency()`, DECIPHER)
       против своей и чужой связывающей площадки (`t_on = revcomp(probe)`, `t_off` — та же,
       но с основанием варианта); результат
       (`allele`/`on`/`off`/`d_eff`) кладётся в `$readout` дизайна TaqMan/dPCR.
       Проба castPCR локу-специфична (не аллель-специфична) — её readout всё ещё RQ AS-праймера.
-- [x] **Явный флаг «readout не смоделирован».** `kasp_readout(marker)` — единая точка:
+- [x] **Явный флаг «readout не смоделирован».** `marker_readout(marker)` — единая точка:
       возвращает `table` модели, если схема её вычислила, иначе `simulated = FALSE`
       и вербальное допущение (напр. HRM — «melting curve not modelled»).
       Текст допущений/имя модели — структурные данные (англ., как gate-лейблы), не msgid.
@@ -866,7 +866,7 @@ A–P — реализовано или оценено; **Q** — локализ
 Наблюдение: почти все задачи закрыты — и это тревожно: значит, аудитов было мало, и дрейф
 копится **между** проходами (новые модули, закрытые пункты, изменённое поведение). Нужен
 регулярный аудит (после каждой крупной группы правок), а не разовый:
-- [ ] **DRY / «сухой» код против библиотек:** нет дублей-копипаст (новые модули `kasp_*.R`
+- [ ] **DRY / «сухой» код против библиотек:** нет дублей-копипаст (новые модули `marker_*.R`
       не должны копировать CAPS/ARMS/`primer_candidates()`); где есть библиотека — берём её,
       а не самопис; сверить, что discovery/registry не обошёл библиотечные примитивы
 - [ ] **Дрейф документации (ROADMAP/README/NEWS/виньетки ↔ код):** каждый закрытый пункт
@@ -884,11 +884,11 @@ A–P — реализовано или оценено; **Q** — локализ
 ### Аудит 2026-10 (4 агента: QC-дыры, API, tidy/CRAN, биология схем)  [исправлено + очередь]
 
 **Исправлено:**
-- **Совместная проверка пула.** `tube_compatibility()` (`R/kasp_pool.R`) — один хелпер
+- **Совместная проверка пула.** `tube_compatibility()` (`R/marker_pool.R`) — один хелпер
   над `primer_set_compatibility()`; теперь финальный набор олиго (праймеры **и** пробы)
   проверяется в `lamp`/`arms`/`snapshot`/`taqman`/`castpcr`/`dpcr`/`rpa` (раньше — только
   `lax`/`duplex`). Модифицированные основания (THF-сайт пробы) трактуются как `N`.
-- **dPCR-проба сделана аллель-специфичной** (`R/kasp_dpcr.R`): две пробы (REF/ALT,
+- **dPCR-проба сделана аллель-специфичной** (`R/marker_dpcr.R`): две пробы (REF/ALT,
   FAM/HEX) — вариант-основание меняется во второй пробе (strand-aware); раньше одна
   общая spanning-проба давала лишь присутствие/отсутствие, а схема заявляла co-dominant.
 - **`po`-каталог вычищен** до 168 переведённых, 0 fuzzy/untranslated/obsolete (§Q).
@@ -898,8 +898,8 @@ A–P — реализовано или оценено; **Q** — локализ
 - **Ладдер:** `per_locus_schemes()` ограничивает дефолтный `rescue_strategy()` схемами
   с одно-локусным дизайнером — `duplex` (`loci = 2`) и `asq` (без движка) больше не висят
   в ладдере как «непроходимые»; дрейф доков `design_marker`/`design_markers` снят.
-- `@param strategy`; битая ссылка `[kasp_scheme_registry()]`; сталые «wired by the caller».
-- `options(tidykasp.tool_hint_shown=)` → `.kasp_state` (`R/zzz.R`, namespace-env) — пакет
+- `@param strategy`; битая ссылка `[marker_scheme_registry()]`; сталые «wired by the caller».
+- `options(tidymarkers.tool_hint_shown=)` → `.marker_state` (`R/zzz.R`, namespace-env) — пакет
   больше не пишет глобальную опцию; `<<-` в CRISPR-Dx заменён на императивный probing-loop.
 - Тесты: новый `test-pool.R` (хелперы) + проверка `$compatibility` в схемах.
 
@@ -914,15 +914,15 @@ A–P — реализовано или оценено; **Q** — локализ
   расходится (NEB vs Soroka), уточнить по источникам перед введением, чтобы не сделать хуже.
 - **indel_size** — `min_gap = 5` bp агарозой не разрешается (≥10 или PAGE/капилляр);
   заголовок это признаёт, дефолт — нет.
-- [x] **Дубли:** `spanning_probe_candidates()` (`R/kasp_primer_pairs.R`) — одна
+- [x] **Дубли:** `spanning_probe_candidates()` (`R/marker_primer_pairs.R`) — одна
   энумерация пробы для `taqman`/`castpcr` (RPA-проба — своя THF-геометрия);
-  `repeat_regex()` (`R/kasp_thermo.R`) — одно homopolymer/SSR-правило для `has_run`/
-  `find_repeats`/`repeat_spans`/`kasp_screen`.
+  `repeat_regex()` (`R/marker_thermo.R`) — одно homopolymer/SSR-правило для `has_run`/
+  `find_repeats`/`repeat_spans`/`marker_screen`.
 - [ ] **guard «single-base only»** (~10 дизайнеров) — свести к одному хелперу; **меняет
   msgid** → одним проходом с `po`.
 - [x] **`assemble_kasp_assay()` 609 → 361 строк** — этапы вынесены в приватные хелперы
-  (`kasp_snp_alts`, `kasp_variant_alleles`, `kasp_linked_offsets`, `kasp_dropout_batch`,
-  `kasp_as_candidates`, `kasp_as_zone_metrics`, `kasp_pick_as`, `kasp_as_warnings`),
+  (`marker_snp_alts`, `marker_variant_alleles`, `marker_linked_offsets`, `marker_dropout_batch`,
+  `marker_as_candidates`, `marker_as_zone_metrics`, `marker_pick_as`, `marker_as_warnings`),
   поведение не менялось (полный набор тестов зелёный).
   **Осталось:** вынести COM-блок, скрин пар и финализацию вывода (стр. ~450-729).
 - [x] `render_design_search()` — промежуточные PNG в `withr::local_tempdir()` (чистятся).
@@ -940,15 +940,15 @@ A–P — реализовано или оценено; **Q** — локализ
   разложены по семейству химии (`KASP_CHECK_PRIMER`/`_SITE`/`_AS` + `KASP_FAMILY_CHECKS`),
   `check_schemes()` переписан — обнаруженные неAS-схемы (`crispr`/`lamp`/`taqman`/`dpcr`/
   `rpa`/`ssr`/`sanger`/`snapshot`/`indel_size`) больше не несут AS/COM/дискриминацию/3'-окно
-  (26 → 12 проверок); `kasp_design_checks()` стал схема-зависимым (C3), SNP-вывод не
+  (26 → 12 проверок); `marker_design_checks()` стал схема-зависимым (C3), SNP-вывод не
   изменился; хелпер `expect_dag_invariants()` (C1–C11) и `dev/dump-dags.R`; общие тесты
   `test-criteria.R`/`test-decision.R` переписаны scheme-агностично.
 - [x] **Фаза 0 / агент 2:** генератор DAG (C1/C4/C6/C9), floor'ы vs `KASP_LIMITS` (C5),
   схема-зависимый граф (C12/C13), честность `KASP_UNGATED_CHECKS` (C10); встроенные
-  стадии (`KASP_*_DUPLEX/ASQ/CAPS/ARMS/HRM`) вынесены в свои файлы (новый `R/kasp_asq.R`) —
+  стадии (`KASP_*_DUPLEX/ASQ/CAPS/ARMS/HRM`) вынесены в свои файлы (новый `R/marker_asq.R`) —
   чистый перенос констант и их подписей, без `scheme_def_*()` и без смены поведения.
   C1 решён подписью роли у гейта (проверка приёмки остаётся источником истины для
-  `kasp_design_checks()`), C5 — проверка читается по планке релаксации, а не по идеалу.
+  `marker_design_checks()`), C5 — проверка читается по планке релаксации, а не по идеалу.
   Осталось агентам 3–10: `expect_dag_invariants()` в своих тестах и своя наука (C7/C8/C13/C14).
 - [x] **Фаза 1 / агенты 3–10:** по схемам, каждый зовёт `expect_dag_invariants()` и правит
   только свои файлы. `snp`/`indel`/`multi`/`primer` (агент 3: порядок релаксации AS,
@@ -963,37 +963,37 @@ A–P — реализовано или оценено; **Q** — локализ
   пол SNaPshot сведены); `sanger`/`ssr`/`indel_size` (агент 10: гейты по методу и
   вычисляются).
 - [x] **Фаза 1 / общие слоты (интегратор):** приёмка `amplicon length (bp)` — по семейству
-  химии (`kasp_amplicon_window()`, C2/C5); штамп статусов гейтов — по стадии, не только
+  химии (`marker_amplicon_window()`, C2/C5); штамп статусов гейтов — по стадии, не только
   `as`/`pair` (C13); ряды реестра `indel`/`multi`/`hrm` поправлены; `asq` — стадия без гейтов
   (`KASP_GATES_ASQ = character(0)`); фигуры README перегенерированы.
 
-## X. Слой плана: `kasp_plan()` -> `kasp_solve()` -> `kasp_tubes()` -> export  [сделано]
+## X. Слой плана: `marker_plan()` -> `marker_solve()` -> `marker_tubes()` -> export  [сделано]
 
 Пользовательский фасад над движком — «грамматика» в духе ggplot (слои складываются `+`,
-`kasp_solve()` — глагол-вычислитель):
-- **target layer:** `kasp_plan(genome)` + `kasp_targets(data | chrom,pos,ref,alt)`
-  (панель `kasp_example()` несёт `id`→label и `alt2`) + `kasp_context(variants, haplotypes)`.
-- **tech layer:** `kasp_tech(schemes|preset|exclude, costs = kasp_costs(...))` — пресеты
+`marker_solve()` — глагол-вычислитель):
+- **target layer:** `marker_plan(genome)` + `marker_targets(data | chrom,pos,ref,alt)`
+  (панель `marker_example()` несёт `id`→label и `alt2`) + `marker_context(variants, haplotypes)`.
+- **tech layer:** `marker_tech(schemes|preset|exclude, costs = marker_costs(...))` — пресеты
   `kasp/gel/lab/field`; схема стоимостей (KASP=1, фрагмент=10…) задаёт порядок обхода;
   кастомная `design_<m>_marker()` + `scheme_def_<m>()` подхватывается автоматически.
-- **solver layer:** `kasp_solve(plan, ..., cache=, all=)` — обходит схемы от дешёвой к
+- **solver layer:** `marker_solve(plan, ..., cache=, all=)` — обходит схемы от дешёвой к
   дорогой и **останавливается** на первой годной (KASP выйграл ⇒ фрагмент не запускается);
   memo-кэш по (target, scheme, knobs); tidy `report` + `attempts`.
-- **tube layer:** `kasp_tubes(solved)` — `marker_primers()` (S3 над всеми классами) +
+- **tube layer:** `marker_tubes(solved)` — `marker_primers()` (S3 над всеми классами) +
   `primer_set_compatibility()` по всем парам МЕЖДУ маркерами (кросс-димеры; self — свойство
   одного праймера и уже проверено при дизайне).
-- **viz/export:** `kasp_plot(solved)` (плитки target×chemistry), `kasp_export(dir)`.
-- Демо: `inst/scripts/pipeline.R`; тесты `test-plan.R` на реальной панели `kasp_example()`.
-- Попутно исправлено: `print.kasp_lax` (no-haplotype форма), `assemble_kasp_assay()` падал
+- **viz/export:** `marker_plot(solved)` (плитки target×chemistry), `marker_export(dir)`.
+- Демо: `inst/scripts/pipeline.R`; тесты `test-plan.R` на реальной панели `marker_example()`.
+- Попутно исправлено: `print.marker_lax` (no-haplotype форма), `assemble_kasp_assay()` падал
   на variants другого хромосома (`substring(integer(0))`), `dev/check.R` lintr теперь
   `load_all()`-ит исходник (иначе «no visible binding» из-за неустановленного пакета).
 - **Хаплотипы из выравнивания:** `read_transcripts()` (FASTA/seqdump; склейка
   coordinate-range записей по accession) + `haplotypes_from_alignment()` (`DECIPHER::AlignSeqs`,
   вариант-коллы против референса — SNP и инделы в reference coords) → `$genome` (одна
-  последовательность-«хромосома») + `$haplotypes` (для `kasp_context(haplotypes=)`).
+  последовательность-«хромосома») + `$haplotypes` (для `marker_context(haplotypes=)`).
   Оффлайн-фикстура: `inst/extdata/sat2_transcripts.fa` (11 транскриптов SAT2, 256 вариантов),
   тест `test-alignment.R` (без сети).
-- **Чанк-интерчейндж (локальное окно, три формы):** `kasp_chunk()` над
+- **Чанк-интерчейндж (локальное окно, три формы):** `marker_chunk()` над
   выравниванием / VCF-подобными вариантами / взвешенными гаплотипами +
   `chunk_variants()`/`chunk_haplotypes()`/`chunk_alignment()`/`chunk_reference()`/
   `chunk_genome()`/`chunk_weight()`. Координаты window-local; `chunk_genome()` — готовый

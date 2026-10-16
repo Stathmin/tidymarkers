@@ -33,14 +33,14 @@ test_that("write_kasp_results writes grouped files and order subsets", {
   dir <- withr::local_tempdir(pattern = "res")
   paths <- write_kasp_results(assay, list(symbol = "FRI"), dir = dir)
   for (f in c(
-    "kasp_design.csv", "kasp_primer_qc.csv", "kasp_dimer_dg.csv",
-    "kasp_FRI_Chr4_269090_tidy.csv", "kasp_FRI_Chr4_269090_idt.csv",
-    "kasp_FRI_Chr4_269090_lgc.csv"
+    "marker_design.csv", "marker_primer_qc.csv", "marker_dimer_dg.csv",
+    "marker_FRI_Chr4_269090_tidy.csv", "marker_FRI_Chr4_269090_idt.csv",
+    "marker_FRI_Chr4_269090_lgc.csv"
   )) {
     expect_true(file.exists(file.path(dir, f)), info = f)
   }
   # primer QC joins thermo + specificity + in-silico PCR into one row per primer
-  qc <- readr::read_csv(file.path(dir, "kasp_primer_qc.csv"), show_col_types = FALSE)
+  qc <- readr::read_csv(file.path(dir, "marker_primer_qc.csv"), show_col_types = FALSE)
   expect_equal(nrow(qc), 3L)
   expect_true(all(c("tm", "terminal_dg", "hits", "n_products") %in% names(qc)))
 })

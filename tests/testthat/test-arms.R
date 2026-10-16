@@ -2,7 +2,7 @@
 
 test_that("an outer flanking pair sits outside the region and codes a product", {
   withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
-  p <- tidykasp:::design_flanking_pair(w, lo = 300L, hi = 300L)
+  p <- tidymarkers:::design_flanking_pair(w, lo = 300L, hi = 300L)
   expect_true(p$start < 300L && p$end > 300L)
   expect_true(p$product >= 200L && p$product <= 800L)
 })
@@ -17,7 +17,7 @@ test_that("design_arms_marker gives two resolvable, different-sized diagnostic b
     alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_arms_marker(genome, snp, flank = 250L)
-  expect_s3_class(m, "kasp_arms")
+  expect_s3_class(m, "marker_arms")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   b <- m$bands
   expect_setequal(b$band, c("control", "REF", "ALT"))
@@ -40,16 +40,16 @@ test_that("plot_arms_gel draws the AA / AB / BB readout", {
         band = c("control", "REF", "ALT"), size = c(400L, 200L, 250L)
       )
     ),
-    class = "kasp_arms"
+    class = "marker_arms"
   )
   expect_s3_class(plot_arms_gel(marker), "ggplot")
 })
 
 test_that("the arms scheme is registered and yields a DAG with its own stage", {
-  expect_true("arms" %in% kasp_schemes()$scheme)
-  crit <- kasp_criteria(scheme = "arms")
+  expect_true("arms" %in% marker_schemes()$scheme)
+  crit <- marker_criteria(scheme = "arms")
   expect_true(all(paste0("arms:gate:", KASP_GATES_ARMS) %in% crit$id))
-  s <- kasp_decision_schema("arms")
+  s <- marker_decision_schema("arms")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(ord[s$edges$to] > ord[s$edges$from]))
 })
@@ -59,7 +59,7 @@ test_that("the arms DAG obeys the contract", {
 })
 
 test_that("arms declares its gate set, hardness, both orders and real floors", {
-  crit <- kasp_criteria(scheme = "arms")
+  crit <- marker_criteria(scheme = "arms")
   gates <- crit[crit$role == "gate", ]
   expect_setequal(gates$id, paste0("arms:gate:", KASP_GATES_ARMS))
   # application order (grave / cheap first) is the declared vector

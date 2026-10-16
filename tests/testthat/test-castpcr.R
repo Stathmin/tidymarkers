@@ -23,7 +23,7 @@ test_that("design_castpcr_marker detects the MUTANT allele, with a WT blocker an
   skip_if_no_oligoarrayaux()
   f <- castpcr_fixture()
   m <- design_castpcr_marker(f$genome, f$snp, flank = 150L)
-  expect_s3_class(m, "kasp_castpcr")
+  expect_s3_class(m, "marker_castpcr")
   expect_equal(m$scheme, "castpcr")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
 
@@ -68,7 +68,7 @@ test_that("design_castpcr_marker detects the MUTANT allele, with a WT blocker an
   expect_true(dplyr::between(m$primers$product, lo, hi))
   expect_true(all(m$selection$relaxed %in% c("gate_castpcr_amplicon", "gate_castpcr_as_tm")))
   expect_true(grepl("^[ACGT]+$", m$primers$forward) && grepl("^[ACGT]+$", m$primers$reverse))
-  expect_output(print(m), "kasp_castpcr")
+  expect_output(print(m), "marker_castpcr")
 })
 
 test_that("design_castpcr_marker declines non-substitution alleles", {
@@ -83,7 +83,7 @@ test_that("design_castpcr_marker declines non-substitution alleles", {
 
 test_that("the castpcr DAG gates the mutant anchor, the WT blocker and the probe ordering", {
   d <- scheme_def_castpcr()
-  s <- kasp_decision_schema("castpcr")
+  s <- marker_decision_schema("castpcr")
   # a single AS primer cannot resolve REF/ALT zygosity: castPCR is mutant
   # detection (dominant), not co-dominant
   expect_equal(d$zygosity, "dominant (mutant detection)")
@@ -104,7 +104,7 @@ test_that("the castpcr DAG gates the mutant anchor, the WT blocker and the probe
     "gate_castpcr_as3", "gate_castpcr_mismatch", "gate_castpcr_blocker", "gate_castpcr_probe_tm"
   ))
   # the amplicon gate's STRICT window is the acceptance check's window (C5)
-  crit <- kasp_criteria(scheme = "castpcr")
+  crit <- marker_criteria(scheme = "castpcr")
   expect_match(crit$limit[crit$id == "castpcr:gate:gate_castpcr_amplicon"], "\\[50, 100\\] bp")
   # the gate order is the declared application order (grave / cheap first)
   ord <- stats::setNames(s$nodes$order, s$nodes$name)

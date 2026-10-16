@@ -68,7 +68,7 @@ test_that("pick_target_snp skips indels and ambiguous alleles", {
 # ---- the multi (degenerate) DAG and its ALT-set consensus gate ----------------
 test_that("the multi DAG obeys the contract and shares the KASP core stages", {
   expect_dag_invariants("multi")
-  s <- kasp_decision_schema("multi")
+  s <- marker_decision_schema("multi")
   expect_identical(
     s$nodes$name[s$nodes$kind == "gate"],
     c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
@@ -98,14 +98,14 @@ test_that("the degenerate ALT gate verifies the 3' code is the consensus of ALL 
   snp <- tibble::tibble(chrom = "Chr1", pos = 1L, ref = "T", alt = "A")
   # not the consensus: the primer's 3' base is a plain ALT base, not the code R
   concrete <- tibble::tibble(alt_degen = "ACGTACGTACGTACGTACGT")
-  expect_true(inherits(kasp_degenerate_alt_gate(concrete, c("A", "G"), snp, list()), "kasp_doomed"))
+  expect_true(inherits(marker_degenerate_alt_gate(concrete, c("A", "G"), snp, list()), "marker_doomed"))
   # the true consensus (3' base R over A/G, REF T excluded) passes
   consensus <- tibble::tibble(alt_degen = c("ACGTACGTACGTACGTACGTR", "acgt"))
-  expect_false(inherits(kasp_degenerate_alt_gate(consensus, c("A", "G"), snp, list()), "kasp_doomed"))
+  expect_false(inherits(marker_degenerate_alt_gate(consensus, c("A", "G"), snp, list()), "marker_doomed"))
   # a code whose members ALSO include REF could extend the reference template, so
   # it discriminates nothing and is doomed even though it is a valid consensus
   ref_amb <- tibble::tibble(alt_degen = "ACGTACGTACGTACGTACGTK")
-  expect_true(inherits(kasp_degenerate_alt_gate(ref_amb, c("G", "T"), snp, list()), "kasp_doomed"))
+  expect_true(inherits(marker_degenerate_alt_gate(ref_amb, c("G", "T"), snp, list()), "marker_doomed"))
   # a biallelic site has one ALT and nothing to cover
-  expect_identical(kasp_degenerate_alt_gate(concrete, "A", snp, list()), concrete)
+  expect_identical(marker_degenerate_alt_gate(concrete, "A", snp, list()), concrete)
 })

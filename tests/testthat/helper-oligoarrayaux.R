@@ -1,7 +1,7 @@
 # Activate a resolved OligoArrayAux for the thermodynamics tests, so they run
-# instead of skipping.  Same resolution order as the package (see R/kasp_tools.R):
+# instead of skipping.  Same resolution order as the package (see R/marker_tools.R):
 # a project-scoped `.tools/` (dev checkout) or the user cache built by
-# `kasp_install_tools()`.  No-op when neither exists - a plain CRAN check, or a
+# `marker_install_tools()`.  No-op when neither exists - a plain CRAN check, or a
 # machine without the tool - and those tests then skip.
 
 local({
@@ -17,7 +17,7 @@ local({
       if (identical(up, d)) break
       d <- up
     }
-    cache <- tryCatch(tools::R_user_dir("tidykasp", "cache"), error = function(e) "")
+    cache <- tryCatch(tools::R_user_dir("tidymarkers", "cache"), error = function(e) "")
     c(out, if (nzchar(cache)) file.path(cache, "tools"))
   }
   for (p in prefixes()) {

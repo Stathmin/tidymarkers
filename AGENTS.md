@@ -1,4 +1,4 @@
-# Agent instructions — tidykasp
+# Agent instructions — tidymarkers
 
 Project-specific rules for agents working in this repository. Read these before
 changing anything, then read `README.md`, `CONTRIBUTING.md`, `ROADMAP.md` (the open

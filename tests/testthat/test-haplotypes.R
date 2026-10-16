@@ -74,7 +74,7 @@ test_that("assemble_kasp_assay accepts haplotypes and reports the hits", {
   skip_if_no_oligoarrayaux()
   m <- hap_fixture()
   a <- suppressWarnings(assemble_kasp_assay(m$genome, m$snp, haplotypes = m$haps, flank = 150L, cores = 1L))
-  if (inherits(a, "kasp_doomed")) skip("the synthetic haplotype did not assemble")
+  if (inherits(a, "marker_doomed")) skip("the synthetic haplotype did not assemble")
   expect_true(!is.null(a$haplotypes))
   expect_equal(nrow(a$haplotype_hits), 3L)
   expect_true(all(c("haplotype", "freq", "target_allele", "primer", "binds") %in% names(a$haplotype_hits)))

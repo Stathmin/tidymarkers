@@ -1,8 +1,8 @@
 bibentry(
   bibtype = "Manual",
-  title = "tidykasp: Tidy Design and Quality Control of KASP Genotyping Assays",
+  title = "tidymarkers: Tidy Design and Quality Control of KASP Genotyping Assays",
   author = person("Daniil", "Ulyanov"),
   year = "2026",
   note = "R package version 0.3.0",
-  url = "https://github.com/Stathmin/tidykasp"
+  url = "https://github.com/Stathmin/tidymarkers"
 )

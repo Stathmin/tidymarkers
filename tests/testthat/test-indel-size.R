@@ -9,7 +9,7 @@ test_that("an insertion gives a REF/ALT product pair differing by the indel leng
   ins <- paste0(ref, "TTTTTTTTTT")
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = ins)
   m <- design_indel_size_marker(genome, snp, flank = 250L, min_gap = 5L)
-  expect_s3_class(m, "kasp_indel_size")
+  expect_s3_class(m, "marker_indel_size")
   expect_equal(m$gap, 10L)
   # the pair straddles the indel, and the two alleles differ by the indel length
   expect_lt(m$amplicon$start, 300L)
@@ -23,7 +23,7 @@ test_that("an insertion gives a REF/ALT product pair differing by the indel leng
   )
   # the pair must amplify exactly one locus (hard uniqueness gate)
   expect_equal(nrow(in_silico_pcr(m$primers$forward, m$primers$reverse, genome)), 1L)
-  expect_output(print(m), "kasp_indel_size")
+  expect_output(print(m), "marker_indel_size")
 })
 
 test_that("a deletion gives an ALT product shorter by the deleted length", {
@@ -34,7 +34,7 @@ test_that("a deletion gives an ALT product shorter by the deleted length", {
   alt <- substr(ref, 1L, 4L) # delete 9 bp (VCF-anchored)
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
   m <- design_indel_size_marker(genome, snp, flank = 250L)
-  expect_s3_class(m, "kasp_indel_size")
+  expect_s3_class(m, "marker_indel_size")
   expect_equal(m$gap, 9L)
   expect_equal(m$amplicon$ref_size - m$amplicon$alt_size, 9L)
   expect_lt(m$amplicon$alt_size, m$amplicon$ref_size)
@@ -64,7 +64,7 @@ test_that("the resolvable-gap gate is evaluated and relaxes to the capillary flo
   # the ladder must lower gate_indel_size_gap and record it, not reject
   snp <- tibble::tibble(chrom = "Chr1", pos = 150L, ref = ref, alt = paste0(ref, "TTT"))
   m <- design_indel_size_marker(genome, snp, flank = 140L, min_gap = 5L)
-  expect_s3_class(m, "kasp_indel_size")
+  expect_s3_class(m, "marker_indel_size")
   expect_equal(m$gap, 3L)
   expect_true("gate_indel_size_gap" %in% m$selection$relaxed)
 })

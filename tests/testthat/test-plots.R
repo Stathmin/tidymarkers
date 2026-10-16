@@ -47,7 +47,7 @@ make_plot_assay <- function(seed = 4L, n = 500L, pos = 250L) {
     snp <- tibble::tibble(chrom = "Chr1", pos = pos, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant", pop_freq = 0.3)
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) {
+    if (!inherits(a, "try-error") && !inherits(a, "marker_doomed")) {
       return(list(assay = a, snp = snp, variants = vs, genome = genome))
     }
   }
@@ -148,9 +148,9 @@ test_that("a doomed target is a classed object and still plots its context", {
     m$genome, m$snp,
     variants = variants, flank = 150L, max_footprint_variants = 0L
   ))
-  expect_s3_class(d, "kasp_doomed")
+  expect_s3_class(d, "marker_doomed")
   expect_true(nzchar(d$reason))
-  expect_output(print(d), "kasp_doomed")
+  expect_output(print(d), "marker_doomed")
   # plot_primers() dispatches to the context plot (a plain ggplot, not patchwork)
   p <- plot_primers(d, variants, m$snp)
   expect_s3_class(p, "ggplot")

@@ -14,7 +14,7 @@ out <- fs::path("/tmp/kasp-dissect")
 fs::dir_create(out)
 
 genome <- ath_genome()
-ex <- kasp_example()
+ex <- marker_example()
 
 rows <- lapply(seq_len(nrow(ex)), function(i) {
   r <- ex[i, ]
@@ -33,14 +33,14 @@ rows <- lapply(seq_len(nrow(ex)), function(i) {
   has <- !is.null(ac) && nrow(ac) > 0L
   tibble::tibble(
     id = r$id, type = r$type, pos = snp$pos, win_var = inwin,
-    verdict = if (inherits(a, "kasp_doomed")) "doomed" else "ok",
-    stage = if (inherits(a, "kasp_doomed")) a$stage else "-",
+    verdict = if (inherits(a, "marker_doomed")) "doomed" else "ok",
+    stage = if (inherits(a, "marker_doomed")) a$stage else "-",
     n_as = if (has) nrow(ac) else 0L,
     n_var0 = if (has) sum(ac$n_var == 0L) else NA_integer_,
     min_n_var = if (has) min(ac$n_var) else NA_integer_,
     n_3p0 = if (has) sum(ac$n_3p == 0L) else NA_integer_,
     max_disc = if (has) round(max(ac$discrimination, na.rm = TRUE), 3) else NA_real_,
-    reason = if (inherits(a, "kasp_doomed")) a$reason else NA_character_
+    reason = if (inherits(a, "marker_doomed")) a$reason else NA_character_
   )
 })
 tab <- purrr::list_rbind(rows)

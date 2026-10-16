@@ -91,7 +91,7 @@ test_that("a multi-allelic SNP is designed as one degenerate ALT primer", {
     chrom = "Chr1", pos = 200L, ref = ref, alt = alts[1], alt2 = alts[2]
   )
   a <- suppressWarnings(assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L))
-  expect_false(inherits(a, "kasp_doomed"))
+  expect_false(inherits(a, "marker_doomed"))
   expect_equal(a$site$class[1], "degenerate")
   expect_equal(a$site$code[1], iupac_code(alts))
   # the ordered AS-alt oligo is the degenerate consensus (IUPAC 3' base)...
@@ -102,9 +102,9 @@ test_that("a multi-allelic SNP is designed as one degenerate ALT primer", {
   last_c <- nchar(a$assay$as_alt[1])
   expect_true(substr(a$assay$as_alt[1], last_c, last_c) %in% alts)
   # export carries the degenerate oligo, not the concrete member
-  tbl <- kasp_primer_table(a, list(symbol = "X"))
+  tbl <- marker_primer_table(a, list(symbol = "X"))
   expect_equal(tbl$seq_no_tail[tbl$oligo_id == "AS2_HEX"], a$assay$as_alt_degen[1])
   # the ALT primer is recorded as covering every ALT (a first-class criterion)
-  chk <- kasp_design_checks(a)
+  chk <- marker_design_checks(a)
   expect_true(chk$pass[chk$criterion == "ALT primer covers all ALTs"])
 })

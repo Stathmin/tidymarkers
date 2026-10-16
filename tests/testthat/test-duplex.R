@@ -1,7 +1,7 @@
 # The duplex engine: two loci in one tube + the compatibility stage.
 #
 # The compatibility rules and their provenance are in the header of
-# R/kasp_duplex.R (Wang 2025 Multi-KASP screen; Jiang 2023 dKASP; Meilink 2025
+# R/marker_duplex.R (Wang 2025 Multi-KASP screen; Jiang 2023 dKASP; Meilink 2025
 # mxKASP).  The gate-level tests isolate one rung at a time by passing explicit
 # limits, so they need no genome; `design_duplex()` is exercised end-to-end at the
 # bottom (it does need OligoArrayAux, like the rest of the KASP design).
@@ -114,7 +114,7 @@ test_that("duplex_compatibility flags inter-locus complementarity and the topolo
 
 test_that("the duplex DAG obeys the contract and shows the real, computed gates", {
   expect_dag_invariants("duplex")
-  s <- kasp_decision_schema("duplex")
+  s <- marker_decision_schema("duplex")
   expect_setequal(
     s$nodes$name[s$nodes$kind == "gate" & s$nodes$stage == "duplex"],
     paste0("duplex:gate:", KASP_GATES_DUPLEX)
@@ -149,10 +149,10 @@ test_that("design_duplex assembles two loci and reports a verdict", {
     alt = vapply(bases, function(b) setdiff(c("A", "C", "G", "T"), b)[1L], character(1))
   )
   d <- suppressWarnings(design_duplex(genome, loci, flank = 150L, cores = 1L))
-  expect_s3_class(d, "kasp_duplex")
+  expect_s3_class(d, "marker_duplex")
   expect_true(d$verdict %in% c("pass", "warn", "fail"))
   expect_length(d$assays, 2L)
-  expect_output(print(d), "kasp_duplex")
+  expect_output(print(d), "marker_duplex")
 })
 
 test_that("design_duplex maps compatibility to pass / fail, never a hard failure to warn (C4)", {
@@ -168,7 +168,7 @@ test_that("design_duplex maps compatibility to pass / fail, never a hard failure
     assemble_kasp_assay = stub(
       "CCGCGTAGGTGGGCGGATTTA", "CCGCGTAGGTGGGCGGATTTA", "AGTGTGTCGGGTGGGTGTTGT"
     ),
-    .package = "tidykasp"
+    .package = "tidymarkers"
   )
   # a clean pair (shared Tm window, no cross-talk, within the self-comp cap) passes
   expect_identical(
@@ -183,8 +183,8 @@ test_that("design_duplex maps compatibility to pass / fail, never a hard failure
   expect_false(hard$compatibility$pass[hard$compatibility$gate == "gate_duplex_targets"])
   # one doomed locus dooms the whole pairing (there is no half-duplex)
   local_mocked_bindings(
-    assemble_kasp_assay = function(genome, snp, ...) kasp_doomed("x", "as", snp, NULL),
-    .package = "tidykasp"
+    assemble_kasp_assay = function(genome, snp, ...) marker_doomed("x", "as", snp, NULL),
+    .package = "tidymarkers"
   )
   expect_identical(design_duplex(NULL, loci, homologous = FALSE)$verdict, "fail")
 })

@@ -1,7 +1,7 @@
 # A gene's transcripts as a haplotype set: FASTA -> alignment -> haplotype table.
 
 # The shipped SAT2 seqdump (11 Triticum accessions), aligned once for the file.
-sat2_path <- system.file("extdata", "sat2_transcripts.fa", package = "tidykasp")
+sat2_path <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 
 sat2_hp <- local({
   if (!nzchar(sat2_path)) {
@@ -68,20 +68,20 @@ test_that("a haplotype set designs with the haplotype engine", {
     haplotypes = sat2_hp$haplotypes, flank = 150L, cores = 1L
   ))
   # it designs or dooms - never errors - and carries the haplotype verdicts when it designs
-  if (inherits(a, "kasp_assay")) {
+  if (inherits(a, "marker_assay")) {
     expect_true(all(c("haplotypes", "haplotype_hits") %in% names(a)))
     expect_equal(nrow(a$haplotype_hits), 11L)
   } else {
-    expect_s3_class(a, "kasp_doomed")
+    expect_s3_class(a, "marker_doomed")
   }
 })
 
 test_that("the plan layer carries haplotype context", {
   skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
-  plan <- kasp_plan(sat2_hp$genome) +
-    kasp_targets(chrom = "SAT2", pos = 356L, ref = "T", alt = "C") +
-    kasp_context(haplotypes = sat2_hp$haplotypes)
-  expect_s3_class(plan, "kasp_plan")
+  plan <- marker_plan(sat2_hp$genome) +
+    marker_targets(chrom = "SAT2", pos = 356L, ref = "T", alt = "C") +
+    marker_context(haplotypes = sat2_hp$haplotypes)
+  expect_s3_class(plan, "marker_plan")
   expect_equal(nrow(plan$targets), 1L)
   expect_equal(nrow(plan$haplotypes), nrow(sat2_hp$haplotypes))
 })
@@ -134,7 +134,7 @@ test_that("an AS primer's genomic interval matches the genome (no off-by-one)", 
   skip_if_no_oligoarrayaux()
   snp <- tibble::tibble(chrom = "SAT2", pos = 431L, ref = "A", alt = "G")
   a <- suppressWarnings(assemble_kasp_assay(sat2_hp$genome, snp, flank = 150L, cores = 1L))
-  skip_if(!inherits(a, "kasp_assay"), "SAT2:431 did not design here")
+  skip_if(!inherits(a, "marker_assay"), "SAT2:431 did not design here")
   aa <- a$assay[1L, ]
   ref <- as.character(sat2_hp$reference)
   rc <- function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAString(x)))
@@ -147,10 +147,10 @@ test_that("an AS primer's genomic interval matches the genome (no off-by-one)", 
   expect_equal(three, snp$pos)
 })
 
-test_that("kasp_chunk slices a haplotype set to a local, window-local chunk", {
+test_that("marker_chunk slices a haplotype set to a local, window-local chunk", {
   skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
-  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
-  expect_s3_class(ch, "kasp_chunk")
+  ch <- marker_chunk(sat2_hp, from = 281L, to = 581L)
+  expect_s3_class(ch, "marker_chunk")
   expect_equal(ch$reference_length, 301L)
   expect_identical(names(chunk_genome(ch)), "SAT2")
   expect_equal(
@@ -160,25 +160,25 @@ test_that("kasp_chunk slices a haplotype set to a local, window-local chunk", {
   v <- chunk_variants(ch)
   expect_true(all(v$pos >= 1L & v$pos <= 301L)) # window-local
   expect_s4_class(chunk_alignment(ch), "DNAMultipleAlignment")
-  expect_output(print(ch), "kasp_chunk")
+  expect_output(print(ch), "marker_chunk")
 })
 
 test_that("a chunk round-trips between the representations", {
   skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
-  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
+  ch <- marker_chunk(sat2_hp, from = 281L, to = 581L)
   # alignment -> (variants, haplotypes): both derived, and consistent
   h <- chunk_haplotypes(ch)
   expect_gte(nrow(h), 1L)
   expect_equal(nrow(chunk_variants(ch)), nrow(variants_from_haplotypes(h)))
   # haplotypes -> a variants-only chunk: its haplotypes are honestly absent
-  ch2 <- kasp_chunk(as.data.frame(chunk_variants(ch)), reference = chunk_reference(ch), chrom = "SAT2")
+  ch2 <- marker_chunk(as.data.frame(chunk_variants(ch)), reference = chunk_reference(ch), chrom = "SAT2")
   expect_null(chunk_haplotypes(ch2))
   expect_equal(nrow(chunk_variants(ch2)), nrow(chunk_variants(ch)))
 })
 
 test_that("chunk_weight applies MAF-style weights", {
   skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
-  ch <- kasp_chunk(sat2_hp, from = 281L, to = 581L)
+  ch <- marker_chunk(sat2_hp, from = 281L, to = 581L)
   t1 <- chunk_variants(ch)[1L, ]
   ch2 <- chunk_weight(ch, tibble::tibble(pos = t1$pos, ref = t1$ref, alt = t1$alt, maf = 0.02))
   got <- chunk_variants(ch2)

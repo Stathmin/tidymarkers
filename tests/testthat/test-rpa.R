@@ -1,5 +1,5 @@
 # RPA (isothermal, recombinase-driven): two long primers, a short amplicon and an
-# optional exo probe.  Design rules are grounded in the file header of kasp_rpa.R.
+# optional exo probe.  Design rules are grounded in the file header of marker_rpa.R.
 
 test_that("design_rpa_marker returns long primers and a short amplicon", {
   skip_if_no_oligoarrayaux()
@@ -9,7 +9,7 @@ test_that("design_rpa_marker returns long primers and a short amplicon", {
   alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
   m <- design_rpa_marker(genome, snp, flank = 200L)
-  expect_s3_class(m, "kasp_rpa")
+  expect_s3_class(m, "marker_rpa")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
 
   # RPA needs a long recombinase filament: both primers are in the length window
@@ -23,7 +23,7 @@ test_that("design_rpa_marker returns long primers and a short amplicon", {
   expect_true(m$primers$variant_under %in% c("forward", "reverse"))
   expect_true(m$amplicon$start < 300L && m$amplicon$end > 300L)
   expect_null(m$probe)
-  expect_output(print(m), "kasp_rpa")
+  expect_output(print(m), "marker_rpa")
 })
 
 test_that("design_rpa_marker can add an exo probe that covers the variant", {
@@ -34,7 +34,7 @@ test_that("design_rpa_marker can add an exo probe that covers the variant", {
   alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
   m <- design_rpa_marker(genome, snp, flank = 200L, design_probe = TRUE)
-  expect_s3_class(m, "kasp_rpa")
+  expect_s3_class(m, "marker_rpa")
   # the primers now flank the variant; the probe carries the discrimination
   expect_identical(m$primers$variant_under, "probe")
   expect_true(m$amplicon$start < 300L && m$amplicon$end > 300L)

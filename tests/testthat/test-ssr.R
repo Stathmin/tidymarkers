@@ -13,7 +13,7 @@ test_that("design_ssr_marker returns a clean flanking pair outside the repeat", 
   snp <- tibble::tibble(chrom = "Chr1", pos = pos, ref = "A", alt = "G")
   m <- design_ssr_marker(genome, snp, flank = 250L)
   rep_span <- m[["repeat"]]
-  expect_s3_class(m, "kasp_ssr")
+  expect_s3_class(m, "marker_ssr")
   # the repeat span includes the anchor, and both primers flank the repeat
   expect_lte(rep_span$start, pos)
   expect_gte(rep_span$end, pos)
@@ -30,7 +30,7 @@ test_that("design_ssr_marker returns a clean flanking pair outside the repeat", 
   expect_false(any(has_repeat(c(m$primers$forward, m$primers$reverse))))
   # the pair must amplify exactly one locus (hard off-target gate)
   expect_equal(nrow(in_silico_pcr(m$primers$forward, m$primers$reverse, genome)), 1L)
-  expect_output(print(m), "kasp_ssr")
+  expect_output(print(m), "marker_ssr")
 })
 
 test_that("design_ssr_marker declines when no repeat is in the window", {
@@ -55,12 +55,12 @@ test_that("the polymorphism gate is really evaluated and relaxes to the detectio
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   snp <- tibble::tibble(chrom = "Chr1", pos = at + 3L, ref = "A", alt = "G")
   m <- design_ssr_marker(genome, snp, flank = 140L)
-  expect_s3_class(m, "kasp_ssr")
+  expect_s3_class(m, "marker_ssr")
   expect_equal(m[["repeat"]]$copies, 3L)
   expect_true("gate_ssr_polymorphic" %in% m$selection$relaxed)
 })
 
-test_that("print.kasp_ssr reports the repeat and the amplicon", {
+test_that("print.marker_ssr reports the repeat and the amplicon", {
   x <- structure(
     list(
       snp = tibble::tibble(chrom = "Chr1", pos = 10L, ref = "A", alt = "G"),
@@ -70,10 +70,10 @@ test_that("print.kasp_ssr reports the repeat and the amplicon", {
       ),
       amplicon = tibble::tibble(start = 1L, end = 120L)
     ),
-    class = "kasp_ssr"
+    class = "marker_ssr"
   )
   x[["repeat"]] <- tibble::tibble(start = 40L, end = 52L, unit = 2L, copies = 7L)
-  expect_output(print(x), "kasp_ssr")
+  expect_output(print(x), "marker_ssr")
   expect_output(print(x), "repeat")
   expect_output(print(x), "120 bp")
 })

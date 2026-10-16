@@ -12,7 +12,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 ```{r}
-library(tidykasp)
+library(tidymarkers)
 ```
 
 Пакет не привязан к Arabidopsis: любые FASTA и VCF подходят. Тяжёлые шаги

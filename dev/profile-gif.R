@@ -29,7 +29,7 @@ make_assay <- function(seed = 4L, n = 500L, pos = 250L) {
                           alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) return(list(assay = a, snp = snp, variants = vs))
+    if (!inherits(a, "try-error") && !inherits(a, "marker_doomed")) return(list(assay = a, snp = snp, variants = vs))
   }
   stop("no random genome assembled into an assay")
 }
@@ -39,7 +39,7 @@ frames <- design_search_frames(m$assay, m$variants, m$snp)
 n      <- nrow(frames$notes)
 cat(sprintf("frames: %d steps\n\n", n))
 
-td <- fs::path_temp("kasp_anim"); fs::dir_create(td)
+td <- fs::path_temp("marker_anim"); fs::dir_create(td)
 pngs <- fs::path(td, sprintf("f%04d.png", seq_len(n)))
 
 draw <- function(device = NULL) {
@@ -68,7 +68,7 @@ tm("ggsave render", ggplot2::ggsave(fs::path(td, "one.png"), p,
 ))
 
 cat("\nassembly (ImageMagick):\n")
-tm("assemble_gif", tidykasp:::assemble_gif(pngs, fs::path(td, "out.gif"), delay_cs = 25L))
+tm("assemble_gif", tidymarkers:::assemble_gif(pngs, fs::path(td, "out.gif"), delay_cs = 25L))
 
 cat("\nrender_design_search end-to-end:\n")
 tm("serial (default)", render_design_search(m$assay, m$variants, m$snp,

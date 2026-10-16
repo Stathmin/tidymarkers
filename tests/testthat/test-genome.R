@@ -8,11 +8,11 @@ make_fa <- function(fa) {
   fa
 }
 
-test_that("a kasp_genome reads the same regions as an in-memory DNAStringSet", {
+test_that("a marker_genome reads the same regions as an in-memory DNAStringSet", {
   skip_if_not_installed("Rsamtools")
   fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
-  gs <- kasp_genome(fa, chrom_map = ATH_CHROM_MAP)
-  expect_s3_class(gs, "kasp_genome")
+  gs <- marker_genome(fa, chrom_map = ATH_CHROM_MAP)
+  expect_s3_class(gs, "marker_genome")
   expect_setequal(genome_chroms(gs), c("Chr1", "Chr2"))
   expect_equal(genome_length(gs, "Chr1"), 40L)
   expect_equal(as.character(genome_seq(gs, "Chr1", 5L, 12L)), "ACGTACGT")
@@ -25,10 +25,10 @@ test_that("a kasp_genome reads the same regions as an in-memory DNAStringSet", {
   )
 })
 
-test_that("design helpers accept a kasp_genome (no whole genome in RAM)", {
+test_that("design helpers accept a marker_genome (no whole genome in RAM)", {
   skip_if_not_installed("Rsamtools")
   fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
-  gs <- kasp_genome(fa, chrom_map = ATH_CHROM_MAP)
+  gs <- marker_genome(fa, chrom_map = ATH_CHROM_MAP)
   tmpl <- snp_template(gs, "Chr1", 20L, flank = 10L)
   expect_equal(length(tmpl$seq), 21L)
   expect_equal(tmpl$snp_i, 11L)
@@ -36,20 +36,20 @@ test_that("design helpers accept a kasp_genome (no whole genome in RAM)", {
   expect_equal(nrow(hint), 2L)
 })
 
-test_that("in_silico_pcr works through an indexed kasp_genome", {
+test_that("in_silico_pcr works through an indexed marker_genome", {
   skip_if_not_installed("Rsamtools")
   fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">chr1", paste0(strrep("A", 30L), "ACGTACGTACGTACGTACGT", strrep("T", 30L))), fa)
-  gs <- kasp_genome(fa)
+  gs <- marker_genome(fa)
   pr <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", gs)
   expect_equal(nrow(pr), 1L)
   expect_equal(pr$width, 20L)
 })
 
-test_that("a kasp_genome can be backed by a BSgenome (getSeq)", {
+test_that("a marker_genome can be backed by a BSgenome (getSeq)", {
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
-  gs <- kasp_genome(bsgenome = "BSgenome.Athaliana.TAIR.TAIR9")
-  expect_s3_class(gs, "kasp_genome")
+  gs <- marker_genome(bsgenome = "BSgenome.Athaliana.TAIR.TAIR9")
+  expect_s3_class(gs, "marker_genome")
   expect_true("Chr4" %in% genome_chroms(gs))
   expect_equal(genome_length(gs, "Chr4"), 18585056L)
   # the FRI stop variant at Chr4:269745 is a G on TAIR9

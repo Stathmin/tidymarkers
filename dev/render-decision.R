@@ -1,9 +1,9 @@
 # =============================================================================
 #  dev/render-decision.R  --  (re)draw the README decision-tree image
 # =============================================================================
-#  The trees are generated from the schema in R/kasp_decision.R, which itself
+#  The trees are generated from the schema in R/marker_decision.R, which itself
 #  reads the engine's constants (KASP_GATES_*, KASP_RELAX_*, KASP_TIERS_*) and
-#  the chemistry registry (kasp_schemes()).  One image per marker chemistry is
+#  the chemistry registry (marker_schemes()).  One image per marker chemistry is
 #  written to the git-ignored smoke dir, and the README-facing SNP and multiplex
 #  images are committed.  Run this after touching the selection policy or the
 #  scheme registry and the diagrams stay in step with the code - nothing is drawn
@@ -28,7 +28,7 @@ fs::dir_create("results/plot-smoke")
 # marker-agnostic primer subset is the bare "primer" scheme, and a duplex
 # chemistry adds its compatibility stage.  The README embeds the SNP one (the
 # package's core) and the multiplex one.
-for (sc in kasp_schemes()$scheme) {
+for (sc in marker_schemes()$scheme) {
   p <- plot_decision_tree(scheme = sc)
   ggplot2::ggsave(
     file.path("results/plot-smoke", paste0("decision-", sc, ".png")), p,

@@ -17,35 +17,35 @@ invented)` header comment. Agents must treat those as the truth and cite them.
 One decision DAG per marker chemistry. It is *generated*, never hand-drawn:
 
 ```
-kasp_criteria(scheme)      R/kasp_criteria.R   → 5 site checks + 21 assay checks + the stage's gates/tiers
-kasp_decision_stages(scheme) R/kasp_decision.R → the scheme's selection stages
+marker_criteria(scheme)      R/marker_criteria.R   → 5 site checks + 21 assay checks + the stage's gates/tiers
+marker_decision_stages(scheme) R/marker_decision.R → the scheme's selection stages
       │
       ▼
-kasp_decision_schema(scheme)  R/kasp_decision.R  → nodes + edges (order, x/y, hard)
-      ├─ kasp_decision_graph()  → tidygraph, stamps status from assay$selection / $evaluation
+marker_decision_schema(scheme)  R/marker_decision.R  → nodes + edges (order, x/y, hard)
+      ├─ marker_decision_graph()  → tidygraph, stamps status from assay$selection / $evaluation
       ├─ plot_decision_tree()   → the PNG (dev/render-decision.R)
-      └─ kasp_decision_text()   → the greppable text export
+      └─ marker_decision_text()   → the greppable text export
 ```
 
 The scheme's *stage* (its gates / relaxation ladder / tiers) comes from either the
-built-in constants in `R/kasp_select.R` (`KASP_GATES_*`, `KASP_RELAX_*`, `KASP_TIERS_*`)
-or from a discovered `scheme_def_<scheme>()` in `R/kasp_<scheme>.R`. The **checks** are
-the fixed lists in `R/kasp_criteria.R`, tagged with schemes by `check_schemes()` in
-`R/kasp_schemes.R`. Acceptance is run by `kasp_design_checks()` in `R/kasp_checks.R`.
+built-in constants in `R/marker_select.R` (`KASP_GATES_*`, `KASP_RELAX_*`, `KASP_TIERS_*`)
+or from a discovered `scheme_def_<scheme>()` in `R/marker_<scheme>.R`. The **checks** are
+the fixed lists in `R/marker_criteria.R`, tagged with schemes by `check_schemes()` in
+`R/marker_schemes.R`. Acceptance is run by `marker_design_checks()` in `R/marker_checks.R`.
 
 Inspecting any DAG locally (needs a working R env, see §10):
 
 ```r
 pkgload::load_all(".")
-cat(kasp_decision_text("lamp"), sep = "\n")   # the whole DAG as text
-kasp_decision_schema("lamp")$nodes            # the node table
+cat(marker_decision_text("lamp"), sep = "\n")   # the whole DAG as text
+marker_decision_schema("lamp")$nodes            # the node table
 ```
 
 ---
 
 ## 2. The 20 schemes and their files
 
-`kasp_schemes()` has 9 built-in rows + 11 discovered (`scheme_def_*`). Every scheme has
+`marker_schemes()` has 9 built-in rows + 11 discovered (`scheme_def_*`). Every scheme has
 one test file. "Kind" matters for the write scopes in §5.
 
 | scheme | family | kind | source of the stage | test |
@@ -59,17 +59,17 @@ one test file. "Kind" matters for the write scopes in §5.
 | `caps` | caps | built-in | `KASP_*_CAPS` | `test-caps.R` |
 | `arms` | arms | built-in | `KASP_*_ARMS` | `test-arms.R` |
 | `hrm` | hrm | built-in | `KASP_*_HRM` | `test-hrm.R` |
-| `castpcr` | castpcr | discovered | `scheme_def_castpcr` · `R/kasp_castpcr.R` | `test-castpcr.R` |
-| `crispr` | crispr | discovered | `scheme_def_crispr` · `R/kasp_crispr.R` | `test-crispr.R` |
-| `dpcr` | dpcr | discovered | `scheme_def_dpcr` · `R/kasp_dpcr.R` | `test-dpcr.R` |
-| `indel_size` | indel_size | discovered | `scheme_def_indel_size` · `R/kasp_indel_size.R` | `test-indel-size.R` |
-| `lamp` | lamp | discovered | `scheme_def_lamp` · `R/kasp_lamp.R` | `test-lamp.R` |
-| `lax` | kasp | discovered | `scheme_def_lax` · `R/kasp_lax.R` | `test-lax.R` |
-| `rpa` | rpa | discovered | `scheme_def_rpa` · `R/kasp_rpa.R` | `test-rpa.R` |
-| `sanger` | sanger | discovered | `scheme_def_sanger` · `R/kasp_sanger.R` | `test-sanger.R` |
-| `snapshot` | snapshot | discovered | `scheme_def_snapshot` · `R/kasp_snapshot.R` | `test-snapshot.R` |
-| `ssr` | ssr | discovered | `scheme_def_ssr` · `R/kasp_ssr.R` | `test-ssr.R` |
-| `taqman` | taqman | discovered | `scheme_def_taqman` · `R/kasp_taqman.R` | `test-taqman.R` |
+| `castpcr` | castpcr | discovered | `scheme_def_castpcr` · `R/marker_castpcr.R` | `test-castpcr.R` |
+| `crispr` | crispr | discovered | `scheme_def_crispr` · `R/marker_crispr.R` | `test-crispr.R` |
+| `dpcr` | dpcr | discovered | `scheme_def_dpcr` · `R/marker_dpcr.R` | `test-dpcr.R` |
+| `indel_size` | indel_size | discovered | `scheme_def_indel_size` · `R/marker_indel_size.R` | `test-indel-size.R` |
+| `lamp` | lamp | discovered | `scheme_def_lamp` · `R/marker_lamp.R` | `test-lamp.R` |
+| `lax` | kasp | discovered | `scheme_def_lax` · `R/marker_lax.R` | `test-lax.R` |
+| `rpa` | rpa | discovered | `scheme_def_rpa` · `R/marker_rpa.R` | `test-rpa.R` |
+| `sanger` | sanger | discovered | `scheme_def_sanger` · `R/marker_sanger.R` | `test-sanger.R` |
+| `snapshot` | snapshot | discovered | `scheme_def_snapshot` · `R/marker_snapshot.R` | `test-snapshot.R` |
+| `ssr` | ssr | discovered | `scheme_def_ssr` · `R/marker_ssr.R` | `test-ssr.R` |
+| `taqman` | taqman | discovered | `scheme_def_taqman` · `R/marker_taqman.R` | `test-taqman.R` |
 
 ---
 
@@ -88,8 +88,8 @@ its own scheme only. **No agent may relax an invariant to make its scheme pass.*
   chemistry obeys. Non-KASP chemistries must not carry AS/COM/discrimination/3'-window
   checks; the 5 *site* checks (`target site class`, `ALT alleles (n)`, … `design relies
   on linkage`) are KASP-selector notions and apply only where an ALT primer/linkage exists.
-- **C3 — graph == evaluation.** `kasp_design_checks(assay)` evaluates exactly the checks
-  the scheme's DAG displays (today it ignores `scheme` entirely, `R/kasp_checks.R:113`).
+- **C3 — graph == evaluation.** `marker_design_checks(assay)` evaluates exactly the checks
+  the scheme's DAG displays (today it ignores `scheme` entirely, `R/marker_checks.R:113`).
 - **C4 — hard failure dooms.** A failed *hard* gate must have a direct path to `DOOMED`.
   A mixed hard/soft stage must not draw a hard gate as merely "relaxable" (today only
   all-hard stages emit `decision --fail--> doomed`).
@@ -116,7 +116,7 @@ its own scheme only. **No agent may relax an invariant to make its scheme pass.*
   scheme and builds *that* scheme's `$decision` (today always `snp`), and
   `plot_decision_tree(assay)` honours it.
 - **C13 — reachable or explicitly documentation-only.** A scheme is reachable through
-  `kasp_design_at()` / the ladder, or it is marked documentation-only with a stated
+  `marker_design_at()` / the ladder, or it is marked documentation-only with a stated
   reason (`asq`, `primer`). Same for status stamping (gate statuses are stamped only for
   `as`/`pair` today).
 - **C14 — tiers are non-vacuous.** A tier must not merely restate a hard gate already
@@ -130,27 +130,27 @@ Everything below depends on these two, and they must land first so the scheme ag
 have a stable, shared contract and non-overlapping files.
 
 ### Agent 1 — foundation A (taxonomy, checks, harness)
-Files: `R/kasp_schemes.R`, `R/kasp_criteria.R`, `R/kasp_checks.R`,
-`R/kasp_scheme_registry.R`, `tests/testthat/test-criteria.R`,
+Files: `R/marker_schemes.R`, `R/marker_criteria.R`, `R/marker_checks.R`,
+`R/marker_scheme_registry.R`, `tests/testthat/test-criteria.R`,
 `tests/testthat/test-decision.R` (only the shared/generic assertions),
 new `tests/testthat/helper-dag.R`, new `dev/dump-dags.R`, `NEWS.md`, `ROADMAP.md`.
 
 1. Define the family → check-set taxonomy (C2): which of the 5 site + 21 assay checks
    each `family` serves. Rewrite `check_schemes()` so a discovered scheme gets its
    family's set, not "everything".
-2. Make `kasp_design_checks()` scheme-aware (C3): read the checker's `scheme` and filter
-   `kasp_criteria(scheme = )`, computing only the rows that scheme owns. Keep the
+2. Make `marker_design_checks()` scheme-aware (C3): read the checker's `scheme` and filter
+   `marker_criteria(scheme = )`, computing only the rows that scheme owns. Keep the
    REF/ALT/footprint *values* only where the chemistry has them.
 3. Introduce the DAG-invariant helper `expect_dag_invariants(scheme)` in `helper-dag.R`
    covering C1–C11 as far as statically checkable, so scheme agents call it in one line.
-4. `dev/dump-dags.R`: write `kasp_decision_text()` for **all** schemes to a file, so an
+4. `dev/dump-dags.R`: write `marker_decision_text()` for **all** schemes to a file, so an
    agent can diff its own scheme before/after.
-5. Rewrite the shared tests to iterate over `kasp_schemes()` reading each scheme's spec
+5. Rewrite the shared tests to iterate over `marker_schemes()` reading each scheme's spec
    (scheme-agnostic), so scheme agents never edit them.
 
 ### Agent 2 — foundation B (DAG generator, graph, floors)
-Files: `R/kasp_decision.R`, `R/kasp_select.R` (generic selector + shared floors only),
-`R/kasp_assemble.R` (only the `$decision` wiring), `R/kasp_scheme_registry.R`,
+Files: `R/marker_decision.R`, `R/marker_select.R` (generic selector + shared floors only),
+`R/marker_assemble.R` (only the `$decision` wiring), `R/marker_scheme_registry.R`,
 `tests/testthat/test-selection.R`, `tests/testthat/test-decision.R` (generic),
 plus the mechanical extraction in step 3.
 
@@ -161,15 +161,15 @@ plus the mechanical extraction in step 3.
    its check (or the check reads the relaxed bar) — today `gate_amplicon` floor `-20`
    and `gate_structure` floor `-3` both admit candidates the checks reject.
 3. Make all 20 schemes uniform so the write scopes are disjoint: move the built-in stage
-   constants (`KASP_*_DUPLEX/ASQ/CAPS/ARMS/HRM`) out of `R/kasp_select.R` into
-   `scheme_def_duplex/asq/caps/arms/hrm()` in their own files, leaving `kasp_select.R`
+   constants (`KASP_*_DUPLEX/ASQ/CAPS/ARMS/HRM`) out of `R/marker_select.R` into
+   `scheme_def_duplex/asq/caps/arms/hrm()` in their own files, leaving `marker_select.R`
    with only the generic selector + the shared AS/PAIR constants.
 4. Scheme-aware graph (C12/C13): store `scheme` on the assay object and build/stamp its
    `$decision` graph; make `plot_decision_tree(assay)` honour it.
 5. Update `KASP_UNGATED_CHECKS` to respect scheme-level off-target gates (C10).
 
 **Gate:** after Phase 0, `Rscript dev/check.R --no-render` must pass and every scheme's
-`kasp_decision_text()` must be free of duplicate-criterion pairs, `[lo, hi]`, and
+`marker_decision_text()` must be free of duplicate-criterion pairs, `[lo, hi]`, and
 hard-gate-reachable-only-via-refine. Freeze §3 as the contract reference.
 
 ---
@@ -177,20 +177,20 @@ hard-gate-reachable-only-via-refine. Freeze §3 as the contract reference.
 ## 5. Phase 1 — per-scheme agents (Agents 3–10, parallel, disjoint files)
 
 Each agent owns exactly its scheme files + its test file(s). **Hard rule:** if an agent
-believes it must edit a file outside its scope (especially `kasp_select.R`,
-`kasp_criteria.R`, `kasp_decision.R`, `kasp_checks.R`, `kasp_primer_pairs.R`), it must
+believes it must edit a file outside its scope (especially `marker_select.R`,
+`marker_criteria.R`, `marker_decision.R`, `marker_checks.R`, `marker_primer_pairs.R`), it must
 stop and request a serial slot from the orchestrator, not edit it inline and collide.
 
 | Agent | Schemes | Owned files (write scope) |
 |---|---|---|
-| 3 | `snp`, `indel`, `multi`, `primer` | `R/kasp_assemble.R`, `R/kasp_select.R` (AS/PAIR section), `R/kasp_design.R`, `R/kasp_target.R` (core path), `tests/testthat/test-selection.R`, `test-indel.R`, `test-mnp.R`, `test-alleles.R` |
-| 4 | `duplex`, `asq` | `R/kasp_duplex.R`, new `R/kasp_asq.R`, `tests/testthat/test-duplex.R`, new `test-asq.R` |
-| 5 | `lax` | `R/kasp_lax.R`, `tests/testthat/test-lax.R` |
-| 6 | `caps`, `arms` | `R/kasp_caps.R`, `R/kasp_arms.R`, `tests/testthat/test-caps.R`, `test-arms.R` |
-| 7 | `hrm`, `castpcr` | `R/kasp_hrm.R`, `R/kasp_castpcr.R`, `tests/testthat/test-hrm.R`, `test-castpcr.R` |
-| 8 | `crispr`, `rpa`, `lamp` | `R/kasp_crispr.R`, `R/kasp_rpa.R`, `R/kasp_lamp.R`, `tests/testthat/test-crispr.R`, `test-rpa.R`, `test-lamp.R` |
-| 9 | `dpcr`, `taqman`, `snapshot` | `R/kasp_dpcr.R`, `R/kasp_taqman.R`, `R/kasp_snapshot.R`, `tests/testthat/test-dpcr.R`, `test-taqman.R`, `test-snapshot.R` |
-| 10 | `sanger`, `ssr`, `indel_size` | `R/kasp_sanger.R`, `R/kasp_ssr.R`, `R/kasp_indel_size.R`, `tests/testthat/test-sanger.R`, `test-ssr.R`, `test-indel-size.R` |
+| 3 | `snp`, `indel`, `multi`, `primer` | `R/marker_assemble.R`, `R/marker_select.R` (AS/PAIR section), `R/marker_design.R`, `R/marker_target.R` (core path), `tests/testthat/test-selection.R`, `test-indel.R`, `test-mnp.R`, `test-alleles.R` |
+| 4 | `duplex`, `asq` | `R/marker_duplex.R`, new `R/marker_asq.R`, `tests/testthat/test-duplex.R`, new `test-asq.R` |
+| 5 | `lax` | `R/marker_lax.R`, `tests/testthat/test-lax.R` |
+| 6 | `caps`, `arms` | `R/marker_caps.R`, `R/marker_arms.R`, `tests/testthat/test-caps.R`, `test-arms.R` |
+| 7 | `hrm`, `castpcr` | `R/marker_hrm.R`, `R/marker_castpcr.R`, `tests/testthat/test-hrm.R`, `test-castpcr.R` |
+| 8 | `crispr`, `rpa`, `lamp` | `R/marker_crispr.R`, `R/marker_rpa.R`, `R/marker_lamp.R`, `tests/testthat/test-crispr.R`, `test-rpa.R`, `test-lamp.R` |
+| 9 | `dpcr`, `taqman`, `snapshot` | `R/marker_dpcr.R`, `R/marker_taqman.R`, `R/marker_snapshot.R`, `tests/testthat/test-dpcr.R`, `test-taqman.R`, `test-snapshot.R` |
+| 10 | `sanger`, `ssr`, `indel_size` | `R/marker_sanger.R`, `R/marker_ssr.R`, `R/marker_indel_size.R`, `tests/testthat/test-sanger.R`, `test-ssr.R`, `test-indel-size.R` |
 
 Agent 3 also updates the committed README figures (`man/figures/decision-tree.png` for
 `snp`, `decision-multiplex.png` for `duplex` via `Rscript dev/render-decision.R`) since
@@ -202,10 +202,10 @@ only those two figures are committed; the rest are git-ignored `results/plot-smo
 
 ### 6a. Search (evidence first)
 1. Read the scheme's own header (`# Design rules (researched, not invented)` block) in
-   `R/kasp_<scheme>.R` — it cites the method literature; that is the authority.
+   `R/marker_<scheme>.R` — it cites the method literature; that is the authority.
 2. Read `README.md` §3 and, where relevant, `lecture/kasp-slides.qmd`.
 3. Read the scheme's `scheme_def_<scheme>()` (gates/relax/tiers/labels) and its designer.
-4. Dump the current DAG: `cat(kasp_decision_text("<scheme>"), sep = "\n")` (or
+4. Dump the current DAG: `cat(marker_decision_text("<scheme>"), sep = "\n")` (or
    `dev/dump-dags.R`).
 5. `grep` for the scheme's gate ids across `R/` to confirm which are actually emitted by
    the engine (C7) — e.g. the audit found `gate_caps_*`/`gate_arms_*` are never emitted.
@@ -263,7 +263,7 @@ expect_dag_invariants(scheme)  # C1 dup-criteria, C2 check membership, C4 hard�
                                # C10 ungated honesty, C11 acyclic/downward/verdict
 ```
 
-`dev/dump-dags.R` writes every scheme's `kasp_decision_text()` to `results/dags.txt`
+`dev/dump-dags.R` writes every scheme's `marker_decision_text()` to `results/dags.txt`
 (git-ignored), so an agent can `diff` its scheme's DAG before/after and paste the delta
 into its report.
 
@@ -272,7 +272,7 @@ into its report.
 ## 8. Per-scheme defect briefs (grounded; each agent expands its own)
 
 These were found by static audit (read-only; the code was not changed). They are a
-starting point, not gospel: **run each scheme and confirm** before editing (`cat(kasp_decision_text("<scheme>"), sep = "\n")`, and `dev/dump-dags.R`). Line numbers are
+starting point, not gospel: **run each scheme and confirm** before editing (`cat(marker_decision_text("<scheme>"), sep = "\n")`, and `dev/dump-dags.R`). Line numbers are
 from the current tree — re-verify.
 
 **Core (Agent 3).** `snp`: amplicon floor `-20` admits 120 bp but the check demands
@@ -284,14 +284,14 @@ tier3 rewards *more* stable 3' ends, against the KASP destabilising rationale; n
 (cf. `gate_caps_resolvable`, `gate_arms_bands`); `gate_wobble` is vacuous (`wobble = NA`).
 `multi`: `wobble`/`disc` computed on `alts[1]` only, ignoring the degenerate IUPAC 3'
 base; no check that the 3' code is the consensus of *all* ALTs. `primer`: unreachable
-(`kasp_design_at()` has no branch; absent from the ladder) — mark documentation-only (C13)
+(`marker_design_at()` has no branch; absent from the ladder) — mark documentation-only (C13)
 or wire it; missing an in-silico-product-count check.
 
 **`duplex`/`asq` (Agent 4).** `duplex`: relax node advertised but there is no
 `KASP_GATE_FLOOR_DUPLEX` and the designer never calls `select_with_ladder`; a failed
 *hard* `gate_duplex_complement` still returns `"warn"` not DOOMED (C4); amplicon gate
 promises ≤150 while the check demands `[50,100]` (C5). `asq`: no engine at all
-(`R/kasp_asq.R` missing, not in `per_locus_schemes()`); both gates
+(`R/marker_asq.R` missing, not in `per_locus_schemes()`); both gates
 (`gate_asq_cassette`, `gate_asq_readout`) are panel/format properties, not
 candidate-computable, yet hard (C7/C8); "Kalendar 2022 / 4-plex cassette" citation
 unverified.

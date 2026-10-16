@@ -12,7 +12,7 @@
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1]])))) else getwd()
 suppressMessages(pkgload::load_all(root, quiet = TRUE))
-haplotype_variants <- getFromNamespace("haplotype_variants", "tidykasp")
+haplotype_variants <- getFromNamespace("haplotype_variants", "tidymarkers")
 
 out <- fs::path("/tmp/kasp-hap")
 fs::dir_create(out)
@@ -52,13 +52,13 @@ haps <- dplyr::bind_rows(
 
 a <- suppressWarnings(assemble_kasp_assay(genome, snp, haplotypes = haps, flank = 150L, cores = 1L))
 saveRDS(list(assay = a, haplotypes = haps), fs::path(out, "panel.rds"))
-if (!inherits(a, "kasp_doomed")) {
+if (!inherits(a, "marker_doomed")) {
   v <- haplotype_variants(haps, snp)$variants
   p <- plot_primers(a, v, snp, genome = genome)
   ggplot2::ggsave(fs::path(out, "panel.png"), p, width = 11, height = 9, dpi = 100, bg = "white")
 }
-cat("\nverdict:", if (inherits(a, "kasp_doomed")) paste("DOOMED:", a$reason) else "ok", "\n")
-if (!inherits(a, "kasp_doomed")) {
+cat("\nverdict:", if (inherits(a, "marker_doomed")) paste("DOOMED:", a$reason) else "ok", "\n")
+if (!inherits(a, "marker_doomed")) {
   cat("AS footprint variants:", a$assay$as_n_var[1L], " dropout:", round(a$assay$as_foot_dropout[1L], 4L), "\n")
   gpos <- a$selection$linked$offset + snp$pos - 151L # template offset -> genomic
   cat("linked (co-segregating) positions:", paste(gpos, collapse = ", "), "\n")

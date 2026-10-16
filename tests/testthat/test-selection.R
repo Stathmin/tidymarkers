@@ -150,10 +150,10 @@ test_that("the pair screen swaps a top pairing with an off-target duplicate for 
       invokeRestart("muffleWarning")
     }
   )
-  expect_false(inherits(a, "kasp_doomed"))
+  expect_false(inherits(a, "marker_doomed"))
   expect_true(any(grepl("Top-ranked pairing", msgs, fixed = TRUE)))
   expect_false(identical(a$assay$com[1L], com0))
-  chk <- kasp_design_checks(a)
+  chk <- marker_design_checks(a)
   expect_true(chk$pass[chk$criterion == "off-target exact primer hits (n)"])
 })
 
@@ -177,29 +177,29 @@ test_that("the two declared orders are separate and explicit (C6)", {
 test_that("a soft gate's acceptance check relaxes to the gate's floor (C5)", {
   # the check must read the bar the ladder may reach, or a relaxed winner (which
   # the selector deliberately accepted, with a warning) would read as a failure
-  amp <- kasp_gate_relaxed_bar("amplicon length (bp)", KASP_LIMITS)
+  amp <- marker_gate_relaxed_bar("amplicon length (bp)", KASP_LIMITS)
   expect_true(amp$test(KASP_LIMITS$amplicon[2L] + 20)) # at the floor
   expect_false(amp$test(KASP_LIMITS$amplicon[2L] + 21)) # past it
   expect_false(amp$test(KASP_LIMITS$amplicon[1L] - 21))
-  tm <- kasp_gate_relaxed_bar("COM Tm >= AS Tm", KASP_LIMITS)
+  tm <- marker_gate_relaxed_bar("COM Tm >= AS Tm", KASP_LIMITS)
   expect_true(tm$test(-2))
   expect_false(tm$test(-3))
-  hair <- kasp_gate_relaxed_bar("worst hairpin dG37", KASP_LIMITS)
-  homo <- kasp_gate_relaxed_bar("worst homodimer dG37", KASP_LIMITS)
+  hair <- marker_gate_relaxed_bar("worst hairpin dG37", KASP_LIMITS)
+  homo <- marker_gate_relaxed_bar("worst homodimer dG37", KASP_LIMITS)
   expect_true(hair$test(KASP_LIMITS$hairpin_dg - 3))
   expect_true(homo$test(KASP_LIMITS$homodimer_dg - 3))
   # every bar is labelled as a relaxed one, so the table never hides the trade-off
   for (lab in unlist(KASP_GATE_CHECK)) {
-    expect_true(grepl("relaxed", kasp_gate_relaxed_bar(lab, KASP_LIMITS)$limit), info = lab)
+    expect_true(grepl("relaxed", marker_gate_relaxed_bar(lab, KASP_LIMITS)$limit), info = lab)
   }
 })
 
 test_that("only a soft gate maps to an acceptance check (C5)", {
   # a hard gate can never be relaxed, so it has no relaxed bar to read
-  hard <- unname(unlist(lapply(kasp_decision_stages("snp"), function(st) setdiff(st$gates, st$relax))))
+  hard <- unname(unlist(lapply(marker_decision_stages("snp"), function(st) setdiff(st$gates, st$relax))))
   expect_length(intersect(hard, names(KASP_GATE_CHECK)), 0L)
   # ... and every soft gate the ladder lists has its check mapped
-  soft <- unname(unlist(lapply(kasp_decision_stages("snp"), function(st) st$relax)))
+  soft <- unname(unlist(lapply(marker_decision_stages("snp"), function(st) st$relax)))
   expect_setequal(setdiff(soft, "gate_wobble"), intersect(soft, names(KASP_GATE_CHECK)))
 })
 
@@ -222,13 +222,13 @@ pick_as <- function(d) {
 test_that("the AS 3' end is ranked for weakness, not stability (KASP rationale)", {
   # KASP holds because Taq fails to extend the primer on the wrong allele, so a
   # WEAK 3' anchor is wanted; a strong one lets the wrong allele extend anyway.
-  expect_true("3' end weakness" %in% kasp_decision_stages("snp")$as$tiers)
+  expect_true("3' end weakness" %in% marker_decision_stages("snp")$as$tiers)
   # equal on every other tier: the weaker 3' end (dg_3p closer to 0) must win
   expect_equal(pick_as(as_table(c(0.9, 0.9), dg_3p = c(-6, -1)))$best$dg_3p, -1)
 })
 
 test_that("the COM primer is also ranked for a weaker 3' end (README section 3)", {
-  expect_true("COM 3' end weakness" %in% kasp_decision_stages("snp")$pair$tiers)
+  expect_true("COM 3' end weakness" %in% marker_decision_stages("snp")$pair$tiers)
   # the two pairings differ only in the COM primer's 3'-terminal dG37
   d <- pair_table(c(0.9, 0.9))
   d$com_dg_3p <- c(-8, -1)
@@ -265,7 +265,7 @@ test_that("a relaxed structure floor still passes the structure checks (C5)", {
   expect_equal(-KASP_GATE_FLOOR_PAIR[["gate_amplicon"]], 20L)
   expect_equal(-KASP_GATE_FLOOR_PAIR[["gate_structure"]], 3L)
   for (lab in c("worst hairpin dG37", "worst homodimer dG37")) {
-    bar <- kasp_gate_relaxed_bar(lab, KASP_LIMITS)
+    bar <- marker_gate_relaxed_bar(lab, KASP_LIMITS)
     base <- if (lab == "worst hairpin dG37") KASP_LIMITS$hairpin_dg else KASP_LIMITS$homodimer_dg
     expect_true(bar$test(base - 3))
     expect_false(bar$test(base - 4))
@@ -275,7 +275,7 @@ test_that("a relaxed structure floor still passes the structure checks (C5)", {
 # ---- the snp DAG, explicitly (gate set, order, hardness) --------------------
 test_that("the snp DAG obeys the contract and declares its gates and hardness", {
   expect_dag_invariants("snp")
-  s <- kasp_decision_schema("snp")
+  s <- marker_decision_schema("snp")
   # gate set in application order (C6/C7): the AS stage then the pair stage
   expect_identical(
     s$nodes$name[s$nodes$kind == "gate"],
@@ -292,9 +292,9 @@ test_that("the marker-agnostic primer scheme is stage-less by design (C13)", {
   # `primer` is not a genotyping chemistry: it carries no allele, so it has no
   # selection stage and no locus-level designer (documentation-only).  Its
   # marker-agnostic checks are still evaluable on any assembled pair.
-  expect_length(kasp_decision_stages("primer"), 0L)
-  expect_null(kasp_design_at(NULL, NULL, "primer"))
-  s <- kasp_decision_schema("primer")
+  expect_length(marker_decision_stages("primer"), 0L)
+  expect_null(marker_design_at(NULL, NULL, "primer"))
+  s <- marker_decision_schema("primer")
   expect_false(any(s$nodes$kind %in% c("gate", "relax", "doomed")))
   expect_setequal(s$nodes$label[s$nodes$kind == "check"], KASP_CHECK_PRIMER)
   expect_dag_invariants("primer")

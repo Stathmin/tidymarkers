@@ -15,7 +15,7 @@ make_search_assay <- function(seed = 4L, n = 500L, pos = 250L, variants = NULL) 
     assay <- try(suppressWarnings(
       assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)
     ), silent = TRUE)
-    if (!inherits(assay, "try-error") && !inherits(assay, "kasp_doomed")) {
+    if (!inherits(assay, "try-error") && !inherits(assay, "marker_doomed")) {
       return(list(assay = assay, snp = snp, variants = vs))
     }
   }

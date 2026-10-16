@@ -36,7 +36,7 @@ test_that("max_footprint_variants enforces N-masking as a hard constraint", {
     max_footprint_variants = 0L
   ))
   # no error: a doomed target comes back as a classed partial record
-  expect_s3_class(d, "kasp_doomed")
+  expect_s3_class(d, "marker_doomed")
   expect_match(d$reason, "max_footprint_variants")
   expect_equal(d$stage, "as")
 })

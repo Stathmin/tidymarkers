@@ -35,18 +35,18 @@ test_that("a BSgenome reference gives codon-level consequences", {
     id = "fri", chrom = "Chr4", pos = 269745L,
     ref_genome = list(c("G", "A")), consequence = NA_character_
   )
-  a <- annotate_variants(v, seqsource = kasp_bsgenome())
+  a <- annotate_variants(v, seqsource = marker_bsgenome())
   expect_equal(a$consequence, "stop_gained") # TGG becomes TGA
   expect_equal(a$codon_change, "TGG>TGA")
   # the codon call outranks the region-level term
   expect_equal(a$gene_id, "AT4G00650")
 })
 
-test_that("kasp_txdb / kasp_bsgenome load the default annotation packages", {
+test_that("marker_txdb / marker_bsgenome load the default annotation packages", {
   skip_if_not_installed_noload("TxDb.Athaliana.BioMart.plantsmart28")
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
-  expect_s4_class(kasp_txdb(), "TxDb")
-  expect_s4_class(kasp_bsgenome(), "BSgenome")
+  expect_s4_class(marker_txdb(), "TxDb")
+  expect_s4_class(marker_bsgenome(), "BSgenome")
 })
 
 test_that("an empty or already-annotated table is returned unchanged", {
@@ -57,7 +57,7 @@ test_that("an empty or already-annotated table is returned unchanged", {
   expect_equal(nrow(annotate_variants(empty)), 0L)
 })
 
-test_that("kasp_ensdb builds an EnsDb from a GTF", {
+test_that("marker_ensdb builds an EnsDb from a GTF", {
   skip_if_not_installed("ensembldb")
   skip_if_not_installed("GenomicFeatures")
   skip_if_not_installed("processx")
@@ -74,7 +74,7 @@ test_that("kasp_ensdb builds an EnsDb from a GTF", {
   # otherwise leaks a benign "call dbDisconnect()" note at this session's exit.
   cache <- withr::local_tempfile()
   code <- sprintf(
-    'edb <- tidykasp::kasp_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
+    'edb <- tidymarkers::marker_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
     gtf, cache
   )
   res <- processx::run(file.path(R.home("bin"), "Rscript"), c("-e", code),

@@ -6,7 +6,7 @@
 #  from) and writes the Tm spread.  A spread well under the AS window
 #  (KASP_LIMITS$as_tm, 10 C wide) means the threshold is model-robust; a large
 #  spread means the window is model-dependent.  Also prints the provenance table
-#  (kasp_priors()) so the numbers and their sources sit side by side.
+#  (marker_priors()) so the numbers and their sources sit side by side.
 #
 #  Run:  Rscript dev/compare-thermo.R
 # =============================================================================
@@ -27,7 +27,7 @@ x <- thermo_crosscheck(seqs)
 cat("\n== Tm across NN tables (C) ==\n")
 print(as.data.frame(x), row.names = FALSE)
 cat("\n== provenance ==\n")
-print(as.data.frame(kasp_priors()), row.names = FALSE)
+print(as.data.frame(marker_priors()), row.names = FALSE)
 
 out <- fs::path(root, "results", "thermo-reconcile.csv")
 fs::dir_create(fs::path_dir(out))

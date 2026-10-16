@@ -2,7 +2,7 @@
 #  dev/render-real.R  --  render the plots on the real Arabidopsis demo
 # =============================================================================
 #  Runs the bundled TAIR10 / FRI (AT4G00650) / 1001-Genomes pipeline (data are
-#  cached under kasp_cache_dir(), so no network is needed after the first run)
+#  cached under marker_cache_dir(), so no network is needed after the first run)
 #  and writes the plots to results/plot-smoke/ for eyeballing.
 #
 #  Run:  Rscript dev/render-real.R

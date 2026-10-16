@@ -13,7 +13,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.height = 4)
 suppressPackageStartupMessages({
-  library(tidykasp)   # пакет и есть протокол
+  library(tidymarkers)   # пакет и есть протокол
   library(tidyverse); library(here)
 })
 ```
@@ -22,7 +22,7 @@ suppressPackageStartupMessages({
 Ниже — ровно те обёртки, которые вызывает пользователь, с параметрами.
 
 ```{r pipeline, cache=TRUE}
-genome   <- ath_genome()                       # TAIR10 (Ensembl Plants), кэш в kasp_cache_dir()
+genome   <- ath_genome()                       # TAIR10 (Ensembl Plants), кэш в marker_cache_dir()
 gene     <- ensembl_gene("AT4G00650")          # FRI (FRIGIDA)
 variants <- ensembl_variants(gene$chrom, gene$start, gene$end)   # 1001 Genomes, Ensembl REST
 
@@ -123,7 +123,7 @@ assay$amplicons |> knitr::kable(caption = "Виртуальная ПЦР: REF �
 ```
 
 ```{r fm}
-fm <- kasp_fm_index(genome, basename = fs::path(kasp_cache_dir(), "tair10_fm"))
+fm <- marker_fm_index(genome, basename = fs::path(marker_cache_dir(), "tair10_fm"))
 specificity_fm(c(AS_ref = assay$assay$as_ref[1], AS_alt = assay$assay$as_alt[1],
                  COM = assay$assay$com[1]), fm, nthreads = 2L) |>
   knitr::kable(caption = "FM-индекс (Rsubread): локусов в геноме на полный праймер")
@@ -131,12 +131,12 @@ specificity_fm(c(AS_ref = assay$assay$as_ref[1], AS_alt = assay$assay$as_alt[1],
 
 ## Критерии приёмки: что такое «хороший KASP»
 
-Пороги — в `KASP_LIMITS`, проверка — `kasp_design_checks()`. Критерии следуют
+Пороги — в `KASP_LIMITS`, проверка — `marker_design_checks()`. Критерии следуют
 методичке LGC/KBioscience и работе **EasyKASP** (Zhang, Yang & Wen, *BMC
 Bioinformatics* 2025, 26:292): ампликон < 100 bp, Tm COM **выше**, чем у AS, и т. д.
 
 ```{r checks}
-kasp_design_checks(assay) |> knitr::kable(digits = 2)
+marker_design_checks(assay) |> knitr::kable(digits = 2)
 ```
 
 ## Соответствие методичке
@@ -145,7 +145,7 @@ kasp_design_checks(assay) |> knitr::kable(digits = 2)
 реализована и что дала на этом прогоне.
 
 ```{r compliance-1}
-chk <- kasp_design_checks(assay)
+chk <- marker_design_checks(assay)
 obs <- function(c) chk$observed[match(c, chk$criterion)]
 aa  <- assay$assay[1, ]
 wt  <- assay$as_candidates |> arrange(n_3p, n_var, desc(discrimination), wobble,
@@ -156,7 +156,7 @@ tibble::tibble(
                    "Стабилизирующий мисматч −2/−3", "Последние 5 nt без др. SNP"),
   Порог = c("50–100 bp", "обязательно", "20–28 nt", "55–65 °C", "40–60%",
             "обе цепи", "1–3 nt от 3'", "0 вариантов"),
-  `Как в пакете` = c("kasp_design_checks()", "make_as_primer()", "design_as_primers()",
+  `Как в пакете` = c("marker_design_checks()", "make_as_primer()", "design_as_primers()",
                      "primer_tm() (TmCalculator)", "gc_frac()", "strand × длины × перебор",
                      "stab_ats (скан)", "n_3p: IRanges::countOverlaps"),
   Прогон = c(glue::glue("{obs('amplicon length (bp)')} bp"),
@@ -219,11 +219,11 @@ plot_variant_landscape(gene, variants, snp, assay)
 `*_lgc.csv` (заказ KASP-теста), `*_tidy.csv`.
 
 ```{r order}
-kasp_primer_table(assay, gene) |> knitr::kable(digits = 1)
+marker_primer_table(assay, gene) |> knitr::kable(digits = 1)
 ```
 
 ```{r export, eval=FALSE}
-export_primers(assay, gene)      # -> results/kasp_FRI_<chr>_<pos>_{idt,lgc,tidy}.csv
+export_primers(assay, gene)      # -> results/marker_FRI_<chr>_<pos>_{idt,lgc,tidy}.csv
 ```
 
 ## Выводы
@@ -238,7 +238,7 @@ export_primers(assay, gene)      # -> results/kasp_FRI_<chr>_<pos>_{idt,lgc,tidy
   `r assay$amplicons$n_products[assay$amplicons$primer == "AS_ref"]` продукт,
   ALT → `r assay$amplicons$n_products[assay$amplicons$primer == "AS_alt"]`.
 * Приёмка: `r sum(chk$pass)` / `r nrow(chk)` критериев
-  (`kasp_design_checks()`).
+  (`marker_design_checks()`).
 
 Следующий шаг — заказать праймеры с хвостами FAM/HEX, прогнать на трёх контролях
 (REF/ALT/HET) + NTC и кластеризовать образцы по конечной флуоресценции.

@@ -10,10 +10,10 @@ blast_fa <- function(fa) {
   fa
 }
 
-test_that("kasp_blast_index builds a database and specificity_blast counts hits", {
+test_that("marker_blast_index builds a database and specificity_blast counts hits", {
   skip_if_not(has_blast(), "NCBI BLAST+ not installed")
   skip_if_not_installed("rBLAST")
-  db <- kasp_blast_index(kasp_genome(blast_fa(withr::local_tempfile(fileext = ".fa"))))
+  db <- marker_blast_index(marker_genome(blast_fa(withr::local_tempfile(fileext = ".fa"))))
   res <- specificity_blast(c(P = blast_amp, Q = "GATTACAGATTACAGATTAC"), db, k = NA_integer_)
   expect_equal(res$hits[res$primer == "P"], 4L) # 2 copies on both strands
   expect_equal(res$hits[res$primer == "Q"], 0L)
@@ -24,11 +24,11 @@ test_that("specificity_of routes an indexed genome to BLAST, and needs a db", {
   skip_if_not(has_blast(), "NCBI BLAST+ not installed")
   skip_if_not_installed("rBLAST")
   fa <- blast_fa(withr::local_tempfile(fileext = ".fa"))
-  gs <- kasp_genome(fa, blast_db = kasp_blast_index(kasp_genome(fa)))
+  gs <- marker_genome(fa, blast_db = marker_blast_index(marker_genome(fa)))
   res <- specificity_of(c(P = blast_amp), gs)
   expect_gte(res$hits[res$primer == "P"], 1L)
   # an indexed genome without a database is a clear error, not a silent zero
-  expect_error(specificity_of(c(P = blast_amp), kasp_genome(fa)), "BLAST")
+  expect_error(specificity_of(c(P = blast_amp), marker_genome(fa)), "BLAST")
 })
 
 test_that("specificity_of uses the in-memory path for a DNAStringSet", {

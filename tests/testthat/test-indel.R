@@ -66,7 +66,7 @@ test_that("assemble_kasp_assay designs an indel end-to-end", {
   expect_false(nchar(a$snp$ref) == nchar(a$snp$alt)) # indel => alleles differ in length
   expect_false(a$assay$as_ref[1] == a$assay$as_alt[1]) # the two AS primers differ
   expect_true(all(c("as_start", "as_alt_start") %in% names(a$assay)))
-  chk <- kasp_design_checks(a)
+  chk <- marker_design_checks(a)
   expect_true(all(c("criterion", "observed", "limit", "pass") %in% names(chk)))
   expect_true(is.logical(chk$pass))
 })
@@ -74,7 +74,7 @@ test_that("assemble_kasp_assay designs an indel end-to-end", {
 # ---- the indel DAG and its (formerly vacuous) wobble gate -------------------
 test_that("the indel DAG obeys the contract and shares the KASP core stages", {
   expect_dag_invariants("indel")
-  s <- kasp_decision_schema("indel")
+  s <- marker_decision_schema("indel")
   # KASP InDel discrimination is the SAME 3'-terminal mechanism as a SNP: the AS
   # primers end at the variant site (EasyKASP 2025), so the stage is deliberately
   # the shared KASP core, not a bespoke length-based one

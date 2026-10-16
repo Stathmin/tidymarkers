@@ -30,7 +30,7 @@ good_assay <- function() {
 }
 
 test_that("a well-formed assay passes every acceptance check", {
-  ch <- kasp_design_checks(good_assay())
+  ch <- marker_design_checks(good_assay())
   expect_true(all(ch$pass))
   expect_true(all(c("criterion", "observed", "limit", "pass") %in% names(ch)))
 })
@@ -79,7 +79,7 @@ test_that("each broken criterion flips the verdict to fail", {
     }
   )
   for (m in mutators) {
-    expect_false(all(kasp_design_checks(m(good_assay()))$pass))
+    expect_false(all(marker_design_checks(m(good_assay()))$pass))
   }
 })
 
@@ -87,7 +87,7 @@ test_that("COM Tm must not fall below the AS primers (EasyKASP)", {
   a <- good_assay()
   a$thermo$tm <- c(62, 62, 60)
   a$assay$com_tm <- 60
-  ch <- kasp_design_checks(a)
+  ch <- marker_design_checks(a)
   expect_false(ch$pass[ch$criterion == "COM Tm >= AS Tm"])
 })
 
@@ -96,24 +96,24 @@ test_that("the amplicon window is the scheme's own, not the KASP optimum (C2/C5)
   a <- good_assay()
   # a wet-lab CAPS band (120-1200 bp) passes as a caps marker, fails as a SNP
   a$assay$amplicon <- 600L
-  caps <- kasp_design_checks(a, scheme = "caps")
+  caps <- marker_design_checks(a, scheme = "caps")
   expect_true(caps$pass[amp(caps)])
   expect_equal(caps$limit[amp(caps)], "[120, 1200]")
-  snp <- kasp_design_checks(a, scheme = "snp")
+  snp <- marker_design_checks(a, scheme = "snp")
   expect_false(snp$pass[amp(snp)])
   # 600 bp is inside the Sanger window (400-800) but outside SSR's (100-300)
-  sanger <- kasp_design_checks(a, scheme = "sanger")
+  sanger <- marker_design_checks(a, scheme = "sanger")
   expect_true(sanger$pass[amp(sanger)])
   expect_equal(sanger$limit[amp(sanger)], "[400, 800]")
-  ssr <- kasp_design_checks(a, scheme = "ssr")
+  ssr <- marker_design_checks(a, scheme = "ssr")
   expect_false(ssr$pass[amp(ssr)])
 })
 
 test_that("the inverted-repeat screen fails a self-symmetric primer", {
-  ch <- kasp_design_checks(good_assay())
+  ch <- marker_design_checks(good_assay())
   expect_true("inverted repeat (arms>=4, loop<=6)" %in% ch$criterion)
   a <- good_assay()
   a$assay$com <- "ACGTACGTACGTACGT"
-  bad <- kasp_design_checks(a)
+  bad <- marker_design_checks(a)
   expect_false(bad$pass[bad$criterion == "inverted repeat (arms>=4, loop<=6)"])
 })

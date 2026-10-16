@@ -7,4 +7,4 @@
 #  state (memoise caches use the same idea).
 # =============================================================================
 
-.kasp_state <- new.env(parent = emptyenv())
+.marker_state <- new.env(parent = emptyenv())

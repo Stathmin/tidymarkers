@@ -7,7 +7,7 @@
 # instead of declaring it.
 
 lax_hp <- local({
-  f <- system.file("extdata", "sat2_transcripts.fa", package = "tidykasp")
+  f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
   if (!nzchar(f)) {
     return(NULL)
   }
@@ -19,7 +19,7 @@ lax_chunk <- function() {
   if (is.null(lax_hp)) {
     return(NULL)
   }
-  kasp_chunk(lax_hp, from = 281L, to = 581L)
+  marker_chunk(lax_hp, from = 281L, to = 581L)
 }
 
 test_that("design_lax_marker groups matching ALT haplotypes into one primer each", {
@@ -31,7 +31,7 @@ test_that("design_lax_marker groups matching ALT haplotypes into one primer each
     chunk_genome(ch), snp, chunk_haplotypes(ch),
     flank = 150L, cores = 1L
   ))
-  expect_s3_class(x, "kasp_lax")
+  expect_s3_class(x, "marker_lax")
   # every ALT haplotype is covered, but haplotypes with the same linked variants
   # collapse to a single ALT primer group
   expect_gte(length(x$alt), 5L)
@@ -48,7 +48,7 @@ test_that("design_lax_marker groups matching ALT haplotypes into one primer each
   expect_true(is.data.frame(x$compatibility))
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(x$compatibility)))
   expect_true(all(x$compatibility$pass))
-  expect_output(print(x), "kasp_lax")
+  expect_output(print(x), "marker_lax")
 })
 
 test_that("design_lax_marker leaves a plain ALT primer without haplotypes", {
@@ -57,7 +57,7 @@ test_that("design_lax_marker leaves a plain ALT primer without haplotypes", {
   ch <- lax_chunk()
   snp <- tibble::tibble(chrom = "SAT2", pos = 151L, ref = "A", alt = "G")
   x <- suppressWarnings(design_lax_marker(chunk_genome(ch), snp, flank = 150L, cores = 1L))
-  expect_s3_class(x, "kasp_lax")
+  expect_s3_class(x, "marker_lax")
   expect_equal(x$alt, "ALT")
   expect_length(x$assays, 1L)
   expect_output(print(x), "plain ALT primer")
@@ -69,8 +69,8 @@ test_that("design_lax_marker leaves a plain ALT primer without haplotypes", {
 })
 
 test_that("the lax scheme is registered and has its own decision stage", {
-  expect_true("lax" %in% kasp_schemes()$scheme)
-  s <- kasp_decision_schema("lax")
+  expect_true("lax" %in% marker_schemes()$scheme)
+  s <- marker_decision_schema("lax")
   expect_true("lax" %in% s$nodes$stage)
   # the scheme keeps the whole KASP family machinery (it *is* a KASP: one AS
   # primer per haplotype on a shared backbone) plus its own set-level stage
@@ -79,7 +79,7 @@ test_that("the lax scheme is registered and has its own decision stage", {
 
 test_that("lax declares its gate set, hardness, both orders and real floors", {
   # the scheme carries the KASP family stages too, so read only its own stage
-  crit <- kasp_criteria(scheme = "lax")
+  crit <- marker_criteria(scheme = "lax")
   gates <- crit[crit$role == "gate" & crit$stage == "lax", ]
   expect_setequal(gates$id, paste0("lax:gate:", KASP_GATES_LAX))
   # application order (grave / cheap first) is the declared vector
@@ -110,7 +110,7 @@ test_that("lax declares its gate set, hardness, both orders and real floors", {
 })
 
 test_that("lax's DAG shows the hard coverage gate, a two-rung ladder and its tier", {
-  s <- kasp_decision_schema("lax")
+  s <- marker_decision_schema("lax")
   n <- s$nodes
   lax_gate <- n$kind == "gate" & n$stage == "lax"
   expect_equal(n$name[lax_gate & n$hard], "lax:gate:gate_lax_coverage")
@@ -122,7 +122,7 @@ test_that("lax's DAG shows the hard coverage gate, a two-rung ladder and its tie
   expect_equal(sum(n$kind == "tier" & n$stage == "lax"), 1L)
   expect_true(all(c("lax:survivors", "lax:best") %in% n$name))
   # the ladder is labelled least grave first (C6)
-  txt <- kasp_decision_text("lax")
+  txt <- marker_decision_text("lax")
   expect_true(any(grepl("haplotype cross-priming", txt, fixed = TRUE)))
   expect_true(any(grepl("relaxation ladder \\(least grave first\\)", txt)))
 })

@@ -15,7 +15,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages({
-  library(tidykasp)
+  library(tidymarkers)
   library(ggplot2)
 })
 
@@ -23,7 +23,7 @@ out_dir <- "results/sat2"
 fs::dir_create(out_dir)
 
 # --- 1. FASTA -> alignment -> haplotype table --------------------------------
-f <- system.file("extdata", "sat2_transcripts.fa", package = "tidykasp")
+f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 
 # illustrative minor-allele frequencies for a few variants (in practice: your own
 # VCF / panel table).  These override the haplotype-count pop_freq for those sites.

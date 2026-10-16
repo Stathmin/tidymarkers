@@ -50,10 +50,10 @@ test_that("a design that holds only on linkage is reported, not silently accepte
       invokeRestart("muffleWarning")
     }
   )
-  expect_false(inherits(a, "kasp_doomed"))
+  expect_false(inherits(a, "marker_doomed"))
   expect_true(isTRUE(a$selection$linked_dependent))
   expect_true(any(grepl("relies on linkage", msgs, fixed = TRUE)))
   # it is a first-class acceptance criterion, not only a warning
-  chk <- kasp_design_checks(a)
+  chk <- marker_design_checks(a)
   expect_false(chk$pass[chk$criterion == "design relies on linkage"])
 })

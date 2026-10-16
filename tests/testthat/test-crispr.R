@@ -8,7 +8,7 @@ test_that("design_crispr_marker builds a Cas12a guide with a TTTV PAM and an amp
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "T", alt = "A")
   m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas12a")
-  expect_s3_class(m, "kasp_crispr")
+  expect_s3_class(m, "marker_crispr")
   expect_equal(m$cas, "cas12a")
   expect_match(m$pam, "^TTT[ACG]$")
   expect_gte(nchar(m$guide), 20L)
@@ -18,7 +18,7 @@ test_that("design_crispr_marker builds a Cas12a guide with a TTTV PAM and an amp
   expect_gt(m$amplicon$end, 300L)
   expect_gte(m$amplicon$product, 80L)
   expect_lte(m$amplicon$product, 250L)
-  expect_output(print(m), "kasp_crispr")
+  expect_output(print(m), "marker_crispr")
 })
 
 test_that("design_crispr_marker builds a PAM-free Cas13 guide", {
@@ -30,12 +30,12 @@ test_that("design_crispr_marker builds a PAM-free Cas13 guide", {
     chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas13")
-  expect_s3_class(m, "kasp_crispr")
+  expect_s3_class(m, "marker_crispr")
   expect_equal(m$cas, "cas13")
   expect_true(is.na(m$pam)) # Cas13 targets RNA: no PAM
   expect_gte(nchar(m$guide), 22L)
   expect_lte(nchar(m$guide), 28L)
-  expect_output(print(m), "kasp_crispr")
+  expect_output(print(m), "marker_crispr")
 })
 
 test_that("design_crispr_marker informs and returns NULL when no guide passes", {

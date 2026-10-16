@@ -1,7 +1,7 @@
 # =============================================================================
 #  dev/dump-dags.R  --  every scheme's decision DAG as text, for diffing
 # =============================================================================
-#  Writes kasp_decision_text() for every scheme to results/dags.txt (git-ignored)
+#  Writes marker_decision_text() for every scheme to results/dags.txt (git-ignored)
 #  so an agent can diff its own scheme before/after an edit:
 #
 #      Rscript dev/dump-dags.R
@@ -27,8 +27,8 @@ out <- "results/dags.txt"
 # one greppable block per scheme: a `#### <scheme> (<family>)` header, then the
 # full text export.  Reading the family here also surfaces a scheme whose family
 # gained or lost its allele-specific checks.
-blocks <- lapply(kasp_schemes()$scheme, function(sc) {
-  c(paste0("#### ", sc, " (", kasp_scheme(sc)$family, ")"), kasp_decision_text(sc), "")
+blocks <- lapply(marker_schemes()$scheme, function(sc) {
+  c(paste0("#### ", sc, " (", marker_scheme(sc)$family, ")"), marker_decision_text(sc), "")
 })
 writeLines(unlist(blocks), out)
-cat("wrote ", out, " for ", nrow(kasp_schemes()), " schemes\n", sep = "")
+cat("wrote ", out, " for ", nrow(marker_schemes()), " schemes\n", sep = "")

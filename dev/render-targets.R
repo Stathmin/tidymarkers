@@ -26,7 +26,7 @@ genome <- ath_genome()
 out <- fs::path(root, "results", "plot-smoke")
 fs::dir_create(out)
 
-ex <- kasp_example()
+ex <- marker_example()
 
 render_one <- function(i) {
   r <- ex[i, ]

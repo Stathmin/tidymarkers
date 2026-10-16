@@ -5,26 +5,26 @@
 
 ## Как устроено
 
-- Строки-шаблоны обёрнуты в `gettext()`; домен `R-tidykasp` R подставляет по namespace.
+- Строки-шаблоны обёрнуты в `gettext()`; домен `R-tidymarkers` R подставляет по namespace.
   `rlang::abort/warn/inform` и `cli::cli_*` potools сам **не** распознаёт — их строки
   обёрнуты вручную.
-- `po/R-tidykasp.pot` — шаблон (`potools::po_extract()`).
+- `po/R-tidymarkers.pot` — шаблон (`potools::po_extract()`).
 - `po/R-ru.po` — перевод (`potools::po_update()`).
-- `inst/po/ru/LC_MESSAGES/R-tidykasp.mo` — скомпилированный каталог
+- `inst/po/ru/LC_MESSAGES/R-tidymarkers.mo` — скомпилированный каталог
   (`potools::po_compile()`); именно он ставится и виден R.
 
 ## Цикл (нужны system gettext-tools + potools)
 
 ```r
-potools::po_extract()   # код -> po/R-tidykasp.pot
+potools::po_extract()   # код -> po/R-tidymarkers.pot
 potools::po_update()    # pot -> po/R-ru.po   (merge, сохраняя перевод)
-potools::po_compile()   # po  -> inst/po/ru/LC_MESSAGES/R-tidykasp.mo
+potools::po_compile()   # po  -> inst/po/ru/LC_MESSAGES/R-tidymarkers.mo
 ```
 
 Затем `R CMD INSTALL .` и:
 
 ```r
-Sys.setenv(LANGUAGE = "ru"); library(tidykasp)
+Sys.setenv(LANGUAGE = "ru"); library(tidymarkers)
 ```
 
 ## Грабли (проверено на этом пакете)
@@ -38,6 +38,6 @@ Sys.setenv(LANGUAGE = "ru"); library(tidykasp)
    директиву и ругается на несовпадение; переформулировать (мы убрали «100%»).
 4. **`R CMD INSTALL` не компилирует `po/`.** `.mo` кладёт `po_compile()` в `inst/po/`,
    откуда он и ставится; без этого `LANGUAGE=ru` молчит.
-5. **Ярлыки `print()`** (`<kasp_assay>`, `AS-ref`, `sequence(s):`, …) намеренно
+5. **Ярлыки `print()`** (`<marker_assay>`, `AS-ref`, `sequence(s):`, …) намеренно
    оставлены на английском — это фиксированные диагностические ярлыки/терминология.
 6. Числа — `ngettext()`; `Plural-Forms` для `ru` (3 формы) прописан в `R-ru.po`.

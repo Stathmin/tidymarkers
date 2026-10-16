@@ -9,7 +9,7 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
     chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_sanger_marker(genome, snp, flank = 500L)
-  expect_s3_class(m, "kasp_sanger")
+  expect_s3_class(m, "marker_sanger")
   # the variant is inside the amplicon and clear of both read starts
   expect_gt(m$amplicon$start, 0L)
   expect_lt(m$amplicon$start, snp$pos)
@@ -28,7 +28,7 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
   expect_true(grepl(rc, W, fixed = TRUE))
 })
 
-test_that("print.kasp_sanger summarises the marker and its sequencing primers", {
+test_that("print.marker_sanger summarises the marker and its sequencing primers", {
   m <- structure(
     list(
       snp = tibble::tibble(chrom = "Chr1", pos = 10L, ref = "A", alt = "G"),
@@ -37,9 +37,9 @@ test_that("print.kasp_sanger summarises the marker and its sequencing primers", 
       seq_primers = list(forward = "AAAACCCCGGGGTTTT", reverse = "TTTTGGGGCCCCAAAA", nested = TRUE),
       selection = list(relaxed = character(0), violated = character(0))
     ),
-    class = "kasp_sanger"
+    class = "marker_sanger"
   )
-  expect_output(print(m), "kasp_sanger")
+  expect_output(print(m), "marker_sanger")
   expect_output(print(m), "600 bp")
   expect_output(print(m), "sequencing primers")
 })
@@ -67,7 +67,7 @@ test_that("the amplicon gate is really evaluated and relaxes to its floor (C7)",
   # a 300 bp template cannot hold the ideal 400-800 bp amplicon, so the ladder
   # must lower gate_sanger_amplicon to its floor and say so
   m <- design_sanger_marker(genome, snp, flank = 140L)
-  expect_s3_class(m, "kasp_sanger")
+  expect_s3_class(m, "marker_sanger")
   expect_true("gate_sanger_amplicon" %in% m$selection$relaxed)
   expect_gte(m$primers$product, 200L) # the relaxed floor: 400 - 200
 })

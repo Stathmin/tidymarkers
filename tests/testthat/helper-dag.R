@@ -6,8 +6,8 @@
 #  own DAG by calling the helper inside a test whose single expression is that
 #  call, with the scheme id as the argument.
 #
-#  It reads only the generated schema (kasp_decision_schema()), the registry
-#  (kasp_criteria()) and the scheme's declared stage spec, so it needs neither a
+#  It reads only the generated schema (marker_decision_schema()), the registry
+#  (marker_criteria()) and the scheme's declared stage spec, so it needs neither a
 #  genome nor an assembled assay, and it is cheap enough for the inner loop.
 #
 #  Scope: the invariants that are *statically* visible from the declared data are
@@ -18,7 +18,7 @@
 # =============================================================================
 
 # A scheme's declared stages, in pipeline order (built-in + discovered).
-dag_stages <- function(scheme) kasp_decision_stages(scheme)
+dag_stages <- function(scheme) marker_decision_stages(scheme)
 
 # Normalise a criterion label for the "same criterion shown twice" test: lower
 # case, keep only alphanumerics.  So the gate "COM Tm >= AS Tm" and the check of
@@ -58,14 +58,14 @@ dag_ungated <- function(scheme) {
 #' C4 (a failed hard gate dooms), C6 (both orders declared), C7 (declared gates
 #' are emitted), C9 (no `[lo, hi]` placeholder), C10 (the ungated list is honest)
 #' and C11 (acyclic, strictly downward, every endpoint known, a verdict).
-#' @param scheme a scheme id (see [kasp_schemes()]).
+#' @param scheme a scheme id (see [marker_schemes()]).
 #' @return the scheme id, invisibly.
 #' @keywords internal
 #' @noRd
 expect_dag_invariants <- function(scheme) {
-  info <- kasp_scheme(scheme)
-  crit <- kasp_criteria(scheme = scheme)
-  s <- kasp_decision_schema(scheme)
+  info <- marker_scheme(scheme)
+  crit <- marker_criteria(scheme = scheme)
+  s <- marker_decision_schema(scheme)
   n <- s$nodes
   e <- s$edges
   stages <- dag_stages(scheme)
@@ -139,7 +139,7 @@ expect_dag_invariants <- function(scheme) {
   }
   if (any(lengths(lapply(stages, `[[`, "relax")) > 0L)) {
     expect_true(
-      any(grepl("relaxation ladder \\(least grave first\\)", kasp_decision_text(scheme))),
+      any(grepl("relaxation ladder \\(least grave first\\)", marker_decision_text(scheme))),
       info = at("the relaxation ladder is not labelled")
     )
   }

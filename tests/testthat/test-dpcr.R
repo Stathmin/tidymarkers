@@ -18,7 +18,7 @@ test_that("design_dpcr_marker returns a short amplicon with a hydrolysis probe o
     chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
   m <- design_dpcr_marker(genome, snp, flank = 150L)
-  expect_s3_class(m, "kasp_dpcr")
+  expect_s3_class(m, "marker_dpcr")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   # a short amplicon with the probe between the primers and over the variant
   expect_gte(m$primers$product, 60L)
@@ -47,7 +47,7 @@ test_that("design_dpcr_marker returns a short amplicon with a hydrolysis probe o
   expect_gte(m$probes$tm[1L] - max(m$primers$tm_f, m$primers$tm_r), 8)
   expect_match(m$primers$forward, "^[ACGT]+$")
   expect_match(m$primers$reverse, "^[ACGT]+$")
-  expect_output(print.kasp_dpcr(m), "kasp_dpcr")
+  expect_output(print.marker_dpcr(m), "marker_dpcr")
 })
 
 test_that("every declared dPCR gate is evaluated by the designer (C7)", {
@@ -71,7 +71,7 @@ test_that("the amplicon soft gate relaxes to its floor instead of silently faili
   # ask for a window outside the declared [60, 150] bp: the winner is inside the
   # requested window but outside the gate's, so the ladder must record the rung
   m <- design_dpcr_marker(genome, snp, flank = 150L, min_product = 155L, max_product = 160L)
-  expect_s3_class(m, "kasp_dpcr")
+  expect_s3_class(m, "marker_dpcr")
   expect_true(m$primers$product > 150L)
   expect_true("gate_dpcr_amplicon" %in% m$selection$relaxed)
   expect_true("gate_dpcr_amplicon" %in% m$selection$violated)
@@ -116,12 +116,12 @@ test_that("the dPCR scheme definition carries its gates, relax and tiers", {
   expect_true(all(d$gate_floor < 0))
   expect_identical(d$stage_label, "dPCR (droplet digital PCR)")
   # the readout does not claim a partitioning/Poisson model this package never
-  # computes (see kasp_readout())
+  # computes (see marker_readout())
   expect_false(grepl("Poisson", d$readout, fixed = TRUE))
 })
 
 test_that("the dPCR DAG shows the gates in application order and the ladder least grave first", {
-  s <- kasp_decision_schema("dpcr")
+  s <- marker_decision_schema("dpcr")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   # gate order follows the declared (grave / cheap first) order
   expect_true(all(diff(ord[paste0("dpcr:gate:", dpcr_gates)]) > 0L))
@@ -133,5 +133,5 @@ test_that("the dPCR DAG shows the gates in application order and the ladder leas
   # the refine node names the rungs in the declared relax order
   refine <- s$nodes$detail[s$nodes$kind == "relax"]
   expect_match(refine, "amplicon")
-  expect_true(grepl("least grave first", paste(kasp_decision_text("dpcr"), collapse = "\n"), fixed = TRUE))
+  expect_true(grepl("least grave first", paste(marker_decision_text("dpcr"), collapse = "\n"), fixed = TRUE))
 })

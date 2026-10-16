@@ -1,0 +1,755 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tidymarkers 0.3.0\n"
+"POT-Creation-Date: 2026-10-15 12:30+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: marker_annotate.R:32
+msgid "for structured variant annotation"
+msgstr ""
+
+#: marker_annotate.R:71
+msgid "for codon-level annotation"
+msgstr ""
+
+#: marker_annotate.R:101
+msgid "for an EnsDb gene model"
+msgstr ""
+
+#: marker_annotate.R:110
+msgid "Downloading the Ensembl Plants GTF into {.path {cache}}."
+msgstr ""
+
+#: marker_annotate.R:116
+msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
+msgstr ""
+
+#: marker_arms.R:41
+msgid "tetra-primer ARMS is implemented for single-base substitutions only."
+msgstr ""
+
+#: marker_arms.R:47
+msgid "No outer primer pair passed the Tm/GC filters."
+msgstr ""
+
+#: marker_arms.R:55
+msgid "No inner allele-specific primer passed the GC/Tm filter."
+msgstr ""
+
+#: marker_arms.R:68
+msgid "An inner primer is missing on one strand."
+msgstr ""
+
+#: marker_arms.R:75
+msgid "The two diagnostic bands are closer than `min_band_gap`."
+msgstr ""
+
+#: marker_arms.R:126
+msgid "to draw the ARMS gel"
+msgstr ""
+
+#: marker_arms.R:128
+msgid "`marker` must be a marker_arms object (see design_arms_marker())."
+msgstr ""
+
+#: marker_assemble.R:134
+msgid ""
+"OligoArrayAux was not found: thermodynamic and structural checks will be NA."
+msgstr ""
+
+#: marker_assemble.R:135
+msgid "run tidymarkers::marker_install_tools() once to build it."
+msgstr ""
+
+#: marker_assemble.R:275
+msgid "No AS primer passed the GC/Tm filter."
+msgstr ""
+
+#: marker_assemble.R:289
+msgid "No AS primer passed the homopolymer/SSR filter."
+msgstr ""
+
+#: marker_assemble.R:297
+msgid "No indel AS primer passed the GC/Tm filter."
+msgstr ""
+
+#: marker_assemble.R:301
+msgid "No indel AS primer passed the homopolymer/SSR filter."
+msgstr ""
+
+#: marker_assemble.R:375
+msgid ""
+"No AS primer survived the footprint cap (max_footprint_variants = "
+"{max_footprint_variants})."
+msgstr ""
+
+#: marker_assemble.R:407
+msgid "No AS primer survived even the relaxed constraints."
+msgstr ""
+
+#: marker_assemble.R:418
+msgid ""
+"Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
+"AS 3'-terminal {clean_3p} nt."
+msgstr ""
+
+#: marker_assemble.R:420
+msgid ""
+"Allele specificity on strand {best_as$strand} may not hold across accessions."
+msgstr ""
+
+#: marker_assemble.R:425
+msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
+msgstr ""
+
+#: marker_assemble.R:426
+msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
+msgstr ""
+
+#: marker_assemble.R:432
+msgid ""
+"Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
+"min_disc = {min_disc}."
+msgstr ""
+
+#: marker_assemble.R:434
+msgid "Consider widening `strands` or `tm_range`."
+msgstr ""
+
+#: marker_assemble.R:450
+msgid ""
+"Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
+"variant(s) in the AS zone)."
+msgstr ""
+
+#: marker_assemble.R:452
+msgid ""
+"The ALT primer is valid only in accessions carrying the linked haplotype."
+msgstr ""
+
+#: marker_assemble.R:517
+msgid "No candidate assay survived even the relaxed constraints."
+msgstr ""
+
+#: marker_assemble.R:568
+msgid ""
+"Top-ranked pairing failed genome-level checks; kept the next clean one "
+"({win} of {n_screen} screened)."
+msgstr ""
+
+#: marker_assemble.R:570
+msgid ""
+"Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
+"are screened here."
+msgstr ""
+
+#: marker_assemble.R:598
+msgid "in-silico PCR failed: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_assemble.R:611
+msgid "FM scan failed: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_assemble.R:617
+msgid "BLAST db unavailable: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_assemble.R:655
+msgid "genome ideogram failed: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_assemble.R:689 marker_assemble.R:698
+msgid ""
+"Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
+"class {out$site$class[1L]})."
+msgstr ""
+
+#: marker_assemble.R:692
+msgid ""
+"The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
+"ALT but cannot tell them apart."
+msgstr ""
+
+#: marker_assemble.R:701
+msgid ""
+"The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
+msgstr ""
+
+#: marker_assemble.R:718
+msgid ""
+"The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
+"'; ')}."
+msgstr ""
+
+#: marker_assemble.R:720
+msgid ""
+"Selection does not gate these yet - inspect assay$evaluation and consider a "
+"trade-off."
+msgstr ""
+
+#: marker_caps.R:31
+msgid "Bundled restriction-enzyme catalogue not found."
+msgstr ""
+
+#: marker_caps.R:178
+msgid "dCAPS scanning is implemented for single-base substitutions only."
+msgstr ""
+
+#: marker_caps.R:273
+msgid ""
+"A discriminating enzyme was found, but no flanking primer pair passed the Tm/"
+"GC filters."
+msgstr ""
+
+#: marker_caps.R:299
+msgid "No natural or primer-introduced (dCAPS) restriction marker here."
+msgstr ""
+
+#: marker_caps.R:312
+msgid "A dCAPS site was found, but no primer pair passed the Tm/GC filters."
+msgstr ""
+
+#: marker_caps.R:358
+msgid "to draw the CAPS gel"
+msgstr ""
+
+#: marker_caps.R:360
+msgid "`marker` must be a marker_caps object (see design_caps_marker())."
+msgstr ""
+
+#: marker_castpcr.R:130
+msgid "castPCR is implemented for single-base substitutions only."
+msgstr ""
+
+#: marker_castpcr.R:143
+msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
+msgstr ""
+
+#: marker_castpcr.R:161
+msgid "No room upstream of the allele-specific primer for a common primer."
+msgstr ""
+
+#: marker_castpcr.R:172
+msgid "No common primer passed the Tm/GC filters within the castPCR amplicon."
+msgstr ""
+
+#: marker_castpcr.R:181
+msgid "No hydrolysis probe covering the variant passed the Tm/GC filters."
+msgstr ""
+
+#: marker_core.R:117
+msgid "OligoArrayAux ('{bin}') was not found."
+msgstr ""
+
+#: marker_core.R:132
+msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+msgstr ""
+
+#: marker_core.R:137
+msgid ""
+"OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+msgstr ""
+
+#: marker_core.R:144
+msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
+msgstr ""
+
+#: marker_core.R:508
+msgid ""
+"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
+"{cache}} ..."
+msgstr ""
+
+#: marker_core.R:516
+msgid ""
+"Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::"
+"head(dropped, 3L)}}."
+msgstr ""
+
+#: marker_core.R:526
+msgid ""
+"ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
+"collapse = ', ')}."
+msgstr ""
+
+#: marker_core.R:528
+msgid "Ensembl deflines may have changed."
+msgstr ""
+
+#: marker_crispr.R:153
+msgid "No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."
+msgstr ""
+
+#: marker_crispr.R:169
+msgid ""
+"A guide spacer was found, but no pre-amplification pair passed the Tm/GC "
+"filters."
+msgstr ""
+
+#: marker_decision.R:226
+msgid "for the decision graph"
+msgstr ""
+
+#: marker_decision.R:275
+msgid "to draw the decision tree"
+msgstr ""
+
+#: marker_design.R:77
+msgid "No common primer passed the filters."
+msgstr ""
+
+#: marker_design.R:78
+msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
+msgstr ""
+
+#: marker_design.R:190
+msgid "every `alt` allele must be as long as `ref`"
+msgstr ""
+
+#: marker_design.R:444
+msgid ""
+"design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
+"a substitution."
+msgstr ""
+
+#: marker_design.R:501
+msgid "No indel AS-primer placement fit inside the design window."
+msgstr ""
+
+#: marker_dpcr.R:86
+msgid ""
+"dPCR allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: marker_dpcr.R:99
+msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
+msgstr ""
+
+#: marker_dpcr.R:104
+msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
+msgstr ""
+
+#: marker_duplex.R:137
+msgid "`loci` must have exactly two rows for a duplex assay."
+msgstr ""
+
+#: marker_fm.R:35 marker_fm.R:77
+msgid "for the FM-index genome scan"
+msgstr ""
+
+#: marker_fm.R:38
+msgid "Reusing the existing FM-index at {.path {basename}}."
+msgstr ""
+
+#: marker_fm.R:49
+msgid "Building a Subread FM-index at {.path {basename}} (one-off)."
+msgstr ""
+
+#: marker_fm.R:78
+msgid "to read the alignments"
+msgstr ""
+
+#: marker_genome.R:75
+msgid "for a BSgenome genome source"
+msgstr ""
+
+#: marker_genome.R:77
+msgid "for the BSgenome genome source"
+msgstr ""
+
+#: marker_genome.R:150 marker_genome.R:175
+msgid "Unknown sequence: {chrom}"
+msgstr ""
+
+#: marker_haplotypes.R:29
+msgid "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_haplotypes.R:45
+msgid "`freq` must be one value in [0, 1] per haplotype."
+msgstr ""
+
+#: marker_hrm.R:53
+msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
+msgstr ""
+
+#: marker_hrm.R:94
+msgid "`marker` must be a marker_hrm object (see design_hrm_marker())."
+msgstr ""
+
+#: marker_indel_size.R:71
+msgid "Not an InDel size polymorphism: `ref` and `alt` are the same length."
+msgstr ""
+
+#: marker_indel_size.R:76
+msgid ""
+"The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a "
+"longer indel."
+msgstr ""
+
+#: marker_indel_size.R:91
+msgid ""
+"No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
+msgstr ""
+
+#: marker_io.R:62
+msgid "VCF not found: {path}"
+msgstr ""
+
+#: marker_io.R:91
+msgid "to read large VCF files"
+msgstr ""
+
+#: marker_io.R:94
+msgid "{path} has no '#CHROM' header line."
+msgstr ""
+
+#: marker_io.R:120
+msgid "for the readVcf backend"
+msgstr ""
+
+#: marker_io.R:159
+msgid "for indexed FASTA random access"
+msgstr ""
+
+#: marker_io.R:160 marker_io.R:244
+msgid "FASTA not found: {path}"
+msgstr ""
+
+#: marker_io.R:163
+msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
+msgstr ""
+
+#: marker_io.R:218
+msgid "Bundled example data not found."
+msgstr ""
+
+#: marker_lamp.R:206
+msgid ""
+"No FIP/BIP inner primer pair passed the loop/Tm/structure filters for LAMP."
+msgstr ""
+
+#: marker_lamp.R:221
+msgid ""
+"No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for "
+"LAMP."
+msgstr ""
+
+#: marker_lamp.R:230
+msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
+msgstr ""
+
+#: marker_lax.R:62
+msgid "No ALT haplotype carries the target allele; nothing to design."
+msgstr ""
+
+#: marker_mix.R:46
+msgid ""
+"Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} "
+"uM stock."
+msgstr ""
+
+#: marker_mix.R:48
+msgid "Raise `stock_uM` or lower the targets."
+msgstr ""
+
+#: marker_mix.R:66
+msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
+msgstr ""
+
+#: marker_object.R:137 marker_strategy.R:91
+msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+msgstr ""
+
+#: marker_object.R:192
+msgid "Designing KASP markers"
+msgstr ""
+
+#: marker_rpa.R:284
+msgid ""
+"RPA discrimination here is implemented for single-base substitutions only."
+msgstr ""
+
+#: marker_rpa.R:295
+msgid "No RPA primer pair passed the length/GC/amplicon filters."
+msgstr ""
+
+#: marker_rpa.R:299
+msgid "The RPA primer pair failed the structure/dimer filters."
+msgstr ""
+
+#: marker_rpa.R:306
+msgid "No exo probe covering the variant passed the geometry filters."
+msgstr ""
+
+#: marker_rprimer.R:31
+msgid "`seqs` must be equal length (an ungapped alignment)."
+msgstr ""
+
+#: marker_rprimer.R:58
+msgid "for an independent oligo-design cross-check"
+msgstr ""
+
+#: marker_sanger.R:109
+msgid "No flanking pair kept the variant clear of both read starts for Sanger."
+msgstr ""
+
+#: marker_sanger.R:115
+msgid ""
+"The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
+msgstr ""
+
+#: marker_scan.R:45 marker_scan.R:85
+msgid "for the indexed genome scan"
+msgstr ""
+
+#: marker_scan.R:47
+msgid "NCBI BLAST+ ('blastn'/'makeblastdb') was not found."
+msgstr ""
+
+#: marker_scan.R:48 marker_scan.R:89
+msgid ""
+"Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast "
+"(macOS)."
+msgstr ""
+
+#: marker_scan.R:49 marker_scan.R:90
+msgid "On Windows run the NCBI BLAST+ installer."
+msgstr ""
+
+#: marker_scan.R:50 marker_scan.R:92
+msgid ""
+"Or point the package at an existing build with options(tidymarkers.blast = )."
+msgstr ""
+
+#: marker_scan.R:88
+msgid "No NCBI BLAST+ found (has_blast() is FALSE)."
+msgstr ""
+
+#: marker_scan.R:91
+msgid "Or use specificity_seed() on an in-memory genome."
+msgstr ""
+
+#: marker_scan.R:109
+msgid ""
+"Could not open a BLAST database at {db_path} (build it with "
+"marker_blast_index())."
+msgstr ""
+
+#: marker_scan.R:165
+msgid "This indexed genome has no BLAST database attached."
+msgstr ""
+
+#: marker_scan.R:166
+msgid "Build one with marker_blast_index(genome) and pass it as `blast_db=`."
+msgstr ""
+
+#: marker_schemes.R:109
+msgid "Unknown marker scheme {scheme}; see marker_schemes()."
+msgstr ""
+
+#: marker_screen.R:54
+msgid "`variants` needs `chrom` and `pos` columns."
+msgstr ""
+
+#: marker_screen.R:204
+msgid "`screen` is empty."
+msgstr ""
+
+#: marker_search_anim.R:299
+msgid ""
+"Design-search animation written to {.path {path}} ({length(pngs)} frames)."
+msgstr ""
+
+#: marker_search_anim.R:331
+msgid "No GIF assembler available (ImageMagick not found)."
+msgstr ""
+
+#: marker_search_anim.R:332
+msgid ""
+"Install it: apt-get install imagemagick (Debian/Ubuntu), brew install "
+"imagemagick (macOS)."
+msgstr ""
+
+#: marker_search_anim.R:333
+msgid "Or assemble the `pngs` yourself (e.g. with gifski)."
+msgstr ""
+
+#: marker_search_anim.R:343
+msgid "ImageMagick failed: {res$stderr}"
+msgstr ""
+
+#: marker_select.R:437
+msgid ""
+"No assay cleared every hard constraint; returned the least-bad after "
+"relaxing some."
+msgstr ""
+
+#: marker_snapshot.R:100
+msgid ""
+"SNaPshot single-base extension is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: marker_snapshot.R:109
+msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
+msgstr ""
+
+#: marker_snapshot.R:123
+msgid ""
+"No extension primer ended immediately 5' of the variant within the Tm/GC "
+"filters."
+msgstr ""
+
+#: marker_specificity.R:34
+msgid "specificity_seed() needs an in-memory DNAStringSet."
+msgstr ""
+
+#: marker_specificity.R:35
+msgid "For an indexed genome use specificity_of()/specificity_blast()."
+msgstr ""
+
+#: marker_specificity.R:228
+msgid "BLAST failed: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_ssr.R:116
+msgid "No SSR / microsatellite repeat found in the flanking window."
+msgstr ""
+
+#: marker_ssr.R:129
+msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
+msgstr ""
+
+#: marker_strategy.R:55
+msgid ""
+"Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see "
+"marker_schemes()."
+msgstr ""
+
+#: marker_taqman.R:108
+msgid ""
+"TaqMan allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+
+#: marker_taqman.R:117
+msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
+msgstr ""
+
+#: marker_taqman.R:128
+msgid "No composition- and position-clean hydrolysis probe passed the filters."
+msgstr ""
+
+#: marker_target.R:51
+msgid ""
+"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_target.R:53 marker_target.R:103
+msgid "The Ensembl REST schema may have changed."
+msgstr ""
+
+#: marker_target.R:101
+msgid ""
+"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
+"', ')}."
+msgstr ""
+
+#: marker_target.R:285
+msgid "No usable substitution variant (SNP/MNP) left after filtering."
+msgstr ""
+
+#: marker_target.R:388
+msgid ""
+"No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
+msgstr ""
+
+#: marker_target.R:389
+msgid "returning the best-ranked target, whose design may be doomed."
+msgstr ""
+
+#: marker_thermo.R:184
+msgid "Directory not found: {path}"
+msgstr ""
+
+#: marker_thermo.R:258
+msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
+msgstr ""
+
+#: marker_thermo.R:259
+msgid ""
+"run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
+msgstr ""
+
+#: marker_tools.R:175
+msgid "'{command}' failed (status {status})."
+msgstr ""
+
+#: marker_tools.R:209
+msgid "OligoArrayAux is already installed in {.path {dest}}."
+msgstr ""
+
+#: marker_tools.R:212
+msgid "Download and build OligoArrayAux into the user cache?"
+msgstr ""
+
+#: marker_tools.R:213
+msgid "Cancelled; nothing was downloaded."
+msgstr ""
+
+#: marker_tools.R:219
+msgid "'make' was not found on the PATH."
+msgstr ""
+
+#: marker_tools.R:220
+msgid "On Windows install Rtools; on Unix install your build tools."
+msgstr ""
+
+#: marker_tools.R:225
+msgid "No C compiler (cc/gcc/clang) was found on the PATH."
+msgstr ""
+
+#: marker_tools.R:226
+msgid "On Windows install Rtools; on Unix install a compiler."
+msgstr ""
+
+#: marker_tools.R:235
+msgid "Downloading OligoArrayAux {version} ..."
+msgstr ""
+
+#: marker_tools.R:240
+msgid "No sha256 tool found; skipping the checksum."
+msgstr ""
+
+#: marker_tools.R:242
+msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
+msgstr ""
+
+#: marker_tools.R:248
+msgid "Configuring and building OligoArrayAux (this takes a minute) ..."
+msgstr ""
+
+#: marker_tools.R:253
+msgid "Building on Windows needs 'bash' (Rtools/MSYS2) on the PATH."
+msgstr ""
+
+#: marker_tools.R:254
+msgid "Install Rtools, or build OligoArrayAux by hand."
+msgstr ""
+
+#: marker_tools.R:269
+msgid "The build finished but hybrid-min did not return a dG."
+msgstr ""
+
+#: marker_tools.R:271
+msgid "OligoArrayAux installed in {.path {dest}}."
+msgstr ""

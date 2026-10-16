@@ -26,7 +26,7 @@ make_assay <- function(seed = 4L, n = 20000L, pos = 10000L) {
     )
     vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant")
     a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error") && !inherits(a, "kasp_doomed")) {
+    if (!inherits(a, "try-error") && !inherits(a, "marker_doomed")) {
       return(list(assay = a, snp = snp, variants = vs, genome = genome))
     }
   }
