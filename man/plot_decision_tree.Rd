@@ -4,12 +4,13 @@
 \alias{plot_decision_tree}
 \title{Draw the selection decision tree}
 \usage{
-plot_decision_tree(x = NULL, scheme = "snp")
+plot_decision_tree(x = NULL, scheme = NULL)
 }
 \arguments{
 \item{x}{an assembled assay, a \code{kasp_decision_graph()} result, or \code{NULL}.}
 
-\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}) for the bare schema.}
+\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}) for the bare schema; \code{NULL}
+(the default) uses the assay's own \verb{$scheme} for an assay, else \code{"snp"}.}
 }
 \value{
 a \code{ggraph}/\code{ggplot} object.

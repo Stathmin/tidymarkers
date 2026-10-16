@@ -39,17 +39,21 @@ read start / primer binding site).}
 \item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
 }
 \value{
-a \code{kasp_sanger} list (\code{snp}, \code{primers}, \code{amplicon}), or \code{NULL} (with a
-message) when no unique pair passes the filters.
+a \code{kasp_sanger} list (\code{snp}, \code{primers}, \code{amplicon}, \code{seq_primers},
+\code{selection}), or \code{NULL} (with a message) when no unique pair passes the
+gates.
 }
 \description{
 The amplicon analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a single flanking pair
 delimits a ~400-800 bp product, the variant sits at least \code{min_dist} bp
 inside both ends (clear of the low-quality read lead and of either primer),
-and the pair is checked for genome-wide uniqueness with \code{\link[=in_silico_pcr]{in_silico_pcr()}}.
-There is no allele-specific primer - Sanger reads the variant directly - so
-the design optimises the amplicon window, the variant placement and the Tm
-balance, then gates on off-target uniqueness.
+the pair is checked for genome-wide uniqueness with \code{\link[=in_silico_pcr]{in_silico_pcr()}}, and the
+sequencing primers that read into the variant are returned.  There is no
+allele-specific primer - Sanger reads the variant directly - so the design
+optimises the amplicon window, the variant placement and the Tm balance, then
+gates on the primer quality and off-target uniqueness.  Every gate the scheme
+declares is evaluated here (C7); a soft one may be relaxed to its floor, in the
+declared order, and the result records which were (\verb{$selection}).
 }
 \details{
 It does \strong{not} simulate the chromatogram, so it returns a well-formed,

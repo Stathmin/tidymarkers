@@ -15,10 +15,19 @@
 #  in step.  The marker-agnostic primer checks (Tm, GC, runs, repeats, dimers,
 #  off-targets) belong to every scheme - including a bare `"primer"` scheme that
 #  is *not* a KASP at all but the reusable "any primer pair" core.
+#
+#  Membership is decided by the scheme's `family`, not by hand: the acceptance
+#  checks fall into three classes (marker-agnostic, KASP-selector *site*, and
+#  allele-specific) and KASP_FAMILY_CHECKS says which classes a chemistry obeys.
+#  So a non-KASP chemistry (PROBE/LAMP/CRISPR/Sanger/...) never inherits the
+#  AS/COM/3'-window/discrimination checks that only make sense with an
+#  allele-anchoring primer - the bug C2 fixes.
 # =============================================================================
 
-# Which chemistries a criterion serves.  `primer` is the marker-agnostic core
-# (any PCR primer pair); the rest are allele-specific assays that inherit it.
+# Scheme groups.  `primer` is the marker-agnostic core (any PCR primer pair);
+# `KASP_SCHEME_CORE` is the built-in set whose selector runs the `as` / `pair`
+# stages.  Check *membership* is family-based (see KASP_FAMILY_CHECKS below), so
+# these vectors only group schemes that share a stage.
 KASP_SCHEME_PRIMER <- "primer"
 KASP_SCHEME_KASP <- c("snp", "indel", "multi")
 KASP_SCHEME_CAPS <- "caps"
@@ -41,14 +50,63 @@ KASP_CHECK_PRIMER <- c(
   "off-target exact primer hits (n)"
 )
 
+# The 5 target-*site* checks: the KASP *selector* notions - the ALT-allele set,
+# how many of them the ALT primer covers, and whether the design leans on linkage
+# (multi / lax).  They apply only to a chemistry whose selector models an ALT
+# primer and linkage, never to a probe/LAMP/CRISPR/flanking-pair assay.
+KASP_CHECK_SITE <- c(
+  "target site class", "ALT alleles (n)", "linked variants skipped (n)",
+  "ALT primer covers all ALTs", "design relies on linkage"
+)
+
+# The 9 allele-specific assay checks: they read the AS primer (its Tm ordering,
+# its 3' window / footprint) and the allele-specific in-silico PCR, so they apply
+# only to a chemistry that actually has an allele-anchoring primer.  The three
+# classes partition the 26 registered checks (test-criteria guards that).
+KASP_CHECK_AS <- c(
+  "COM Tm >= AS Tm",
+  "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
+  "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout",
+  "discrimination", "in-silico PCR (REF 1 / ALT 0)"
+)
+
+# family -> the non-primer check classes that chemistry obeys.  Keyed by `family`
+# (not by scheme), so a discovered chemistry inherits its family's set with no
+# per-scheme edit here.  `site` = the KASP ALT-primer/linkage selector applies
+# (the `as`/`pair` stages, plus the discovered `kasp` family such as `lax`);
+# `as` = the chemistry has an allele-anchoring primer (`kasp`/`multiplex`/`asq`
+# and castPCR's 3'-terminal AS primer).  Everything else is the marker-agnostic
+# primer subset only.
+KASP_FAMILY_CHECKS <- list(
+  primer = character(0),
+  kasp = c("site", "as"),
+  multiplex = c("site", "as"),
+  asq = c("site", "as"),
+  castpcr = c("site", "as"),
+  caps = character(0),
+  arms = character(0),
+  hrm = character(0),
+  crispr = character(0),
+  dpcr = character(0),
+  indel_size = character(0),
+  lamp = character(0),
+  rpa = character(0),
+  sanger = character(0),
+  snapshot = character(0),
+  ssr = character(0),
+  taqman = character(0)
+)
+
 #' The marker chemistries this package can describe
 #'
 #' One row per chemistry: how it tells the alleles apart, how the signal is read,
 #' the zygosity it can call, whether amplicon length is critical, and how many
 #' loci share a reaction.  Each scheme is realised in the pipeline as a piece of
-#' the decision schema ([kasp_decision_schema()]): the marker-agnostic primer
-#' checks are shared by all of them, the allele-specific stages by
-#' `family != "primer"`, and a duplex chemistry adds its compatibility stage.
+#' the decision schema ([kasp_decision_schema()]): every scheme carries the
+#' marker-agnostic primer checks, and the allele-specific / target-site checks
+#' follow the scheme's `family` (see `KASP_FAMILY_CHECKS`), so a non-KASP
+#' chemistry is never graded on an AS primer it does not have.  A duplex
+#' chemistry adds its compatibility stage.
 #'
 #' The `"primer"` scheme is deliberately **not** a KASP: it is the reusable
 #' "any primer pair" subset (composition, structure, repeats, off-targets),
@@ -70,10 +128,10 @@ kasp_schemes <- function() {
     "3'-terminal base + FRET ratio", "co-dominant two-colour", "co-dominant", "critical", 1L,
     "usable KASP assay",
     "indel", "kasp", "indel KASP",
-    "allele-specific amplicon length", "co-dominant two-colour", "co-dominant", "critical", 1L,
+    "3'-terminal junction base + FRET ratio", "co-dominant two-colour", "co-dominant", "critical", 1L,
     "usable KASP assay",
     "multi", "kasp", "multi-allelic / degenerate KASP",
-    "3'-terminal IUPAC code over the ALT set", "co-dominant two-colour", "co-dominant", "critical", 1L,
+    "3'-terminal IUPAC code over the ALT set", "co-dominant two-colour", "co-dominant (REF vs non-REF)", "critical", 1L,
     "usable KASP assay",
     "duplex", "multiplex", "duplex KASP (dKASP / mxKASP / Multi-KASP)",
     "two independent loci in one tube", "two cassettes (or presence/absence)",
@@ -90,7 +148,7 @@ kasp_schemes <- function() {
     "co-dominant", "bounded", 1L, "usable ARMS marker",
     "hrm", "hrm", "HRM (high-resolution melting)",
     "amplicon melting curve (neighbour-tolerant)", "melt curve", "co-dominant",
-    "short (<= 150 bp)", 1L, "usable HRM amplicon"
+    "short (50-100 bp)", 1L, "usable HRM amplicon"
   )
   # discovered schemes (R/kasp_<scheme>.R via scheme_def_*()) are appended here,
   # so a new chemistry is one file, not an edit to this registry
@@ -112,11 +170,32 @@ kasp_scheme <- function(scheme = "snp") {
 }
 
 #' The schemes each check applies to (a list, one element per label)
+#'
+#' Membership is family-based ([KASP_FAMILY_CHECKS]): a `KASP_CHECK_PRIMER`
+#' criterion belongs to every scheme, a `KASP_CHECK_SITE` criterion to the
+#' families whose selector models the ALT-allele set / linkage, and a
+#' `KASP_CHECK_AS` criterion to the families with an allele-anchoring primer.  A
+#' discovered scheme is tagged from its `family`, never per-scheme, so a new
+#' chemistry is one row in `KASP_FAMILY_CHECKS`.
+#' @param label the check labels (see [kasp_criteria()]).
+#' @return a list of scheme-id vectors, one per label.
 #' @keywords internal
 #' @noRd
 check_schemes <- function(label) {
-  extra <- names(extra_scheme_defs())
-  out <- rep(list(c(KASP_SCHEME_CORE, extra)), length(label))
-  out[label %in% KASP_CHECK_PRIMER] <- list(c(KASP_SCHEME_ALL, extra))
-  out
+  s <- kasp_schemes()
+  family <- function(f) KASP_FAMILY_CHECKS[[f]] %||% character(0)
+  in_class <- function(cls) {
+    s$scheme[vapply(s$family, function(f) cls %in% family(f), logical(1))]
+  }
+  lapply(label, function(l) {
+    if (l %in% KASP_CHECK_PRIMER) {
+      s$scheme
+    } else if (l %in% KASP_CHECK_SITE) {
+      in_class("site")
+    } else if (l %in% KASP_CHECK_AS) {
+      in_class("as")
+    } else {
+      character(0)
+    }
+  })
 }

@@ -50,7 +50,15 @@ kasp_snp_alts <- function(snp) {
     if ("alt2" %in% names(snp)) as.character(snp$alt2) else character(0)
   ))
   alts_in <- alts_in[!is.na(alts_in) & nzchar(alts_in)]
-  snp_alts <- unique(alts_in[nchar(alts_in) == 1L & grepl("^[ACGT]$", alts_in)])
+  # An "ALT" that is the REF base is not an ALT.  If it were kept, REF would enter
+  # the degenerate 3' code and the "ALT" primer would also extend the reference
+  # template - i.e. discriminate nothing - so it is dropped from the consensus
+  # set (kasp_site_class() excludes it the same way).  alts_in itself is left
+  # untouched, so the single-ALT fallback and `is_indel` are unchanged.
+  snp_alts <- setdiff(
+    unique(alts_in[nchar(alts_in) == 1L & grepl("^[ACGT]$", alts_in)]),
+    snp$ref
+  )
   degenerate <- length(snp_alts) > 1L && length(snp_alts) == length(alts_in)
   alt_pass <- if (degenerate) snp_alts else alts_in[1L]
   if (length(alts_in) > 1L) snp$alt <- alts_in[1L]
@@ -196,10 +204,18 @@ kasp_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_r
         as_end = .data$tmpl_end + off - 1L,
         as_alt_start = .data$as_start,
         as_alt_end = .data$as_end,
-        wobble = wobble_mismatch(snp$ref, snp$alt)
+        # the wobble is a property of the 3'-terminal allele pair, so at a
+        # degenerate (multi-allelic) site it is the WORST case over every ALT:
+        # if any ALT the primer must bind forms a weak G:T / A:C terminal pair
+        # with REF, the ALT primer discriminates poorly there.
+        wobble = any(wobble_mismatch(snp$ref, alt_pass))
       )
     if (nrow(as_cand) == 0L) {
       return(kasp_doomed(gettext("No AS primer passed the homopolymer/SSR filter."), "as", snp, tmpl))
+    }
+    as_cand <- kasp_degenerate_alt_gate(as_cand, alt_pass, snp, tmpl)
+    if (is_kasp_doomed(as_cand)) {
+      return(as_cand)
     }
   } else {
     ind <- design_as_primers_indel(
@@ -242,7 +258,21 @@ kasp_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_r
         discrimination = (.data$discrimination_ref + .data$discrimination_alt) / 2,
         tm = .data$tm_ref, gc = .data$gc_ref,
         dg_3p = terminal_dg(.data$primer_ref),
-        wobble = NA, # undefined for length-changing alleles
+        # A length change has no substitution wobble, so the substitution flag is
+        # only defined when the two AS primers are the SAME length: then the
+        # junction differs by a single 3'-terminal base (a substitution-like
+        # junction) and the usual G:T / A:C rule applies.  A length-differing pair
+        # mismatches by a bulge, not a wobble, so it is not flagged.
+        # `wobble_mismatch()` reads plus-strand alleles, so a '-' primer's 3' base
+        # is normalised to its plus-strand allele first.
+        wobble = dplyr::if_else(
+          nchar(.data$primer_ref) == nchar(.data$primer_alt),
+          wobble_mismatch(
+            plus_3p_base(.data$primer_alt, .data$strand),
+            plus_3p_base(.data$primer_ref, .data$strand)
+          ),
+          FALSE
+        ),
         as_start = .data$as_start_ref + off - 1L,
         as_end = .data$as_end_ref + off - 1L,
         as_alt_start = alt_to_ref(.data$as_start_alt) + off - 1L,
@@ -252,7 +282,37 @@ kasp_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_r
   as_cand
 }
 
-#' AS 3'-window and footprint metrics (variant load + expected dropout)
+#' Doom a multi-allelic design whose ALT primer is not the ALT-set consensus
+#'
+#' At a degenerate (all-SNP multi-allelic) site one physical ALT primer must bind
+#' every ALT, so its 3'-terminal base has to be the IUPAC code over the whole ALT
+#' set ([iupac_code()]) and must not also match REF (an "ALT" primer that extends
+#' the reference template discriminates nothing).  The engine carries that
+#' consensus in `alt_degen`; this verifies it instead of trusting it, so a site
+#' whose ALT set no single primer can cover is *doomed* rather than returned as a
+#' single-ALT primer that claims full coverage.
+#' @param as_cand the AS candidate table (see `kasp_as_candidates()`).
+#' @param alt_pass the ALT allele(s) the primer must bind.
+#' @param snp,tmpl the target and template (for the doomed record).
+#' @return `as_cand`, or a `kasp_doomed` object when no candidate carries the code.
+#' @keywords internal
+#' @noRd
+kasp_degenerate_alt_gate <- function(as_cand, alt_pass, snp, tmpl) {
+  if (length(alt_pass) < 2L) {
+    return(as_cand) # a biallelic site has one ALT: nothing to cover
+  }
+  code <- iupac_code(alt_pass)
+  members <- if (is.na(code)) NA_character_ else Biostrings::IUPAC_CODE_MAP[[code]]
+  last <- substr(as_cand$alt_degen, nchar(as_cand$alt_degen), nchar(as_cand$alt_degen))
+  ok <- !is.na(members) & last == code & !grepl(snp$ref, members, fixed = TRUE)
+  if (!any(ok)) {
+    return(kasp_doomed(
+      gettext("No ALT primer's 3' code is the consensus of every ALT."),
+      "as", snp, tmpl, as_cand
+    ))
+  }
+  as_cand[ok, , drop = FALSE]
+}
 #'
 #' Adds `n_3p`/`n_var`/`w_var` and the expected `as_dropout`/`as_foot_dropout`,
 #' then applies the optional hard `max_footprint_variants` cap.  Returns the
@@ -477,6 +537,10 @@ kasp_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   carries `haplotypes` and a per-haplotype `haplotype_hits` table (which AS
 #'   primer each is expected to bind).
 #' @param min_gc,max_gc accepted AS GC window.
+#' @param scheme the marker chemistry this assay is assembled *as* (see
+#'   [kasp_schemes()]): stored on the object, and used to build the matching
+#'   decision graph and to grade the acceptance checks, so a scheme never shows
+#'   (or is graded by) another chemistry's tree (C12).
 #' @family KASP design
 #' @export
 assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
@@ -487,6 +551,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 min_disc = 0.5, specificity_candidates = 10L,
                                 pair_screen = 3L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
+                                scheme = "snp",
                                 cores = getOption("tidykasp.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- kasp_bpparam(cores)
   # one-line install UX: a missing tool is a hint (once per session), not a silent NA
@@ -603,6 +668,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         .data$com, .data$com_start, .data$com_end,
         .data$strand != "+", .data$n_var, vblock
       ),
+      # the COM primer's 3'-terminal dG37 (README section 3: a low 3'-end
+      # stability), ranked by the pair stage's "COM 3' end weakness" tier
+      com_dg_3p = terminal_dg(.data$com, BPPARAM = BPPARAM),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
       as_alt_degen = best_as$alt_degen, as_dropout = best_as$as_dropout,
       as_foot_dropout = best_as$as_foot_dropout,
@@ -736,6 +804,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
 
   out <- list(
+    scheme = scheme,
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
@@ -827,9 +896,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   out$evaluation <- tryCatch(kasp_design_checks(out), error = function(e) NULL)
   # structural / specificity checks that the selection gates do not cover (they
   # need the genome or a PCR pass, computed only after the pair is chosen):
-  # rather than return an ugly assay in silence, name the failures
+  # rather than return an ugly assay in silence, name the failures.  Which checks
+  # those are is per-scheme (C10) - a scheme that already gates one is not told
+  # it is ungated.
   if (!is.null(out$evaluation)) {
-    hit <- !out$evaluation$pass & out$evaluation$criterion %in% KASP_UNGATED_CHECKS
+    ungated <- KASP_UNGATED_CHECKS(scheme)
+    hit <- !out$evaluation$pass & out$evaluation$criterion %in% ungated
     bad <- out$evaluation$criterion[hit]
     if (length(bad)) {
       cli::cli_warn(c(
@@ -840,8 +912,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       ))
     }
   }
-  # the selection policy as a graph, with this assay's runtime status stamped on
-  out$decision <- tryCatch(kasp_decision_graph(out),
+  # the selection policy of *this* scheme as a graph, with the assay's runtime
+  # status stamped on (C12); the object carries the scheme, so a plot or a report
+  # can rebuild/match it without guessing
+  out$decision <- tryCatch(kasp_decision_graph(out, scheme = scheme),
     error = function(e) NULL
   )
   structure(out, class = "kasp_assay")

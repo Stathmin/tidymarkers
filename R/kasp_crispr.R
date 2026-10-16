@@ -33,8 +33,17 @@
 #     bounded window (80-250 bp) rather than a single value.
 #
 #  Assumptions stated where the literature does not fix a number: the guide GC
-#  window (0.35-0.65, around the common 40-60% ideal) and the Cas13 "critical"
-#  region (the central half of the spacer, the least mismatch-tolerant region).
+#  window (0.35-0.65, around the common 40-60% ideal), the Cas13 "critical"
+#  region (the central half of the spacer, the least mismatch-tolerant region),
+#  and the pre-amplification pair's own windows (RPA or LAMP, never a KASP PCR).
+#
+#  Discrimination, spelled out: the guide is matched to ONE allele and mismatched
+#  to the other, so the variant must sit where a single mismatch abolishes
+#  activation - the PAM-proximal seed for Cas12a, the central critical region for
+#  Cas13 - and the assay must not be licensed by an off-target protospacer
+#  elsewhere in the genome (a second full-match spacer would fire on the wrong
+#  template).  The pre-amplification is allele-blind (it copies both alleles), so
+#  it is graded only on its own chemistry's composition - never on KASP Tm/GC.
 # =============================================================================
 
 #' Candidate guide spacers covering a variant
@@ -109,19 +118,56 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
   )
 }
 
+#' Genome-wide exact hits of a guide spacer (both strands)
+#'
+#' A guide is specific only when its protospacer occurs once - the on-target
+#' locus.  Any other exact hit is a full-match off-target a Cas effector could be
+#' licensed by, so it is counted.  Exact matching (no seed mismatch) is used on
+#' purpose: a single-mismatch count in a 100+ Mb genome is dominated by chance and
+#' would not mean a real off-target protospacer.
+#' @param spacer the guide spacer (5'->3').
+#' @param genome a `kasp_genome` or `DNAStringSet`.
+#' @param BPPARAM optional `BiocParallel` backend (one task per chromosome).
+#' @return the both-strand hit count (integer), or `NA` when uncomputable.
+#' @keywords internal
+#' @noRd
+crispr_spacer_hits <- function(spacer, genome, BPPARAM = NULL) {
+  if (is.null(genome) || length(spacer) != 1L || is.na(spacer) || !nzchar(spacer)) {
+    return(NA_integer_)
+  }
+  fwd <- Biostrings::DNAString(spacer)
+  rev <- Biostrings::reverseComplement(fwd)
+  count_chr <- function(nm) {
+    chr <- genome_seq(genome, nm)
+    as.integer(Biostrings::countPattern(fwd, chr) + Biostrings::countPattern(rev, chr))
+  }
+  chroms <- genome_chroms(genome)
+  hits <- if (is.null(BPPARAM)) {
+    lapply(chroms, count_chr)
+  } else {
+    bp_lapply(chroms, count_chr, BPPARAM)
+  }
+  as.integer(sum(unlist(hits)))
+}
+
 #' Design a CRISPR-Dx (SHERLOCK / DETECTR) marker at a variant
 #'
 #' The Cas-mediated detection analogue of [assemble_kasp_assay()]: an isothermal
 #' pre-amplification pair (RPA / LAMP) straddles the variant and a guide RNA is
 #' placed so its spacer covers the variant, with the variant in the seed or
 #' critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer; Cas13
-#' is PAM-free.  The collateral-cleavage readout itself is not simulated, so this
+#' is PAM-free.  The guide must also be unique in the genome (no off-target
+#' protospacer).  The collateral-cleavage readout itself is not simulated, so this
 #' returns a well-formed guide plus its pre-amplification amplicon, not a
 #' predicted signal.
 #'
 #' The guide is chosen best-first among all candidates whose pre-amplification
-#' pair also passes the Tm/GC filters, so a guide is only returned when its
-#' amplicon is designable too.
+#' pair also passes *that chemistry's* composition filters (RPA or LAMP, never a
+#' KASP PCR), so a guide is only returned when its amplicon is designable too.
+#' The soft gates (amplicon window, GC, spacer length, off-target count) are
+#' relaxed one at a time, least grave first, only when no guide clears them all;
+#' the PAM (Cas12a) and the seed/critical region are hard - no guide is returned
+#' past them.
 #' @param genome a `kasp_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
@@ -134,12 +180,17 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
 #'   the caller's to validate.
 #' @param spacer_lengths guide spacer lengths to try (default: 20-23 nt for
 #'   Cas12a, 22-28 nt for Cas13).
-#' @param gc_range accepted guide GC window.
+#' @param gc_range accepted guide GC window (default 0.35-0.65).
+#' @param specificity_max accepted number of off-target protospacers (exact
+#'   genome hits of the spacer beyond the on-target locus; default 0).
+#' @param preamp the isothermal pre-amplification the guide rides on, `"rpa"`
+#'   (default) or `"lamp"`; it sets that pair's length / Tm / GC windows.
 #' @param min_product,max_product accepted pre-amplification amplicon window.
-#' @param ... reserved for future options.
+#' @param BPPARAM optional `BiocParallel` backend for the guide-specificity scan.
 #' @return a `kasp_crispr` list (`snp`, `cas`, `strand`, `guide`, `pam`,
-#'   `guide_start`, `guide_end`, `seed_offset`, `gc`, `amplicon`), or `NULL`
-#'   (with a message) when no guide / amplicon passes the filters.
+#'   `guide_start`, `guide_end`, `seed_offset`, `gc`, `amplicon`, `off_target`,
+#'   `gates`, `relaxed`), or `NULL` (with a message) when no guide / amplicon
+#'   passes the hard gates.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -151,40 +202,97 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
 design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "cas13"),
                                  strand = c("both", "+", "-"),
                                  spacer_lengths = NULL, gc_range = NULL,
-                                 min_product = 80L, max_product = 250L, ...) {
+                                 specificity_max = 0L,
+                                 preamp = c("rpa", "lamp"),
+                                 min_product = 80L, max_product = 250L,
+                                 BPPARAM = NULL) {
   cas <- match.arg(cas)
   strand <- match.arg(strand)
+  preamp <- match.arg(preamp)
   strands <- if (identical(strand, "both")) c("+", "-") else strand
-  if (is.null(spacer_lengths)) {
-    spacer_lengths <- if (identical(cas, "cas12a")) 20:23 else 22:28
+  strict_spacer <- if (is.null(spacer_lengths)) {
+    if (identical(cas, "cas12a")) 20:23 else 22:28
+  } else {
+    as.integer(spacer_lengths)
   }
-  if (is.null(gc_range)) {
-    gc_range <- c(0.35, 0.65)
+  strict_gc <- gc_range %||% c(0.35, 0.65)
+  # the relaxation floors (bounded; C8): a guide a little outside the ideal
+  # window still works, so these gates are soft, but never widened without bound.
+  relax_spacer <- seq.int(min(strict_spacer) - 2L, max(strict_spacer) + 2L)
+  relax_gc <- c(max(0, strict_gc[1L] - 0.10), min(1, strict_gc[2L] + 0.10))
+  # the pre-amplification is RPA or LAMP, so its pair is screened with THAT
+  # chemistry's length / Tm / GC windows - never KASP's PCR conditions.
+  pre <- if (identical(preamp, "rpa")) {
+    list(lengths = RPA_PRIMER_LEN, tm = RPA_NO_TM, gc = RPA_GC)
+  } else {
+    list(lengths = 21:24, tm = c(55, 62), gc = KASP_LIMITS$gc)
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
-  cand <- crispr_guide_candidates(tmpl$seq, tmpl$snp_i, cas, spacer_lengths, gc_range, strands)
-  if (!nrow(cand)) {
-    cli::cli_inform(gettext("No guide spacer passed the PAM / GC filters for this CRISPR-Dx marker."))
-    return(NULL)
-  }
   off <- snp$pos - tmpl$snp_i
-  # design pre-amplification pairs best-guide-first, stopping at the first that works
+  # the ladder to the first usable guide: relax the soft gates LEAST grave first
+  # (C6), one rung at a time.  PAM and seed are hard: a guide without a PAM
+  # (Cas12a) or with the variant outside the seed/critical region cannot be
+  # licensed to discriminate, so they are filtered by the enumeration and never
+  # relaxed.
+  rungs <- list(
+    character(0),
+    "gate_crispr_amplicon",
+    c("gate_crispr_amplicon", "gate_crispr_gc"),
+    c("gate_crispr_amplicon", "gate_crispr_gc", "gate_crispr_spacer"),
+    c("gate_crispr_amplicon", "gate_crispr_gc", "gate_crispr_spacer", "gate_crispr_specificity")
+  )
+  attempt <- function(relaxed) {
+    sl <- if ("gate_crispr_spacer" %in% relaxed) relax_spacer else strict_spacer
+    gl <- if ("gate_crispr_gc" %in% relaxed) relax_gc else strict_gc
+    spec_max <- if ("gate_crispr_specificity" %in% relaxed) specificity_max + 1L else specificity_max
+    amp_lo <- if ("gate_crispr_amplicon" %in% relaxed) min_product - 20L else min_product
+    amp_hi <- if ("gate_crispr_amplicon" %in% relaxed) max_product + 20L else max_product
+    cand <- crispr_guide_candidates(tmpl$seq, tmpl$snp_i, cas, sl, gl, strands)
+    if (!nrow(cand)) {
+      return(NULL)
+    }
+    for (i in seq_len(nrow(cand))) {
+      hits <- crispr_spacer_hits(cand$spacer[i], genome, BPPARAM)
+      if (!is.na(hits) && (hits - 1L) > spec_max) next # an off-target protospacer
+      amp <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
+        lengths = pre$lengths, min_product = amp_lo, max_product = amp_hi,
+        tm_range = pre$tm, gc_range = pre$gc
+      )
+      if (!is.null(amp)) {
+        return(list(row = cand[i, ], amp = amp, hits = hits))
+      }
+    }
+    NULL
+  }
   pick <- NULL
-  for (i in seq_len(nrow(cand))) {
-    amp <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
-      min_product = min_product, max_product = max_product
-    )
-    if (!is.null(amp)) {
-      pick <- list(row = cand[i, ], amp = amp)
+  for (r in rungs) {
+    pick <- attempt(r)
+    if (!is.null(pick)) {
       break
     }
   }
   if (is.null(pick)) {
-    cli::cli_inform(gettext("A guide spacer was found, but no pre-amplification pair passed the Tm/GC filters."))
+    cli::cli_inform(gettext(
+      "No guide spacer passed the PAM / seed / specificity / GC filters with a pre-amplification pair."
+    ))
     return(NULL)
   }
   row <- pick$row
   amp <- pick$amp
+  off_target <- if (is.na(pick$hits)) NA_integer_ else pick$hits - 1L
+  # the gate table the DAG displays, evaluated on the guide actually returned (C7)
+  gates <- c(
+    gate_crispr_pam = if (identical(cas, "cas12a")) grepl("^TTT[ACG]$", row$pam) else NA,
+    gate_crispr_seed = TRUE, # enforced by the seed / central-window enumeration
+    gate_crispr_spacer = dplyr::between(row$len, min(strict_spacer), max(strict_spacer)),
+    gate_crispr_specificity = if (is.na(off_target)) NA else off_target <= specificity_max,
+    gate_crispr_gc = dplyr::between(row$gc, strict_gc[1L], strict_gc[2L]),
+    gate_crispr_amplicon = dplyr::between(amp$product, min_product, max_product)
+  )
+  soft <- c(
+    "gate_crispr_spacer", "gate_crispr_specificity", "gate_crispr_gc", "gate_crispr_amplicon"
+  )
+  relaxed <- soft[vapply(soft, function(g) isFALSE(gates[[g]]), logical(1))]
   out <- list(
     snp = snp,
     cas = cas,
@@ -195,6 +303,10 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
     guide_end = row$end + off,
     seed_offset = row$v_off,
     gc = row$gc,
+    preamp = preamp,
+    off_target = off_target,
+    gates = gates,
+    relaxed = relaxed,
     amplicon = list(
       forward = amp$forward, reverse = amp$reverse,
       start = amp$start + off, end = amp$end + off, product = amp$product
@@ -212,8 +324,13 @@ print.kasp_crispr <- function(x, ...) {
   )
   pam <- if (is.na(x$pam)) "PAM-free" else paste0("PAM ", x$pam)
   cat("  guide:", x$guide, "(", x$strand, ",", pam, ", seed offset", x$seed_offset, ")\n")
-  cat("  pre-amplification amplicon:", x$amplicon$product, "bp\n")
+  ot <- if (is.na(x$off_target)) "unscanned" else paste0(x$off_target, " off-target protospacer(s)")
+  cat("  specificity:", ot, "\n")
+  cat("  pre-amplification (", x$preamp, ") amplicon:", x$amplicon$product, "bp\n", sep = "")
   cat("  F:", x$amplicon$forward, "\n  R:", x$amplicon$reverse, "\n")
+  if (length(x$relaxed)) {
+    cat("  (relaxed:", paste(x$relaxed, collapse = ", "), ")\n")
+  }
   invisible(x)
 }
 
@@ -237,38 +354,48 @@ scheme_def_crispr <- function() {
     amplicon = "pre-amplified (RPA / LAMP)",
     loci = 1L,
     verdict = "usable CRISPR-Dx marker",
+    # the gate order the method applies (grave / cheap first): a guide is
+    # licensed by the PAM and the seed first, then its length, specificity, GC
+    # and finally the pre-amplification amplicon it rides on.
     gates = c(
-      "gate_crispr_spacer", "gate_crispr_pam", "gate_crispr_seed",
-      "gate_crispr_gc", "gate_crispr_amplicon"
+      "gate_crispr_pam", "gate_crispr_seed", "gate_crispr_spacer",
+      "gate_crispr_specificity", "gate_crispr_gc", "gate_crispr_amplicon"
     ),
-    relax = c("gate_crispr_spacer", "gate_crispr_gc", "gate_crispr_amplicon"),
+    relax = c(
+      "gate_crispr_amplicon", "gate_crispr_gc", "gate_crispr_spacer",
+      "gate_crispr_specificity"
+    ),
     tiers = c(
       guide = "guide / PAM quality",
       seed = "variant position in spacer",
+      specificity = "guide off-target count",
       amplicon = "amplicon length"
     ),
     gate_short = c(
-      gate_crispr_spacer = "spacer length",
-      gate_crispr_pam = "PAM (TTTV)",
+      gate_crispr_pam = "PAM (Cas12a)",
       gate_crispr_seed = "seed coverage",
+      gate_crispr_spacer = "spacer length",
+      gate_crispr_specificity = "guide specificity",
       gate_crispr_gc = "guide GC",
       gate_crispr_amplicon = "amplicon length"
     ),
     gate_limit = c(
+      gate_crispr_pam = "5'-TTTV adjacent (Cas12a); PAM-free (Cas13)",
+      gate_crispr_seed = "variant in the seed (Cas12a) / central region (Cas13)",
       gate_crispr_spacer = "20-23 nt (Cas12a) / 22-28 nt (Cas13)",
-      gate_crispr_pam = "5'-TTTV adjacent to the protospacer (Cas12a)",
-      gate_crispr_seed = "variant within the seed / central critical region",
+      gate_crispr_specificity = "no off-target protospacer (spacer hit count = 1)",
       gate_crispr_gc = "0.35-0.65",
       gate_crispr_amplicon = "80-250 bp (RPA / LAMP)"
     ),
     gate_floor_label = c(
-      gate_crispr_spacer = "widen the spacer length window",
+      gate_crispr_amplicon = "widen the amplicon window",
       gate_crispr_gc = "widen the GC window",
-      gate_crispr_amplicon = "widen the amplicon window"
+      gate_crispr_spacer = "widen the spacer length window",
+      gate_crispr_specificity = "allow one off-target protospacer"
     ),
     gate_hard_label = c(
       gate_crispr_pam = "no 5'-TTTV PAM = Cas12a cannot be licensed",
-      gate_crispr_seed = "a variant outside the seed is not discriminated"
+      gate_crispr_seed = "a variant outside the seed / critical region is not discriminated"
     ),
     stage_label = "CRISPR guide"
   )

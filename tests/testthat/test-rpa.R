@@ -72,7 +72,9 @@ test_that("scheme_def_rpa describes the chemistry's gates, tiers and stage", {
   expect_setequal(names(d$gate_limit), d$gates)
   expect_true(all(names(d$gate_floor_label) %in% d$relax))
   expect_true(all(names(d$gate_hard_label) %in% setdiff(d$gates, d$relax)))
-  expect_setequal(names(d$tiers), c("tier1", "tier2", "tier3"))
+  expect_setequal(names(d$tiers), c("tier1", "tier2", "tier3", "tier4"))
   expect_true(nzchar(d$stage_label))
   expect_equal(d$loci, 1L)
 })
+
+test_that("the rpa DAG obeys the contract", expect_dag_invariants("rpa"))

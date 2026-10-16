@@ -21,6 +21,8 @@ test_that("an insertion gives a REF/ALT product pair differing by the indel leng
   expect_true(
     grepl("^[ACGT]+$", m$primers$forward) && grepl("^[ACGT]+$", m$primers$reverse)
   )
+  # the pair must amplify exactly one locus (hard uniqueness gate)
+  expect_equal(nrow(in_silico_pcr(m$primers$forward, m$primers$reverse, genome)), 1L)
   expect_output(print(m), "kasp_indel_size")
 })
 
@@ -49,7 +51,22 @@ test_that("a sub-resolvable size difference is declined with a message", {
   withr::local_envvar(LANGUAGE = "en")
   genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(400L, 5L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = "A", alt = "AT") # 1 bp
+  # below even the 3 bp capillary floor, so no ladder can reach it
   expect_message(design_indel_size_marker(genome, snp, min_gap = 5L), "min_gap")
+})
+
+test_that("the resolvable-gap gate is evaluated and relaxes to the capillary floor (C7)", {
+  skip_if_no_oligoarrayaux()
+  W <- bseq(300L, 8L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 150L, 150L)
+  # a 3 bp insertion: below the 5 bp agarose bar but at the capillary floor, so
+  # the ladder must lower gate_indel_size_gap and record it, not reject
+  snp <- tibble::tibble(chrom = "Chr1", pos = 150L, ref = ref, alt = paste0(ref, "TTT"))
+  m <- design_indel_size_marker(genome, snp, flank = 140L, min_gap = 5L)
+  expect_s3_class(m, "kasp_indel_size")
+  expect_equal(m$gap, 3L)
+  expect_true("gate_indel_size_gap" %in% m$selection$relaxed)
 })
 
 test_that("scheme_def_indel_size declares the InDel-size gates, tiers and labels", {
@@ -57,15 +74,41 @@ test_that("scheme_def_indel_size declares the InDel-size gates, tiers and labels
   expect_equal(d$scheme, "indel_size")
   expect_equal(d$family, "indel_size")
   expect_equal(d$loci, 1L)
-  expect_true(all(c(
-    "gate_indel_size_gap", "gate_indel_size_amplicon", "gate_indel_size_tm",
-    "gate_indel_size_structure", "gate_indel_size_unique"
-  ) %in% d$gates))
+  expect_setequal(
+    d$gates,
+    c(
+      "gate_indel_size_gap", "gate_indel_size_amplicon", "gate_indel_size_tm",
+      "gate_indel_size_structure", "gate_indel_size_unique"
+    )
+  )
   expect_setequal(names(d$gate_short), d$gates)
   expect_setequal(names(d$gate_limit), d$gates)
   expect_identical(names(d$tiers), c("tier1", "tier2", "tier3"))
   expect_true(all(d$relax %in% d$gates))
-  # the hard-gate labels and the relaxation floors cover exactly the gates
-  expect_setequal(names(d$gate_hard_label), setdiff(d$gates, d$relax))
-  expect_true(all(names(d$gate_floor_label) %in% d$relax))
+  # the gap gate is soft (the lattice may relax it to the capillary floor); the
+  # structure and uniqueness gates are hard and never relaxed
+  expect_true("gate_indel_size_gap" %in% d$relax)
+  expect_setequal(
+    names(d$gate_hard_label),
+    c("gate_indel_size_structure", "gate_indel_size_unique")
+  )
+  expect_setequal(names(d$gate_floor_label), setdiff(d$gates, names(d$gate_hard_label)))
+})
+
+test_that("a duplicated locus dooms the design through the hard uniqueness gate (C7)", {
+  skip_if_no_oligoarrayaux()
+  # two tandem copies: every primer's 3' seed occurs twice, so no candidate can
+  # pass the hard uniqueness gate and the design must give up
+  W <- bseq(400L, 4L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = paste0(W, W)))
+  ref <- substr(W, 200L, 200L)
+  snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = ref, alt = paste0(ref, "TTTTTTTTTT"))
+  expect_message(
+    expect_null(design_indel_size_marker(genome, snp, flank = 150L)),
+    "unique 3' ends"
+  )
+})
+
+test_that("indel_size DAG obeys the contract", {
+  expect_dag_invariants("indel_size")
 })

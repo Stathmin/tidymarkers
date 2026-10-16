@@ -103,6 +103,26 @@ as_target <- function(seg, strand) {
   if (identical(strand, "+")) Biostrings::reverseComplement(seg) else seg
 }
 
+#' Plus-strand allele at a primer's 3' terminus
+#'
+#' [wobble_mismatch()] reads plus-strand alleles, but a primer on the `"-"`
+#' strand carries the complement of the template base at its 3' end, so both must
+#' be put on one strand before the pair can be asked whether it is a weak
+#' G:T / A:C mismatch.  Used for the indel junction's wobble analogue.
+#' @param primer oligo(s) 5'->3'.
+#' @param strand the primer's strand (`"+"`/`"-"`).
+#' @return the 3'-terminal base as a plus-strand allele.
+#' @keywords internal
+#' @noRd
+plus_3p_base <- function(primer, strand) {
+  b <- substr(primer, nchar(primer), nchar(primer))
+  minus <- !is.na(strand) & strand == "-"
+  if (any(minus)) {
+    b[minus] <- as.character(Biostrings::complement(Biostrings::DNAStringSet(b[minus])))
+  }
+  b
+}
+
 #' Build one allele-specific primer on a given strand
 #'
 #' `anchor` is the plus-strand coordinate of the primer's 3'-terminal base (see

@@ -156,3 +156,146 @@ test_that("the pair screen swaps a top pairing with an off-target duplicate for 
   chk <- kasp_design_checks(a)
   expect_true(chk$pass[chk$criterion == "off-target exact primer hits (n)"])
 })
+
+test_that("the two declared orders are separate and explicit (C6)", {
+  # gate order = how the method applies the gates (grave / cheap first); relax
+  # order = how the ladder lowers them (least grave first).  They need not agree.
+  expect_identical(KASP_GATES_AS, c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window"))
+  # the wobble (the manual's WORST mismatch) is the graver of the two soft AS
+  # gates, so the ladder spends the milder footprint trade-off first
+  expect_identical(KASP_RELAX_AS, c("gate_as_footprint", "gate_wobble"))
+  expect_identical(KASP_GATES_PAIR, c("gate_structure", "gate_tm", "gate_amplicon", "gate_com_footprint"))
+  expect_identical(KASP_RELAX_PAIR, c("gate_amplicon", "gate_structure", "gate_tm", "gate_com_footprint"))
+  # both are declared subsets, and the pair ladder genuinely reorders the gates
+  expect_true(all(KASP_RELAX_AS %in% KASP_GATES_AS))
+  expect_true(all(KASP_RELAX_PAIR %in% KASP_GATES_PAIR))
+  expect_false(identical(KASP_RELAX_PAIR, intersect(KASP_GATES_PAIR, KASP_RELAX_PAIR)))
+  # the gate order and the relax order differ for the AS stage too
+  expect_false(identical(KASP_RELAX_AS, intersect(KASP_GATES_AS, KASP_RELAX_AS)))
+})
+
+test_that("a soft gate's acceptance check relaxes to the gate's floor (C5)", {
+  # the check must read the bar the ladder may reach, or a relaxed winner (which
+  # the selector deliberately accepted, with a warning) would read as a failure
+  amp <- kasp_gate_relaxed_bar("amplicon length (bp)", KASP_LIMITS)
+  expect_true(amp$test(KASP_LIMITS$amplicon[2L] + 20)) # at the floor
+  expect_false(amp$test(KASP_LIMITS$amplicon[2L] + 21)) # past it
+  expect_false(amp$test(KASP_LIMITS$amplicon[1L] - 21))
+  tm <- kasp_gate_relaxed_bar("COM Tm >= AS Tm", KASP_LIMITS)
+  expect_true(tm$test(-2))
+  expect_false(tm$test(-3))
+  hair <- kasp_gate_relaxed_bar("worst hairpin dG37", KASP_LIMITS)
+  homo <- kasp_gate_relaxed_bar("worst homodimer dG37", KASP_LIMITS)
+  expect_true(hair$test(KASP_LIMITS$hairpin_dg - 3))
+  expect_true(homo$test(KASP_LIMITS$homodimer_dg - 3))
+  # every bar is labelled as a relaxed one, so the table never hides the trade-off
+  for (lab in unlist(KASP_GATE_CHECK)) {
+    expect_true(grepl("relaxed", kasp_gate_relaxed_bar(lab, KASP_LIMITS)$limit), info = lab)
+  }
+})
+
+test_that("only a soft gate maps to an acceptance check (C5)", {
+  # a hard gate can never be relaxed, so it has no relaxed bar to read
+  hard <- unname(unlist(lapply(kasp_decision_stages("snp"), function(st) setdiff(st$gates, st$relax))))
+  expect_length(intersect(hard, names(KASP_GATE_CHECK)), 0L)
+  # ... and every soft gate the ladder lists has its check mapped
+  soft <- unname(unlist(lapply(kasp_decision_stages("snp"), function(st) st$relax)))
+  expect_setequal(setdiff(soft, "gate_wobble"), intersect(soft, names(KASP_GATE_CHECK)))
+})
+
+# ---- the AS stage as a ranked oligo (grade_as_candidates) --------------------
+# A minimal AS-candidate table with the columns grade_as_candidates() reads.
+as_table <- function(discrimination, tm = 58, dg_3p = -1, wobble = FALSE,
+                     n_var = 0L, w_var = 0, n_3p = 0L) {
+  tibble::tibble(
+    discrimination = discrimination, tm = tm, dg_3p = dg_3p,
+    wobble = wobble, n_var = as.integer(n_var), w_var = as.numeric(w_var),
+    n_3p = as.integer(n_3p)
+  )
+}
+
+pick_as <- function(d) {
+  g <- grade_as_candidates(d, KASP_LIMITS, min_disc = 0.5)
+  select_with_ladder(g$data, g$gates, KASP_RELAX_AS, g$tiers, g$ties, g$gate_margin, g$gate_floor)
+}
+
+test_that("the AS 3' end is ranked for weakness, not stability (KASP rationale)", {
+  # KASP holds because Taq fails to extend the primer on the wrong allele, so a
+  # WEAK 3' anchor is wanted; a strong one lets the wrong allele extend anyway.
+  expect_true("3' end weakness" %in% kasp_decision_stages("snp")$as$tiers)
+  # equal on every other tier: the weaker 3' end (dg_3p closer to 0) must win
+  expect_equal(pick_as(as_table(c(0.9, 0.9), dg_3p = c(-6, -1)))$best$dg_3p, -1)
+})
+
+test_that("the COM primer is also ranked for a weaker 3' end (README section 3)", {
+  expect_true("COM 3' end weakness" %in% kasp_decision_stages("snp")$pair$tiers)
+  # the two pairings differ only in the COM primer's 3'-terminal dG37
+  d <- pair_table(c(0.9, 0.9))
+  d$com_dg_3p <- c(-8, -1)
+  g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
+  expect_true("tier5" %in% names(g$data))
+  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)
+  expect_equal(pick$best$com_dg_3p, -1) # the weaker COM 3' end wins
+})
+
+test_that("a footprint trade-off is spent before the wobble is touched", {
+  # only the footprint blocks: the ladder must lower it and leave the wobble
+  # (the graver sin) alone
+  d <- as_table(c(0.9, 0.9), n_var = c(3L, 1L), w_var = c(0.3, 0.1))
+  pick <- pick_as(d)
+  expect_true("gate_as_footprint" %in% pick$relaxed)
+  expect_false("gate_wobble" %in% pick$relaxed)
+  expect_equal(pick$best$n_var, 1L) # still the least-laden placement
+})
+
+test_that("gate_wobble is really evaluated and relaxable for the AS stage (C7)", {
+  # a wobble at the 3' base is a soft failure: it blocks, then the ladder may
+  # lower it (so the gate is not decoration - it can fail and be relaxed)
+  d <- as_table(c(0.9, 0.9), wobble = c(TRUE, TRUE))
+  g <- grade_as_candidates(d, KASP_LIMITS, min_disc = 0.5)
+  expect_false(any(g$data$gate_wobble))
+  pick <- pick_as(d)
+  expect_true("gate_wobble" %in% pick$relaxed)
+  expect_true(is.logical(d$wobble))
+})
+
+test_that("a relaxed structure floor still passes the structure checks (C5)", {
+  # the amplicon/structure floors widen the bar; the checks read the same bar, so
+  # "relaxed" and "accepted" cannot contradict
+  expect_equal(-KASP_GATE_FLOOR_PAIR[["gate_amplicon"]], 20L)
+  expect_equal(-KASP_GATE_FLOOR_PAIR[["gate_structure"]], 3L)
+  for (lab in c("worst hairpin dG37", "worst homodimer dG37")) {
+    bar <- kasp_gate_relaxed_bar(lab, KASP_LIMITS)
+    base <- if (lab == "worst hairpin dG37") KASP_LIMITS$hairpin_dg else KASP_LIMITS$homodimer_dg
+    expect_true(bar$test(base - 3))
+    expect_false(bar$test(base - 4))
+  }
+})
+
+# ---- the snp DAG, explicitly (gate set, order, hardness) --------------------
+test_that("the snp DAG obeys the contract and declares its gates and hardness", {
+  expect_dag_invariants("snp")
+  s <- kasp_decision_schema("snp")
+  # gate set in application order (C6/C7): the AS stage then the pair stage
+  expect_identical(
+    s$nodes$name[s$nodes$kind == "gate"],
+    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
+  )
+  # hardness (C8): only the AS discrimination and the AS 3' window are hard
+  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
+  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
+  # one DOOMED terminal (C4)
+  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
+})
+
+test_that("the marker-agnostic primer scheme is stage-less by design (C13)", {
+  # `primer` is not a genotyping chemistry: it carries no allele, so it has no
+  # selection stage and no locus-level designer (documentation-only).  Its
+  # marker-agnostic checks are still evaluable on any assembled pair.
+  expect_length(kasp_decision_stages("primer"), 0L)
+  expect_null(kasp_design_at(NULL, NULL, "primer"))
+  s <- kasp_decision_schema("primer")
+  expect_false(any(s$nodes$kind %in% c("gate", "relax", "doomed")))
+  expect_setequal(s$nodes$label[s$nodes$kind == "check"], KASP_CHECK_PRIMER)
+  expect_dag_invariants("primer")
+})

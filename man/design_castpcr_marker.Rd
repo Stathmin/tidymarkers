@@ -11,10 +11,11 @@ design_castpcr_marker(
   as_lengths = 18:27,
   mate_lengths = 18:25,
   probe_lengths = 18:32,
+  blocker_lengths = CASTPCR_BLOCKER_LENGTHS,
   probe_margin = CASTPCR_PROBE_MARGIN,
   probe_tm_max = CASTPCR_PROBE_TM_MAX,
-  min_product = CASTPCR_AMPLICON[1L],
-  max_product = CASTPCR_AMPLICON[2L],
+  min_product = KASP_LIMITS$amplicon[1L],
+  max_product = KASP_LIMITS$amplicon[2L],
   tm_range = KASP_LIMITS$as_tm,
   gc_range = KASP_LIMITS$gc
 )
@@ -26,13 +27,15 @@ design_castpcr_marker(
 
 \item{flank}{template half-width.}
 
-\item{as_lengths}{allele-specific primer lengths to try.}
+\item{as_lengths}{mutant allele-specific primer lengths to try.}
 
 \item{mate_lengths}{common-primer lengths to try.}
 
 \item{probe_lengths}{hydrolysis-probe lengths to try.}
 
-\item{probe_margin}{minimum probe Tm excess (C) over the AS primer (probe must
+\item{blocker_lengths}{wild-type blocker lengths to try.}
+
+\item{probe_margin}{minimum probe Tm excess (C) over the ASP (probe must
 melt above the primer); defaults to \code{CASTPCR_PROBE_MARGIN}.}
 
 \item{probe_tm_max}{upper bound (C) on the probe Tm; defaults to
@@ -45,20 +48,32 @@ melt above the primer); defaults to \code{CASTPCR_PROBE_MARGIN}.}
 \item{gc_range}{accepted GC window for every oligo.}
 }
 \value{
-a \code{kasp_castpcr} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},
-\code{compatibility} - the joint dimer/hairpin screen over the AS primer, its mate
-and the probe), or \code{NULL} (with a message) when no AS primer, mate or probe
-passes the filters.
+a \code{kasp_castpcr} list (\code{scheme}, \code{snp}, \code{primers}, \code{blocker}, \code{probe},
+\code{amplicon}, \code{selection} - the gate outcomes, \code{compatibility} - the joint
+dimer/hairpin screen over the ASP, its mate, the probe and the blocker), or
+\code{NULL} (with a message) when no ASP, mate, probe or blocker passes the
+filters.
 }
 \description{
-The real-time analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: one allele-specific primer
-whose 3' base sits on the variant (\code{\link[=design_as_primers]{design_as_primers()}}), a locus-specific
-hydrolysis probe that covers the variant, and a common reverse primer, all
-packed into a short amplicon.  The 3' mismatch is the discriminator and the
-probe is the readout, so the same variant this places in an AS 3' window is a
-KASP placement seen through a real-time probe; the hydrolysis probe is required
-to melt above the primers (\code{probe_margin}, see the file header for the
-assumption).  Single-base substitutions only.
+The real-time analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} that targets the mutant
+allele - a low-abundance ALT detected against a wild-type background.  One
+mutant allele-specific primer has its 3' base on the mutant base, a
+locus-specific hydrolysis (TaqMan/MGB) probe reports the amplicon, a
+wild-type-specific MGB blocker (its 3' base on the WT base) suppresses
+wild-type amplification without touching the mutant, and a common mate closes
+a short amplicon.  The probe is \emph{not} allele-specific: the allele specificity
+is carried entirely by the ASP's 3' mismatch plus the blocker's, so the probe
+only has to sit inside the amplicon and melt above the ASP.
+}
+\details{
+The returned marker records its gate outcomes in \code{selection}: the ASP Tm
+window and the amplicon window are the two soft gates, any of which the ladder
+may widen (least grave first) and report as relaxed.  The mutant anchor, the
+ASP's mutual discrimination, the WT blocker and the probe Tm ordering are hard:
+without them the assay is not the method (see the file header).
+
+HONEST LIMIT: the blocker's suppression efficiency - and so the 0.1-1\% LOD the
+method papers report - is not simulated (see the file header).
 }
 \examples{
 \dontrun{

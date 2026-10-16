@@ -23,8 +23,11 @@ names), \code{base} (the shared backbone - one ordinary KASP assembly whose REF
 primer and COM are reused), \code{alt_primers} (one ALT primer per haplotype, on
 the base's strand; \code{NA} when a haplotype did not design), \code{pool} +
 \code{compatibility} (the \emph{joint} check of the shared REF + shared COM + every ALT
-primer, see \code{\link[=primer_set_compatibility]{primer_set_compatibility()}}) and \code{verdict} (\code{"pass"} only when
-at least one haplotype designs \emph{and} the joint pool is free of dimers).
+primer, see \code{\link[=primer_set_compatibility]{primer_set_compatibility()}}), \code{selection} (the lax stage's gate
+outcome and the metrics behind it, see \code{\link[=lax_stage_pick]{lax_stage_pick()}}) and \code{verdict}
+(\code{"fail"} when no haplotype designs or the hard coverage gate blocks,
+\code{"warn"} when a soft gate was relaxed or the pool is not clean, else
+\code{"pass"}).
 }
 \description{
 The haplotype-aware member of the KASP family.  Given a tidy haplotype table
@@ -35,6 +38,15 @@ in via \code{\link[=design_as_primers]{design_as_primers()}}'s \verb{linked=}), 
 one.  Every per-haplotype primer runs through the usual \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}
 pipeline, so thermodynamics, complementarity, internal repeats and off-targets
 are checked as for pure KASP.
+}
+\details{
+The tube is then put through the scheme's own \emph{set-level} stage, so the
+declared lax gates are evaluated and recorded in \verb{$selection}: every ALT
+haplotype must be covered (hard), the baked linked alleles must be ALT-specific
+(\code{\link[=lax_ref_leakage]{lax_ref_leakage()}}) and the haplotype ALT primers must not cross-prime each
+other (\code{\link[=lax_cross_priming_pairs]{lax_cross_priming_pairs()}}).  The last two are soft, with bounded floors
+(see \code{KASP_GATE_FLOOR_LAX}), so a relaxed tube comes back with a warning and a
+\code{"warn"} verdict.
 }
 \examples{
 \dontrun{

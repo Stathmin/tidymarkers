@@ -11,10 +11,11 @@ design_lamp_marker(
   arm_lengths = 20:24,
   outer_lengths = 21:24,
   outer_tm = c(55, 62),
-  inner_tm = c(60, 65),
+  inner_tm = c(55, 65),
   gc_range = KASP_LIMITS$gc,
   min_product = 120L,
-  max_product = 300L
+  max_product = 300L,
+  loop_primers = TRUE
 )
 }
 \arguments{
@@ -37,21 +38,26 @@ published inner window is 45-49 nt), and widens only with \code{flank}.}
 \item{gc_range}{accepted GC fraction window (both arm classes).}
 
 \item{min_product, max_product}{accepted amplicon window (bp).}
+
+\item{loop_primers}{also place the optional LF/LB loop primers (default
+\code{TRUE}).}
 }
 \value{
 a \code{kasp_lamp} list (\code{snp}, \code{primers}, \code{amplicon}, \code{loop}, \code{tm},
-\code{compatibility} - the joint dimer/hairpin screen over all four primers), or
-\code{NULL} (with a message) when no primer set passes the filters.
+\code{variant_primer}, \code{gates}, \code{relaxed}, \code{compatibility} - the joint
+dimer/hairpin screen over the whole primer set), or \code{NULL} (with a message)
+when no primer set passes the filters.
 }
 \description{
 The isothermal analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: the outer F3/B3 pair and
-the inner FIP/BIP pair are placed so the variant sits in the loop between F2
-and B2 - at the 5' ends of the inner primers, where the allelic difference
-biases loop formation.  FIP and BIP are two-arm fusions (\code{F1c+F2}, \code{B1c+B2})
-built by \code{\link[=lamp_fusion]{lamp_fusion()}}; F3/B3 reuse the generic \code{\link[=design_flanking_pair]{design_flanking_pair()}} over
-the inner block.  The designer does \strong{not} simulate the isothermal reaction
-(that needs a polymerase/kinetics model), so it returns a well-formed primer
-set, not a predicted amplification curve.
+the inner FIP/BIP pair are placed so the variant sits at the 3' terminus of
+FIP's displacement arm (F2) - where a 3' mismatch blocks the strand-displacing
+polymerase and so discriminates the alleles.  FIP and BIP are two-arm fusions
+(\code{F1c+F2}, \code{B1c+B2}) built by \code{\link[=lamp_fip]{lamp_fip()}} / \code{\link[=lamp_bip]{lamp_bip()}}; F3/B3 reuse the
+generic pair search over the inner block; the optional loop primers LF/LB are
+placed in the F1c/F2 and B1c/B2 loops.  The designer does \strong{not} simulate the
+isothermal reaction (that needs a polymerase/kinetics model), so it returns a
+well-formed primer set, not a predicted amplification curve.
 }
 \examples{
 \dontrun{

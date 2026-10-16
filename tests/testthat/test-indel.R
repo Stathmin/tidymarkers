@@ -70,3 +70,46 @@ test_that("assemble_kasp_assay designs an indel end-to-end", {
   expect_true(all(c("criterion", "observed", "limit", "pass") %in% names(chk)))
   expect_true(is.logical(chk$pass))
 })
+
+# ---- the indel DAG and its (formerly vacuous) wobble gate -------------------
+test_that("the indel DAG obeys the contract and shares the KASP core stages", {
+  expect_dag_invariants("indel")
+  s <- kasp_decision_schema("indel")
+  # KASP InDel discrimination is the SAME 3'-terminal mechanism as a SNP: the AS
+  # primers end at the variant site (EasyKASP 2025), so the stage is deliberately
+  # the shared KASP core, not a bespoke length-based one
+  expect_identical(
+    s$nodes$name[s$nodes$kind == "gate"],
+    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
+  )
+  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
+  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
+  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
+})
+
+test_that("an indel is genuinely evaluated by the wobble gate (C7)", {
+  skip_if_no_oligoarrayaux()
+  W <- Biostrings::DNAString(rand_seq(400, 4))
+  ref <- as.character(Biostrings::subseq(W, 200L, 200L))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = ref, alt = paste0(ref, "GGG"))
+  a <- suppressWarnings(assemble_kasp_assay(genome, snp, variants = NULL, flank = 150L))
+  d <- a$as_candidates
+  # the declared soft gate must carry a real flag, not NA (the old defect)
+  expect_true(is.logical(d$wobble))
+  expect_false(all(is.na(d$wobble)))
+  # and it must match the documented rule: a substitution-like (equal-length)
+  # junction is a real G:T / A:C wobble question; a length-changing bulge is not
+  want <- nchar(d$ref_primer) == nchar(d$alt_primer) &
+    wobble_mismatch(plus_3p_base(d$alt_primer, d$strand), plus_3p_base(d$ref_primer, d$strand))
+  expect_identical(d$wobble, want)
+})
+
+test_that("the junction wobble asks about equal-length primers only", {
+  # equal-length: the two 3' bases really do differ by one substitution
+  expect_true(wobble_mismatch(plus_3p_base("ACGTACGTG", "+"), plus_3p_base("ACGTACGTA", "+")))
+  # a '-' primer carries the complement, so the same pair is read on the plus strand
+  expect_true(wobble_mismatch(plus_3p_base("ACGTACGTG", "-"), plus_3p_base("ACGTACGTA", "-")))
+  # no wobble for a same-base terminal pair
+  expect_false(wobble_mismatch(plus_3p_base("ACGTACGTG", "+"), plus_3p_base("ACGTACGTG", "+")))
+})

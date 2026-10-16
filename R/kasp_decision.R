@@ -19,8 +19,14 @@
 #'
 #' The allele-specific stages (AS primer, then the AS x COM pair) are shared by
 #' every chemistry in the KASP family; a duplex chemistry appends its
-#' compatibility stage, ASQ its cassette stage, and the marker-agnostic
-#' `"primer"` scheme has none (there is no allele to discriminate).
+#' compatibility stage, ASQ a documentation-only geometry stage, and the
+#' marker-agnostic `"primer"` scheme has none (there is no allele to discriminate).
+#'
+#' Each stage declares *two* orders (C6), which need not agree: `gates` is the
+#' order the method applies the gates (grave / cheap first - a fatal flaw is
+#' tested before an expensive one), and `relax` is the ladder's order (least
+#' grave first - the mildest trade-off is tried before a worse one).  Both are
+#' labelled per stage in [kasp_decision_text()].
 #' @param scheme a scheme id (see [kasp_schemes()]).
 #' @keywords internal
 #' @noRd
@@ -45,7 +51,7 @@ kasp_decision_stages <- function(scheme = "snp") {
   }
   if (info$family == "asq") {
     stages$asq <- list(
-      id = "asq", label = "ASQ cassette",
+      id = "asq", label = "ASQ primer geometry",
       gates = KASP_GATES_ASQ, relax = KASP_RELAX_ASQ, tiers = KASP_TIERS_ASQ
     )
   }
@@ -80,7 +86,10 @@ kasp_decision_stages <- function(scheme = "snp") {
 #' and rejoins the ranking; a DOOMED terminal marks a hard block or an exhausted
 #' floor), then the *assay* acceptance checks and a final verdict.  Hard gates
 #' carry `hard = TRUE`.  A stage whose gates are all hard routes its fail edge
-#' straight to DOOMED (no refinement branch).
+#' straight to DOOMED (no refinement branch); in a *mixed* stage each hard gate
+#' routes to DOOMED itself, so a failure of it never looks relaxable (C4).  A
+#' stage with no gates (a documentation-only stage, e.g. ASQ) contributes no gate
+#' / decision / DOOMED node - only its declared ranking tail (C7/C13).
 #' @param scheme a scheme id (see [kasp_schemes()]).
 #' @return a list with `nodes` (name, stage, kind, label, x, y, order, hard,
 #'   detail) and `edges` (from, to, kind) tibbles.
@@ -132,34 +141,51 @@ kasp_decision_schema <- function(scheme = "snp") {
       best = paste0(st$id, ":best"),
       refine = paste0(st$id, ":refine")
     )
-    push(node(ids$gate, st$id, "gate", scheme_label("short", gates), o + seq_along(gates),
-      hard = hard, detail = scheme_label("limit", gates)
-    ))
-    if (length(gates) > 1L) add_edge(chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"))
-    add_edge(chain(entry, ids$gate[1L], "flow"))
-    # the last gate flows into the decision node: without this the gate chain floats
-    # and the "all gates pass?" node is disconnected from the gates it summarises
-    add_edge(chain(ids$gate[length(gates)], ids$decision, "flow"))
-    o <- o + length(gates)
-    push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
-    decision_order <- o
-    soft <- length(relax) > 0L
-    if (soft) {
-      # one refinement node per stage: the soft-gate ladder in order (not one node
-      # per rung - the ladder relaxes the *same* criteria, so a rung per gate would
-      # just duplicate the gate nodes)
-      push(node(
-        ids$refine, st$id, "relax",
-        paste0("refine: ", paste(scheme_label("short", relax), collapse = " -> ")),
-        decision_order + 1L,
-        x = 0.85,
-        detail = paste0(scheme_label("short", relax), " [", scheme_label("floor", relax), "]", collapse = "; ")
+    if (length(gates)) {
+      push(node(ids$gate, st$id, "gate", scheme_label("short", gates), o + seq_along(gates),
+        hard = hard, detail = scheme_label("limit", gates)
       ))
-      refine_ids <- c(refine_ids, ids$refine)
-      merge_order <- decision_order + 2L
+      if (length(gates) > 1L) add_edge(chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"))
+      add_edge(chain(entry, ids$gate[1L], "flow"))
+      # the last gate flows into the decision node: without this the gate chain floats
+      # and the "all gates pass?" node is disconnected from the gates it summarises
+      add_edge(chain(ids$gate[length(gates)], ids$decision, "flow"))
+      o <- o + length(gates)
+      push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
+      decision_order <- o
+      soft <- length(relax) > 0L
+      if (soft) {
+        # one refinement node per stage: the soft-gate ladder in order (not one node
+        # per rung - the ladder relaxes the *same* criteria, so a rung per gate would
+        # just duplicate the gate nodes)
+        push(node(
+          ids$refine, st$id, "relax",
+          paste0("refine: ", paste(scheme_label("short", relax), collapse = " -> ")),
+          decision_order + 1L,
+          x = 0.85,
+          detail = paste0(scheme_label("short", relax), " [", scheme_label("floor", relax), "]", collapse = "; ")
+        ))
+        refine_ids <- c(refine_ids, ids$refine)
+        merge_order <- decision_order + 2L
+        # a *hard* gate in a mixed stage still dooms directly: a candidate that
+        # fails it can never be relaxed away, so it must not be drawn as merely
+        # "relaxable" (C4).  The soft gates keep the refinement branch.
+        doomed_sources <- c(doomed_sources, ids$gate[hard])
+      } else {
+        doomed_sources <- c(doomed_sources, ids$decision)
+        merge_order <- decision_order + 1L
+      }
+      add_edge(chain(ids$decision, ids$merge, "pass"))
+      if (soft) {
+        add_edge(chain(ids$decision, ids$refine, "fail"))
+        add_edge(chain(ids$refine, ids$merge, "relax"))
+      }
     } else {
-      doomed_sources <- c(doomed_sources, ids$decision)
-      merge_order <- decision_order + 1L
+      # a documentation-only stage (`gates = character(0)`, e.g. ASQ): it has no
+      # computable gate, so it emits no gate / decision / DOOMED node - only its
+      # declared ranking tail, hung directly off the previous stage (C7/C13)
+      add_edge(chain(entry, ids$merge, "flow"))
+      merge_order <- o + 1L
     }
     push(node(ids$merge, st$id, "merge", "survivors (bounds kept)", merge_order))
     has_tiers <- length(tiers) > 0L
@@ -171,11 +197,6 @@ kasp_decision_schema <- function(scheme = "snp") {
     }
     push(node(ids$best, st$id, "outcome", "best", best_order))
     o <- best_order
-    add_edge(chain(ids$decision, ids$merge, "pass"))
-    if (soft) {
-      add_edge(chain(ids$decision, ids$refine, "fail"))
-      add_edge(chain(ids$refine, ids$merge, "relax"))
-    }
     if (has_tiers) {
       add_edge(chain(ids$merge, ids$tier[1L], "pass"))
       if (length(tiers) > 1L) add_edge(chain(ids$tier[-length(tiers)], ids$tier[-1L], "pass"))
@@ -210,9 +231,12 @@ kasp_decision_schema <- function(scheme = "snp") {
 #'
 #' @param assay optional assembled assay; when given, gate nodes are stamped from
 #'   `assay$selection` (`"relaxed"`/`"violated"`/`"ok"`) and check nodes from
-#'   `assay$evaluation` (`"ok"`/`"violated"`).
-#' @param scheme a scheme id (see [kasp_schemes()]); ignored when `assay` carries
-#'   its own `$decision` graph.
+#'   `assay$evaluation` (`"ok"`/`"violated"`), and the assay's own `$scheme`
+#'   picks the tree.  The gate stamping is per stage id, so every chemistry's own
+#'   stage (CAPS, ARMS, Sanger, ...) is coloured, not only the shared `as`/`pair`
+#'   ones (C13).
+#' @param scheme a scheme id (see [kasp_schemes()]); `NULL` (the default) uses
+#'   `assay$scheme`, falling back to `"snp"`.
 #' @return a `tidygraph::tbl_graph`; nodes carry `name`, `stage`, `kind`,
 #'   `label`, `x`, `y`, `hard`, `status`.
 #' @examples
@@ -222,8 +246,11 @@ kasp_decision_schema <- function(scheme = "snp") {
 #' }
 #' @family KASP checks
 #' @export
-kasp_decision_graph <- function(assay = NULL, scheme = "snp") {
+kasp_decision_graph <- function(assay = NULL, scheme = NULL) {
   rlang::check_installed("tidygraph", reason = gettext("for the decision graph"))
+  # the assay carries the chemistry it was assembled as, so the runtime graph is
+  # *that* scheme's tree, never another's (C12)
+  scheme <- scheme %||% (if (!is.null(assay)) assay$scheme else NULL) %||% "snp"
   s <- kasp_decision_schema(scheme)
   nodes <- s$nodes
   nodes$status <- "neutral"
@@ -232,11 +259,17 @@ kasp_decision_graph <- function(assay = NULL, scheme = "snp") {
     status <- nodes$status
     gate <- nodes$kind == "gate"
     status[gate] <- "ok"
-    is_pair <- gate & nodes$stage == "pair"
-    is_as <- gate & nodes$stage == "as"
-    status[is_pair & nodes$name %in% paste0("pair:gate:", sel$relaxed %||% character(0))] <- "relaxed"
-    status[is_pair & nodes$name %in% paste0("pair:gate:", sel$violated %||% character(0))] <- "violated"
-    status[is_as & nodes$name %in% paste0("as:gate:", sel$as %||% character(0))] <- "violated"
+    # a scheme records its relaxed / violated / AS-stage gates by gate id; the node
+    # name is that id prefixed with its stage, so build the candidate names for
+    # *every* stage the schema shows (C13) - a discovered chemistry's own gate
+    # nodes are coloured too, not only the shared as / pair ones.
+    stage_ids <- unique(nodes$stage[gate])
+    gate_nodes <- function(gs) {
+      unlist(lapply(stage_ids, function(id) paste0(id, ":gate:", gs %||% character(0))), use.names = FALSE)
+    }
+    status[gate & nodes$name %in% gate_nodes(sel$relaxed)] <- "relaxed"
+    status[gate & nodes$name %in% gate_nodes(sel$violated)] <- "violated"
+    status[gate & nodes$name %in% gate_nodes(sel$as)] <- "violated"
     status[nodes$kind %in% c("tier", "decision", "merge", "outcome")] <- "ok"
     status[nodes$kind == "start"] <- "start"
     status[nodes$kind == "relax"] <- "relax"
@@ -261,7 +294,8 @@ kasp_decision_graph <- function(assay = NULL, scheme = "snp") {
 #' relaxed, red violated).  One marker chemistry is drawn at a time
 #' ([kasp_schemes()]).
 #' @param x an assembled assay, a `kasp_decision_graph()` result, or `NULL`.
-#' @param scheme a scheme id (see [kasp_schemes()]) for the bare schema.
+#' @param scheme a scheme id (see [kasp_schemes()]) for the bare schema; `NULL`
+#'   (the default) uses the assay's own `$scheme` for an assay, else `"snp"`.
 #' @return a `ggraph`/`ggplot` object.
 #' @examples
 #' \dontrun{
@@ -271,17 +305,20 @@ kasp_decision_graph <- function(assay = NULL, scheme = "snp") {
 #' }
 #' @family KASP checks
 #' @export
-plot_decision_tree <- function(x = NULL, scheme = "snp") {
+plot_decision_tree <- function(x = NULL, scheme = NULL) {
   rlang::check_installed("ggraph", reason = gettext("to draw the decision tree"))
   g <- if (is.null(x)) {
-    kasp_decision_graph(scheme = scheme)
+    kasp_decision_graph(scheme = scheme %||% "snp")
   } else if (inherits(x, "kasp_assay")) {
+    # the assay's stored graph already *is* its scheme's tree (C12)
     x$decision %||% kasp_decision_graph(x, scheme = scheme)
   } else {
     x
   }
   title <- if (is.null(x)) {
-    paste0(kasp_scheme(scheme)$label, " - decision tree (bold = hard limit)")
+    paste0(kasp_scheme(scheme %||% "snp")$label, " - decision tree (bold = hard limit)")
+  } else if (inherits(x, "kasp_assay")) {
+    paste0(kasp_scheme(x$scheme %||% "snp")$label, " - this assay (bold = hard limit)")
   } else {
     "KASP decision tree (bold = hard limit)"
   }
@@ -372,7 +409,7 @@ kasp_decision_text <- function(scheme = "snp") {
     gate <- cc[cc$role == "gate", ]
     res <- c(
       glue::glue("== stage {st$id} ({st$label}) =="),
-      "gates (hard = never relaxed):",
+      "gates (hard = never relaxed), in application order (grave / cheap first):",
       check_lines(gate, 22L, soft = "- soft")
     )
     if (length(st$relax)) {

@@ -65,7 +65,9 @@ test_that("scheme_def_crispr declares its prefixed gates, tiers and lookups", {
   expect_setequal(def$gates, names(def$gate_short))
   expect_setequal(def$gates, names(def$gate_limit))
   expect_true(all(def$relax %in% def$gates))
-  expect_setequal(names(def$tiers), c("guide", "seed", "amplicon"))
+  expect_setequal(names(def$tiers), c("guide", "seed", "specificity", "amplicon"))
   expect_true(all(names(def$gate_floor_label) %in% def$relax))
   expect_true(all(names(def$gate_hard_label) %in% setdiff(def$gates, def$relax)))
 })
+
+test_that("the crispr DAG obeys the contract", expect_dag_invariants("crispr"))

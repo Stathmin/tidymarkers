@@ -8,13 +8,13 @@ design_ssr_marker(
   genome,
   snp,
   flank = 250L,
-  min_product = 100L,
-  max_product = 300L,
+  min_product = KASP_SSR_LIMITS$amplicon[1L],
+  max_product = KASP_SSR_LIMITS$amplicon[2L],
   lengths = 18:25,
   units = 2:4,
-  min_copies = 3L,
-  tm_range = KASP_LIMITS$com_tm,
-  gc_range = KASP_LIMITS$gc,
+  min_copies = KASP_SSR_LIMITS$min_copies,
+  tm_range = KASP_SSR_LIMITS$tm,
+  gc_range = KASP_SSR_LIMITS$gc,
   ...
 )
 }
@@ -36,20 +36,25 @@ window searched for the repeat.}
 
 \item{tm_range, gc_range}{accepted primer windows.}
 
-\item{...}{reserved for future options.}
+\item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
 }
 \value{
-a \code{kasp_ssr} list (\code{snp}, \code{primers}, \code{amplicon}, \code{repeat}), or \code{NULL}
-(with a message) when no repeat or flanking pair passes the filters.  The
-\code{primers}, \code{amplicon} and \code{repeat} coordinates are genomic.
+a \code{kasp_ssr} list (\code{snp}, \code{primers}, \code{amplicon}, \code{repeat},
+\code{selection}), or \code{NULL} (with a message) when no repeat or no flanking pair
+passes the gates.  The \code{primers}, \code{amplicon} and \code{repeat} coordinates are
+genomic.
 }
 \description{
 The size-marker analogue of \code{\link[=design_hrm_marker]{design_hrm_marker()}}: a single flanking pair
 straddles the repeat, which sits under neither primer, and the amplicon is
 sized to the ~100-300 bp window a capillary/gel readout wants.  The repeat is
-located around \code{snp$pos}, the pair is placed in the unique flanks by
-\code{\link[=design_flanking_pair]{design_flanking_pair()}} (so both primers lie outside the repeat and carry no
-homopolymer >= 4 or SSR), and the alleles are read as the amplicon size.
+located around \code{snp$pos}, the pair is placed in the unique flanks (so both
+primers lie outside the repeat and carry no homopolymer >= 4 or SSR), and the
+alleles are read as the amplicon size.  Every gate the scheme declares is
+evaluated here (C7): the flanks' 3'-seed uniqueness, the repeat's
+length-polymorphism, the amplicon and Tm windows and the full in-silico PCR
+uniqueness.  A soft gate may be relaxed to its floor, least grave first, and
+the result records which were (\verb{$selection}).
 }
 \details{
 \code{snp$pos} is only the \emph{anchor} of the window searched for the repeat - an SSR

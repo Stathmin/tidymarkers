@@ -64,3 +64,48 @@ test_that("pick_target_snp skips indels and ambiguous alleles", {
   )
   expect_error(pick_target_snp(variants, genome, gene), "No usable substitution")
 })
+
+# ---- the multi (degenerate) DAG and its ALT-set consensus gate ----------------
+test_that("the multi DAG obeys the contract and shares the KASP core stages", {
+  expect_dag_invariants("multi")
+  s <- kasp_decision_schema("multi")
+  expect_identical(
+    s$nodes$name[s$nodes$kind == "gate"],
+    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
+  )
+  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
+  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
+})
+
+test_that("the wobble is the worst case over ALL ALTs, not just the first", {
+  skip_if_no_oligoarrayaux()
+  W <- Biostrings::DNAString(bseq(600L, 2L))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- as.character(Biostrings::subseq(W, 200L, 200L))
+  # the transition is the wobble ALT (A>G / C>T / G>A / T>C); the transversion is not
+  wob <- c(A = "G", C = "T", G = "A", T = "C")[[ref]]
+  non <- setdiff(c("A", "C", "G", "T"), c(ref, wob))[1L]
+  snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = ref, alt = non, alt2 = wob)
+  a <- suppressWarnings(assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L))
+  expect_equal(a$site$class[1], "degenerate")
+  # the FIRST ALT is not a wobble, but the ALT set contains one, so the primer's
+  # wobble flag must be TRUE (the old code looked at alt[1] and missed it)
+  expect_false(wobble_mismatch(ref, non))
+  expect_true(all(a$as_candidates$wobble))
+})
+
+test_that("the degenerate ALT gate verifies the 3' code is the consensus of ALL ALTs", {
+  snp <- tibble::tibble(chrom = "Chr1", pos = 1L, ref = "T", alt = "A")
+  # not the consensus: the primer's 3' base is a plain ALT base, not the code R
+  concrete <- tibble::tibble(alt_degen = "ACGTACGTACGTACGTACGT")
+  expect_true(inherits(kasp_degenerate_alt_gate(concrete, c("A", "G"), snp, list()), "kasp_doomed"))
+  # the true consensus (3' base R over A/G, REF T excluded) passes
+  consensus <- tibble::tibble(alt_degen = c("ACGTACGTACGTACGTACGTR", "acgt"))
+  expect_false(inherits(kasp_degenerate_alt_gate(consensus, c("A", "G"), snp, list()), "kasp_doomed"))
+  # a code whose members ALSO include REF could extend the reference template, so
+  # it discriminates nothing and is doomed even though it is a valid consensus
+  ref_amb <- tibble::tibble(alt_degen = "ACGTACGTACGTACGTACGTK")
+  expect_true(inherits(kasp_degenerate_alt_gate(ref_amb, c("G", "T"), snp, list()), "kasp_doomed"))
+  # a biallelic site has one ALT and nothing to cover
+  expect_identical(kasp_degenerate_alt_gate(concrete, "A", snp, list()), concrete)
+})

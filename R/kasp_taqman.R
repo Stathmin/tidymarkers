@@ -31,13 +31,29 @@
 #  package PCR conditions returns values below the vendor numbers, so the default
 #  probe window (`probe_tm = c(56, 72)`) is set on that model rather than the
 #  literal 68-70 C band.  The vendor ordering rule ("probe Tm 8-10 C above the
-#  primers") is NOT enforced as a hard gate: on this compressed scale even a
-#  30-mer probe reaches only ~+4 C over the primers, so a fixed 8 C margin would
-#  doom every design.  The ordering is kept as a *ranking* preference (tier2: the
-#  probe should be the hottest oligo in the tube), and a true margin gate is
-#  queued in the roadmap pending a vendor-scale Tm.  The amplicon is kept short
-#  (~60-150 bp) as in the usual TaqMan SNP-genotyping assays.
+#  primers") is therefore NOT a gate: on this compressed scale even a 30-mer probe
+#  reaches only ~+4 C over the primers, so a fixed 8 C margin would doom every
+#  design.  The ordering is a *ranking* preference only (tier2 here: the probe
+#  should be the hottest oligo in the tube), while the physically binding rules
+#  are gates: the probe must sit in its own absolute Tm window (or it never
+#  anneals), it must be the only perfect probe site in the genome, its own
+#  secondary structure must be acceptable, and the allele mismatch must actually
+#  destabilise the probe duplex (the mismatch dG the method runs on).
+#
+#  Every declared gate is evaluated by the designer (C7): the candidate scans
+#  enforce the hard gates and `grade_one_marker()` records them through the shared
+#  relaxation ladder, so the scheme's decision graph and its engine read the same
+#  thresholds.
 # =============================================================================
+
+# The two thresholds the formals do not carry.  A single mismatch that costs less
+# than this much duplex stability (dG37, kcal/mol) is not discriminated by the
+# exonuclease step, so it is a hard gate; a probe this much more stable than the
+# dG37 limit is a *soft* gate (a somewhat sticky probe still reports).
+TAQMAN_MISMATCH_DG <- 1.5
+TAQMAN_PROBE_STRUCT_RELAX <- 3
+TAQMAN_CENTRALITY_RELAX <- -0.25
+TAQMAN_AMPLICON_RELAX <- 20L
 
 #' Probe candidates centred over a variant
 #'
@@ -60,6 +76,30 @@ taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
       variant_pos = snp_i - .data$start + 1L,
       centrality = 1 - abs(.data$variant_pos - (.data$len + 1L) / 2) / ((.data$len - 1L) / 2)
     )
+}
+
+#' Duplex dG cost of the probe's allele mismatch
+#'
+#' The physical discrimination of a 5'-nuclease probe: it is cleaved only on a
+#' perfectly matched template, so the allele mismatch must cost the probe duplex
+#' enough stability (`dG_off - dG_on`, kcal/mol; positive = destabilised).  The
+#' REF probe is scored against its perfect complement and against the same target
+#' carrying the ALT base at the variant.  Needs OligoArrayAux; `NA` otherwise.
+#' @param probe the REF probe (plus-strand window).
+#' @param variant_pos the variant's index within the probe.
+#' @param alt the ALT base.
+#' @return the mismatch dG (numeric scalar, `NA` when OligoArrayAux is absent).
+#' @keywords internal
+#' @noRd
+taqman_mismatch_dg <- function(probe, variant_pos, alt) {
+  if (!has_oligoarrayaux()) {
+    return(NA_real_)
+  }
+  on <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(probe)))
+  off <- on
+  j <- nchar(probe) - variant_pos + 1L
+  stringr::str_sub(off, j, j) <- as.character(Biostrings::complement(Biostrings::DNAString(alt)))
+  oligo_dg(probe, off) - oligo_dg(probe, on)
 }
 
 #' Design a TaqMan 5'-nuclease allelic-discrimination marker at a variant
@@ -106,19 +146,27 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
-  primers <- design_flanking_pair(
-    tmpl$seq, si, si, primer_lengths, min_product, max_product, primer_tm, gc_range
-  )
+  d <- scheme_def_taqman()
+  amp <- d$amplicon_window
+  # the amplicon rung of the ladder: the declared window first, widened by the
+  # floor only when nothing clears it (so the soft gate is genuinely reachable)
+  pair_in <- function(lo, hi) {
+    design_flanking_pair(tmpl$seq, si, si, primer_lengths, lo, hi, primer_tm, gc_range)
+  }
+  primers <- pair_in(min_product, max_product) %||%
+    pair_in(min_product - TAQMAN_AMPLICON_RELAX, max_product + TAQMAN_AMPLICON_RELAX)
   if (is.null(primers)) {
     cli::cli_inform(gettext("No short flanking primer pair passed the Tm/GC filters for TaqMan."))
     return(NULL)
   }
   # the probe must lie inside the amplicon (Wikipedia: it anneals within the
-  # amplified region) and keep the variant away from its ends
+  # amplified region) and keep the variant away from its ends.  The search dips
+  # below the centrality gate by its floor so the ladder can report the relaxation
+  # instead of silently failing; the ranking still prefers the most central probe.
   cand <- taqman_probe_candidates(tmpl$seq, si, probe_lengths, probe_tm, gc_range) |>
     dplyr::filter(
       .data$start >= primers$start, .data$end <= primers$end,
-      .data$centrality >= min_centrality
+      .data$centrality >= min_centrality + TAQMAN_CENTRALITY_RELAX
     )
   if (!nrow(cand)) {
     cli::cli_inform(gettext("No composition- and position-clean hydrolysis probe passed the filters."))
@@ -128,7 +176,12 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   # being the hottest oligo in the tube (the ordering rule, see the header caveat)
   primer_hot <- max(primers$tm_f, primers$tm_r)
   cand$ordered <- cand$tm >= primer_hot
-  best <- cand[order(-cand$centrality, -cand$ordered, -cand$tm), ][1L, ]
+  cand$mismatch_dg <- vapply(
+    seq_len(nrow(cand)),
+    function(i) taqman_mismatch_dg(cand$primer[i], cand$variant_pos[i], alt),
+    numeric(1)
+  )
+  best <- cand[order(-cand$centrality, -cand$ordered, -cand$mismatch_dg, -cand$tm), ][1L, ]
   ref_probe <- best$primer
   alt_probe <- as.character(Biostrings::replaceAt(
     Biostrings::DNAString(ref_probe),
@@ -155,6 +208,50 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
     probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
   ))
+
+  # ---- C7: the declared gates are all evaluated on the winner ----------------
+  probe_gc_obs <- gc_frac(ref_probe)
+  comp_ok <- substr(ref_probe, 1L, 1L) != "G" &&
+    probe_gc_obs >= gc_range[1L] && probe_gc_obs <= gc_range[2L] &&
+    !has_run(ref_probe) && !has_repeat(ref_probe)
+  if (has_oligoarrayaux()) {
+    hairpin <- oligo_dg_vec(ref_probe)
+    homodimer <- oligo_dg_vec(ref_probe, ref_probe)
+  } else {
+    hairpin <- NA_real_
+    homodimer <- NA_real_
+  }
+  primer_tm_all <- c(out$primers$tm_f, out$primers$tm_r)
+  graded <- tibble::tibble(
+    m_probe_comp = if (comp_ok) 1 else -1,
+    m_probe_specific = if (exact_oligo_hits(ref_probe, genome) == 1L) 1 else -1,
+    m_probe_structure = pmin(hairpin - KASP_LIMITS$hairpin_dg, homodimer - KASP_LIMITS$homodimer_dg),
+    m_probe_tm = min(out$probes$tm[1L] - d$probe_tm_window[1L], d$probe_tm_window[2L] - out$probes$tm[1L]),
+    m_primer_tm = min(primer_tm_all - d$primer_tm_window[1L], d$primer_tm_window[2L] - primer_tm_all),
+    m_discrimination = best$mismatch_dg - TAQMAN_MISMATCH_DG,
+    m_centrality = best$centrality - min_centrality,
+    m_amplicon = pmin(out$amplicon$product - amp[1L], amp[2L] - out$amplicon$product)
+  )
+  gate_margin <- c(
+    gate_taqman_probe_comp = "m_probe_comp", gate_taqman_probe_specific = "m_probe_specific",
+    gate_taqman_probe_structure = "m_probe_structure", gate_taqman_probe_tm = "m_probe_tm",
+    gate_taqman_primer_tm = "m_primer_tm", gate_taqman_discrimination = "m_discrimination",
+    gate_taqman_centrality = "m_centrality", gate_taqman_amplicon = "m_amplicon"
+  )
+  sel <- grade_one_marker(
+    graded,
+    gates = d$gates, relax_order = d$relax,
+    tiers = c("m_discrimination", "m_probe_tm", "m_amplicon"), # tier1..3 in scheme_def_taqman()
+    gate_margin = gate_margin, gate_floor = d$gate_floor
+  )
+  if (is.null(sel)) {
+    cli::cli_inform(gettext(
+      "The TaqMan candidate failed a hard gate (probe composition, specificity, Tm window, primer Tm or mismatch dG)."
+    ))
+    return(NULL)
+  }
+  out$selection <- sel
+
   # the readout this scheme *does* model: per-allele probe discrimination
   if (has_oligoarrayaux()) {
     out$readout <- probe_discrimination(
@@ -193,6 +290,19 @@ print.kasp_taqman <- function(x, ...) {
 #' @keywords internal
 #' @noRd
 scheme_def_taqman <- function() {
+  # the windows the designer applies, read from its formals so the two cannot
+  # drift (formals() gives the *default expression*, hence eval())
+  fm <- formals(design_taqman_marker)
+  amp <- c(eval(fm$min_product), eval(fm$max_product))
+  primer_tm <- eval(fm$primer_tm)
+  probe_tm <- eval(fm$probe_tm)
+  gc <- eval(fm$gc_range)
+  cent <- eval(fm$min_centrality)
+  gates <- c(
+    "gate_taqman_probe_comp", "gate_taqman_probe_specific", "gate_taqman_probe_structure",
+    "gate_taqman_probe_tm", "gate_taqman_primer_tm", "gate_taqman_discrimination",
+    "gate_taqman_centrality", "gate_taqman_amplicon"
+  )
   list(
     scheme = "taqman",
     family = "taqman",
@@ -203,38 +313,58 @@ scheme_def_taqman <- function() {
     amplicon = "short (60-150 bp)",
     loci = 1L,
     verdict = "usable TaqMan assay",
-    gates = c(
-      "gate_taqman_amplicon", "gate_taqman_primer_tm", "gate_taqman_probe_tm",
-      "gate_taqman_centrality", "gate_taqman_probe_comp"
-    ),
-    relax = c("gate_taqman_amplicon", "gate_taqman_centrality"),
+    gates = gates,
+    # least grave first: allow the mismatch nearer a probe end, then a longer
+    # amplicon, and only then a slightly stickier probe
+    relax = c("gate_taqman_centrality", "gate_taqman_amplicon", "gate_taqman_probe_structure"),
     tiers = c(
-      tier1 = "probe discrimination (variant centrality)",
+      tier1 = "probe discrimination (mismatch dG margin)",
       tier2 = "Tm ordering (probe above primers)",
-      tier3 = "amplicon length"
+      tier3 = "amplicon length (near the ideal)"
     ),
     gate_short = c(
-      gate_taqman_amplicon = "amplicon length (TaqMan)",
+      gate_taqman_probe_comp = "probe composition",
+      gate_taqman_probe_specific = "probe specificity",
+      gate_taqman_probe_structure = "probe self-structure",
+      gate_taqman_probe_tm = "probe Tm window",
       gate_taqman_primer_tm = "primer Tm (TaqMan)",
-      gate_taqman_probe_tm = "probe Tm",
+      gate_taqman_discrimination = "probe mismatch dG",
       gate_taqman_centrality = "probe centrality",
-      gate_taqman_probe_comp = "probe composition"
+      gate_taqman_amplicon = "amplicon length (TaqMan)"
     ),
     gate_limit = c(
-      gate_taqman_amplicon = "amplicon within [60, 150]",
-      gate_taqman_primer_tm = "both primers Tm within [58, 63] C",
-      gate_taqman_probe_tm = "probe Tm the hottest in the tube (ranking)",
-      gate_taqman_centrality = "variant within the probe central window",
-      gate_taqman_probe_comp = "GC 40-60%, no 5'-G, no run / SSR"
+      gate_taqman_probe_comp = glue::glue("GC {gc[1L] * 100}-{gc[2L] * 100} %, no 5' G, no run / SSR"),
+      gate_taqman_probe_specific = "exactly one perfect probe site in the genome",
+      gate_taqman_probe_structure = glue::glue("probe hairpin/homodimer dG37 >= {KASP_LIMITS$hairpin_dg}"),
+      gate_taqman_probe_tm = glue::glue("probe Tm within [{probe_tm[1L]}, {probe_tm[2L]}] C"),
+      gate_taqman_primer_tm = glue::glue("both primers Tm within [{primer_tm[1L]}, {primer_tm[2L]}] C"),
+      gate_taqman_discrimination = glue::glue("mismatch dG >= {TAQMAN_MISMATCH_DG} kcal/mol"),
+      gate_taqman_centrality = glue::glue("variant centrality >= {cent}"),
+      gate_taqman_amplicon = glue::glue("amplicon within [{amp[1L]}, {amp[2L]}] bp")
+    ),
+    # the numeric windows the engine scores against (so gate margins and the
+    # declared limits cannot drift), and the ladder's floors in margin units
+    amplicon_window = amp,
+    primer_tm_window = primer_tm,
+    probe_tm_window = probe_tm,
+    gc_window = gc,
+    min_centrality = cent,
+    gate_floor = c(
+      gate_taqman_centrality = TAQMAN_CENTRALITY_RELAX,
+      gate_taqman_amplicon = -TAQMAN_AMPLICON_RELAX,
+      gate_taqman_probe_structure = -TAQMAN_PROBE_STRUCT_RELAX
     ),
     gate_floor_label = c(
-      gate_taqman_amplicon = "widen the amplicon window by 20 bp",
-      gate_taqman_centrality = "allow the variant nearer a probe end"
+      gate_taqman_centrality = "allow the variant nearer a probe end",
+      gate_taqman_amplicon = glue::glue("widen the amplicon window by {TAQMAN_AMPLICON_RELAX} bp"),
+      gate_taqman_probe_structure = glue::glue("allow {TAQMAN_PROBE_STRUCT_RELAX} kcal/mol more stable")
     ),
     gate_hard_label = c(
+      gate_taqman_probe_comp = "a 5'-G or off-GC probe reads poorly",
+      gate_taqman_probe_specific = "a probe that binds elsewhere is cleaved there and lights the wrong dye",
+      gate_taqman_probe_tm = "a probe outside its Tm window does not anneal, so there is no signal",
       gate_taqman_primer_tm = "the flanking pair must sit in the extension window",
-      gate_taqman_probe_tm = "a probe must out-compete the primers at annealing",
-      gate_taqman_probe_comp = "a 5'-G or off-GC probe reads poorly"
+      gate_taqman_discrimination = "without a destabilising mismatch the probe cannot tell REF from ALT"
     ),
     stage_label = "TaqMan 5'-nuclease"
   )

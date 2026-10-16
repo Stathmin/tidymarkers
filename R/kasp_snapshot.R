@@ -26,15 +26,20 @@
 #      "there is little flexibility in the positioning of the primer, although
 #      parameters like the length of the primer and its orientation are more
 #      amenable to manipulation" (Fanis).  ASSUMPTION: we take the task's window
-#      (Tm 50-55 C, ~18-25 nt) and widen it once when nothing clears, because the
-#      package primer_tm is salt-corrected (Mg/dNTPs) and runs hotter than the
-#      Promega formula those papers quote.
+#      (Tm 50-55 C, ~18-25 nt) as the gate and widen it by 5 C on each side (the
+#      ladder's tm floor: [45, 60] C) when nothing clears, because the package
+#      primer_tm is salt-corrected (Mg/dNTPs) and runs hotter than the Promega
+#      formula those papers quote.
 #    * The extension primer must be free of stable hairpins/self-dimers: "stable
 #      oligonucleotide secondary structures can affect signals" (Fanis); hairpins
 #      and dimers "were checked" (Namdar Aligoodarzi).
+#    * The extension primer must be *unique*: a second perfect binding site
+#      extends elsewhere and adds a spurious peak to the electropherogram, so the
+#      design requires exactly one perfect genomic site for it.
 #    * Amplification: a flanking pair over a short amplicon.  Published amplicons
 #      span ~60-882 bp (Fanis 60-649; Namdar Aligoodarzi 143-882).  ASSUMPTION:
-#      the task's 100-300 bp target is a practical default, not a hard rule.
+#      the task's 100-300 bp target is a practical default, not a hard rule - hence
+#      a *soft* gate whose floor widens it to [50, 350] bp.
 #    * Readout: capillary electrophoresis of the extended products; the kit
 #      multiplexes up to 10 SNPs (Thermo Fisher, SNaPshot Multiplex Kit,
 #      cat. 4323151, https://www.thermofisher.com/order/catalog/product/4323151).
@@ -43,6 +48,11 @@
 #  %20minisequencing%20primer%20design&format=json); DuckDuckGo's HTML endpoint
 #  (https://duckduckgo.com/html/?q=SNaPshot+minisequencing+primer+design) was
 #  bot-blocked at the time.
+#
+#  Every declared gate is evaluated by the designer (C7): the candidate scans
+#  enforce the hard gates and `grade_one_marker()` records them through the shared
+#  relaxation ladder (least grave first: amplicon, tm, structure), so the
+#  scheme's decision graph and its engine read the same thresholds.
 # =============================================================================
 
 # Default design targets for a SNaPshot marker (sources in the file header).
@@ -51,6 +61,13 @@ SNAPSHOT_AMP_LENGTHS <- 18:25
 SNAPSHOT_EXT_LENGTHS <- 18:25
 SNAPSHOT_EXT_TM <- c(50, 55)
 SNAPSHOT_EXT_GC <- c(0.30, 0.70)
+
+# How far the ladder may lower the three soft SNaPshot gates (margin units): the
+# amplicon window by this many bp on each side, the extension Tm window by this
+# many C on each side, and this much extra probe/extension self-structure.
+SNAPSHOT_AMPLICON_RELAX <- 50L
+SNAPSHOT_TM_RELAX <- 5
+SNAPSHOT_STRUCT_RELAX <- 3
 
 #' Design a SNaPshot / single-base-extension marker at a variant
 #'
@@ -102,21 +119,24 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
-  amp <- design_flanking_pair(
-    tmpl$seq, si, si, amp_lengths, min_amplicon, max_amplicon, amp_tm, amp_gc
-  )
+  # the amplicon rung of the ladder: the declared window first, widened by the
+  # floor only when nothing clears it (so the soft gate is genuinely reachable)
+  amp_in <- function(lo, hi) {
+    design_flanking_pair(tmpl$seq, si, si, amp_lengths, lo, hi, amp_tm, amp_gc)
+  }
+  amp <- amp_in(min_amplicon, max_amplicon) %||%
+    amp_in(min_amplicon - SNAPSHOT_AMPLICON_RELAX, max_amplicon + SNAPSHOT_AMPLICON_RELAX)
   if (is.null(amp)) {
     cli::cli_inform(gettext("No amplification pair passed the Tm/GC and amplicon-length filters."))
     return(NULL)
   }
   ext <- design_extension_primer(tmpl$seq, si, ext_lengths, ext_tm, ext_gc, limits)
   if (is.null(ext)) {
-    # a single documented relaxation of the extension windows (see file header)
+    # the tm rung: the same documented relaxation, declared as the gate's floor
     ext <- design_extension_primer(
       tmpl$seq, si, ext_lengths,
-      c(ext_tm[1L] - 2, ext_tm[2L] + 5),
-      c(max(0, ext_gc[1L] - 0.05), min(1, ext_gc[2L] + 0.05)),
-      limits
+      ext_tm + c(-SNAPSHOT_TM_RELAX, SNAPSHOT_TM_RELAX),
+      ext_gc, limits
     )
   }
   if (is.null(ext)) {
@@ -145,6 +165,42 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
     amp_forward = out$amplification$forward, amp_reverse = out$amplification$reverse,
     extension = out$extension$primer
   ))
+
+  # ---- C7: the declared gates are all evaluated on the winner ----------------
+  d <- scheme_def_snapshot()
+  # placement is structural, but verify it on the winner rather than assume it
+  placement_ok <- if (identical(ext$strand, "+")) ext$end == si - 1L else ext$start == si + 1L
+  ext_gc_obs <- gc_frac(ext$primer)
+  comp_ok <- ext_gc_obs >= SNAPSHOT_EXT_GC[1L] && ext_gc_obs <= SNAPSHOT_EXT_GC[2L] &&
+    !has_run(ext$primer) && !has_repeat(ext$primer)
+  tm_win <- d$ext_tm_window
+  amp_win <- d$amplicon_window
+  graded <- tibble::tibble(
+    m_placement = if (placement_ok) 1 else -1,
+    m_comp = if (comp_ok) 1 else -1,
+    m_unique = if (exact_oligo_hits(ext$primer, genome) == 1L) 1 else -1,
+    m_structure = pmin(ext$hairpin_dg - limits$hairpin_dg, ext$homodimer_dg - limits$homodimer_dg),
+    m_tm = min(ext$tm - tm_win[1L], tm_win[2L] - ext$tm),
+    m_amplicon = pmin(amp$product - amp_win[1L], amp_win[2L] - amp$product)
+  )
+  gate_margin <- c(
+    gate_snapshot_placement = "m_placement", gate_snapshot_comp = "m_comp",
+    gate_snapshot_unique = "m_unique", gate_snapshot_structure = "m_structure",
+    gate_snapshot_tm = "m_tm", gate_snapshot_amplicon = "m_amplicon"
+  )
+  sel <- grade_one_marker(
+    graded,
+    gates = d$gates, relax_order = d$relax,
+    tiers = c("m_tm", "m_structure", "m_amplicon"), # tier1..3 in scheme_def_snapshot()
+    gate_margin = gate_margin, gate_floor = d$gate_floor
+  )
+  if (is.null(sel)) {
+    cli::cli_inform(gettext(
+      "The SNaPshot candidate failed a hard gate (extension placement, composition or uniqueness)."
+    ))
+    return(NULL)
+  }
+  out$selection <- sel
   structure(out, class = "kasp_snapshot")
 }
 
@@ -232,8 +288,8 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
 #' @noRd
 scheme_def_snapshot <- function() {
   gates <- c(
-    "gate_snapshot_placement", "gate_snapshot_tm",
-    "gate_snapshot_amplicon", "gate_snapshot_structure"
+    "gate_snapshot_placement", "gate_snapshot_comp", "gate_snapshot_unique",
+    "gate_snapshot_structure", "gate_snapshot_tm", "gate_snapshot_amplicon"
   )
   list(
     scheme = "snapshot",
@@ -246,31 +302,51 @@ scheme_def_snapshot <- function() {
     loci = 1L,
     verdict = "usable SNaPshot marker",
     gates = gates,
-    relax = c("gate_snapshot_tm", "gate_snapshot_structure", "gate_snapshot_amplicon"),
+    # least grave first: the amplicon window is a practical default, the Tm
+    # window is salt-corrected, and a hairpin/dimer is the costliest deviation
+    relax = c("gate_snapshot_amplicon", "gate_snapshot_tm", "gate_snapshot_structure"),
     tiers = c(
-      tier1 = "extension-primer placement",
-      tier2 = "extension-primer Tm",
-      tier3 = "amplicon length"
+      tier1 = "extension-primer Tm centrality",
+      tier2 = "extension self-structure (hairpin / homodimer)",
+      tier3 = "amplicon length (near the ideal)"
     ),
     gate_short = c(
       gate_snapshot_placement = "extension 3' placement",
+      gate_snapshot_comp = "extension composition",
+      gate_snapshot_unique = "extension primer uniqueness",
+      gate_snapshot_structure = "extension structure",
       gate_snapshot_tm = "extension primer Tm",
-      gate_snapshot_amplicon = "amplicon length",
-      gate_snapshot_structure = "extension structure"
+      gate_snapshot_amplicon = "amplicon length"
     ),
     gate_limit = c(
       gate_snapshot_placement = "extension 3' end immediately 5' of the variant",
+      gate_snapshot_comp = glue::glue(
+        "GC {SNAPSHOT_EXT_GC[1L] * 100}-{SNAPSHOT_EXT_GC[2L] * 100} %, no run >= 4, no SSR"
+      ),
+      gate_snapshot_unique = "exactly one perfect extension-primer site in the genome",
+      gate_snapshot_structure = glue::glue("hairpin/homodimer dG37 >= {KASP_LIMITS$hairpin_dg}"),
       gate_snapshot_tm = glue::glue("extension primer Tm within [{SNAPSHOT_EXT_TM[1]}, {SNAPSHOT_EXT_TM[2]}] C"),
-      gate_snapshot_amplicon = glue::glue("amplicon within [{SNAPSHOT_AMPLICON[1]}, {SNAPSHOT_AMPLICON[2]}] bp"),
-      gate_snapshot_structure = "hairpin/homodimer dG37 >= limit"
+      gate_snapshot_amplicon = glue::glue("amplicon within [{SNAPSHOT_AMPLICON[1]}, {SNAPSHOT_AMPLICON[2]}] bp")
+    ),
+    # the numeric windows the engine scores against (so gate margins and the
+    # declared limits cannot drift) and the ladder's floors in margin units
+    amplicon_window = SNAPSHOT_AMPLICON,
+    ext_tm_window = SNAPSHOT_EXT_TM,
+    ext_gc_window = SNAPSHOT_EXT_GC,
+    gate_floor = c(
+      gate_snapshot_amplicon = -SNAPSHOT_AMPLICON_RELAX,
+      gate_snapshot_tm = -SNAPSHOT_TM_RELAX,
+      gate_snapshot_structure = -SNAPSHOT_STRUCT_RELAX
     ),
     gate_floor_label = c(
-      gate_snapshot_tm = "widen the extension Tm window",
-      gate_snapshot_amplicon = "widen the amplicon window",
-      gate_snapshot_structure = "allow 3 kcal/mol more stable"
+      gate_snapshot_amplicon = glue::glue("widen the amplicon window by {SNAPSHOT_AMPLICON_RELAX} bp"),
+      gate_snapshot_tm = glue::glue("widen the Tm window by {SNAPSHOT_TM_RELAX} C each side"),
+      gate_snapshot_structure = glue::glue("allow {SNAPSHOT_STRUCT_RELAX} kcal/mol more stable")
     ),
     gate_hard_label = c(
-      gate_snapshot_placement = "the first ddNTP reads the variant only if the 3' end abuts it"
+      gate_snapshot_placement = "the first ddNTP reads the variant only if the 3' end abuts it",
+      gate_snapshot_comp = "a run or extreme GC content stops the extension primer annealing",
+      gate_snapshot_unique = "a second binding site extends elsewhere and adds a spurious peak"
     ),
     stage_label = "SNaPshot extension"
   )

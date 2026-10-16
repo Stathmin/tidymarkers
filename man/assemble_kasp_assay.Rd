@@ -21,6 +21,7 @@ assemble_kasp_assay(
   linked = NULL,
   haplotypes = NULL,
   run_blast = FALSE,
+  scheme = "snp",
   cores = getOption("tidykasp.cores", 1L),
   BPPARAM = NULL
 )
@@ -71,6 +72,11 @@ carries \code{haplotypes} and a per-haplotype \code{haplotype_hits} table (which
 primer each is expected to bind).}
 
 \item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
+
+\item{scheme}{the marker chemistry this assay is assembled \emph{as} (see
+\code{\link[=kasp_schemes]{kasp_schemes()}}): stored on the object, and used to build the matching
+decision graph and to grade the acceptance checks, so a scheme never shows
+(or is graded by) another chemistry's tree (C12).}
 
 \item{cores}{processors for the per-SNP subprocess work (the DECIPHER PCR
 efficiencies and the OligoArrayAux dG maps); \code{1} (the default, from

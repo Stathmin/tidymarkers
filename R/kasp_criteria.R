@@ -12,42 +12,76 @@
 #  appears in the tree and in the results at once.
 # =============================================================================
 
-# Human-readable limits for the selection gates (for the registry / text export).
-KASP_GATE_LIMIT <- c(
-  gate_discrimination = "discrimination >= min_disc",
-  gate_structure = "hairpin/homodimer dG37 >= limit",
-  gate_tm = "COM Tm >= AS Tm",
-  gate_amplicon = "amplicon within [lo, hi]",
-  gate_com_footprint = "COM dropout <= tol",
-  gate_as_window = "no unlinked variant in AS 3' window",
-  gate_wobble = "no weak G:T / A:C 3' mismatch",
-  gate_as_footprint = "AS footprint dropout <= tol",
-  gate_duplex_targets = "homologous (dKASP) or non-homologous (mxKASP)",
-  gate_duplex_tm = "all primers Tm in [59, 65] C",
-  gate_duplex_complement = "no >= 6 bp inter-pair complementarity",
-  gate_duplex_selfcomp = "<= 5 self-complementary bases",
-  gate_duplex_amplicon = "each amplicon <= 150 bp",
-  gate_asq_cassette = "cassette per target (<= 4-plex)",
-  gate_asq_readout = "allele resolved in real time",
-  gate_caps_site = "an enzyme separates the REF and ALT amplicons",
-  gate_caps_resolvable = "closest diagnostic bands >= 50 bp apart",
-  gate_caps_amplicon = "amplicon within [120, 1200]",
-  gate_caps_tm = "both primers Tm within [lo, hi]",
-  gate_arms_disc = "inner 3' base matches the allele",
-  gate_arms_bands = "diagnostic bands >= 20 bp apart",
-  gate_arms_outer = "outer primers Tm-balanced",
-  gate_hrm_amplicon = "amplicon within the short HRM window",
-  gate_hrm_tm = "both flanking primers Tm within the window"
+# The human-readable gate limits (`KASP_GATE_LIMIT`) live in R/kasp_select.R with
+# the other gate lookups, so each scheme's entries sit in its own scheme file.
+
+# How each not-gated *check* is named inside a gate (its id / label / limit),
+# normalised the same way the DAG helper's C10 check does.  Only a check whose
+# stem appears in one of the scheme's gates is really gated.
+KASP_UNGATED_STEM <- c(
+  "inverted repeat (arms>=4, loop<=6)" = "invertedrepeat",
+  "in-silico PCR (REF 1 / ALT 0)" = "insilico",
+  "off-target exact primer hits (n)" = "offtarget"
 )
 
 # Acceptance checks the *selection* does not gate (they need the genome or an
 # in-silico PCR pass, computed only after the pair is chosen).  A failed one is
 # reported as a warning by assemble_kasp_assay(), not returned in silence.
-KASP_UNGATED_CHECKS <- c(
-  "inverted repeat (arms>=4, loop<=6)",
-  "in-silico PCR (REF 1 / ALT 0)",
-  "off-target exact primer hits (n)"
-)
+#
+# The set is per-scheme (C10): a scheme whose stage *does* gate one of them
+# (indel_size's uniqueness gate covers the PCR check, lamp's structure gate the
+# inverted repeat, ssr's the off-target) must not still call it ungated - that
+# would claim the selection ignores a criterion it enforces.  With no scheme the
+# full un-filtered set is returned.
+KASP_UNGATED_CHECKS <- function(scheme = NULL) {
+  all <- names(KASP_UNGATED_STEM)
+  if (is.null(scheme)) {
+    return(all)
+  }
+  gate <- kasp_criteria(scheme = scheme)
+  gate <- gate[gate$role == "gate", ]
+  evidence <- gsub(
+    "[^a-z0-9]", "",
+    tolower(paste(c(gate$id, gate$label, gate$limit), collapse = " "))
+  )
+  all[!vapply(all, function(l) grepl(KASP_UNGATED_STEM[[l]], evidence, fixed = TRUE), logical(1))]
+}
+
+# The amplicon acceptance window a family is graded against.
+#
+# The `amplicon length (bp)` check is the marker-agnostic primer one, but a single
+# 50-100 bp EasyKASP optimum is wrong for every chemistry that reads the product
+# by *size*: a CAPS/ARMS band, a Sanger read, an SSR / InDel-size fragment, an
+# isothermal LAMP/RPA/CRISPR product, or a short dPCR / TaqMan amplicon.  Each
+# family's window is read from its own constant (or its designer's declared
+# default), so the selection gate and the acceptance check cannot drift (C2/C5).
+#
+# A function, not a top-level constant: R sources kasp_criteria.R *before* the
+# scheme files, so reading `KASP_LIMITS$amplicon` here at load time fails (the
+# bug that already bit an agent); resolving the lookup lazily defers it until the
+# namespace is complete.  `kasp` / `multiplex` / `asq` / `primer` - and `hrm` /
+# `castpcr`, whose gate window *is* the KASP optimum - keep the marker-agnostic
+# window, so the SNP/indel/multi/duplex/asq/primer behaviour is unchanged.
+kasp_amplicon_window <- function(family = "kasp", limits = KASP_LIMITS) {
+  product_window <- function(f) {
+    fm <- formals(f)
+    c(eval(fm$min_product), eval(fm$max_product))
+  }
+  switch(family,
+    caps = caps_limits()$amplicon,
+    arms = as.numeric(KASP_ARMS_WINDOW$control),
+    crispr = product_window(design_crispr_marker),
+    dpcr = product_window(design_dpcr_marker),
+    indel_size = KASP_INDEL_SIZE_LIMITS$amplicon,
+    lamp = product_window(design_lamp_marker),
+    rpa = RPA_AMPLICON,
+    sanger = KASP_SANGER_LIMITS$amplicon,
+    snapshot = SNAPSHOT_AMPLICON,
+    ssr = KASP_SSR_LIMITS$amplicon,
+    taqman = product_window(design_taqman_marker),
+    limits$amplicon
+  )
+}
 
 #' The registry of every candidate evaluation
 #'
@@ -71,19 +105,26 @@ KASP_UNGATED_CHECKS <- c(
 #' @export
 kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   tol <- limits$footprint_dropout %||% 0.05
+  # `stage` / `role` / `level` are recycled over the gate (and tier) count so a
+  # stage with `gates = character(0)` (a documentation-only stage, e.g. ASQ)
+  # yields a 0-row gate block instead of a length-mismatch error.
   stage_rows <- function(stage, gates, relax, tiers, level, schemes) {
     n_gate <- length(gates)
     n_tier <- length(tiers)
+    # `id` is built with an explicit `if` so an empty gate/tier vector gives a
+    # length-0 id, never the dangling `"<stage>:gate:"` a bare paste0 would make
     dplyr::bind_rows(
       tibble::tibble(
-        stage = stage, role = "gate", id = paste0(stage, ":gate:", gates),
-        label = unname(KASP_GATE_SHORT[gates]), level = level,
+        stage = rep(stage, n_gate), role = rep("gate", n_gate),
+        id = if (n_gate) paste0(stage, ":gate:", gates) else character(0),
+        label = unname(KASP_GATE_SHORT[gates]), level = rep(level, n_gate),
         hard = !(gates %in% relax), limit = unname(KASP_GATE_LIMIT[gates]),
         order = seq_along(gates), schemes = rep(list(schemes), n_gate)
       ),
       tibble::tibble(
-        stage = stage, role = "tier", id = paste0(stage, ":tier:", names(tiers)),
-        label = unname(tiers), level = level, hard = FALSE,
+        stage = rep(stage, n_tier), role = rep("tier", n_tier),
+        id = if (n_tier) paste0(stage, ":tier:", names(tiers)) else character(0),
+        label = unname(tiers), level = rep(level, n_tier), hard = FALSE,
         limit = "maximise (per-tier bottleneck min)", order = seq_along(tiers),
         schemes = rep(list(schemes), n_tier)
       )
@@ -156,6 +197,11 @@ kasp_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   if (!is.null(scheme)) {
     keep <- vapply(out$schemes, function(s) scheme %in% s, logical(1))
     out <- out[keep, , drop = FALSE]
+    # the amplicon acceptance window is per-family (C2/C5): a product read by size
+    # is graded against the scheme's own window, never the KASP 50-100 bp optimum
+    win <- kasp_amplicon_window(kasp_scheme(scheme)$family, limits)
+    i <- match("amplicon length (bp)", out$label)
+    if (!is.na(i)) out$limit[i] <- glue::glue("[{win[1L]}, {win[2L]}]")
   }
   out
 }

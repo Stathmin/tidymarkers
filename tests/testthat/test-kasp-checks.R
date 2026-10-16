@@ -91,6 +91,24 @@ test_that("COM Tm must not fall below the AS primers (EasyKASP)", {
   expect_false(ch$pass[ch$criterion == "COM Tm >= AS Tm"])
 })
 
+test_that("the amplicon window is the scheme's own, not the KASP optimum (C2/C5)", {
+  amp <- function(ch) ch$criterion == "amplicon length (bp)"
+  a <- good_assay()
+  # a wet-lab CAPS band (120-1200 bp) passes as a caps marker, fails as a SNP
+  a$assay$amplicon <- 600L
+  caps <- kasp_design_checks(a, scheme = "caps")
+  expect_true(caps$pass[amp(caps)])
+  expect_equal(caps$limit[amp(caps)], "[120, 1200]")
+  snp <- kasp_design_checks(a, scheme = "snp")
+  expect_false(snp$pass[amp(snp)])
+  # 600 bp is inside the Sanger window (400-800) but outside SSR's (100-300)
+  sanger <- kasp_design_checks(a, scheme = "sanger")
+  expect_true(sanger$pass[amp(sanger)])
+  expect_equal(sanger$limit[amp(sanger)], "[400, 800]")
+  ssr <- kasp_design_checks(a, scheme = "ssr")
+  expect_false(ssr$pass[amp(ssr)])
+})
+
 test_that("the inverted-repeat screen fails a self-symmetric primer", {
   ch <- kasp_design_checks(good_assay())
   expect_true("inverted repeat (arms>=4, loop<=6)" %in% ch$criterion)

@@ -4,17 +4,22 @@
 \alias{kasp_design_checks}
 \title{Check an assembled assay against the KASP acceptance criteria}
 \usage{
-kasp_design_checks(assay, limits = KASP_LIMITS)
+kasp_design_checks(assay, limits = KASP_LIMITS, scheme = NULL)
 }
 \arguments{
 \item{assay}{result of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 
 \item{limits}{list of thresholds; defaults to \code{KASP_LIMITS}.}
+
+\item{scheme}{the marker chemistry the assay is graded as (see
+\code{\link[=kasp_schemes]{kasp_schemes()}}); \code{NULL} (the default) uses \code{assay$scheme}, falling back to
+\code{"snp"}.}
 }
 \value{
 tibble with \code{stage}, \code{criterion}, \code{observed}, \code{limit}, \code{pass},
 \code{detail} and \code{level}.  Criteria cover the target \emph{site}, each \emph{feature}
-oligo, the \emph{alignment}, and \emph{off-target} specificity.
+oligo, the \emph{alignment}, and \emph{off-target} specificity - as far as the scheme
+has them.
 }
 \description{
 Turns the prose design manual into a tidy pass/fail table so "good" and
@@ -23,6 +28,22 @@ The criterion list, levels and limits come from \code{\link[=kasp_criteria]{kasp
 \code{role == "check"} rows), so the checks and the decision tree share one
 vocabulary.  Reads only the assay object produced by \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 so it is pure and cheap to test.
+}
+\details{
+Only the checks the scheme's DAG displays are evaluated: \code{scheme} (or the
+assay's own \verb{$scheme}) filters \code{\link[=kasp_criteria]{kasp_criteria()}} to that chemistry, so a
+non-allele-specific scheme is never graded on AS/COM/REF-ALT facts it does not
+have (C3).  The values are computed lazily, so a scheme that lacks a check
+never reads the field that check needs.  The \verb{amplicon length (bp)} check is
+graded against the \emph{scheme's own} amplicon window (\code{kasp_amplicon_window()}),
+so a CAPS band, Sanger read, SSR / InDel-size fragment or isothermal product is
+never failed for the 50-100 bp KASP optimum (C2/C5).
+
+A criterion the selection ladder lowered for this winner (see
+\code{assay$selection$relaxed}/\verb{$violated}/\verb{$as}) is graded against the \emph{bar the
+selection applied}, not the ideal: the gate is soft precisely because the method
+tolerates the deviation, so "relaxed" must not also read as "failed" (C5).  Its
+\code{limit} then carries the relaxed bar and a \code{(relaxed)} marker.
 }
 \examples{
 \dontrun{

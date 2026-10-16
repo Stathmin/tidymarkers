@@ -8,8 +8,8 @@ design_hrm_marker(
   genome,
   snp,
   flank = 150L,
-  min_product = 40L,
-  max_product = 150L,
+  min_product = KASP_LIMITS$amplicon[1L],
+  max_product = KASP_LIMITS$amplicon[2L],
   lengths = 18:25,
   tm_range = KASP_LIMITS$com_tm,
   gc_range = KASP_LIMITS$gc
@@ -29,8 +29,9 @@ design_hrm_marker(
 \item{tm_range, gc_range}{accepted primer windows.}
 }
 \value{
-a \code{kasp_hrm} list (\code{snp}, \code{primers}, \code{amplicon}), or \code{NULL} (with a
-message) when no flanking pair passes the filters.
+a \code{kasp_hrm} list (\code{scheme}, \code{snp}, \code{primers}, \code{amplicon},
+\code{selection}), or \code{NULL} (with a message) when no flanking pair passes the
+filters.
 }
 \description{
 The melting-curve analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a single flanking pair
@@ -41,6 +42,12 @@ imposes no clean 3' window.  This is why HRM is the fallback for the loci KASP
 dooms (a variant in the AS 3' window, an AT-rich / poly-A junction).
 }
 \details{
+The short amplicon is the \emph{hard} requirement: it is the marker-agnostic
+amplicon window (\code{KASP_LIMITS$amplicon}), so a marker this gate admits always
+passes the acceptance check on the same criterion.  The pair's Tm balance is
+the soft one: when no pair clears the strict Tm window the ladder widens it by
+\code{HRM_TM_FLOOR} degrees and the marker records \code{selection$relaxed}.
+
 It does \strong{not} simulate the melting curve (that needs uMELT/PolyMelt-class
 models), so it returns a well-formed amplicon, not a predicted melt profile.
 }

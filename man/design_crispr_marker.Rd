@@ -12,9 +12,11 @@ design_crispr_marker(
   strand = c("both", "+", "-"),
   spacer_lengths = NULL,
   gc_range = NULL,
+  specificity_max = 0L,
+  preamp = c("rpa", "lamp"),
   min_product = 80L,
   max_product = 250L,
-  ...
+  BPPARAM = NULL
 )
 }
 \arguments{
@@ -36,30 +38,42 @@ the caller's to validate.}
 \item{spacer_lengths}{guide spacer lengths to try (default: 20-23 nt for
 Cas12a, 22-28 nt for Cas13).}
 
-\item{gc_range}{accepted guide GC window.}
+\item{gc_range}{accepted guide GC window (default 0.35-0.65).}
+
+\item{specificity_max}{accepted number of off-target protospacers (exact
+genome hits of the spacer beyond the on-target locus; default 0).}
+
+\item{preamp}{the isothermal pre-amplification the guide rides on, \code{"rpa"}
+(default) or \code{"lamp"}; it sets that pair's length / Tm / GC windows.}
 
 \item{min_product, max_product}{accepted pre-amplification amplicon window.}
 
-\item{...}{reserved for future options.}
+\item{BPPARAM}{optional \code{BiocParallel} backend for the guide-specificity scan.}
 }
 \value{
 a \code{kasp_crispr} list (\code{snp}, \code{cas}, \code{strand}, \code{guide}, \code{pam},
-\code{guide_start}, \code{guide_end}, \code{seed_offset}, \code{gc}, \code{amplicon}), or \code{NULL}
-(with a message) when no guide / amplicon passes the filters.
+\code{guide_start}, \code{guide_end}, \code{seed_offset}, \code{gc}, \code{amplicon}, \code{off_target},
+\code{gates}, \code{relaxed}), or \code{NULL} (with a message) when no guide / amplicon
+passes the hard gates.
 }
 \description{
 The Cas-mediated detection analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: an isothermal
 pre-amplification pair (RPA / LAMP) straddles the variant and a guide RNA is
 placed so its spacer covers the variant, with the variant in the seed or
 critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer; Cas13
-is PAM-free.  The collateral-cleavage readout itself is not simulated, so this
+is PAM-free.  The guide must also be unique in the genome (no off-target
+protospacer).  The collateral-cleavage readout itself is not simulated, so this
 returns a well-formed guide plus its pre-amplification amplicon, not a
 predicted signal.
 }
 \details{
 The guide is chosen best-first among all candidates whose pre-amplification
-pair also passes the Tm/GC filters, so a guide is only returned when its
-amplicon is designable too.
+pair also passes \emph{that chemistry's} composition filters (RPA or LAMP, never a
+KASP PCR), so a guide is only returned when its amplicon is designable too.
+The soft gates (amplicon window, GC, spacer length, off-target count) are
+relaxed one at a time, least grave first, only when no guide clears them all;
+the PAM (Cas12a) and the seed/critical region are hard - no guide is returned
+past them.
 }
 \examples{
 \dontrun{

@@ -9,8 +9,10 @@
 #       a long filament, so primers are ~30-35 nt (a short PCR primer recombines
 #       poorly and the reaction is slow/insensitive); Tm is not a gate.
 #    2. The amplicon is kept SHORT (~100-200 bp), the range RPA amplifies best.
-#  Allele discrimination is not as sharp as KASP's, so the variant is placed
-#  under a primer (no probe) or under the optional exo probe.  The exo probe is
+#  Allele discrimination is not as sharp as KASP's, so the variant is placed at
+#  a primer's 3'-terminal base (no probe) or under the optional exo probe.  A
+#  variant *inside* a primer (not at its 3' end) does not block extension and
+#  would not discriminate the alleles, so it is rejected rather than accepted.  The exo probe is
 #  an oligo blocked at its 3' end with a tetrahydrofuran (THF / dSpacer) abasic
 #  site flanked by a dT-fluorophore and a dT-quencher; Exonuclease III cleaves
 #  the THF only in a probe-target duplex, separating the pair and releasing
@@ -68,6 +70,22 @@ RPA_PROBE_THF_3P <- 15L
 # (Lobato 2018); we require a dT within this gap on each side of the THF.
 RPA_PROBE_FQ_GAP <- 4L
 
+# Without a probe the variant is read from a primer's 3'-terminal base (the
+# allele-specific-extension logic: a 3' mismatch blocks the strand-displacing
+# polymerase).  It must sit exactly at the 3' terminus; further in and the
+# mismatch no longer stops extension, so the window is 0.
+RPA_3P_WINDOW <- 0L
+
+# The relaxation floors for the soft gates (bounded; C8).  A primer a few nt
+# outside the governing length window still recombines (Wikipedia allows to 38
+# nt), the amplicon may stretch, and the THF / fluorophore-quencher geometry may
+# drift a little - but never without bound.
+RPA_PRIMER_LEN_RELAX <- c(min(RPA_PRIMER_LEN) - 3L, max(RPA_PRIMER_LEN) + 3L)
+RPA_AMPLICON_RELAX <- 20L
+RPA_PROBE_THF_5P_RELAX <- 25L
+RPA_PROBE_THF_3P_RELAX <- 12L
+RPA_PROBE_FQ_GAP_RELAX <- 6L
+
 # The isothermal operating window (Lobato 2018; Wikipedia): recorded for the
 # readout, not gated - RPA needs no thermal cycling.
 RPA_TEMP <- c(37, 42)
@@ -76,12 +94,31 @@ RPA_TEMP <- c(37, 42)
 # R/kasp_select.R.  `scheme_def_rpa()` returns them so the shared registry can
 # wire the chemistry in afterwards without a second vocabulary.
 KASP_GATES_RPA <- c(
-  "gate_rpa_primer_len", "gate_rpa_structure", "gate_rpa_probe", "gate_rpa_amplicon"
+  "gate_rpa_variant", "gate_rpa_primer_len", "gate_rpa_structure",
+  "gate_rpa_probe", "gate_rpa_amplicon"
 )
-KASP_RELAX_RPA <- c("gate_rpa_primer_len", "gate_rpa_probe", "gate_rpa_amplicon")
+# relaxation order, LEAST grave first (C6): the amplicon window is the most
+# forgiving, then the probe geometry, then the governing primer length.
+KASP_RELAX_RPA <- c("gate_rpa_amplicon", "gate_rpa_probe", "gate_rpa_primer_len")
 KASP_TIERS_RPA <- c(
-  tier1 = "primer length/position", tier2 = "probe geometry", tier3 = "amplicon length"
+  tier1 = "discrimination placement", tier2 = "primer length",
+  tier3 = "probe geometry", tier4 = "amplicon length"
 )
+
+# An empty primer_candidates() result (every candidate carries a homopolymer run or
+# an SSR) makes the shared screener fail in primer_tm(); RPA probes very narrow
+# windows, so guard it here and treat "no candidates" as an empty grid.
+rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range) {
+  empty <- tibble::tibble(
+    start = integer(0), len = integer(0), end = integer(0),
+    primer = character(0), tm = numeric(0), gc = numeric(0)
+  )
+  out <- tryCatch(
+    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range),
+    error = function(e) NULL
+  )
+  if (is.null(out)) empty else out
+}
 
 #' Do an RPA primer pair pass the structure / dimer filters?
 #'
@@ -134,25 +171,35 @@ rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
   }
   clean <- function(d) d[!has_palindrome(d$primer), , drop = FALSE]
   if (design_probe) {
-    fwd <- primer_candidates(seq, seq_len(si - 1L), lengths, "+", tm_range, gc_range) |>
+    # with a probe the primers flank the variant and the probe carries the
+    # discrimination, so the primers only need to bracket it
+    fwd <- rpa_candidates(seq, seq_len(si - 1L), lengths, "+", tm_range, gc_range) |>
       dplyr::filter(.data$end < si) |>
       clean()
-    rev <- primer_candidates(seq, seq.int(si + 1L, n), lengths, "-", tm_range, gc_range) |>
+    rev <- rpa_candidates(seq, seq.int(si + 1L, n), lengths, "-", tm_range, gc_range) |>
       clean()
     b <- pick_primer_pair(fwd, rev, min_product, max_product)
     return(if (is.null(b)) NULL else pair_to_list(b))
   }
-  s_starts <- seq.int(max(1L, si - max(lengths) + 1L), si)
-  cover_f <- primer_candidates(seq, s_starts, lengths, "+", tm_range, gc_range) |>
-    dplyr::filter(.data$end >= si) |>
+  # no probe: the variant must sit at a primer's 3' terminus (the AS-like
+  # extension block), within RPA_3P_WINDOW nt of it - an internal mismatch does
+  # not stop the strand-displacing polymerase and would not discriminate.
+  w <- RPA_3P_WINDOW
+  near_f <- seq_len(si)
+  near_r <- seq.int(max(1L, si - max(lengths) + 1L), si)
+  # the variant at the 3' end of the forward primer (its `end`) or the reverse
+  # primer (whose 3' terminus is its plus-strand `start`)
+  cover_f <- rpa_candidates(seq, near_f, lengths, "+", tm_range, gc_range) |>
+    dplyr::filter(.data$end >= si, .data$end <= si + w) |>
     clean()
-  cover_r <- primer_candidates(seq, s_starts, lengths, "-", tm_range, gc_range) |>
-    dplyr::filter(.data$end >= si) |>
+  cover_r <- rpa_candidates(seq, near_r, lengths, "-", tm_range, gc_range) |>
+    dplyr::filter(.data$start >= si - w) |>
     clean()
-  mate_r <- primer_candidates(seq, seq.int(si + 1L, n), lengths, "-", tm_range, gc_range) |>
+  # the mates stay clear of the covering primer so they cannot overlap it
+  mate_r <- rpa_candidates(seq, seq.int(si + w + 1L, n), lengths, "-", tm_range, gc_range) |>
     clean()
-  mate_f <- primer_candidates(seq, seq_len(si - 1L), lengths, "+", tm_range, gc_range) |>
-    dplyr::filter(.data$end < si) |>
+  mate_f <- rpa_candidates(seq, seq_len(si - w - 1L), lengths, "+", tm_range, gc_range) |>
+    dplyr::filter(.data$end < si - w) |>
     clean()
   cand <- dplyr::bind_rows(
     pick_primer_pair(cover_f, mate_r, min_product, max_product),
@@ -167,18 +214,22 @@ rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
 #' One exo probe candidate: place the THF and the dT-fluorophore/quencher
 #'
 #' Keeps the abasic (THF) site inside the published 5'/3' arm windows, replaces
-#' that base with `"X"`, and verifies a dT within `RPA_PROBE_FQ_GAP` bases on each
-#' side (the dT-fluorophore and dT-quencher of the TwistAmp exo probe).  Returns
-#' `NULL` when the geometry cannot be satisfied.
+#' that base with `"X"`, and verifies a dT within `fq_gap` bases on each side (the
+#' dT-fluorophore and dT-quencher of the TwistAmp exo probe).  Returns `NULL`
+#' when the geometry cannot be satisfied.  The arm/gap windows are parameters so
+#' the ladder can relax them (they are soft).
 #' @param row one row of [primer_candidates()] output.
 #' @param si 1-based variant position on the template.
+#' @param thf_5p,thf_3p the minimum 5'/3' abasic-arm lengths.
+#' @param fq_gap the maximum dT-fluorophore/quencher gap on each side.
 #' @return a probe list, or `NULL`.
 #' @keywords internal
 #' @noRd
-rpa_probe_one <- function(row, si) {
+rpa_probe_one <- function(row, si, thf_5p = RPA_PROBE_THF_5P,
+                          thf_3p = RPA_PROBE_THF_3P, fq_gap = RPA_PROBE_FQ_GAP) {
   len <- row$len
-  lo <- RPA_PROBE_THF_5P + 1L
-  hi <- len - RPA_PROBE_THF_3P
+  lo <- thf_5p + 1L
+  hi <- len - thf_3p
   if (lo > hi) {
     return(NULL)
   }
@@ -190,7 +241,7 @@ rpa_probe_one <- function(row, si) {
   }
   gap5 <- thf - max(left[, "start"])
   gap3 <- min(right[, "start"])
-  if (gap5 > RPA_PROBE_FQ_GAP || gap3 > RPA_PROBE_FQ_GAP) {
+  if (gap5 > fq_gap || gap3 > fq_gap) {
     return(NULL)
   }
   list(
@@ -216,18 +267,23 @@ rpa_probe_one <- function(row, si) {
 #' @param pair the amplicon-bounding pair ([pair_to_list()]).
 #' @param probe_len probe lengths to try.
 #' @param gc_range accepted GC window.
+#' @param thf_5p,thf_3p,fq_gap the (soft) geometry windows (see [rpa_probe_one()]).
 #' @return a probe list, or `NULL`.
 #' @keywords internal
 #' @noRd
-rpa_probe <- function(seq, si, pair, probe_len, gc_range) {
+rpa_probe <- function(seq, si, pair, probe_len, gc_range,
+                      thf_5p = RPA_PROBE_THF_5P, thf_3p = RPA_PROBE_THF_3P,
+                      fq_gap = RPA_PROBE_FQ_GAP) {
   starts <- seq.int(max(1L, si - max(probe_len) + 1L), si)
-  cand <- primer_candidates(seq, starts, probe_len, "+", RPA_NO_TM, gc_range) |>
+  cand <- rpa_candidates(seq, starts, probe_len, "+", RPA_NO_TM, gc_range) |>
     dplyr::filter(
       .data$start >= pair$start, .data$end <= pair$end,
       .data$start <= si, .data$end >= si
     ) |>
     dplyr::arrange(dplyr::desc(.data$len), .data$start)
-  probe <- purrr::map(seq_len(nrow(cand)), function(i) rpa_probe_one(cand[i, ], si))
+  probe <- purrr::map(seq_len(nrow(cand)), function(i) {
+    rpa_probe_one(cand[i, ], si, thf_5p, thf_3p, fq_gap)
+  })
   purrr::keep(probe, ~ !is.null(.x)) |>
     purrr::pluck(1L)
 }
@@ -259,8 +315,9 @@ rpa_probe <- function(seq, si, pair, probe_len, gc_range) {
 #'   gate) and only used by the shared candidate screener.
 #' @param BPPARAM optional `BiocParallel` backend for the dimer filter.
 #' @return a `kasp_rpa` list (`snp`, `primers`, `probe`, `amplicon`,
-#'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe),
-#'   or `NULL` (with a message) when no pair or probe passes the filters.
+#'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe -
+#'   `gates` - the evaluated gate table - and `relaxed`, the soft gates it had to
+#'   lower), or `NULL` (with a message) when no pair or probe passes the filters.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -286,27 +343,56 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
-  # no probe: the variant sits UNDER a primer (site pair); with a probe: the
-  # primers flank and the probe covers the variant (its own discrimination locus)
-  pair <- rpa_pair(
-    tmpl$seq, si, design_probe, primer_len, min_product, max_product, tm_range, gc_range
+  strict_len <- as.integer(primer_len)
+  # the ladder: relax the soft gates LEAST grave first (C6), one rung at a time,
+  # never below the floors above.  The variant placement (`gate_rpa_variant`) and
+  # the structure/dimers (`gate_rpa_structure`) are hard - no pair is returned
+  # past them, at any rung.
+  rungs <- list(
+    character(0),
+    "gate_rpa_amplicon",
+    c("gate_rpa_amplicon", "gate_rpa_probe"),
+    c("gate_rpa_amplicon", "gate_rpa_probe", "gate_rpa_primer_len")
   )
-  if (is.null(pair)) {
-    cli::cli_inform(gettext("No RPA primer pair passed the length/GC/amplicon filters."))
-    return(NULL)
-  }
-  if (!rpa_structure_ok(pair, BPPARAM)) {
-    cli::cli_inform(gettext("The RPA primer pair failed the structure/dimer filters."))
-    return(NULL)
-  }
-  probe <- NULL
-  if (design_probe) {
-    probe <- rpa_probe(tmpl$seq, si, pair, probe_len, gc_range)
-    if (is.null(probe)) {
-      cli::cli_inform(gettext("No exo probe covering the variant passed the geometry filters."))
+  attempt <- function(relaxed) {
+    lengths <- if ("gate_rpa_primer_len" %in% relaxed) {
+      seq.int(min(strict_len) - 3L, max(strict_len) + 3L)
+    } else {
+      strict_len
+    }
+    amp_lo <- if ("gate_rpa_amplicon" %in% relaxed) min_product - RPA_AMPLICON_RELAX else min_product
+    amp_hi <- if ("gate_rpa_amplicon" %in% relaxed) max_product + RPA_AMPLICON_RELAX else max_product
+    pair <- rpa_pair(tmpl$seq, si, design_probe, lengths, amp_lo, amp_hi, tm_range, gc_range)
+    if (is.null(pair) || !rpa_structure_ok(pair, BPPARAM)) {
       return(NULL)
     }
+    probe <- NULL
+    if (design_probe) {
+      thf5 <- if ("gate_rpa_probe" %in% relaxed) RPA_PROBE_THF_5P_RELAX else RPA_PROBE_THF_5P
+      thf3 <- if ("gate_rpa_probe" %in% relaxed) RPA_PROBE_THF_3P_RELAX else RPA_PROBE_THF_3P
+      fq <- if ("gate_rpa_probe" %in% relaxed) RPA_PROBE_FQ_GAP_RELAX else RPA_PROBE_FQ_GAP
+      probe <- rpa_probe(tmpl$seq, si, pair, probe_len, gc_range, thf5, thf3, fq)
+      if (is.null(probe)) {
+        return(NULL)
+      }
+    }
+    list(pair = pair, probe = probe)
   }
+  pick <- NULL
+  for (r in rungs) {
+    pick <- attempt(r)
+    if (!is.null(pick)) {
+      break
+    }
+  }
+  if (is.null(pick)) {
+    cli::cli_inform(gettext(
+      "No RPA primer pair passed the variant-placement / length / structure / amplicon filters."
+    ))
+    return(NULL)
+  }
+  pair <- pick$pair
+  probe <- pick$probe
   off <- snp$pos - si
   if (!is.null(probe)) {
     probe$start <- probe$start + off
@@ -315,11 +401,23 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
   fwd_end <- pair$start + nchar(pair$forward) - 1L
   under <- if (design_probe) {
     "probe"
-  } else if (si >= pair$start && si <= fwd_end) {
+  } else if (abs(fwd_end - si) <= RPA_3P_WINDOW) {
     "forward"
   } else {
     "reverse"
   }
+  # the gate table the DAG displays, evaluated on the assay actually returned (C7)
+  gates <- c(
+    gate_rpa_variant = TRUE, # enforced by the 3'-end / under-probe placement
+    gate_rpa_primer_len = all(
+      dplyr::between(c(nchar(pair$forward), nchar(pair$reverse)), min(strict_len), max(strict_len))
+    ),
+    gate_rpa_structure = if (has_oligoarrayaux()) TRUE else NA,
+    gate_rpa_probe = if (is.null(probe)) NA else TRUE, # geometry enforced if a probe is used
+    gate_rpa_amplicon = dplyr::between(pair$product, min_product, max_product)
+  )
+  soft <- c("gate_rpa_amplicon", "gate_rpa_probe", "gate_rpa_primer_len")
+  relaxed <- soft[vapply(soft, function(g) isFALSE(gates[[g]]), logical(1))]
   out <- list(
     snp = snp,
     primers = c(pair, list(
@@ -327,6 +425,8 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
       variant_under = under, temperature = RPA_TEMP
     )),
     probe = probe,
+    gates = gates,
+    relaxed = relaxed,
     amplicon = tibble::tibble(start = pair$start + off, end = pair$end + off)
   )
   # the pair and the exo probe share the tube: joint screen (the probe's THF base
@@ -351,11 +451,20 @@ print.kasp_rpa <- function(x, ...) {
       sep = ""
     )
   }
+  locus <- if (identical(x$primers$variant_under, "probe")) {
+    "under the exo probe"
+  } else {
+    paste0("at the ", x$primers$variant_under, " primer 3' end")
+  }
   cat(
-    "  amplicon:", x$primers$product, "bp; variant under ", x$primers$variant_under,
-    "; isothermal ", x$primers$temperature[1L], "-", x$primers$temperature[2L], " C\n",
+    "  amplicon:", x$primers$product, "bp; variant ", locus,
+    "; isothermal ", x$primers$temperature[1L], "-",
+    x$primers$temperature[2L], " C\n",
     sep = ""
   )
+  if (length(x$relaxed)) {
+    cat("  (relaxed:", paste(x$relaxed, collapse = ", "), ")\n")
+  }
   invisible(x)
 }
 
@@ -383,7 +492,7 @@ scheme_def_rpa <- function() {
     scheme = "rpa",
     family = "rpa",
     label = "RPA (recombinase polymerase amplification, isothermal)",
-    discrimination = "variant under a long primer or the exo probe",
+    discrimination = "variant at a long primer 3' end, or under the exo probe",
     readout = "isothermal 37-42 C; real-time exo probe (or gel)",
     zygosity = "co-dominant",
     amplicon = "short (100-200 bp)",
@@ -393,26 +502,29 @@ scheme_def_rpa <- function() {
     relax = KASP_RELAX_RPA,
     tiers = KASP_TIERS_RPA,
     gate_short = c(
+      gate_rpa_variant = "variant placement",
       gate_rpa_primer_len = "primer length",
       gate_rpa_structure = "primer structure/dimers",
       gate_rpa_probe = "probe geometry",
       gate_rpa_amplicon = "amplicon length (RPA)"
     ),
     gate_limit = c(
+      gate_rpa_variant = "variant at a primer 3' end (no probe) or under the exo probe",
       gate_rpa_primer_len = glue::glue("each primer within [{primer_lo}, {primer_hi}] nt (length, not Tm)"),
       gate_rpa_structure = glue::glue("no palindrome; dimer dG37 >= {KASP_LIMITS$homodimer_dg}"),
       gate_rpa_probe = paste0(
         "probe ", probe_lo, "-", probe_hi, " nt; THF >= ", RPA_PROBE_THF_5P,
-        " nt 5' / >= ", RPA_PROBE_THF_3P, " nt 3'; variant under probe"
+        " nt 5' / >= ", RPA_PROBE_THF_3P, " nt 3'; variant under probe (when used)"
       ),
       gate_rpa_amplicon = glue::glue("amplicon within [{amp_lo}, {amp_hi}] bp")
     ),
     gate_floor_label = c(
-      gate_rpa_primer_len = "allow 1-2 nt outside the length window",
+      gate_rpa_amplicon = "widen the amplicon window by 20 bp",
       gate_rpa_probe = "relax the THF / fluorophore-quencher geometry",
-      gate_rpa_amplicon = "widen the amplicon window"
+      gate_rpa_primer_len = "allow up to 3 nt outside the length window"
     ),
     gate_hard_label = c(
+      gate_rpa_variant = "a variant away from a primer 3' end / the probe is not discriminated",
       gate_rpa_structure = "strong primer dimers/hairpins stall the recombinase"
     ),
     stage_label = "RPA primers/probe"

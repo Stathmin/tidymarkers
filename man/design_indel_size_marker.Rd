@@ -8,11 +8,11 @@ design_indel_size_marker(
   genome,
   snp,
   flank = 250L,
-  min_gap = 5L,
-  min_product = 80L,
-  max_product = 300L,
+  min_gap = KASP_INDEL_SIZE_LIMITS$min_gap,
+  min_product = KASP_INDEL_SIZE_LIMITS$amplicon[1L],
+  max_product = KASP_INDEL_SIZE_LIMITS$amplicon[2L],
   lengths = 18:25,
-  tm_range = KASP_LIMITS$com_tm,
+  tm_range = KASP_INDEL_SIZE_LIMITS$tm,
   gc_range = KASP_LIMITS$gc,
   ...
 )
@@ -25,7 +25,8 @@ design_indel_size_marker(
 
 \item{flank}{template half-width.}
 
-\item{min_gap}{minimal REF/ALT product-size difference (bp) to call resolvable.}
+\item{min_gap}{minimal REF/ALT product-size difference (bp) to call resolvable
+on the agarose readout; the ladder may relax it to \code{capillary_gap}.}
 
 \item{min_product, max_product}{the accepted amplicon window (bp), applied to
 both alleles.}
@@ -34,12 +35,13 @@ both alleles.}
 
 \item{tm_range, gc_range}{accepted primer windows.}
 
-\item{...}{reserved for future arguments.}
+\item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
 }
 \value{
 a \code{kasp_indel_size} list (\code{snp}, \code{primers}, \code{amplicon} with the REF
-and ALT product sizes, \code{gap}), or \code{NULL} (with a message) when the indel is
-too short or no flanking pair passes the filters.
+and ALT product sizes, \code{gap}, \code{selection}), or \code{NULL} (with a message) when
+the indel is too short for even a capillary readout or no flanking pair
+passes the gates.
 }
 \description{
 The fragment-length readout: one flanking pair spans the insertion/deletion
@@ -47,8 +49,11 @@ and the two alleles give products that differ by the indel length, so the
 genotype is read from band size (agarose or capillary).  Both primers sit in
 the conserved flanks \emph{outside} the indel, so each binds both alleles and the
 product-size difference is exactly the indel length.  The pair is Tm-balanced
-and kept in a short product window; a difference below \code{min_gap} is treated as
-a capillary/PAGE job and rejected.  Single-locus (1-plex) only.
+and kept in a short product window.  Every gate the scheme declares is
+evaluated here (C7): the resolvability of the size difference (soft, with a
+3 bp capillary floor), the amplicon and Tm windows (soft), and the primer
+structure and genome-wide uniqueness (hard).  The result records which soft
+gates were relaxed (\verb{$selection}).  Single-locus (1-plex) only.
 }
 \examples{
 \dontrun{

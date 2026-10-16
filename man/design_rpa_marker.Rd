@@ -43,8 +43,9 @@ gate) and only used by the shared candidate screener.}
 }
 \value{
 a \code{kasp_rpa} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},
-\code{compatibility} - the joint dimer/hairpin screen over the pair and the probe),
-or \code{NULL} (with a message) when no pair or probe passes the filters.
+\code{compatibility} - the joint dimer/hairpin screen over the pair and the probe -
+\code{gates} - the evaluated gate table - and \code{relaxed}, the soft gates it had to
+lower), or \code{NULL} (with a message) when no pair or probe passes the filters.
 }
 \description{
 The isothermal analogue of a plain PCR pair: two LONG primers (default 30-35

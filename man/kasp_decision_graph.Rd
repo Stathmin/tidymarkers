@@ -4,15 +4,18 @@
 \alias{kasp_decision_graph}
 \title{The decision tree as a \code{tidygraph}, annotated with an assay's outcome}
 \usage{
-kasp_decision_graph(assay = NULL, scheme = "snp")
+kasp_decision_graph(assay = NULL, scheme = NULL)
 }
 \arguments{
 \item{assay}{optional assembled assay; when given, gate nodes are stamped from
 \code{assay$selection} (\code{"relaxed"}/\code{"violated"}/\code{"ok"}) and check nodes from
-\code{assay$evaluation} (\code{"ok"}/\code{"violated"}).}
+\code{assay$evaluation} (\code{"ok"}/\code{"violated"}), and the assay's own \verb{$scheme}
+picks the tree.  The gate stamping is per stage id, so every chemistry's own
+stage (CAPS, ARMS, Sanger, ...) is coloured, not only the shared \code{as}/\code{pair}
+ones (C13).}
 
-\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}); ignored when \code{assay} carries
-its own \verb{$decision} graph.}
+\item{scheme}{a scheme id (see \code{\link[=kasp_schemes]{kasp_schemes()}}); \code{NULL} (the default) uses
+\code{assay$scheme}, falling back to \code{"snp"}.}
 }
 \value{
 a \code{tidygraph::tbl_graph}; nodes carry \code{name}, \code{stage}, \code{kind},

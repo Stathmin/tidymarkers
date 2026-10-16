@@ -15,6 +15,17 @@
 #  designer makes the trade-off; we never hide it.
 # =============================================================================
 
+# ---- the two declared orders (C6) -------------------------------------------
+# Every selection stage declares *two* orders, and they are not the same thing:
+#   * the GATE order - the order the method applies the gates, grave / cheap
+#     first (a fatal flaw is tested before an expensive one).  It is the order
+#     of the stage's `KASP_GATES_*` vector;
+#   * the RELAXATION order - the order the ladder lowers the *soft* gates when
+#     nothing clears them, LEAST grave first (the mildest trade-off is tried
+#     before a worse one).  It is the order of the stage's `KASP_RELAX_*` vector.
+# Both are declared by the constants below, and the text export labels both per
+# stage ("in application order (grave / cheap first)" / "least grave first").
+
 # Which gates may be *somewhat* relaxed, least grave first.  Gates absent here
 # are hard limits set by the assay's chemistry / KASP literature and are never
 # lowered (a lone variant in the AS 3' window, or no allele discrimination, makes
@@ -22,12 +33,18 @@
 # a violation - it rides with the ALT haplotype and is baked into the ALT primer,
 # so the window count excludes it (see assemble_kasp_assay(linked=)).
 KASP_RELAX_PAIR <- c("gate_amplicon", "gate_structure", "gate_tm", "gate_com_footprint")
-KASP_RELAX_AS <- c("gate_wobble", "gate_as_footprint")
+# Least grave first.  A footprint variant (another catalogued variant *somewhere*
+# under the AS primer) costs at most a fraction of the templates, so it is the
+# mildest trade-off; a G:T / A:C *wobble* at the 3' base is the manual's worst
+# mismatch (README section 3: "G:T and C:A are the most stable and give the worst
+# discrimination"), so it is the graver of the two and is relaxed LAST.
+KASP_RELAX_AS <- c("gate_as_footprint", "gate_wobble")
 
-# The gate set: the AS stage decides discrimination and the 3' window (they are
-# fixed by the AS placement), so the pair stage only gates what varies across
-# COM placements - structure, Tm, amplicon and the COM footprint.  Re-gating the
-# AS's constants here would be vacuous.
+# The gate set, in application order (grave / cheap first): the AS stage decides
+# discrimination and the 3' window (they are fixed by the AS placement), so the
+# pair stage only gates what varies across COM placements - structure, Tm,
+# amplicon and the COM footprint.  Re-gating the AS's constants here would be
+# vacuous.
 KASP_GATES_PAIR <- c("gate_structure", "gate_tm", "gate_amplicon", "gate_com_footprint")
 KASP_GATES_AS <- c("gate_discrimination", "gate_wobble", "gate_as_footprint", "gate_as_window")
 
@@ -48,66 +65,24 @@ KASP_GATE_FLOOR_PAIR <- c(
 # changing the order shows up in the picture.
 KASP_TIERS_PAIR <- c(
   tier1 = "structure (hairpin / homodimer)", tier2 = "Tm (COM vs AS / target)",
-  tier3 = "amplicon length", tier4 = "footprint load"
+  tier3 = "amplicon length", tier4 = "footprint load",
+  tier5 = "COM 3' end weakness"
 )
 KASP_TIES_PAIR <- c("run", "ssr", "com_start")
 KASP_TIERS_AS <- c(
-  tier1 = "discrimination", tier2 = "Tm", tier3 = "3' stability", tier4 = "footprint load"
+  tier1 = "discrimination", tier2 = "Tm", tier3 = "3' end weakness", tier4 = "footprint load"
 )
 KASP_TIES_AS <- c("seed_hits", "as_length", "as_start")
 
-# A duplex chemistry (dKASP / mxKASP / Multi-KASP) puts two loci in one tube, so
-# on top of the per-locus design it adds a compatibility stage.  The rules are
-# the published ones: Multi-KASP bans >= 6 bp inter-primer complementarity, keeps
-# every primer Tm in 59-65 C and each amplicon <= 150 bp; dKASP pairs homologous
-# genes, mxKASP non-homologous ones (zygosity then follows from the combination).
-# A shared refinement branch may widen the amplicon or the self-complementarity
-# cap, but never the cross-talk rules.  Readout may be two cassettes (co-dominant
-# per locus) or presence/absence (dominant) - see kasp_schemes().
-KASP_GATES_DUPLEX <- c(
-  "gate_duplex_targets", "gate_duplex_tm", "gate_duplex_complement",
-  "gate_duplex_selfcomp", "gate_duplex_amplicon"
-)
-KASP_RELAX_DUPLEX <- c("gate_duplex_amplicon", "gate_duplex_selfcomp")
-KASP_TIERS_DUPLEX <- c(
-  tier1 = "duplex pair compatibility", tier2 = "Tm window match", tier3 = "amplicon budget"
-)
-
-# ASQ / PACE: a different cassette readout (Kalendar 2022), up to 4-plex in one
-# real-time reaction.  The allele-specific core is the KASP one; the extra gates
-# are the cassette budget and the real-time resolution.
-KASP_GATES_ASQ <- c("gate_asq_cassette", "gate_asq_readout")
-KASP_RELAX_ASQ <- character(0)
-KASP_TIERS_ASQ <- c(tier1 = "allele discrimination", tier2 = "Tm")
-
-# CAPS / dCAPS: the variant is read by a restriction digest (R/kasp_caps.R), so
-# selection is "is there an enzyme that separates the alleles, and does the pair
-# amplify the site cleanly" - none of the KASP 3'-terminal machinery applies.
-KASP_GATES_CAPS <- c("gate_caps_site", "gate_caps_resolvable", "gate_caps_amplicon", "gate_caps_tm")
-KASP_RELAX_CAPS <- c("gate_caps_amplicon", "gate_caps_tm", "gate_caps_resolvable")
-KASP_TIERS_CAPS <- c(
-  tier1 = "band gap (gel resolvability)", tier2 = "Tm balance", tier3 = "amplicon length"
-)
-
-# Tetra-primer ARMS-PCR: an outer control pair plus two inner allele-specific
-# primers on opposite strands, read as band sizes (R/kasp_arms.R).
-KASP_GATES_ARMS <- c("gate_arms_disc", "gate_arms_bands", "gate_arms_outer")
-KASP_RELAX_ARMS <- c("gate_arms_bands", "gate_arms_outer")
-KASP_TIERS_ARMS <- c(
-  tier1 = "inner discrimination", tier2 = "band separation", tier3 = "outer Tm balance"
-)
-
-# HRM: the variant is read from the melting curve of a *short* amplicon, so there
-# is no allele-specific primer - one flanking pair straddles the variant, which
-# sits in the melt domain and under neither primer.  The gates are the amplicon
-# budget and the pair's Tm balance; neighbouring variants are tolerated (the curve
-# separates them), so there is no 3'-window gate.
-KASP_GATES_HRM <- c("gate_hrm_amplicon", "gate_hrm_tm")
-KASP_RELAX_HRM <- c("gate_hrm_amplicon")
-KASP_TIERS_HRM <- c(tier1 = "short amplicon", tier2 = "Tm balance")
+# The duplex / ASQ / CAPS / ARMS / HRM stage constants live with their scheme
+# (R/kasp_duplex.R, R/kasp_asq.R, R/kasp_caps.R, R/kasp_arms.R, R/kasp_hrm.R),
+# so a scheme agent edits one file: its stage, its labels and its designer.
+# kasp_decision_stages() / kasp_criteria() read the globals from the namespace.
 
 # Human-readable name for each gate, used in the relaxation warning and the
-# decision graph.
+# decision graph.  Each scheme's own entries follow this KASP-core block (see
+# `KASP_GATE_LABEL_*`); the concatenation below keeps one lookup for the
+# registry, the text export and the tree.
 KASP_GATE_LABEL <- c(
   gate_discrimination = "allele discrimination below min_disc",
   gate_structure = "strong COM hairpin / homodimer",
@@ -117,40 +92,22 @@ KASP_GATE_LABEL <- c(
   gate_as_window = "known variant in the AS 3' window",
   gate_wobble = "wobble (G:T / A:C) mismatch at the 3' base",
   gate_as_footprint = "AS footprint dropout above tolerance",
-  gate_duplex_targets = "the two loci do not match the chosen readout",
-  gate_duplex_tm = "primers outside the shared Tm window",
-  gate_duplex_complement = "inter-pair primer complementarity",
-  gate_duplex_selfcomp = "primer self-complementarity above the duplex cap",
-  gate_duplex_amplicon = "a duplex amplicon above 150 bp",
-  gate_asq_cassette = "more targets than the ASQ cassette budget",
-  gate_asq_readout = "no allele resolution in real time",
-  gate_caps_site = "no enzyme separates the REF and ALT amplicons",
-  gate_caps_resolvable = "the diagnostic bands are too close on a gel",
-  gate_caps_amplicon = "the CAPS amplicon is outside the accepted window",
-  gate_caps_tm = "a flanking primer Tm is outside the window",
-  gate_arms_disc = "an inner primer does not discriminate the allele",
-  gate_arms_bands = "the diagnostic bands are too close to resolve",
-  gate_arms_outer = "the outer control pair is unbalanced",
-  gate_hrm_amplicon = "the HRM amplicon is outside the short window",
-  gate_hrm_tm = "a flanking primer Tm is outside the window"
+  KASP_GATE_LABEL_DUPLEX, KASP_GATE_LABEL_ASQ, KASP_GATE_LABEL_CAPS,
+  KASP_GATE_LABEL_ARMS, KASP_GATE_LABEL_HRM
 )
 
-# Short names for the decision graph (the warnings keep the full labels).
+# Short names for the decision graph (the warnings keep the full labels).  A
+# gate that a stage decides on the same physical criterion an acceptance check
+# reports is labelled for its *role* (the selection rule), so the graph never
+# shows two nodes with one criterion's name (C1): "discrimination (gate)" is the
+# selector's screen, while the check "discrimination" reports the winner.
 KASP_GATE_SHORT <- c(
-  gate_discrimination = "discrimination", gate_structure = "structure",
-  gate_tm = "COM Tm >= AS Tm", gate_amplicon = "amplicon length",
+  gate_discrimination = "discrimination (gate)", gate_structure = "structure",
+  gate_tm = "COM Tm >= AS Tm (gate)", gate_amplicon = "amplicon length",
   gate_com_footprint = "COM footprint", gate_as_window = "AS 3' window",
   gate_wobble = "wobble mismatch", gate_as_footprint = "AS footprint",
-  gate_duplex_targets = "duplex targets", gate_duplex_tm = "Tm window (all primers)",
-  gate_duplex_complement = "inter-pair complementarity",
-  gate_duplex_selfcomp = "self-complementarity",
-  gate_duplex_amplicon = "amplicon <= 150 bp",
-  gate_asq_cassette = "ASQ cassette", gate_asq_readout = "real-time readout",
-  gate_caps_site = "restriction site", gate_caps_resolvable = "band gap",
-  gate_caps_amplicon = "amplicon length (CAPS)", gate_caps_tm = "primer Tm (CAPS)",
-  gate_arms_disc = "inner specificity", gate_arms_bands = "band gap",
-  gate_arms_outer = "outer pair",
-  gate_hrm_amplicon = "amplicon length (HRM)", gate_hrm_tm = "primer Tm (HRM)"
+  KASP_GATE_SHORT_DUPLEX, KASP_GATE_SHORT_ASQ, KASP_GATE_SHORT_CAPS,
+  KASP_GATE_SHORT_ARMS, KASP_GATE_SHORT_HRM
 )
 
 # Human-readable relaxation floor per soft gate (for the graph and text export).
@@ -161,29 +118,100 @@ KASP_GATE_FLOOR_LABEL <- c(
   gate_com_footprint = "dropout up to 2x tolerance",
   gate_wobble = "one weak G:T / A:C 3' mismatch",
   gate_as_footprint = "dropout up to 2x tolerance",
-  gate_duplex_amplicon = "allow up to 200 bp",
-  gate_duplex_selfcomp = "one extra self-complementary base",
-  gate_caps_amplicon = "widen the amplicon window",
-  gate_caps_resolvable = "allow a 30 bp band gap",
-  gate_caps_tm = "widen the Tm window",
-  gate_arms_bands = "allow a 20 bp band gap",
-  gate_arms_outer = "allow a 2 C Tm drift",
-  gate_hrm_amplicon = "widen the amplicon window"
+  KASP_GATE_FLOOR_LABEL_DUPLEX, KASP_GATE_FLOOR_LABEL_CAPS,
+  KASP_GATE_FLOOR_LABEL_ARMS, KASP_GATE_FLOOR_LABEL_HRM
 )
 
 # Why a gate is hard (never lowered).
 KASP_GATE_HARD_LABEL <- c(
   gate_discrimination = "no allele discrimination = no assay",
   gate_as_window = "an unlinked variant in the AS 3' window destroys specificity",
-  gate_duplex_targets = "the two loci must match the chosen readout",
-  gate_duplex_tm = "all primers must share the extension window",
-  gate_duplex_complement = "primer cross-talk defeats multiplexing",
-  gate_asq_cassette = "one cassette per target",
-  gate_asq_readout = "no allele resolution in real time = no assay",
-  gate_caps_site = "no discriminating enzyme = no CAPS marker",
-  gate_arms_disc = "no allele-specific inner primer = no ARMS assay",
-  gate_hrm_tm = "a Tm-balanced flanking pair is required"
+  KASP_GATE_HARD_LABEL_DUPLEX, KASP_GATE_HARD_LABEL_ASQ,
+  KASP_GATE_HARD_LABEL_CAPS, KASP_GATE_HARD_LABEL_ARMS, KASP_GATE_HARD_LABEL_HRM
 )
+
+# Human-readable limit for each gate (shown as the gate's detail in the tree and
+# the text export).  Parameterised from KASP_LIMITS - never a `[lo, hi]`
+# placeholder (C9) - and assembled from the schemes' own entries like the labels.
+KASP_GATE_LIMIT <- c(
+  gate_discrimination = "discrimination >= min_disc",
+  gate_structure = "hairpin/homodimer dG37 >= limit",
+  gate_tm = "COM Tm >= AS Tm",
+  gate_amplicon = glue::glue("amplicon within [{KASP_LIMITS$amplicon[1L]}, {KASP_LIMITS$amplicon[2L]}] bp"),
+  gate_com_footprint = "COM dropout <= tol",
+  gate_as_window = "no unlinked variant in AS 3' window",
+  gate_wobble = "no weak G:T / A:C 3' mismatch",
+  gate_as_footprint = "AS footprint dropout <= tol",
+  KASP_GATE_LIMIT_DUPLEX, KASP_GATE_LIMIT_ASQ, caps_gate_limit(),
+  KASP_GATE_LIMIT_ARMS, KASP_GATE_LIMIT_HRM
+)
+
+# ---- the soft gates think the acceptance checks read -----------------------
+# A soft gate may be relaxed to its floor, and the winner the ladder then returns
+# sits below the gate's *original* threshold.  The acceptance check that measures
+# the same physical criterion must not then report that winner as a failure -
+# otherwise "relaxed" and "accepted" contradict (C5).  This maps each soft gate
+# to the check it decides; when the ladder lowered the gate for the winner,
+# `kasp_gate_relaxed_bar()` gives the bar the selection really judged against.
+KASP_GATE_CHECK <- list(
+  gate_amplicon = "amplicon length (bp)",
+  gate_structure = c("worst hairpin dG37", "worst homodimer dG37"),
+  gate_tm = "COM Tm >= AS Tm",
+  gate_as_footprint = "AS footprint dropout",
+  gate_com_footprint = "COM footprint dropout"
+)
+
+#' The acceptance bar a relaxed soft gate lowers its check to
+#'
+#' The floor of a soft gate bounds how far the ladder may relax it; the check
+#' that measures the same criterion must read the *same* bound, or a relaxed
+#' winner (which the selector deliberately accepted, with a warning) would be
+#' reported as an acceptance failure (C5).  The floor is stored in the gate's
+#' margin units, so this restates it in the check's units: a window, a lower
+#' bound on a dG, a lower bound on a Tm difference, or a dropout tolerance.
+#' @param label an acceptance-check label (see `KASP_GATE_CHECK`).
+#' @param limits thresholds (see `KASP_LIMITS`).
+#' @return `list(limit, test)`: the relaxed limit as text, and a predicate on the
+#'   check's observed value.
+#' @keywords internal
+#' @noRd
+kasp_gate_relaxed_bar <- function(label, limits = KASP_LIMITS) {
+  tol <- limits$footprint_dropout %||% 0.05
+  drop <- -KASP_GATE_FLOOR_PAIR[["gate_structure"]]
+  switch(label,
+    "amplicon length (bp)" = {
+      bp <- -KASP_GATE_FLOOR_PAIR[["gate_amplicon"]]
+      lim <- c(limits$amplicon[1L] - bp, limits$amplicon[2L] + bp)
+      list(
+        limit = glue::glue("[{lim[1L]}, {lim[2L]}] (relaxed)"),
+        test = function(obs) dplyr::between(obs, lim[1L], lim[2L])
+      )
+    },
+    "COM Tm >= AS Tm" = {
+      bar <- KASP_GATE_FLOOR_PAIR[["gate_tm"]] # the margin IS the Tm difference
+      list(
+        limit = glue::glue(">= {bar} (relaxed)"),
+        test = function(obs) obs >= bar
+      )
+    },
+    "worst hairpin dG37" = {
+      bar <- limits$hairpin_dg - drop
+      list(limit = glue::glue(">= {bar} (relaxed)"), test = function(obs) obs >= bar)
+    },
+    "worst homodimer dG37" = {
+      bar <- limits$homodimer_dg - drop
+      list(limit = glue::glue(">= {bar} (relaxed)"), test = function(obs) obs >= bar)
+    },
+    "AS footprint dropout" = list(
+      limit = glue::glue("<= {2 * tol} (relaxed)"),
+      test = function(obs) is.na(obs) || obs <= 2 * tol
+    ),
+    "COM footprint dropout" = list(
+      limit = glue::glue("<= {2 * tol} (relaxed)"),
+      test = function(obs) is.na(obs) || obs <= 2 * tol
+    )
+  )
+}
 
 #' Grade candidate AS x COM pairs: hard gates + tiered margins
 #'
@@ -200,6 +228,10 @@ KASP_GATE_HARD_LABEL <- c(
 #' @noRd
 grade_assay_pairs <- function(assays, limits, as_tm_mean) {
   tol <- limits$footprint_dropout %||% 0.05
+  # the COM primer's 3'-terminal dG37 (its 3'-end stability) is a design dimension
+  # only when the designer computed it; a bare candidate table (unit tests) omits
+  # it, and the tier then has no opinion rather than an error.
+  if (!"com_dg_3p" %in% names(assays)) assays$com_dg_3p <- NA_real_
   use_drop <- "com_dropout" %in% names(assays) && any(!is.na(assays$com_dropout))
   # footprint load: expected dropout when DECIPHER is available, else the
   # weighted count (still weights-aware, just position-blind)
@@ -238,6 +270,11 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
       ),
       m_footprint = -foot,
       m_window = win_margin,
+      # README section 3 asks the COM primer for a LOW 3'-end stability (a strong
+      # terminal pair misprimes and extends the wrong template).  dg_3p is the
+      # terminal-5-mer dG37 (more negative = more stable), so maximise it: the
+      # weakest 3' end (closest to 0) wins.
+      m_com_3p_weak = as.numeric(.data$com_dg_3p),
       gate_discrimination = .data$discrimination >= limits$discrimination,
       gate_structure = .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,
@@ -250,7 +287,8 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
       tier1 = .data$m_structure,
       tier2 = pmin(.data$m_tm_com, .data$m_tm_tgt),
       tier3 = .data$m_amplicon,
-      tier4 = .data$m_footprint
+      tier4 = .data$m_footprint,
+      tier5 = .data$m_com_3p_weak
     )
   list(
     data = d,
@@ -315,7 +353,12 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
       as_row = dplyr::row_number(),
       m_disc = .data$discrimination - min_disc,
       m_tm = -abs(.data$tm - AS_TM_TARGET),
-      m_stability = -as.numeric(.data$dg_3p),
+      # KASP wants a WEAK 3' end on the allele-specific primer: Taq must fail to
+      # extend the primer on the mismatched (wrong) allele, and the deliberate
+      # destabilising mismatch near the 3' end (see design_as_primers()) works
+      # only if the terminal pair is weak to begin with.  dg_3p is the terminal
+      # 5-mer dG37 (more negative = more stable), so maximise it (weakest wins).
+      m_3p_weak = as.numeric(.data$dg_3p),
       m_footprint = -foot,
       m_window = win_margin,
       m_wobble = -as.numeric(.data$wobble),
@@ -325,7 +368,7 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
       gate_as_window = gate_win,
       tier1 = .data$m_disc,
       tier2 = .data$m_tm,
-      tier3 = .data$m_stability,
+      tier3 = .data$m_3p_weak,
       tier4 = .data$m_footprint
     )
   list(

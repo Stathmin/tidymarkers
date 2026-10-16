@@ -399,10 +399,19 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' @keywords internal
 #' @noRd
 kasp_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL, ...) {
+  # `primer` is deliberately absent: it is not a genotyping chemistry (no allele
+  # is read) but the marker-agnostic "any primer pair" QC subset, so it has no
+  # locus-level designer and is documentation-only (C13).  Its criteria remain
+  # evaluable - kasp_design_checks(assay, scheme = "primer") and
+  # kasp_decision_graph(scheme = "primer") work on any assembled pair - they just
+  # are not a marker the rescue ladder can return.  The one check it still lacks
+  # is a pair-level "in-silico PCR: exactly one product" node; registering it
+  # belongs in kasp_criteria.R/kasp_schemes.R (a requested serial slot, not this
+  # file).
   switch(scheme,
     snp = ,
     indel = ,
-    multi = assemble_kasp_assay(genome, snp, variants = variants, BPPARAM = BPPARAM, ...),
+    multi = assemble_kasp_assay(genome, snp, variants = variants, scheme = scheme, BPPARAM = BPPARAM, ...),
     caps = design_caps_marker(genome, snp, ...),
     arms = design_arms_marker(genome, snp, ...),
     hrm = design_hrm_marker(genome, snp, ...),

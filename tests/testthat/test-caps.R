@@ -96,3 +96,46 @@ test_that("the caps scheme is registered and yields a DAG with its own stage", {
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(ord[s$edges$to] > ord[s$edges$from]))
 })
+
+test_that("the caps DAG obeys the contract", {
+  expect_dag_invariants("caps")
+})
+
+test_that("caps declares its gate set, hardness, both orders and real floors", {
+  crit <- kasp_criteria(scheme = "caps")
+  gates <- crit[crit$role == "gate", ]
+  expect_setequal(gates$id, paste0("caps:gate:", KASP_GATES_CAPS))
+  # application order (grave / cheap first) is the declared vector
+  expect_equal(gates$id[order(gates$order)], paste0("caps:gate:", KASP_GATES_CAPS))
+  # only "no discriminating enzyme" is hard (C8); the rest form the ladder
+  expect_equal(gates$id[gates$hard], "caps:gate:gate_caps_site")
+  expect_setequal(gates$id[!gates$hard], paste0("caps:gate:", KASP_RELAX_CAPS))
+  expect_true(all(KASP_RELAX_CAPS %in% KASP_GATES_CAPS))
+  # the band gap is relaxable but *bounded*: a relaxed winner is never an
+  # unresolvable digest (the audit's "relaxing gate_caps_resolvable" risk)
+  expect_lt(KASP_GATE_FLOOR_CAPS[["gate_caps_resolvable"]], 0)
+  expect_gt(KASP_CAPS_GAP_FLOOR, 0)
+  expect_lt(KASP_CAPS_GAP_FLOOR, KASP_CAPS_GAP_MIN)
+  # limits are real values, never a `[lo, hi]` placeholder (C9)
+  expect_false(any(grepl("\\[lo, ?hi\\]", gates$limit)))
+  expect_true(any(grepl("20 bp", gates$limit)))
+  expect_true(any(grepl("120, 1200", gates$limit)))
+})
+
+test_that("design_caps_marker evaluates the caps gates and reports the product gel", {
+  withr::with_seed(2L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
+  substr(w, 300L, 305L) <- "GAATTC"
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
+  m <- design_caps_marker(genome, snp, flank = 250L)
+  # the gates are *evaluated*, not decorative (C7): the marker carries the outcome
+  expect_setequal(names(m$selection), c("relaxed", "violated"))
+  expect_true(all(unlist(m$selection) %in% KASP_GATES_CAPS))
+  expect_false("gate_caps_resolvable" %in% m$selection$violated)
+  # the reported digest is the *product*'s (the gel the bench would show): both
+  # allele fragments add up to the amplicon, and the closest differing bands clear
+  # the accepted 20 bp bar
+  expect_equal(sum(m$fragments_ref), m$primers$product)
+  expect_equal(sum(m$fragments_alt), m$primers$product)
+  expect_gte(m$gap, KASP_CAPS_GAP_MIN)
+})
