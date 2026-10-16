@@ -1,7 +1,8 @@
 # Agent instructions — tidykasp
 
 Project-specific rules for agents working in this repository. Read these before
-changing anything, then read `README.md`, `CONTRIBUTING.md` and `ROADMAP.md`.
+changing anything, then read `README.md`, `CONTRIBUTING.md`, `ROADMAP.md` (the open
+queue) and `INVENTORY.md` (the archived inventory of what already exists).
 
 ## Running anything (read first — the environment is NOT the default library)
 

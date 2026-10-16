@@ -13,6 +13,9 @@
 ^\.quarto$
 ^data-raw$
 ^dev$
+^AGENTS\.md$
+^ROADMAP\.md$
+^INVENTORY\.md$
 ^\.i18n-lib$
 ^.*\.Rproj$
 ^\.Rproj\.user$
