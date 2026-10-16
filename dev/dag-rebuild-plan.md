@@ -394,8 +394,8 @@ This is already recorded in `AGENTS.md`.
 
 ```sh
 export R_LIBS=/home/stathmin/.cache/R/renv/library/kasp-example-cee55197/linux-debian-forky/R-4.6/x86_64-pc-linux-gnu
-export PATH=/home/stathmin/Documents/devel/tidykasp/.tools/bin:$PATH
-export UNAFOLDDAT=/home/stathmin/Documents/devel/tidykasp/.tools/share/oligoarrayaux
+export PATH=/home/stathmin/Documents/devel/tidymarkers/.tools/bin:$PATH
+export UNAFOLDDAT=/home/stathmin/Documents/devel/tidymarkers/.tools/share/oligoarrayaux
 
 Rscript -e 'pkgload::load_all(".")'                       # load from source
 Rscript -e 'testthat::test_local(filter = "<scheme>")'   # one scheme's tests
