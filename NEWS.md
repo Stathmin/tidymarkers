@@ -10,7 +10,7 @@
 - **Ломающее переименование пакета.** Пакет давно шире «просто KASP» (20 химий,
   маркер-агностичный слой §X). Имя пакета `tidykasp` → **`tidymarkers`**; домен
   переводов `R-tidykasp` → `R-tidymarkers` (msgid'ы обновлены синхронно — все переводы
-  сохранены, `msgfmt --statistics` = 168); URL/CITATION/бейджи обновлены.
+  сохранены); URL/CITATION/бейджи обновлены.
 - **Маркер-агностичный API.** Функции без KASP-специфики обобщены `kasp_*` → `marker_*`
   (`kasp_plan()`→`marker_plan()`, `kasp_solve`→`marker_solve`, `kasp_tubes`,
   `kasp_context`, `kasp_criteria`, `kasp_design_checks`, `kasp_schemes`, `kasp_genome`,
@@ -32,6 +32,11 @@
   инвертированный повтор), больше **не возвращается** — цель **думится с причиной**
   (`marker_doomed`). Терпимые (`multicopy`/`off`) сохраняют предупреждённого лидера
   (qPCR/FISH и легитимно мультикопийные локусы). Остальное из §Y3 — дальше.
+
+### i18n: каталог догнан до источника
+- Долг закрыт: `po/R-tidymarkers.pot` перегенерирован (`po_extract`), `.po` синхронизирован
+  (`msgmerge`), 51 запись допереведена/исправлена (fuzzy от `msgmerge` переписаны);
+  `msgfmt --statistics` = **203**, 0 fuzzy/untranslated; `.mo` перекомпилирован.
 
 ## 0.3.0
 
