@@ -38,3 +38,6 @@ vignettes/figures/*.png
 
 # local graphify index (developer tool, not a product input)
 graphify-out/
+
+# local test logs and timings (machine-specific; see dev/README.md)
+dev/logs/
