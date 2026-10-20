@@ -4,7 +4,15 @@
 \alias{in_silico_pcr}
 \title{In-silico PCR: every product a primer pair would amplify}
 \usage{
-in_silico_pcr(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM = NULL)
+in_silico_pcr(
+  f_primer,
+  r_primer,
+  genome,
+  max_mismatch = NULL,
+  BPPARAM = NULL,
+  scheme = NULL,
+  pam = NULL
+)
 }
 \arguments{
 \item{f_primer}{forward primer (5'->3'), binds the plus strand.}
@@ -13,13 +21,28 @@ in_silico_pcr(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM = NULL)
 
 \item{genome}{DNAStringSet.}
 
-\item{max_mismatch}{mismatches tolerated in the primer match.}
+\item{max_mismatch}{mismatches tolerated in the primer match (the search
+radius; with \code{scheme}, defaults to the policy's \code{max_mismatch}).}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; the virtual PCR is split by
 genome sequence (one worker per chromosome with \code{MulticoreParam()}).}
+
+\item{scheme}{optional specificity scheme (\code{"pcr"}, \code{"rpa"}, \code{"crispr"},
+\code{"paralog"}); see \code{\link[=specificity_policy]{specificity_policy()}}.  When given, the returned table
+gains \code{scheme} and \code{tolerated} (whether this chemistry would amplify);
+\code{f_penalty}/\code{r_penalty} in the returned table are the forward and reverse
+primer's share of \code{penalty}.}
+
+\item{pam}{optional PAM / protospacer-flanking site to check for \code{"crispr"}
+(a \code{TTTV} string, e.g. \code{"TTTA"}, or \code{"PFS"} for a Cas13 guide).  An exact
+case-insensitive match is the only tolerated state; a mismatch is a hard
+loss of target (never a tolerated primer mismatch).}
 }
 \value{
-tibble \code{chrom}, \code{start}, \code{end}, \code{width} (one row per product).
+tibble \code{chrom}, \code{start}, \code{end}, \code{width}, \code{n_mismatch},
+\code{mismatch_positions}, \code{three_prime_mismatch}, \code{seed_mismatch},
+\code{three_prime_terminal}, \code{penalty}, \code{f_penalty}, \code{r_penalty}, \code{score} (one
+row per product).
 }
 \description{
 Uses IUPAC-aware \code{Biostrings::matchPattern()} to find forward and reverse
@@ -27,10 +50,29 @@ primer matches, then pairs every forward start with a downstream reverse end
 into a product.  This supports degenerate primers and \code{max_mismatch}; a KASP
 test must amplify exactly one product per allele.
 }
+\details{
+Every product also carries its primer mismatches (\code{n_mismatch} = the worse of
+the two primers), where they sit (\code{mismatch_positions}, list-column,
+1-based from each searched primer's 5' end: the forward primer, and the
+reverse complement of the reverse primer), how many fall in the last
+\code{THREE_PRIME_WINDOW} nt (\code{three_prime_mismatch}; \verb{f_*}/\verb{r_*} for each primer)
+and in the seed (\code{seed_mismatch}), and a weighted \code{penalty} / \code{score}.  Those
+columns are always present and are \code{0}/empty for a perfect product, so the
+original \code{chrom}/\code{start}/\code{end}/\code{width} contract is unchanged.
+
+Passing a \code{scheme} makes the search \emph{policy-aware}: the scan radius is the
+policy's \code{max_mismatch} and a product is kept only when the policy tolerates
+it (\code{max} total, seed and three-prime caps; a changed PAM is a hard loss for
+CRISPR).  Without \code{scheme} the call behaves exactly as before: a search
+radius of \code{max_mismatch}, no chemistry filter.
+}
 \examples{
 \dontrun{
 genome <- ath_genome()
 in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome)
+in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome,
+  scheme = "rpa"
+)
 }
 }
 \seealso{
@@ -47,6 +89,8 @@ Other KASP specificity:
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
 \code{\link[=specificity_of]{specificity_of()}},
-\code{\link[=specificity_seed]{specificity_seed()}}
+\code{\link[=specificity_policy]{specificity_policy()}},
+\code{\link[=specificity_seed]{specificity_seed()}},
+\code{\link[=specificity_verdict]{specificity_verdict()}}
 }
 \concept{KASP specificity}
