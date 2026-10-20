@@ -34,6 +34,8 @@ Other KASP specificity:
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
 \code{\link[=specificity_of]{specificity_of()}},
-\code{\link[=specificity_seed]{specificity_seed()}}
+\code{\link[=specificity_policy]{specificity_policy()}},
+\code{\link[=specificity_seed]{specificity_seed()}},
+\code{\link[=specificity_verdict]{specificity_verdict()}}
 }
 \concept{KASP specificity}
