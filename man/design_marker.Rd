@@ -4,7 +4,14 @@
 \alias{design_marker}
 \title{Design a marker with the first chemistry that works}
 \usage{
-design_marker(genome, snp, strategy = NULL, schemes = NULL, ...)
+design_marker(
+  genome,
+  snp,
+  strategy = NULL,
+  schemes = NULL,
+  ...,
+  context = NULL
+)
 }
 \arguments{
 \item{genome}{a \code{marker_genome} or \code{DNAStringSet}.}
@@ -18,6 +25,10 @@ is honoured by the KASP scheme).}
 \item{schemes}{scheme ids to try, in order (see \code{\link[=marker_schemes]{marker_schemes()}}).}
 
 \item{...}{passed to the per-scheme designer (e.g. \code{flank}).}
+
+\item{context}{optional \code{\link[=marker_context]{marker_context()}} supplying \code{variants}/\code{haplotypes}
+(and, for later seams, \code{population}, \code{conditions}, \code{engines}).  Must be
+named; supplied through \code{...} before this argument it would bind there.}
 }
 \value{
 a list: \code{snp}, \code{scheme} (the winner, or \code{NA}), \code{marker} (the winning

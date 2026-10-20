@@ -73,6 +73,8 @@ rescue_strategy <- function(schemes = NULL) {
 #' @param scheme a scheme id (see [marker_schemes()]), or `NULL` for the full rescue
 #'   ladder.
 #' @param ... passed to the per-scheme designer (e.g. `flank`).
+#' @param context optional [marker_context()] supplying `variants`/`haplotypes`
+#'   for every locus (passed to the per-scheme designer).
 #' @return a one-row-per-locus tibble: `chrom`, `pos`, `ref`, `alt`, `scheme` (the
 #'   winner, or `NA`) and `ok`.
 #' @examples
@@ -83,7 +85,7 @@ rescue_strategy <- function(schemes = NULL) {
 #' }
 #' @family KASP design
 #' @export
-design_markers <- function(genome, loci, scheme = "snp", ...) {
+design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(loci))
   if (length(missing)) {
@@ -99,11 +101,14 @@ design_markers <- function(genome, loci, scheme = "snp", ...) {
       alt2 = if ("alt2" %in% names(r)) as.character(r$alt2) else NA_character_
     )
     if (is.null(scheme)) {
-      d <- design_marker(genome, snp, ...)
+      d <- design_marker(genome, snp, ..., context = context)
       chosen <- d$scheme
       ok <- is_target_designable(d$marker)
     } else {
-      m <- tryCatch(suppressWarnings(marker_design_at(genome, snp, scheme, ...)), error = function(e) NULL)
+      m <- tryCatch(
+        suppressWarnings(marker_design_at(genome, snp, scheme, ..., context = context)),
+        error = function(e) NULL
+      )
       chosen <- scheme
       ok <- is_target_designable(m)
     }

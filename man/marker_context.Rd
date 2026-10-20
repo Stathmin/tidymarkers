@@ -4,7 +4,15 @@
 \alias{marker_context}
 \title{Add variant / haplotype context to a plan}
 \usage{
-marker_context(variants = NULL, haplotypes = NULL)
+marker_context(
+  genome = NULL,
+  variants = NULL,
+  population = NULL,
+  haplotypes = NULL,
+  conditions = NULL,
+  engines = NULL,
+  options = list()
+)
 }
 \arguments{
 \item{variants}{a tidy variant table (\code{chrom}, \code{pos}, and either \code{alt} or
