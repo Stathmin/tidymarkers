@@ -126,3 +126,53 @@ test_that("marker_design_checks returns exactly the registry's checks, in order"
     expect_equal(ch$pass, ch$status == "pass", info = sc)
   }
 })
+
+test_that("a criterion's threshold and its rendered limit cannot diverge (Z2)", {
+  spec <- tidymarkers:::criterion_spec()
+  crit <- marker_criteria()
+  # the public view is a projection of the spec, row for row
+  expect_equal(nrow(crit), nrow(spec))
+  expect_equal(crit$id, spec$id)
+  expect_equal(crit$limit, spec$limit)
+
+  numeric_bar <- vapply(
+    spec$bounds, function(b) is.numeric(b) && length(b) >= 2L, logical(1)
+  )
+  # a KASP bar is rendered from its own bound, by the one formatter
+  kasp <- numeric_bar & spec$scope == "kasp"
+  expect_gt(sum(kasp), 0L)
+  expect_equal(
+    crit$limit[kasp],
+    vapply(spec$bounds[kasp], tidymarkers:::criterion_bound_text, character(1))
+  )
+  # a family bar keeps its published prose, but its numbers must be in that prose
+  fam <- numeric_bar & spec$scope == "family"
+  expect_gt(sum(fam), 0L)
+  for (i in which(fam)) {
+    for (v in spec$bounds[[i]][is.finite(spec$bounds[[i]])]) {
+      expect_true(
+        grepl(as.character(v), crit$limit[[i]], fixed = TRUE),
+        info = paste(spec$id[[i]], "bound", v, "absent from", crit$limit[[i]])
+      )
+    }
+  }
+})
+
+test_that("the scheme filter moves the amplicon bound and its limit together (Z2)", {
+  for (sc in c("caps", "lamp", "ssr", "taqman")) {
+    win <- tidymarkers:::marker_amplicon_window(marker_scheme(sc)$family)
+    lim <- KASP_LIMITS
+    lim$amplicon <- win
+    spec <- tidymarkers:::criterion_spec(lim)
+    i <- match("amplicon", spec$id)
+    # one object: the bound the selector grades against and the text the results
+    # show are the same numbers
+    expect_equal(spec$bounds[[i]], win, info = sc)
+    crit <- marker_criteria(scheme = sc)
+    expect_equal(
+      crit$limit[match("amplicon length (bp)", crit$label)],
+      spec$limit[[i]],
+      info = sc
+    )
+  }
+})

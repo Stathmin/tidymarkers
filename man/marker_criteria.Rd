@@ -26,6 +26,11 @@ decision graph and \code{\link[=marker_decision_text]{marker_decision_text()}} a
 marker \code{schemes} it serves (\code{\link[=marker_schemes]{marker_schemes()}}), so the same registry yields one
 decision schema per chemistry.
 }
+\details{
+The thresholds themselves live in the \code{bounds} column of \code{criterion_spec()};
+this view renders them into \code{limit}, so the same criterion cannot carry two
+different bars.
+}
 \examples{
 marker_criteria()
 marker_criteria(scheme = "duplex")
