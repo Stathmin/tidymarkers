@@ -16,6 +16,7 @@ design_sanger_marker(
   tm_range = KASP_SANGER_LIMITS$tm,
   gc_range = KASP_SANGER_LIMITS$gc,
   check_unique = TRUE,
+  population = NULL,
   ...
 )
 }
@@ -41,12 +42,23 @@ returns, but warns and flags that side in \verb{$seq_primers$usable}.}
 
 \item{check_unique}{when \code{TRUE}, require exactly one \code{\link[=in_silico_pcr]{in_silico_pcr()}} product.}
 
+\item{population}{optional population table already used by the package's
+haplotype-aware markers (\code{haplotype}, \code{freq}, \code{chrom}, \code{pos}, \code{ref}, \code{alt},
+see \code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}}).  A known variant under a PCR or read
+primer interferes with that primer's binding (allele dropout), so it is
+\strong{warned and flagged} in \verb{$allele_dropout} + \verb{$allele_dropout_risk}, not
+passed silently.  When absent the design still returns, but
+\verb{$allele_dropout_risk} is \code{NA} and a warning says the check was not run.}
+
 \item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
 }
 \value{
 a \code{marker_sanger} list (\code{snp}, \code{primers}, \code{amplicon}, \code{seq_primers},
-\code{selection}), or \code{NULL} (with a message) when no unique pair passes the
-gates.
+\code{selection}, \code{readout}, \code{allele_dropout}, \code{allele_dropout_risk}), or \code{NULL}
+(with a message) when no unique pair passes the gates.  \code{readout} is the
+declared limit (\code{SANGER_DETECTION}): the minor-allele floor, and
+\code{status = "not_modelled"} because this package designs the amplicon, it does
+not call the trace.
 }
 \description{
 The amplicon analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a single flanking pair
@@ -61,8 +73,12 @@ declares is evaluated here (C7); a soft one may be relaxed to its floor, in the
 declared order, and the result records which were (\verb{$selection}).
 }
 \details{
-It does \strong{not} simulate the chromatogram, so it returns a well-formed,
-unique amplicon, not a predicted trace.
+It does \strong{not} simulate or read the chromatogram, so it returns a
+well-formed, unique amplicon, not a predicted trace.  \verb{$readout} states that
+limit (\code{status = "not_modelled"}, the minor-allele floor, and the tools that
+do read a trace), so the absence of a trace model is visible in the result.
+A known population variant under a primer is flagged as allele dropout when
+\code{population} is supplied (\verb{$allele_dropout}, \verb{$allele_dropout_risk}).
 }
 \examples{
 \dontrun{

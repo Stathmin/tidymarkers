@@ -23,18 +23,24 @@
 #   * the pair must amplify exactly one product genome-wide, or the chromatogram
 #     is a mixture of two templates.
 #
-#  The read-out is not simulated (no chromatogram model), so this returns a
-#  well-formed, unique amplicon with the variant correctly placed, plus the
-#  sequencing primers that read into it, not a trace.  The read *physics* that
-#  are modelled are geometric: the variant must sit between `min_dist` and
-#  `read_length` bp of the sequencing primer's 5' end.  What is deliberately
-#  NOT modelled (and not pretended to be):
-#   * heterozygous indel deconvolution (ICE / TIDE / Poly Peak Parser), so a
-#     mixed indel trace is not resolved into its two alleles;
-#   * a minor allele below ~15-20% of the trace, which can sit under the
-#     chromatogram's call threshold;
-#   * peak heights / spacing / base qualities themselves - `read_length` is the
-#     only proxy for read quality.
+#  The designer itself never simulates a chromatogram: it returns a well-formed,
+#  unique amplicon with the variant correctly placed, plus the sequencing primers
+#  that read into it.  The read *physics* that are modelled there are geometric:
+#  the variant must sit between `min_dist` and `read_length` bp of the sequencing
+#  primer's 5' end.
+#
+#  What is deliberately NOT modelled is reported as an explicit limit in
+#  `$readout`, never guessed at:
+#   * the chromatogram itself: reading a trace (base calls, peak heights) is the
+#     job of the trace ecosystem (`sangerseqR` / `sangeranalyseR` /
+#     `seqinr::read.abif`), not of a marker designer;
+#   * heterozygous indel deconvolution (ICE / TIDE / Poly Peak Parser): run one
+#     of those tools on the trace;
+#   * a minor allele below ~15-20% of the trace (`SANGER_DETECTION$floor`), which
+#     sits under the chromatogram's call threshold and cannot be called a
+#     heterozygote from a single read.
+#  The floor is a literature default, not a calibration of the caller's
+#  instrument, hence `calibrated = FALSE`.
 #
 #  Selection is real (not decorative): every gate declared by scheme_def_sanger()
 #  is computed here and applied by select_with_ladder() (C7).  The cheap margins
@@ -55,6 +61,22 @@ KASP_SANGER_LIMITS <- list(
   gc = c(0.40, 0.60),
   min_dist = 50L,
   read_length = 700L
+)
+
+# The read-out limits, stated rather than modelled.  `floor` is the minor-allele
+# fraction below which a secondary peak is not distinguishable from noise in a
+# dideoxy trace (the ~15-20% visibility limit of a minor peak; the ICE/TIDE
+# dilution series probes the same boundary).  `mixed` is the fraction from which
+# a heterozygote is called.  `calibrated = FALSE`: both are a literature default
+# for a generic capillary instrument, not a calibration of the caller's own
+# trace.  `status = "not_modelled"` says the package does not read a trace;
+# `tools` names the engines that do, so a caller is never left to guess.
+SANGER_DETECTION <- list(
+  floor = 0.15,
+  mixed = 0.20,
+  calibrated = FALSE,
+  status = "not_modelled",
+  tools = c("sangerseqR", "sangeranalyseR", "ICE", "TIDE", "Poly Peak Parser")
 )
 
 # How far each *soft* Sanger gate may be relaxed - the bounded floor the ladder
@@ -408,8 +430,12 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' declares is evaluated here (C7); a soft one may be relaxed to its floor, in the
 #' declared order, and the result records which were (`$selection`).
 #'
-#' It does **not** simulate the chromatogram, so it returns a well-formed,
-#' unique amplicon, not a predicted trace.
+#' It does **not** simulate or read the chromatogram, so it returns a
+#' well-formed, unique amplicon, not a predicted trace.  `$readout` states that
+#' limit (`status = "not_modelled"`, the minor-allele floor, and the tools that
+#' do read a trace), so the absence of a trace model is visible in the result.
+#' A known population variant under a primer is flagged as allele dropout when
+#' `population` is supplied (`$allele_dropout`, `$allele_dropout_risk`).
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width (must leave room for the amplicon).
@@ -422,10 +448,20 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' @param lengths primer lengths to try.
 #' @param tm_range,gc_range accepted primer windows.
 #' @param check_unique when `TRUE`, require exactly one [in_silico_pcr()] product.
+#' @param population optional population table already used by the package's
+#'   haplotype-aware markers (`haplotype`, `freq`, `chrom`, `pos`, `ref`, `alt`,
+#'   see [marker_attach_haplotypes()]).  A known variant under a PCR or read
+#'   primer interferes with that primer's binding (allele dropout), so it is
+#'   **warned and flagged** in `$allele_dropout` + `$allele_dropout_risk`, not
+#'   passed silently.  When absent the design still returns, but
+#'   `$allele_dropout_risk` is `NA` and a warning says the check was not run.
 #' @param ... passed to [in_silico_pcr()] (e.g. `BPPARAM`).
 #' @return a `marker_sanger` list (`snp`, `primers`, `amplicon`, `seq_primers`,
-#'   `selection`), or `NULL` (with a message) when no unique pair passes the
-#'   gates.
+#'   `selection`, `readout`, `allele_dropout`, `allele_dropout_risk`), or `NULL`
+#'   (with a message) when no unique pair passes the gates.  `readout` is the
+#'   declared limit (`SANGER_DETECTION`): the minor-allele floor, and
+#'   `status = "not_modelled"` because this package designs the amplicon, it does
+#'   not call the trace.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -440,7 +476,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
                                  max_product = KASP_SANGER_LIMITS$amplicon[2L],
                                  lengths = 18:25, tm_range = KASP_SANGER_LIMITS$tm,
                                  gc_range = KASP_SANGER_LIMITS$gc,
-                                 check_unique = TRUE, ...) {
+                                 check_unique = TRUE, population = NULL, ...) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   amp_pad <- KASP_SANGER_FLOOR$amplicon
@@ -514,9 +550,86 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     snp = snp, primers = primers,
     amplicon = tibble::tibble(start = primers$start + amp0, end = primers$end + amp0),
     seq_primers = seq_primers,
-    selection = list(relaxed = sel$relaxed, violated = sel$violated)
+    selection = list(relaxed = sel$relaxed, violated = sel$violated),
+    readout = SANGER_DETECTION
   )
-  structure(out, class = "marker_sanger")
+  out <- structure(out, class = "marker_sanger")
+  if (is.null(population)) {
+    out$allele_dropout <- tibble::tibble()
+    out$allele_dropout_risk <- NA
+    cli::cli_warn(c(
+      gettext("Sanger: no population variants supplied; primer-over-variant allele dropout is not checked."),
+      "i" = gettext("`allele_dropout_risk` is unknown, not a pass.")
+    ))
+    return(out)
+  }
+  h <- normalise_haplotypes(population)
+  hits <- sanger_primer_variants(out, h)
+  out$allele_dropout <- hits
+  out$allele_dropout_risk <- nrow(hits) > 0L
+  if (nrow(hits)) {
+    cli::cli_warn(c(
+      gettext("Sanger: {nrow(hits)} population variant(s) fall under a primer (allele-dropout risk)."),
+      "i" = gettext(
+        "A variant in a primer binding site can lose that allele (or the whole product); see `$allele_dropout`."
+      )
+    ))
+  }
+  marker_attach_haplotypes(out, population, snp)
+}
+
+#' Population variants that fall under a designed Sanger primer
+#'
+#' Allele dropout is a *primer-binding* problem: a variant in the 17-25 nt a
+#' primer anneals to can weaken that primer for the haplotype carrying it, so the
+#' amplicon (or that allele) disappears in a fraction of the population.  Every
+#' primer's binding site is mapped to plus-strand coordinates (the reverse
+#' primers cover `start..start + length - 1` on the minus strand, the same span
+#' on the plus strand) and every population variant inside a span is reported.
+#' The target position itself is excluded: the variant is placed at least
+#' `min_dist` from both read starts and never under a primer by construction.
+#' @param marker a `marker_sanger` object.
+#' @param haplotypes a normalised population table.
+#' @return a tibble (`primer`, `start`, `end`, `pos`, `haplotype`, `freq`, `risk`),
+#'   one row per variant per primer, or an empty tibble.
+#' @keywords internal
+#' @noRd
+sanger_primer_variants <- function(marker, haplotypes) {
+  h <- haplotypes[haplotypes$chrom == marker$snp$chrom[1L] & haplotypes$pos != marker$snp$pos[1L], ,
+    drop = FALSE
+  ]
+  if (!nrow(h)) {
+    return(tibble::tibble())
+  }
+  amp <- marker$amplicon
+  sp <- marker$seq_primers
+  spans <- tibble::tibble(
+    primer = c("PCR_F", "PCR_R", "read_F", "read_R"),
+    start = c(
+      amp$start[1L],
+      amp$end[1L] - nchar(marker$primers$reverse) + 1L,
+      sp$forward_start %||% amp$start[1L],
+      sp$reverse_start %||% (amp$end[1L] - nchar(sp$reverse) + 1L)
+    )
+  ) |>
+    dplyr::mutate(end = .data$start + c(
+      nchar(marker$primers$forward), nchar(marker$primers$reverse),
+      nchar(sp$forward), nchar(sp$reverse)
+    ) - 1L) |>
+    dplyr::distinct(.data$primer, .data$start, .data$end)
+  hits <- lapply(seq_len(nrow(spans)), function(i) {
+    inside <- h$pos >= spans$start[i] & h$pos <= spans$end[i]
+    if (!any(inside)) {
+      return(NULL)
+    }
+    tibble::tibble(
+      primer = spans$primer[i], start = spans$start[i], end = spans$end[i],
+      pos = h$pos[inside], haplotype = h$haplotype[inside], freq = h$freq[inside],
+      risk = "allele dropout"
+    )
+  })
+  out <- purrr::list_rbind(hits)
+  if (is.null(out)) tibble::tibble() else out
 }
 
 #' @export
@@ -542,6 +655,18 @@ print.marker_sanger <- function(x, ...) {
   }
   if (length(x$selection$relaxed)) {
     cat("  relaxed:", paste(x$selection$relaxed, collapse = ", "), "\n")
+  }
+  if (!is.null(x$readout)) {
+    cat(
+      "  read-out: not modelled (minor allele below",
+      sprintf("%.0f%%", 100 * x$readout$floor), "is invisible)",
+      "- use", paste(x$readout$tools[1:2], collapse = " / "), "\n"
+    )
+  }
+  if (isTRUE(x$allele_dropout_risk)) {
+    cat("  allele-dropout risk:", nrow(x$allele_dropout), "population variant(s) under a primer\n")
+  } else if (identical(x$allele_dropout_risk, NA)) {
+    cat("  allele-dropout: not checked (no population variants supplied)\n")
   }
   invisible(x)
 }

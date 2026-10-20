@@ -2,13 +2,20 @@
 # plus the sequencing primers that read into it.
 
 test_that("design_sanger_marker returns a unique amplicon with the variant inside", {
+  withr::local_envvar(LANGUAGE = "en")
   W <- bseq(1200L, 2L)
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   ref <- substr(W, 600L, 600L)
   snp <- tibble::tibble(
     chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
-  m <- design_sanger_marker(genome, snp, flank = 500L)
+  # no population variants: the primer-over-variant check did not run, which must
+  # be said out loud rather than passed silently
+  expect_warning(
+    m <- design_sanger_marker(genome, snp, flank = 500L),
+    "allele dropout is not checked"
+  )
+  expect_identical(m$allele_dropout_risk, NA)
   expect_s3_class(m, "marker_sanger")
   # the variant is inside the amplicon and clear of both read starts
   expect_gt(m$amplicon$start, 0L)
@@ -83,7 +90,7 @@ test_that("the amplicon gate is really evaluated and relaxes to its floor (C7)",
   )
   # a 300 bp template cannot hold the ideal 400-800 bp amplicon, so the ladder
   # must lower gate_sanger_amplicon to its floor and say so
-  m <- design_sanger_marker(genome, snp, flank = 140L)
+  m <- suppressWarnings(design_sanger_marker(genome, snp, flank = 140L))
   expect_s3_class(m, "marker_sanger")
   expect_true("gate_sanger_amplicon" %in% m$selection$relaxed)
   expect_gte(m$primers$product, 200L) # the relaxed floor: 400 - 200
@@ -100,7 +107,12 @@ test_that("a variant beyond the usable read is warned about, not silently paired
   # a 400+ bp amplicon cannot put the variant within a 100 bp read of both ends,
   # so the design must say which side cannot call it
   expect_warning(
-    m <- design_sanger_marker(genome, snp, flank = 500L, read_length = 100L),
+    m <- withCallingHandlers(
+      design_sanger_marker(genome, snp, flank = 500L, read_length = 100L),
+      warning = function(w) {
+        if (grepl("allele dropout", conditionMessage(w), fixed = TRUE)) invokeRestart("muffleWarning")
+      }
+    ),
     "No usable Sanger read"
   )
   expect_s3_class(m, "marker_sanger")
@@ -175,4 +187,62 @@ test_that("a duplicated locus dooms the design through the hard uniqueness gate 
 
 test_that("sanger DAG obeys the contract", {
   expect_dag_invariants("sanger")
+})
+
+
+# ---------------------------------------------------------------------------
+# The read-out is a stated limit, not a home-rolled chromatogram model
+# ---------------------------------------------------------------------------
+
+test_that("the Sanger read-out limit is declared, uncalibrated and tool-named", {
+  expect_identical(SANGER_DETECTION$floor, 0.15)
+  expect_identical(SANGER_DETECTION$mixed, 0.20)
+  expect_false(SANGER_DETECTION$calibrated)
+  expect_identical(SANGER_DETECTION$status, "not_modelled")
+  expect_true(all(c("sangerseqR", "sangeranalyseR") %in% SANGER_DETECTION$tools))
+  W <- bseq(1200L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 600L, 600L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  m <- suppressWarnings(design_sanger_marker(genome, snp, flank = 500L))
+  # the result states what it does not model, so a missing trace model is never
+  # mistaken for a passing read-out check
+  expect_identical(m$readout$status, "not_modelled")
+  expect_identical(m$readout$floor, SANGER_DETECTION$floor)
+  expect_output(print(m), "read-out: not modelled")
+})
+
+test_that("design_sanger_marker flags a population variant under a primer, not a silent pass", {
+  withr::local_envvar(LANGUAGE = "en")
+  W <- bseq(1200L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 600L, 600L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  base <- suppressWarnings(design_sanger_marker(genome, snp, flank = 500L))
+  expect_identical(base$allele_dropout_risk, NA)
+  # a known variant inside the forward PCR primer, on a haplotype that also
+  # carries the target ALT (so the population is not monomorphic at the target)
+  under <- tibble::tibble(
+    haplotype = c("X", "X"), freq = c(0.2, 0.2), chrom = "Chr1",
+    pos = c(base$amplicon$start + 2L, snp$pos), ref = c("A", ref), alt = c("G", snp$alt)
+  )
+  expect_warning(m <- design_sanger_marker(genome, snp, flank = 500L, population = under), "allele-dropout")
+  expect_true(m$allele_dropout_risk)
+  expect_equal(nrow(m$allele_dropout), 1L)
+  expect_equal(m$allele_dropout$pos, base$amplicon$start + 2L)
+  expect_equal(m$allele_dropout$primer, "PCR_F")
+  expect_output(print(m), "allele-dropout risk")
+  # a variant clear of every primer is not a risk
+  clear <- tibble::tibble(
+    haplotype = c("Y", "Y"), freq = c(0.3, 0.3), chrom = "Chr1",
+    pos = c(base$amplicon$start + 100L, snp$pos), ref = c("A", ref), alt = c("G", snp$alt)
+  )
+  m2 <- design_sanger_marker(genome, snp, flank = 500L, population = clear)
+  expect_false(m2$allele_dropout_risk)
+  expect_equal(nrow(m2$allele_dropout), 0L)
+  expect_output(print(m2), "marker_sanger")
 })
