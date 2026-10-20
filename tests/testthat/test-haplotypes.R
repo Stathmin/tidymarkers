@@ -105,3 +105,36 @@ test_that("assemble_kasp_assay accepts haplotypes and reports the hits", {
   v <- haplotype_variants(m$haps, m$snp)$variants
   expect_s3_class(plot_primers(a, v, m$snp, genome = m$genome), "patchwork")
 })
+
+test_that("marker_context stores variants and haplotypes unchanged", {
+  g <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
+  v <- tibble::tibble(chrom = "Chr1", pos = 10L, alt = "A")
+  h <- tibble::tibble(
+    haplotype = c("H1", "H2"), freq = c(0.4, 0.6), chrom = "Chr1",
+    pos = c(10L, 20L), ref = c("C", "G"), alt = c("A", "T")
+  )
+  ctx <- marker_context(g, variants = v, population = h)
+  expect_s3_class(ctx, "marker_context")
+  expect_identical(ctx$genome, g)
+  expect_identical(ctx$variants, v)
+  expect_identical(ctx$population, h)
+  expect_identical(ctx$haplotypes, h)
+})
+
+test_that("a context with no population leaves the frequency unknown, not 1", {
+  g <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
+  ctx <- marker_context(g)
+  expect_null(ctx$population)
+  expect_true(is.na(marker_context_frequency(ctx)))
+  expect_false(isTRUE(marker_context_frequency(ctx) == 1))
+})
+
+test_that("a context with known haplotypes attaches $population on design", {
+  f <- hap_fixture()
+  ctx <- marker_context(f$genome, population = f$haps)
+  args <- marker_context_args(ctx)
+  expect_identical(args$haplotypes, f$haps)
+  # the existing attach path computes the frequency from the haplotypes
+  marker <- marker_attach_haplotypes(list(snp = f$snp), args$haplotypes, f$snp)
+  expect_equal(marker$population$alt_freq, 0.5)
+})

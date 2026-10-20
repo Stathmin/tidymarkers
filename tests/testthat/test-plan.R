@@ -70,6 +70,18 @@ test_that("a plan composes in layers with + and prints without solving", {
   expect_error(p + 1, "layer")
 })
 
+test_that("legacy marker_context() calls still build a plan layer", {
+  v <- tibble::tibble(chrom = "Chr1", pos = 6L, alt = "G")
+  h <- tibble::tibble(
+    haplotype = "H1", freq = 1, chrom = "Chr1", pos = 6L, ref = "C", alt = "G"
+  )
+  layer <- marker_context(variants = v, haplotypes = h)
+  expect_true(inherits(layer, "marker_layer"))
+  p <- dummy_plan() + layer
+  expect_identical(p$variants, v)
+  expect_identical(p$haplotypes, h)
+})
+
 test_that("marker_tech orders schemes cheapest-first and honours exclude", {
   p <- dummy_plan() + marker_tech(preset = "kasp")
   s <- plan_schemes(p)

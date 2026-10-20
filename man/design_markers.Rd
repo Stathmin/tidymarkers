@@ -4,7 +4,7 @@
 \alias{design_markers}
 \title{Design markers for a table of loci with one chemistry (or the rescue ladder)}
 \usage{
-design_markers(genome, loci, scheme = "snp", ...)
+design_markers(genome, loci, scheme = "snp", ..., context = NULL)
 }
 \arguments{
 \item{genome}{a \code{marker_genome} or \code{DNAStringSet}.}
@@ -16,6 +16,9 @@ honoured by the KASP scheme).}
 ladder.}
 
 \item{...}{passed to the per-scheme designer (e.g. \code{flank}).}
+
+\item{context}{optional \code{\link[=marker_context]{marker_context()}} supplying \code{variants}/\code{haplotypes}
+for every locus (passed to the per-scheme designer).}
 }
 \value{
 a one-row-per-locus tibble: \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{scheme} (the

@@ -391,15 +391,125 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
   best
 }
 
+# =============================================================================
+#  MarkerContext seam (ROADMAP ZA2)
+# =============================================================================
+#  `marker_context()` is the single object the design seam reads: the genome the
+#  target is anchored to, plus the optional variant table, population/haplotype
+#  table, reaction conditions and engines.  The plan-layer constructor of the
+#  same name lives in marker_plan.R; R collates this file later, so this
+#  definition supersedes it.  It keeps the legacy plan-layer call form (no
+#  `genome` and no context-only field) by returning the same `marker_layer`
+#  object as before, and returns the classed list otherwise.
+#
+#  Invariants:
+#  * `variants`/`haplotypes` are stored exactly as supplied (no normalisation
+#    until `marker_attach_haplotypes()` aligns them to a target);
+#  * a missing population stays `NULL` - its frequency is `NA`, never 1.
+# =============================================================================
+
+#' A marker design context
+#'
+#' Bundles what a design needs besides the target itself.  `population` is the
+#' tidy haplotype table (`haplotype`, `freq`, `chrom`, `pos`, `ref`, `alt`) used
+#' by [marker_attach_haplotypes()]; `conditions` and `engines` are carried for
+#' the reaction/engine seams.  When `genome` (and every context-only field) is
+#' absent the call keeps its historical meaning: a [marker_plan()] layer.
+#' @keywords internal
+#' @noRd
+marker_context <- function(genome = NULL, variants = NULL, population = NULL,
+                           haplotypes = NULL, conditions = NULL, engines = NULL,
+                           options = list()) {
+  if (is.null(genome) && is.null(population) && is.null(conditions) && is.null(engines) && !length(options)) {
+    return(marker_context_layer(variants, haplotypes))
+  }
+  # a haplotype table is the population in the current vocabulary; keep the
+  # supplied table unchanged and let marker_attach_haplotypes() validate it.
+  if (is.null(haplotypes) && is_haplotype_table(population)) {
+    haplotypes <- population
+  }
+  structure(
+    list(
+      genome = genome,
+      variants = variants,
+      population = population,
+      haplotypes = haplotypes,
+      conditions = conditions,
+      engines = engines,
+      options = options
+    ),
+    class = "marker_context"
+  )
+}
+
+# The unchanged historical plan-layer constructor (see marker_plan.R).
+marker_context_layer <- function(variants, haplotypes) {
+  marker_layer(
+    function(plan) {
+      if (!is.null(variants)) plan$variants <- variants
+      if (!is.null(haplotypes)) plan$haplotypes <- haplotypes
+      plan
+    },
+    label = "context"
+  )
+}
+
+is_haplotype_table <- function(x) {
+  is.data.frame(x) && all(c("haplotype", "freq") %in% names(x))
+}
+
+#' Frequency carried by a marker context (NA when the population is unknown)
+#' @keywords internal
+#' @noRd
+marker_context_frequency <- function(context) {
+  if (is.null(context) || !inherits(context, "marker_context")) {
+    return(NA_real_)
+  }
+  pop <- context$population
+  if (is.null(pop)) {
+    return(NA_real_)
+  }
+  if (is.data.frame(pop) && "alt_freq" %in% names(pop) && nrow(pop)) {
+    return(as.numeric(pop$alt_freq[[1L]]))
+  }
+  NA_real_
+}
+
+#' Resolve a context's variant/haplotype inputs for one design call
+#' @keywords internal
+#' @noRd
+marker_context_args <- function(context, variants = NULL, haplotypes = NULL) {
+  if (is.null(context)) {
+    return(list(variants = variants, haplotypes = haplotypes))
+  }
+  if (inherits(context, "marker_layer")) {
+    cli::cli_abort(gettext(
+      "`context` is a marker_plan() layer; pass marker_context(genome, ...) instead."
+    ))
+  }
+  if (!inherits(context, "marker_context")) {
+    cli::cli_abort(gettext("`context` must be a marker_context() object."))
+  }
+  list(
+    variants = variants %||% context$variants,
+    haplotypes = haplotypes %||% context$haplotypes
+  )
+}
+
 #' Design a target with one scheme's engine (for designability checks)
 #'
 #' "Doomed" is not one thing: a SNP may be undesignable as a KASP but fine as a
 #' CAPS or ARMS marker.  This dispatches to the scheme's designer so
 #' [pick_target_snp()] can walk candidates until one actually designs.
+#' @param context optional [marker_context()] supplying `variants`/`haplotypes`;
+#'   an explicit argument wins over the context.
 #' @keywords internal
 #' @noRd
 marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = NULL,
-                             BPPARAM = NULL, ...) {
+                             BPPARAM = NULL, ..., context = NULL) {
+  ctx <- marker_context_args(context, variants, haplotypes)
+  variants <- ctx$variants
+  haplotypes <- ctx$haplotypes
   # `primer` is deliberately absent: it is not a genotyping chemistry (no allele
   # is read) but the marker-agnostic "any primer pair" QC subset, so it has no
   # locus-level designer and is documentation-only (C13).  Its criteria remain
@@ -471,6 +581,9 @@ is_target_designable <- function(marker) {
 #'   `NULL` (with `schemes = NULL`) uses the default per-locus ladder.
 #' @param schemes scheme ids to try, in order (see [marker_schemes()]).
 #' @param ... passed to the per-scheme designer (e.g. `flank`).
+#' @param context optional [marker_context()] supplying `variants`/`haplotypes`
+#'   (and, for later seams, `population`, `conditions`, `engines`).  Must be
+#'   named; supplied through `...` before this argument it would bind there.
 #' @return a list: `snp`, `scheme` (the winner, or `NA`), `marker` (the winning
 #'   object, or `NULL`), and `tried` (a tibble `scheme`, `ok`, `marker`).
 #' @examples
@@ -480,7 +593,8 @@ is_target_designable <- function(marker) {
 #' }
 #' @family KASP design
 #' @export
-design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...) {
+design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
+                          context = NULL) {
   # the order to try is the rescue policy (see rescue_strategy()); a plain vector
   # keeps the historical KASP -> CAPS -> ARMS -> HRM ladder
   if (is.null(schemes)) {
@@ -488,7 +602,7 @@ design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...) {
   }
   tried <- purrr::map(schemes, function(sc) {
     m <- tryCatch(
-      suppressWarnings(marker_design_at(genome, snp, sc, ...)),
+      suppressWarnings(marker_design_at(genome, snp, sc, ..., context = context)),
       error = function(e) NULL
     )
     tibble::tibble(scheme = sc, ok = is_target_designable(m), marker = list(m))
