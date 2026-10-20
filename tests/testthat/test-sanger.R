@@ -31,6 +31,12 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
   expect_lt(m$seq_primers$forward_end, snp$pos)
   expect_gt(m$seq_primers$reverse_start, snp$pos)
   expect_lt(m$seq_primers$reverse_end, m$amplicon$end)
+  # both reads reach the variant inside the usable window [min_dist, read_length]
+  expect_true(all(m$seq_primers$usable))
+  expect_gte(snp$pos - m$seq_primers$forward_start, KASP_SANGER_LIMITS$min_dist)
+  expect_lte(snp$pos - m$seq_primers$forward_start, KASP_SANGER_LIMITS$read_length)
+  expect_gte(m$seq_primers$reverse_end - snp$pos, KASP_SANGER_LIMITS$min_dist)
+  expect_lte(m$seq_primers$reverse_end - snp$pos, KASP_SANGER_LIMITS$read_length)
   spec <- marker_map_spec(m, "sanger")
   expect_setequal(spec$feature, c("amplicon", "PCR F", "PCR R", "read F", "read R"))
   expect_equal(spec$start[spec$feature == "read F"], m$seq_primers$forward_start)
@@ -81,6 +87,55 @@ test_that("the amplicon gate is really evaluated and relaxes to its floor (C7)",
   expect_s3_class(m, "marker_sanger")
   expect_true("gate_sanger_amplicon" %in% m$selection$relaxed)
   expect_gte(m$primers$product, 200L) # the relaxed floor: 400 - 200
+})
+
+test_that("a variant beyond the usable read is warned about, not silently paired", {
+  withr::local_envvar(LANGUAGE = "en")
+  W <- bseq(1200L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 600L, 600L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # a 400+ bp amplicon cannot put the variant within a 100 bp read of both ends,
+  # so the design must say which side cannot call it
+  expect_warning(
+    m <- design_sanger_marker(genome, snp, flank = 500L, read_length = 100L),
+    "No usable Sanger read"
+  )
+  expect_s3_class(m, "marker_sanger")
+  expect_true(any(!m$seq_primers$usable))
+  d <- c(
+    forward = snp$pos - m$seq_primers$forward_start,
+    reverse = m$seq_primers$reverse_end - snp$pos
+  )
+  expect_true(all(d[!m$seq_primers$usable] > 100L))
+  expect_output(print(m), "unusable read")
+})
+
+test_that("a read primer falls back to the flanking primer when no nested one qualifies", {
+  W <- bseq(900L, 11L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  start_f <- 110L
+  end_r <- 790L
+  flank_f <- substr(W, start_f, start_f + 19L)
+  flank_r <- as.character(Biostrings::reverseComplement(
+    Biostrings::DNAStringSet(substr(W, end_r - 19L, end_r))
+  ))
+  # an impossible Tm window rejects every nested candidate, so the routine must
+  # fall back to the PCR pair (inside the 700 bp reach) instead of returning NULL
+  sp <- sanger_seq_primers(
+    Biostrings::DNAString(W),
+    si = 450L, start_f = start_f, end_r = end_r,
+    flank_f = flank_f, flank_r = flank_r, min_dist = 50L, genome = genome,
+    lengths = 18:25, tm_range = c(0, 1), gc_range = c(0, 1)
+  )
+  expect_false(sp$nested)
+  expect_identical(sp$forward, flank_f)
+  expect_identical(sp$reverse, flank_r)
+  expect_equal(sp$forward_start, start_f)
+  expect_equal(sp$reverse_end, end_r)
+  expect_true(all(sp$usable))
 })
 
 test_that("scheme_def_sanger describes the chemistry and its gates", {

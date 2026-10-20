@@ -25,7 +25,16 @@
 #
 #  The read-out is not simulated (no chromatogram model), so this returns a
 #  well-formed, unique amplicon with the variant correctly placed, plus the
-#  sequencing primers that read into it, not a trace.
+#  sequencing primers that read into it, not a trace.  The read *physics* that
+#  are modelled are geometric: the variant must sit between `min_dist` and
+#  `read_length` bp of the sequencing primer's 5' end.  What is deliberately
+#  NOT modelled (and not pretended to be):
+#   * heterozygous indel deconvolution (ICE / TIDE / Poly Peak Parser), so a
+#     mixed indel trace is not resolved into its two alleles;
+#   * a minor allele below ~15-20% of the trace, which can sit under the
+#     chromatogram's call threshold;
+#   * peak heights / spacing / base qualities themselves - `read_length` is the
+#     only proxy for read quality.
 #
 #  Selection is real (not decorative): every gate declared by scheme_def_sanger()
 #  is computed here and applied by select_with_ladder() (C7).  The cheap margins
@@ -36,13 +45,16 @@
 # =============================================================================
 
 # The Sanger acceptance windows (the constraints the gates below encode).  Tm is
-# the sequencing-core 55-65 C rather than the tighter KASP COM window; min_dist
-# is the low-quality lead of a read.
+# the sequencing-core 55-65 C rather than the tighter KASP COM window.  A read
+# is usable from `min_dist` (the low-quality lead) to `read_length` bp past the
+# sequencing primer's 5' end; past that the base quality / peak spacing is no
+# longer reliable enough for a heterozygous call.
 KASP_SANGER_LIMITS <- list(
   amplicon = c(400L, 800L),
   tm = c(55, 65),
   gc = c(0.40, 0.60),
-  min_dist = 50L
+  min_dist = 50L,
+  read_length = 700L
 )
 
 # How far each *soft* Sanger gate may be relaxed - the bounded floor the ladder
@@ -318,12 +330,15 @@ seq_primer_at <- function(seq, side, starts, lengths, tm_range, gc_range, keep) 
 #' @param start_f,end_r plus-strand coordinates of the flanking pair's ends.
 #' @param flank_f,flank_r the flanking PCR primers (the fallback sequencing ones).
 #' @param min_dist minimal read-start distance.
+#' @param read_length usable read span from the primer's 5' end; a variant past
+#'   it cannot be called reliably from that read.
 #' @param genome a `marker_genome` or `DNAStringSet` (for the seed screen).
-#' @return a list (`forward`, `reverse`, `nested`).
+#' @return a list (`forward`, `reverse`, `nested`, `usable`).
 #' @keywords internal
 #' @noRd
 sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_dist, genome,
-                               lengths, tm_range, gc_range) {
+                               lengths, tm_range, gc_range,
+                               read_length = KASP_SANGER_LIMITS$read_length) {
   nested_lens <- intersect(c(20L, 22L), lengths)
   if (!length(nested_lens)) {
     nested_lens <- min(lengths)
@@ -331,12 +346,14 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
   window <- 40L
   fwd <- seq_primer_at(
     seq, "+", start_f + seq.int(0L, window), nested_lens, tm_range, gc_range,
-    function(cand) cand$end <= si - min_dist
+    function(cand) cand$end <= si - min_dist & si - cand$start <= read_length
   )
   rev <- seq_primer_at(
     seq, "-", seq.int(end_r - window - max(nested_lens) + 1L, end_r - min(nested_lens) + 1L),
     nested_lens, tm_range, gc_range,
-    function(cand) cand$start >= si + min_dist & cand$end <= end_r
+    function(cand) {
+      cand$start >= si + min_dist & cand$end <= end_r & cand$end - si <= read_length
+    }
   )
   if (!is.null(fwd) && !is.null(rev) && !inherits(genome, "marker_genome")) {
     p <- c(fwd$primer, rev$primer)
@@ -344,16 +361,37 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
       fwd <- rev <- NULL
     }
   }
+  forward <- fwd$primer %||% flank_f
+  reverse <- rev$primer %||% flank_r
+  forward_start <- fwd$start %||% start_f
+  forward_end <- fwd$end %||% (start_f + nchar(flank_f) - 1L)
+  reverse_start <- rev$start %||% (end_r - nchar(flank_r) + 1L)
+  reverse_end <- rev$end %||% end_r
+  # A read is usable from `min_dist` (low-quality lead) to `read_length` bp of
+  # the primer's 5' end.  The nested search already enforces the upper bound; a
+  # *flanking* fallback can still be too far away, so mark the side instead of
+  # presenting a pair that silently cannot call the variant.
+  dist <- c(forward = si - forward_start, reverse = reverse_end - si)
+  usable <- dist >= min_dist & dist <= read_length
+  if (!all(usable)) {
+    sides <- paste(names(usable)[!usable], collapse = " and ")
+    msg <- gettext("No usable Sanger read reaches the variant (%s): more than %s bp from the read primer.")
+    cli::cli_warn(c(
+      sprintf(msg, sides, read_length),
+      "i" = gettext("The amplicon is returned, but that side cannot call the variant.")
+    ))
+  }
   list(
-    forward = fwd$primer %||% flank_f,
-    reverse = rev$primer %||% flank_r,
+    forward = forward,
+    reverse = reverse,
     nested = !is.null(fwd) && !is.null(rev),
     # template coordinates of the actual read primers (the PCR pair when a
     # nested read primer was not found), converted to genomic by the designer
-    forward_start = fwd$start %||% start_f,
-    forward_end = fwd$end %||% (start_f + nchar(flank_f) - 1L),
-    reverse_start = rev$start %||% (end_r - nchar(flank_r) + 1L),
-    reverse_end = rev$end %||% end_r
+    forward_start = forward_start,
+    forward_end = forward_end,
+    reverse_start = reverse_start,
+    reverse_end = reverse_end,
+    usable = usable
   )
 }
 
@@ -377,6 +415,9 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' @param flank template half-width (must leave room for the amplicon).
 #' @param min_dist minimal distance from the variant to each amplicon end (the
 #'   read start / primer binding site).
+#' @param read_length usable read span from the sequencing primer's 5' end.  A
+#'   variant farther than this is not reliably callable; the design still
+#'   returns, but warns and flags that side in `$seq_primers$usable`.
 #' @param min_product,max_product the accepted amplicon window.
 #' @param lengths primer lengths to try.
 #' @param tm_range,gc_range accepted primer windows.
@@ -394,6 +435,7 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' @export
 design_sanger_marker <- function(genome, snp, flank = 500L,
                                  min_dist = KASP_SANGER_LIMITS$min_dist,
+                                 read_length = KASP_SANGER_LIMITS$read_length,
                                  min_product = KASP_SANGER_LIMITS$amplicon[1L],
                                  max_product = KASP_SANGER_LIMITS$amplicon[2L],
                                  lengths = 18:25, tm_range = KASP_SANGER_LIMITS$tm,
@@ -461,7 +503,8 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
   primers <- pair_to_list(sel$best)
   seq_primers <- sanger_seq_primers(
     tmpl$seq, si, primers$start, primers$end,
-    primers$forward, primers$reverse, min_dist, genome, lengths, tm_range, gc_range
+    primers$forward, primers$reverse, min_dist, genome, lengths, tm_range, gc_range,
+    read_length = read_length
   )
   amp0 <- snp$pos - si
   for (nm in c("forward_start", "forward_end", "reverse_start", "reverse_end")) {
@@ -489,6 +532,13 @@ print.marker_sanger <- function(x, ...) {
     how <- if (isTRUE(x$seq_primers$nested)) "nested" else "flanking"
     cat("  sequencing primers (", how, "):\n", sep = "")
     cat("    F:", x$seq_primers$forward, "\n    R:", x$seq_primers$reverse, "\n")
+    if (!is.null(x$seq_primers$usable) && !all(x$seq_primers$usable)) {
+      bad <- names(x$seq_primers$usable)[!x$seq_primers$usable]
+      cat(
+        "  unusable read:", paste(bad, collapse = ", "),
+        "(variant beyond read reach)\n"
+      )
+    }
   }
   if (length(x$selection$relaxed)) {
     cat("  relaxed:", paste(x$selection$relaxed, collapse = ", "), "\n")
