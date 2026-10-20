@@ -84,13 +84,17 @@ wobble_mismatch <- function(on_allele, off_allele) {
 
 #' Duplex (dimer) free energy for every primer pair (OligoArrayAux, DNA)
 #'
-#' `dg` is the hybridisation free energy of the two strands (kcal/mol, 37 C);
-#' more negative = stronger dimer.  The diagonal is the homodimer of each primer.
+#' `dg` is the hybridisation free energy of the two strands (kcal/mol) at the
+#' reaction `temperature` (37 C by default); more negative = stronger dimer.  The
+#' diagonal is the homodimer of each primer.
 #' Returns the FULL matrix (both orders); symmetry is imposed here, once.  Each
 #' pair is one OligoArrayAux subprocess, so for large primer sets pass a
 #' `BPPARAM` to run the n(n+1)/2 pairs in parallel.
 #' @param primers named character vector of oligos.
 #' @param BPPARAM optional `BiocParallel` backend; pairs are split across workers.
+#' @param conditions reaction conditions from [reaction_conditions()]; its
+#'   `Na` (mM) and `temperature` (C) are passed to [oligo_dg()].  The default
+#'   (50 mM Na, 37 C) is the historical behaviour.
 #' @return a tibble of every ordered primer pair (`a`, `b`, `dg`; kcal/mol).
 #' @examples
 #' \dontrun{
@@ -98,7 +102,9 @@ wobble_mismatch <- function(on_allele, off_allele) {
 #' }
 #' @family KASP thermodynamics
 #' @export
-dimer_thermo <- function(primers, BPPARAM = NULL) {
+dimer_thermo <- function(primers, BPPARAM = NULL,
+                         conditions = reaction_conditions()) {
+  conditions <- as_reaction_conditions(conditions)
   nm <- names(primers)
   # upper triangle (i <= j) is all DISTINCT pairs; the full grid is then a join
   grid <- tidyr::crossing(a = nm, b = nm) |>
@@ -107,7 +113,11 @@ dimer_thermo <- function(primers, BPPARAM = NULL) {
       hi = pmax(match(.data$a, nm), match(.data$b, nm))
     )
   keys <- dplyr::distinct(grid, .data$lo, .data$hi)
-  one <- function(k) oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]])
+  one <- function(k) {
+    oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]],
+      na = conditions$Na / 1000, temp = conditions$temperature
+    )
+  }
   keys$dg <- if (is.null(BPPARAM)) {
     purrr::map_dbl(seq_len(nrow(keys)), one)
   } else {

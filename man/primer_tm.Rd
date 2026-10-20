@@ -4,14 +4,24 @@
 \alias{primer_tm}
 \title{Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)}
 \usage{
-primer_tm(seq, DMSO = PCR_COND$DMSO, nn_table = NN_TABLE)
+primer_tm(
+  seq,
+  DMSO = NULL,
+  nn_table = NN_TABLE,
+  conditions = reaction_conditions()
+)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
 
-\item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.}
+\item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.
+\code{NULL} (the default) uses \code{conditions$DMSO}.}
 
 \item{nn_table}{nearest-neighbour parameter table (see details).}
+
+\item{conditions}{reaction conditions from \code{\link[=reaction_conditions]{reaction_conditions()}}; its
+\code{Na}, \code{Mg}, \code{dNTPs} and \code{DMSO} fields are used.  \code{temperature} does not
+enter the nearest-neighbour Tm calculation.}
 }
 \value{
 a numeric vector of Tm (C), one per oligo.
@@ -26,6 +36,7 @@ thermodynamic cross-check, see \code{\link[=thermo_crosscheck]{thermo_crosscheck
 \examples{
 primer_tm("GAAGGTGACCAAGTTCATGCT")
 primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
+primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
 }
 \seealso{
 Other KASP thermodynamics:

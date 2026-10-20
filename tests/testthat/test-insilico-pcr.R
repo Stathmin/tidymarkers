@@ -70,3 +70,13 @@ test_that("in_silico_pcr finds off-target products too", {
   # reverse in copy 2)
   expect_equal(nrow(pr), 3L)
 })
+
+test_that("the specificity engine advertises in-silico PCR without changing the matcher", {
+  eng <- marker_engines()$specificity
+  expect_true(capabilities(eng, "in_silico_pcr"))
+  expect_true(capabilities(eng, "iupac"))
+  expect_identical(capabilities(eng, "not_a_capability"), "unknown")
+  # metadata only: the matcher keeps its signature (no conditions argument)
+  expect_false("conditions" %in% names(formals(in_silico_pcr)))
+  expect_identical(eng$pcr, in_silico_pcr)
+})

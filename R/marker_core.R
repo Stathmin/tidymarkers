@@ -92,6 +92,186 @@ KASP_LIMITS <- list(
 # half-width of the "primer window" haplotype_groups() keys on.
 KASP_AS_LENGTHS <- 20:27L
 
+
+# --- conditions / engines seam -----------------------------------------------
+
+#' Reaction conditions for the thermodynamics engines
+#'
+#' One named object for the conditions a thermodynamic engine needs.  The units
+#' are the ones the rest of the package already uses: `Na`, `Mg` and `dNTPs` in
+#' mM, `DMSO` in percent, `temperature` in degrees C.  The defaults are exactly
+#' the values used before this seam existed (`PCR_COND` plus the 37 C duplex
+#' temperature of [oligo_dg()]), so a default call reproduces the package's
+#' historical numbers.
+#'
+#' `temperature` is the reaction temperature used by the dG engines; the
+#' nearest-neighbour Tm ([primer_tm()]) does not depend on it.
+#'
+#' @param Na,Mg,dNTPs monovalent salt, magnesium and dNTP concentrations (mM).
+#' @param DMSO DMSO concentration (%).
+#' @param temperature reaction temperature (C) for the dG engines.
+#' @return a named list with elements `Na`, `Mg`, `dNTPs`, `DMSO`, `temperature`.
+#' @examples
+#' reaction_conditions()
+#' reaction_conditions(Na = 100, temperature = 60)
+#' @family KASP engines
+#' @export
+reaction_conditions <- function(Na = PCR_COND$Na, Mg = PCR_COND$Mg, # nolint: object_name_linter.
+                                dNTPs = PCR_COND$dNTPs, DMSO = PCR_COND$DMSO, # nolint: object_name_linter.
+                                temperature = 37) {
+  out <- list(Na = Na, Mg = Mg, dNTPs = dNTPs, DMSO = DMSO, temperature = temperature)
+  for (nm in names(out)) {
+    value <- out[[nm]]
+    if (!is.numeric(value) || length(value) != 1L || !is.finite(value)) {
+      cli::cli_abort(gettext("`{nm}` must be a single finite number."))
+    }
+  }
+  if (any(unlist(out[c("Na", "Mg", "dNTPs", "DMSO")]) < 0)) {
+    cli::cli_abort(gettext("Salt, dNTP and DMSO concentrations cannot be negative."))
+  }
+  out
+}
+
+#' Normalise a (possibly partial) reaction-conditions list
+#'
+#' Fills missing fields from [reaction_conditions()] and rejects unknown names,
+#' so a typo cannot silently leave the old condition in place.
+#' @keywords internal
+#' @noRd
+as_reaction_conditions <- function(conditions = reaction_conditions()) {
+  if (is.null(conditions)) {
+    return(reaction_conditions())
+  }
+  if (!is.list(conditions) || is.null(names(conditions)) || any(!nzchar(names(conditions)))) {
+    cli::cli_abort(gettext("`conditions` must be a named list, e.g. reaction_conditions()."))
+  }
+  defaults <- reaction_conditions()
+  unknown <- setdiff(names(conditions), names(defaults))
+  if (length(unknown)) {
+    cli::cli_abort(c(
+      gettext("Unknown reaction condition(s): {.val {unknown}}."),
+      i = gettext("Allowed fields: {.val {names(defaults)}}.")
+    ))
+  }
+  merged <- defaults
+  for (nm in names(conditions)) merged[[nm]] <- conditions[[nm]]
+  do.call(reaction_conditions, merged)
+}
+
+#' Build one engine adapter
+#' @keywords internal
+#' @noRd
+marker_engine <- function(name, capabilities, ...) {
+  structure(list(name = name, capabilities = capabilities, ...), class = "marker_engine")
+}
+
+#' Marker engines and their capabilities
+#'
+#' The seam between the design code and the tools that compute the
+#' thermodynamics and the genome-wide specificity.  Each adapter carries its
+#' entry points (`tm`, `dimer`, `dg`; `pcr`, `seed`) and a capability table.
+#' A capability the adapter does not declare is reported as `"unknown"` by
+#' [capabilities()] - never `TRUE` - so an unverified feature cannot silently
+#' pass a gate.
+#'
+#' @return a named list (`thermo`, `specificity`) of `marker_engine` adapters,
+#'   classed `marker_engines`.
+#' @examples
+#' engines <- marker_engines()
+#' names(engines)
+#' capabilities(engines$specificity)
+#' @family KASP engines
+#' @export
+marker_engines <- function() {
+  structure(
+    list(
+      thermo = marker_engine(
+        "thermo",
+        capabilities = list(
+          tm = TRUE,
+          salt = TRUE,
+          temperature = TRUE,
+          duplex_dg = has_oligoarrayaux(),
+          hairpin_dg = has_oligoarrayaux()
+        ),
+        tm = primer_tm,
+        dimer = dimer_thermo,
+        dg = oligo_dg
+      ),
+      specificity = marker_engine(
+        "specificity",
+        capabilities = list(
+          in_silico_pcr = TRUE,
+          seed_counts = TRUE,
+          iupac = TRUE,
+          mismatch = TRUE,
+          blast = requireNamespace("rBLAST", quietly = TRUE) && nzchar(Sys.which("blastn"))
+        ),
+        pcr = in_silico_pcr,
+        seed = specificity_seed
+      )
+    ),
+    class = "marker_engines"
+  )
+}
+
+#' Capabilities of a marker engine
+#'
+#' Queries the capability table of an adapter from [marker_engines()].  A
+#' capability the adapter does not declare is `"unknown"`, not `TRUE`: the
+#' absence of a declaration is not evidence that the engine can do it.
+#'
+#' @param engine a `marker_engine` adapter or the whole `marker_engines`
+#'   registry.
+#' @param capability a single capability name; `NULL` returns every declared
+#'   capability.
+#' @param ... reserved for methods.
+#' @return with `capability = NULL`, a named list of declared capabilities (for
+#'   the registry, one such list per engine).  With a capability, its value:
+#'   `TRUE`, `FALSE`, or `"unknown"`.
+#' @examples
+#' engines <- marker_engines()
+#' capabilities(engines$thermo, "tm")
+#' capabilities(engines$thermo, "not_a_capability") # "unknown"
+#' @family KASP engines
+#' @export
+capabilities <- function(engine, capability = NULL, ...) {
+  if (!is.null(capability) && (!is.character(capability) || length(capability) != 1L)) {
+    cli::cli_abort(gettext("`capability` must be a single capability name."))
+  }
+  UseMethod("capabilities")
+}
+
+#' @rdname capabilities
+#' @export
+capabilities.marker_engine <- function(engine, capability = NULL, ...) {
+  if (is.null(capability)) {
+    return(engine$capabilities)
+  }
+  value <- engine$capabilities[[capability]]
+  if (is.null(value)) "unknown" else value
+}
+
+#' @keywords internal
+#' @noRd
+#' @exportS3Method
+capabilities.default <- function(engine, capability = NULL, ...) {
+  if (is.null(capability)) list() else "unknown"
+}
+
+#' @rdname capabilities
+#' @export
+capabilities.marker_engines <- function(engine, capability = NULL, ...) {
+  if (is.null(capability)) {
+    return(lapply(engine, capabilities))
+  }
+  values <- vapply(engine, function(one) {
+    value <- capabilities(one, capability)
+    if (isTRUE(value)) "true" else if (isFALSE(value)) "false" else "unknown"
+  }, character(1))
+  if (any(values == "true")) TRUE else if (any(values == "false")) FALSE else "unknown"
+}
+
 #' OligoArrayAux duplex / hairpin free energy
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or

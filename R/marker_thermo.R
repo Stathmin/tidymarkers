@@ -155,19 +155,27 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' thermodynamic cross-check, see [thermo_crosscheck()]).
 #' @param seq oligo(s) 5'->3'.
 #' @param DMSO DMSO concentration (%), as in a KASP master mix; it lowers Tm.
+#'   `NULL` (the default) uses `conditions$DMSO`.
 #' @param nn_table nearest-neighbour parameter table (see details).
+#' @param conditions reaction conditions from [reaction_conditions()]; its
+#'   `Na`, `Mg`, `dNTPs` and `DMSO` fields are used.  `temperature` does not
+#'   enter the nearest-neighbour Tm calculation.
 #' @return a numeric vector of Tm (C), one per oligo.
 #' @examples
 #' primer_tm("GAAGGTGACCAAGTTCATGCT")
 #' primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
+#' primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
 #' @family KASP thermodynamics
 #' @export
-primer_tm <- function(seq, DMSO = PCR_COND$DMSO, nn_table = NN_TABLE) {
+primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
+                      conditions = reaction_conditions()) {
+  conditions <- as_reaction_conditions(conditions)
+  DMSO <- DMSO %||% conditions$DMSO
   seq <- as.character(seq)
   gr <- TmCalculator::to_genomic_ranges(seq)
   res <- TmCalculator::tm_calculate(gr,
     method = "tm_nn", nn_table = nn_table,
-    Na = PCR_COND$Na, Mg = PCR_COND$Mg, dNTPs = PCR_COND$dNTPs, DMSO = DMSO
+    Na = conditions$Na, Mg = conditions$Mg, dNTPs = conditions$dNTPs, DMSO = DMSO
   )
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }
@@ -236,12 +244,19 @@ marker_ncores <- function(BPPARAM = NULL) {
 #' spot.
 #' @keywords internal
 #' @noRd
-oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL) {
+oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL,
+                         na = 0.05, temp = 37) {
   n <- length(seq1)
   if (n == 0L) {
     return(numeric(0))
   }
-  one <- function(i) if (is.null(seq2)) oligo_dg(seq1[[i]]) else oligo_dg(seq1[[i]], seq2[[i]])
+  one <- function(i) {
+    if (is.null(seq2)) {
+      oligo_dg(seq1[[i]], na = na, temp = temp)
+    } else {
+      oligo_dg(seq1[[i]], seq2[[i]], na = na, temp = temp)
+    }
+  }
   if (is.null(BPPARAM)) {
     vapply(seq_len(n), one, numeric(1))
   } else {

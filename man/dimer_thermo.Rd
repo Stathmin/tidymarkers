@@ -4,19 +4,24 @@
 \alias{dimer_thermo}
 \title{Duplex (dimer) free energy for every primer pair (OligoArrayAux, DNA)}
 \usage{
-dimer_thermo(primers, BPPARAM = NULL)
+dimer_thermo(primers, BPPARAM = NULL, conditions = reaction_conditions())
 }
 \arguments{
 \item{primers}{named character vector of oligos.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; pairs are split across workers.}
+
+\item{conditions}{reaction conditions from \code{\link[=reaction_conditions]{reaction_conditions()}}; its
+\code{Na} (mM) and \code{temperature} (C) are passed to \code{\link[=oligo_dg]{oligo_dg()}}.  The default
+(50 mM Na, 37 C) is the historical behaviour.}
 }
 \value{
 a tibble of every ordered primer pair (\code{a}, \code{b}, \code{dg}; kcal/mol).
 }
 \description{
-\code{dg} is the hybridisation free energy of the two strands (kcal/mol, 37 C);
-more negative = stronger dimer.  The diagonal is the homodimer of each primer.
+\code{dg} is the hybridisation free energy of the two strands (kcal/mol) at the
+reaction \code{temperature} (37 C by default); more negative = stronger dimer.  The
+diagonal is the homodimer of each primer.
 Returns the FULL matrix (both orders); symmetry is imposed here, once.  Each
 pair is one OligoArrayAux subprocess, so for large primer sets pass a
 \code{BPPARAM} to run the n(n+1)/2 pairs in parallel.

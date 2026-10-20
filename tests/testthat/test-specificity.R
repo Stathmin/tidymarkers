@@ -80,3 +80,14 @@ test_that("a BiocParallel BPPARAM gives the same mismatch counts as serial", {
   )
   expect_equal(par$hits, serial$hits)
 })
+
+test_that("the engines registry reports unknown for an undeclared capability", {
+  eng <- marker_engines()
+  expect_named(eng, c("thermo", "specificity"))
+  expect_identical(capabilities(eng, "not_a_capability"), "unknown")
+  expect_identical(capabilities(eng$thermo, "not_a_capability"), "unknown")
+  expect_identical(capabilities(eng$specificity, "not_a_capability"), "unknown")
+  expect_true(capabilities(eng, "seed_counts"))
+  # a non-engine object is unknown too, never a silent pass
+  expect_identical(capabilities(list(), "seed_counts"), "unknown")
+})
