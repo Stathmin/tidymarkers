@@ -13,18 +13,28 @@
 #  Design rules (researched, not invented):
 #   * Cas12a (DETECTR) requires a 5'-TTTV PAM (V = A/C/G) immediately 5' of the
 #     protospacer, and the PAM-proximal seed is the mismatch-critical region; the
-#     spacer is ~20-23 nt and target binding unleashes indiscriminate ssDNase
-#     ("collateral") cleavage read by a quenched reporter.
+#     spacer is ~20-23 nt.  Cas12a cuts its DNA target in cis and then acts as an
+#     indiscriminate ssDNase in trans ("collateral" cleavage); the DETECTR readout
+#     is a quenched ssDNA reporter, and the collateral activity does not degrade
+#     a double-stranded reporter.
 #     Chen JS et al. (2018) Science 360:436-439, doi:10.1126/science.aar6245.
 #     Addgene CRISPR Guide, PAM table (AsCpf1/LbCpf1: 5' TTTV; seed at the
 #     PAM-proximal end): https://www.addgene.org/guides/crispr/
-#   * Cas13 (SHERLOCK) is PAM-free (it targets ssRNA, so the DNA PAM is not
-#     required), tolerates a mismatch, and its crRNA spacer is ~20-28 nt; an
-#     isothermal pre-amplification precedes T7 transcription and detection.
+#   * Cas13 (SHERLOCK) targets ssRNA, so it has no DNA PAM - but it is NOT simply
+#     "PAM-free": a protospacer-flanking site (PFS) constrains the target.  Cas13a
+#     has a weak 3' PFS preference for H (A/C/U), so a G immediately 3' of the
+#     protospacer is avoided; that conservative rule is enforced here even though
+#     LwaCas13a tolerates some 3' G in vitro.  Cas13b requires a 5' D-PFS
+#     (D = A/U/G, i.e. not C); its additional 3' NAN/NNA PFS is documented but not
+#     enforced (the designer warns for `cas13b`).  The LwaCas13a crRNA spacer is
+#     ~28 nt, so the Cas13a window is 26-28 nt; the Cas13b window is 28-30 nt
+#     (canonical ~30 nt).  Cas13 collateral cleavage is an ssRNase activity read by
+#     an ssRNA reporter; an isothermal pre-amplification precedes T7 transcription.
+#     Abudayyeh OO et al. (2016) Science 353:aaf5573, doi:10.1126/science.aaf5573;
 #     Gootenberg JS et al. (2017) Science 356:438-442, doi:10.1126/science.aam9321;
 #     Gootenberg JS et al. (2018) Science 360:439-444, doi:10.1126/science.aaq0179
-#     (SHERLOCKv2, 20-28 nt spacers).  Addgene CRISPR Guide (Cas13 targets RNA,
-#     no PAM): https://www.addgene.org/guides/crispr/
+#     (SHERLOCKv2); Smargon AA et al. (2017) Mol Cell 65:618-630,
+#     doi:10.1016/j.molcel.2016.12.023 (Cas13b 5' D-PFS and 3' PFS).
 #   * Cas13 cleaves ssRNA, so its guide must match the *transcribed* strand (the
 #     one the T7 promoter turns into the target RNA), not the genomic plus strand
 #     automatically; guides are searched on both strands unless `strand=` restricts
@@ -51,22 +61,30 @@
 #' Enumerates guide spacers of the accepted lengths that place the variant at
 #' each offset of the *critical* window, on both strands.  For `cas = "cas12a"` a
 #' 5'-TTTV PAM immediately adjacent to the protospacer is required and the
-#' critical window is the PAM-proximal seed; for `cas = "cas13"` there is no PAM
-#' and the critical window is the central region of the spacer.  Candidates are
+#' critical window is the PAM-proximal seed.  Cas13 has no DNA PAM (it targets
+#' ssRNA) but it is not PFS-free: the target must carry a protospacer-flanking
+#' site (PFS), which is recorded in `pfs` and filtered here.  For Cas13a (and its
+#' `"cas13"` alias) the PFS is the base immediately 3' of the target protospacer
+#' and G is rejected (H = A/C/U preference).  For Cas13b the PFS is the 5' D-PFS
+#' (D = A/U/G) and C is rejected; the additional 3' NAN/NNA PFS is not enforced.
+#' The Cas13 critical window is the central region of the spacer.  Candidates are
 #' ordered best-first (deepest in the seed / most central, then GC closest to
-#' 0.5).
+#' 0.5).  PFS bases are returned in the DNA alphabet (`T` stands for `U` in the
+#' target RNA) and are read from the strand the guide spacer matches.
 #' @param seq the plus-strand template.
 #' @param snp_i template coordinate of the variant.
-#' @param cas `"cas12a"` or `"cas13"`.
+#' @param cas `"cas12a"`, `"cas13"`/`"cas13a"`, or `"cas13b"`.
 #' @param spacer_lengths spacer lengths to try.
 #' @param gc_range accepted guide GC window.
 #' @param strands strands the guide may be placed on (`"+"`/`"-"`).
-#' @return a tibble (`start`, `end`, `len`, `strand`, `spacer`, `pam`, `gc`,
-#'   `v_off`), plus-strand coordinates, or zero rows.
+#' @return a tibble (`start`, `end`, `len`, `strand`, `spacer`, `pam`, `pfs`,
+#'   `pfs_side`, `gc`, `v_off`), plus-strand coordinates, or zero rows.  `pam` is
+#'   `NA` for Cas13; `pfs`/`pfs_side` are `NA` for Cas12a.
 #' @keywords internal
 #' @noRd
 crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, strands = c("+", "-")) {
   strands <- match.arg(strands, c("+", "-"), several.ok = TRUE)
+  cas <- match.arg(cas, c("cas12a", "cas13", "cas13a", "cas13b"))
   s <- as.character(seq)
   n <- nchar(s)
   seed_len <- 8L # Cas12a PAM-proximal seed; also the length of the offsets tried
@@ -89,24 +107,55 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
   if (!nrow(cand)) {
     return(cand)
   }
+  rc <- function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(x)))
+  pfs_side <- if (cas %in% c("cas13", "cas13a")) {
+    "3'"
+  } else if (identical(cas, "cas13b")) {
+    "5'"
+  } else {
+    NA_character_
+  }
+  pfs_side_val <- pfs_side
   cand <- cand |>
     dplyr::mutate(
       plus_spacer = stringr::str_sub(s, .data$start, .data$end),
-      pam_raw = stringr::str_sub(s, .data$pam_lo, .data$pam_hi)
+      pam_raw = stringr::str_sub(s, .data$pam_lo, .data$pam_hi),
+      plus_pfs = if (identical(pfs_side, "3'")) {
+        stringr::str_sub(s, .data$end + 1L, .data$end + 1L)
+      } else if (identical(pfs_side, "5'")) {
+        stringr::str_sub(s, .data$start - 1L, .data$start - 1L)
+      } else {
+        rep(NA_character_, dplyr::n())
+      },
+      minus_pfs = if (identical(pfs_side, "3'")) {
+        rc(stringr::str_sub(s, .data$start - 1L, .data$start - 1L))
+      } else if (identical(pfs_side, "5'")) {
+        rc(stringr::str_sub(s, .data$end + 1L, .data$end + 1L))
+      } else {
+        rep(NA_character_, dplyr::n())
+      }
     )
-  rc <- function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(x)))
   cand <- cand |>
     dplyr::mutate(
       spacer = dplyr::if_else(.data$strand == "+", .data$plus_spacer, rc(.data$plus_spacer)),
       pam = dplyr::if_else(.data$strand == "+", .data$pam_raw, rc(.data$pam_raw)),
+      pfs = dplyr::if_else(.data$strand == "+", .data$plus_pfs, .data$minus_pfs),
+      pfs_side = pfs_side_val,
       gc = gc_frac(.data$spacer)
     )
   if (identical(cas, "cas12a")) {
     cand <- dplyr::filter(cand, stringr::str_detect(.data$pam, "^TTT[ACG]$"))
+  } else if (identical(pfs_side, "3'")) {
+    cand <- dplyr::filter(cand, .data$pfs != "G")
+  } else {
+    cand <- dplyr::filter(cand, .data$pfs != "C")
   }
   cand <- cand |>
     dplyr::filter(dplyr::between(.data$gc, gc_range[1L], gc_range[2L])) |>
     dplyr::mutate(gc_dev = abs(.data$gc - 0.5))
+  if (!identical(cas, "cas12a")) {
+    cand <- dplyr::mutate(cand, pam = NA_character_)
+  }
   if (identical(cas, "cas12a")) {
     cand <- dplyr::arrange(cand, .data$v_off, .data$gc_dev)
   } else {
@@ -114,7 +163,8 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
       dplyr::arrange(.data$pos_dev, .data$gc_dev)
   }
   dplyr::select(
-    cand, "start", "end", "len", "strand", "spacer", "pam", "gc", "v_off"
+    cand, "start", "end", "len", "strand", "spacer", "pam", "pfs",
+    "pfs_side", "gc", "v_off"
   )
 }
 
@@ -150,36 +200,57 @@ crispr_spacer_hits <- function(spacer, genome, BPPARAM = NULL) {
   as.integer(sum(unlist(hits)))
 }
 
+#' Default guide spacer windows per Cas effector
+#' @param cas one of `"cas12a"`, `"cas13"`, `"cas13a"`, `"cas13b"`.
+#' @return an integer vector of spacer lengths: 20-23 nt (Cas12a), 26-28 nt
+#'   (Cas13a/`"cas13"`, around the ~28 nt LwaCas13a spacer), 28-30 nt (Cas13b).
+#' @keywords internal
+#' @noRd
+crispr_default_spacer <- function(cas) {
+  switch(cas,
+    cas12a = 20:23,
+    cas13 = 26:28,
+    cas13a = 26:28,
+    cas13b = 28:30,
+    stop("unknown Cas effector: ", cas, call. = FALSE)
+  )
+}
+
 #' Design a CRISPR-Dx (SHERLOCK / DETECTR) marker at a variant
 #'
 #' The Cas-mediated detection analogue of [assemble_kasp_assay()]: an isothermal
 #' RPA pre-amplification pair straddles the variant and a guide RNA is
 #' placed so its spacer covers the variant, with the variant in the seed or
-#' critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer; Cas13
-#' is PAM-free.  The guide must also be unique in the genome (no off-target
-#' protospacer).  The collateral-cleavage readout itself is not simulated, so this
-#' returns a well-formed guide plus its pre-amplification amplicon, not a
-#' predicted signal.
+#' critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer.
+#' Cas13 has no DNA PAM (it targets ssRNA), but it is not PFS-free: Cas13a needs
+#' a non-G base immediately 3' of the target protospacer, and Cas13b needs a
+#' 5' D-PFS (A/U/G, i.e. not C).  The guide must also be unique in the genome
+#' (no off-target protospacer).  The collateral-cleavage readout itself is not
+#' simulated, so this returns a well-formed guide plus its pre-amplification
+#' amplicon, not a predicted signal.
 #'
 #' The guide is chosen best-first among all candidates whose pre-amplification
 #' pair also passes *that chemistry's* composition filters (RPA, never a KASP
 #' PCR), so a guide is only returned when its amplicon is designable too.
 #' The soft gates (amplicon window, GC, spacer length) are relaxed one at a
-#' time, least grave first, only when no guide clears them all; the PAM
-#' (Cas12a), the seed/critical region and guide specificity (no off-target
-#' protospacer) are hard - no guide is returned past them.
+#' time, least grave first, only when no guide clears them all; the PAM/PFS,
+#' the seed/critical region and guide specificity (no off-target protospacer)
+#' are hard - no guide is returned past them.  For `cas13b` the 3' NAN/NNA PFS
+#' is not enforced, and the designer warns about that gap.
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
-#' @param cas `"cas12a"` (DETECTR; needs a PAM) or `"cas13"` (SHERLOCK;
-#'   PAM-free).
+#' @param cas `"cas12a"` (DETECTR; needs a 5'-TTTV PAM), `"cas13"` or
+#'   `"cas13a"` (SHERLOCK; no DNA PAM, 3' non-G PFS), or `"cas13b"`
+#'   (5' D-PFS; the 3' PFS is not enforced).
 #' @param strand guide placement: `"both"` (default), or `"+"`/`"-"`.  Cas13
 #'   cleaves ssRNA, so its guide must match the *transcribed* strand (the one the
 #'   pre-amplification's T7 promoter turns into the target RNA); pass `strand`
 #'   when that orientation is known, otherwise both are tried and the choice is
 #'   the caller's to validate.
 #' @param spacer_lengths guide spacer lengths to try (default: 20-23 nt for
-#'   Cas12a, 22-28 nt for Cas13).
+#'   Cas12a, 26-28 nt for Cas13a/`"cas13"` around the ~28 nt LwaCas13a spacer,
+#'   and 28-30 nt for Cas13b).
 #' @param gc_range accepted guide GC window (default 0.35-0.65).
 #' @param specificity_max accepted number of off-target protospacers (exact
 #'   genome hits of the spacer beyond the on-target locus; default 0).  This is
@@ -192,10 +263,11 @@ crispr_spacer_hits <- function(spacer, genome, BPPARAM = NULL) {
 #'   attached for guide/PAM conservation warnings and the generic haplotype
 #'   track; when absent, CRISPR warns that guide/PAM conservation is unchecked.
 #' @param BPPARAM optional `BiocParallel` backend for the guide-specificity scan.
-#' @return a `marker_crispr` list (`snp`, `cas`, `strand`, `guide`, `pam`,
-#'   `guide_start`, `guide_end`, `seed_offset`, `gc`, `amplicon`, `off_target`,
-#'   `gates`, `relaxed`), or `NULL` (with a message) when no guide / amplicon
-#'   passes the hard gates.
+#' @return a `marker_crispr` list (`snp`, `cas`, `strand`, `guide`, `pam`, `pfs`,
+#'   `pfs_side`, `guide_start`, `guide_end`, `seed_offset`, `gc`, `amplicon`,
+#'   `off_target`, `gates`, `relaxed`), or `NULL` (with a message) when no
+#'   guide / amplicon passes the hard gates.  `pam` is `NA` for Cas13;
+#'   `pfs`/`pfs_side` are `NA` for Cas12a.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -204,7 +276,8 @@ crispr_spacer_hits <- function(spacer, genome, BPPARAM = NULL) {
 #' }
 #' @family KASP CRISPR
 #' @export
-design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "cas13"),
+design_crispr_marker <- function(genome, snp, flank = 200L,
+                                 cas = c("cas12a", "cas13", "cas13a", "cas13b"),
                                  strand = c("both", "+", "-"),
                                  spacer_lengths = NULL, gc_range = NULL,
                                  specificity_max = 0L,
@@ -214,9 +287,14 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
   cas <- match.arg(cas)
   strand <- match.arg(strand)
   preamp <- match.arg(preamp, "rpa")
+  if (identical(cas, "cas13b")) {
+    cli::cli_warn(gettext(
+      "Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled."
+    ))
+  }
   strands <- if (identical(strand, "both")) c("+", "-") else strand
   strict_spacer <- if (is.null(spacer_lengths)) {
-    if (identical(cas, "cas12a")) 20:23 else 22:28
+    crispr_default_spacer(cas)
   } else {
     as.integer(spacer_lengths)
   }
@@ -231,10 +309,11 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   off <- snp$pos - tmpl$snp_i
   # the ladder to the first usable guide: relax the soft gates LEAST grave first
-  # (C6), one rung at a time.  PAM, seed and specificity are hard: a guide
-  # without a PAM (Cas12a), with the variant outside the seed/critical region,
-  # or with an off-target protospacer cannot be licensed to discriminate, so
-  # they are enforced by the enumeration / hit count and never relaxed.
+  # (C6), one rung at a time.  PAM/PFS, seed and specificity are hard: a guide
+  # without a PAM (Cas12a) or a compatible PFS (Cas13), with the variant outside
+  # the seed/critical region, or with an off-target protospacer cannot be
+  # licensed to discriminate, so they are enforced by the enumeration / hit
+  # count and never relaxed.
   rungs <- list(
     character(0),
     "gate_crispr_amplicon",
@@ -273,16 +352,24 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
   }
   if (is.null(pick)) {
     cli::cli_inform(gettext(
-      "No guide spacer passed the PAM / seed / specificity / GC filters with a pre-amplification pair."
+      "No guide spacer passed the PAM/PFS / seed / specificity / GC filters with a pre-amplification pair."
     ))
     return(NULL)
   }
   row <- pick$row
   amp <- pick$amp
   off_target <- if (is.na(pick$hits)) NA_integer_ else pick$hits - 1L
-  # the gate table the DAG displays, evaluated on the guide actually returned (C7)
+  # the gate table the DAG displays, evaluated on the guide actually returned
+  # (C7).  `gate_crispr_pam` is the legacy key for the licensing gate: the
+  # Cas12a PAM or, for Cas13, the PFS (no DNA PAM exists for an RNA target).
   gates <- c(
-    gate_crispr_pam = if (identical(cas, "cas12a")) grepl("^TTT[ACG]$", row$pam) else NA,
+    gate_crispr_pam = if (identical(cas, "cas12a")) {
+      grepl("^TTT[ACG]$", row$pam)
+    } else if (identical(cas, "cas13b")) {
+      !is.na(row$pfs) && row$pfs != "C"
+    } else {
+      !is.na(row$pfs) && row$pfs != "G"
+    },
     gate_crispr_seed = TRUE, # enforced by the seed / central-window enumeration
     gate_crispr_spacer = dplyr::between(row$len, min(strict_spacer), max(strict_spacer)),
     gate_crispr_specificity = if (is.na(off_target)) NA else off_target <= specificity_max,
@@ -299,6 +386,8 @@ design_crispr_marker <- function(genome, snp, flank = 200L, cas = c("cas12a", "c
     strand = row$strand,
     guide = row$spacer,
     pam = if (identical(cas, "cas12a")) row$pam else NA_character_,
+    pfs = row$pfs,
+    pfs_side = row$pfs_side,
     guide_start = row$start + off,
     guide_end = row$end + off,
     seed_offset = row$v_off,
@@ -329,8 +418,15 @@ print.marker_crispr <- function(x, ...) {
     x$snp$ref, ">", x$snp$alt, " [", x$cas, "]\n",
     sep = ""
   )
-  pam <- if (is.na(x$pam)) "PAM-free" else paste0("PAM ", x$pam)
-  cat("  guide:", x$guide, "(", x$strand, ",", pam, ", seed offset", x$seed_offset, ")\n")
+  pfs <- x$pfs %||% NA_character_
+  lic <- if (!is.na(x$pam)) {
+    paste0("PAM ", x$pam)
+  } else if (identical(x$cas, "cas13b")) {
+    paste0("no PAM; 5' PFS ", pfs, " (D)")
+  } else {
+    paste0("no PAM; 3' PFS ", pfs, " (non-G)")
+  }
+  cat("  guide:", x$guide, "(", x$strand, ",", lic, ", seed offset", x$seed_offset, ")\n")
   ot <- if (is.na(x$off_target)) "unscanned" else paste0(x$off_target, " off-target protospacer(s)")
   cat("  specificity:", ot, "\n")
   cat("  pre-amplification (", x$preamp, ") amplicon:", x$amplicon$product, "bp\n", sep = "")
@@ -382,17 +478,20 @@ scheme_def_crispr <- function() {
     scheme = "crispr",
     family = "crispr",
     label = "CRISPR-Dx (SHERLOCK / DETECTR)",
-    discrimination = "Cas collateral cleavage of a reporter, guided to the variant",
-    readout = "fluorescence / lateral flow (collateral reporter)",
+    discrimination = paste0(
+      "Cas collateral cleavage of a reporter, guided to the variant ",
+      "(ssDNase/ssDNA reporter for Cas12a; ssRNase/ssRNA for Cas13)"
+    ),
+    readout = "fluorescence / lateral flow (ssDNA reporter for Cas12a; ssRNA for Cas13)",
     zygosity = "co-dominant (dominant for presence/absence)",
     amplicon = "pre-amplified (RPA)",
     loci = 1L,
     verdict = "usable CRISPR-Dx marker",
     # the gate order the method applies (grave / cheap first): a guide is
-    # licensed by the PAM and the seed first, then its length, specificity, GC
-    # and finally the pre-amplification amplicon it rides on.
-    # The single DAG describes the stricter Cas12a path for `gate_crispr_pam`:
-    # the gate is hard, but it evaluates to `NA` for PAM-free Cas13.
+    # licensed by the PAM (Cas12a) or PFS (Cas13) and the seed first, then its
+    # length, specificity, GC and finally the pre-amplification amplicon it rides
+    # on.  `gate_crispr_pam` is the legacy key for that licensing gate; for Cas13
+    # it reports the PFS, because an RNA target has no DNA PAM.
     gates = c(
       "gate_crispr_pam", "gate_crispr_seed", "gate_crispr_spacer",
       "gate_crispr_specificity", "gate_crispr_gc", "gate_crispr_amplicon"
@@ -401,13 +500,13 @@ scheme_def_crispr <- function() {
       "gate_crispr_amplicon", "gate_crispr_gc", "gate_crispr_spacer"
     ),
     tiers = c(
-      guide = "guide / PAM quality",
+      guide = "guide / PAM/PFS quality",
       seed = "variant position in spacer",
       specificity = "guide off-target count",
       amplicon = "amplicon length"
     ),
     gate_short = c(
-      gate_crispr_pam = "PAM (Cas12a; Cas13 PAM-free)",
+      gate_crispr_pam = "PAM (Cas12a) / PFS (Cas13)",
       gate_crispr_seed = "seed coverage",
       gate_crispr_spacer = "spacer length",
       gate_crispr_specificity = "guide specificity",
@@ -415,9 +514,9 @@ scheme_def_crispr <- function() {
       gate_crispr_amplicon = "amplicon length"
     ),
     gate_limit = c(
-      gate_crispr_pam = "5'-TTTV adjacent (Cas12a); PAM-free (Cas13)",
+      gate_crispr_pam = "5'-TTTV (Cas12a); 3' non-G (Cas13a) / 5' D (Cas13b)",
       gate_crispr_seed = "variant in the seed (Cas12a) / central region (Cas13)",
-      gate_crispr_spacer = "20-23 nt (Cas12a) / 22-28 nt (Cas13)",
+      gate_crispr_spacer = "20-23 nt (Cas12a) / 26-28 nt (Cas13a) / 28-30 nt (Cas13b)",
       gate_crispr_specificity = "no off-target protospacer (spacer hit count = 1)",
       gate_crispr_gc = "0.35-0.65",
       gate_crispr_amplicon = "80-250 bp (RPA)"
@@ -428,7 +527,7 @@ scheme_def_crispr <- function() {
       gate_crispr_spacer = "widen the spacer length window"
     ),
     gate_hard_label = c(
-      gate_crispr_pam = "no 5'-TTTV PAM = Cas12a cannot be licensed (Cas13 is PAM-free)",
+      gate_crispr_pam = "no Cas12a 5'-TTTV PAM or compatible Cas13 PFS = the guide is not selected",
       gate_crispr_seed = "a variant outside the seed / critical region is not discriminated",
       gate_crispr_specificity = "an off-target protospacer would fire on the wrong template"
     ),
