@@ -4,12 +4,7 @@
 \alias{primer_tm}
 \title{Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)}
 \usage{
-primer_tm(
-  seq,
-  DMSO = NULL,
-  nn_table = NN_TABLE,
-  conditions = reaction_conditions()
-)
+primer_tm(seq, DMSO = NULL, nn_table = NN_TABLE, conditions = NULL)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
@@ -19,9 +14,14 @@ primer_tm(
 
 \item{nn_table}{nearest-neighbour parameter table (see details).}
 
-\item{conditions}{reaction conditions from \code{\link[=reaction_conditions]{reaction_conditions()}}; its
-\code{Na}, \code{Mg}, \code{dNTPs} and \code{DMSO} fields are used.  \code{temperature} does not
-enter the nearest-neighbour Tm calculation.}
+\item{conditions}{reaction conditions from \code{\link[=reaction_conditions]{reaction_conditions()}} (or
+\code{\link[=scheme_conditions]{scheme_conditions()}}, or a partial named list); its \code{Na}, \code{Mg}, \code{dNTPs} and
+\code{DMSO} fields are used.  \code{temperature} does not enter the nearest-neighbour
+Tm calculation (the NN model gives Tm directly), so passing
+\code{scheme_conditions("lamp")} shifts the Tm only through the buffer fields.
+\code{NULL} uses \code{\link[=reaction_conditions]{reaction_conditions()}}, i.e. the package's historical numbers.
+For an isothermal method whose buffer this model does not represent (RPA's
+crowded recombinase buffer) the Tm is informational, not a gate.}
 }
 \value{
 a numeric vector of Tm (C), one per oligo.
@@ -41,6 +41,8 @@ primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
 \seealso{
 Other KASP thermodynamics:
 \code{\link[=dimer_thermo]{dimer_thermo()}},
+\code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
+\code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},

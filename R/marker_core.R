@@ -29,6 +29,55 @@ NN_TABLE <- "DNA_NN_SantaLucia_2004"
 # PCR conditions (molar) for DECIPHER::CalculateEfficiencyPCR
 PCR_EFF <- list(temp = 60, P = 4e-7, ions = 0.2)
 
+# Per-scheme reaction temperatures (C) for the dG engines, see scheme_conditions().
+# PCR_COND holds only the salt / denaturant values; only `temperature` is
+# scheme-specific here, and every value is one the code already assumes rather
+# than a new buffer recipe:
+#   pcr     the thermal-cycler chemistries anneal / read at the PCR
+#           extension-anneal temperature pcr_efficiency() already passes to
+#           DECIPHER (PCR_EFF$temp, 60 C)
+#   lamp    the LAMP operating window recorded in R/marker_lamp.R:5 (60-65 C)
+#   rpa     the RPA operating window recorded in R/marker_rpa.R (RPA_TEMP,
+#           37-42 C), a crowded reaction this nearest-neighbour model does not
+#           represent - its Tm is informational, never a gate
+#   ambient a restriction digest / bead capture / capillary read with no heated
+#           incubation; 25 C is an ASSUMPTION (room temperature), not a stated
+#           protocol step
+# The values are repeated here (not read from RPA_TEMP / the LAMP header, which
+# collate later) and tests/testthat/test-oligo-dg.R pins them equal to those
+# constants so the two cannot drift apart silently.
+SCHEME_TEMPERATURE <- list(
+  pcr     = c(PCR_EFF$temp, PCR_EFF$temp),
+  lamp    = c(60, 65),
+  rpa     = c(37, 42),
+  ambient = c(25, 25)
+)
+
+# Scheme id -> family whose reaction conditions it uses.  Any id not listed is a
+# PCR-style thermal-cycler chemistry.  `crispr` stays in the PCR family: only its
+# readout is isothermal (collateral cleavage of an RPA-or-PCR amplicon), so 60 C
+# is the model the rest of the family shares; it is separately named in
+# TM_INFORMATIONAL below because its Tm must never gate.
+SCHEME_TEMP_FAMILY <- c(
+  snp = "pcr", indel = "pcr", multi = "pcr", duplex = "pcr", primer = "pcr",
+  asq = "pcr", arms = "pcr", hrm = "pcr", castpcr = "pcr", crispr = "pcr",
+  dpcr = "pcr", indel_size = "pcr", lax = "pcr", sanger = "pcr",
+  taqman = "pcr",
+  caps = "ambient",
+  snapshot = "ambient",
+  ssr = "ambient",
+  lamp = "lamp",
+  rpa = "rpa"
+)
+
+# Schemes whose reaction temperature this nearest-neighbour model does not
+# represent, so their Tm is INFORMATIONAL and must never become a gate:
+#   rpa    a crowded recombinase/SSB reaction (RPA_NO_TM in R/marker_rpa.R is an
+#          open c(0, 200) on purpose - primer LENGTH is the gate, not Tm)
+#   crispr an RPA pre-amplification feeds the Cas readout, so it inherits RPA's
+#          open Tm window (R/marker_crispr.R screens its pre-pair with RPA_NO_TM)
+TM_INFORMATIONAL <- c("rpa", "crispr")
+
 # Ensembl Plants FASTA defline -> TAIR chromosome name; the only sequences kept.
 ATH_CHROM_MAP <- c(
   "1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
@@ -156,6 +205,72 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
   merged <- defaults
   for (nm in names(conditions)) merged[[nm]] <- conditions[[nm]]
   do.call(reaction_conditions, merged)
+}
+
+#' Reaction conditions for one marker scheme
+#'
+#' The single place a scheme id becomes a [reaction_conditions()] object, so the
+#' dG engines can be evaluated at the temperature the chemistry actually runs at
+#' instead of a global 37 C.  This is a *temperature* seam, not a buffer recipe:
+#' the code models no additives (no betaine, PEG or crowding), so the salt, dNTP
+#' and DMSO fields are [reaction_conditions()]'s defaults (`PCR_COND`) for every
+#' scheme, and only `temperature` is scheme-specific.
+#'
+#' Encoded temperatures and their source:
+#' * PCR-style chemistries (`snp`, `indel`, `multi`, `duplex`, `primer`, `asq`,
+#'   `arms`, `hrm`, `castpcr`, `crispr`, `dpcr`, `indel_size`, `lax`, `sanger`,
+#'   `taqman`) - `PCR_EFF$temp` (60 C), the anneal/extension temperature the
+#'   package already uses for [pcr_efficiency()].
+#' * `lamp` - 60-65 C, the LAMP operating window already recorded in
+#'   `R/marker_lamp.R` (`LAMP_TEMP`).
+#' * `rpa` - 37-42 C, the RPA operating window already recorded in
+#'   `R/marker_rpa.R` (`RPA_TEMP`).  RPA buffers are crowded (recombinase, SSB,
+#'   crowding agent), which this nearest-neighbour model does not represent: a
+#'   PCR-style Tm is *informational* for RPA, never a gate (see [primer_tm()]; RPA
+#'   primers are screened on length, with `RPA_NO_TM` deliberately open).
+#'   `crispr` is mapped to the PCR family (its readout is what the family shares)
+#'   but is likewise listed in `TM_INFORMATIONAL`: its isothermal pre-amplification
+#'   is RPA and its pre-primers are already screened with `RPA_NO_TM`.
+#' * `caps`, `snapshot`, `ssr` - no heated incubation is assumed by the code (a
+#'   restriction digest, bead capture and capillary read are all at room
+#'   temperature), so 25 C; this is an explicit *assumption*, not a stated step
+#'   of any of those protocols.
+#'
+#' `temperature` is the top of each window (60 C, 65 C, 42 C, 25 C): a higher
+#' temperature weakens every duplex, so it is the least punitive reading for a
+#' dimer screen and the one that cannot hide a design under a gentler model.
+#' The rest of the window is registered on the returned object's
+#' `temperature_range` attribute.
+#'
+#' @param scheme a scheme id (see [marker_schemes()]) or a temperature family
+#'   (`"pcr"`, `"lamp"`, `"rpa"`, `"ambient"`).  An unregistered id is treated as
+#'   PCR-style, matching the package's historical behaviour.
+#' @return a [reaction_conditions()] object with a `temperature_range` attribute
+#'   (C, the method's operating window) and a `tm_informational` attribute
+#'   (`TRUE` for RPA and CRISPR, whose Tm must not gate).
+#' @examples
+#' scheme_conditions("lamp")
+#' attr(scheme_conditions("rpa"), "temperature_range")
+#' @seealso [reaction_conditions()], [primer_tm()], [dimer_thermo()]
+#' @family KASP engines
+#' @export
+scheme_conditions <- function(scheme = "pcr") {
+  if (!is.character(scheme) || length(scheme) != 1L || is.na(scheme) || !nzchar(scheme)) {
+    cli::cli_abort(gettext("`scheme` must be a single scheme id."))
+  }
+  family <- if (scheme %in% names(SCHEME_TEMPERATURE)) {
+    scheme
+  } else if (scheme %in% names(SCHEME_TEMP_FAMILY)) {
+    unname(SCHEME_TEMP_FAMILY[[scheme]])
+  } else {
+    "pcr"
+  }
+  window <- SCHEME_TEMPERATURE[[family]]
+  cond <- reaction_conditions(temperature = window[2L])
+  structure(cond,
+    temperature_range = window, scheme = scheme, family = family,
+    tm_informational = scheme %in% TM_INFORMATIONAL
+  )
 }
 
 #' Build one engine adapter
