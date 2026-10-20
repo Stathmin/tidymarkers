@@ -79,9 +79,10 @@ exact_seed_counts <- function(seeds, genome) {
 
 #' In-silico PCR: every product a primer pair would amplify
 #'
-#' Uses `Biostrings::matchProbePair` (the library's own virtual PCR) to find
-#' each product the forward/reverse pair generates, chromosome by chromosome.
-#' A KASP test must amplify exactly one product per allele.
+#' Uses IUPAC-aware `Biostrings::matchPattern()` to find forward and reverse
+#' primer matches, then pairs every forward start with a downstream reverse end
+#' into a product.  This supports degenerate primers and `max_mismatch`; a KASP
+#' test must amplify exactly one product per allele.
 #'
 #' @param f_primer forward primer (5'->3'), binds the plus strand.
 #' @param r_primer reverse primer (5'->3').
@@ -99,29 +100,66 @@ exact_seed_counts <- function(seeds, genome) {
 #' @export
 in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = 0L, BPPARAM = NULL) {
   fwd <- Biostrings::DNAString(f_primer)
-  rev <- Biostrings::DNAString(r_primer)
+  # the reverse primer binds the minus strand, so its reverse complement is the
+  # plus-strand pattern to search
+  rev <- Biostrings::reverseComplement(Biostrings::DNAString(r_primer))
+  min_width <- max(nchar(f_primer), nchar(r_primer))
   chroms <- genome_chroms(genome)
   scan_one <- function(nm) {
     worker_biostrings()
-    # genome_seq() reads one sequence at a time, so an indexed `marker_genome` stays
-    # out of RAM; a DNAStringSet is simply subscripted
-    pr <- Biostrings::matchProbePair(fwd, rev, genome_seq(genome, nm),
-      max.mismatch = max_mismatch, verbose = FALSE
-    )
-    if (is.null(pr) || length(pr) == 0L) {
+    subject <- genome_seq(genome, nm)
+    # matchPattern(fixed = FALSE) is IUPAC-aware and supports max.mismatch;
+    # matchProbePair() returns individual probe hits, not paired products.
+    fh <- Biostrings::matchPattern(fwd, subject, max.mismatch = max_mismatch, fixed = FALSE)
+    rh <- Biostrings::matchPattern(rev, subject, max.mismatch = max_mismatch, fixed = FALSE)
+    if (length(fh) == 0L || length(rh) == 0L) {
       return(NULL)
     }
-    tibble::tibble(
-      chrom = nm, start = IRanges::start(pr), end = IRanges::end(pr),
-      width = IRanges::width(pr)
+    fs <- IRanges::start(fh)
+    re <- IRanges::end(rh)
+    idx <- which(outer(fs, re, "<="), arr.ind = TRUE)
+    if (!nrow(idx)) {
+      return(NULL)
+    }
+    out <- tibble::tibble(
+      chrom = nm, start = fs[idx[, 1L]], end = re[idx[, 2L]]
     )
+    out$width <- out$end - out$start + 1L
+    out <- out[out$width >= min_width, , drop = FALSE]
+    if (!nrow(out)) NULL else dplyr::distinct(out)
   }
   res <- if (is.null(BPPARAM)) {
     lapply(chroms, scan_one)
   } else {
     bp_lapply(chroms, scan_one, BPPARAM)
   }
-  purrr::list_rbind(res)
+  out <- purrr::list_rbind(res)
+  if (!nrow(out)) {
+    out <- tibble::tibble(
+      chrom = character(), start = integer(), end = integer(), width = integer()
+    )
+  }
+  # Exact mode must not silently hide a one-mismatch primer product.  Scan one
+  # mismatch and warn; callers who want those products in the table pass
+  # max_mismatch = 1 explicitly.
+  if (max_mismatch == 0L) {
+    near <- in_silico_pcr(
+      f_primer, r_primer, genome,
+      max_mismatch = 1L, BPPARAM = BPPARAM
+    )
+    extra <- dplyr::anti_join(
+      near, out,
+      by = c("chrom", "start", "end")
+    )
+    if (nrow(extra)) {
+      msg <- gettext(paste0(
+        "%d near-match in-silico PCR product(s) with <= 1 primer mismatch ",
+        "were found; exact mode ignores them. Set max_mismatch = 1 to include them."
+      ))
+      cli::cli_warn(sprintf(msg, nrow(extra)))
+    }
+  }
+  out
 }
 
 #' Forward/reverse primer pairs for the two allele-specific virtual PCRs
@@ -154,7 +192,7 @@ as_pcr_pairs <- function(assay) {
 #' @param genome DNAStringSet.
 #' @param max_mismatch mismatches tolerated in the primer match.
 #' @param BPPARAM optional `BiocParallel` backend (see [in_silico_pcr()]).
-#' @param products precomputed products from [assay_pcr_products()]; when given,
+#' @param products precomputed products from `assay_pcr_products()`; when given,
 #'   the genome is not rescanned (the ideogram and the amplicon counts then share
 #'   one virtual PCR).
 #' @return a tibble `primer`, `n_products`, `width`, one row per AS primer.
@@ -173,11 +211,10 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, pr
 
 #' Every in-silico PCR product of an assay's two allele-specific pairings
 #'
-#' One virtual-PCR pass per AS primer ([as_pcr_pairs()]); computed once at design
+#' One virtual-PCR pass per AS primer (`as_pcr_pairs()`); computed once at design
 #' time and reused for both the amplicon counts and the genome ideogram, so the
 #' genome is scanned once instead of twice.
 #' @keywords internal
-#' @noRd
 assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
   purrr::imap(as_pcr_pairs(assay), function(fr, nm) {
     in_silico_pcr(fr[["F"]], fr[["R"]], genome,

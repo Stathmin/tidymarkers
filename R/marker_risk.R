@@ -21,7 +21,7 @@ KASP_RISK_HIGH <- c(
 #' A graded discrimination band from the observed efficiency margin
 #'
 #' Discrimination is the one number that is genuinely continuous (DECIPHER on-
-#' minus off-target efficiency, in [-1, 1]), so it is graded rather than a bare
+#' minus off-target efficiency, in `-1, 1`), so it is graded rather than a bare
 #' pass/fail: at or above `min_disc` it is `low`, within `discrimination_margin`
 #' below it `medium`, further below `high`.  The bands are anchored to the design's
 #' own `min_disc` and its margin - not a hand-fitted probability, which would need

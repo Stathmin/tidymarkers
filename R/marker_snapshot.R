@@ -130,13 +130,20 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
     cli::cli_inform(gettext("No amplification pair passed the Tm/GC and amplicon-length filters."))
     return(NULL)
   }
-  ext <- design_extension_primer(tmpl$seq, si, ext_lengths, ext_tm, ext_gc, limits)
+  # the extension primer must anneal inside the product, between the PCR
+  # primers' 3' ends: overlapping either primer (or falling outside) means it
+  # cannot extend on the amplicon.
+  inner_lo <- amp$start + nchar(amp$forward)
+  inner_hi <- amp$end - nchar(amp$reverse)
+  ext <- design_extension_primer(
+    tmpl$seq, si, ext_lengths, ext_tm, ext_gc, limits, inner_lo, inner_hi
+  )
   if (is.null(ext)) {
     # the tm rung: the same documented relaxation, declared as the gate's floor
     ext <- design_extension_primer(
       tmpl$seq, si, ext_lengths,
       ext_tm + c(-SNAPSHOT_TM_RELAX, SNAPSHOT_TM_RELAX),
-      ext_gc, limits
+      ext_gc, limits, inner_lo, inner_hi
     )
   }
   if (is.null(ext)) {
@@ -226,11 +233,16 @@ print.marker_snapshot <- function(x, ...) {
 #'
 #' Placement fixes the candidate set: on the plus strand the primer ends at
 #' `si - 1`, on the minus strand (reverse complement) it starts at `si + 1`.
-#' Candidates are GC/Tm-screened by [primer_candidates()], structure-screened
-#' with OligoArrayAux when available, then ranked by Tm centrality.
+#' Candidates are GC/Tm-screened by `primer_candidates()`, structure-screened
+#' with OligoArrayAux when available, then ranked by Tm centrality.  The
+#' `inner_lo`/`inner_hi` span (plus-strand coordinates) keeps the primer inside
+#' the amplicon between the flanking primers' 3' ends.
+#' @param inner_lo,inner_hi plus-strand span the extension primer must fit
+#'   between (the amplicon's inner bases).
 #' @keywords internal
 #' @noRd
-design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits) {
+design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits,
+                                    inner_lo = -Inf, inner_hi = Inf) {
   s <- as.character(seq)
   n <- nchar(s)
   short <- min(lengths)
@@ -262,7 +274,8 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
   } else {
     empty
   }
-  cand <- dplyr::bind_rows(plus, minus)
+  cand <- dplyr::bind_rows(plus, minus) |>
+    dplyr::filter(.data$start >= inner_lo, .data$end <= inner_hi)
   if (!nrow(cand)) {
     return(NULL)
   }
@@ -286,6 +299,30 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
 #' The SNaPshot scheme definition (gates, tiers, labels)
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_snapshot
+#' @export
+#' @noRd
+marker_map_spec.marker_snapshot <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  start <- sp[["start"]]
+  end <- sp[["end"]]
+  amp_f <- marker$amplification
+  map_spec(
+    marker,
+    features = c(
+      map_pair_spec(amp_f$forward, amp_f$reverse, start, end),
+      list(spec_row(
+        "extension", marker$extension$start[1L], marker$extension$end[1L],
+        marker$extension$strand[1L], "primer"
+      ))
+    ),
+    sequences = list(
+      forward = amp_f$forward, reverse = amp_f$reverse,
+      extension = marker$extension$primer
+    )
+  )
+}
+
 scheme_def_snapshot <- function() {
   gates <- c(
     "gate_snapshot_placement", "gate_snapshot_comp", "gate_snapshot_unique",

@@ -11,19 +11,30 @@ snapshot_soft <- c("gate_snapshot_amplicon", "gate_snapshot_tm", "gate_snapshot_
 
 # A reproducible template with a mid-region substitution (seed 1 gives a valid
 # design at pos 400 with flank 250 across the extension and amplification stages).
-snap_W <- bseq(800L, 1L)
-snap_genome <- Biostrings::DNAStringSet(c(Chr1 = snap_W))
+snap_f <- snp_fixture(n = 800L, seed = 1L, pos = 400L)
+snap_W <- snap_f$W
+snap_genome <- snap_f$genome
 snap_pos <- 400L
 snap_flank <- 250L
-snap_ref <- substr(snap_W, snap_pos, snap_pos)
-snap_snp <- tibble::tibble(
-  chrom = "Chr1", pos = snap_pos, ref = snap_ref,
-  alt = setdiff(c("A", "C", "G", "T"), snap_ref)[1L]
-)
+snap_snp <- snap_f$snp
+
+# Several tests ask for the same design; build it once.  The key includes the
+# genome, the target and every knob, so no different design is ever reused.
+snap_design <- local({
+  cache <- new.env(parent = emptyenv())
+  function(genome, snp, ...) {
+    args <- list(...)
+    key <- design_key(genome, snp, args)
+    if (!is.null(cache[[key]])) {
+      return(cache[[key]])
+    }
+    cache[[key]] <- design_snapshot_marker(genome, snp, ...)
+  }
+})
 
 test_that("the extension primer's 3' end sits one base 5' of the variant", {
   skip_if_no_oligoarrayaux()
-  m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank)
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank)
   expect_s3_class(m, "marker_snapshot")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_equal(m$extension$placement, 1L)
@@ -50,7 +61,7 @@ test_that("the extension primer's 3' end sits one base 5' of the variant", {
 
 test_that("every declared SNaPshot gate is evaluated by the designer (C7)", {
   skip_if_no_oligoarrayaux()
-  m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank)
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank)
   expect_setequal(names(m$selection$gates), scheme_def_snapshot()$gates)
   expect_true(all(m$selection$gates))
   expect_length(m$selection$relaxed, 0L)
@@ -61,18 +72,18 @@ test_that("every declared SNaPshot gate is evaluated by the designer (C7)", {
 test_that("the extension-Tm soft gate relaxes to its floor, never past it (C8)", {
   # ask for a Tm window below the declared one: the winner's Tm is inside the
   # requested window but outside the gate's, so the ladder records the rung
-  m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(45, 47))
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(45, 47))
   expect_s3_class(m, "marker_snapshot")
   expect_true("gate_snapshot_tm" %in% m$selection$relaxed)
   # past the floor the design is refused, so the rung is bounded
   expect_null(suppressMessages(
-    design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(30, 32))
+    snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(30, 32))
   ))
 })
 
 test_that("the flanking pair gives a short amplicon enclosing the variant", {
   skip_if_no_oligoarrayaux()
-  m <- design_snapshot_marker(snap_genome, snap_snp, flank = snap_flank)
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank)
   expect_gte(m$amplification$product, 100L)
   expect_lte(m$amplification$product, 300L)
   expect_lt(m$amplicon$start, snap_snp$pos)
@@ -90,6 +101,18 @@ test_that("the flanking pair gives a short amplicon enclosing the variant", {
   )
   expect_lt(m$amplification$start + nchar(m$amplification$forward) - 1L, snap_snp$pos)
   expect_gt(m$amplification$end - nchar(m$amplification$reverse) + 1L, snap_snp$pos)
+})
+
+test_that("the extension primer lies inside the amplicon between the primer 3' ends", {
+  skip_if_no_oligoarrayaux()
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank)
+  expect_s3_class(m, "marker_snapshot")
+  # plus-strand span strictly inside the product: after the forward primer and
+  # before the reverse primer, so the extension can actually run on the amplicon
+  inner_lo <- m$amplification$start + nchar(m$amplification$forward)
+  inner_hi <- m$amplification$end - nchar(m$amplification$reverse)
+  expect_gte(m$extension$start, inner_lo)
+  expect_lte(m$extension$end, inner_hi)
 })
 
 test_that("a non-substitution target is refused with a message", {

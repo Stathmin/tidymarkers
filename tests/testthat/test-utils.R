@@ -1,11 +1,7 @@
 # Package helpers: class predicate, all-pass predicate, env helper.
 
 mk_assay <- function() {
-  p <- c(
-    AS_ref = "CATGGACCTAGCATTGACGTA",
-    AS_alt = "CATGGACCTAGCATTGACGTT",
-    COM = "GCTTAGCCATGGTCAATGCTA"
-  )
+  p <- kasp_primers()
   structure(list(
     snp = tibble::tibble(chrom = "Chr4", pos = 1L, ref = "G", alt = "A"),
     strand = "+",

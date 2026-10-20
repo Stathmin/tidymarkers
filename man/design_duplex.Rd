@@ -19,7 +19,7 @@ design_duplex(
 
 \item{readout}{\code{"co-dominant"} or \code{"presence-absence"}.}
 
-\item{homologous}{are the two loci homologous? (see \code{\link[=duplex_compatibility]{duplex_compatibility()}}).}
+\item{homologous}{are the two loci homologous? (see \code{duplex_compatibility()}).}
 
 \item{...}{passed to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 }
@@ -29,10 +29,10 @@ a \code{marker_duplex} list (\code{loci}, \code{assays}, \code{readout}, \code{h
 }
 \description{
 Assembles each locus on its own (\code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}) and then evaluates
-the two-locus \strong{compatibility stage} (\code{\link[=duplex_compatibility]{duplex_compatibility()}}) across every
+the two-locus \strong{compatibility stage} (\code{duplex_compatibility()}) across every
 primer of both loci - the declared topology, harmonised Tm, no inter-pair
 complementarity and a bounded self-complementarity - through the declared
-relaxation ladder (\code{\link[=duplex_selection]{duplex_selection()}}).  A failed \emph{hard} gate dooms the
+relaxation ladder (\code{duplex_selection()}).  A failed \emph{hard} gate dooms the
 pairing (\code{verdict = "fail"}); a relaxed soft gate warns.  The readout is either
 co-dominant (\code{"dKASP"}: a cassette per locus, \code{homologous = TRUE}) or
 presence/absence (\code{"mxKASP"}/\code{"Multi-KASP"}: a dominant call from the

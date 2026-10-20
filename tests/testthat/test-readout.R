@@ -2,12 +2,9 @@
 
 test_that("marker_readout returns a modelled readout for a hydrolysis-probe scheme", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_taqman_marker(genome, snp, flank = 150L)
   r <- marker_readout(m)
   expect_true(r$simulated)

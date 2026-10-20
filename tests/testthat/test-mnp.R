@@ -68,13 +68,7 @@ test_that("pick_target_snp skips indels and ambiguous alleles", {
 # ---- the multi (degenerate) DAG and its ALT-set consensus gate ----------------
 test_that("the multi DAG obeys the contract and shares the KASP core stages", {
   expect_dag_invariants("multi")
-  s <- marker_decision_schema("multi")
-  expect_identical(
-    s$nodes$name[s$nodes$kind == "gate"],
-    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
-  )
-  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
-  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
+  expect_kasp_core_dag("multi")
 })
 
 test_that("the wobble is the worst case over ALL ALTs, not just the first", {

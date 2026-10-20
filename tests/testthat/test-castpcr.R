@@ -3,16 +3,7 @@
 # and a WT-specific MGB blocker suppresses the wild type (Roma 2013; Barbano
 # 2015).  The hydrolysis probe is *locus-specific*, not allele-specific.
 
-castpcr_fixture <- function() {
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref,
-    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
-  list(genome = genome, snp = snp)
-}
+castpcr_fixture <- function() snp_fixture()
 
 # the base a plus-strand oligo carries at a position, on the ASP's own strand
 on_strand <- function(base, role) {

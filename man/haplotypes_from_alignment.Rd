@@ -60,6 +60,7 @@ Other KASP haplotypes:
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
+\code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}},
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}

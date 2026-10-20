@@ -127,23 +127,29 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     "-N", as.character(na), "-E", "-q"
   )
   args <- if (is.null(seq2)) c(args, seq1) else c(args, seq1, seq2)
-  # -q makes UNAFold print a single number; run via processx so a non-zero exit
-  # or an unparsable result is an explicit failure, not a silent NA.
-  env <- if (!is.null(paths) && !is.na(paths$dat)) c(UNAFOLDDAT = as.character(paths$dat))
-  run <- tryCatch(processx::run(exe, args, env = env, error_on_status = FALSE),
+  # -q makes UNAFold print a single number.  system2() is ~2x cheaper than a
+  # processx object per oligo, and this is the hottest loop in design.
+  env <- if (!is.null(paths) && !is.na(paths$dat)) {
+    paste0("UNAFOLDDAT=", as.character(paths$dat))
+  } else {
+    character(0)
+  }
+  out <- tryCatch(
+    suppressWarnings(system2(exe, args, env = env, stdout = TRUE, stderr = TRUE)),
     error = function(e) e
   )
-  if (inherits(run, "error")) {
-    cli::cli_warn(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"))
+  if (inherits(out, "error")) {
+    cli::cli_warn(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}"))
     return(NA_real_)
   }
-  if (run$status != 0L) {
+  status <- attr(out, "status")
+  if (!is.null(status) && as.integer(status) != 0L) {
     cli::cli_warn(gettext(
-      "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+      "OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, collapse = ' '))}"
     ))
     return(NA_real_)
   }
-  tok <- utils::tail(strsplit(trimws(run$stdout), "[[:space:]]+")[[1L]], 1L)
+  tok <- utils::tail(strsplit(trimws(paste(out, collapse = " ")), "[[:space:]]+")[[1L]], 1L)
   dg <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
     cli::cli_warn(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
@@ -414,7 +420,7 @@ zone_dropout <- function(primer, start, end, forward, n_var, tmpl, off, vpos, vb
 
 #' Expected dropout of many zones, with every DECIPHER pair pooled into one call
 #'
-#' Numerically identical to calling [zone_dropout()] per zone, but the per-zone
+#' Numerically identical to calling `zone_dropout()` per zone, but the per-zone
 #' (primer, target) units are concatenated and scored by a single
 #' `pcr_efficiency()`.  With dozens of candidates each holding a few variants the
 #' per-call DECIPHER setup dominates, so pooling is the difference between

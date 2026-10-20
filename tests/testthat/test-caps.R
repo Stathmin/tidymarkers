@@ -31,6 +31,24 @@ test_that("design_caps_marker returns a classed marker whose pair spans the site
   # the pair spans the discriminating site, i.e. straddles the variant
   expect_true(m$amplicon$start < 300L && m$amplicon$end > 300L)
   expect_true(m$primers$product >= 120L)
+  # the object carries the actual recognition site and its enzyme
+  enz <- restriction_enzymes()
+  sel <- enz[enz$enzyme == m$enzyme, ]
+  expect_equal(m$site$enzyme, m$enzyme)
+  expect_equal(m$site$motif, sel$site)
+  expect_equal(m$site$cut, sel$cut)
+  expect_gte(m$site$start, m$amplicon$start)
+  expect_lte(m$site$end, m$amplicon$end)
+  expect_equal(m$site$end - m$site$start + 1L, nchar(m$site$motif))
+  # the map shows a real block, not a zero-width point, and names the enzyme
+  spec <- marker_map_spec(m, "caps")
+  site <- spec[spec$kind == "site", ]
+  expect_equal(nrow(site), 1L)
+  expect_equal(site$start, m$site$start)
+  expect_equal(site$end, m$site$end)
+  expect_match(site$label, m$enzyme, fixed = TRUE)
+  expect_match(site$label, "\\^")
+  expect_true(inherits(plot(m), c("patchwork", "ggplot")))
 })
 
 test_that("find_dcaps_enzymes finds a site a primer can complete", {
@@ -62,7 +80,8 @@ test_that("design_caps_marker falls back to dCAPS when no natural site exists", 
   substr(w, 300L, 305L) <- "GAGTTC"
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 305L, ref = "C", alt = "A")
-  m <- design_caps_marker(genome, snp, flank = 200L)
+  # the fixture only admits a relaxed dCAPS call; the relaxation is the point
+  m <- suppressWarnings(design_caps_marker(genome, snp, flank = 200L))
   expect_s3_class(m, "marker_caps")
   expect_true(isTRUE(m$dcaps))
   expect_true(m$enzyme %in% restriction_enzymes()$enzyme)
@@ -76,21 +95,32 @@ test_that("a resolvable CAPS call needs a site change, not just a length shift",
   if (nrow(h)) expect_false(any(h$resolvable & !h$site_change))
 })
 
-test_that("plot_caps_gel draws the two-lane readout", {
+test_that("plot_caps_gel draws a monochrome, Poisson-width two-lane readout", {
   withr::with_seed(2L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
   substr(w, 300L, 305L) <- "GAATTC"
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
   m <- design_caps_marker(genome, snp, flank = 250L)
-  expect_s3_class(plot_caps_gel(m), "ggplot")
+  p <- plot_caps_gel(m)
+  expect_s3_class(p, "ggplot")
+  # allele identity is carried by lane + label, not by reserved blue/red
+  expect_true(all(p$data$col %in% c("#44403C", "#D6D3D1")))
+  expect_false(any(p$data$col %in% unname(KASP_STATUS[c("neutral", "broken")])))
+  expect_true(all(p$data$width > 0.2 & p$data$width <= 0.4))
+  expect_match(p$labels$title, m$enzyme, fixed = TRUE)
+  expect_match(p$labels$title, "\\^")
 })
 
 test_that("the caps scheme is registered and yields a DAG with its own stage", {
   expect_true("caps" %in% marker_schemes()$scheme)
   crit <- marker_criteria(scheme = "caps")
   expect_true(all(paste0("caps:gate:", KASP_GATES_CAPS) %in% crit$id))
-  # the marker-agnostic primer checks apply, the KASP 3'-terminal ones do not
-  expect_true("AS GC" %in% crit$label)
+  # a flanking pair has no AS/COM oligos: the marker-agnostic primer checks apply,
+  # the AS/COM-labelled ones do not (C2 regression)
+  expect_false("AS GC" %in% crit$label)
+  expect_false("AS Tm (C)" %in% crit$label)
+  expect_false("COM GC" %in% crit$label)
+  expect_false("COM Tm (C)" %in% crit$label)
   expect_false("in-silico PCR (REF 1 / ALT 0)" %in% crit$label)
   s <- marker_decision_schema("caps")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)

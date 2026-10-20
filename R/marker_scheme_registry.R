@@ -17,7 +17,10 @@
 extra_scheme_defs <- function() {
   ns <- asNamespace("tidymarkers")
   nms <- sort(grep("^scheme_def_", ls(ns, all.names = TRUE), value = TRUE))
-  stats::setNames(lapply(nms, function(nm) get(nm, envir = ns)()), sub("^scheme_def_", "", nms))
+  file_defs <- stats::setNames(lapply(nms, function(nm) get(nm, envir = ns)()), sub("^scheme_def_", "", nms))
+  # technologies composed at runtime (marker_technology()) are schemes too
+  dyn <- as.list(.marker_tech_store)
+  c(file_defs, dyn)
 }
 
 #' A gate-label lookup merged over the built-in vectors and every scheme spec
@@ -74,6 +77,9 @@ extra_scheme_rows <- function() {
 #' @noRd
 extra_stage_rows <- function() {
   defs <- extra_scheme_defs()
+  # a composed technology may carry no own gate/tier (it just re-parameterises a
+  # base) - it adds no stage rows; the base's stages already cover it
+  defs <- defs[vapply(defs, function(d) length(d$gates) || length(d$tiers), logical(1))]
   if (!length(defs)) {
     return(NULL)
   }
@@ -103,6 +109,7 @@ extra_stage_rows <- function() {
 #' @noRd
 extra_decision_stages <- function(scheme = NULL) {
   defs <- extra_scheme_defs()
+  defs <- defs[vapply(defs, function(d) length(d$gates) || length(d$tiers), logical(1))]
   if (!is.null(scheme)) {
     defs <- defs[names(defs) == scheme]
   }
@@ -117,7 +124,30 @@ extra_decision_stages <- function(scheme = NULL) {
 extra_scheme_designer <- function(scheme) {
   ns <- asNamespace("tidymarkers")
   nm <- paste0("design_", scheme, "_marker")
-  if (exists(nm, envir = ns, inherits = FALSE)) get(nm, envir = ns) else NULL
+  if (exists(nm, envir = ns, inherits = FALSE)) {
+    return(get(nm, envir = ns))
+  }
+  # a composed technology has no designer of its own: dispatch to its base's
+  # designer, passing the technology's parameters (and, for the KASP core, its
+  # scheme id, so the assay is assembled as this technology)
+  d <- marker_technology_def(scheme)
+  if (is.null(d)) {
+    return(NULL)
+  }
+  params <- d$params %||% list()
+  if (d$base %in% c("snp", "indel", "multi")) {
+    function(genome, snp, variants = NULL, BPPARAM = NULL, ...) {
+      rlang::exec(assemble_kasp_assay, genome, snp,
+        variants = variants, scheme = scheme, BPPARAM = BPPARAM, !!!params, ...
+      )
+    }
+  } else {
+    inner <- extra_scheme_designer(d$base)
+    if (is.null(inner)) {
+      return(NULL)
+    }
+    function(genome, snp, ...) rlang::exec(inner, genome, snp, !!!params, ...)
+  }
 }
 
 #' Discovered scheme ids whose `family` matches (e.g. the extra KASP-family ones)

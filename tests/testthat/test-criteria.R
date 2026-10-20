@@ -5,7 +5,7 @@
 # no edit here.
 
 crit_mock <- function(scheme = "snp") {
-  p <- c(AS_ref = "CATGGACCTAGCATTGACGTA", AS_alt = "CATGGACCTAGCATTGACGTT", COM = "GCTTAGCCATGGTCAATGCTA")
+  p <- kasp_primers()
   # the amplicon acceptance window is per-family, so a "clean" mock must sit inside
   # the scheme's own window (a CAPS band is not 90 bp)
   amp <- as.integer(mean(marker_amplicon_window(marker_scheme(scheme)$family)))
@@ -27,11 +27,13 @@ crit_mock <- function(scheme = "snp") {
 
 # the check a scheme's family should carry (used by the membership tests below)
 family_checks <- function(scheme) {
-  classes <- KASP_FAMILY_CHECKS[[marker_scheme(scheme)$family]] %||% character(0)
+  fam <- marker_scheme(scheme)$family
+  classes <- KASP_FAMILY_CHECKS[[fam]] %||% character(0)
   c(
     KASP_CHECK_PRIMER,
     if ("site" %in% classes) KASP_CHECK_SITE,
-    if ("as" %in% classes) KASP_CHECK_AS
+    if ("as" %in% classes) KASP_CHECK_AS,
+    MARKER_FAMILY_CHECKS[[fam]] %||% character(0)
   )
 }
 
@@ -59,10 +61,20 @@ test_that("marker_criteria declares gates, tiers and checks with metadata", {
   )
 })
 
-test_that("the three check classes partition the registered checks", {
+test_that("the check classes partition the registered checks", {
   labels <- marker_criteria()$label[marker_criteria()$role == "check"]
-  expect_setequal(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), labels)
-  # distinct classes: no criterion is both marker-agnostic and allele-specific
+  family_labels <- unique(unlist(MARKER_FAMILY_CHECKS, use.names = FALSE))
+  expect_setequal(
+    c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS, family_labels), labels
+  )
+  # 8 marker-agnostic + 5 site + 13 allele-specific + 29 family-specific = 55
+  expect_length(KASP_CHECK_PRIMER, 8L)
+  expect_length(KASP_CHECK_SITE, 5L)
+  expect_length(KASP_CHECK_AS, 13L)
+  expect_length(family_labels, 29L)
+  expect_length(labels, 55L)
+  # distinct classes: a base check is never also family-specific
+  expect_length(intersect(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), family_labels), 0L)
   expect_length(intersect(KASP_CHECK_PRIMER, KASP_CHECK_SITE), 0L)
   expect_length(intersect(KASP_CHECK_PRIMER, KASP_CHECK_AS), 0L)
   expect_length(intersect(KASP_CHECK_SITE, KASP_CHECK_AS), 0L)
@@ -86,6 +98,18 @@ test_that("every scheme carries exactly its family's check classes", {
   expect_false(any(grepl("duplex", marker_criteria(scheme = "snp")$id)))
 })
 
+test_that("the AS/COM oligo checks reach only families with an AS primer (C2)", {
+  # an AS/COM Tm or GC window is meaningless where those oligos do not exist, so
+  # the moved labels follow the `as` class and never leak to a flanking pair.
+  as_com <- c("AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC")
+  for (sc in marker_schemes()$scheme) {
+    crit <- marker_criteria(scheme = sc)
+    chk <- crit$label[crit$role == "check"]
+    classes <- KASP_FAMILY_CHECKS[[marker_scheme(sc)$family]] %||% character(0)
+    expect_equal(all(as_com %in% chk), "as" %in% classes, info = sc)
+  }
+})
+
 test_that("marker_design_checks returns exactly the registry's checks, in order", {
   for (sc in marker_schemes()$scheme) {
     crit <- marker_criteria(scheme = sc)
@@ -93,6 +117,8 @@ test_that("marker_design_checks returns exactly the registry's checks, in order"
     ch <- marker_design_checks(crit_mock(sc), scheme = sc)
     expect_equal(ch$criterion, checks$label, info = sc)
     expect_equal(ch$limit, checks$limit, info = sc)
-    expect_true(all(ch$pass), info = sc) # a clean mock passes every check it owns
+    # a KASP mock cannot supply CAPS/LAMP/RPA/... fields; those checks are NA.
+    # Every check that is actually evaluable must pass.
+    expect_true(all(ch$pass[!is.na(ch$pass)]), info = sc)
   }
 })

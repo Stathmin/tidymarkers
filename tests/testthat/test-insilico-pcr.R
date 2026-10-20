@@ -27,7 +27,6 @@ test_that("in_silico_pcr is invariant to the parallel backend", {
   )
   expect_equal(par, serial)
   skip_on_os("windows")
-  skip_if_stale_install()
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
   on.exit(BiocParallel::bpstop(bp), add = TRUE)
   mc <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome,
@@ -36,9 +35,38 @@ test_that("in_silico_pcr is invariant to the parallel backend", {
   expect_equal(mc, serial)
 })
 
+test_that("in_silico_pcr supports degenerate primers", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGGAAAATGCAAAACGT"))
+  pr <- in_silico_pcr("ACGS", "TGCA", genome)
+  expect_equal(nrow(pr), 1L)
+  expect_equal(pr$start, 1L)
+  expect_equal(pr$end, 12L)
+  expect_equal(pr$width, 12L)
+})
+
+test_that("in_silico_pcr finds a product with one mismatch in a primer", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGGAAAATGCAAAACGT"))
+  # ACGT vs ACGG is one mismatch at the 4th base; the reverse primer stays intact
+  pr <- in_silico_pcr("ACGT", "TGCA", genome, max_mismatch = 1L)
+  expect_equal(nrow(pr), 1L)
+  expect_equal(pr$start, 1L)
+  expect_equal(pr$end, 12L)
+  expect_equal(nrow(in_silico_pcr("ACGT", "TGCA", genome)), 0L)
+})
+
+test_that("exact mode warns when a one-mismatch product is hidden", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGGAAAATGCAAAACGT"))
+  expect_warning(
+    in_silico_pcr("ACGT", "TGCA", genome),
+    "near-match"
+  )
+})
+
 test_that("in_silico_pcr finds off-target products too", {
   amp <- "GGGGGGGGGGACGTACGTACGTACGTACGTGGGGGGGGGG"
   genome <- Biostrings::DNAStringSet(c(chr1 = paste0(amp, strrep("C", 40L), amp)))
   pr <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome)
-  expect_equal(nrow(pr), 2L) # both copies amplified
+  # two intra-copy products plus the real cross-copy product (forward in copy 1,
+  # reverse in copy 2)
+  expect_equal(nrow(pr), 3L)
 })

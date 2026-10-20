@@ -10,16 +10,7 @@
 
 # the fixture every test designs against: a reproducible 600 bp template with a
 # SNP at the centre
-hrm_fixture <- function() {
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref,
-    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
-  list(genome = genome, snp = snp)
-}
+hrm_fixture <- function() snp_fixture()
 
 test_that("design_hrm_marker returns a short flanking pair with the variant inside", {
   skip_if_no_oligoarrayaux()
@@ -45,6 +36,7 @@ test_that("design_hrm_marker returns a short flanking pair with the variant insi
   # the marker carries its scheme, so a graph/report rebuilds the right tree (C12)
   expect_equal(m$scheme, "hrm")
   expect_output(print(m), "marker_hrm")
+  expect_true(inherits(plot(m), c("patchwork", "ggplot")))
 })
 
 test_that("the amplicon gate is hard and the Tm balance is the ladder's only rung", {

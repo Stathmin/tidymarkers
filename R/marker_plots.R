@@ -71,24 +71,65 @@ variants_in_window <- function(variants, chrom, win) {
 #    discrimination the placement buys, the in-silico PCR products.
 #  Both levels are coloured the same way: ok (green) vs broken (red).
 
-KASP_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
+MARKER_STATUS <- c(ok = "#1b7837", broken = "#d7301f", neutral = "#4477aa")
+# historical internal name; all schemes now share the same palette
+KASP_STATUS <- MARKER_STATUS
 
 #' A two-lane schematic gel (shared by the CAPS / ARMS readouts)
 #'
 #' Bands are horizontal marks at their fragment size; the caller supplies the
 #' per-band colour (diagnostic vs shared) so the two marker families render the
-#' same way.  Internal - the exported accessors are [plot_caps_gel()] and
-#' [plot_arms_gel()].
+#' same way.  Internal - the exported accessors are `plot_caps_gel()` and
+#' `plot_arms_gel()`.
 #' @param bands tibble with `x` (numeric lane), `size` (bp) and `col`.
 #' @param x_labels lane labels.
 #' @param y_label y-axis label.
 #' @param title,subtitle plot text.
 #' @keywords internal
 #' @noRd
+# One gel vocabulary for every restriction/ARMS family.  Allele identity lives
+# in the lane label; colour is reserved for status, never for REF/ALT.
+GEL_DIAG <- "#44403C"
+GEL_SHARED <- "#D6D3D1"
+
+# Poisson counting noise (CV = 1/sqrt(lambda)) is an illustrative band-width
+# cue, not a gel simulator: loading, staining, diffusion and camera response are
+# not modelled.
+poisson_band_halfwidth <- function(size) {
+  lambda <- pmax(4, size / 25)
+  cv <- 1 / sqrt(lambda)
+  pmin(0.40, 0.22 + 0.30 * cv)
+}
+
+# The only constructor for gel bands.  Callers supply biological facts
+# (allele, size, diagnostic); the renderer supplies lane, palette and width.
+gel_spec <- function(allele, size, diagnostic) {
+  n <- length(size)
+  if (length(allele) == 1L && n > 1L) allele <- rep(allele, n)
+  if (length(diagnostic) == 1L && n > 1L) diagnostic <- rep(diagnostic, n)
+  tibble::tibble(
+    allele = as.character(allele), size = as.numeric(size),
+    diagnostic = as.logical(diagnostic)
+  ) |>
+    dplyr::mutate(
+      x = as.numeric(factor(.data$allele, levels = unique(.data$allele))),
+      width = poisson_band_halfwidth(.data$size),
+      col = dplyr::if_else(.data$diagnostic, GEL_DIAG, GEL_SHARED)
+    )
+}
+
 gel_plot <- function(bands, x_labels, y_label, title, subtitle) {
+  # `width` is optional: callers that model band counting set it; the plain
+  # two-lane gel keeps the shared default footprint.
+  if (!"width" %in% names(bands)) {
+    bands$width <- 0.32
+  }
   ggplot2::ggplot(bands) +
     ggplot2::geom_segment(
-      ggplot2::aes(x = .data$x - 0.32, xend = .data$x + 0.32, y = .data$size, yend = .data$size),
+      ggplot2::aes(
+        x = .data$x - .data$width, xend = .data$x + .data$width,
+        y = .data$size, yend = .data$size
+      ),
       linewidth = 2.4, lineend = "round", colour = bands$col
     ) +
     ggplot2::scale_x_continuous(
@@ -124,36 +165,75 @@ check_level <- function(criterion) {
   out
 }
 
+# The one label -> short table. Keys are the registry labels from
+# marker_criteria(); values are the tumbler text. Tests guard that every
+# registered check is present, so a short name is never invented at render time.
+CHECK_SHORT_MAP <- c(
+  "target site class" = "site class",
+  "ALT alleles (n)" = "ALT n",
+  "linked variants skipped (n)" = "linked skip",
+  "ALT primer covers all ALTs" = "ALT cover",
+  "design relies on linkage" = "linkage",
+  "off-target exact primer hits (n)" = "off-target",
+  "amplicon length (bp)" = "amplicon",
+  "AS Tm (C)" = "AS Tm",
+  "COM Tm (C)" = "COM Tm",
+  "AS GC" = "AS GC",
+  "COM GC" = "COM GC",
+  "COM Tm >= AS Tm" = "COM\u2265AS Tm",
+  "longest homopolymer (bp)" = "run",
+  "SSR (2-4 nt, >=3 copies)" = "SSR",
+  "inverted repeat (arms>=4, loop<=6)" = "inv. repeat",
+  "worst hairpin dG37" = "hairpin",
+  "worst cross-dimer dG37" = "dimer",
+  "worst homodimer dG37" = "homodimer",
+  "AS 3' window variants (n)" = "AS 3' var",
+  "AS footprint variants (n)" = "AS foot var",
+  "COM footprint variants (n)" = "COM var",
+  "AS 3' window dropout" = "AS 3' drop",
+  "AS footprint dropout" = "AS foot drop",
+  "COM footprint dropout" = "COM drop",
+  "discrimination" = "discrim.",
+  "in-silico PCR (REF 1 / ALT 0)" = "PCR",
+  "restriction site defined" = "site present",
+  "restriction site separates alleles" = "site discrim.",
+  "band gap (bp)" = "band gap",
+  "digest sums to amplicon" = "digest sum",
+  "restriction site conserved (population)" = "site conserv.",
+  "FIP 3' ALT" = "FIP 3' ALT",
+  "inner arm Tm balance (C)" = "arm Tm bal.",
+  "inner arms inside amplicon" = "arms inside",
+  "variant at FIP 3' end" = "FIP variant",
+  "primer length (nt)" = "primer len",
+  "THF off variant" = "THF off var",
+  "RPA probe spans variant" = "RPA probe",
+  "variant under primer/probe" = "variant site",
+  "PAM valid" = "PAM",
+  "variant in seed" = "seed",
+  "guide spans variant" = "guide span",
+  "guide/PAM conserved (population)" = "guide cons.",
+  "off-target protospacers (n)" = "off-target",
+  "probe spans variant" = "probe span",
+  "probe Tm - primer Tm (C)" = "probe dTm",
+  "ASP 3' discrimination" = "ASP discr.",
+  "extension 3' at variant" = "ext at var",
+  "variant-read distance (bp)" = "read dist",
+  "read primers inside amplicon" = "read inside",
+  "read primer pair defined" = "read pair",
+  "repeat unit (nt)" = "repeat unit",
+  "repeat copies" = "copies",
+  "REF/ALT size difference (bp)" = "size diff",
+  "fragment size (bp)" = "fragment"
+)
+
 #' Short labels for the acceptance criteria (for the tumbler column)
 #' @keywords internal
 #' @noRd
 check_short <- function(criterion) {
-  dplyr::recode(criterion,
-    "target site class" = "site class",
-    "ALT alleles (n)" = "ALT n",
-    "linked variants skipped (n)" = "linked skip",
-    "ALT primer covers all ALTs" = "ALT cover",
-    "design relies on linkage" = "linkage",
-    "off-target exact primer hits (n)" = "off-target",
-    "amplicon length (bp)" = "amplicon",
-    "AS Tm (C)" = "AS Tm",
-    "COM Tm (C)" = "COM Tm",
-    "COM Tm >= AS Tm" = "COM\u2265AS Tm",
-    "longest homopolymer (bp)" = "run",
-    "SSR (2-4 nt, >=3 copies)" = "SSR",
-    "inverted repeat (arms>=4, loop<=6)" = "inv. repeat",
-    "worst hairpin dG37" = "hairpin",
-    "worst cross-dimer dG37" = "dimer",
-    "worst homodimer dG37" = "homodimer",
-    "AS 3' window variants (n)" = "AS 3' var",
-    "AS footprint variants (n)" = "AS foot var",
-    "COM footprint variants (n)" = "COM var",
-    "AS 3' window dropout" = "AS 3' drop",
-    "AS footprint dropout" = "AS foot drop",
-    "COM footprint dropout" = "COM drop",
-    "discrimination" = "discrim.",
-    "in-silico PCR (REF 1 / ALT 0)" = "PCR"
-  )
+  out <- unname(CHECK_SHORT_MAP[criterion])
+  miss <- is.na(out) | !nzchar(out)
+  out[miss] <- criterion[miss]
+  out
 }
 
 #' Variant points on a track, sized by population frequency when present
@@ -164,6 +244,11 @@ check_short <- function(criterion) {
 #' @keywords internal
 #' @noRd
 variant_points <- function(variants, y) {
+  if (!"consequence" %in% names(variants)) {
+    variants$consequence <- "variant"
+  }
+  variants$consequence <- as.character(variants$consequence)
+  variants$consequence[is.na(variants$consequence)] <- "variant"
   if ("pop_freq" %in% names(variants)) {
     list(
       ggplot2::geom_point(
@@ -257,23 +342,23 @@ repeat_spans <- function(s, units = 2:4, min_copies = 3L) {
 #' minus-strand primer reads right-to-left.
 #' @keywords internal
 #' @noRd
-primer_letters <- function(assay, clamp_n = 5L) {
-  d <- primer_features(assay)
-  rows <- lapply(seq_len(nrow(d)), function(i) {
-    s <- d$seq[i] # concrete: the QC below (SSR / palindrome) needs real bases
-    s_disp <- d$seq_disp[i] # possibly degenerate, for the drawn letters
-    L <- nchar(s)
-    xs <- if (d$forward[i]) seq.int(d$start[i], length.out = L) else seq.int(d$end[i], by = -1L, length.out = L)
-    face <- rep("plain", L)
-    # sequence is grey by default; only the KASP-relevant bases stand out (GC-clamp
-    # in bold black, SSR/hairpin bases in red)
-    colour <- rep("grey55", L)
-    # `s` is always 5'->3', so the 3' GC-clamp is the last `clamp_n` letters,
-    # whatever the genomic strand
-    clamp <- (L - clamp_n + 1L):L
-    clamp <- clamp[clamp >= 1L & clamp <= L]
-    face[clamp] <- "bold"
-    colour[clamp] <- "black"
+# The letters layer, reusable by any oligo with a plus-strand interval.  The
+# sequence is 5'->3'; a minus-strand oligo is laid right-to-left.
+oligo_letters <- function(seq, start, end, forward, role, seq_disp = seq, clamp_n = 5L,
+                          spans = NULL, bases = NULL) {
+  s <- as.character(seq)[1L]
+  s_disp <- as.character(seq_disp)[1L]
+  L <- nchar(s)
+  xs <- if (isTRUE(forward)) seq.int(start, length.out = L) else seq.int(end, by = -1L, length.out = L)
+  face <- rep("plain", L)
+  colour <- rep("#292524", L)
+  clamp <- if (clamp_n > 0L) (L - clamp_n + 1L):L else integer(0)
+  clamp <- clamp[clamp >= 1L & clamp <= L]
+  face[clamp] <- "bold"
+  colour[clamp] <- "black"
+  # A displayed oligo may carry a non-DNA chemistry (e.g. the RPA THF `X`).
+  # Show the character, but do not ask the DNA secondary-structure code about it.
+  if (grepl("^[ACGT]+$", s)) {
     sp <- repeat_spans(s)
     pal <- find_palindromes(s)[[1L]]
     if (nrow(pal)) sp <- rbind(sp, as.matrix(pal[, c("start", "end")]))
@@ -281,9 +366,86 @@ primer_letters <- function(assay, clamp_n = 5L) {
       idx <- unique(purrr::list_c(purrr::map(seq_len(nrow(sp)), function(j) sp[j, 1L]:sp[j, 2L])))
       colour[idx[idx >= 1L & idx <= L]] <- "#d7191c"
     }
-    tibble::tibble(
-      role = as.character(d$role[i]), x = xs, letter = strsplit(s_disp, "")[[1L]],
-      face = face, colour = colour
+  }
+  # explicit highlights win over the defaults: any scheme can mark a PAM, a
+  # probe base, a variant or a guide without growing this function
+  if (!is.null(spans)) {
+    for (i in seq_len(nrow(spans))) {
+      idx <- seq.int(spans$from[i], spans$to[i])
+      idx <- idx[idx >= 1L & idx <= L]
+      if (!length(idx)) next
+      if ("colour" %in% names(spans) && !is.na(spans$colour[i])) colour[idx] <- spans$colour[i]
+      if ("face" %in% names(spans) && !is.na(spans$face[i])) face[idx] <- spans$face[i]
+    }
+  }
+  if (!is.null(bases)) {
+    idx <- as.integer(bases$pos)
+    idx <- idx[idx >= 1L & idx <= L]
+    if (length(idx)) {
+      if ("colour" %in% names(bases)) colour[idx] <- bases$colour[match(idx, as.integer(bases$pos))]
+      if ("face" %in% names(bases)) face[idx] <- bases$face[match(idx, as.integer(bases$pos))]
+    }
+  }
+  tibble::tibble(
+    role = rep(as.character(role), L), x = xs, letter = strsplit(s_disp, "")[[1L]],
+    face = face, colour = colour
+  )
+}
+
+letter_size_for_feature <- function(width, max_size = LETTER_SIZE_DEFAULT) {
+  # a short block (PAM, restriction site) cannot use the amplicon-scale font:
+  # shrink the glyphs so the letters stay inside the block
+  min(max_size, 0.45 + 0.11 * width)
+}
+
+letters_layer <- function(d, size = LETTER_SIZE_DEFAULT) {
+  if (!"y" %in% names(d)) d$y <- d$role
+  if ("size" %in% names(d)) {
+    return(list(
+      ggplot2::geom_text(
+        data = d,
+        ggplot2::aes(
+          x = .data$x, y = .data$y, label = .data$letter,
+          fontface = .data$face, colour = .data$colour, size = .data$size
+        ),
+        family = "mono", show.legend = FALSE
+      ),
+      ggplot2::scale_size_identity()
+    ))
+  }
+  ggplot2::geom_text(
+    data = d,
+    ggplot2::aes(
+      x = .data$x, y = .data$y, label = .data$letter,
+      fontface = .data$face, colour = .data$colour
+    ),
+    family = "mono", size = size, show.legend = FALSE
+  )
+}
+
+# One sizing rule for every sequence row.  A primer is not drawn at a fixed
+# size: it shares the amplicon/reference scale, so a 600 bp Sanger product and
+# its 20 bp primers cannot end up in two different typographic worlds.
+LETTER_SIZE_DEFAULT <- 2.6
+letter_size_for_span <- function(span) {
+  n <- diff(range(span)) + 1L
+  if (n > 500L) {
+    0.9
+  } else if (n > 250L) {
+    1.1
+  } else if (n > 150L) {
+    1.5
+  } else {
+    LETTER_SIZE_DEFAULT
+  }
+}
+
+primer_letters <- function(assay, clamp_n = 5L) {
+  d <- primer_features(assay)
+  rows <- lapply(seq_len(nrow(d)), function(i) {
+    oligo_letters(
+      d$seq[i], d$start[i], d$end[i], d$forward[i], d$role[i],
+      seq_disp = d$seq_disp[i], clamp_n = clamp_n
     )
   })
   dplyr::bind_rows(rows)
@@ -326,13 +488,17 @@ assay_ideogram_data <- function(assay, genome, BPPARAM = NULL, hits = NULL, prod
 primer_hits <- function(primers, genome, BPPARAM = NULL) {
   scan_one <- function(ch) {
     worker_biostrings()
-    subject <- Biostrings::DNAStringSet(genome_seq(genome, ch))
+    subject <- Biostrings::DNAString(genome_seq(genome, ch))
     purrr::imap(primers, function(p, nm) {
       # a primer binds either strand: search the plus strand for the primer and
-      # for its reverse complement, and report the plus-strand match starts
+      # for its reverse complement, and report the plus-strand match starts.
+      # matchPattern(fixed = FALSE) keeps IUPAC degenerate primers usable.
       pats <- unique(c(p, as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))))
       pos <- purrr::list_c(purrr::map(pats, function(pt) {
-        IRanges::start(Biostrings::vmatchPattern(Biostrings::DNAString(pt), subject, max.mismatch = 0L)[[1L]])
+        IRanges::start(Biostrings::matchPattern(
+          Biostrings::DNAString(pt), subject,
+          fixed = FALSE
+        ))
       }))
       if (!length(pos)) {
         return(NULL)
@@ -373,6 +539,11 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
   hits <- dat$hits
   prods <- dat$products
   sig_cols <- c("AS-ref" = "#4477aa", "AS-alt" = "#66c2a5", "COM" = "#8da0cb")
+  extra <- setdiff(unique(hits$signal), names(sig_cols))
+  if (length(extra)) {
+    more <- c("#e78ac3", "#a6d854", "#ffd92f", "#fc8d62", "#66c2a5")
+    sig_cols <- c(sig_cols, stats::setNames(rep(more, length.out = length(extra)), extra))
+  }
   # adaptive axis unit: Mb for real genomes, kb/bp for small ones
   span <- max(bars$length)
   div <- if (span >= 1e6) 1e6 else if (span >= 1e3) 1e3 else 1
@@ -631,12 +802,14 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
     start = min(d$start), end = max(d$end), forward = plus,
     status = dplyr::if_else(amp_ok, "ok", "broken")
   )
+  # one size for the whole map: primers and amplicon share the reference scale
+  letter_size <- letter_size_for_span(c(amp$start, amp$end))
   # the amplicon's own sequence (plus strand) as letters on its row
   ti <- function(p) p - snp$pos + assay$template$snp_i
   amp_seq <- as.character(Biostrings::subseq(assay$template$seq, ti(amp$start), ti(amp$end)))
   letters <- dplyr::bind_rows(letters, tibble::tibble(
     role = "amplicon", x = seq.int(amp$start, amp$end),
-    letter = strsplit(amp_seq, "")[[1L]], face = "plain", colour = "grey55"
+    letter = strsplit(amp_seq, "")[[1L]], face = "plain", colour = "#292524"
   ))
 
   # the Tm as a small number just past the 3' end, and its deviation from the
@@ -670,18 +843,14 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
     gggenes::geom_gene_arrow(
       data = amp,
       ggplot2::aes(xmin = .data$start, xmax = .data$end, y = .data$role, forward = .data$forward),
-      fill = "grey94", colour = "grey55"
+      fill = "grey94", colour = "grey55", linewidth = 0.25
     ) +
     gggenes::geom_gene_arrow(
       data = d,
       ggplot2::aes(xmin = .data$start, xmax = .data$end, y = .data$role, forward = .data$forward),
-      fill = "grey98", colour = "grey75"
+      fill = "grey98", colour = "grey75", linewidth = 0.25
     ) +
-    ggplot2::geom_text(
-      data = letters,
-      ggplot2::aes(x = .data$x, y = .data$role, label = .data$letter, fontface = .data$face, colour = .data$colour),
-      family = "mono", size = 2.6
-    ) +
+    letters_layer(letters, size = letter_size) +
     ggplot2::scale_colour_identity() +
     ggplot2::geom_point(
       data = pins, ggplot2::aes(x = .data$x, y = .data$role),
@@ -898,7 +1067,7 @@ format_check_value <- function(name, value) {
   } else {
     dplyr::case_when(
       name %in% c("AS GC", "COM GC", "discrim.", "AS drop", "COM drop") ~ sprintf("%.0f%%", 100 * value),
-      name %in% c("AS Tm", "COM Tm", "dimer", "homodimer", "hairpin", "COM\u2265AS Tm") ~ sprintf("%.1f", value),
+      name %in% c("AS Tm", "COM Tm", "Tm", "dimer", "homodimer", "hairpin", "COM\u2265AS Tm") ~ sprintf("%.1f", value),
       abs(value) >= 1e6 ~ paste0(round(value / 1e6), "M"),
       abs(value) >= 1e3 ~ paste0(round(value / 1e3), "K"),
       TRUE ~ as.character(round(value))
@@ -908,14 +1077,37 @@ format_check_value <- function(name, value) {
   out
 }
 
+# One tumbler for KASP acceptance checks and for the per-class gate tables.
+# `chk` needs `level`, `name`, `status` (ok/broken/neutral) and `value`.
+tumbler_plot <- function(chk) {
+  chk$level <- droplevels(factor(chk$level, levels = unique(chk$level)))
+  ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
+    ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
+    ggplot2::geom_text(
+      ggplot2::aes(label = .data$value),
+      x = 0.92, hjust = 1, size = 2.3, colour = "black", family = "mono"
+    ) +
+    ggplot2::facet_grid(level ~ ., scales = "free_y", space = "free_y") +
+    ggplot2::scale_fill_manual(values = KASP_STATUS, guide = "none") +
+    ggplot2::scale_x_continuous(limits = c(0.32, 0.97), breaks = NULL) +
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme_minimal(base_size = 7) +
+    ggplot2::theme(
+      panel.grid = ggplot2::element_blank(),
+      axis.text.x = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = 6.5, colour = "black"),
+      strip.text.y = ggplot2::element_blank()
+    )
+}
+
 #' Acceptance checks as a thin list of tumblers (feature vs alignment)
 #'
 #' Runs [marker_design_checks()] and shows one named tumbler per criterion - a
 #' small green (ok) / red (broken) marker with its observed value and limit - in
-#' in a single narrow column, faceted by the level judged: the *site* level is
-#' the target itself (KASP class, ALT count, linked variants), the *feature*
-#' level is one oligo on its own, the *alignment* level is how the primers sit
-#' together on the template.  Sits as a thin strip beside [plot_primers()].
+#' a single narrow column, faceted by the level judged: the *site* level is the
+#' target itself (KASP class, ALT count, linked variants), the *feature* level is
+#' one oligo on its own, the *alignment* level is how the primers sit together on
+#' the template.  Sits as a thin strip beside [plot_primers()].
 #' @param assay assembled assay.
 #' @param limits thresholds (see `KASP_LIMITS`).
 #' @return a `ggplot` tumbler list.
@@ -938,23 +1130,11 @@ plot_checks <- function(assay, limits = KASP_LIMITS) {
   cls <- c(biallelic = "bial", degenerate = "degn", complementary = "comp", indel = "indl", none = "--")
   is_site <- chk$criterion == "target site class"
   chk$value[is_site] <- unname(cls[chk$detail[is_site]])
-  ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
-    ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
-    ggplot2::geom_text(
-      ggplot2::aes(label = .data$value),
-      x = 0.92, hjust = 1, size = 2.3, colour = "black", family = "mono"
-    ) +
-    ggplot2::facet_grid(level ~ ., scales = "free_y", space = "free_y") +
-    ggplot2::scale_fill_manual(values = KASP_STATUS, guide = "none") +
-    ggplot2::scale_x_continuous(limits = c(0.32, 0.97), breaks = NULL) +
-    ggplot2::labs(x = NULL, y = NULL) +
-    ggplot2::theme_minimal(base_size = 7) +
-    ggplot2::theme(
-      panel.grid = ggplot2::element_blank(),
-      axis.text.x = ggplot2::element_blank(),
-      axis.text.y = ggplot2::element_text(size = 6.5, colour = "black"),
-      strip.text.y = ggplot2::element_blank()
-    )
+  # population facts are chemistry-independent: append ALT frequency and, when
+  # available, haplotype coverage to the same check column
+  pop <- marker_population_checks(assay)
+  if (nrow(pop)) chk <- dplyr::bind_rows(chk, pop)
+  tumbler_plot(chk)
 }
 
 #' Points of a constant-height arc (bump) spanning `[a, b]` above `y0`

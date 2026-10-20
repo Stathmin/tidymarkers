@@ -83,6 +83,37 @@ marker_amplicon_window <- function(family = "kasp", limits = KASP_LIMITS) {
   )
 }
 
+marker_family_check_rows <- function() {
+  tibble::tibble(
+    stage = "assay",
+    role = "check",
+    label = c(
+      MARKER_CHECK_CAPS, MARKER_CHECK_LAMP, MARKER_CHECK_RPA,
+      MARKER_CHECK_CRISPR, MARKER_CHECK_PROBE, MARKER_CHECK_SANGER,
+      MARKER_CHECK_SIZE
+    ),
+    level = c(
+      "alignment", "alignment", "alignment", "alignment", "specificity",
+      "feature", "feature", "alignment", "feature",
+      "feature", "feature", "alignment", "feature",
+      "feature", "feature", "alignment", "specificity", "specificity",
+      "alignment", "feature", "feature", "feature",
+      "alignment", "alignment", "feature",
+      "feature", "feature", "alignment", "alignment"
+    ),
+    hard = FALSE,
+    limit = c(
+      "present", "REF != ALT", ">= 20 bp", "REF/ALT = product", "0 extra variants",
+      "ALT at FIP 3'", "<= 5 C", "inside", "yes",
+      "30-35 nt", "yes", "yes", "yes",
+      "TTTV", "yes", "yes", "0 extra", "0",
+      "yes", ">= 5 C", "> 0", "adjacent",
+      ">= 50 bp", "inside", "pair",
+      "2-4 nt", ">= 5", ">= 3 bp", "scheme window"
+    )
+  )
+}
+
 #' The registry of every candidate evaluation
 #'
 #' One row per criterion the pipeline applies: the selection gates and ranking
@@ -179,6 +210,7 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
       "REF=1, ALT=0", "1 locus"
     )
   )
+  checks <- dplyr::bind_rows(checks, marker_family_check_rows())
   checks$id <- paste0("check:", gsub("[^a-z0-9]+", "_", tolower(checks$label)))
   checks$order <- seq_len(nrow(checks))
   checks$schemes <- check_schemes(checks$label)

@@ -10,11 +10,11 @@ taqman_gates <- c(
 taqman_soft <- c("gate_taqman_centrality", "gate_taqman_amplicon", "gate_taqman_probe_structure")
 
 test_that("design_taqman_marker returns a short pair with two allele-specific probes", {
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
-  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
+  f <- snp_fixture()
+  genome <- f$genome
+  ref <- f$ref
+  alt <- f$alt
+  snp <- f$snp
 
   m <- design_taqman_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "marker_taqman")
@@ -44,6 +44,43 @@ test_that("design_taqman_marker returns a short pair with two allele-specific pr
   expect_output(print.marker_taqman(m), "<marker_taqman>")
   expect_output(print.marker_taqman(m), "FAM")
   expect_output(print.marker_taqman(m), "HEX")
+})
+
+test_that("probes lie strictly between the primer 3' ends, not merely in the amplicon", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
+  m <- design_taqman_marker(genome, snp, flank = 150L)
+  expect_s3_class(m, "marker_taqman")
+  # the probe may not overlap either primer: it must sit inside the region
+  # bounded by the two primer 3' ends
+  inner_lo <- m$primers$start + nchar(m$primers$forward)
+  inner_hi <- m$primers$end - nchar(m$primers$reverse)
+  expect_true(all(m$probes$start >= inner_lo & m$probes$end <= inner_hi))
+})
+
+test_that("an ALT probe with a second perfect genomic site fails the specificity gate", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  W <- f$W
+  genome <- f$genome
+  snp <- f$snp
+  m <- design_taqman_marker(genome, snp, flank = 150L)
+  expect_s3_class(m, "marker_taqman")
+  ref_probe <- m$probes$probe[1L]
+  alt_probe <- m$probes$probe[2L]
+  expect_false(alt_probe == ref_probe)
+  # the ALT probe's only perfect site is the ALT allele itself, so the reference
+  # genome carries no off-target copy
+  expect_equal(exact_oligo_hits(ref_probe, genome), 1L)
+  expect_equal(exact_oligo_hits(alt_probe, genome), 0L)
+  # append one off-target copy outside the design window (positions 151-450):
+  # together with the ALT allele's on-target site that is a second genomic site,
+  # so the hard specificity gate must refuse the design
+  genome2 <- Biostrings::DNAStringSet(c(Chr1 = paste0(W, alt_probe)))
+  expect_equal(exact_oligo_hits(alt_probe, genome2), 1L)
+  expect_null(suppressMessages(design_taqman_marker(genome2, snp, flank = 150L)))
 })
 
 test_that("every declared TaqMan gate is evaluated by the designer (C7)", {
@@ -86,12 +123,9 @@ test_that("the centrality soft gate relaxes to its interior floor, never past it
 })
 
 test_that("probes are centred over the variant (maximal destabilisation)", {
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_taqman_marker(genome, snp, flank = 150L)
   expect_gte(m$probes$centrality[1L], 0.5)
   # centrality 1 = exactly central; the variant must sit near, not at, a probe end

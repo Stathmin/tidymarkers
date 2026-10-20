@@ -497,6 +497,25 @@ caps_grade <- function(cands, snp, tmpl, enzymes, limits, floors) {
     }
     alt_seq <- paste0(substr(seq, 1L, variant_i - 1L), alt, substr(seq, variant_i + nchar(ref), nchar(seq)))
     one <- enzymes[enzymes$enzyme == cand$enzyme, ]
+    # keep the recognition site itself, not just its cut: the map must show what
+    # the enzyme binds (`EcoRI GAATTC`) and where it cuts (`G^AATTC`).  A dCAPS
+    # site span is already the candidate's window; a natural site is located by
+    # matching its own IUPAC motif and taking the copy closest to the variant.
+    site_span <- if (isTRUE(cand$dcaps)) {
+      c(cand$reg_lo, cand$reg_hi)
+    } else {
+      st <- IRanges::start(Biostrings::matchPattern(
+        one$site, Biostrings::DNAString(seq),
+        fixed = FALSE
+      ))
+      if (!length(st)) {
+        c(NA_integer_, NA_integer_)
+      } else {
+        mid <- st + (nchar(one$site) - 1) / 2
+        hit <- st[which.min(abs(mid - variant_i))]
+        c(hit, hit + nchar(one$site) - 1L)
+      }
+    }
     fr <- caps_fragments(substr(seq, pair$start, pair$end), one)$fragments[[1L]]
     fa <- caps_fragments(substr(alt_seq, pair$start, pair$end + delta), one)$fragments[[1L]]
     gap <- digest_gap(fr, fa)
@@ -508,6 +527,8 @@ caps_grade <- function(cands, snp, tmpl, enzymes, limits, floors) {
     m_amp <- min(pair$product - amp_win[1L], amp_win[2L] - pair$product)
     tibble::tibble(
       dcaps = cand$dcaps, enzyme = cand$enzyme, allele = cand$allele, gap = gap,
+      site_start = site_span[1L], site_end = site_span[2L],
+      enzyme_motif = one$site, enzyme_cut = one$cut,
       fragments_ref = list(fr), fragments_alt = list(fa), primers = list(pair),
       m_site = if (isTRUE(cand$site_change)) 1 else -1,
       m_resolvable = gap - limits$band_gap,
@@ -543,9 +564,20 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors) {
   }
   primers <- best$primers[[1L]]
   warn_relaxed(pick$violated)
+  site <- if (!anyNA(c(best$site_start, best$site_end))) {
+    tibble::tibble(
+      start = snp$pos + best$site_start - tmpl$snp_i,
+      end = snp$pos + best$site_end - tmpl$snp_i,
+      enzyme = best$enzyme, motif = best$enzyme_motif, cut = best$enzyme_cut,
+      dcaps = isTRUE(best$dcaps)
+    )
+  } else {
+    NULL
+  }
   structure(
     list(
       snp = snp, enzyme = best$enzyme, dcaps = isTRUE(best$dcaps), allele = best$allele,
+      site = site,
       fragments_ref = best$fragments_ref[[1L]], fragments_alt = best$fragments_alt[[1L]],
       gap = best$gap, primers = primers,
       amplicon = tibble::tibble(
@@ -572,9 +604,14 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors) {
 #' @param flank window half-width for the scan and primer design.
 #' @param enzymes enzyme table (see [restriction_enzymes()]).
 #' @param min_gap minimal band separation to require (see [find_caps_enzymes()]).
-#' @return a `marker_caps` list (`snp`, `enzyme`, `fragments_ref`, `fragments_alt`,
-#'   `gap`, `primers`, `amplicon`), or `NULL` (with a message) when no enzyme
-#'   separates the alleles.
+#' @param haplotypes optional population haplotype table.  When supplied, it is
+#'   attached for the generic haplotype track and population check rows; when
+#'   absent, CAPS warns that restriction-site frequency/conservation is unchecked.
+#' @return a `marker_caps` list (`snp`, `enzyme`, `site`, `fragments_ref`,
+#'   `fragments_alt`, `gap`, `primers`, `amplicon`), or `NULL` (with a message)
+#'   when no enzyme separates the alleles.  `site` carries the recognition
+#'   `start`/`end`, `motif`, `cut` offset and whether it is primer-introduced
+#'   (`dcaps`).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -583,7 +620,7 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors) {
 #' @family KASP CAPS
 #' @export
 design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
-                               min_gap = 50L) {
+                               min_gap = 50L, haplotypes = NULL) {
   # `min_gap` is the cheap *scanning* pre-filter (see find_caps_enzymes()); the
   # gate that decides is the band gap measured on the real product (`caps_limits()`)
   limits <- caps_limits()
@@ -592,11 +629,17 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
     caps_natural_candidates(genome, snp, flank, enzymes, min_gap),
     snp, tmpl, enzymes, limits, KASP_GATE_FLOOR_CAPS
   )
-  if (!is.null(marker)) {
-    return(marker)
+  out <- if (!is.null(marker)) marker else design_dcaps_marker(genome, snp, flank, enzymes, min_gap)
+  if (is.null(out)) {
+    return(NULL)
   }
-  # no natural site separates the alleles - let a primer introduce one (dCAPS)
-  design_dcaps_marker(genome, snp, flank, enzymes, min_gap)
+  if (is.null(haplotypes)) {
+    cli::cli_warn(gettext(
+      "CAPS: no population haplotypes supplied; restriction-site frequency/conservation is not checked."
+    ))
+    return(out)
+  }
+  marker_attach_haplotypes(out, haplotypes, snp)
 }
 
 #' Build a dCAPS marker from a primer-introduced site
@@ -637,8 +680,9 @@ print.marker_caps <- function(x, ...) {
 #'
 #' A two-lane schematic gel (REF and ALT) with a band for every restriction
 #' fragment length, the diagnostic bands highlighted - so the readout is visible
-#' without running the digest.  Bands shared by both alleles are grey;
-#' allele-diagnostic bands take the allele colour.
+#' without running the digest.  The gel is monochrome: allele identity comes from
+#' the lane, not from a reserved status colour.  Band width is an illustrative
+#' Poisson counting cue (CV = 1/sqrt(lambda)); it is not a gel simulator.
 #' @param marker a `marker_caps` object (see [design_caps_marker()]).
 #' @return a `ggplot`.
 #' @examples
@@ -649,30 +693,60 @@ print.marker_caps <- function(x, ...) {
 #' }
 #' @family KASP CAPS
 #' @export
+#' @method marker_map_spec marker_caps
+#' @export
+#' @noRd
+marker_map_spec.marker_caps <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  site <- marker$site
+  site_row <- if (!is.null(site) && !anyNA(c(site$start[1L], site$end[1L]))) {
+    list(spec_row(
+      "enzyme site", site$start[1L], site$end[1L], "+", "site",
+      label = caps_site_label(site)
+    ))
+  } else {
+    list()
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), site_row),
+    sequences = list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  )
+}
+
+caps_site_label <- function(site) {
+  if (is.null(site) || !nrow(site)) {
+    return(NULL)
+  }
+  motif <- as.character(site$motif[1L])
+  cut <- as.integer(site$cut[1L])
+  cut_motif <- if (is.finite(cut) && cut >= 0L && cut <= nchar(motif)) {
+    paste0(substr(motif, 1L, cut), "^", substr(motif, cut + 1L, nchar(motif)))
+  } else {
+    motif
+  }
+  tail <- if (isTRUE(site$dcaps[1L])) " (primer-introduced)" else ""
+  paste0(site$enzyme[1L], " ", cut_motif, tail)
+}
+
 plot_caps_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the CAPS gel"))
   if (!inherits(marker, "marker_caps")) {
     cli::cli_abort(gettext("`marker` must be a marker_caps object (see design_caps_marker())."))
   }
   shared <- intersect(marker$fragments_ref, marker$fragments_alt)
-  bands <- tibble::tibble(
+  bands <- gel_spec(
     allele = rep(c("REF", "ALT"), times = c(length(marker$fragments_ref), length(marker$fragments_alt))),
-    size = c(marker$fragments_ref, marker$fragments_alt)
-  ) |>
-    dplyr::mutate(
-      diagnostic = !.data$size %in% shared,
-      x = as.numeric(factor(.data$allele, levels = c("REF", "ALT"))),
-      col = dplyr::case_when(
-        !.data$diagnostic ~ "grey65",
-        .data$allele == "REF" ~ KASP_STATUS[["neutral"]],
-        TRUE ~ KASP_STATUS[["broken"]]
-      )
-    )
+    size = c(marker$fragments_ref, marker$fragments_alt),
+    diagnostic = !c(marker$fragments_ref, marker$fragments_alt) %in% shared
+  )
   ref_txt <- paste(marker$fragments_ref, collapse = "+")
   alt_txt <- paste(marker$fragments_alt, collapse = "+")
+  via <- caps_site_label(marker$site)
+  if (is.null(via)) via <- marker$enzyme
   gel_plot(
     bands, c("REF", "ALT"), "fragment length (bp)",
-    glue::glue("CAPS gel: {marker$snp$chrom}:{marker$snp$pos} via {marker$enzyme}"),
+    glue::glue("CAPS gel: {marker$snp$chrom}:{marker$snp$pos} via {via}"),
     glue::glue("REF: {ref_txt}  |  ALT: {alt_txt} bp")
   )
 }

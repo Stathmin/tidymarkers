@@ -23,6 +23,7 @@ test_that("design_arms_marker gives two resolvable, different-sized diagnostic b
   expect_setequal(b$band, c("control", "REF", "ALT"))
   expect_gte(abs(b$size[b$band == "REF"] - b$size[b$band == "ALT"]), 20L)
   expect_true(all(b$size > 0))
+  expect_true(inherits(plot(m), c("patchwork", "ggplot")))
 })
 
 test_that("design_arms_marker declines non-substitution alleles", {
@@ -42,7 +43,11 @@ test_that("plot_arms_gel draws the AA / AB / BB readout", {
     ),
     class = "marker_arms"
   )
-  expect_s3_class(plot_arms_gel(marker), "ggplot")
+  p <- plot_arms_gel(marker)
+  expect_s3_class(p, "ggplot")
+  expect_true(all(p$data$col %in% c(GEL_DIAG, GEL_SHARED)))
+  expect_false(any(p$data$col %in% unname(KASP_STATUS[c("neutral", "broken")])))
+  expect_true(all(p$data$width > 0.2 & p$data$width <= 0.4))
 })
 
 test_that("the arms scheme is registered and yields a DAG with its own stage", {

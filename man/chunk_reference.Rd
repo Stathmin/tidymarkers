@@ -41,6 +41,7 @@ Other KASP haplotypes:
 \code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
+\code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}},
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}

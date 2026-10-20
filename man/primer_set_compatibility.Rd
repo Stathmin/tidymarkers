@@ -11,7 +11,7 @@ primer_set_compatibility(primers, min_cross_run = 6L, max_selfcomp = 5L)
 whose elements are pooled; names are the pool labels.}
 
 \item{min_cross_run, max_selfcomp}{the base-pair rules (see
-\code{\link[=duplex_compatibility]{duplex_compatibility()}}).}
+\code{duplex_compatibility()}).}
 }
 \value{
 a tidy tibble: \code{a}, \code{b}, \code{kind} (\code{"self"}/\code{"cross"}), \code{run} (bp), \code{dg}
@@ -21,9 +21,9 @@ a tidy tibble: \code{a}, \code{b}, \code{kind} (\code{"self"}/\code{"cross"}), \
 Takes any set of oligos (e.g. the primers of several markers) and returns one
 tidy row per unordered pair: a \code{"self"} row is that oligo's hairpin, a
 \code{"cross"} row an inter-primer interaction.  \code{run} is the longest complementary
-stretch (see \code{\link[=complementary_run]{complementary_run()}}), \code{dg} the dimer dG37 (OligoArrayAux, \code{NA}
+stretch (see \code{complementary_run()}), \code{dg} the dimer dG37 (OligoArrayAux, \code{NA}
 without it) and \code{pass} the verdict.  This is the general "many primers" check
-behind the duplex stage (\code{\link[=duplex_compatibility]{duplex_compatibility()}}).
+behind the duplex stage (\code{duplex_compatibility()}).
 }
 \examples{
 primer_set_compatibility(c(

@@ -51,6 +51,7 @@ test_that("read_variants_vcf normalises IUPAC/lowercase instead of dropping", {
 })
 
 test_that("the vroom and VariantAnnotation backends agree", {
+  skip_if_not_full()
   skip_if_not_installed("vroom")
   # VariantAnnotation's namespace load emits a benign import-replacement warning
   if (!suppressWarnings(suppressMessages(requireNamespace("VariantAnnotation", quietly = TRUE)))) {
@@ -73,6 +74,7 @@ test_that("the vroom and VariantAnnotation backends agree", {
 })
 
 test_that("the VariantAnnotation backend filters by region too", {
+  skip_if_not_full()
   skip_if_not_installed_noload("VariantAnnotation")
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
@@ -93,6 +95,7 @@ test_that("the VariantAnnotation backend filters by region too", {
 })
 
 test_that("the VariantAnnotation backend streams a region like filtering", {
+  skip_if_not_full()
   skip_if_not_installed_noload("VariantAnnotation")
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(

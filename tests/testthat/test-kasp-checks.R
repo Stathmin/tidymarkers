@@ -2,11 +2,7 @@
 # Synthetic assay objects keep this pure (no genome, no network, no DECIPHER).
 
 good_assay <- function() {
-  p <- c(
-    AS_ref = "CATGGACCTAGCATTGACGTA",
-    AS_alt = "CATGGACCTAGCATTGACGTT",
-    COM = "GCTTAGCCATGGTCAATGCTA"
-  )
+  p <- kasp_primers()
   list(
     assay = tibble::tibble(
       amplicon = 90L, as_ref = p[["AS_ref"]], as_alt = p[["AS_alt"]], com = p[["COM"]],

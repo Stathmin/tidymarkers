@@ -16,13 +16,13 @@
 #' Takes any set of oligos (e.g. the primers of several markers) and returns one
 #' tidy row per unordered pair: a `"self"` row is that oligo's hairpin, a
 #' `"cross"` row an inter-primer interaction.  `run` is the longest complementary
-#' stretch (see [complementary_run()]), `dg` the dimer dG37 (OligoArrayAux, `NA`
+#' stretch (see `complementary_run()`), `dg` the dimer dG37 (OligoArrayAux, `NA`
 #' without it) and `pass` the verdict.  This is the general "many primers" check
-#' behind the duplex stage ([duplex_compatibility()]).
+#' behind the duplex stage (`duplex_compatibility()`).
 #' @param primers a named character vector, or a (named) list of such vectors
 #'   whose elements are pooled; names are the pool labels.
 #' @param min_cross_run,max_selfcomp the base-pair rules (see
-#'   [duplex_compatibility()]).
+#'   `duplex_compatibility()`).
 #' @return a tidy tibble: `a`, `b`, `kind` (`"self"`/`"cross"`), `run` (bp), `dg`
 #'   (kcal/mol), `pass`.  All rows pass (`all(pass)`) for a clean pool.
 #' @examples

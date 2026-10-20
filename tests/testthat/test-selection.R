@@ -125,12 +125,10 @@ test_that("the dropout gate tolerates benign footprint variants (dropout <= tol)
 
 test_that("the pair screen swaps a top pairing with an off-target duplicate for a clean sibling", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  W <- f$W
+  genome <- f$genome
+  snp <- f$snp
   # the ranked winner with the screen off, so we know which COM to sabotage
   base <- suppressWarnings(
     assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L, pair_screen = 0L)
@@ -159,12 +157,10 @@ test_that("the pair screen swaps a top pairing with an off-target duplicate for 
 
 test_that("a strict specificity policy dooms instead of returning an off-target marker (Y3)", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  W <- f$W
+  genome <- f$genome
+  snp <- f$snp
   # the AS oligo of the ranked winner (screen off), then duplicate its exact site
   # on a second chromosome: every pairing now has an off-target exact hit
   base <- suppressWarnings(
@@ -192,9 +188,9 @@ test_that("a strict specificity policy dooms instead of returning an off-target 
   expect_false(inherits(a, "marker_doomed"))
 })
 
-test_that("kasp_specificity reads the scheme policy, tolerant by default (Y3)", {
-  expect_identical(kasp_specificity("snp"), "multicopy")
-  expect_true(kasp_specificity("crispr") %in% KASP_SPECIFICITY_MODES)
+test_that("marker_specificity reads the scheme policy, tolerant by default (Y3)", {
+  expect_identical(marker_specificity("snp"), "multicopy")
+  expect_true(marker_specificity("crispr") %in% KASP_SPECIFICITY_MODES)
   expect_setequal(KASP_SPECIFICITY_STRICT, c("unique", "homeolog-aware"))
   expect_false("multicopy" %in% KASP_SPECIFICITY_STRICT)
 })
@@ -317,17 +313,10 @@ test_that("a relaxed structure floor still passes the structure checks (C5)", {
 # ---- the snp DAG, explicitly (gate set, order, hardness) --------------------
 test_that("the snp DAG obeys the contract and declares its gates and hardness", {
   expect_dag_invariants("snp")
-  s <- marker_decision_schema("snp")
-  # gate set in application order (C6/C7): the AS stage then the pair stage
-  expect_identical(
-    s$nodes$name[s$nodes$kind == "gate"],
-    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
-  )
-  # hardness (C8): only the AS discrimination and the AS 3' window are hard
-  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
-  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
-  # one DOOMED terminal (C4)
-  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
+  # gate set in application order (C6/C7): the AS stage then the pair stage;
+  # hardness (C8): only the AS discrimination and the AS 3' window are hard;
+  # and one DOOMED terminal (C4)
+  expect_kasp_core_dag("snp")
 })
 
 test_that("the marker-agnostic primer scheme is stage-less by design (C13)", {

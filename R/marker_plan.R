@@ -207,7 +207,7 @@ marker_context <- function(variants = NULL, haplotypes = NULL) {
 #' Declare which chemistries a plan may use, and their costs
 #'
 #' The tech layer.  `schemes` is an allow-list (leaving it unset means every
-#' designable scheme); `preset` names a bundle ([KASP_TECH_PRESETS]); `exclude`
+#' designable scheme); `preset` names a bundle (`KASP_TECH_PRESETS`); `exclude`
 #' drops schemes from the allowed set.  `costs` is a cost schema - a relative
 #' effort per chemistry, bigger meaning harder - and the solver walks the allowed
 #' schemes cheapest-first, stopping at the first that designs.
@@ -217,7 +217,7 @@ marker_context <- function(variants = NULL, haplotypes = NULL) {
 #' is discovered automatically and can be named here like any other.
 #' @param schemes scheme ids to allow (see [marker_schemes()]); `NULL` = all.
 #' @param costs a named cost per scheme, e.g. [marker_costs()]; `NULL` = defaults.
-#' @param preset a bundle name in [KASP_TECH_PRESETS] (`"kasp"`, `"gel"`,
+#' @param preset a bundle name in `KASP_TECH_PRESETS` (`"kasp"`, `"gel"`,
 #'   `"lab"`, `"field"`).
 #' @param exclude scheme ids to drop from the allowed set.
 #' @return a plan layer (add it with `+`).

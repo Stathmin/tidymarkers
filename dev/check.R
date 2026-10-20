@@ -101,6 +101,9 @@ step("figures (auto-render)", function() {
   if (no_render) {
     return(message("  skip (--no-render)"))
   }
+  if (!nzchar(Sys.which("dot"))) {
+    return(message("  skip (graphviz dot not installed)"))
+  }
   # the figures are code: regenerate every one from the engine, then fail only if a
   # *committed* figure (man/figures) changed - so the update is deliberate and
   # committed, never a silent drift
@@ -124,8 +127,10 @@ step("install (smoke)", function() {
   lib <- tempfile("kasp-check-lib-")
   dir.create(lib)
   on.exit(unlink(lib, recursive = TRUE), add = TRUE)
+  # --no-byte-compile keeps the smoke fast; `--full` still byte-compiles via
+  # R CMD check, so compile problems are not lost
   out <- suppressWarnings(system2("R",
-    c("CMD", "INSTALL", "--no-docs", "--no-help", "-l", shQuote(lib), "."),
+    c("CMD", "INSTALL", "--no-docs", "--no-help", "--no-byte-compile", "-l", shQuote(lib), "."),
     stdout = TRUE, stderr = TRUE
   ))
   if (!identical(attr(out, "status"), NULL) && !identical(as.integer(attr(out, "status")), 0L)) {

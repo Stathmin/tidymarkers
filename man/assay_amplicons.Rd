@@ -21,7 +21,7 @@ assay_amplicons(
 
 \item{BPPARAM}{optional \code{BiocParallel} backend (see \code{\link[=in_silico_pcr]{in_silico_pcr()}}).}
 
-\item{products}{precomputed products from \code{\link[=assay_pcr_products]{assay_pcr_products()}}; when given,
+\item{products}{precomputed products from \code{assay_pcr_products()}; when given,
 the genome is not rescanned (the ideogram and the amplicon counts then share
 one virtual PCR).}
 }

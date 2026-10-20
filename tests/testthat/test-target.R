@@ -34,12 +34,9 @@ test_that("pick_target_snp with a scheme warns and returns the best when none de
 
 test_that("design_marker walks the chemistries and returns the first that works", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   d <- suppressWarnings(design_marker(genome, snp, flank = 150L))
   expect_setequal(d$tried$scheme, c("snp", "caps", "arms", "hrm"))
   expect_true(d$scheme %in% c("snp", "caps", "arms", "hrm"))

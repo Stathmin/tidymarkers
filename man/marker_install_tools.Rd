@@ -26,7 +26,7 @@ marker_install_tools(
 \description{
 Downloads the OligoArrayAux source release, verifies its checksum, builds it
 and installs it under \code{dest} (\code{marker_cache_dir()/tools} by default) - the
-directory \code{\link[=oligoarrayaux_paths]{oligoarrayaux_paths()}} then searches, so the thermodynamics and QC
+directory \code{oligoarrayaux_paths()} then searches, so the thermodynamics and QC
 functions start working without any \code{PATH}/\code{UNAFOLDDAT} fiddling.
 }
 \details{

@@ -4,15 +4,45 @@
 # The shipped panel needs the TAIR10 genome; use it when it is available
 # (cached, so offline), otherwise skip - a synthetic genome would not exercise
 # the real targets.
+# The TAIR10 genome is ~35 MB compressed: read it once per file, not once per plan.
+example_genome <- local({
+  value <- NULL
+  function() {
+    if (is.null(value)) {
+      value <<- tryCatch(ath_genome(), error = function(e) NULL)
+    }
+    value
+  }
+})
+
 example_plan <- function(ids = c("ENSVATH01332998", "ENSVATH02162468"), preset = "kasp") {
   ex <- marker_example()
   ex <- ex[ex$id %in% ids, , drop = FALSE]
-  genome <- tryCatch(ath_genome(), error = function(e) NULL)
+  genome <- example_genome()
   if (is.null(genome) || !nrow(ex)) {
     return(NULL)
   }
   marker_plan(genome) + marker_targets(data = ex) + marker_tech(preset = preset)
 }
+
+# Solving is deterministic, and every report/plot test needs the same solved
+# panel.  Solve it once so the tests assert the same design without repeating
+# the search (and keep its cache for the cache-reuse test).
+solved_example <- local({
+  value <- NULL
+  function() {
+    if (is.null(value)) {
+      plan <- example_plan()
+      if (is.null(plan)) {
+        return(NULL)
+      }
+      value <<- suppressWarnings(
+        marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE)
+      )
+    }
+    value
+  }
+})
 
 # a tiny stand-in genome for the pure-logic layers (nothing is designed)
 dummy_plan <- function() {
@@ -59,9 +89,8 @@ test_that("marker_costs overrides merge over the defaults", {
 
 test_that("marker_solve designs the real example targets and reports", {
   skip_if_no_oligoarrayaux()
-  plan <- example_plan()
-  skip_if(is.null(plan), "TAIR10 genome not available")
-  solved <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE))
+  solved <- solved_example()
+  skip_if(is.null(solved), "TAIR10 genome not available")
   expect_s3_class(solved, "marker_solved")
   expect_equal(nrow(solved$report), 2L)
   expect_true(all(solved$report$ok))
@@ -72,20 +101,20 @@ test_that("marker_solve designs the real example targets and reports", {
 
 test_that("marker_solve reuses its cache", {
   skip_if_no_oligoarrayaux()
-  plan <- example_plan()
-  skip_if(is.null(plan), "TAIR10 genome not available")
-  cache <- new.env()
-  s1 <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE, cache = cache))
-  s2 <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE, cache = cache))
+  s1 <- solved_example()
+  skip_if(is.null(s1), "TAIR10 genome not available")
+  # re-solving with the cache the first solve used must return the same answer
+  s2 <- suppressWarnings(
+    marker_solve(s1$plan, flank = 150L, cores = 1L, progress = FALSE, cache = s1$cache)
+  )
   expect_identical(s1$report$scheme, s2$report$scheme)
   expect_identical(s1$report$marker[[1L]], s2$report$marker[[1L]])
 })
 
 test_that("marker_primers pulls the oligos out of a solved marker", {
   skip_if_no_oligoarrayaux()
-  plan <- example_plan()
-  skip_if(is.null(plan), "TAIR10 genome not available")
-  solved <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE))
+  solved <- solved_example()
+  skip_if(is.null(solved), "TAIR10 genome not available")
   pm <- marker_primers(solved$report$marker[[1L]])
   expect_true(all(c("AS_ref", "AS_alt", "COM") %in% names(pm)))
   expect_true(all(nzchar(pm)))
@@ -93,9 +122,8 @@ test_that("marker_primers pulls the oligos out of a solved marker", {
 
 test_that("marker_tubes screens every pair of solved markers", {
   skip_if_no_oligoarrayaux()
-  plan <- example_plan()
-  skip_if(is.null(plan), "TAIR10 genome not available")
-  solved <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE))
+  solved <- solved_example()
+  skip_if(is.null(solved), "TAIR10 genome not available")
   tb <- marker_tubes(solved)
   expect_true(all(c("a", "b", "n_pairs", "worst_run", "pass") %in% names(tb)))
   expect_equal(nrow(tb), 1L) # one pair of two solved targets
@@ -104,9 +132,8 @@ test_that("marker_tubes screens every pair of solved markers", {
 test_that("marker_plot and marker_export work off a solved plan", {
   skip_if_no_oligoarrayaux()
   skip_if_not_installed("ggplot2")
-  plan <- example_plan()
-  skip_if(is.null(plan), "TAIR10 genome not available")
-  solved <- suppressWarnings(marker_solve(plan, flank = 150L, cores = 1L, progress = FALSE))
+  solved <- solved_example()
+  skip_if(is.null(solved), "TAIR10 genome not available")
   expect_s3_class(marker_plot(solved), "ggplot")
   dir <- withr::local_tempdir()
   marker_export(solved, dir = dir)

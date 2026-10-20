@@ -23,16 +23,15 @@ test_that("design_crispr_marker builds a Cas12a guide with a TTTV PAM and an amp
 
 test_that("design_crispr_marker builds a PAM-free Cas13 guide", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas13")
   expect_s3_class(m, "marker_crispr")
   expect_equal(m$cas, "cas13")
   expect_true(is.na(m$pam)) # Cas13 targets RNA: no PAM
+  expect_true(is.na(m$gates[["gate_crispr_pam"]])) # PAM-free: the gate is NA
+  expect_false(is.na(m$amplicon$product)) # ... and the marker still designs
   expect_gte(nchar(m$guide), 22L)
   expect_lte(nchar(m$guide), 28L)
   expect_output(print(m), "marker_crispr")
@@ -68,6 +67,24 @@ test_that("scheme_def_crispr declares its prefixed gates, tiers and lookups", {
   expect_setequal(names(def$tiers), c("guide", "seed", "specificity", "amplicon"))
   expect_true(all(names(def$gate_floor_label) %in% def$relax))
   expect_true(all(names(def$gate_hard_label) %in% setdiff(def$gates, def$relax)))
+})
+
+test_that("guide specificity is a hard gate", {
+  # an off-target protospacer could license the reporter on the wrong template,
+  # so this gate is never relaxed (unlike the amplicon / GC / spacer gates).
+  expect_true(
+    "gate_crispr_specificity" %in% setdiff(scheme_def_crispr()$gates, scheme_def_crispr()$relax)
+  )
+})
+
+test_that("design_crispr_marker supports only the RPA pre-amplification", {
+  # `lamp` was accepted but only reused the flanking-pair designer, which is not
+  # a LAMP reaction (no FIP/BIP): the choice is gone until a LAMP engine exists.
+  expect_false(any(grepl("lamp", deparse(formals(design_crispr_marker)$preamp))))
+  expect_identical(formals(design_crispr_marker)$preamp, "rpa")
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("AT", 300L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "C")
+  expect_error(design_crispr_marker(genome, snp, preamp = "lamp"), "rpa")
 })
 
 test_that("the crispr DAG obeys the contract", expect_dag_invariants("crispr"))

@@ -238,7 +238,7 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #'   chromosome, see [specificity_seed()]).
 #' @param scheme optional marker scheme to require (see [marker_schemes()]).  When
 #'   given, ranked candidates are designed one by one with that scheme's engine
-#'   ([marker_design_at()]) and the first *designable* one is returned - "doomed"
+#'   (`marker_design_at()`) and the first *designable* one is returned - "doomed"
 #'   depends on the marker type, so a KASP-doomed locus may still make a CAPS or
 #'   ARMS marker.  `NULL` keeps the plain best-by-criteria pick.
 #' @param max_tries how many ranked candidates to try when `scheme` is given.
@@ -398,7 +398,8 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' [pick_target_snp()] can walk candidates until one actually designs.
 #' @keywords internal
 #' @noRd
-marker_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NULL, ...) {
+marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = NULL,
+                             BPPARAM = NULL, ...) {
   # `primer` is deliberately absent: it is not a genotyping chemistry (no allele
   # is read) but the marker-agnostic "any primer pair" QC subset, so it has no
   # locus-level designer and is documentation-only (C13).  Its criteria remain
@@ -408,22 +409,44 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, BPPARAM = NUL
   # is a pair-level "in-silico PCR: exactly one product" node; registering it
   # belongs in marker_criteria.R/marker_schemes.R (a requested serial slot, not this
   # file).
-  switch(scheme,
+  out <- switch(scheme,
     snp = ,
     indel = ,
-    multi = assemble_kasp_assay(genome, snp, variants = variants, scheme = scheme, BPPARAM = BPPARAM, ...),
-    caps = design_caps_marker(genome, snp, ...),
+    multi = assemble_kasp_assay(
+      genome, snp,
+      variants = variants, scheme = scheme,
+      haplotypes = haplotypes, BPPARAM = BPPARAM, ...
+    ),
+    caps = design_caps_marker(genome, snp, haplotypes = haplotypes, ...),
     arms = design_arms_marker(genome, snp, ...),
     hrm = design_hrm_marker(genome, snp, ...),
     {
-      # a discovered scheme (R/marker_<scheme>.R) supplies its own designer
+      # a discovered scheme (R/marker_<scheme>.R) supplies its own designer; a
+      # composed technology dispatches to its base designer
+      # (extra_scheme_designer).  Pass the shared context only when the designer
+      # accepts it, so an existing scheme's designer never sees an extra argument.
       f <- extra_scheme_designer(scheme)
-      if (is.null(f)) NULL else rlang::exec(f, genome, snp, ...)
+      if (is.null(f)) {
+        NULL
+      } else {
+        fm <- names(formals(f))
+        ctx <- list()
+        if ("variants" %in% fm) ctx$variants <- variants
+        if ("haplotypes" %in% fm) ctx$haplotypes <- haplotypes
+        if ("BPPARAM" %in% fm) ctx$BPPARAM <- BPPARAM
+        rlang::exec(f, genome, snp, !!!ctx, ...)
+      }
     }
   )
+  # attach the population layer to every chemistry: haplotype-aware engines use
+  # it during design; the rest use it for plotting and the check column
+  if (!is.null(out) && !is.null(haplotypes)) {
+    out <- marker_attach_haplotypes(out, haplotypes, snp)
+  }
+  out
 }
 
-#' Did a scheme's designer return a usable marker? (see [marker_design_at()])
+#' Did a scheme's designer return a usable marker? (see `marker_design_at()`)
 #' @keywords internal
 #' @noRd
 is_target_designable <- function(marker) {

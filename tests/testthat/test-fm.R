@@ -1,6 +1,7 @@
 # FM-index genome scan (Rsubread): an index-based alternative to BLAST.
 
 test_that("marker_fm_index + specificity_fm count genome loci", {
+  skip_if_not_full()
   skip_if_not_installed("Rsubread")
   skip_if_not_installed("Rsamtools")
   withr::local_seed(1)

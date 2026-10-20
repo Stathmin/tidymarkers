@@ -52,7 +52,12 @@ marker_primers.marker_lax <- function(marker, ...) {
   # the no-haplotype form: one plain KASP assay per (single) ALT
   purrr::imap(marker$assays, function(a, i) {
     p <- marker_primers(a)
-    stats::setNames(p, paste0(names(p), "_", i))
+    if (!length(p)) {
+      return(character(0))
+    }
+    nm <- names(p)
+    if (is.null(nm)) nm <- rep("primer", length(p))
+    stats::setNames(p, paste0(nm, "_", i))
   }) |>
     unlist(use.names = TRUE)
 }
@@ -61,25 +66,34 @@ marker_primers.marker_lax <- function(marker, ...) {
 marker_primers.marker_duplex <- function(marker, ...) {
   purrr::imap(marker$assays, function(a, i) {
     p <- marker_primers(a)
-    stats::setNames(p, paste0(names(p), "_", i))
+    if (!length(p)) {
+      return(character(0))
+    }
+    nm <- names(p)
+    if (is.null(nm)) nm <- rep("primer", length(p))
+    stats::setNames(p, paste0(nm, "_", i))
   }) |>
     unlist(use.names = TRUE)
 }
 
 #' @export
 marker_primers.marker_taqman <- function(marker, ...) {
-  c(
-    forward = marker$primers$forward, reverse = marker$primers$reverse,
-    stats::setNames(marker$probes$probe, paste0("probe_", marker$probes$allele))
-  )
+  out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  pr <- marker$probes
+  if (!is.null(pr) && all(c("probe", "allele") %in% names(pr))) {
+    out <- c(out, stats::setNames(pr$probe, paste0("probe_", pr$allele)))
+  }
+  out
 }
 
 #' @export
 marker_primers.marker_dpcr <- function(marker, ...) {
-  c(
-    forward = marker$primers$forward, reverse = marker$primers$reverse,
-    stats::setNames(marker$probes$probe, paste0("probe_", marker$probes$allele))
-  )
+  out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  pr <- marker$probes
+  if (!is.null(pr) && all(c("probe", "allele") %in% names(pr))) {
+    out <- c(out, stats::setNames(pr$probe, paste0("probe_", pr$allele)))
+  }
+  out
 }
 
 #' @export
@@ -99,9 +113,12 @@ marker_primers.marker_rpa <- function(marker, ...) {
 
 #' @export
 marker_primers.marker_snapshot <- function(marker, ...) {
+  amp <- marker$amplification
+  ext <- marker$extension
   c(
-    forward = marker$amplification$forward, reverse = marker$amplification$reverse,
-    extension = marker$extension$primer
+    forward = if (!is.null(amp)) amp$forward else NULL,
+    reverse = if (!is.null(amp)) amp$reverse else NULL,
+    extension = if (!is.null(ext)) ext$primer else NULL
   )
 }
 
@@ -118,7 +135,27 @@ marker_primers.marker_arms <- function(marker, ...) {
 
 #' @export
 marker_primers.marker_crispr <- function(marker, ...) {
-  c(forward = marker$amplicon$forward, reverse = marker$amplicon$reverse, guide = marker$guide)
+  amp <- marker$amplicon
+  out <- c(guide = marker$guide)
+  if (!is.null(amp) && all(c("forward", "reverse") %in% names(amp))) {
+    out <- c(forward = amp$forward, reverse = amp$reverse, out)
+  }
+  out
+}
+
+#' @export
+marker_primers.marker_sanger <- function(marker, ...) {
+  out <- c(PCR_F = marker$primers$forward, PCR_R = marker$primers$reverse)
+  sp <- marker$seq_primers
+  if (!is.null(sp)) {
+    if (!identical(sp$forward, marker$primers$forward)) {
+      out <- c(out, read_F = sp$forward)
+    }
+    if (!identical(sp$reverse, marker$primers$reverse)) {
+      out <- c(out, read_R = sp$reverse)
+    }
+  }
+  out
 }
 
 #' Which solved markers can share one tube without interfering

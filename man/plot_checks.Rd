@@ -17,10 +17,10 @@ a \code{ggplot} tumbler list.
 \description{
 Runs \code{\link[=marker_design_checks]{marker_design_checks()}} and shows one named tumbler per criterion - a
 small green (ok) / red (broken) marker with its observed value and limit - in
-in a single narrow column, faceted by the level judged: the \emph{site} level is
-the target itself (KASP class, ALT count, linked variants), the \emph{feature}
-level is one oligo on its own, the \emph{alignment} level is how the primers sit
-together on the template.  Sits as a thin strip beside \code{\link[=plot_primers]{plot_primers()}}.
+a single narrow column, faceted by the level judged: the \emph{site} level is the
+target itself (KASP class, ALT count, linked variants), the \emph{feature} level is
+one oligo on its own, the \emph{alignment} level is how the primers sit together on
+the template.  Sits as a thin strip beside \code{\link[=plot_primers]{plot_primers()}}.
 }
 \examples{
 \dontrun{

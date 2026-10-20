@@ -116,10 +116,10 @@ KASP_MARKER_MAX_PER_SIDE <- 600L
 
 #' Keep one length per start position, capped by Tm closeness to a target
 #'
-#' The bound that keeps [flanking_pair_grid()] affordable on a long flank:
+#' The bound that keeps `flanking_pair_grid()` affordable on a long flank:
 #' positions are preserved (so the placement tiers still see the whole flank) and
 #' for each only the length whose Tm is closest to `target` is kept.
-#' @param cand a candidate primer tibble (see [primer_candidates()]).
+#' @param cand a candidate primer tibble (see `primer_candidates()`).
 #' @param target the preferred Tm (C).
 #' @param max_per_side pool cap.
 #' @return a thinned tibble.
@@ -234,14 +234,14 @@ pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
 
 #' Select one flanking pair through the ladder, then confirm its expensive gates
 #'
-#' Phase 1 is the shared [select_with_ladder()] over the *cheap* margins, so the
+#' Phase 1 is the shared `select_with_ladder()` over the *cheap* margins, so the
 #' declared gate order, relaxation order and floors are the ones the DAG shows.
 #' Phase 2 walks the tier-ordered survivors and applies the *expensive* gate(s)
 #' via `confirm()` (OligoArrayAux structure, in-silico PCR): the first candidate
 #' the confirmation accepts wins, so a design never runs the expensive test on
 #' more than `max_alternatives` pairs, and a candidate the confirmation rejects is
 #' dropped and the ladder re-run (which can also relax a soft gate further).
-#' @param grid the candidate grid (see [flanking_pair_grid()]).
+#' @param grid the candidate grid (see `flanking_pair_grid()`).
 #' @param gates,relax,tiers the scheme's declared stage (C6).
 #' @param margins,floors named maps gate -> margin column / gate -> floor.
 #' @param ties ascending tie-break columns.
@@ -309,7 +309,7 @@ seq_primer_at <- function(seq, side, starts, lengths, tm_range, gc_range, keep) 
 #' Design a sequencing primer pair that reads into the variant
 #'
 #' Returns the forward and reverse sequencing primers (each inside the amplicon,
-#' >= `min_dist` from the variant, Tm-screened and free of a 3' homopolymer),
+#' at least `min_dist` from the variant, Tm-screened and free of a 3' homopolymer),
 #' preferring a nested primer and falling back to the flanking pair (the routine
 #' workflow).  A nested primer is kept only when its 3' seed is unique, so the
 #' read is not a mixture.  The nested search window is deliberately narrow (<= 40
@@ -347,7 +347,13 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
   list(
     forward = fwd$primer %||% flank_f,
     reverse = rev$primer %||% flank_r,
-    nested = !is.null(fwd) && !is.null(rev)
+    nested = !is.null(fwd) && !is.null(rev),
+    # template coordinates of the actual read primers (the PCR pair when a
+    # nested read primer was not found), converted to genomic by the designer
+    forward_start = fwd$start %||% start_f,
+    forward_end = fwd$end %||% (start_f + nchar(flank_f) - 1L),
+    reverse_start = rev$start %||% (end_r - nchar(flank_r) + 1L),
+    reverse_end = rev$end %||% end_r
   )
 }
 
@@ -458,6 +464,9 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     primers$forward, primers$reverse, min_dist, genome, lengths, tm_range, gc_range
   )
   amp0 <- snp$pos - si
+  for (nm in c("forward_start", "forward_end", "reverse_start", "reverse_end")) {
+    seq_primers[[nm]] <- seq_primers[[nm]] + amp0
+  }
   out <- list(
     snp = snp, primers = primers,
     amplicon = tibble::tibble(start = primers$start + amp0, end = primers$end + amp0),
@@ -499,6 +508,38 @@ print.marker_sanger <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_sanger
+#' @export
+#' @noRd
+marker_map_spec.marker_sanger <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  start <- sp[["start"]]
+  end <- sp[["end"]]
+  fwd <- marker$primers$forward
+  rev <- marker$primers$reverse
+  features <- list(
+    spec_row("PCR F", start, start + nchar(fwd) - 1L, "+", "primer"),
+    spec_row("PCR R", end - nchar(rev) + 1L, end, "-", "primer")
+  )
+  sequences <- list("PCR F" = fwd, "PCR R" = rev)
+  sp_read <- marker$seq_primers
+  if (!is.null(sp_read)) {
+    if (!identical(sp_read$forward, fwd)) {
+      rs <- sp_read$forward_start %||% start
+      re <- sp_read$forward_end %||% (rs + nchar(sp_read$forward) - 1L)
+      features <- c(features, list(spec_row("read F", rs, re, "+", "seq")))
+      sequences[["read F"]] <- sp_read$forward
+    }
+    if (!identical(sp_read$reverse, rev)) {
+      rs <- sp_read$reverse_start %||% (end - nchar(sp_read$reverse) + 1L)
+      re <- sp_read$reverse_end %||% end
+      features <- c(features, list(spec_row("read R", rs, re, "-", "seq")))
+      sequences[["read R"]] <- sp_read$reverse
+    }
+  }
+  map_spec(marker, features = features, sequences = sequences)
+}
+
 scheme_def_sanger <- function() {
   list(
     scheme = "sanger",

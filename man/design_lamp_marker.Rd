@@ -53,7 +53,7 @@ The isothermal analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay
 the inner FIP/BIP pair are placed so the variant sits at the 3' terminus of
 FIP's displacement arm (F2) - where a 3' mismatch blocks the strand-displacing
 polymerase and so discriminates the alleles.  FIP and BIP are two-arm fusions
-(\code{F1c+F2}, \code{B1c+B2}) built by \code{\link[=lamp_fip]{lamp_fip()}} / \code{\link[=lamp_bip]{lamp_bip()}}; F3/B3 reuse the
+(\code{F1c+F2}, \code{B1c+B2}) built by \code{lamp_fip()} / \code{lamp_bip()}; F3/B3 reuse the
 generic pair search over the inner block; the optional loop primers LF/LB are
 placed in the F1c/F2 and B1c/B2 loops.  The designer does \strong{not} simulate the
 isothermal reaction (that needs a polymerase/kinetics model), so it returns a

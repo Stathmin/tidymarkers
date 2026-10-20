@@ -25,11 +25,10 @@ tidy-таблицу) — инструмент проектирует аллел�
 ## 0. Установка
 
 ```r
-# с GitHub (нужен remotes; при желании — build_vignettes = FALSE, чтобы не собирать виньетки)
-remotes::install_github("Stathmin/tidymarkers")
-
-# из локальной копии
-# remotes::install_local(".")
+# быстрый путь (2026): pak берёт бинарники CRAN на Windows/macOS и
+# Posit Package Manager на поддерживаемом Linux; renv для пользователя не нужен
+install.packages("pak")
+pak::pak("Stathmin/tidymarkers", sysreqs = TRUE)
 ```
 
 Требуется **R ≥ 4.5** и внешний **OligoArrayAux** (`hybrid-min`) — термодинамика
@@ -55,7 +54,7 @@ remotes::install_github("Stathmin/tidymarkers")
 | Рецепт реакции | `kasp_mix_recipe()` | tidy-рецепт смеси праймеров (AS:AS:COM = 2:2:5) и сборки реакции |
 | Визуализация | `gggenes`, `ggrepel`, `patchwork`, `ggforce` | карта праймеров и ген, подписи без наложений, зум-панели, композиция |
 | Заказ олиго | `export_primers()` + `readr` | tidy-таблица + sheets для IDT (bulk) и LGC/KASP |
-| Воспроизводимость | `renv` | лок-файл со всеми версиями |
+| Воспроизводимость | `renv` (лок) / `pak` (быстрая установка) | `renv.lock` для пиннинга; `pak` — бинарники/параллель для пользователей |
 
 Своих строк — минимум: только то, что специфично для KASP (3'-концевое
 «прикалывание» AS-праймера к SNP и скан кандидатов для общего праймера).
@@ -94,11 +93,14 @@ Rscript data-raw/install-oligoarrayaux.R
 #       Windows: cairo идёт с Rtools; либо pak::pak("tidymarkers", sysreqs = TRUE)
 #       (кроссплатформенно: pak сам ставит системные библиотеки)
 
-# 2. R-окружение из лочки
-Rscript -e 'if (!requireNamespace("renv")) install.packages("renv")'
-Rscript -e 'renv::restore(prompt = FALSE)'
+# 2. R-окружение: pak читает DESCRIPTION и ставит только нужное
+#    (бинарники, где платформа их даёт; без 262-пакетного dev-лока)
+Rscript -e 'if (!requireNamespace("pak")) install.packages("pak")'
+Rscript dev/install-deps.R   # Imports + dev/test tools + сам пакет; --with-suggests for all
+# renv.lock остаётся для воспроизводимости; renv::restore() тянет весь старый
+# dev-лок (262 пакета) и на порядок медленнее — для пользователей он не нужен.
 
-# 3. установить сам пакет
+# 3. пакет уже установлен шагом 2; переустановить после правок:
 R CMD INSTALL .              # или: Rscript -e 'pkgload::load_all()' для разработки
 # когда пакет вынесен в свой репозиторий:
 #   pak::pak("Stathmin/tidymarkers", sysreqs = TRUE)   # BLAST+/cairo системно
@@ -111,7 +113,8 @@ Rscript inst/scripts/run_kasp.R
 Rscript -e 'rmarkdown::render("report/marker_report.Rmd")'
 
 # 6. тесты (инварианты ядра дизайна)
-Rscript -e 'testthat::test_local()'    # грузит пакет из исходников (pkgload)
+Rscript dev/test.R                     # быстро: ядро и фикстуры
+Rscript dev/test.R --full              # + BLAST/Rsubread/аннотации/SOCK
 
 # 7. лекционный дек Quarto (reveal.js)
 sh lecture/render.sh                    # ставит OligoArrayAux на PATH и рендерит
@@ -143,7 +146,10 @@ sh lecture/render.sh                    # ставит OligoArrayAux на PATH �
 
 Другой ген — поменяйте `gene_id` в `inst/scripts/run_kasp.R` (например `AT5G10140` для
 `FLC`). Конкретный маркер — передайте `variant_id = "..."` в `pick_target_snp()`.
-Начните с виньетки: `vignette("kasp-intro")`.
+Начните с `vignette("kasp-intro")`; семейные виньетки — `markers-kasp`,
+`markers-gel`, `markers-probe`, `markers-isothermal`,
+`markers-crispr-sequencing` (у каждой — рисунки `plot(marker)` и ссылки на
+первичные статьи).
 
 Лекция: `lecture/kasp-slides.qmd` — живые tidyverse-чанки (рендер `sh lecture/render.sh`,
 нужен `quarto` CLI); подробности в `lecture/README.md`.

@@ -252,7 +252,7 @@ print.marker_indel_size <- function(x, ...) {
 #' Declare the InDel size-polymorphism scheme
 #'
 #' The metadata the shared registry (see [marker_schemes()], [marker_criteria()] and
-#' [marker_decision_stages()]) needs to wire this chemistry into the decision
+#' `marker_decision_stages()`) needs to wire this chemistry into the decision
 #' schema: its family/label, how it reads the genotype, and its selection gates,
 #' refinement order and tiers.  Kept here, next to the designer, so the two
 #' cannot drift.  Gate ids are prefixed `gate_indel_size_`.  Every gate declared
@@ -260,6 +260,32 @@ print.marker_indel_size <- function(x, ...) {
 #' @return a list describing the `indel_size` scheme.
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_indel_size
+#' @export
+#' @noRd
+marker_map_spec.marker_indel_size <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  start <- sp[["start"]]
+  end <- sp[["end"]]
+  map_spec(
+    marker,
+    features = c(
+      map_pair_rows(marker, start, end),
+      list(
+        spec_row(
+          "REF product", start, start + marker$amplicon$ref_size[1L] - 1L, "+", "amplicon",
+          label = "REF"
+        ),
+        spec_row(
+          "ALT product", start, start + marker$amplicon$alt_size[1L] - 1L, "+", "amplicon",
+          label = "ALT"
+        )
+      )
+    ),
+    sequences = list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  )
+}
+
 scheme_def_indel_size <- function() {
   list(
     scheme = "indel_size",

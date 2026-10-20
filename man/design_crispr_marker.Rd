@@ -13,9 +13,10 @@ design_crispr_marker(
   spacer_lengths = NULL,
   gc_range = NULL,
   specificity_max = 0L,
-  preamp = c("rpa", "lamp"),
+  preamp = "rpa",
   min_product = 80L,
   max_product = 250L,
+  haplotypes = NULL,
   BPPARAM = NULL
 )
 }
@@ -41,12 +42,18 @@ Cas12a, 22-28 nt for Cas13).}
 \item{gc_range}{accepted guide GC window (default 0.35-0.65).}
 
 \item{specificity_max}{accepted number of off-target protospacers (exact
-genome hits of the spacer beyond the on-target locus; default 0).}
+genome hits of the spacer beyond the on-target locus; default 0).  This is
+a hard gate: it is never relaxed to \code{specificity_max + 1}.}
 
 \item{preamp}{the isothermal pre-amplification the guide rides on, \code{"rpa"}
-(default) or \code{"lamp"}; it sets that pair's length / Tm / GC windows.}
+(the only implemented chemistry); it sets that pair's length / Tm / GC
+windows.}
 
 \item{min_product, max_product}{accepted pre-amplification amplicon window.}
+
+\item{haplotypes}{optional population haplotype table.  When supplied, it is
+attached for guide/PAM conservation warnings and the generic haplotype
+track; when absent, CRISPR warns that guide/PAM conservation is unchecked.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend for the guide-specificity scan.}
 }
@@ -58,7 +65,7 @@ passes the hard gates.
 }
 \description{
 The Cas-mediated detection analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: an isothermal
-pre-amplification pair (RPA / LAMP) straddles the variant and a guide RNA is
+RPA pre-amplification pair straddles the variant and a guide RNA is
 placed so its spacer covers the variant, with the variant in the seed or
 critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer; Cas13
 is PAM-free.  The guide must also be unique in the genome (no off-target
@@ -68,12 +75,12 @@ predicted signal.
 }
 \details{
 The guide is chosen best-first among all candidates whose pre-amplification
-pair also passes \emph{that chemistry's} composition filters (RPA or LAMP, never a
-KASP PCR), so a guide is only returned when its amplicon is designable too.
-The soft gates (amplicon window, GC, spacer length, off-target count) are
-relaxed one at a time, least grave first, only when no guide clears them all;
-the PAM (Cas12a) and the seed/critical region are hard - no guide is returned
-past them.
+pair also passes \emph{that chemistry's} composition filters (RPA, never a KASP
+PCR), so a guide is only returned when its amplicon is designable too.
+The soft gates (amplicon window, GC, spacer length) are relaxed one at a
+time, least grave first, only when no guide clears them all; the PAM
+(Cas12a), the seed/critical region and guide specificity (no off-target
+protospacer) are hard - no guide is returned past them.
 }
 \examples{
 \dontrun{

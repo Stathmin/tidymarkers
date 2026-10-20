@@ -9,7 +9,8 @@ design_caps_marker(
   snp,
   flank = 250L,
   enzymes = restriction_enzymes(),
-  min_gap = 50L
+  min_gap = 50L,
+  haplotypes = NULL
 )
 }
 \arguments{
@@ -22,11 +23,17 @@ design_caps_marker(
 \item{enzymes}{enzyme table (see \code{\link[=restriction_enzymes]{restriction_enzymes()}}).}
 
 \item{min_gap}{minimal band separation to require (see \code{\link[=find_caps_enzymes]{find_caps_enzymes()}}).}
+
+\item{haplotypes}{optional population haplotype table.  When supplied, it is
+attached for the generic haplotype track and population check rows; when
+absent, CAPS warns that restriction-site frequency/conservation is unchecked.}
 }
 \value{
-a \code{marker_caps} list (\code{snp}, \code{enzyme}, \code{fragments_ref}, \code{fragments_alt},
-\code{gap}, \code{primers}, \code{amplicon}), or \code{NULL} (with a message) when no enzyme
-separates the alleles.
+a \code{marker_caps} list (\code{snp}, \code{enzyme}, \code{site}, \code{fragments_ref},
+\code{fragments_alt}, \code{gap}, \code{primers}, \code{amplicon}), or \code{NULL} (with a message)
+when no enzyme separates the alleles.  \code{site} carries the recognition
+\code{start}/\code{end}, \code{motif}, \code{cut} offset and whether it is primer-introduced
+(\code{dcaps}).
 }
 \description{
 The CAPS analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: find the enzyme whose digest
@@ -48,7 +55,6 @@ Other KASP CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
-\code{\link[=plot_caps_gel]{plot_caps_gel()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
 \concept{KASP CAPS}

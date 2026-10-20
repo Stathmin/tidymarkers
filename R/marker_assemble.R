@@ -286,7 +286,7 @@ marker_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm
 #'
 #' At a degenerate (all-SNP multi-allelic) site one physical ALT primer must bind
 #' every ALT, so its 3'-terminal base has to be the IUPAC code over the whole ALT
-#' set ([iupac_code()]) and must not also match REF (an "ALT" primer that extends
+#' set (`iupac_code()`) and must not also match REF (an "ALT" primer that extends
 #' the reference template discriminates nothing).  The engine carries that
 #' consensus in `alt_degen`; this verifies it instead of trusting it, so a site
 #' whose ALT set no single primer can cover is *doomed* rather than returned as a
@@ -501,7 +501,7 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #' @param on_offtarget the specificity policy (roadmap Y3): `"doom"` - a pairing
 #'   that fails the genome-level screen is not returned, the target is doomed with
 #'   the reason; `"warn"` - keep the warned ranked leader.  `NULL` (default)
-#'   follows the scheme's own policy ([kasp_specificity()]): `unique` /
+#'   follows the scheme's own policy (`marker_specificity()`): `unique` /
 #'   `homeolog-aware` doom, the tolerant default `multicopy` / `off` warn.
 #' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
 #' @param cores processors for the per-SNP subprocess work (the DECIPHER PCR
@@ -564,7 +564,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # (no silent warn-and-return); `multicopy`/`off`/`homeolog-aware` keep the
   # warned leader.  `on_offtarget` overrides the scheme's own policy.
   on_offtarget <- on_offtarget %||%
-    if (kasp_specificity(scheme) %in% KASP_SPECIFICITY_STRICT) "doom" else "warn"
+    if (marker_specificity(scheme) %in% KASP_SPECIFICITY_STRICT) "doom" else "warn"
   on_offtarget <- match.arg(on_offtarget, c("warn", "doom"))
   # one-line install UX: a missing tool is a hint (once per session), not a silent NA
   if (!has_oligoarrayaux() && !isTRUE(.marker_state$tool_hint_shown)) {

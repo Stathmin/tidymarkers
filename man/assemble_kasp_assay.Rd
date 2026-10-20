@@ -82,7 +82,7 @@ decision graph and to grade the acceptance checks, so a scheme never shows
 \item{on_offtarget}{the specificity policy (roadmap Y3): \code{"doom"} - a pairing
 that fails the genome-level screen is not returned, the target is doomed with
 the reason; \code{"warn"} - keep the warned ranked leader.  \code{NULL} (default)
-follows the scheme's own policy (\code{\link[=kasp_specificity]{kasp_specificity()}}): \code{unique} /
+follows the scheme's own policy (\code{marker_specificity()}): \code{unique} /
 \code{homeolog-aware} doom, the tolerant default \code{multicopy} / \code{off} warn.}
 
 \item{cores}{processors for the per-SNP subprocess work (the DECIPHER PCR

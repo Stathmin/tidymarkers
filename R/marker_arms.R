@@ -283,7 +283,9 @@ print.marker_arms <- function(x, ...) {
 #' Draw the expected tetra-primer ARMS gel
 #'
 #' Two lanes (REF and ALT homozygotes) with the control band plus the
-#' allele-specific diagnostic band - the AA / AB / BB readout.
+#' allele-specific diagnostic band - the AA / AB / BB readout.  The gel is
+#' monochrome (allele identity comes from the lane label); band width is an
+#' illustrative Poisson counting cue, not a gel simulator.
 #' @param marker a `marker_arms` object (see [design_arms_marker()]).
 #' @return a `ggplot`.
 #' @examples
@@ -293,6 +295,27 @@ print.marker_arms <- function(x, ...) {
 #' }
 #' @family KASP ARMS
 #' @export
+#' @method marker_map_spec marker_arms
+#' @export
+#' @noRd
+marker_map_spec.marker_arms <- function(marker, scheme = NULL, ...) {
+  of <- marker$outer
+  map_spec(
+    marker,
+    features = list(
+      spec_row("outer F", of$start[1L], of$start[1L] + nchar(of$forward) - 1L, "+", "primer"),
+      spec_row("outer R", of$end[1L] - nchar(of$reverse) + 1L, of$end[1L], "-", "primer"),
+      spec_row("inner REF", marker$inner$ref$start[1L], marker$inner$ref$end[1L], "+", "primer"),
+      spec_row("inner ALT", marker$inner$alt$start[1L], marker$inner$alt$end[1L], "-", "primer")
+    ),
+    sequences = list(
+      "outer F" = of$forward, "outer R" = of$reverse,
+      "inner REF" = marker$inner$ref$primer,
+      "inner ALT" = marker$inner$alt$primer
+    )
+  )
+}
+
 plot_arms_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the ARMS gel"))
   if (!inherits(marker, "marker_arms")) {
@@ -301,19 +324,11 @@ plot_arms_gel <- function(marker) {
   ctrl <- marker$bands$size[marker$bands$band == "control"]
   ref <- marker$bands$size[marker$bands$band == "REF"]
   alt <- marker$bands$size[marker$bands$band == "ALT"]
-  bands <- tibble::tibble(
+  bands <- gel_spec(
     allele = c("REF", "REF", "ALT", "ALT"),
     size = c(ctrl, ref, ctrl, alt),
     diagnostic = c(FALSE, TRUE, FALSE, TRUE)
-  ) |>
-    dplyr::mutate(
-      x = as.numeric(factor(.data$allele, levels = c("REF", "ALT"))),
-      col = dplyr::case_when(
-        !.data$diagnostic ~ "grey65",
-        .data$allele == "REF" ~ KASP_STATUS[["neutral"]],
-        TRUE ~ KASP_STATUS[["broken"]]
-      )
-    )
+  )
   gel_plot(
     bands, c("REF/REF", "ALT/ALT"), "band size (bp)",
     glue::glue("ARMS gel: {marker$snp$chrom}:{marker$snp$pos}"),

@@ -12,9 +12,11 @@
 #  This registry names those chemistries.  `marker_criteria()` tags each criterion
 #  with the schemes it applies to, so the decision schema, the text export and
 #  the picture can be filtered per chemistry without a second vocabulary to keep
-#  in step.  The marker-agnostic primer checks (Tm, GC, runs, repeats, dimers,
-#  off-targets) belong to every scheme - including a bare `"primer"` scheme that
-#  is *not* a KASP at all but the reusable "any primer pair" core.
+#  in step.  The marker-agnostic primer checks (amplicon length, runs, repeats,
+#  dimers, off-targets) belong to every scheme - including a bare `"primer"`
+#  scheme that is *not* a KASP at all but the reusable "any primer pair" core.
+#  The AS/COM oligo Tm and GC windows belong to the allele-specific class instead:
+#  they only make sense where both of those primers exist.
 #
 #  Membership is decided by the scheme's `family`, not by hand: the acceptance
 #  checks fall into three classes (marker-agnostic, KASP-selector *site*, and
@@ -40,11 +42,11 @@ KASP_SCHEME_ALL <- c(
 )
 
 # The acceptance checks that are true of any primer pair, KASP or not.  Their
-# complement is the allele-specific machinery (discrimination, the hierarchical
-# AS/COM Tm rule, the variant footprints, the ALT PCR) - the part that *is* KASP.
+# complement is the allele-specific machinery (the AS/COM Tm and GC windows, the
+# hierarchical Tm rule, discrimination, the variant footprints, the ALT PCR) - the
+# checks that need an allele-anchoring primer.
 KASP_CHECK_PRIMER <- c(
-  "amplicon length (bp)", "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
-  "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
+  "amplicon length (bp)", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
   "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
   "worst cross-dimer dG37", "worst homodimer dG37",
   "off-target exact primer hits (n)"
@@ -59,30 +61,79 @@ KASP_CHECK_SITE <- c(
   "ALT primer covers all ALTs", "design relies on linkage"
 )
 
-# The 9 allele-specific assay checks: they read the AS primer (its Tm ordering,
-# its 3' window / footprint) and the allele-specific in-silico PCR, so they apply
-# only to a chemistry that actually has an allele-anchoring primer.  The three
-# classes partition the 26 registered checks (test-criteria guards that).
+# The 13 allele-specific assay checks: they read the AS/COM primers (their Tm
+# and GC windows, the Tm ordering, the 3' window / footprint) and the
+# allele-specific in-silico PCR, so they apply only to a chemistry that actually
+# has an allele-anchoring primer.  The three classes partition the 26 registered
+# checks (test-criteria guards that).
 KASP_CHECK_AS <- c(
+  "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
   "COM Tm >= AS Tm",
   "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
   "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout",
   "discrimination", "in-silico PCR (REF 1 / ALT 0)"
 )
 
+# Family-specific checks.  These are not KASP checks, so they use the MARKER_
+# prefix.  The generic primer QC checks above still apply to every scheme.
+MARKER_CHECK_CAPS <- c(
+  "restriction site defined", "restriction site separates alleles",
+  "band gap (bp)", "digest sums to amplicon",
+  "restriction site conserved (population)"
+)
+MARKER_CHECK_LAMP <- c(
+  "FIP 3' ALT", "inner arm Tm balance (C)",
+  "inner arms inside amplicon", "variant at FIP 3' end"
+)
+MARKER_CHECK_RPA <- c(
+  "primer length (nt)", "THF off variant",
+  "RPA probe spans variant", "variant under primer/probe"
+)
+MARKER_CHECK_CRISPR <- c(
+  "PAM valid", "variant in seed", "guide spans variant",
+  "guide/PAM conserved (population)", "off-target protospacers (n)"
+)
+MARKER_CHECK_PROBE <- c(
+  "probe spans variant", "probe Tm - primer Tm (C)",
+  "ASP 3' discrimination", "extension 3' at variant"
+)
+MARKER_CHECK_SANGER <- c(
+  "variant-read distance (bp)", "read primers inside amplicon",
+  "read primer pair defined"
+)
+MARKER_CHECK_SIZE <- c(
+  "repeat unit (nt)", "repeat copies",
+  "REF/ALT size difference (bp)", "fragment size (bp)"
+)
+
+MARKER_FAMILY_CHECKS <- list(
+  caps = MARKER_CHECK_CAPS,
+  lamp = MARKER_CHECK_LAMP,
+  rpa = MARKER_CHECK_RPA,
+  crispr = MARKER_CHECK_CRISPR,
+  taqman = MARKER_CHECK_PROBE,
+  dpcr = MARKER_CHECK_PROBE,
+  snapshot = MARKER_CHECK_PROBE,
+  castpcr = MARKER_CHECK_PROBE,
+  sanger = MARKER_CHECK_SANGER,
+  ssr = MARKER_CHECK_SIZE,
+  indel_size = MARKER_CHECK_SIZE
+)
+
 # family -> the non-primer check classes that chemistry obeys.  Keyed by `family`
 # (not by scheme), so a discovered chemistry inherits its family's set with no
 # per-scheme edit here.  `site` = the KASP ALT-primer/linkage selector applies
 # (the `as`/`pair` stages, plus the discovered `kasp` family such as `lax`);
-# `as` = the chemistry has an allele-anchoring primer (`kasp`/`multiplex`/`asq`
-# and castPCR's 3'-terminal AS primer).  Everything else is the marker-agnostic
-# primer subset only.
+# `as` = the chemistry grades an AS/COM primer pair (`kasp`/`multiplex`/`asq`).
+# Everything else is the marker-agnostic primer subset only.
 KASP_FAMILY_CHECKS <- list(
   primer = character(0),
   kasp = c("site", "as"),
   multiplex = c("site", "as"),
   asq = c("site", "as"),
-  castpcr = c("site", "as"),
+  # castPCR is mutant-only (one ASP, no REF primer / COM allele rule): its own
+  # gates enforce mutant specificity, so it takes none of the KASP `as` checks.
+  castpcr = character(0),
   caps = character(0),
   arms = character(0),
   hrm = character(0),
@@ -120,7 +171,7 @@ KASP_SPECIFICITY_STRICT <- c("unique", "homeolog-aware")
 #' @return one of `KASP_SPECIFICITY_MODES`.
 #' @keywords internal
 #' @noRd
-kasp_specificity <- function(scheme = "snp") {
+marker_specificity <- function(scheme = "snp") {
   mode <- extra_scheme_defs()[[scheme]]$specificity %||% "multicopy"
   if (!mode %in% KASP_SPECIFICITY_MODES) {
     cli::cli_abort(gettext("Unknown specificity mode {mode} for scheme {scheme}."))
@@ -133,7 +184,7 @@ kasp_specificity <- function(scheme = "snp") {
 #' One row per chemistry: how it tells the alleles apart, how the signal is read,
 #' the zygosity it can call, whether amplicon length is critical, and how many
 #' loci share a reaction.  Each scheme is realised in the pipeline as a piece of
-#' the decision schema ([marker_decision_schema()]): every scheme carries the
+#' the decision schema (`marker_decision_schema()`): every scheme carries the
 #' marker-agnostic primer checks, and the allele-specific / target-site checks
 #' follow the scheme's `family` (see `KASP_FAMILY_CHECKS`), so a non-KASP
 #' chemistry is never graded on an AS primer it does not have.  A duplex
@@ -202,7 +253,7 @@ marker_scheme <- function(scheme = "snp") {
 
 #' The schemes each check applies to (a list, one element per label)
 #'
-#' Membership is family-based ([KASP_FAMILY_CHECKS]): a `KASP_CHECK_PRIMER`
+#' Membership is family-based (`KASP_FAMILY_CHECKS`): a `KASP_CHECK_PRIMER`
 #' criterion belongs to every scheme, a `KASP_CHECK_SITE` criterion to the
 #' families whose selector models the ALT-allele set / linkage, and a
 #' `KASP_CHECK_AS` criterion to the families with an allele-anchoring primer.  A
@@ -226,7 +277,9 @@ check_schemes <- function(label) {
     } else if (l %in% KASP_CHECK_AS) {
       in_class("as")
     } else {
-      character(0)
+      s$scheme[vapply(s$family, function(f) {
+        l %in% (MARKER_FAMILY_CHECKS[[f]] %||% character(0))
+      }, logical(1))]
     }
   })
 }

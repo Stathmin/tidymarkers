@@ -57,7 +57,7 @@ TAQMAN_AMPLICON_RELAX <- 20L
 
 #' Probe candidates centred over a variant
 #'
-#' Reuses [primer_candidates()] for the composition screen (GC, Tm, runs, SSR),
+#' Reuses `primer_candidates()` for the composition screen (GC, Tm, runs, SSR),
 #' keeps the plus-strand windows that span the variant and avoid a 5'-G, and adds
 #' the variant's position in the probe and a `centrality` in `[0, 1]` (1 = the
 #' variant is exactly central, 0 = at an end).
@@ -159,13 +159,20 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     cli::cli_inform(gettext("No short flanking primer pair passed the Tm/GC filters for TaqMan."))
     return(NULL)
   }
-  # the probe must lie inside the amplicon (Wikipedia: it anneals within the
-  # amplified region) and keep the variant away from its ends.  The search dips
-  # below the centrality gate by its floor so the ladder can report the relaxation
-  # instead of silently failing; the ranking still prefers the most central probe.
+  # the probe must lie strictly between the primer 3' ends (not merely inside the
+  # amplicon): overlapping either primer lets the primer out-compete the probe.
+  # The inner bounds are the ones pick_dpcr_probe() uses for the dPCR sibling,
+  # and the search still dips below the centrality gate by its floor so the ladder
+  # can report the relaxation; the ranking prefers the most central probe.
+  inner_lo <- primers$start + nchar(primers$forward)
+  inner_hi <- primers$end - nchar(primers$reverse)
+  if (inner_hi - inner_lo + 1L < min(probe_lengths)) {
+    cli::cli_inform(gettext("No composition- and position-clean hydrolysis probe passed the filters."))
+    return(NULL)
+  }
   cand <- taqman_probe_candidates(tmpl$seq, si, probe_lengths, probe_tm, gc_range) |>
     dplyr::filter(
-      .data$start >= primers$start, .data$end <= primers$end,
+      .data$start >= inner_lo, .data$end <= inner_hi,
       .data$centrality >= min_centrality + TAQMAN_CENTRALITY_RELAX
     )
   if (!nrow(cand)) {
@@ -222,9 +229,19 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     homodimer <- NA_real_
   }
   primer_tm_all <- c(out$primers$tm_f, out$primers$tm_r)
+  # Both allele-specific probes must have a single perfect genomic site.  The REF
+  # probe's on-target site is in the reference genome; the ALT probe's on-target
+  # site is the ALT allele, which the reference genome does not carry, so any
+  # reference-genome hit is an off-target (a second site).  Count each probe in
+  # its own allele context (the degenerate alt == genome base case makes the two
+  # probes identical, so the on-target site is already counted).
+  ref_hits <- exact_oligo_hits(ref_probe, genome)
+  alt_hits <- exact_oligo_hits(alt_probe, genome)
+  alt_sites <- if (alt_probe == ref_probe) alt_hits else alt_hits + 1L
+  probes_unique <- ref_hits == 1L && alt_sites == 1L
   graded <- tibble::tibble(
     m_probe_comp = if (comp_ok) 1 else -1,
-    m_probe_specific = if (exact_oligo_hits(ref_probe, genome) == 1L) 1 else -1,
+    m_probe_specific = if (probes_unique) 1 else -1,
     m_probe_structure = pmin(hairpin - KASP_LIMITS$hairpin_dg, homodimer - KASP_LIMITS$homodimer_dg),
     m_probe_tm = min(out$probes$tm[1L] - d$probe_tm_window[1L], d$probe_tm_window[2L] - out$probes$tm[1L]),
     m_primer_tm = min(primer_tm_all - d$primer_tm_window[1L], d$primer_tm_window[2L] - primer_tm_all),
@@ -289,6 +306,27 @@ print.marker_taqman <- function(x, ...) {
 #' @return a named list with the scheme row fields plus the gate/tier vocabulary.
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_taqman
+#' @export
+#' @noRd
+marker_map_spec.marker_taqman <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  pr <- marker$probes
+  sequences <- list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  if (!is.null(pr) && all(c("allele", "probe") %in% names(pr))) {
+    for (i in seq_len(nrow(pr))) {
+      sequences[[paste0("probe ", pr$allele[i])]] <- pr$probe[i]
+    }
+  } else if (!is.null(pr) && "probe" %in% names(pr)) {
+    sequences$probe <- pr$probe[1L]
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), map_probe_rows(pr)),
+    sequences = sequences
+  )
+}
+
 scheme_def_taqman <- function() {
   # the windows the designer applies, read from its formals so the two cannot
   # drift (formals() gives the *default expression*, hence eval())

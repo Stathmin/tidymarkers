@@ -39,7 +39,7 @@ chromosome, see \code{\link[=specificity_seed]{specificity_seed()}}).}
 
 \item{scheme}{optional marker scheme to require (see \code{\link[=marker_schemes]{marker_schemes()}}).  When
 given, ranked candidates are designed one by one with that scheme's engine
-(\code{\link[=marker_design_at]{marker_design_at()}}) and the first \emph{designable} one is returned - "doomed"
+(\code{marker_design_at()}) and the first \emph{designable} one is returned - "doomed"
 depends on the marker type, so a KASP-doomed locus may still make a CAPS or
 ARMS marker.  \code{NULL} keeps the plain best-by-criteria pick.}
 

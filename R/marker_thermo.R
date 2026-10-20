@@ -17,7 +17,9 @@ gc_frac <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStrin
 #' @keywords internal
 #' @noRd
 repeat_regex <- function(unit, min_copies = 3L) {
-  glue::glue("([ACGT]{{{unit}}})\\1{{{min_copies - 1L},}}")
+  # sprintf, not glue: this is called once per sequence per unit on the candidate
+  # grid, and glue's data masking dominated the design profile
+  sprintf("([ACGT]{%d})\\1{%d,}", as.integer(unit), as.integer(min_copies) - 1L)
 }
 
 has_run <- function(seq, n = 4L) stringr::str_detect(seq, repeat_regex(1L, n))
@@ -67,8 +69,9 @@ bp_lapply <- function(X, FUN, BPPARAM) {
 #' @family KASP QC
 #' @export
 find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
+  pats <- repeat_regex(units, min_copies)
   purrr::map(seq, function(s) {
-    purrr::map(units, function(u) stringr::str_match_all(s, repeat_regex(u, min_copies))[[1L]][, 2L]) |>
+    purrr::map(pats, function(p) stringr::str_match_all(s, p)[[1L]][, 2L]) |>
       purrr::list_c() |>
       unique()
   })
@@ -84,7 +87,13 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 #' @family KASP QC
 #' @export
 has_repeat <- function(seq, units = 2:4, min_copies = 3L) {
-  lengths(find_repeats(seq, units, min_copies)) > 0L
+  if (!length(units)) {
+    return(rep(FALSE, length(seq)))
+  }
+  # a boolean question must not extract every match: one vectorised detect per
+  # unit over the whole candidate vector
+  pats <- repeat_regex(units, min_copies)
+  Reduce(`|`, lapply(pats, function(p) stringr::str_detect(seq, p)))
 }
 
 #' Inverted repeats / palindromes in a primer (library screen)
@@ -154,7 +163,8 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' @family KASP thermodynamics
 #' @export
 primer_tm <- function(seq, DMSO = PCR_COND$DMSO, nn_table = NN_TABLE) {
-  gr <- TmCalculator::to_genomic_ranges(as.character(seq))
+  seq <- as.character(seq)
+  gr <- TmCalculator::to_genomic_ranges(seq)
   res <- TmCalculator::tm_calculate(gr,
     method = "tm_nn", nn_table = nn_table,
     Na = PCR_COND$Na, Mg = PCR_COND$Mg, dNTPs = PCR_COND$dNTPs, DMSO = DMSO
@@ -269,9 +279,11 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
       i = gettext("run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R")
     ))
   }
+  primers <- as.character(primers)
+  targets <- as.character(targets)
   with_oligoarrayaux(as.numeric(DECIPHER::CalculateEfficiencyPCR(
-    primer = Biostrings::DNAStringSet(as.character(primers)),
-    target = Biostrings::DNAStringSet(as.character(targets)),
+    primer = Biostrings::DNAStringSet(primers),
+    target = Biostrings::DNAStringSet(targets),
     temp = temp, P = P, ions = ions, taqEfficiency = TRUE,
     processors = max(1L, as.integer(cores))
   )))

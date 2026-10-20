@@ -22,15 +22,30 @@ lax_chunk <- function() {
   marker_chunk(lax_hp, from = 281L, to = 581L)
 }
 
+# The design is deterministic and takes tens of seconds: build each path once and
+# let the assertions read the same object instead of re-running the search.
+lax_design <- local({
+  cache <- new.env(parent = emptyenv())
+  function(with_haplotypes = TRUE) {
+    key <- if (with_haplotypes) "haplotypes" else "plain"
+    if (!is.null(cache[[key]])) {
+      return(cache[[key]])
+    }
+    ch <- lax_chunk()
+    snp <- tibble::tibble(chrom = "SAT2", pos = 151L, ref = "A", alt = "G")
+    args <- list(chunk_genome(ch), snp, flank = 150L, cores = 1L)
+    if (with_haplotypes) {
+      args$haplotypes <- chunk_haplotypes(ch)
+    }
+    cache[[key]] <- suppressWarnings(do.call(design_lax_marker, args))
+    cache[[key]]
+  }
+})
+
 test_that("design_lax_marker groups matching ALT haplotypes into one primer each", {
   skip_if(is.null(lax_hp), "bundled SAT2 FASTA not found")
   skip_if_no_oligoarrayaux()
-  ch <- lax_chunk()
-  snp <- tibble::tibble(chrom = "SAT2", pos = 151L, ref = "A", alt = "G")
-  x <- suppressWarnings(design_lax_marker(
-    chunk_genome(ch), snp, chunk_haplotypes(ch),
-    flank = 150L, cores = 1L
-  ))
+  x <- lax_design()
   expect_s3_class(x, "marker_lax")
   # every ALT haplotype is covered, but haplotypes with the same linked variants
   # collapse to a single ALT primer group
@@ -54,9 +69,7 @@ test_that("design_lax_marker groups matching ALT haplotypes into one primer each
 test_that("design_lax_marker leaves a plain ALT primer without haplotypes", {
   skip_if(is.null(lax_hp), "bundled SAT2 FASTA not found")
   skip_if_no_oligoarrayaux()
-  ch <- lax_chunk()
-  snp <- tibble::tibble(chrom = "SAT2", pos = 151L, ref = "A", alt = "G")
-  x <- suppressWarnings(design_lax_marker(chunk_genome(ch), snp, flank = 150L, cores = 1L))
+  x <- lax_design(with_haplotypes = FALSE)
   expect_s3_class(x, "marker_lax")
   expect_equal(x$alt, "ALT")
   expect_length(x$assays, 1L)
@@ -130,12 +143,7 @@ test_that("lax's DAG shows the hard coverage gate, a two-rung ladder and its tie
 test_that("design_lax_marker evaluates the lax gates and records them (C7)", {
   skip_if(is.null(lax_hp), "bundled SAT2 FASTA not found")
   skip_if_no_oligoarrayaux()
-  ch <- lax_chunk()
-  snp <- tibble::tibble(chrom = "SAT2", pos = 151L, ref = "A", alt = "G")
-  x <- suppressWarnings(design_lax_marker(
-    chunk_genome(ch), snp, chunk_haplotypes(ch),
-    flank = 150L, cores = 1L
-  ))
+  x <- lax_design()
   expect_setequal(
     names(x$selection),
     c(

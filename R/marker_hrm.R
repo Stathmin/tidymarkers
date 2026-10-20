@@ -83,7 +83,7 @@ KASP_GATE_HARD_LABEL_HRM <- c(
 
 #' The best HRM flanking pair: shortest melt domain, then the most balanced Tm
 #'
-#' The HRM-specific sibling of [design_flanking_pair()]: the pair must sit
+#' The HRM-specific sibling of `design_flanking_pair()`: the pair must sit
 #' strictly outside `[lo, hi]`, the product must fall in `[min_product,
 #' max_product]` (the hard amplicon gate), and the survivors are ranked by the
 #' two declared tiers - the variant as central in the amplicon as possible, then
@@ -94,7 +94,7 @@ KASP_GATE_HARD_LABEL_HRM <- c(
 #' @param lengths primer lengths to try.
 #' @param min_product,max_product accepted amplicon window.
 #' @param tm_range,gc_range accepted primer windows.
-#' @return a pair list (see [pair_to_list()]), or `NULL`.
+#' @return a pair list (see `pair_to_list()`), or `NULL`.
 #' @keywords internal
 #' @noRd
 hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
@@ -161,6 +161,13 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
                               min_product = KASP_LIMITS$amplicon[1L],
                               max_product = KASP_LIMITS$amplicon[2L], lengths = 18:25,
                               tm_range = KASP_LIMITS$com_tm, gc_range = KASP_LIMITS$gc) {
+  ref <- toupper(as.character(snp$ref)[1L])
+  alt <- toupper(as.character(snp$alt)[1L])
+  if (nchar(ref) == 1L && nchar(alt) == 1L && ref %in% c("A", "T") && alt %in% c("A", "T")) {
+    cli::cli_warn(gettext(
+      "A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and a positive control."
+    ))
+  }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   # the variant must sit in the melt *domain*, under neither primer: the pair
@@ -229,6 +236,18 @@ print.marker_hrm <- function(x, ...) {
 #' }
 #' @family KASP HRM
 #' @export
+#' @method marker_map_spec marker_hrm
+#' @export
+#' @noRd
+marker_map_spec.marker_hrm <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  map_spec(
+    marker,
+    features = map_pair_rows(marker, sp[["start"]], sp[["end"]]),
+    sequences = list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  )
+}
+
 plot_hrm_amplicon <- function(marker) {
   if (!inherits(marker, "marker_hrm")) {
     cli::cli_abort(gettext("`marker` must be a marker_hrm object (see design_hrm_marker())."))
@@ -248,7 +267,7 @@ plot_hrm_amplicon <- function(marker) {
     ggplot2::geom_segment(
       data = primers,
       ggplot2::aes(x = .data$x, xend = .data$xend, y = 1.3, yend = 1.3),
-      linewidth = 2.2, colour = "#4477aa", lineend = "round"
+      linewidth = 2.2, colour = "#57534E", lineend = "round"
     ) +
     ggplot2::geom_segment(
       data = tibble::tibble(x = marker$snp$pos),

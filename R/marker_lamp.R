@@ -105,6 +105,58 @@ LAMP_SELFCOMP <- 6L
 #'   registry's schemes).
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_lamp
+#' @export
+#' @noRd
+marker_map_spec.marker_lamp <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  start <- sp[["start"]]
+  end <- sp[["end"]]
+  f3 <- nchar(marker$primers$F3)
+  b3 <- nchar(marker$primers$B3)
+  loop <- marker$loop
+  arms <- marker$lamp_arms
+  if (!is.null(arms)) {
+    fip <- marker$primers$FIP
+    bip <- marker$primers$BIP
+    fa <- arms$FIP
+    ba <- arms$BIP
+    n5f <- fa$arm5[2L] - fa$arm5[1L] + 1L
+    n5b <- ba$arm5[2L] - ba$arm5[1L] + 1L
+    return(map_spec(
+      marker,
+      features = list(
+        spec_row("F3", start, start + f3 - 1L, "+", "primer"),
+        spec_row("B3", end - b3 + 1L, end, "-", "primer"),
+        spec_row("FIP 5'", fa$arm5[1L], fa$arm5[2L], "-", "primer"),
+        spec_row("FIP 3'", fa$arm3[1L], fa$arm3[2L], "+", "primer"),
+        spec_row("BIP 5'", ba$arm5[1L], ba$arm5[2L], "-", "primer"),
+        spec_row("BIP 3'", ba$arm3[1L], ba$arm3[2L], "-", "primer")
+      ),
+      sequences = list(
+        F3 = marker$primers$F3, B3 = marker$primers$B3,
+        "FIP 5'" = substr(fip, 1L, n5f),
+        "FIP 3'" = substr(fip, n5f + 1L, nchar(fip)),
+        "BIP 5'" = substr(bip, 1L, n5b),
+        "BIP 3'" = substr(bip, n5b + 1L, nchar(bip))
+      )
+    ))
+  }
+  map_spec(
+    marker,
+    features = list(
+      spec_row("F3", start, start + f3 - 1L, "+", "primer"),
+      spec_row("B3", end - b3 + 1L, end, "-", "primer"),
+      spec_row("FIP", start, loop$start[1L] - 1L, "+", "primer"),
+      spec_row("BIP", loop$end[1L] + 1L, end, "-", "primer")
+    ),
+    sequences = list(
+      F3 = marker$primers$F3, B3 = marker$primers$B3,
+      FIP = marker$primers$FIP, BIP = marker$primers$BIP
+    )
+  )
+}
+
 scheme_def_lamp <- function() {
   list(
     scheme = "lamp",
@@ -156,7 +208,7 @@ lamp_revcomp <- function(x) {
   as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(x)))
 }
 
-#' A guarded [primer_candidates()] for the narrow windows LAMP probes
+#' A guarded `primer_candidates()` for the narrow windows LAMP probes
 #'
 #' The shared screener fails in `primer_tm()` when every candidate is removed by
 #' its homopolymer / SSR filter; LAMP arm windows can be that narrow, so an empty
@@ -200,12 +252,14 @@ lamp_arm_sites <- function(seq, starts, lengths, tm_range, gc_range, reverse, to
 #' Fuse two arm sites into an inner primer (FIP or BIP)
 #'
 #' `five` is the 5' (loop) arm's plus-strand site, `three` the 3' (displacement)
-#' arm's; the inner primer is `five + three` for a forward primer and
-#' `revcomp(five) + revcomp(three)` for a reverse one.  The arms must be
-#' non-overlapping with at least `min_gap` single-stranded loop between them, the
-#' fusion must be free of inverted repeats, and the best is the most compact pair
-#' (shortest loop, so the outer F3/B3 pair still has room to flank it), then the
-#' one whose binding Tm is closest to `target_tm`.
+#' arm's.  The 5' loop arm is always the reverse complement of its plus-strand
+#' site, so FIP is `revcomp(F1 site) + F2 site` and BIP is
+#' `revcomp(B1 site) + revcomp(B2 site)` (BIP is a minus-strand oligo, so both
+#' arms are complemented).  The arms must be non-overlapping with at least
+#' `min_gap` single-stranded loop between them, the fusion must be free of
+#' inverted repeats, and the best is the most compact pair (shortest loop, so the
+#' outer F3/B3 pair still has room to flank it), then the one whose binding Tm is
+#' closest to `target_tm`.
 #' @keywords internal
 #' @noRd
 lamp_fuse <- function(five, three, target_tm, min_gap, reverse = FALSE) {
@@ -215,9 +269,14 @@ lamp_fuse <- function(five, three, target_tm, min_gap, reverse = FALSE) {
   f <- dplyr::rename(five, s1 = "start", e1 = "end", p1 = "primer", t1 = "tm")
   t <- dplyr::rename(three, s2 = "start", e2 = "end", p2 = "primer", t2 = "tm")
   pairs <- dplyr::cross_join(f, t) |>
-    dplyr::filter(.data$e1 < .data$s2, .data$s2 - .data$e1 - 1L >= min_gap) |>
+    dplyr::filter(
+      .data$e1 < .data$s2, .data$s2 - .data$e1 - 1L >= min_gap,
+      # inner-primer 5' (F1c/B1c) arm is the hot arm; the 3' displacement
+      # arm (F2/B2) must be cooler so the loop opens after the 5' arm binds
+      .data$t1 > .data$t2
+    ) |>
     dplyr::mutate(
-      a1 = if (reverse) lamp_revcomp(.data$p1) else .data$p1,
+      a1 = lamp_revcomp(.data$p1),
       a2 = if (reverse) lamp_revcomp(.data$p2) else .data$p2,
       tm_bind = pmax(.data$t1, .data$t2)
     ) |>
@@ -250,9 +309,16 @@ lamp_fuse <- function(five, three, target_tm, min_gap, reverse = FALSE) {
 #' @return a list (`primer`, `tm`, `arm5`, `arm3`), or `NULL`.
 #' @keywords internal
 #' @noRd
-lamp_fip <- function(seq, q, arm_lengths, tm_range, gc_range, target_tm, min_loop) {
+lamp_fip <- function(seq, q, arm_lengths, tm_range, gc_range, target_tm, min_loop,
+                     alt_base = NULL) {
   if (q <= 1L) {
     return(NULL)
+  }
+  # The FIP 3' arm must read the ALT allele.  The template is REF, so replace
+  # the anchor base before enumerating the 3' arm; the 5' arm is unaffected.
+  if (!is.null(alt_base) && nchar(alt_base) == 1L) {
+    seq <- as.character(seq)
+    substr(seq, q, q) <- alt_base
   }
   # 3' arm: end exactly at the variant (start = q - len + 1)
   three <- lamp_arm_sites(
@@ -273,8 +339,8 @@ lamp_fip <- function(seq, q, arm_lengths, tm_range, gc_range, target_tm, min_loo
 #' and its 3' arm (B2) binds farther downstream, leaving the B loop; it is a
 #' minus-strand oligo (extends leftward).
 #' @param after plus-strand coordinate the BIP arms must start after.
-#' @param ... see [lamp_fip()].
-#' @return a list (see [lamp_fip()]), or `NULL`.
+#' @param ... see `lamp_fip()`.
+#' @return a list (see `lamp_fip()`), or `NULL`.
 #' @keywords internal
 #' @noRd
 lamp_bip <- function(seq, after, arm_lengths, tm_range, gc_range, target_tm, min_loop) {
@@ -351,7 +417,7 @@ lamp_pool_compatibility <- function(primers, slack = 0L) {
 #' the inner FIP/BIP pair are placed so the variant sits at the 3' terminus of
 #' FIP's displacement arm (F2) - where a 3' mismatch blocks the strand-displacing
 #' polymerase and so discriminates the alleles.  FIP and BIP are two-arm fusions
-#' (`F1c+F2`, `B1c+B2`) built by [lamp_fip()] / [lamp_bip()]; F3/B3 reuse the
+#' (`F1c+F2`, `B1c+B2`) built by `lamp_fip()` / `lamp_bip()`; F3/B3 reuse the
 #' generic pair search over the inner block; the optional loop primers LF/LB are
 #' placed in the F1c/F2 and B1c/B2 loops.  The designer does **not** simulate the
 #' isothermal reaction (that needs a polymerase/kinetics model), so it returns a
@@ -402,7 +468,10 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
   attempt <- function(relaxed) {
     # FIP carries the mutation (its 3' arm ends at the variant); BIP sits
     # downstream so the two inner primers never overlap.
-    fip <- lamp_fip(tmpl$seq, q, arm_lengths, inner_tm, gc_range, target_tm, LAMP_LOOP_MIN)
+    fip <- lamp_fip(
+      tmpl$seq, q, arm_lengths, inner_tm, gc_range, target_tm, LAMP_LOOP_MIN,
+      alt_base = if (nchar(snp$alt[1L]) == 1L) snp$alt[1L] else NULL
+    )
     if (is.null(fip)) {
       return(NULL)
     }
@@ -422,7 +491,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     amp_hi <- if ("gate_lamp_amplicon" %in% relaxed) max_product + LAMP_AMPLICON_RELAX else max_product
     fwd <- lamp_candidates(tmpl$seq, seq_len(max(1L, lo - 1L)), outer_lengths, tm_win, gc_range) |>
       dplyr::filter(.data$end < lo, !has_palindrome(.data$primer))
-    rev <- lamp_candidates(tmpl$seq, seq.int(hi + 1L, n), outer_lengths, tm_win, gc_range) |>
+    rev <- lamp_candidates(tmpl$seq, seq.int(hi + 1L, n), outer_lengths, tm_win, gc_range, strand = "-") |>
       dplyr::filter(!has_palindrome(.data$primer))
     pair <- pick_primer_pair(fwd, rev, amp_lo, amp_hi)
     if (is.null(pair)) {
@@ -498,6 +567,12 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     amplicon = tibble::tibble(start = outer$start + off, end = outer$end + off),
     # the F2-B2 loop the inner primers read, for reference
     loop = tibble::tibble(start = fip$arm3[2] + 1L + off, end = bip$arm5[1] - 1L + off),
+    # genomic arm coordinates: FIP/BIP are fusions, only these arms align to the
+    # reference and can carry sequence letters on the map
+    lamp_arms = list(
+      FIP = list(arm5 = fip$arm5 + off, arm3 = fip$arm3 + off),
+      BIP = list(arm5 = bip$arm5 + off, arm3 = bip$arm3 + off)
+    ),
     tm = c(F3 = outer$tm_f, B3 = outer$tm_r, FIP = fip$tm, BIP = bip$tm),
     variant_primer = "FIP",
     gates = gates,

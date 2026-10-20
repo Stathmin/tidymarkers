@@ -5,10 +5,16 @@
 ## Быстрый цикл разработки
 
 ```r
+# окружение: Imports + dev/test-инструменты, без тяжёлых Suggests
+# (быстрее, чем renv::restore(): без исторического 262-пакетного dev-лока)
+# Rscript dev/install-deps.R                  # зависимости + сам пакет
+# Rscript dev/install-deps.R --with-suggests  # полный набор, для R CMD check
+
 # загрузить пакет из исходников, без установки
 pkgload::load_all()
 
-# тесты (наследуют namespace, внутренние функции доступны без :::)
+# быстрые тесты; --full добавляет внешние сверки (BLAST/Rsubread/аннотации/SOCK)
+# Rscript dev/test.R --full
 testthat::test_local()
 
 # документация из roxygen -> NAMESPACE + man/

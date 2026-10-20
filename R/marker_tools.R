@@ -181,7 +181,7 @@ run_step <- function(command, args = character(), dir = NULL) {
 #'
 #' Downloads the OligoArrayAux source release, verifies its checksum, builds it
 #' and installs it under `dest` (`marker_cache_dir()/tools` by default) - the
-#' directory [oligoarrayaux_paths()] then searches, so the thermodynamics and QC
+#' directory `oligoarrayaux_paths()` then searches, so the thermodynamics and QC
 #' functions start working without any `PATH`/`UNAFOLDDAT` fiddling.
 #'
 #' Nothing is downloaded or written unless you call this function; a working

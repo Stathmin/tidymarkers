@@ -16,6 +16,7 @@ withr::defer(
 )
 
 test_that("annotate_variants reads the gene model (locateVariants)", {
+  skip_if_not_full()
   skip_if_not_installed_noload("TxDb.Athaliana.BioMart.plantsmart28")
   skip_if_not_installed_noload("VariantAnnotation")
   v <- tibble::tibble(
@@ -28,6 +29,7 @@ test_that("annotate_variants reads the gene model (locateVariants)", {
 })
 
 test_that("a BSgenome reference gives codon-level consequences", {
+  skip_if_not_full()
   skip_if_not_installed_noload("TxDb.Athaliana.BioMart.plantsmart28")
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
   skip_if_not_installed_noload("VariantAnnotation")
@@ -43,6 +45,7 @@ test_that("a BSgenome reference gives codon-level consequences", {
 })
 
 test_that("marker_txdb / marker_bsgenome load the default annotation packages", {
+  skip_if_not_full()
   skip_if_not_installed_noload("TxDb.Athaliana.BioMart.plantsmart28")
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
   expect_s4_class(marker_txdb(), "TxDb")
@@ -58,6 +61,7 @@ test_that("an empty or already-annotated table is returned unchanged", {
 })
 
 test_that("marker_ensdb builds an EnsDb from a GTF", {
+  skip_if_not_full()
   skip_if_not_installed("ensembldb")
   skip_if_not_installed("GenomicFeatures")
   skip_if_not_installed("processx")

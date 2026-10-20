@@ -22,9 +22,10 @@ genome sequence (one worker per chromosome with \code{MulticoreParam()}).}
 tibble \code{chrom}, \code{start}, \code{end}, \code{width} (one row per product).
 }
 \description{
-Uses \code{Biostrings::matchProbePair} (the library's own virtual PCR) to find
-each product the forward/reverse pair generates, chromosome by chromosome.
-A KASP test must amplify exactly one product per allele.
+Uses IUPAC-aware \code{Biostrings::matchPattern()} to find forward and reverse
+primer matches, then pairs every forward start with a downstream reverse end
+into a product.  This supports degenerate primers and \code{max_mismatch}; a KASP
+test must amplify exactly one product per allele.
 }
 \examples{
 \dontrun{

@@ -118,7 +118,7 @@ KASP_GATE_HARD_LABEL_SSR <- c(
 
 #' The SSR span nearest (or containing) an anchor in a template
 #'
-#' Reuses [repeat_spans()] for the hit list and returns the widest/nearest span,
+#' Reuses `repeat_spans()` for the hit list and returns the widest/nearest span,
 #' keeping the repeat `unit` and its `copies` so the polymorphism gate can be
 #' scored: a span containing `anchor` wins (the smallest one), otherwise the span
 #' whose midpoint is closest.
@@ -270,12 +270,17 @@ design_ssr_marker <- function(genome, snp, flank = 250L,
     amplicon = tibble::tibble(start = primers$start, end = primers$end),
     selection = list(relaxed = sel$relaxed, violated = sel$violated)
   )
+  # the motif itself is part of the marker: a plot must show `(AC)5`, not an
+  # opaque "2nt x5", and the sequence is what the user can verify in the genome
+  motif <- substr(as.character(tmpl$seq), span$start, span$end)
   # `repeat` is an R reserved word, so the field can only be set/read with [[
   out[["repeat"]] <- tibble::tibble(
     start = span$start + off,
     end = span$end + off,
     unit = span$unit,
-    copies = span$copies
+    copies = span$copies,
+    motif = motif,
+    unit_seq = substr(motif, 1L, span$unit)
   )
   structure(out, class = "marker_ssr")
 }
@@ -294,7 +299,15 @@ print.marker_ssr <- function(x, ...) {
     sep = ""
   )
   if (!is.null(rep_span$copies)) {
-    cat("  motif:", rep_span$unit, "nt x", rep_span$copies, "copies (size marker)\n")
+    unit_seq <- if ("unit_seq" %in% names(rep_span)) rep_span$unit_seq[1L] else NULL
+    motif <- if ("motif" %in% names(rep_span)) rep_span$motif[1L] else NULL
+    formula <- if (!is.null(unit_seq) && !is.na(unit_seq)) {
+      sprintf("(%s)%d", unit_seq, rep_span$copies)
+    } else {
+      sprintf("%d nt x %d", rep_span$unit, rep_span$copies)
+    }
+    seq <- if (!is.null(motif) && !is.na(motif)) paste0("  ", motif) else ""
+    cat("  motif:", formula, seq, "(size marker)\n")
   }
   cat("  amplicon:", x$primers$product, "bp\n")
   cat("  F:", x$primers$forward, "\n  R:", x$primers$reverse, "\n")
@@ -317,6 +330,31 @@ print.marker_ssr <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_ssr
+#' @export
+#' @noRd
+marker_map_spec.marker_ssr <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  tract <- if (!is.null(marker[["repeat"]])) {
+    rp <- marker[["repeat"]]
+    motif <- if ("motif" %in% names(rp)) rp$motif[1L] else NULL
+    unit_seq <- if ("unit_seq" %in% names(rp)) rp$unit_seq[1L] else NULL
+    formula <- ssr_formula(unit_seq, rp$copies[1L])
+    label <- if (is.null(motif)) formula else paste0(formula, "  ", motif)
+    list(spec_row(
+      "repeat tract", rp$start[1L], rp$end[1L], "+", "tract",
+      label = label
+    ))
+  } else {
+    list()
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), tract),
+    sequences = list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  )
+}
+
 scheme_def_ssr <- function() {
   list(
     scheme = "ssr",

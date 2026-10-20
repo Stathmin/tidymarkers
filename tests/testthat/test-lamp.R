@@ -2,12 +2,9 @@
 
 test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FIP's 3' end", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_lamp_marker(genome, snp, flank = 150L)
   expect_s3_class(m, "marker_lamp")
   expect_true(all(c("F3", "B3", "FIP", "BIP") %in% names(m$primers)))
@@ -37,14 +34,70 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   expect_output(print.marker_lamp(m), "FIP:")
 })
 
+test_that("lamp_fuse reverse-complements the 5' loop arm in both orientations", {
+  # non-palindromic arms: the 5' arm is A/C-only, the 3' arm A/C-only, so each
+  # fused primer stays free of inverted repeats (the G/T complement cannot pair).
+  five_seq <- "AAAACCCC"
+  three_seq <- "ACACCAACAC"
+  five <- tibble::tibble(start = 1L, end = 8L, primer = five_seq, tm = 62)
+  three <- tibble::tibble(start = 31L, end = 40L, primer = three_seq, tm = 58)
+
+  fwd <- lamp_fuse(five, three, target_tm = 60, min_gap = 16L, reverse = FALSE)
+  rev <- lamp_fuse(five, three, target_tm = 60, min_gap = 16L, reverse = TRUE)
+
+  # FIP = revcomp(F1 site) + F2 site: its 3' displacement arm stays plus-strand
+  expect_equal(fwd$primer, paste0(lamp_revcomp(five_seq), three_seq))
+  expect_true(startsWith(fwd$primer, lamp_revcomp(five_seq)))
+  expect_true(endsWith(fwd$primer, three_seq))
+  # BIP = revcomp(B1 site) + revcomp(B2 site): both arms are minus-strand
+  expect_equal(rev$primer, paste0(lamp_revcomp(five_seq), lamp_revcomp(three_seq)))
+  expect_true(startsWith(rev$primer, lamp_revcomp(five_seq)))
+  expect_true(endsWith(rev$primer, lamp_revcomp(three_seq)))
+  # the old plus+plus FIP (five + three) must no longer be produced
+  expect_false(identical(fwd$primer, paste0(five_seq, three_seq)))
+  expect_false(identical(fwd$primer, rev$primer))
+})
+
+test_that("B3 is a minus-strand oligo and FIP carries the ALT base at its 3' end", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  W <- f$W
+  genome <- f$genome
+  ref <- f$ref
+  snp <- f$snp
+  m <- design_lamp_marker(genome, snp, flank = 150L)
+
+  # (a) B3 anneals to the plus strand: it is the reverse complement of its
+  # plus-strand window, whose end is the amplicon end.
+  b3_end <- m$amplicon$end
+  b3_start <- b3_end - nchar(m$primers$B3) + 1L
+  expect_equal(
+    m$primers$B3,
+    as.character(Biostrings::reverseComplement(
+      Biostrings::DNAString(substr(W, b3_start, b3_end))
+    ))
+  )
+
+  # (b) FIP's 3' arm (F2) stays plus-strand and ends at the variant, carrying
+  # the ALT base - the allele-specific block.
+  fip_3p <- substr(m$primers$FIP, nchar(m$primers$FIP), nchar(m$primers$FIP))
+  expect_equal(fip_3p, m$snp$alt)
+  expect_false(identical(fip_3p, m$snp$ref))
+
+  # (c) the fusion did not introduce non-ACGT characters or change the lengths
+  expect_match(m$primers$FIP, "^[ACGT]+$")
+  expect_match(m$primers$BIP, "^[ACGT]+$")
+  expect_gte(nchar(m$primers$FIP), 40L)
+  expect_lte(nchar(m$primers$FIP), 50L)
+  expect_gte(nchar(m$primers$BIP), 40L)
+  expect_lte(nchar(m$primers$BIP), 50L)
+})
+
 test_that("print.marker_lamp names the four primers and the loop", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  snp <- tibble::tibble(
-    chrom = "Chr1", pos = 300L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
-  )
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_lamp_marker(genome, snp, flank = 150L)
   expect_output(print.marker_lamp(m), "variant at the FIP 3' end")
   expect_output(print.marker_lamp(m), "B3:")

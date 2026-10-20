@@ -54,6 +54,8 @@ test_that("asq keeps the KASP family's checks, because its core is KASP's (C2)",
   chk <- chk$label[chk$role == "check"]
   expect_true(all(KASP_CHECK_PRIMER %in% chk)) # the marker-agnostic set
   expect_true(all(KASP_CHECK_AS %in% chk)) # the allele-specific core is shared
+  # the AS/COM Tm and GC windows moved into the `as` class with ASQ, not away
+  expect_true(all(c("AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC") %in% chk))
   # the site checks follow the family too
   expect_true(all(KASP_CHECK_SITE %in% chk))
 })

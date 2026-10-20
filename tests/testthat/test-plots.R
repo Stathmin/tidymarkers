@@ -12,10 +12,129 @@ test_that("clamp_window follows the primer's 3' end on either strand", {
   expect_equal(clamp_window(10L, 19L, forward = FALSE, n = 5L), c(10L, 14L))
 })
 
+test_that("one letter size rule covers primers and the amplicon they sit on", {
+  # a short KASP product and a long Sanger read share the same scale within a
+  # plot, but a long product shrinks the whole stack
+  expect_equal(letter_size_for_span(c(1L, 100L)), LETTER_SIZE_DEFAULT)
+  expect_lt(letter_size_for_span(c(1L, 600L)), letter_size_for_span(c(1L, 100L)))
+  expect_equal(letter_size_for_span(c(1L, 600L)), 0.9)
+})
+
+test_that("every registered check has a brief tumbler name", {
+  crit <- marker_criteria()
+  chk <- crit$label[crit$role == "check"]
+  short <- check_short(chk)
+  expect_false(anyNA(short))
+  expect_true(all(nzchar(short)))
+  expect_true(all(nchar(short) <= 16L))
+  # the label -> short table is the single, backtraceable source
+  expect_equal(check_short(names(CHECK_SHORT_MAP)), unname(CHECK_SHORT_MAP))
+  expect_setequal(chk, names(CHECK_SHORT_MAP))
+})
+
+test_that("map_spec is the only amplicon/primer row constructor", {
+  m <- list(
+    amplicon = tibble::tibble(start = 10L, end = 100L),
+    primers = list(forward = "ACGT", reverse = "TGCA")
+  )
+  spec <- map_spec(
+    m,
+    features = map_pair_rows(m, 10L, 100L),
+    sequences = list(forward = "ACGT", reverse = "TGCA")
+  )
+  expect_equal(spec$feature, c("amplicon", "forward", "reverse"))
+  expect_equal(spec$seq, c(NA_character_, "ACGT", "TGCA"))
+  expect_equal(spec$start, c(10L, 10L, 97L))
+})
+
+test_that("only primers inherit the 3' clamp", {
+  expect_equal(
+    feature_clamp_n(c("primer", "seq", "probe", "guide", "site", "blocker")),
+    c(5L, 5L, 0L, 0L, 0L, 0L)
+  )
+})
+
+test_that("primer nose carries Tm text and a status dot", {
+  spec <- tibble::tibble(
+    feature = c("forward", "reverse"),
+    start = c(10L, 90L), end = c(29L, 109L),
+    strand = c("+", "-"), kind = "primer",
+    seq = c("ACGTACGTACGTACGTACGT", "TGCATGCATGCATGCATGCA"),
+    y = c(2L, 1L)
+  )
+  nose <- primer_nose_spec(spec, "caps")
+  expect_equal(nrow(nose), 2L)
+  expect_true(all(grepl("\u00b0C", nose$label)))
+  expect_true(all(c("label_x", "dot_x", "hjust", "status") %in% names(nose)))
+})
+
+test_that("a generic map replaces the SNP strip with a haplotype track", {
+  x <- structure(
+    list(
+      snp = tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G"),
+      amplicon = tibble::tibble(start = 250L, end = 350L),
+      primers = list(
+        forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
+      ),
+      site = NULL,
+      haplotypes = tibble::tibble(
+        haplotype = c("H1", "H2", "H1"), freq = c(0.6, 0.4, 0.6),
+        chrom = "Chr1", pos = c(300L, 300L, 310L),
+        ref = c("A", "A", "C"), alt = c("G", "G", "T")
+      )
+    ),
+    class = "marker_caps"
+  )
+  expect_s3_class(plot_marker_map(x, "caps"), "patchwork")
+})
+
+test_that("gel_spec owns band colour and Poisson width", {
+  g <- gel_spec(c("REF", "ALT"), c(100, 120), c(TRUE, FALSE))
+  expect_equal(g$col, c(GEL_DIAG, GEL_SHARED))
+  expect_true(all(g$width > 0.2 & g$width <= 0.4))
+  expect_equal(g$x, c(1, 2))
+})
+
+test_that("clamp_n = 0 keeps every base plain", {
+  d <- oligo_letters("ACGTACGT", 1L, 8L, TRUE, "probe", clamp_n = 0L)
+  expect_true(all(d$face == "plain"))
+})
+
+test_that("oligo_letters displays a non-DNA mark without DNA structure lookup", {
+  d <- oligo_letters("ACGTXACGT", 1L, 9L, TRUE, "probe")
+  expect_equal(nrow(d), 9L)
+  expect_equal(d$letter[5L], "X")
+})
+
+test_that("oligo_letters accepts reusable span and base marks", {
+  d <- oligo_letters("ACGTACGT", 10L, 17L, TRUE, "p",
+    spans = tibble::tibble(from = 2L, to = 3L, colour = "#ff0000"),
+    bases = tibble::tibble(pos = 2L, face = "bold")
+  )
+  expect_equal(d$colour[d$x == 11L], "#ff0000")
+  expect_equal(d$colour[d$x == 12L], "#ff0000")
+  expect_equal(d$face[d$x == 11L], "bold")
+  # minus strand reads right-to-left; local sequence indices do not change
+  m <- oligo_letters("ACGT", 17L, 20L, FALSE, "p",
+    bases = tibble::tibble(pos = 1L, colour = "#00ff00")
+  )
+  expect_equal(m$x[1L], 20L)
+  expect_equal(m$colour[1L], "#00ff00")
+})
+
+test_that("spec_row carries the shared status/label highlight contract", {
+  r <- spec_row("probe", 10L, 20L, kind = "probe", status = "broken", label = "P")
+  expect_equal(r$status, "broken")
+  expect_equal(r$label, "P")
+  e <- spec_bind(list())
+  expect_named(e, c("feature", "start", "end", "strand", "kind", "status", "label"))
+})
+
 test_that("check values are monospaced, <= 4 chars, formatted per criterion", {
   expect_equal(format_check_value("AS GC", 0.444), "44%")
   expect_equal(format_check_value("COM GC", 0.571), "57%")
   expect_equal(format_check_value("AS Tm", 63.526), "63.5")
+  expect_equal(format_check_value("Tm", 60.24), "60.2")
   expect_equal(format_check_value("dimer", -3.26), "-3.3")
   expect_equal(format_check_value("homodimer", -1.63), "-1.6")
   expect_equal(format_check_value("hairpin", -2.294), "-2.3")
@@ -36,23 +155,33 @@ test_that("check values are monospaced, <= 4 chars, formatted per criterion", {
   expect_true(all(nchar(format_check_value(names, vals)) <= 4L))
 })
 
-# A tiny real assay on a random genome (skips without OligoArrayAux).
-make_plot_assay <- function(seed = 4L, n = 500L, pos = 250L) {
-  for (s in seed:(seed + 19L)) {
-    withr::with_seed(s, {
-      w <- paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
-      genome <- Biostrings::DNAStringSet(c(Chr1 = w))
-    })
-    ref <- as.character(Biostrings::subseq(genome[["Chr1"]], pos, pos))
-    snp <- tibble::tibble(chrom = "Chr1", pos = pos, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
-    vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant", pop_freq = 0.3)
-    a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
-    if (!inherits(a, "try-error") && !inherits(a, "marker_doomed")) {
-      return(list(assay = a, snp = snp, variants = vs, genome = genome))
+# A tiny real assay on a random genome (skips without OligoArrayAux).  The
+# assembly is deterministic and costs seconds, so build each fixture once and let
+# the tests share it.
+make_plot_assay <- local({
+  cache <- new.env(parent = emptyenv())
+  function(seed = 4L, n = 500L, pos = 250L) {
+    key <- paste(seed, n, pos, sep = ":")
+    if (!is.null(cache[[key]])) {
+      return(cache[[key]])
     }
+    for (s in seed:(seed + 19L)) {
+      withr::with_seed(s, {
+        w <- paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+        genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+      })
+      ref <- as.character(Biostrings::subseq(genome[["Chr1"]], pos, pos))
+      snp <- tibble::tibble(chrom = "Chr1", pos = pos, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L])
+      vs <- tibble::tibble(chrom = "Chr1", pos = pos, consequence = "missense_variant", pop_freq = 0.3)
+      a <- try(suppressWarnings(assemble_kasp_assay(genome, snp, variants = vs, flank = 150L)), silent = TRUE)
+      if (!inherits(a, "try-error") && !inherits(a, "marker_doomed")) {
+        cache[[key]] <- list(assay = a, snp = snp, variants = vs, genome = genome)
+        return(cache[[key]])
+      }
+    }
+    testthat::skip("no random genome assembled into an assay")
   }
-  testthat::skip("no random genome assembled into an assay")
-}
+})
 
 test_that("the assay plots render and carry the two-level vocabulary", {
   skip_if_no_oligoarrayaux()

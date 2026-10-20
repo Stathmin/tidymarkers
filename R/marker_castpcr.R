@@ -95,7 +95,7 @@ KASP_TIERS_CASTPCR <- c(
 #' primers (never overlapping the ASP, which would make the two compete for the
 #' same bases), on the plus strand the polymerase reads, avoiding a 5'-G (which
 #' quenches the reporter even after cleavage) and self-complementarity.  Reuses
-#' [primer_candidates()] for every composition check and orders so the probe Tm
+#' `primer_candidates()` for every composition check and orders so the probe Tm
 #' closest to the middle of the accepted window comes first (robust, not marginal).
 #' @param seq the template (plus strand).
 #' @param lo,hi 1-based inclusive inner region (between the primers).
@@ -165,7 +165,7 @@ castpcr_blocker <- function(seq, si, strand, ref, alt, lengths, gc_range) {
 
 #' The most Tm-balanced AS x common pair that still leaves room for the probe
 #'
-#' The castPCR sibling of [pick_primer_pair()]: the same Tm-balance ranking, but
+#' The castPCR sibling of `pick_primer_pair()`: the same Tm-balance ranking, but
 #' the inner gap between the two primers must hold at least `min_gap` bases (the
 #' shortest accepted probe), because the locus probe has to fit between them
 #' without overlapping either primer.
@@ -440,6 +440,58 @@ print.marker_castpcr <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_castpcr
+#' @export
+#' @noRd
+marker_map_spec.marker_castpcr <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  start <- sp[["start"]]
+  end <- sp[["end"]]
+  probe <- if (!is.null(marker$probe)) {
+    list(spec_row(
+      "probe", marker$probe$start[1L], marker$probe$end[1L], "+", "probe",
+      label = "probe"
+    ))
+  } else {
+    list()
+  }
+  bl <- marker$blocker
+  blocker <- if (!is.null(bl) && nzchar(bl$sequence)) {
+    len <- nchar(bl$sequence)
+    role <- marker$primers$as_role %||% "forward"
+    bs <- if (identical(role, "forward")) marker$snp$pos[1L] - len + 1L else marker$snp$pos[1L]
+    list(spec_row(
+      "blocker", bs, bs + len - 1L,
+      if (identical(role, "forward")) "+" else "-", "probe",
+      label = "blocker"
+    ))
+  } else {
+    list()
+  }
+  features <- c(
+    map_pair_spec(marker$primers$forward, marker$primers$reverse, start, end),
+    probe, blocker
+  )
+  sequences <- list(
+    forward = marker$primers$forward, reverse = marker$primers$reverse,
+    probe = if (!is.null(marker$probe)) marker$probe$sequence else NULL,
+    blocker = if (!is.null(bl)) bl$sequence else NULL
+  )
+  # the mutant-specific ASP is a primer in its own right; draw it unless the
+  # designer reused the common reverse primer
+  asp <- marker$primers$as_primer
+  if (!is.null(asp) && nzchar(asp) && !asp %in% c(marker$primers$forward, marker$primers$reverse)) {
+    role <- marker$primers$as_role %||% "forward"
+    astart <- if (identical(role, "forward")) start else end - nchar(asp) + 1L
+    aend <- if (identical(role, "forward")) start + nchar(asp) - 1L else end
+    features <- c(features, list(spec_row(
+      "AS", astart, aend, if (identical(role, "forward")) "+" else "-", "primer"
+    )))
+    sequences$AS <- asp
+  }
+  map_spec(marker, features = features, sequences = sequences)
+}
+
 scheme_def_castpcr <- function() {
   as_tm <- KASP_LIMITS$as_tm
   margin <- CASTPCR_PROBE_MARGIN

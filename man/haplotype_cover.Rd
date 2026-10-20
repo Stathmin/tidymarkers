@@ -28,7 +28,7 @@ The shared two-pass engine for \strong{per-haplotype} design (used by
 footprint).  First it groups the ALT haplotypes by the alleles in the primer
 window (\code{\link[=haplotype_groups]{haplotype_groups()}}) and designs one marker per group with \code{design};
 then it merges by \emph{footprint} - a design covers every haplotype whose variants
-under its footprint match \code{\link[=binds_footprint]{binds_footprint()}} - and greedily keeps the fewest
+under its footprint match \code{binds_footprint()} - and greedily keeps the fewest
 designs that cover every ALT haplotype.  So haplotypes that differ only
 \emph{outside} a primer share it.
 }
@@ -43,6 +43,7 @@ Other KASP haplotypes:
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
+\code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}},
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}

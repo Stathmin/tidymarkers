@@ -105,7 +105,7 @@ haplotype_variants <- function(haplotypes, snp) {
 #'   `ref`, `alt`).
 #' @param snp one-row target (`pos`).
 #' @param window half-width (bp) of the primer window around the target; `NULL`
-#'   uses the longest KASP AS primer ([KASP_AS_LENGTHS]).
+#'   uses the longest KASP AS primer (`KASP_AS_LENGTHS`).
 #' @return a tibble `haplotype`, `group` (the group's allele signature).
 #' @examples
 #' \dontrun{
@@ -138,7 +138,7 @@ hap_signature <- function(h, haplotype, snp, a, b) {
 #' Does a haplotype match a primer's template over a footprint?
 #'
 #' The one definition of "this haplotype is bound": its own variants over the
-#' footprint equal the template's ([hap_signature()]), so a reference-template
+#' footprint equal the template's (`hap_signature()`), so a reference-template
 #' primer (`template_sig = ""`) binds a haplotype only if it carries nothing
 #' there.
 #' @keywords internal
@@ -149,7 +149,7 @@ binds_footprint <- function(h, haplotype, snp, a, b, template_sig) {
 
 #' The template signature a baked linked set produces over a footprint
 #'
-#' The counterpart of [hap_signature()] for a primer that is *not* reference-based:
+#' The counterpart of `hap_signature()` for a primer that is *not* reference-based:
 #' a primer carrying baked linked alleles matches only haplotypes whose footprint
 #' signature equals theirs.  Coordinates are the haplotype table's own.
 #' @keywords internal
@@ -192,7 +192,7 @@ marker_as_footprint.marker_assay <- function(marker, ...) {
 #' footprint).  First it groups the ALT haplotypes by the alleles in the primer
 #' window ([haplotype_groups()]) and designs one marker per group with `design`;
 #' then it merges by *footprint* - a design covers every haplotype whose variants
-#' under its footprint match [binds_footprint()] - and greedily keeps the fewest
+#' under its footprint match `binds_footprint()` - and greedily keeps the fewest
 #' designs that cover every ALT haplotype.  So haplotypes that differ only
 #' *outside* a primer share it.
 #' @param haplotypes a tidy haplotype table.
@@ -277,7 +277,7 @@ haplotype_cover <- function(haplotypes, snp, design, window = NULL) {
 #' matches it, and how many of the haplotype's own variants sit under that
 #' primer's footprint *and are not baked into it* (which would disrupt binding).
 #' `binds` is `TRUE` when the haplotype's footprint signature equals the primer's
-#' template ([binds_footprint()]) - the one definition used everywhere: the REF
+#' template (`binds_footprint()`) - the one definition used everywhere: the REF
 #' primer's template is the reference, and the ALT primer's is the reference plus
 #' the `alt_baked` linked set.
 #' @keywords internal
@@ -307,4 +307,128 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
     )
   }) |>
     purrr::list_rbind()
+}
+
+#' Attach known population haplotypes to any designed marker
+#'
+#' This is the population layer, independent of chemistry: a marker can carry
+#' the haplotypes and their frequencies even when its design engine does not use
+#' them (e.g. CAPS, TaqMan).  The attached table drives the generic haplotype
+#' track in `plot_marker_map()` and the population rows in the check column;
+#' haplotype-aware engines such as [design_lax_marker()] additionally use it for
+#' primer selection.
+#' @param marker a designed marker object.
+#' @param haplotypes tidy table (`haplotype`, `freq`, `chrom`, `pos`, `ref`,
+#'   `alt`).
+#' @param snp the target row; defaults to the marker's own `$snp`.
+#' @param min_alt_freq population-frequency floor for the check column.
+#' @return the marker with `$haplotypes` and `$population` attached.
+#' @family KASP haplotypes
+#' @export
+marker_attach_haplotypes <- function(marker, haplotypes, snp = marker$snp,
+                                     min_alt_freq = 0.01) {
+  if (is.null(snp) || !nrow(snp)) {
+    cli::cli_abort(gettext("The marker has no `snp` row to anchor haplotypes."))
+  }
+  h <- normalise_haplotypes(haplotypes)
+  alt <- unique(h$haplotype[h$pos == snp$pos & h$alt == snp$alt])
+  freqs <- dplyr::distinct(h, .data$haplotype, .data$freq)
+  alt_freq <- sum(freqs$freq[freqs$haplotype %in% alt], na.rm = TRUE)
+  if (is.null(marker$haplotypes)) {
+    marker$haplotypes <- h
+  }
+  marker$population <- tibble::tibble(
+    alt_freq = as.numeric(alt_freq), ref_freq = 1 - alt_freq,
+    n_haplotypes = nrow(freqs), n_alt_haplotypes = length(alt),
+    min_alt_freq = min_alt_freq
+  )
+  marker_population_warnings(marker)
+  marker
+}
+
+# Population-aware warnings shared by all chemistries.  These are warnings, not
+# gates: the design engines remain reference-based unless they explicitly accept
+# haplotypes (KASP/lax).
+marker_population_warnings <- function(marker) {
+  pop <- marker$population
+  if (is.null(pop) || !nrow(pop)) {
+    return(invisible(NULL))
+  }
+  thr <- pop$min_alt_freq[1L] %||% 0.01
+  if (is.finite(pop$alt_freq[1L]) && pop$alt_freq[1L] < thr) {
+    msg <- gettext(
+      "Target ALT frequency is %s%% (< %s%%); this marker may be monomorphic/rare in the supplied population."
+    )
+    cli::cli_warn(sprintf(msg, round(100 * pop$alt_freq[1L], 1), round(100 * thr, 1)))
+  }
+  h <- marker$haplotypes
+  if (is.null(h) || !nrow(h)) {
+    return(invisible(NULL))
+  }
+  site <- marker$site
+  if (inherits(marker, "marker_caps") && !is.null(site) && !anyNA(c(site$start[1L], site$end[1L]))) {
+    extra <- h[
+      h$pos >= site$start[1L] & h$pos <= site$end[1L] & h$pos != marker$snp$pos[1L], ,
+      drop = FALSE
+    ]
+    if (nrow(extra)) {
+      msg <- gettext(
+        "CAPS recognition site carries %d extra population variant(s); site conservation/frequency is not guaranteed."
+      )
+      cli::cli_warn(sprintf(msg, nrow(extra)))
+    }
+  }
+  if (inherits(marker, "marker_crispr") && "guide_start" %in% names(marker)) {
+    lo <- marker$guide_start[1L]
+    hi <- marker$guide_end[1L]
+    if (!is.na(marker$pam[1L] %||% NA_character_)) {
+      lo <- min(lo, marker$guide_start[1L] - 4L)
+      hi <- max(hi, marker$guide_start[1L] - 1L)
+    }
+    extra <- h[h$pos >= lo & h$pos <= hi & h$pos != marker$snp$pos[1L], , drop = FALSE]
+    if (nrow(extra)) {
+      cli::cli_warn(gettext(
+        "CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); conservation is not guaranteed."
+      ))
+    }
+  }
+  invisible(NULL)
+}
+
+#' Population-frequency and haplotype-coverage rows for the check column
+#' @param marker a marker with `$population` (see `marker_attach_haplotypes()`).
+#' @param min_alt_freq override the marker's frequency floor.
+#' @return a tibble (`level`, `name`, `status`, `value`), or an empty tibble.
+#' @keywords internal
+#' @noRd
+marker_population_checks <- function(marker, min_alt_freq = NULL) {
+  pop <- marker$population
+  if (is.null(pop) || !nrow(pop)) {
+    return(tibble::tibble())
+  }
+  thr <- min_alt_freq %||% pop$min_alt_freq[1L] %||% 0.01
+  out <- tibble::tibble(
+    level = "site",
+    name = c("ALT freq", "haplotypes", "ALT haplotypes"),
+    status = c(
+      if (is.finite(pop$alt_freq[1L]) && pop$alt_freq[1L] >= thr) "ok" else "broken",
+      "ok", "ok"
+    ),
+    value = c(
+      sprintf("%.0f%%", 100 * pop$alt_freq[1L]),
+      as.character(pop$n_haplotypes[1L]),
+      as.character(pop$n_alt_haplotypes[1L])
+    )
+  )
+  hits <- marker$haplotype_hits
+  if (!is.null(hits) && nrow(hits) && "binds" %in% names(hits)) {
+    total <- sum(hits$freq, na.rm = TRUE)
+    cov <- if (total > 0) sum(hits$freq[hits$binds], na.rm = TRUE) / total else NA_real_
+    out <- dplyr::bind_rows(out, tibble::tibble(
+      level = "site", name = "hap covered",
+      status = if (is.finite(cov) && cov >= 0.95) "ok" else "broken",
+      value = if (is.finite(cov)) sprintf("%.0f%%", 100 * cov) else "-"
+    ))
+  }
+  out
 }

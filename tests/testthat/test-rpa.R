@@ -3,11 +3,9 @@
 
 test_that("design_rpa_marker returns long primers and a short amplicon", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
-  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_rpa_marker(genome, snp, flank = 200L)
   expect_s3_class(m, "marker_rpa")
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
@@ -28,11 +26,9 @@ test_that("design_rpa_marker returns long primers and a short amplicon", {
 
 test_that("design_rpa_marker can add an exo probe that covers the variant", {
   skip_if_no_oligoarrayaux()
-  W <- bseq(600L, 2L)
-  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
-  ref <- substr(W, 300L, 300L)
-  alt <- setdiff(c("A", "C", "G", "T"), ref)[1L]
-  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = ref, alt = alt)
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
   m <- design_rpa_marker(genome, snp, flank = 200L, design_probe = TRUE)
   expect_s3_class(m, "marker_rpa")
   # the primers now flank the variant; the probe carries the discrimination
@@ -50,6 +46,34 @@ test_that("design_rpa_marker can add an exo probe that covers the variant", {
   expect_lte(m$probe$fq_gap5, 4L)
   expect_lte(m$probe$fq_gap3, 4L)
   expect_output(print(m), "exo probe")
+})
+
+test_that("the exo probe lies inside the amplicon between the primer 3' ends", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  genome <- f$genome
+  snp <- f$snp
+  m <- design_rpa_marker(genome, snp, flank = 200L, design_probe = TRUE)
+  expect_s3_class(m, "marker_rpa")
+  # the probe must anneal between the primers' 3' ends, not on top of one
+  inner_lo <- m$primers$start + nchar(m$primers$forward)
+  inner_hi <- m$primers$end - nchar(m$primers$reverse)
+  expect_gte(m$probe$start, inner_lo)
+  expect_lte(m$probe$end, inner_hi)
+  # the probe gate and the ladder's record can never disagree
+  expect_false(is.na(m$gates[["gate_rpa_probe"]]))
+  expect_identical(isFALSE(m$gates[["gate_rpa_probe"]]), "gate_rpa_probe" %in% m$relaxed)
+})
+
+test_that("the probe gate records the relaxed THF/FQ rung honestly (C6/C7)", {
+  probe <- list(sequence = "ACGTXACGT")
+  # no probe: the gate is not applicable
+  expect_true(is.na(rpa_probe_gate(NULL, FALSE)))
+  expect_true(is.na(rpa_probe_gate(NULL, TRUE)))
+  # strict geometry: the gate is cleared, so it is not in `relaxed`
+  expect_true(rpa_probe_gate(probe, FALSE))
+  # a probe found only at the relaxed rung: the gate is FALSE, so `relaxed` lists it
+  expect_false(rpa_probe_gate(probe, TRUE))
 })
 
 test_that("design_rpa_marker declines non-substitution alleles", {

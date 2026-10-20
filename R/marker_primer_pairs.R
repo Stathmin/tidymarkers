@@ -50,13 +50,13 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
 #'
 #' The shared enumeration behind the hydrolysis-probe schemes (TaqMan, castPCR):
 #' every (start, length) plus-strand window whose span covers `snp_i`, GC/Tm/
-#' composition-screened by [primer_candidates()].  Callers add their own extra
+#' composition-screened by `primer_candidates()`.  Callers add their own extra
 #' filters (e.g. no 5'-G) and ranking.
 #' @param seq the template (plus strand).
 #' @param snp_i 1-based variant position on `seq`.
 #' @param lengths probe lengths to try.
 #' @param tm_range,gc_range accepted windows.
-#' @return a tibble (see [primer_candidates()]), possibly zero rows.
+#' @return a tibble (see `primer_candidates()`), possibly zero rows.
 #' @keywords internal
 #' @noRd
 spanning_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {

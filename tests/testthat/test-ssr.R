@@ -19,9 +19,13 @@ test_that("design_ssr_marker returns a clean flanking pair outside the repeat", 
   expect_gte(rep_span$end, pos)
   expect_lte(m$primers$start + nchar(m$primers$forward), rep_span$start)
   expect_gte(m$primers$end - nchar(m$primers$reverse), rep_span$end)
-  # the repeat was resolved to its motif and copy number
+  # the repeat was resolved to its motif and copy number, and the motif itself
+  # is stored so a plot can show `(AC)5`, not an opaque length
   expect_equal(rep_span$unit, 2L)
   expect_gte(rep_span$copies, 5L)
+  expect_equal(rep_span$unit_seq, "AC")
+  expect_equal(rep_span$motif, ssr)
+  expect_match(paste(capture.output(print(m)), collapse = " "), "\\(AC\\)[0-9]+")
   # the size-marker amplicon window, and clean primers (no run / no SSR)
   expect_gte(m$primers$product, 100L)
   expect_lte(m$primers$product, 300L)
@@ -72,8 +76,12 @@ test_that("print.marker_ssr reports the repeat and the amplicon", {
     ),
     class = "marker_ssr"
   )
-  x[["repeat"]] <- tibble::tibble(start = 40L, end = 52L, unit = 2L, copies = 7L)
+  x[["repeat"]] <- tibble::tibble(
+    start = 40L, end = 52L, unit = 2L, copies = 7L,
+    motif = "ACACACACACACAC", unit_seq = "AC"
+  )
   expect_output(print(x), "marker_ssr")
+  expect_output(print(x), "\\(AC\\)7")
   expect_output(print(x), "repeat")
   expect_output(print(x), "120 bp")
 })

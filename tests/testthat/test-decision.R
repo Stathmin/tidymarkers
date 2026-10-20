@@ -144,11 +144,7 @@ test_that("a discovered scheme's own gate nodes are stamped too (C13)", {
 })
 
 test_that("site-level checks read the assay's site and linked skips", {
-  p <- c(
-    AS_ref = "CATGGACCTAGCATTGACGTA",
-    AS_alt = "CATGGACCTAGCATTGACGTT",
-    COM = "GCTTAGCCATGGTCAATGCTA"
-  )
+  p <- kasp_primers()
   good <- marker_design_checks(list(
     assay = tibble::tibble(
       amplicon = 90L, as_ref = p[[1]], as_alt = p[[2]], com = p[[3]],
@@ -285,11 +281,7 @@ test_that("the ungated-check list is honest per scheme (C10)", {
 })
 
 test_that("a relaxed winner is graded at the relaxed bar, not the ideal (C5)", {
-  p <- c(
-    AS_ref = "CATGGACCTAGCATTGACGTA",
-    AS_alt = "CATGGACCTAGCATTGACGTT",
-    COM = "GCTTAGCCATGGTCAATGCTA"
-  )
+  p <- kasp_primers()
   mock <- function(sel) {
     list(
       assay = tibble::tibble(

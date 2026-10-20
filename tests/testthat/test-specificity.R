@@ -29,6 +29,7 @@ test_that("the mismatch scan is invariant to the parallel backend", {
   )
   expect_equal(par$hits, serial$hits)
   skip_on_os("windows")
+  skip_if_not_full()
   bp <- BiocParallel::SnowParam(2L, type = "SOCK")
   on.exit(BiocParallel::bpstop(bp), add = TRUE)
   mc <- specificity_seed(primers, genome,

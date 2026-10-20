@@ -13,7 +13,7 @@ haplotype_groups(haplotypes, snp, window = NULL)
 \item{snp}{one-row target (\code{pos}).}
 
 \item{window}{half-width (bp) of the primer window around the target; \code{NULL}
-uses the longest KASP AS primer (\link{KASP_AS_LENGTHS}).}
+uses the longest KASP AS primer (\code{KASP_AS_LENGTHS}).}
 }
 \value{
 a tibble \code{haplotype}, \code{group} (the group's allele signature).
@@ -37,6 +37,7 @@ Other KASP haplotypes:
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotypes_from_alignment]{haplotypes_from_alignment()}},
+\code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}},
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}

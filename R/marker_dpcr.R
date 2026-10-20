@@ -91,7 +91,7 @@ exact_oligo_hits <- function(oligo, genome) {
 #'
 #' The scheme designers pick their marker with the usual candidate scans, whose
 #' filters *are* the gates; this runs the same gates through the shared
-#' [select_with_ladder()] so the winner's gate outcomes are recorded in the
+#' `select_with_ladder()` so the winner's gate outcomes are recorded in the
 #' marker (`$selection`), and a candidate that cannot clear a *hard* gate is
 #' rejected (`NULL`) rather than returned silently.  The graded table holds one
 #' numeric margin column per gate (a value `>= 0` passes at the original
@@ -252,9 +252,19 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
     hairpin <- NA_real_
     homodimer <- NA_real_
   }
+  # Both allele-specific probes must have a single perfect genomic site.  The REF
+  # probe's on-target site is in the reference genome; the ALT probe's on-target
+  # site is the ALT allele, which the reference genome does not carry, so any
+  # reference-genome hit is an off-target (a second site).  Count each probe in
+  # its own allele context (the degenerate alt == genome base case makes the two
+  # probes identical, so the on-target site is already counted).
+  ref_hits <- exact_oligo_hits(probe$primer, genome)
+  alt_hits <- exact_oligo_hits(alt_probe, genome)
+  alt_sites <- if (alt_probe == probe$primer) alt_hits else alt_hits + 1L
+  probes_unique <- ref_hits == 1L && alt_sites == 1L
   graded <- tibble::tibble(
     m_probe_comp = if (comp_ok) 1 else -1,
-    m_probe_specific = if (exact_oligo_hits(probe$primer, genome) == 1L) 1 else -1,
+    m_probe_specific = if (probes_unique) 1 else -1,
     m_probe_structure = pmin(hairpin - KASP_LIMITS$hairpin_dg, homodimer - KASP_LIMITS$homodimer_dg),
     m_probe_tm = out$probes$tm[1L] - (max(prim_tm_all) + probe_tm_margin),
     m_primer_tm = min(prim_tm_all - d$primer_tm_window[1L], d$primer_tm_window[2L] - prim_tm_all),
@@ -300,7 +310,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
 #' The best hydrolysis probe inside a primer pair
 #'
 #' Screens both strands for probes of `probe_lengths` in the inner region between
-#' the primer 3' ends with [primer_candidates()] (GC/Tm window, homopolymer runs,
+#' the primer 3' ends with `primer_candidates()` (GC/Tm window, homopolymer runs,
 #' SSRs), keeps those that span the variant, do not start with G and reach
 #' `max(primer Tm) + probe_tm_margin` (the ~8-10 C rule), then prefers a
 #' non-palindromic, variant-centred, short probe.
@@ -358,6 +368,27 @@ print.marker_dpcr <- function(x, ...) {
 #' @return a list describing the `dpcr` scheme.
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_dpcr
+#' @export
+#' @noRd
+marker_map_spec.marker_dpcr <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  pr <- marker$probes
+  sequences <- list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  if (!is.null(pr) && all(c("allele", "probe") %in% names(pr))) {
+    for (i in seq_len(nrow(pr))) {
+      sequences[[paste0("probe ", pr$allele[i])]] <- pr$probe[i]
+    }
+  } else if (!is.null(pr) && "probe" %in% names(pr)) {
+    sequences$probe <- pr$probe[1L]
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), map_probe_rows(pr)),
+    sequences = sequences
+  )
+}
+
 scheme_def_dpcr <- function() {
   # the windows the designer applies, read from its formals so the two cannot
   # drift (formals() gives the *default expression*, hence eval())

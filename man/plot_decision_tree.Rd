@@ -16,13 +16,13 @@ plot_decision_tree(x = NULL, scheme = NULL)
 a \code{ggraph}/\code{ggplot} object.
 }
 \description{
-Renders the graph from \code{\link[=marker_decision_graph]{marker_decision_graph()}} with \code{ggraph}: the target-site
-checks, each selection stage (hard gates never relaxed, the refinement ladder
-rejoining the ranking, a DOOMED terminal) and the assay acceptance checks
-ending in a verdict.  Hard limits are drawn with a \strong{bold border}; with an
-assay the traversed nodes are coloured by outcome (green enforced, amber
-relaxed, red violated).  One marker chemistry is drawn at a time
-(\code{\link[=marker_schemes]{marker_schemes()}}).
+Renders the graph from \code{\link[=marker_decision_graph]{marker_decision_graph()}} with \code{ggraph} as a layered
+left-to-right pipeline: one column per stage, nodes stacked inside it, so the
+main direction is always left to right.  Node \strong{fill} is the node kind
+(start/check/gate/decision/relax/merge/tier/outcome/doomed, a light palette),
+while text and border carry the outcome (ok / violated / relaxed / neutral).
+Hard limits keep a \strong{bold border}.  One marker chemistry is drawn at a time
+(\code{\link[=marker_schemes]{marker_schemes()}}); \code{\link[=marker_decision_text]{marker_decision_text()}} is the greppable double.
 }
 \examples{
 \dontrun{

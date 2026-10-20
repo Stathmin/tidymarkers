@@ -44,22 +44,31 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
   plus <- identical(strand, "+")
   grid <- tidyr::crossing(L = lengths, gap = gaps)
 
-  cand <- purrr::pmap(grid, function(L, gap) {
-    iv <- primer_interval(snp_i, strand, L, gap = gap, role = "COM") # template coords
-    start <- IRanges::start(iv)
-    end <- IRanges::end(iv)
-    if (start < 1L || end > wlen) {
-      return(NULL)
-    }
-    seq_plus <- Biostrings::subseq(window, start, end)
-    com <- if (plus) {
-      as.character(Biostrings::reverseComplement(seq_plus))
+  # vectorised COM geometry (the `COM` branch of primer_interval()).  The
+  # scalar-IRanges + one-row-tibble loop was a top profile entry: hundreds of
+  # allocations per assembly, all of it pure bookkeeping.
+  if (plus) {
+    start <- snp_i + grid$gap
+    end <- start + grid$L - 1L
+  } else {
+    end <- snp_i - grid$gap
+    start <- end - grid$L + 1L
+  }
+  keep <- start >= 1L & end <= wlen
+  cand <- tibble::tibble(
+    com = NA_character_, len = grid$L[keep], gap = grid$gap[keep],
+    start = start[keep], end = end[keep]
+  )
+  if (nrow(cand)) {
+    # substring(), not subseq(): a single DNAString does not vectorise start/end
+    seq_plus <- substring(as.character(window), cand$start, cand$end)
+    cand$com <- if (plus) {
+      as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(seq_plus)))
     } else {
-      as.character(seq_plus)
+      seq_plus
     }
-    tibble::tibble(com = com, len = L, gap = gap, start = start, end = end)
-  }) |>
-    purrr::list_rbind() |>
+  }
+  cand <- cand |>
     dplyr::mutate(
       com_gc = gc_frac(.data$com),
       com_tm = primer_tm(.data$com),

@@ -18,7 +18,8 @@ Description: An opinionated, reproducible toolkit for designing and quality
 License: MIT + file LICENSE
 URL: https://github.com/Stathmin/tidymarkers
 BugReports: https://github.com/Stathmin/tidymarkers/issues
-SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional)
+SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional),
+    Graphviz (optional, for routed decision graphs)
 Encoding: UTF-8
 Imports:
     Biostrings,
@@ -56,6 +57,7 @@ Imports:
 Suggests:
     rmarkdown,
     knitr,
+    svglite,
     ggraph,
     VariantAnnotation,
     SummarizedExperiment,
@@ -72,13 +74,16 @@ Suggests:
     profmem,
     lobstr,
     rprimer,
+    snow,
     spelling,
+    roxygen2,
     styler,
     lintr,
     pkgdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/testthat/parallel: true
+Config/testthat/parallel: false
+Config/testthat/cores: 2
 Roxygen: list(markdown = TRUE)
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
 Config/potools/style: base

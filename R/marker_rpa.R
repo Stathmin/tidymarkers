@@ -127,7 +127,7 @@ rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range) {
 #' cross-dimer dG37 must clear the shared KASP thresholds.  When OligoArrayAux is
 #' unavailable the check is skipped (the metric cannot be computed) rather than
 #' failing the design.  Reuses [has_palindrome()] and [dimer_thermo()].
-#' @param pair a pair list from [pair_to_list()] (`forward`, `reverse`).
+#' @param pair a pair list from `pair_to_list()` (`forward`, `reverse`).
 #' @param BPPARAM optional `BiocParallel` backend for [dimer_thermo()].
 #' @return a single logical.
 #' @keywords internal
@@ -148,10 +148,10 @@ rpa_structure_ok <- function(pair, BPPARAM = NULL) {
 
 #' Pick an RPA primer pair (long primers; variant under a primer or flanked)
 #'
-#' Mirrors [design_site_pair()] / [design_flanking_pair()] but pre-filters the
+#' Mirrors `design_site_pair()` / `design_flanking_pair()` but pre-filters the
 #' candidate primers for palindromes (an inverted repeat is a structure defect the
 #' recombinase cannot work through), which those shared helpers do not screen.
-#' Reuses [primer_candidates()], [pick_primer_pair()] and [pair_to_list()].
+#' Reuses `primer_candidates()`, `pick_primer_pair()` and `pair_to_list()`.
 #' Without a probe the variant sits under one primer (a site pair); with a probe
 #' the primers flank the variant.
 #' @param seq the template (plus strand).
@@ -160,7 +160,7 @@ rpa_structure_ok <- function(pair, BPPARAM = NULL) {
 #' @param lengths primer lengths to try.
 #' @param min_product,max_product the accepted amplicon window.
 #' @param tm_range,gc_range accepted windows.
-#' @return a pair list ([pair_to_list()]), or `NULL`.
+#' @return a pair list (`pair_to_list()`), or `NULL`.
 #' @keywords internal
 #' @noRd
 rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
@@ -218,7 +218,7 @@ rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
 #' dT-fluorophore and dT-quencher of the TwistAmp exo probe).  Returns `NULL`
 #' when the geometry cannot be satisfied.  The arm/gap windows are parameters so
 #' the ladder can relax them (they are soft).
-#' @param row one row of [primer_candidates()] output.
+#' @param row one row of `primer_candidates()` output.
 #' @param si 1-based variant position on the template.
 #' @param thf_5p,thf_3p the minimum 5'/3' abasic-arm lengths.
 #' @param fq_gap the maximum dT-fluorophore/quencher gap on each side.
@@ -233,7 +233,16 @@ rpa_probe_one <- function(row, si, thf_5p = RPA_PROBE_THF_5P,
   if (lo > hi) {
     return(NULL)
   }
-  thf <- min(max(si - row$start + 1L, lo), hi)
+  voff <- si - row$start + 1L
+  thf <- min(max(voff, lo), hi)
+  # THF on the variant would replace the allele with X and destroy the readout.
+  # Move it one base aside when the arm window allows it; otherwise reject.
+  if (identical(thf, voff)) {
+    thf <- if (voff < hi) voff + 1L else if (voff > lo) voff - 1L else NA_integer_
+    if (is.na(thf)) {
+      return(NULL)
+    }
+  }
   left <- stringr::str_locate_all(stringr::str_sub(row$primer, 1L, thf - 1L), "T")[[1L]]
   right <- stringr::str_locate_all(stringr::str_sub(row$primer, thf + 1L, len), "T")[[1L]]
   if (!nrow(left) || !nrow(right)) {
@@ -258,16 +267,17 @@ rpa_probe_one <- function(row, si, thf_5p = RPA_PROBE_THF_5P,
 
 #' The first exo probe covering the variant inside the amplicon
 #'
-#' Enumerates plus-strand probes that span the variant and fit the amplicon,
-#' screened for GC/composition by [primer_candidates()], then keeps the first
-#' that satisfies the THF / fluorophore-quencher geometry ([rpa_probe_one()]),
-#' preferring a longer probe and the THF nearest the variant.
+#' Enumerates plus-strand probes that span the variant and fit *between* the
+#' flanking primers' 3' ends, screened for GC/composition by
+#' `primer_candidates()`, then keeps the first that satisfies the THF /
+#' fluorophore-quencher geometry (`rpa_probe_one()`), preferring a longer probe
+#' and the THF nearest the variant.
 #' @param seq the template (plus strand).
 #' @param si 1-based variant position on `seq`.
-#' @param pair the amplicon-bounding pair ([pair_to_list()]).
+#' @param pair the amplicon-bounding pair (`pair_to_list()`).
 #' @param probe_len probe lengths to try.
 #' @param gc_range accepted GC window.
-#' @param thf_5p,thf_3p,fq_gap the (soft) geometry windows (see [rpa_probe_one()]).
+#' @param thf_5p,thf_3p,fq_gap the (soft) geometry windows (see `rpa_probe_one()`).
 #' @return a probe list, or `NULL`.
 #' @keywords internal
 #' @noRd
@@ -275,9 +285,13 @@ rpa_probe <- function(seq, si, pair, probe_len, gc_range,
                       thf_5p = RPA_PROBE_THF_5P, thf_3p = RPA_PROBE_THF_3P,
                       fq_gap = RPA_PROBE_FQ_GAP) {
   starts <- seq.int(max(1L, si - max(probe_len) + 1L), si)
+  # the probe must not overlap either primer: stay inside the amplicon bases
+  # between the flanking primers' 3' ends.
+  inner_lo <- pair$start + nchar(pair$forward)
+  inner_hi <- pair$end - nchar(pair$reverse)
   cand <- rpa_candidates(seq, starts, probe_len, "+", RPA_NO_TM, gc_range) |>
     dplyr::filter(
-      .data$start >= pair$start, .data$end <= pair$end,
+      .data$start >= inner_lo, .data$end <= inner_hi,
       .data$start <= si, .data$end >= si
     ) |>
     dplyr::arrange(dplyr::desc(.data$len), .data$start)
@@ -286,6 +300,24 @@ rpa_probe <- function(seq, si, pair, probe_len, gc_range,
   })
   purrr::keep(probe, ~ !is.null(.x)) |>
     purrr::pluck(1L)
+}
+
+#' Did the exo probe clear the declared THF/FQ geometry?
+#'
+#' `TRUE` for a probe that passed at the strict geometry rung, `FALSE` when it
+#' only appeared at the relaxed rung (so `relaxed` records `gate_rpa_probe`),
+#' and `NA` when no probe was designed.  Kept separate from
+#' [design_rpa_marker()] so the ladder's bookkeeping is directly testable.
+#' @param probe the chosen probe list, or `NULL`.
+#' @param probe_relaxed did the successful rung relax the probe geometry?
+#' @return a single logical (or `NA`).
+#' @keywords internal
+#' @noRd
+rpa_probe_gate <- function(probe, probe_relaxed) {
+  if (is.null(probe)) {
+    return(NA)
+  }
+  !isTRUE(probe_relaxed)
 }
 
 #' Design an RPA (recombinase polymerase amplification) marker at a variant
@@ -376,7 +408,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
         return(NULL)
       }
     }
-    list(pair = pair, probe = probe)
+    list(pair = pair, probe = probe, probe_relaxed = "gate_rpa_probe" %in% relaxed)
   }
   pick <- NULL
   for (r in rungs) {
@@ -413,14 +445,19 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
       dplyr::between(c(nchar(pair$forward), nchar(pair$reverse)), min(strict_len), max(strict_len))
     ),
     gate_rpa_structure = if (has_oligoarrayaux()) TRUE else NA,
-    gate_rpa_probe = if (is.null(probe)) NA else TRUE, # geometry enforced if a probe is used
+    gate_rpa_probe = rpa_probe_gate(probe, pick$probe_relaxed),
     gate_rpa_amplicon = dplyr::between(pair$product, min_product, max_product)
   )
   soft <- c("gate_rpa_amplicon", "gate_rpa_probe", "gate_rpa_primer_len")
   relaxed <- soft[vapply(soft, function(g) isFALSE(gates[[g]]), logical(1))]
+  # every coordinate exposed by the object is plus-strand/genomic (the probe and
+  # amplicon below are already shifted); shift the pair's local coords to match
+  primers <- pair
+  primers$start <- pair$start + off
+  primers$end <- pair$end + off
   out <- list(
     snp = snp,
-    primers = c(pair, list(
+    primers = c(primers, list(
       length_f = nchar(pair$forward), length_r = nchar(pair$reverse),
       variant_under = under, temperature = RPA_TEMP
     )),
@@ -478,6 +515,29 @@ print.marker_rpa <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
+#' @method marker_map_spec marker_rpa
+#' @export
+#' @noRd
+marker_map_spec.marker_rpa <- function(marker, scheme = NULL, ...) {
+  sp <- map_amplicon(marker)
+  probe <- if (!is.null(marker$probe)) {
+    list(spec_row(
+      "exo probe", marker$probe$start[1L], marker$probe$end[1L], "+", "probe",
+      label = "exo probe"
+    ))
+  } else {
+    list()
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), probe),
+    sequences = list(
+      forward = marker$primers$forward, reverse = marker$primers$reverse,
+      "exo probe" = if (!is.null(marker$probe)) marker$probe$sequence else NULL
+    )
+  )
+}
+
 scheme_def_rpa <- function() {
   primer_len <- RPA_PRIMER_LEN
   amplicon <- RPA_AMPLICON

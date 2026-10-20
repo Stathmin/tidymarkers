@@ -50,7 +50,18 @@ longest_run <- function(seq) {
 #' @family KASP checks
 #' @export
 marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
-  scheme <- scheme %||% assay$scheme %||% "snp"
+  scheme <- scheme %||% assay$scheme %||% if (inherits(assay, "marker_assay")) {
+    "snp"
+  } else {
+    cls <- class(assay)[1L]
+    if (startsWith(cls, "marker_")) sub("^marker_", "", cls) else "snp"
+  }
+  # Non-KASP markers use the same family criterion set and the generic
+  # amplicon/primer/structure/specificity evaluator.  The KASP path below reads
+  # the richer assay object only when that object is present.
+  if (!inherits(assay, "marker_assay") && grepl("^marker_", class(assay)[1L])) {
+    return(marker_generic_checks(assay, scheme, limits = limits))
+  }
   crit <- marker_criteria(limits, scheme = scheme)
   crit <- crit[crit$role == "check", ]
   amp_win <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
@@ -220,10 +231,15 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     }
   )
 
-  rows <- lapply(crit$label, function(l) checks[[l]]())
+  rows <- lapply(crit$label, function(l) {
+    if (l %in% names(checks)) checks[[l]]() else list(observed = NA_real_, pass = NA)
+  })
   observed <- vapply(rows, function(r) as.numeric(r$observed), numeric(1))
   limit <- crit$limit
-  pass <- vapply(rows, function(r) isTRUE(r$pass), logical(1))
+  pass <- vapply(rows, function(r) {
+    p <- r$pass
+    if (!length(p) || is.na(p[1L])) NA else isTRUE(p[1L])
+  }, logical(1))
   # A criterion the ladder lowered for *this* winner is judged against the bar the
   # selection actually applied, not the ideal, so an explicitly accepted
   # (relaxed, warned) result is not also reported as an acceptance failure (C5).

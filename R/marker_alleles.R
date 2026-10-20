@@ -57,7 +57,7 @@ merge_iupac <- function(seqs) {
 #'   A/T or C/G transversion mismatches the wrong template by a strong *same-base*
 #'   pair, so it discriminates as well as any other SNP);
 #' * `"degenerate"` -- two or more distinct SNP ALTs: one AS primer whose
-#'   3'-terminal base is the IUPAC consensus [`iupac_code()`] of the ALT set
+#'   3'-terminal base is the IUPAC consensus `iupac_code()` of the ALT set
 #'   matches all of them and mismatches REF (the degenerate-primer option);
 #' * `"indel"` -- only non-SNP ALTs (handled by the indel-junction path);
 #' * `"none"` -- no usable ALT.

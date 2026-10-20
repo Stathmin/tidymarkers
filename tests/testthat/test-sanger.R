@@ -26,6 +26,17 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
   expect_true(grepl(m$seq_primers$forward, W, fixed = TRUE))
   rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(m$seq_primers$reverse)))
   expect_true(grepl(rc, W, fixed = TRUE))
+  # the read primers are nested, not the PCR primers drawn at the amplicon ends
+  expect_gt(m$seq_primers$forward_start, m$amplicon$start)
+  expect_lt(m$seq_primers$forward_end, snp$pos)
+  expect_gt(m$seq_primers$reverse_start, snp$pos)
+  expect_lt(m$seq_primers$reverse_end, m$amplicon$end)
+  spec <- marker_map_spec(m, "sanger")
+  expect_setequal(spec$feature, c("amplicon", "PCR F", "PCR R", "read F", "read R"))
+  expect_equal(spec$start[spec$feature == "read F"], m$seq_primers$forward_start)
+  expect_equal(spec$end[spec$feature == "read R"], m$seq_primers$reverse_end)
+  oligos <- marker_primers(m)
+  expect_true(all(c("PCR_F", "PCR_R", "read_F", "read_R") %in% names(oligos)))
 })
 
 test_that("print.marker_sanger summarises the marker and its sequencing primers", {

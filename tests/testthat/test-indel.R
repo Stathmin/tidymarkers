@@ -1,11 +1,7 @@
 # Indel engine: allele templates, the junction scan, and end-to-end assembly.
 
-rand_seq <- function(n, seed) {
-  withr::with_seed(seed, paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = ""))
-}
-
 test_that("allele_templates keeps the left flank and shifts the right one", {
-  W <- Biostrings::DNAString(rand_seq(120, 7))
+  W <- Biostrings::DNAString(bseq(120, 7))
   snp_i <- 60L
   ref <- as.character(Biostrings::subseq(W, snp_i, snp_i + 2L)) # e.g. deletion block
   alt <- substr(ref, 1L, 1L)
@@ -21,7 +17,7 @@ test_that("allele_templates keeps the left flank and shifts the right one", {
 
 test_that("the junction scan proposes discriminating primers for an insertion", {
   skip_if_no_oligoarrayaux()
-  W <- Biostrings::DNAString(rand_seq(160, 11))
+  W <- Biostrings::DNAString(bseq(160, 11))
   snp_i <- 80L
   ref <- as.character(Biostrings::subseq(W, snp_i, snp_i))
   alt <- paste0(ref, "TTG") # 2-nt insertion, VCF-anchored
@@ -33,7 +29,7 @@ test_that("the junction scan proposes discriminating primers for an insertion", 
 
 test_that("the junction scan proposes discriminating primers for a deletion", {
   skip_if_no_oligoarrayaux()
-  W <- Biostrings::DNAString(rand_seq(160, 13))
+  W <- Biostrings::DNAString(bseq(160, 13))
   snp_i <- 80L
   ref <- as.character(Biostrings::subseq(W, snp_i, snp_i + 2L))
   alt <- substr(ref, 1L, 1L)
@@ -43,13 +39,13 @@ test_that("the junction scan proposes discriminating primers for a deletion", {
 
 test_that("design_as_primers_indel refuses equal-length alleles", {
   withr::local_envvar(LANGUAGE = "en")
-  W <- Biostrings::DNAString(rand_seq(160, 17))
+  W <- Biostrings::DNAString(bseq(160, 17))
   expect_error(design_as_primers_indel(W, 80L, "A", "G"), "unequal")
 })
 
 test_that("assemble_kasp_assay designs an indel end-to-end", {
   skip_if_no_oligoarrayaux()
-  W <- Biostrings::DNAString(rand_seq(400, 4))
+  W <- Biostrings::DNAString(bseq(400, 4))
   # pick a locus whose neighbourhood has no long homopolymer (a real designer
   # would too - a run-rich junction is legitimately rejected by the checks)
   cand <- seq(160L, 240L, by = 1L)
@@ -74,22 +70,15 @@ test_that("assemble_kasp_assay designs an indel end-to-end", {
 # ---- the indel DAG and its (formerly vacuous) wobble gate -------------------
 test_that("the indel DAG obeys the contract and shares the KASP core stages", {
   expect_dag_invariants("indel")
-  s <- marker_decision_schema("indel")
   # KASP InDel discrimination is the SAME 3'-terminal mechanism as a SNP: the AS
   # primers end at the variant site (EasyKASP 2025), so the stage is deliberately
   # the shared KASP core, not a bespoke length-based one
-  expect_identical(
-    s$nodes$name[s$nodes$kind == "gate"],
-    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
-  )
-  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
-  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
-  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
+  expect_kasp_core_dag("indel")
 })
 
 test_that("an indel is genuinely evaluated by the wobble gate (C7)", {
   skip_if_no_oligoarrayaux()
-  W <- Biostrings::DNAString(rand_seq(400, 4))
+  W <- Biostrings::DNAString(bseq(400, 4))
   ref <- as.character(Biostrings::subseq(W, 200L, 200L))
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = ref, alt = paste0(ref, "GGG"))

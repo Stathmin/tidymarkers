@@ -3,7 +3,7 @@
 Только незакрытое. Полный ретроспективный инвентарь (что уже есть, с обоснованиями и
 ссылками) — в `INVENTORY.md`; история изменений — в `NEWS.md`.
 
-Обозначения: `[ ]` очередь · `[~]` частично.
+Обозначения: `[ ]` очередь · `[~]` частично · `[x]` сделано.
 
 ## Открытая работа — сводка (детали — в `INVENTORY.md` по номеру раздела)
 
@@ -17,15 +17,343 @@
   расщепление; ARMS/CAPS/indel_size/SSR — виртуальный гель; LAMP/RPA — изотермическая кинетика.
 
 ### §W. Повторяющийся аудит
-- [ ] DRY / «сухой» код; дрейф документации; styler/lintr/`R CMD check --as-cran`;
+- [~] DRY / «сухой» код; дрейф документации; styler/lintr/`R CMD check --as-cran`;
   «дерево == код»; «мокрые» принципы; встроить аудит в `dev/check.R`; guard «single-base only»;
-  тест `render_design_search()`; порядок Tm F1c/B1c > F2/B2 (LAMP).
+  тест `render_design_search()`.
+  Сделано: LAMP B3/FIP ориентация и F1c/B1c > F2/B2, FIP 3′ ALT,
+  containment зондов TaqMan/dPCR/SNaPshot/RPA, жёсткая специфичность CRISPR,
+  классы AS/COM-проверок, общие тестовые фикстуры, `in_silico_pcr()` с IUPAC/
+  mismatch и реальными продуктами.
 
 ### §X. Слой плана
 - [ ] Двухпроходная дизайн-проводка для остальных схем.
 
 ### Прочее
 - [ ] Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).
+- [~] Скорость: устранены горячие точки по `Rprof`, быстрый/полный прогон,
+  installer ставит зависимости и пакет (сделано; замерить на чистой машине).
+
+## Z. Внешний научный аудит (окт. 2026) — код, требования и физика
+
+Это не список пожеланий к тексту. Каждый пункт должен закрываться кодом,
+тестом и (где есть данные) калибровкой. Приоритеты: **P0** — неверная
+биология/вердикт; **P1** — специфичность, популяция, калибровка; **P2** —
+расширение методов.
+
+### Z0. Фактические ошибки физики/биологии  [P0]
+- [~] **Cas12a collateral — ssDNase, репортёр ssDNA.** Код-комментарии уже
+  говорят `ssDNA`; осталось проверить все виньетки и добавить тест на wording в
+  `marker_readout()`.
+- [ ] **Cas13 — не «PAM-free» без оговорок.** Cas13a: слабое предпочтение PFS
+  (избегать G на 3′ фланге); Cas13b: D-PFS. Ввести `cas = "cas13a" | "cas13b"`,
+  длину спейсера ~28 nt для LwaCas13a и PFS-поле в кандидатах; тесты на PFS.
+- [ ] **dPCR Tm-шкала.** Стандарт: праймеры 58–62 °C, проба +8–10 °C. Текущий
+  default 44–50 °C — не менять окном, пока `primer_tm()` не откалиброван против
+  вендорского/`TmCalculator`; это блокер Z2/Z8. Временный default помечен как
+  калибровочный долг, не как норма.
+- [x] **LAMP F1c/B1c > F2/B2.** `lamp_fuse()` теперь фильтрует `t1 > t2`;
+  FIP 3′ несёт ALT, а не REF.
+- [ ] **KASP: «Taq не продлевает 3′ мисматч» — кинетика, не бинарность.**
+  Заменить формулировку и добавить в `marker_design_checks()`/DAG различитель
+  типа мисматча (transition/transversion, G:T/A:C, wobble) как `unknown`/риск,
+  а не «pass».
+
+### Z1. Вердикт и статусы  [P0]
+- [~] `NA` больше не проходит `select_with_ladder()`; DAG получил статус
+  `unknown`; но acceptance/verdict всё ещё не различает `unknown` и
+  `not_applicable`.
+- [ ] Ввести тип `pass | fail | unknown | not_applicable` для каждой проверки.
+  `marker_design_checks()` возвращает его; `marker_decision_graph()` и
+  `marker_readout()` считают вердикт только из `pass`, а `unknown` не считают
+  успехом. Тест: любой `NA` не даёт «all checks pass».
+- [ ] Гейты, которые не могут провалиться (`gate_lamp_variant = TRUE`,
+  `duplex homologous = NA`), сделать конструкторскими инвариантами или
+  `not_applicable`, а не декоративными гейтами.
+
+### Z2. Один источник истины для порогов  [P1]
+- [ ] Каждый критерий — data-object: `id`, `scope`, `kind`, `bounds`, `units`,
+  `source`, `calibrated = yes/no`. Селектор, checker, plotter и DAG читают один
+  объект; расхождение (design GC 0.35–0.70 vs check 0.40–0.60, Tm display vs
+  gate, DAG label vs constant) становится невозможным. Тест на отсутствие
+  дублирующих констант.
+- [ ] `MARKER_CHECK_*`/`MARKER_FAMILY_CHECKS` — начало; перенести в них limits,
+  levels и evaluator-id, чтобы семья не собиралась из трёх мест.
+
+### Z3. Условия реакции  [P1]
+- [ ] `reaction_conditions` на схему: соли, Mg, dNTP, DMSO/бетаин/PEG,
+  температура. `primer_tm()` и `dimer_thermo()` принимают его; ΔG димеров
+  считается при температуре реакции (60–65 °C для LAMP, 37–42 °C для RPA),
+  а не всегда 37 °C. RPA не получает PCR-Tm как гейт.
+
+### Z4. Движки и capabilities  [P1]
+- [ ] Thermo/specificity/scoring — интерфейсы с `capabilities()`. Если движок
+  недоступен (OligoArrayAux, BLAST, crisprScore), результат `unknown`, а не
+  молчаливый `pass`. `TmCalculator` — независимый cross-check шкалы Tm.
+- [ ] **Ecosystem reuse, not reimplementation.** `crisprVerse` (Cas9/Cas12a/
+  Cas13d; Bowtie/BWA; `crisprScore`) для PAM/search/off-target — но не как
+  trans-cleavage activity predictor и с оговоркой human-only SNP annotation;
+  `DECIPHER` `DesignPrimers`/`DesignProbes`/`DesignSignatures` для group/
+  homeolog-aware design; `rprimer` для degenerate-панелей; `TmCalculator` (27 NN,
+  salt/DMSO) как независимый Tm-cross-check; `fitPoly` для dosage. Внешние
+  Primer3/MFEprimer/NUPACK/ViennaRNA — только через capability-интерфейс;
+  `openPrimeR` — проверить maintenance перед зависимостью.
+
+### Z5. Mismatch-tolerant specificity  [P1]
+- [x] `in_silico_pcr()` ищет IUPAC-праймеры, поддерживает `max_mismatch` и
+  склеивает реальные forward/reverse продукты; exact-mode предупреждает о
+  near-match продукте.
+- [ ] Position-aware off-target: 3′-конец, число и позиция мисматчей; отдельные
+  модели для RPA (несколько мисматчей), CRISPR (seed/PAM), паралогов/гомеологов.
+  Не считать exact-hit + 15-nt seed достаточной специфичностью.
+- [ ] Backends: crisprVerse/Bowtie/BWA для CRISPR, DECIPHER для group-specific
+  design, rprimer для degenerate-панелей, Primer3/MFEprimer/NUPACK/ViennaRNA
+  как внешние проверки. Каждый — с provenance и capability-флагом.
+
+### Z6. Популяционный слой  [P1]
+- [x] `marker_attach_haplotypes()` + `marker_population_checks()` + generic
+  haplotype track; CAPS/CRISPR предупреждают без популяции и при вариантах в
+  сайте/guide-PAM.
+- [ ] Allele-frequency/haplotype object течёт во **все** схемы; отсутствие
+  частоты = `NA`, не вес 1. Проверять: CAPS site, CRISPR guide/PAM, LAMP/RPA
+  primer sites, SSR null alleles, polyploid dosage. Полиплоидия — отдельная ось,
+  не «pop_freq».
+
+### Z7. Намеренные вторые мисматричи  [P1]
+- [ ] Параметр deliberate mismatch для KASP/ARMS/AS-LAMP/AS-RPA/CRISPR
+  (SHERLOCK synthetic mismatches): позиция, тип, predicted ΔΔG; тесты, что
+  слабый transition SNP усиливается, а не просто помечается «риск».
+
+### Z8. Калибровка и benchmark  [P1]
+- [ ] Harness/`targets` pipeline: gate-pass → wet-lab outcome; published
+  conversion rates; `calibrated`-флаг у каждого порога. Без этого «usable» —
+  эвристика, а не вероятность.
+- [ ] Analytical performance: LOD, minor-allele fraction, stutter, false-positive
+  rate, dPCR partitioning; отдельные поля отчёта, не «not modeled» в тексте.
+
+### Z9. Пробелы по методам  [P1–P2]
+- [ ] **LAMP:** paired ALT set или internal control; REF-only ALT = «нет сигнала»
+  неотличим от failed reaction; F2–B2 distance, loop length и 3′-stability —
+  явные гейты.
+- [ ] **HRM:** SNP-class awareness (A/T class 4, Liew 2004), melt-domain/uMELT,
+  heteroduplex; A/T warning уже есть, модель плавления — нет.
+- [ ] **TaqMan:** MGB/LNA probes (short probes) и probe Tm/MGB-специфичные правила.
+- [ ] **Sanger:** ICE/TIDE/Poly Peak deconvolution, minor allele ~15–20% limit,
+  primers-over-variants allele dropout.
+- [ ] **CRISPR:** screen several spacers; activity scoring; crisprScore/Bowtie;
+  reporter/readout kinetics.
+- [ ] **dPCR:** Poisson/partition/LOD/minor-fraction model; не только Tm.
+
+### Z10. Структура, плоидность, аналитика  [P2]
+- [ ] Amplicon/target folding (особенно LAMP/RPA/Cas13 RNA, GC-rich HRM).
+- [ ] Dosage/copy-number (fitPoly/mixture model) для полиплоидных KASP.
+- [ ] GRanges/VCF-backed interchange вместо custom tibble там, где это уместно.
+
+### Z11. Документация  [P2]
+- [ ] «Аудит решений» переписать из dev-заметок в user-facing ограничения и
+  рекомендации; каждое утверждение — с source/calibrated-флагом.
+- [ ] Исправить Cas12a/Cas13/dPCR/LAMP/KASP формулировки во всех виньетках и
+  комментариях; тест на запрещённые термины (`dsDNase`, «PAM-free» без PFS).
+
+### Уже закрыто в этом проходе
+- [x] 29 family-specific checks (`MARKER_CHECK_*`), DAG-узлы и статус `unknown`.
+- [x] `NA` не проходит отбор; CAPS/CRISPR population warnings.
+- [x] LAMP F1c/B1c > F2/B2, FIP 3′ ALT; RPA THF off variant.
+- [x] `in_silico_pcr()` IUPAC/mismatch/real products; near-match warning.
+- [x] Generic haplotype track/population checks; examples with known proportions.
+- [x] Template/plot fixes (noses, short-feature letters, boxes, Sanger roles).
+
+## ZA. Целевые интерфейсы и швы (codebase-design)
+
+Это план перестройки **модулей и швов**, а не список функций. Принцип:
+табличные данные — `tibble`/`vctrs`; поведение — S3-generic; граф —
+`tidygraph`; рисование — грамматика `ggplot2`; внешний движок — adapter с
+`capabilities()`. Не тащить `R6`/`data.table`; не превращать поведение в
+data-frame только ради «tidy».
+
+### ZA1. Целевой путь вызова
+
+```r
+context <- marker_context(
+  genome, variants = NULL, population = NULL,
+  conditions = reaction_conditions("pcr"), engines = marker_engines()
+)
+scheme <- marker_scheme("caps")
+m  <- scheme$design(snp, context)
+ev <- scheme$evaluate(m, context)
+tr <- scheme$tracks(m, context)
+dc <- scheme$decision()
+ro <- scheme$readout(m, context)
+```
+
+### ZA2. Модули и швы
+
+| Модуль | Tidy/ggplot-форма | Заменяет | Зависимость |
+|---|---|---|---|
+| `MarkerContext` | classed list, `rlang::list2`, `withr` | ручной `...`-плумбинг | существующие |
+| `Scheme` | S3 + `tibble`-реестр | `design_<scheme>_marker` + `switch(scheme)` + naming convention | нет |
+| `Criterion`/`CriterionSet` | `tibble` + list-column evaluator, `vctrs::vec_rbind` | дубли порогов в design/check/DAG | `vctrs` (Imports) |
+| `Evaluation` | `tibble` + `forcats` status | три evaluator-пути | `vctrs`, `forcats` |
+| `Population` | `tibble` + `GenomicRanges`/`VariantAnnotation` adapters | мутация `marker_attach_haplotypes()` | `fitPoly` позже (Suggests) |
+| `Engines` | S3-adapter + `capabilities()` | глобальный `PCR_COND`, молчаливые skip | существующие + внешние |
+| `DecisionSchema`/`DecisionState` | `tidygraph` + Graphviz | ручная раскладка и статусы | `ggraph` (Suggests) |
+| `TrackSpec`/`Figure` | `ggplot2` + `ggenes`/`patchwork` | стиль внутри схем | `scales` (Imports) |
+| `Readout`/`Calibration` | model-result + `ggplot2`/`yardstick` | строки «not modeled» | `yardstick`, `rsample`, `targets` (Suggests) |
+| YAML-технология | `yaml` | ручная сериализация | `yaml` |
+| Отчёты/таблицы | `knitr::kable`/`gt` | ручной текст | опционально Suggests |
+
+### ZA3. Home-rolled → проверенный импорт
+
+- `spec_bind()`/ручная сборка строк → `purrr::list_rbind()`/`vctrs::vec_rbind()`.
+- `format_check_value()` → `scales::percent()`, `scales::number()`.
+- progress/messages → `cli::cli_progress_*()`, `cli::cli_abort()`.
+- cache key → `rlang::hash()`.
+- IUPAC/regex-праймеры → `Biostrings::matchPattern(fixed = FALSE)`, `PDict`.
+- интервалы → `IRanges`/`GenomicRanges`.
+- раскладка графа → `tidygraph` + Graphviz `dot`; `ggraph` только для R-view.
+- test doubles → `testthat::local_mocked_bindings()`.
+- таблицы в доках → `knitr::kable()`/`gt`.
+- метрики/калибровка → `yardstick`; resampling → `rsample`; pipeline → `targets`.
+
+### ZA4. Политика зависимостей
+
+- **Imports (добавить при прямом использовании):** `vctrs`, `scales`, `yaml`.
+- **Suggests:** `yardstick`, `rsample`, `targets`, `fitPoly`, `crisprBase`,
+  `crisprDesign`, `crisprScore`, `crisprBowtie`, `crisprBwa`, `vdiffr`, `gt`.
+- **Уже есть и переиспользовать:** `Biostrings`, `IRanges`, `GenomicRanges`,
+  `Rsamtools`, `BiocParallel`, `DECIPHER`, `TmCalculator`, `rBLAST`, `Rsubread`,
+  `rprimer`, `dplyr`, `tidyr`, `purrr`, `forcats`, `tibble`, `ggplot2`,
+  `ggenes`, `ggforce`, `ggrepel`, `patchwork`, `tidygraph`, `cli`, `withr`,
+  `rlang`, `glue`, `processx`.
+- **Не добавлять без второго adapter:** `R6`, `data.table`, `DiagrammeR`,
+  `openPrimeR` (сначала проверить maintenance).
+- Тяжёлые `crispr*`/`fitPoly` — только при реальной реализации
+  CRISPR-search/dosage, не «на будущее».
+
+### ZA5. Что не делать tidy/ggplot
+
+- `Scheme` и `Engines` — поведение, S3-generic, не data-frame.
+- `DecisionSchema` — графовые данные + state; рисование отдельным adapter.
+- `Readout` — typed result (`simulated`, `lod`, `maf`, `stderr`), не ggplot.
+- Не вводить seam для одного adapter (deletion test): если удаление модуля
+  просто возвращает сложность одному caller, это pass-through.
+
+### ZA6. Порядок миграции
+
+1. `vctrs`-typed `Criterion`/`Evaluation`; статус
+   `pass/fail/unknown/not_applicable`.
+2. `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
+3. `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
+4. `Population` в context; `marker_attach_haplotypes()` — compatibility adapter.
+5. `DecisionSchema`/`DecisionState`; `tidygraph` + Graphviz.
+6. `TrackSpec`/`Figure`; `scales`; стиль только в renderer.
+7. `Readout` + `yardstick`/`targets`.
+8. `yaml` export; затем optional `fitPoly`/`crispr*`.
+
+### ZA7. Acceptance / test surface
+
+- Вызовы в тестах идут тем же швом: `marker_context()` → `scheme$design()` →
+  `scheme$evaluate()` → `scheme$tracks()`/`scheme$readout()`.
+- Contract-test: каждая схема реализует `design/evaluate/tracks/decision/readout`.
+- `NA` никогда не становится `pass`; `unknown` не считается успехом.
+- У каждого criterion один bounds-object и `source`/`calibrated`.
+- Fake thermo/specificity engines дают deterministic тесты без OligoArrayAux.
+- Golden-тесты: criterion-id, evaluation-table и track-rows; не пиксели.
+- После каждого шага — `graphify update .` (если CLI установлен) и `dev/check.R`.
+
+### ZA8. Docs/artifacts graph и freshness
+
+Graphify сейчас индексирует код и doc-headings, но **не** файлы документов и **не**
+артефакты: `graphify explain vignettes/markers-gel.Rmd` и
+`vignettes/figures/caps.svg` не находят узлов. Попытка sidecar-merge также
+провалилась: `graph.json` хранит `nodes` как dict, а `graphify merge-graphs`
+ожидает node-link list (проверено). Поэтому docs/artifacts слой делаем через
+manifest + generated Markdown, а не через sidecar JSON.
+
+- [ ] **`docs/INDEX.md` — единый вход.** Все README/AGENTS/CONTRIBUTING/ROADMAP/
+  NEWS/INVENTORY/vignettes/dev-docs; каждая ссылка проверяется на существование.
+- [ ] **`docs/artifacts.yml` — источник истины.** Для каждого артефакта:
+  `path`, `kind` (figure/decision/table/benchmark), `generator`, `inputs`,
+  `input_hash`, `output_hash`, `docs`, `code`, `status`.
+- [ ] **`dev/check-docs.R`.** Нет orphan-документа; нет broken relative link;
+  каждый `include_graphics()` имеет manifest-entry; обратные ссылки совпадают.
+- [ ] **`dev/check-artifacts.R`.** Нет orphan-файла в `vignettes/figures`,
+  `man/figures`, `results/plot-smoke`; все пути manifest существуют; входной хеш
+  не изменился; выходной хеш совпадает — иначе **stale** и gate fail.
+- [ ] **`docs/generated/artifacts.md`.** Один heading на артефакт со ссылками
+  на generator/source/docs; `graphify update . --no-cluster` после генерации.
+  Heading label = путь артефакта, чтобы `graphify query "caps.svg"` находил
+  docs/code, даже если самого файла нет в AST-графе.
+- [ ] **`targets` (Suggests).** `tar_outdated()`/`tar_make()` для gallery,
+  decision graphs и vignettes; manifest обновляется из `tar_meta()`.
+- [ ] **Gate.** `dev/check.R` вызывает docs/artifacts checks; graphify остаётся
+  developer tool (`--graphify` opt-in), не CI-зависимость.
+- [ ] **Graphify health.** `diagnose multigraph` сейчас показывает 41
+  same-endpoint collapse и 291 external node без `source_file`; учитывать как
+  ограничение ориентации, не как доказательство корректности.
+
+## ZP. Параллельный rollout (coordination)
+
+Правило: **ветки изолируют историю, не рабочее дерево.** Один clone = один
+checkout. Никаких N агентов с `git checkout` в одном каталоге.
+
+### ZP0. Base snapshot — блокер
+- [ ] Сейчас: **144 незакоммиченных пути**, только worktree `main` (`2077c46`).
+  Worktree из `HEAD` был бы stale и не содержал бы текущую работу.
+- [ ] Перед запуском: зафиксировать базу (`wip/roadmap-base` или merge в `main`)
+  с явного разрешения. Пока базы нет — параллельный rollout не стартует.
+- [ ] После snapshot: `git worktree add ../tidymarkers-<slug> -b <branch> wip/roadmap-base`.
+
+### ZP1. Волны и ownership
+
+**Wave 0 — последовательно (shared files):**
+`Evaluation`/status, `MarkerContext`/`ReactionConditions`/`Engines`,
+`marker_haplotypes` population seam. Файлы: `R/marker_checks.R`,
+`R/marker_plot_methods.R`, `R/marker_core.R`, `R/marker_thermo.R`,
+`R/marker_haplotypes.R`, `tests/testthat/helper-*`, shared tests. Один владелец.
+
+**Wave 1 — параллельно, disjoint paths:**
+
+| Agent | Worktree | Branch | Owns | Forbidden |
+|---|---|---|---|---|
+| docs-artifacts | `../tidymarkers-agent-docs` | `feat/docs-artifacts` | `docs/**`, `dev/check-docs.R`, `dev/check-artifacts.R`, `dev/artifacts.R` | `R/**`, `vignettes/**` |
+| crispr-physics | `../tidymarkers-agent-crispr` | `feat/crispr-physics` | `R/marker_crispr.R`, `tests/testthat/test-crispr.R` | `vignettes/**`, other `R/**` |
+| sanger-physics | `../tidymarkers-agent-sanger` | `feat/sanger-physics` | `R/marker_sanger.R`, `tests/testthat/test-sanger.R` | `vignettes/**`, other `R/**` |
+| lamp-physics | `../tidymarkers-agent-lamp` | `feat/lamp-physics` | `R/marker_lamp.R`, `tests/testthat/test-lamp.R` | `vignettes/**`, other `R/**` |
+
+**Wave 2 — после Wave 0/1:**
+- dPCR Tm calibration — только после engine/conditions seam и калибровочной базы.
+- Vignettes — один агент на файл, строго после code-агентов; никто не делит
+  `markers-kasp.Rmd`/`markers-gel.Rmd`/`markers-probe.Rmd`/
+  `markers-isothermal.Rmd`/`markers-crispr-sequencing.Rmd`.
+- Decision/plot split — после `Evaluation`, тот же owner, что и Wave 0.
+
+### ZP2. Merge order
+
+1. `wip/roadmap-base` → `main` (или integration worktree).
+2. `feat/docs-artifacts` — новые пути, низкий конфликт.
+3. `feat/crispr-physics`, `feat/sanger-physics`, `feat/lamp-physics` — по одному.
+4. Vignette branches — последними.
+5. После каждого merge: `Rscript dev/check.R --no-render`; полный gate — в
+   integration worktree. Конфликты решать в integration worktree, не в агентских.
+
+### ZP3. Agent brief
+
+```text
+Worktree: /abs/path/tidymarkers-<slug>
+Branch: feat/<slug> (already checked out; do NOT checkout elsewhere)
+Owns: <paths>
+Forbidden: <paths>
+Tests: Rscript dev/test.R <filter>; Rscript dev/check.R --no-render
+Commit only on feat/<slug>; verify git branch --show-current before commit.
+```
+
+### ZP4. Anti-patterns
+
+- N branches in one clone without worktrees.
+- Worktrees from stale `HEAD` while 144 paths are dirty.
+- Two agents editing the same vignette or shared helper.
+- Parallel dPCR calibration before Tm engine/benchmark.
+- Merge without the gate, or deleting a worktree before merge.
 
 ## Y. Следующий слой: конструктор технологий, цели по области, специфичность  [план]
 
@@ -113,7 +441,7 @@
      Иначе «ленивая оценка» повиснет.
   6. **Опция доп. сборок/пангенома:** прогонять и по ним (хотя бы финальных кандидатов) —
      одна сборка не видит паралогов/вставок у линий пользователя.
-- **Сделано (0.4.0):** `kasp_specificity()` + `KASP_SPECIFICITY_MODES` и «нет чистой
+- **Сделано (0.4.0):** `marker_specificity()` + `KASP_SPECIFICITY_MODES` и «нет чистой
   пары → нет маркера» (`assemble_kasp_assay(on_offtarget=)`) для `unique`-схем.
   Остаётся: 3'-end-aware проверка, ленивая оценка + выбор индекса (под 15 Gb),
   опция доп. сборок, логика `homeolog-aware`.

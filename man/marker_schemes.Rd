@@ -14,7 +14,7 @@ tibble with one row per scheme: \code{scheme}, \code{family}, \code{label},
 One row per chemistry: how it tells the alleles apart, how the signal is read,
 the zygosity it can call, whether amplicon length is critical, and how many
 loci share a reaction.  Each scheme is realised in the pipeline as a piece of
-the decision schema (\code{\link[=marker_decision_schema]{marker_decision_schema()}}): every scheme carries the
+the decision schema (\code{marker_decision_schema()}): every scheme carries the
 marker-agnostic primer checks, and the allele-specific / target-site checks
 follow the scheme's \code{family} (see \code{KASP_FAMILY_CHECKS}), so a non-KASP
 chemistry is never graded on an AS primer it does not have.  A duplex

@@ -1,8 +1,11 @@
 ^\.tools$
 ^renv$
 ^renv\.lock$
+^\.Rprofile$
 ^results$
 ^report$
+^vignettes/figures/.*[.]png$
+^graphify-out$
 ^_pkgdown\.yml$
 ^\.lintr$
 ^.*\.Rcheck$
@@ -17,5 +20,6 @@
 ^ROADMAP\.md$
 ^INVENTORY\.md$
 ^\.i18n-lib$
+^\.tmp-rt$
 ^.*\.Rproj$
 ^\.Rproj\.user$

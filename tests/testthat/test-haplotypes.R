@@ -70,6 +70,23 @@ test_that("haplotype_hits says which AS primer each haplotype should bind", {
   expect_true(all(hits$binds[hits$haplotype %in% c("H2", "H3")]))
 })
 
+test_that("any marker can carry population haplotypes and report ALT frequency", {
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G")
+  h <- tibble::tibble(
+    haplotype = c("H1", "H1", "H2", "H0"),
+    freq = c(0.55, 0.55, 0.25, 0.20),
+    chrom = "Chr1", pos = c(300L, 310L, 300L, 320L),
+    ref = c("A", "C", "A", "G"), alt = c("G", "T", "G", "A")
+  )
+  m <- marker_attach_haplotypes(list(snp = snp, amplicon = tibble::tibble(start = 250L, end = 350L)), h, snp)
+  expect_equal(m$population$alt_freq, 0.8)
+  expect_equal(m$population$n_haplotypes, 3L)
+  expect_equal(m$population$n_alt_haplotypes, 2L)
+  ch <- marker_population_checks(m)
+  expect_equal(ch$value[ch$name == "ALT freq"], "80%")
+  expect_equal(ch$status[ch$name == "ALT freq"], "ok")
+})
+
 test_that("assemble_kasp_assay accepts haplotypes and reports the hits", {
   skip_if_no_oligoarrayaux()
   m <- hap_fixture()
@@ -78,6 +95,9 @@ test_that("assemble_kasp_assay accepts haplotypes and reports the hits", {
   expect_true(!is.null(a$haplotypes))
   expect_equal(nrow(a$haplotype_hits), 3L)
   expect_true(all(c("haplotype", "freq", "target_allele", "primer", "binds") %in% names(a$haplotype_hits)))
+  a <- marker_attach_haplotypes(a, m$haps, m$snp)
+  pop <- marker_population_checks(a)
+  expect_true(all(c("ALT freq", "haplotypes", "ALT haplotypes", "hap covered") %in% pop$name))
   # the co-segregating variant was baked into the ALT haplotype
   expect_true(!is.null(a$selection$linked) && nrow(a$selection$linked) >= 1L)
   # the layered haplotype track renders, and the full plot still assembles

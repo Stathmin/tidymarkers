@@ -24,7 +24,7 @@ from the reference.  The classes are:
 A/T or C/G transversion mismatches the wrong template by a strong \emph{same-base}
 pair, so it discriminates as well as any other SNP);
 \item \code{"degenerate"} -- two or more distinct SNP ALTs: one AS primer whose
-3'-terminal base is the IUPAC consensus \code{\link[=iupac_code]{iupac_code()}} of the ALT set
+3'-terminal base is the IUPAC consensus \code{iupac_code()} of the ALT set
 matches all of them and mismatches REF (the degenerate-primer option);
 \item \code{"indel"} -- only non-SNP ALTs (handled by the indel-junction path);
 \item \code{"none"} -- no usable ALT.

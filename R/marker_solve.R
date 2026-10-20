@@ -40,7 +40,7 @@ knobs_key <- function(dots) {
 
 #' Is a designer's return a usable marker?
 #'
-#' Class-based ([is_target_designable()]) plus a scheme's own `verdict`: a
+#' Class-based (`is_target_designable()`) plus a scheme's own `verdict`: a
 #' `marker_lax`/`marker_duplex` object can carry a `"fail"` verdict (its inner assay
 #' was doomed), so the class alone is not enough.
 #' @keywords internal

@@ -7,6 +7,7 @@ test_that("alignment_from builds an ungapped alignment and rejects ragged input"
 })
 
 test_that("rprimer_assays designs and reports a match table", {
+  skip_if_not_full()
   skip_if_not_installed("rprimer")
   withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 120L, TRUE), collapse = ""))
   aln <- alignment_from(c(

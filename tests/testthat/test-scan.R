@@ -11,6 +11,7 @@ blast_fa <- function(fa) {
 }
 
 test_that("marker_blast_index builds a database and specificity_blast counts hits", {
+  skip_if_not_full()
   skip_if_not(has_blast(), "NCBI BLAST+ not installed")
   skip_if_not_installed("rBLAST")
   db <- marker_blast_index(marker_genome(blast_fa(withr::local_tempfile(fileext = ".fa"))))
@@ -20,6 +21,7 @@ test_that("marker_blast_index builds a database and specificity_blast counts hit
 })
 
 test_that("specificity_of routes an indexed genome to BLAST, and needs a db", {
+  skip_if_not_full()
   withr::local_envvar(LANGUAGE = "en")
   skip_if_not(has_blast(), "NCBI BLAST+ not installed")
   skip_if_not_installed("rBLAST")

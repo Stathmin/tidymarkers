@@ -164,11 +164,11 @@ duplex_selfcomp <- function(primer) {
 #' Raw compatibility metrics of a duplex pairing
 #'
 #' One evaluation of the two-locus stage, shared by the gate table
-#' ([duplex_compatibility()]) and the relaxation ladder ([duplex_selection()]) so
+#' (`duplex_compatibility()`) and the relaxation ladder (`duplex_selection()`) so
 #' the two can never disagree.
 #' @param assays a list of two assembled assays (one per locus).
 #' @param readout `"co-dominant"` (one cassette per locus) or `"presence-absence"`.
-#' @param homologous are the two loci homologous? (see [duplex_compatibility()]).
+#' @param homologous are the two loci homologous? (see `duplex_compatibility()`).
 #' @param tm_window,max_amplicon,max_selfcomp,min_cross_run the duplex limits.
 #' @return a list of scalars/vectors (see the body).
 #' @keywords internal
@@ -275,7 +275,7 @@ duplex_compatibility <- function(assays, readout = c("co-dominant", "presence-ab
 #' warning (C4).
 #' @param assays a list of two assembled assays (one per locus).
 #' @param readout,homologous,tm_window,max_amplicon,max_selfcomp,min_cross_run see
-#'   [duplex_compatibility()].
+#'   `duplex_compatibility()`.
 #' @return list with `pick` (the `select_with_ladder()` result) and `metrics`.
 #' @keywords internal
 #' @noRd
@@ -317,10 +317,10 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
 #' Design a duplex assay: two loci in one tube
 #'
 #' Assembles each locus on its own ([assemble_kasp_assay()]) and then evaluates
-#' the two-locus **compatibility stage** ([duplex_compatibility()]) across every
+#' the two-locus **compatibility stage** (`duplex_compatibility()`) across every
 #' primer of both loci - the declared topology, harmonised Tm, no inter-pair
 #' complementarity and a bounded self-complementarity - through the declared
-#' relaxation ladder ([duplex_selection()]).  A failed *hard* gate dooms the
+#' relaxation ladder (`duplex_selection()`).  A failed *hard* gate dooms the
 #' pairing (`verdict = "fail"`); a relaxed soft gate warns.  The readout is either
 #' co-dominant (`"dKASP"`: a cassette per locus, `homologous = TRUE`) or
 #' presence/absence (`"mxKASP"`/`"Multi-KASP"`: a dominant call from the
@@ -328,7 +328,7 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param loci two-row tibble (`chrom`, `pos`, `ref`, `alt`).
 #' @param readout `"co-dominant"` or `"presence-absence"`.
-#' @param homologous are the two loci homologous? (see [duplex_compatibility()]).
+#' @param homologous are the two loci homologous? (see `duplex_compatibility()`).
 #' @param ... passed to [assemble_kasp_assay()].
 #' @return a `marker_duplex` list (`loci`, `assays`, `readout`, `homologous`,
 #'   `compatibility`, `selection`, `verdict`).

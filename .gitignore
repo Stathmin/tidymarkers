@@ -5,6 +5,7 @@ results/*
 .tools/
 .deps/
 .i18n-lib/
+.tmp-rt/
 
 # curated demo data must be tracked
 !inst/
@@ -17,6 +18,8 @@ results/*
 
 # rendered report
 report/*.html
+vignettes/*.html
+vignettes/*_files/
 report/*.nb.html
 
 # R CMD check / build artefacts
@@ -29,3 +32,9 @@ lecture/*_cache/
 lecture/*_files/
 report/*_cache/
 report/*_files/
+
+# generated gallery rasters are local; vignettes embed the tracked SVG
+vignettes/figures/*.png
+
+# local graphify index (developer tool, not a product input)
+graphify-out/

@@ -203,7 +203,7 @@ lax_cross_priming_pairs <- function(haplotypes, snp, designs) {
 #' The designer hands each group's representative to `assemble_kasp_assay()`
 #' (`linked =`), so the positions that actually rewrite that group's ALT primer are
 #' its linked set intersected with the primer's own footprint.
-#' @param linked the haplotype engine's linked table (see [haplotype_variants()]);
+#' @param linked the haplotype engine's linked table (see `haplotype_variants()`);
 #'   `NULL` when there is none.
 #' @param designs the kept designs (see [haplotype_cover()]), each with `rep` and
 #'   `fp` (its AS footprint).
@@ -222,7 +222,7 @@ lax_baked_positions <- function(linked, designs) {
 
 #' The population frequency of ALT haplotypes the tube can resolve
 #'
-#' The ranking counterpart of [lax_cross_priming_pairs()]: a group whose
+#' The ranking counterpart of `lax_cross_priming_pairs()`: a group whose
 #' 3'-proximal window is unique among the designs is separable (its ALT primer
 #' fires only on its own templates), while groups that share a window cannot be
 #' told apart.  This weights that by the population each covers - the scheme's
@@ -259,15 +259,15 @@ lax_resolvable_freq <- function(haplotypes, snp, cover) {
 
 #' Run one tube through the lax decision stage
 #'
-#' The set-level twin of [select_with_ladder()]: the per-haplotype primers are
+#' The set-level twin of `select_with_ladder()`: the per-haplotype primers are
 #' already chosen, so the table has exactly one row (the tube) and the shared
 #' ladder only has to decide whether its three gate margins clear.  Running this
 #' here is what makes the declared lax gates real rather than decorative (C7): the
 #' designer records the outcome and the observed metrics on the marker.
 #' @param n_uncovered ALT haplotypes no kept design covers.
-#' @param leakage wild-type leakage fraction (see [lax_ref_leakage()]).
-#' @param n_cross collapsible group pairs (see [lax_cross_priming_pairs()]).
-#' @param resolvable the tube's ranking margin (see [lax_resolvable_freq()]).
+#' @param leakage wild-type leakage fraction (see `lax_ref_leakage()`).
+#' @param n_cross collapsible group pairs (see `lax_cross_priming_pairs()`).
+#' @param resolvable the tube's ranking margin (see `lax_resolvable_freq()`).
 #' @return `list(pick, metrics)`: the ladder's outcome (`best`, `relaxed`,
 #'   `violated`) and the observed numbers.
 #' @keywords internal
@@ -301,7 +301,7 @@ lax_stage_pick <- function(n_uncovered = 0L, leakage = 0, n_cross = 0L, resolvab
 }
 
 #' The lax stage's record on the marker (`$selection`)
-#' @param lax a [lax_stage_pick()] result.
+#' @param lax a `lax_stage_pick()` result.
 #' @param designs the kept designs, whose own `as`/`pair` outcomes are rolled up.
 #' @return a list (`relaxed`/`violated`/`doomed`/the metrics + the rolled-up
 #'   `as`/`pair` gate ids) suitable as a marker's `$selection`.
@@ -341,8 +341,8 @@ lax_selection <- function(lax, designs = list()) {
 #' The tube is then put through the scheme's own *set-level* stage, so the
 #' declared lax gates are evaluated and recorded in `$selection`: every ALT
 #' haplotype must be covered (hard), the baked linked alleles must be ALT-specific
-#' ([lax_ref_leakage()]) and the haplotype ALT primers must not cross-prime each
-#' other ([lax_cross_priming_pairs()]).  The last two are soft, with bounded floors
+#' (`lax_ref_leakage()`) and the haplotype ALT primers must not cross-prime each
+#' other (`lax_cross_priming_pairs()`).  The last two are soft, with bounded floors
 #' (see `KASP_GATE_FLOOR_LAX`), so a relaxed tube comes back with a warning and a
 #' `"warn"` verdict.
 #' @param genome a `marker_genome` or `DNAStringSet`.
@@ -357,7 +357,7 @@ lax_selection <- function(lax, designs = list()) {
 #'   the base's strand; `NA` when a haplotype did not design), `pool` +
 #'   `compatibility` (the *joint* check of the shared REF + shared COM + every ALT
 #'   primer, see [primer_set_compatibility()]), `selection` (the lax stage's gate
-#'   outcome and the metrics behind it, see [lax_stage_pick()]) and `verdict`
+#'   outcome and the metrics behind it, see `lax_stage_pick()`) and `verdict`
 #'   (`"fail"` when no haplotype designs or the hard coverage gate blocks,
 #'   `"warn"` when a soft gate was relaxed or the pool is not clean, else
 #'   `"pass"`).

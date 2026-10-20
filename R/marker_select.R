@@ -439,7 +439,7 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties,
     ok <- rep(TRUE, nrow(data))
     for (g in gates) {
       m <- data[[gate_margin[[g]]]]
-      ok <- ok & (is.na(m) | m >= bars[[g]]) # NA (unknown) does not block
+      ok <- ok & !is.na(m) & m >= bars[[g]] # an unknown margin is not evidence
     }
     ok
   }

@@ -11,7 +11,7 @@ marker_tech(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL)
 
 \item{costs}{a named cost per scheme, e.g. \code{\link[=marker_costs]{marker_costs()}}; \code{NULL} = defaults.}
 
-\item{preset}{a bundle name in \link{KASP_TECH_PRESETS} (\code{"kasp"}, \code{"gel"},
+\item{preset}{a bundle name in \code{KASP_TECH_PRESETS} (\code{"kasp"}, \code{"gel"},
 \code{"lab"}, \code{"field"}).}
 
 \item{exclude}{scheme ids to drop from the allowed set.}
@@ -21,7 +21,7 @@ a plan layer (add it with \code{+}).
 }
 \description{
 The tech layer.  \code{schemes} is an allow-list (leaving it unset means every
-designable scheme); \code{preset} names a bundle (\link{KASP_TECH_PRESETS}); \code{exclude}
+designable scheme); \code{preset} names a bundle (\code{KASP_TECH_PRESETS}); \code{exclude}
 drops schemes from the allowed set.  \code{costs} is a cost schema - a relative
 effort per chemistry, bigger meaning harder - and the solver walks the allowed
 schemes cheapest-first, stopping at the first that designs.

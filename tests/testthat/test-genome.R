@@ -47,6 +47,7 @@ test_that("in_silico_pcr works through an indexed marker_genome", {
 })
 
 test_that("a marker_genome can be backed by a BSgenome (getSeq)", {
+  skip_if_not_full()
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
   gs <- marker_genome(bsgenome = "BSgenome.Athaliana.TAIR.TAIR9")
   expect_s3_class(gs, "marker_genome")

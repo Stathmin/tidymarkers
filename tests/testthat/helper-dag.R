@@ -26,15 +26,6 @@ dag_stages <- function(scheme) marker_decision_stages(scheme)
 # "amplicon length (bp)".
 dag_norm <- function(x) gsub("[^a-z0-9]", "", tolower(x))
 
-# The distinctive stem of each *ungated* check, so C10 can tell whether a scheme
-# hard-gates the same criterion it still calls ungated (off-target is hard in
-# indel_size but still listed in KASP_UNGATED_CHECKS).
-KASP_UNGATED_STEM <- c(
-  "inverted repeat (arms>=4, loop<=6)" = "invertedrepeat",
-  "in-silico PCR (REF 1 / ALT 0)" = "insilico",
-  "off-target exact primer hits (n)" = "offtarget"
-)
-
 # The ungated set for one scheme: KASP_UNGATED_CHECKS may be a plain vector, a
 # per-scheme list, or a function of the scheme once C10 makes it scheme-aware.
 # Guarded so a future rename of the constant skips C10 rather than erroring.
@@ -97,7 +88,8 @@ expect_dag_invariants <- function(scheme) {
   allowed <- c(
     KASP_CHECK_PRIMER,
     if ("site" %in% classes) KASP_CHECK_SITE,
-    if ("as" %in% classes) KASP_CHECK_AS
+    if ("as" %in% classes) KASP_CHECK_AS,
+    MARKER_FAMILY_CHECKS[[info$family]] %||% character(0)
   )
   chk <- crit$label[crit$role == "check"]
   rogue <- setdiff(chk, allowed)
@@ -171,5 +163,26 @@ expect_dag_invariants <- function(scheme) {
     )
   }
 
+  invisible(scheme)
+}
+
+# The shared KASP core DAG block: every SNP-like scheme (snp, indel, multi, ...)
+# declares the same AS + pair gate set, the same two hard AS gates, and exactly
+# one DOOMED terminal.  Call it after `expect_dag_invariants(scheme)`.
+#' Assert a scheme uses the shared KASP core stages
+#'
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return the scheme id, invisibly.
+#' @keywords internal
+#' @noRd
+expect_kasp_core_dag <- function(scheme) {
+  s <- marker_decision_schema(scheme)
+  expect_identical(
+    s$nodes$name[s$nodes$kind == "gate"],
+    c(paste0("as:gate:", KASP_GATES_AS), paste0("pair:gate:", KASP_GATES_PAIR))
+  )
+  hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
+  expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
+  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
   invisible(scheme)
 }
