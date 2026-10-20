@@ -148,7 +148,7 @@ consumers.
 - code: [R/marker_assemble.R](../../R/marker_assemble.R)
 - inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `28960d57ab27353350229c0243d61cec`
+- output_hash: `0c94776c57c5e1437920ea492d77ec4e`
 
 ## vignettes/figures/indel_size.svg
 
@@ -192,7 +192,7 @@ consumers.
 - code: [R/marker_assemble.R](../../R/marker_assemble.R)
 - inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `5ed0d4a586d21d2edce356d61aed13aa`
+- output_hash: `6f4c8e39c8c5a1b92e56f344975186ff`
 
 ## vignettes/figures/primer.svg
 

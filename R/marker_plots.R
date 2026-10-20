@@ -1119,11 +1119,18 @@ tumbler_plot <- function(chk) {
 #' @export
 plot_checks <- function(assay, limits = KASP_LIMITS) {
   chk <- assay$evaluation %||% marker_design_checks(assay, limits)
+  if (!"status" %in% names(chk)) {
+    chk$status <- dplyr::if_else(chk$pass, "pass", "fail")
+  }
   chk <- chk |>
     dplyr::mutate(
       level = factor(.data$level, levels = c("site", "feature", "alignment", "specificity")),
       name = check_short(.data$criterion),
-      status = dplyr::if_else(.data$pass, "ok", "broken"),
+      status = dplyr::case_when(
+        .data$status %in% c("unknown", "not_applicable") ~ "neutral",
+        .data$status == "pass" ~ "ok",
+        TRUE ~ "broken"
+      ),
       value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))
     )
   # the site class is shown as a 4-char code (monospace column, max 4 wide)
