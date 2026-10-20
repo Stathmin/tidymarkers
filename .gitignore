@@ -2,7 +2,7 @@
 results/*
 !results/.gitkeep
 .venv/
-.tools/
+.tools
 .deps/
 .i18n-lib/
 .tmp-rt/

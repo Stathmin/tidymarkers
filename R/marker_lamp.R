@@ -550,8 +550,11 @@ lamp_pool_compatibility <- function(primers, slack = 0L) {
 #' @keywords internal
 #' @noRd
 lamp_variant_gate <- function(fip, alt, pos) {
-  if (is.null(fip) || length(fip$arm3) < 2L ||
-    is.null(fip$primer) || !nzchar(fip$primer[1L])) {
+  ok <- !is.null(fip) &&
+    length(fip$arm3) >= 2L &&
+    !is.null(fip$primer) &&
+    nzchar(fip$primer[1L])
+  if (!ok) {
     return(FALSE)
   }
   end <- as.integer(fip$arm3[[2L]])
