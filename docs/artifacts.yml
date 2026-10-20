@@ -1,0 +1,297 @@
+# Artifact manifest -- committed artifacts only (the source of truth).
+#
+# Fields: path, kind, generator, inputs, input_hash, output_hash, docs, code,
+# status.
+#   input_hash  md5 over the generator and its inputs (content, not mtime)
+#   output_hash md5 of the artifact itself
+#   docs        the docs that embed the artifact (the backlinks)
+#   code        the package source the artifact is derived from
+#   status      verified | unverified
+#
+# Hashes cover repository inputs only. External tools (Graphviz `dot` for the
+# decision trees, OligoArrayAux for the gallery) are not hashed: they are
+# versioned by DESCRIPTION/SystemRequirements, not by file content here.
+#
+# vignettes/figures/*.png are generated locally and git-ignored, so they are
+# deliberately absent from this manifest.
+#
+# Refresh: Rscript dev/artifacts.R --write
+# Check:   Rscript dev/check-artifacts.R
+artifacts:
+- path: man/figures/logo.png
+  kind: figure
+  generator: data-raw/logo.R
+  inputs: []
+  input_hash: e29ac1680d4fb4bcebca2d56a1308070
+  output_hash: ea61b070675eb7f23ab7519dba4b3a57
+  docs: README.md
+  code: data-raw/logo.R
+  status: verified
+- path: man/figures/logo.svg
+  kind: figure
+  generator: data-raw/logo.R
+  inputs: []
+  input_hash: e29ac1680d4fb4bcebca2d56a1308070
+  output_hash: 89fc01f8d162143dad18db81c9bfdd37
+  docs: []
+  code: data-raw/logo.R
+  status: verified
+- path: man/figures/decision-tree.png
+  kind: decision
+  generator: dev/render-decision.R
+  inputs:
+  - R/marker_decision.R
+  - R/marker_select.R
+  - R/marker_criteria.R
+  - R/marker_schemes.R
+  - R/marker_scheme_registry.R
+  input_hash: 79d8ab44d3b43a84deee8c15fd0997b6
+  output_hash: 71b8c0eb2daef1059d320ca5e5efc414
+  docs: README.md
+  code:
+  - R/marker_decision.R
+  - R/marker_select.R
+  - R/marker_criteria.R
+  status: verified
+- path: man/figures/decision-multiplex.png
+  kind: decision
+  generator: dev/render-decision.R
+  inputs:
+  - R/marker_decision.R
+  - R/marker_select.R
+  - R/marker_criteria.R
+  - R/marker_schemes.R
+  - R/marker_scheme_registry.R
+  input_hash: 79d8ab44d3b43a84deee8c15fd0997b6
+  output_hash: 6c981fa641efdf993d29b5ea96b4a557
+  docs: README.md
+  code:
+  - R/marker_decision.R
+  - R/marker_duplex.R
+  - R/marker_scheme_registry.R
+  status: verified
+- path: vignettes/figures/arms.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 746f58c2b64c3fb1a8fd4a5842779b0e
+  docs: vignettes/markers-gel.Rmd
+  code: R/marker_arms.R
+  status: verified
+- path: vignettes/figures/asq.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 1866334e979f251228f7059bbc003426
+  docs: vignettes/markers-kasp.Rmd
+  code:
+  - R/marker_assemble.R
+  - R/marker_scheme_registry.R
+  status: verified
+- path: vignettes/figures/caps.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 478253e744e0d07a1fedddb17bd65cb0
+  docs: vignettes/markers-gel.Rmd
+  code: R/marker_caps.R
+  status: verified
+- path: vignettes/figures/castpcr.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 99da3dea8a93122392383832b27ec3e0
+  docs: vignettes/markers-probe.Rmd
+  code: R/marker_castpcr.R
+  status: verified
+- path: vignettes/figures/crispr.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: d8f4626704256d8fcaa6d1ef78917206
+  docs: vignettes/markers-crispr-sequencing.Rmd
+  code: R/marker_crispr.R
+  status: verified
+- path: vignettes/figures/dpcr.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: e521cba4cc9787bc5bf10fab4dfe153d
+  docs: vignettes/markers-probe.Rmd
+  code: R/marker_dpcr.R
+  status: verified
+- path: vignettes/figures/duplex.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: bdaa78acba20fa6203b941b952c97dc1
+  docs: vignettes/markers-kasp.Rmd
+  code: R/marker_duplex.R
+  status: verified
+- path: vignettes/figures/hrm.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 65761a1a184dec7452d8c1858a016376
+  docs: vignettes/markers-gel.Rmd
+  code: R/marker_hrm.R
+  status: verified
+- path: vignettes/figures/indel.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 85bb16e5a5ad9acdd7be1a8df630ee06
+  docs: vignettes/markers-kasp.Rmd
+  code: R/marker_assemble.R
+  status: verified
+- path: vignettes/figures/indel_size.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 9a9a70426977084c5cc84ea9c9b0fda2
+  docs: vignettes/markers-gel.Rmd
+  code: R/marker_indel_size.R
+  status: verified
+- path: vignettes/figures/lamp.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 5c75a0178dc55c0bf8ca1db51d904bd8
+  docs: vignettes/markers-isothermal.Rmd
+  code: R/marker_lamp.R
+  status: verified
+- path: vignettes/figures/lax.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 7998fb51cc5dffa1ad0e11556feca16a
+  docs: vignettes/markers-kasp.Rmd
+  code: R/marker_lax.R
+  status: verified
+- path: vignettes/figures/multi.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 01f0f56206e558a85d583b252ffa9102
+  docs: vignettes/markers-kasp.Rmd
+  code: R/marker_assemble.R
+  status: verified
+- path: vignettes/figures/primer.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 911db1fb414d98d171220830de5bf4bb
+  docs: vignettes/markers-kasp.Rmd
+  code: R/marker_assemble.R
+  status: verified
+- path: vignettes/figures/rpa.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 40a9449f502928b0fe307ddf663a9a58
+  docs: vignettes/markers-isothermal.Rmd
+  code: R/marker_rpa.R
+  status: verified
+- path: vignettes/figures/sanger.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 34e4b065aee9f797aa3352f754067998
+  docs: vignettes/markers-crispr-sequencing.Rmd
+  code: R/marker_sanger.R
+  status: verified
+- path: vignettes/figures/snapshot.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: ff8cd2e54523ac6c85a3896aff54e5dd
+  docs: vignettes/markers-probe.Rmd
+  code: R/marker_snapshot.R
+  status: verified
+- path: vignettes/figures/snp.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 1866334e979f251228f7059bbc003426
+  docs: vignettes/markers-kasp.Rmd
+  code:
+  - R/marker_assemble.R
+  - R/marker_scheme_registry.R
+  status: verified
+- path: vignettes/figures/ssr.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 1107dd615d7f71a2b3f7128040883363
+  docs: vignettes/markers-gel.Rmd
+  code: R/marker_ssr.R
+  status: verified
+- path: vignettes/figures/taqman.svg
+  kind: figure
+  generator: dev/render-gallery.R
+  inputs:
+  - R
+  - inst/extdata/sat2_transcripts.fa
+  input_hash: b46e976b628ceda8f5a82b64e6c1ff04
+  output_hash: 2cb3b074a27e73221dc1c1ef05b04903
+  docs: vignettes/markers-probe.Rmd
+  code: R/marker_taqman.R
+  status: verified
+
