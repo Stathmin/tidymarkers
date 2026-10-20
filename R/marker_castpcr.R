@@ -101,11 +101,14 @@ KASP_TIERS_CASTPCR <- c(
 #' @param lo,hi 1-based inclusive inner region (between the primers).
 #' @param lengths probe lengths to try.
 #' @param tm_range,gc_range accepted windows.
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).
 #' @return a tibble (`start`, `len`, `end`, `primer`, `tm`, `gc`), possibly zero
 #'   rows.
 #' @keywords internal
 #' @noRd
-castpcr_probe_candidates <- function(seq, lo, hi, lengths, tm_range, gc_range) {
+castpcr_probe_candidates <- function(seq, lo, hi, lengths, tm_range, gc_range,
+                                     conditions = NULL) {
   empty <- tibble::tibble(
     start = integer(), len = integer(), end = integer(),
     primer = character(), tm = numeric(), gc = numeric()
@@ -113,7 +116,10 @@ castpcr_probe_candidates <- function(seq, lo, hi, lengths, tm_range, gc_range) {
   if (hi < lo) {
     return(empty)
   }
-  cand <- primer_candidates(seq, seq.int(lo, hi), lengths, "+", tm_range, gc_range) |>
+  cand <- primer_candidates(
+    seq, seq.int(lo, hi), lengths, "+", tm_range, gc_range,
+    conditions = conditions
+  ) |>
     dplyr::filter(.data$start >= lo, .data$end <= hi) |>
     dplyr::filter(substr(.data$primer, 1L, 1L) != "G") |>
     dplyr::filter(!has_palindrome(.data$primer))
@@ -250,13 +256,15 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
     return(NULL)
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
+  conditions <- scheme_conditions("castpcr")
   si <- tmpl$snp_i
   n <- nchar(as.character(tmpl$seq))
   # fetch the ASP candidates over the *widened* Tm window in one DECIPHER batch,
   # so the ladder's Tm rung below costs nothing extra
   as_cand <- design_as_primers(tmpl$seq, si, ref, alt,
     strands = c("+", "-"), lengths = as_lengths,
-    gc_range = gc_range, tm_range = tm_range + c(-CASTPCR_TM_FLOOR, CASTPCR_TM_FLOOR)
+    gc_range = gc_range, tm_range = tm_range + c(-CASTPCR_TM_FLOOR, CASTPCR_TM_FLOOR),
+    conditions = conditions
   )
   if (!nrow(as_cand)) {
     cli::cli_inform(gettext("No allele-specific primer passed the GC/Tm filters for castPCR."))
@@ -265,7 +273,7 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
   # gate_castpcr_mismatch reads the ASP's OWN margin - the mutant may be a
   # vanishing fraction of the template, so its on-target efficiency is what a
   # positive call rests on.  Tier 1 ranks on the same margin.
-  as_cand$asp_tm <- primer_tm(as_cand$alt_primer)
+  as_cand$asp_tm <- primer_tm(as_cand$alt_primer, conditions = conditions)
   as_cand$as_discrimination <- as_cand$alt_on - as_cand$alt_off
   as_cand <- as_cand[order(-as_cand$as_discrimination), ]
 
@@ -290,7 +298,8 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
     if (identical(best$strand, "+")) {
       mate <- primer_candidates(
         tmpl$seq, seq.int(best$tmpl_end + 1L, n), mate_lengths, "-",
-        KASP_LIMITS$com_tm, gc_range
+        KASP_LIMITS$com_tm, gc_range,
+        conditions = conditions
       )
       b <- pick_castpcr_pair(as_one, mate, prod_win[1L], prod_win[2L], min_gap)
     } else {
@@ -299,7 +308,8 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
       }
       mate <- primer_candidates(
         tmpl$seq, seq_len(best$tmpl_start - 1L), mate_lengths, "+",
-        KASP_LIMITS$com_tm, gc_range
+        KASP_LIMITS$com_tm, gc_range,
+        conditions = conditions
       ) |>
         dplyr::filter(.data$end < best$tmpl_start)
       b <- pick_castpcr_pair(mate, as_one, prod_win[1L], prod_win[2L], min_gap)
@@ -314,7 +324,8 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
     inner_hi <- b$end_r - nchar(b$primer_r)
     probe <- castpcr_probe_candidates(
       tmpl$seq, inner_lo, inner_hi, probe_lengths,
-      c(best$asp_tm + probe_margin, probe_tm_max), gc_range
+      c(best$asp_tm + probe_margin, probe_tm_max), gc_range,
+      conditions = conditions
     )
     if (!nrow(probe)) {
       return(NULL)
@@ -405,7 +416,7 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
   out$compatibility <- tube_compatibility(c(
     as_primer = out$primers$as_primer, common = out$primers$forward,
     mate = out$primers$reverse, probe = out$probe$sequence, blocker = out$blocker$sequence
-  ))
+  ), conditions = conditions)
   structure(out, class = "marker_castpcr")
 }
 

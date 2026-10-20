@@ -4,7 +4,12 @@
 \alias{primer_set_compatibility}
 \title{Pairwise compatibility of a primer pool}
 \usage{
-primer_set_compatibility(primers, min_cross_run = 6L, max_selfcomp = 5L)
+primer_set_compatibility(
+  primers,
+  min_cross_run = 6L,
+  max_selfcomp = 5L,
+  conditions = NULL
+)
 }
 \arguments{
 \item{primers}{a named character vector, or a (named) list of such vectors
@@ -12,6 +17,11 @@ whose elements are pooled; names are the pool labels.}
 
 \item{min_cross_run, max_selfcomp}{the base-pair rules (see
 \code{duplex_compatibility()}).}
+
+\item{conditions}{reaction conditions from \code{\link[=reaction_conditions]{reaction_conditions()}} or
+\code{\link[=scheme_conditions]{scheme_conditions()}} for the reported \code{dg}; \code{NULL} uses the historical
+50 mM Na / 37 C.  The \code{pass} verdict reads the base-pair runs only, so it
+never depends on this temperature.}
 }
 \value{
 a tidy tibble: \code{a}, \code{b}, \code{kind} (\code{"self"}/\code{"cross"}), \code{run} (bp), \code{dg}
@@ -21,9 +31,10 @@ a tidy tibble: \code{a}, \code{b}, \code{kind} (\code{"self"}/\code{"cross"}), \
 Takes any set of oligos (e.g. the primers of several markers) and returns one
 tidy row per unordered pair: a \code{"self"} row is that oligo's hairpin, a
 \code{"cross"} row an inter-primer interaction.  \code{run} is the longest complementary
-stretch (see \code{complementary_run()}), \code{dg} the dimer dG37 (OligoArrayAux, \code{NA}
-without it) and \code{pass} the verdict.  This is the general "many primers" check
-behind the duplex stage (\code{duplex_compatibility()}).
+stretch (see \code{complementary_run()}), \code{dg} the dimer dG (OligoArrayAux, \code{NA}
+without it) at the reaction temperature in \code{conditions} (37 C by default) and
+\code{pass} the verdict.  This is the general "many primers" check behind the
+duplex stage (\code{duplex_compatibility()}).
 }
 \examples{
 primer_set_compatibility(c(

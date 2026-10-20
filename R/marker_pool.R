@@ -6,8 +6,9 @@
 #  interactions grows quadratically with primer count and is the usual cause of
 #  multiplex failure.  This is the general object: give it any set of oligos and
 #  it reports, per pair, the longest Watson-Crick run (a cross-dimer) and the
-#  self-complementarity (a hairpin), plus the thermodynamic dimer dG37 when the
-#  OligoArrayAux engine is available.  One vocabulary for "would these primers
+#  self-complementarity (a hairpin), plus the thermodynamic dimer dG when the
+#  OligoArrayAux engine is available, evaluated at the temperature the chemistry
+#  actually runs at (`conditions`).  One vocabulary for "would these primers
 #  misbehave together", shared by the duplex stage and any multiplex set.
 # =============================================================================
 
@@ -16,13 +17,18 @@
 #' Takes any set of oligos (e.g. the primers of several markers) and returns one
 #' tidy row per unordered pair: a `"self"` row is that oligo's hairpin, a
 #' `"cross"` row an inter-primer interaction.  `run` is the longest complementary
-#' stretch (see `complementary_run()`), `dg` the dimer dG37 (OligoArrayAux, `NA`
-#' without it) and `pass` the verdict.  This is the general "many primers" check
-#' behind the duplex stage (`duplex_compatibility()`).
+#' stretch (see `complementary_run()`), `dg` the dimer dG (OligoArrayAux, `NA`
+#' without it) at the reaction temperature in `conditions` (37 C by default) and
+#' `pass` the verdict.  This is the general "many primers" check behind the
+#' duplex stage (`duplex_compatibility()`).
 #' @param primers a named character vector, or a (named) list of such vectors
 #'   whose elements are pooled; names are the pool labels.
 #' @param min_cross_run,max_selfcomp the base-pair rules (see
 #'   `duplex_compatibility()`).
+#' @param conditions reaction conditions from [reaction_conditions()] or
+#'   [scheme_conditions()] for the reported `dg`; `NULL` uses the historical
+#'   50 mM Na / 37 C.  The `pass` verdict reads the base-pair runs only, so it
+#'   never depends on this temperature.
 #' @return a tidy tibble: `a`, `b`, `kind` (`"self"`/`"cross"`), `run` (bp), `dg`
 #'   (kcal/mol), `pass`.  All rows pass (`all(pass)`) for a clean pool.
 #' @examples
@@ -31,7 +37,8 @@
 #' ))
 #' @family KASP specificity
 #' @export
-primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp = 5L) {
+primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp = 5L,
+                                     conditions = NULL) {
   primers <- unlist(primers, use.names = TRUE)
   if (is.null(names(primers)) || any(!nzchar(names(primers)))) {
     names(primers) <- paste0("p", seq_along(primers))
@@ -45,7 +52,8 @@ primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp =
         complementary_run(primers[[i]], primers[[j]])
       })
     )
-  dg <- tryCatch(dimer_thermo(primers), error = function(e) NULL)
+  conditions <- as_reaction_conditions(conditions)
+  dg <- tryCatch(dimer_thermo(primers, conditions = conditions), error = function(e) NULL)
   d$dg <- if (is.null(dg) || !nrow(dg)) {
     NA_real_
   } else {
@@ -69,16 +77,20 @@ primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp =
 #' Non-ACGT marks (a probe's THF abasic site, a modified base) are treated as `N`,
 #' since the run screen is a heuristic.
 #' @param oligos a named character vector, or a list of them (pooled).
+#' @param conditions reaction conditions for the reported dimer dG (see
+#'   [primer_set_compatibility()]); a scheme passes its [scheme_conditions()].
 #' @return a tibble (see [primer_set_compatibility()]), or `NULL` when fewer than
 #'   two distinct oligos are present.
 #' @keywords internal
 #' @noRd
-tube_compatibility <- function(oligos) {
+tube_compatibility <- function(oligos, conditions = NULL) {
   oligos <- unlist(oligos, use.names = TRUE)
   oligos <- oligos[!is.na(oligos) & nzchar(oligos)]
   oligos <- oligos[!duplicated(oligos)]
   if (length(oligos) < 2L) {
     return(NULL)
   }
-  primer_set_compatibility(gsub("[^ACGTNacgtn]", "N", toupper(oligos)))
+  primer_set_compatibility(gsub("[^ACGTNacgtn]", "N", toupper(oligos)),
+    conditions = conditions
+  )
 }

@@ -47,9 +47,9 @@
 # =============================================================================
 
 # The two thresholds the formals do not carry.  A single mismatch that costs less
-# than this much duplex stability (dG37, kcal/mol) is not discriminated by the
+# than this much duplex stability (dG at the reaction temperature, kcal/mol) is not discriminated by the
 # exonuclease step, so it is a hard gate; a probe this much more stable than the
-# dG37 limit is a *soft* gate (a somewhat sticky probe still reports).
+# dG limit is a *soft* gate (a somewhat sticky probe still reports).
 TAQMAN_MISMATCH_DG <- 1.5
 TAQMAN_PROBE_STRUCT_RELAX <- 3
 TAQMAN_CENTRALITY_RELAX <- -0.25
@@ -214,7 +214,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   out$compatibility <- tube_compatibility(c(
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
     probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
-  ))
+  ), conditions = scheme_conditions("taqman"))
 
   # ---- C7: the declared gates are all evaluated on the winner ----------------
   probe_gc_obs <- gc_frac(ref_probe)
@@ -373,7 +373,7 @@ scheme_def_taqman <- function() {
     gate_limit = c(
       gate_taqman_probe_comp = glue::glue("GC {gc[1L] * 100}-{gc[2L] * 100} %, no 5' G, no run / SSR"),
       gate_taqman_probe_specific = "exactly one perfect probe site in the genome",
-      gate_taqman_probe_structure = glue::glue("probe hairpin/homodimer dG37 >= {KASP_LIMITS$hairpin_dg}"),
+      gate_taqman_probe_structure = glue::glue("probe hairpin/homodimer dG (reaction T) >= {KASP_LIMITS$hairpin_dg}"),
       gate_taqman_probe_tm = glue::glue("probe Tm within [{probe_tm[1L]}, {probe_tm[2L]}] C"),
       gate_taqman_primer_tm = glue::glue("both primers Tm within [{primer_tm[1L]}, {primer_tm[2L]}] C"),
       gate_taqman_discrimination = glue::glue("mismatch dG >= {TAQMAN_MISMATCH_DG} kcal/mol"),
