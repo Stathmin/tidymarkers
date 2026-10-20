@@ -289,8 +289,13 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     } else if (identical(lab, "variant under primer/probe")) {
       under <- field(marker$primers, "variant_under")
       if (!is.null(under) && length(under) && nzchar(under[1L])) {
-        observed[i] <- 1
-        pass[i] <- TRUE
+        pos <- marker$snp$pos[1L]
+        fwd_end <- marker$primers$start[1L] + nchar(marker$primers$forward[1L]) - 1L
+        rev_start <- marker$primers$end[1L] - nchar(marker$primers$reverse[1L]) + 1L
+        observed[i] <- as.numeric(rpa_variant_gate(
+          under[1L], pos, fwd_end, rev_start, marker$probe
+        ))
+        pass[i] <- observed[i] == 1
       }
     } else if (identical(lab, "PAM valid")) {
       g <- field(marker$gates, "gate_crispr_pam")

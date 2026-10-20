@@ -112,6 +112,35 @@ test_that("duplex_compatibility flags inter-locus complementarity and the topolo
   expect_true(pa$pass[pa$gate == "gate_duplex_targets"])
 })
 
+test_that("an undeclared duplex relationship is not a silent pass", {
+  a <- mk_assay(P_RUN6, P_RUN6, P_CLEAN)
+  cc <- duplex_compatibility(list(a, a),
+    readout = "co-dominant", homologous = NA,
+    tm_window = c(0, 200), min_cross_run = 100L
+  )
+  tg <- cc$gate == "gate_duplex_targets"
+  expect_false(cc$pass[tg])
+  expect_identical(as.character(cc$status[tg]), "not_applicable")
+  expect_match(cc$detail[tg], "undeclared")
+  # no margin means no evidence: the pairing cannot pass on an unknown topology
+  sel <- duplex_selection(list(a, a),
+    readout = "co-dominant", homologous = NA,
+    tm_window = c(0, 200), min_cross_run = 100L
+  )
+  expect_null(sel$pick$best)
+})
+
+test_that("the duplex topology gate enforces both declared readouts", {
+  a <- mk_assay(P_RUN6, P_RUN6, P_CLEAN)
+  # presence/absence is the mxKASP / Multi-KASP build: non-homologous loci
+  wrong <- duplex_compatibility(list(a, a),
+    readout = "presence-absence", homologous = TRUE,
+    tm_window = c(0, 200), min_cross_run = 100L
+  )
+  expect_false(wrong$pass[wrong$gate == "gate_duplex_targets"])
+  expect_identical(as.character(wrong$status[wrong$gate == "gate_duplex_targets"]), "fail")
+})
+
 test_that("the duplex DAG obeys the contract and shows the real, computed gates", {
   expect_dag_invariants("duplex")
   s <- marker_decision_schema("duplex")

@@ -71,9 +71,13 @@
   наблюдения → `unknown`, чужая family-проверка → `not_applicable`) живёт в
   одном месте. Тесты: `test-kasp-checks.R` (конструктор + оба пути),
   `test-plot-methods.R` (нет наблюдения → не pass).
-- [ ] Гейты, которые не могут провалиться (`gate_lamp_variant = TRUE`,
-  `duplex homologous = NA`), сделать конструкторскими инвариантами или
-  `not_applicable`, а не декоративными гейтами.
+- [x] Гейты, которые не могут провалиться, перестали быть декоративными:
+  `gate_lamp_variant`, `gate_crispr_seed`, `gate_rpa_variant` пересчитываются
+  из фактической раскладки (`lamp_variant_gate()`, `crispr_seed_gate()`,
+  `rpa_variant_gate()`), а не возвращают `TRUE`; RPA больше не подписывает
+  дальний праймер "reverse" без проверки его 3′ конца. Необъявленная гомология
+  в duplex даёт `not_applicable` и `NA`-margin (не "pass"). Тесты: helper-гейты
+  в `test-lamp.R`/`test-crispr.R`/`test-rpa.R`, три-стейт в `test-duplex.R`.
 
 ### Z2. Один источник истины для порогов  [P1]
 - [ ] Каждый критерий — data-object: `id`, `scope`, `kind`, `bounds`, `units`,

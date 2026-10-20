@@ -166,6 +166,14 @@ test_that("B3 is a minus-strand oligo and FIP carries the ALT base at its 3' end
   expect_lte(nchar(m$primers$BIP), 50L)
 })
 
+test_that("the LAMP variant gate re-checks FIP placement (not a decorative TRUE)", {
+  fip <- list(arm3 = c(1L, 10L), primer = "AAAAC")
+  expect_true(lamp_variant_gate(fip, "C", 10L))
+  expect_false(lamp_variant_gate(fip, "A", 10L)) # FIP's 3' base is not ALT
+  expect_false(lamp_variant_gate(fip, "C", 9L)) # the arm does not end at the variant
+  expect_false(lamp_variant_gate(NULL, "C", 10L))
+})
+
 test_that("print.marker_lamp names the four primers and the loop", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()

@@ -184,8 +184,18 @@ duplex_metrics <- function(assays, readout, homologous, tm_window, max_amplicon,
   # duplex (co-dominant, one cassette per locus) is the dKASP build and pairs
   # *homologous* genes, so one common primer serves both (Jiang 2023); the
   # independent-pair builds (mxKASP / Multi-KASP) target *non-homologous* loci
-  # (Meilink 2025, Wang 2025).  An undeclared relationship is noted, not assumed.
-  tgt_pass <- !(readout == "co-dominant" && isFALSE(homologous))
+  # (Meilink 2025, Wang 2025).  An undeclared relationship cannot be assumed: it
+  # is `not_applicable` (neither pass nor fail), never a silent pass.
+  tgt_status <- if (isTRUE(is.na(homologous))) {
+    "not_applicable"
+  } else if (identical(readout, "co-dominant")) {
+    if (isTRUE(homologous)) "pass" else "fail"
+  } else if (isFALSE(homologous)) {
+    "pass"
+  } else {
+    "fail"
+  }
+  tgt_pass <- identical(tgt_status, "pass")
   # cross-complementarity only *between* the loci's primers (within a locus the
   # per-locus dimer screen already covers it)
   cross <- unlist(lapply(seq_along(primers), function(i) {
@@ -199,7 +209,8 @@ duplex_metrics <- function(assays, readout, homologous, tm_window, max_amplicon,
   self <- lapply(all_pr, duplex_selfcomp)
   amp <- vapply(assays, function(a) as.numeric(a$assay$amplicon[1L]), numeric(1))
   list(
-    primers = all_pr, tm = tm, tgt_pass = tgt_pass, cross = max(cross),
+    primers = all_pr, tm = tm, tgt_pass = tgt_pass, tgt_status = tgt_status,
+    cross = max(cross),
     self_run = max(vapply(self, `[[`, integer(1), "run")),
     self_fold = any(vapply(self, `[[`, logical(1), "fold")),
     amplicon = max(amp),
@@ -245,24 +256,32 @@ duplex_compatibility <- function(assays, readout = c("co-dominant", "presence-ab
     dplyr::if_else(is.na(homologous), NA_real_, as.numeric(homologous)),
     m$cross, max(m$tm) - min(m$tm), m$self_run
   )
+  topology <- if (isTRUE(homologous)) "homologous" else "non-homologous"
   lim <- c(
-    if (readout == "co-dominant") "homologous" else "any",
+    if (readout == "co-dominant") "homologous" else "non-homologous",
     glue::glue("< {min_cross_run} bp"),
     glue::glue("<= {tm_window[2L] - tm_window[1L]} C spread, all in [{tm_window[1L]}, {tm_window[2L]}] C"),
     glue::glue("<= {max_selfcomp} bp, no >= 4 bp 3' fold")
   )
-  pass <- c(
-    m$tgt_pass,
-    m$cross < min_cross_run,
-    all(dplyr::between(m$tm, tm_window[1L], tm_window[2L])),
-    m$self_run <= max_selfcomp && !m$self_fold
+  status <- c(
+    m$tgt_status,
+    if (m$cross < min_cross_run) "pass" else "fail",
+    if (all(dplyr::between(m$tm, tm_window[1L], tm_window[2L]))) "pass" else "fail",
+    if (m$self_run <= max_selfcomp && !m$self_fold) "pass" else "fail"
   )
   detail <- c(
-    if (is.na(homologous)) "homology undeclared" else if (homologous) "homologous" else "non-homologous",
+    switch(m$tgt_status,
+      not_applicable = "homology undeclared",
+      pass = topology,
+      fail = paste0(topology, " (wrong topology)")
+    ),
     NA, NA,
     if (m$self_fold) "3' end folds back (>= 4 bp)" else NA
   )
-  tibble::tibble(gate = gate, observed = obs, limit = lim, pass = pass, detail = detail)
+  tibble::tibble(
+    gate = gate, observed = obs, limit = lim, pass = status == "pass",
+    status = marker_check_status(status), detail = detail
+  )
 }
 
 #' Pick the duplex pairing through the declared relaxation ladder
@@ -292,7 +311,15 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
   # the duplex stage has exactly one candidate and the ladder bounds how far its
   # soft cap may be lowered before the pairing is doomed
   data <- tibble::tibble(
-    m_targets = if (m$tgt_pass) 0 else -1,
+    # an undeclared relationship has no margin: `select_with_ladder()` treats NA
+    # as "not evidence", so the pairing cannot quietly pass on an unknown
+    m_targets = if (identical(m$tgt_status, "pass")) {
+      0
+    } else if (identical(m$tgt_status, "fail")) {
+      -1
+    } else {
+      NA_real_
+    },
     m_complement = min_cross_run - m$cross,
     m_tm = min(min(m$tm) - tm_window[1L], tm_window[2L] - max(m$tm)),
     m_selfcomp = max_selfcomp - m$self_run,
@@ -357,6 +384,11 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
   sel <- NULL
   verdict <- "fail"
   if (all(ok)) {
+    if (isTRUE(is.na(homologous))) {
+      cli::cli_warn(gettext(
+        "Duplex: `homologous` is undeclared; the topology gate is not_applicable and the pairing cannot pass."
+      ))
+    }
     compat <- duplex_compatibility(assays, readout, homologous)
     sel <- duplex_selection(assays, readout, homologous)
     # a hard gate has floor 0 and is never lowered, so `best = NULL` means a hard
@@ -396,8 +428,24 @@ print.marker_duplex <- function(x, ...) {
     )
   }
   if (!is.null(x$compatibility)) {
-    bad <- x$compatibility$gate[!x$compatibility$pass]
-    cat("  compatibility:", if (length(bad)) paste("failed", paste(bad, collapse = ", ")) else "ok", "\n")
+    st <- if ("status" %in% names(x$compatibility)) {
+      as.character(x$compatibility$status)
+    } else {
+      ifelse(x$compatibility$pass, "pass", "fail")
+    }
+    bad <- x$compatibility$gate[st == "fail"]
+    unknown <- x$compatibility$gate[st == "not_applicable"]
+    cat(
+      "  compatibility:",
+      if (length(bad)) {
+        paste("failed", paste(bad, collapse = ", "))
+      } else if (length(unknown)) {
+        paste("not evaluated", paste(unknown, collapse = ", "))
+      } else {
+        "ok"
+      },
+      "\n"
+    )
   }
   if (identical(x$verdict, "warn") && length(x$selection$pick$violated)) {
     cat("  relaxed:", paste(x$selection$pick$violated, collapse = ", "), "\n")

@@ -320,6 +320,41 @@ rpa_probe_gate <- function(probe, probe_relaxed) {
   !isTRUE(probe_relaxed)
 }
 
+#' Is the variant actually at a discriminating position?
+#'
+#' Without a probe RPA discriminates through a primer's 3'-terminal base, so the
+#' variant must sit within [RPA_3P_WINDOW] nt of that 3' end.  With an exo probe
+#' the probe carries the allele: it must span the variant, and its THF must not
+#' replace the variant base.  `design_rpa_marker()` enforces this while it picks
+#' the pair/probe, so the gate re-checks the returned coordinates rather than
+#' returning an unconditional `TRUE`.
+#' @param under `"forward"`, `"reverse"`, `"probe"` (or anything else).
+#' @param pos variant position (same coordinate system as the others).
+#' @param fwd_end forward primer 3' end.
+#' @param rev_start reverse primer 3' end (plus-strand start).
+#' @param probe the exo probe, or `NULL`.
+#' @param window allowed distance from a primer 3' end.
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+rpa_variant_gate <- function(under, pos, fwd_end = NA_real_, rev_start = NA_real_,
+                             probe = NULL, window = RPA_3P_WINDOW) {
+  if (identical(under, "probe")) {
+    return(
+      !is.null(probe) &&
+        probe$start[1L] <= pos && probe$end[1L] >= pos &&
+        !identical(as.integer(probe$thf_index[1L]), as.integer(pos - probe$start[1L] + 1L))
+    )
+  }
+  if (identical(under, "forward")) {
+    return(!is.na(fwd_end) && abs(fwd_end - pos) <= window)
+  }
+  if (identical(under, "reverse")) {
+    return(!is.na(rev_start) && abs(rev_start - pos) <= window)
+  }
+  FALSE
+}
+
 #' Design an RPA (recombinase polymerase amplification) marker at a variant
 #'
 #' The isothermal analogue of a plain PCR pair: two LONG primers (default 30-35
@@ -431,16 +466,20 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
     probe$end <- probe$end + off
   }
   fwd_end <- pair$start + nchar(pair$forward) - 1L
+  rev_start <- pair$end - nchar(pair$reverse) + 1L
   under <- if (design_probe) {
     "probe"
   } else if (abs(fwd_end - si) <= RPA_3P_WINDOW) {
     "forward"
-  } else {
+  } else if (abs(rev_start - si) <= RPA_3P_WINDOW) {
     "reverse"
+  } else {
+    "none" # no discriminating placement: the gate below reports the failure
   }
   # the gate table the DAG displays, evaluated on the assay actually returned (C7)
   gates <- c(
-    gate_rpa_variant = TRUE, # enforced by the 3'-end / under-probe placement
+    # constructor invariant: the variant is at a primer 3' end or under the probe
+    gate_rpa_variant = rpa_variant_gate(under, si, fwd_end, rev_start, probe),
     gate_rpa_primer_len = all(
       dplyr::between(c(nchar(pair$forward), nchar(pair$reverse)), min(strict_len), max(strict_len))
     ),
@@ -488,11 +527,12 @@ print.marker_rpa <- function(x, ...) {
       sep = ""
     )
   }
-  locus <- if (identical(x$primers$variant_under, "probe")) {
-    "under the exo probe"
-  } else {
-    paste0("at the ", x$primers$variant_under, " primer 3' end")
-  }
+  locus <- switch(x$primers$variant_under,
+    probe = "under the exo probe",
+    forward = "at the forward primer 3' end",
+    reverse = "at the reverse primer 3' end",
+    "not at a discriminating position"
+  )
   cat(
     "  amplicon:", x$primers$product, "bp; variant ", locus,
     "; isothermal ", x$primers$temperature[1L], "-",

@@ -86,6 +86,21 @@ test_that("design_rpa_marker declines non-substitution alleles", {
   )
 })
 
+test_that("the RPA variant gate checks the actual placement", {
+  probe <- list(start = 100L, end = 150L, thf_index = 20L)
+  # the probe spans the variant and its THF does not replace it
+  expect_true(rpa_variant_gate("probe", 110L, probe = probe))
+  expect_false(rpa_variant_gate("probe", 110L, probe = list(
+    start = 100L, end = 150L, thf_index = 11L
+  )))
+  expect_false(rpa_variant_gate("probe", 99L, probe = probe))
+  # no probe: the variant is at a primer 3' end (window is 0 by default)
+  expect_true(rpa_variant_gate("forward", 100L, fwd_end = 100L))
+  expect_false(rpa_variant_gate("forward", 100L, fwd_end = 101L))
+  expect_true(rpa_variant_gate("reverse", 100L, rev_start = 100L))
+  expect_false(rpa_variant_gate("none", 100L, fwd_end = 100L))
+})
+
 test_that("scheme_def_rpa describes the chemistry's gates, tiers and stage", {
   d <- scheme_def_rpa()
   expect_equal(d$scheme, "rpa")

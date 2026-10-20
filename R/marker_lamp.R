@@ -536,6 +536,29 @@ lamp_pool_compatibility <- function(primers, slack = 0L) {
   )
 }
 
+#' Does FIP actually carry the variant at its 3' terminus?
+#'
+#' The designer's contract is that FIP's 3' arm (F2) ends at the variant and its
+#' 3'-terminal base is the ALT allele.  That placement is enforced while the arm
+#' is built, so the gate is a constructor invariant: it re-checks the returned
+#' FIP rather than assuming the invariant held.  A drift in the placement (or a
+#' caller-supplied FIP) therefore fails the gate instead of being accepted.
+#' @param fip an inner-primer record (`arm3`, `primer`), or `NULL`.
+#' @param alt the ALT base.
+#' @param pos the variant position in the sequence the FIP was built on.
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+lamp_variant_gate <- function(fip, alt, pos) {
+  if (is.null(fip) || length(fip$arm3) < 2L ||
+    is.null(fip$primer) || !nzchar(fip$primer[1L])) {
+    return(FALSE)
+  }
+  end <- as.integer(fip$arm3[[2L]])
+  terminal <- substr(fip$primer[1L], nchar(fip$primer[1L]), nchar(fip$primer[1L]))
+  identical(end, as.integer(pos)) && identical(terminal, as.character(alt))
+}
+
 #' Design a LAMP marker at a variant
 #'
 #' The isothermal analogue of [assemble_kasp_assay()]: the outer F3/B3 pair and
@@ -641,7 +664,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     # the ladder is real: a design below the strict bar is returned only by the
     # rung that lowered that bar, never silently.
     gates_rung <- c(
-      gate_lamp_variant = TRUE,
+      gate_lamp_variant = lamp_variant_gate(fip, snp$alt[1L], q),
       gate_lamp_inner_tm = all(dplyr::between(c(fip$tm, bip$tm), inner_tm[1L], inner_tm[2L])),
       gate_lamp_outer_tm = all(dplyr::between(c(outer$tm_f, outer$tm_r), tm_win[1L], tm_win[2L])),
       gate_lamp_structure = !any(has_palindrome(unlist(primers))),
@@ -673,7 +696,8 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
   off <- snp$pos - q
   # the gate table the DAG displays, evaluated on the set actually returned (C7)
   gates <- c(
-    gate_lamp_variant = TRUE, # FIP's 3' arm ends at the variant (its 3' base reads it)
+    # constructor invariant: FIP's 3' arm ends at the variant and reads ALT
+    gate_lamp_variant = lamp_variant_gate(fip, snp$alt[1L], q),
     gate_lamp_inner_tm = all(
       dplyr::between(c(fip$tm, bip$tm), inner_tm[1L], inner_tm[2L])
     ),

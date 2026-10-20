@@ -56,6 +56,33 @@
 #  it is graded only on its own chemistry's composition - never on KASP Tm/GC.
 # =============================================================================
 
+# Cas12a's PAM-proximal seed is the mismatch-critical region; for Cas13 the
+# critical region is central (no PAM, no PAM-proximal seed).
+CRISPR_SEED_LEN <- 8L
+
+#' Does the variant sit in the guide's discriminating region?
+#'
+#' Cas12a needs the variant in the PAM-proximal seed; Cas13 needs it in the
+#' central critical region.  The candidate grid enforces this while it is built,
+#' so the gate re-checks the chosen guide (a constructor invariant) rather than
+#' returning an unconditional `TRUE`.
+#' @param cas the effector.
+#' @param len spacer length.
+#' @param v_off the variant's offset in the spacer (0-based, PAM-proximal end).
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+crispr_seed_gate <- function(cas, len, v_off) {
+  if (length(len) != 1L || length(v_off) != 1L || is.na(len) || is.na(v_off)) {
+    return(FALSE)
+  }
+  if (identical(cas, "cas12a")) {
+    as.integer(v_off) < CRISPR_SEED_LEN
+  } else {
+    abs(v_off - (len - 1) / 2) <= len %/% 4L
+  }
+}
+
 #' Candidate guide spacers covering a variant
 #'
 #' Enumerates guide spacers of the accepted lengths that place the variant at
@@ -87,7 +114,7 @@ crispr_guide_candidates <- function(seq, snp_i, cas, spacer_lengths, gc_range, s
   cas <- match.arg(cas, c("cas12a", "cas13", "cas13a", "cas13b"))
   s <- as.character(seq)
   n <- nchar(s)
-  seed_len <- 8L # Cas12a PAM-proximal seed; also the length of the offsets tried
+  seed_len <- CRISPR_SEED_LEN
   grid <- tidyr::crossing(len = spacer_lengths, v_off = 0:(max(spacer_lengths) - 1L)) |>
     dplyr::filter(.data$v_off < .data$len)
   if (identical(cas, "cas12a")) {
@@ -370,7 +397,9 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
     } else {
       !is.na(row$pfs) && row$pfs != "G"
     },
-    gate_crispr_seed = TRUE, # enforced by the seed / central-window enumeration
+    # constructor invariant: the candidate grid put the variant in the seed /
+    # central window; re-check the chosen guide rather than assuming it
+    gate_crispr_seed = crispr_seed_gate(cas, row$len, row$v_off),
     gate_crispr_spacer = dplyr::between(row$len, min(strict_spacer), max(strict_spacer)),
     gate_crispr_specificity = if (is.na(off_target)) NA else off_target <= specificity_max,
     gate_crispr_gc = dplyr::between(row$gc, strict_gc[1L], strict_gc[2L]),

@@ -176,6 +176,16 @@ test_that("the crispr scheme describes Cas13 by its PFS, not as simply PAM-free"
   expect_false(grepl("PAM-free", def$gate_short[["gate_crispr_pam"]]))
 })
 
+test_that("the CRISPR seed gate re-checks the guide's discriminating region", {
+  # Cas12a: the PAM-proximal 8 nt are the seed
+  expect_true(crispr_seed_gate("cas12a", 20L, 7L))
+  expect_false(crispr_seed_gate("cas12a", 20L, 8L))
+  expect_false(crispr_seed_gate("cas12a", 20L, NA_integer_))
+  # Cas13: the variant must be in the central window, not at an end
+  expect_true(crispr_seed_gate("cas13", 28L, 14L))
+  expect_false(crispr_seed_gate("cas13", 28L, 0L))
+})
+
 test_that("guide specificity is a hard gate", {
   # an off-target protospacer could license the reporter on the wrong template,
   # so this gate is never relaxed (unlike the amplicon / GC / spacer gates).
