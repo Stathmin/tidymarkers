@@ -79,20 +79,31 @@
   в duplex даёт `not_applicable` и `NA`-margin (не "pass"). Тесты: helper-гейты
   в `test-lamp.R`/`test-crispr.R`/`test-rpa.R`, три-стейт в `test-duplex.R`.
 
-### Z2. Один источник истины для порогов  [P1]
-- [ ] Каждый критерий — data-object: `id`, `scope`, `kind`, `bounds`, `units`,
-  `source`, `calibrated = yes/no`. Селектор, checker, plotter и DAG читают один
-  объект; расхождение (design GC 0.35–0.70 vs check 0.40–0.60, Tm display vs
-  gate, DAG label vs constant) становится невозможным. Тест на отсутствие
-  дублирующих констант.
-- [ ] `MARKER_CHECK_*`/`MARKER_FAMILY_CHECKS` — начало; перенести в них limits,
-  levels и evaluator-id, чтобы семья не собиралась из трёх мест.
+### Z2. Один источник истины для порогов  [P1]  — сделано (`2647884`, `bb9d96c`, `f494a50`)
+- [x] Каждый критерий — data-object (`R/marker_criteria.R`): `id`, `label`,
+  `level`, `kind`, `bounds`, `units`, `source`, `calibrated`, `evaluator`.
+  Селектор, checker, plotter и DAG читают его; `KASP_LIMITS` собран из
+  `criterion()`. Уровни-«стаканчики» сохранены ровно как были (`f494a50`), чтобы
+  рефакторинг не сдвинул ни один вердикт. Тест: `test-criteria.R` (+50).
+- [x] `MARKER_CHECK_*`/`MARKER_FAMILY_CHECKS` (`R/marker_schemes.R`) без
+  `KASP_`-префикса; имена — по типу маркера, а не по семейству.
+- [ ] Остаток: `MARKER_FAMILY_CHECKS` — векторы **label**-ов, а не `id` из
+  реестра. Перевести на `id` и резолвить label через реестр, чтобы DAG/plot не
+  могли напечатать подпись, которой нет в критериях (это же снимает вопрос
+  «почему у всех маркеров одинаковый список»: списки разные, но типы проверок
+  общие — так и должно быть).
 
-### Z3. Условия реакции  [P1]
-- [ ] `reaction_conditions` на схему: соли, Mg, dNTP, DMSO/бетаин/PEG,
-  температура. `primer_tm()` и `dimer_thermo()` принимают его; ΔG димеров
-  считается при температуре реакции (60–65 °C для LAMP, 37–42 °C для RPA),
-  а не всегда 37 °C. RPA не получает PCR-Tm как гейт.
+### Z3. Условия реакции  [P1]  — объект сделан (`8990d2e`), проводка не закончена
+- [x] `reaction_conditions()` / `scheme_conditions(scheme)` (`R/marker_core.R`);
+  `primer_tm()`, `hairpin_dg_thermo()`, `duplex_dg_thermo()`, `dimer_thermo()`
+  принимают `conditions`; ΔG больше не прибит к 37 °C для всех схем.
+- [ ] Проводка по call sites (сейчас везде дефолт 50 mM / 37 °C):
+  `R/marker_rpa.R:143` (RPA — 37–42 °C, важнее всего),
+  `R/marker_assemble.R:831`, `R/marker_pool.R:48`; `primer_tm()` без условий —
+  `R/marker_design.R:74,275,534`, `R/marker_primer_pairs.R:41`,
+  `R/marker_castpcr.R:268`, `R/marker_duplex.R:182`. Схема должна подставлять
+  свои условия сама, а не только по явному аргументу.
+- [ ] RPA не получает PCR-Tm как гейт (сейчас информационно — закрепить тестом).
 
 ### Z4. Движки и capabilities  [P1]
 - [ ] Thermo/specificity/scoring — интерфейсы с `capabilities()`. Если движок
@@ -110,7 +121,11 @@
 ### Z5. Mismatch-tolerant specificity  [P1]
 - [x] `in_silico_pcr()` ищет IUPAC-праймеры, поддерживает `max_mismatch` и
   склеивает реальные forward/reverse продукты; exact-mode предупреждает о
-  near-match продукте.
+  near-match продукте. Degenerate покрыт тестом (`"ACGS"`), политика
+  подставляется по `scheme` (`test-insilico-pcr.R`).
+- [x] Политика и вердикт: `specificity_policy()`, `specificity_verdict()`
+  (seed/exact/BLAST/FM) с capability-флагом и статусом `unknown` (`cfb3638`,
+  +268 утверждений).
 - [ ] Position-aware off-target: 3′-конец, число и позиция мисматчей; отдельные
   модели для RPA (несколько мисматчей), CRISPR (seed/PAM), паралогов/гомеологов.
   Не считать exact-hit + 15-nt seed достаточной специфичностью.
@@ -146,8 +161,12 @@
 - [ ] **HRM:** SNP-class awareness (A/T class 4, Liew 2004), melt-domain/uMELT,
   heteroduplex; A/T warning уже есть, модель плавления — нет.
 - [ ] **TaqMan:** MGB/LNA probes (short probes) и probe Tm/MGB-специфичные правила.
-- [ ] **Sanger:** ICE/TIDE/Poly Peak deconvolution, minor allele ~15–20% limit,
-  primers-over-variants allele dropout.
+- [x] **Sanger:** объявленный предел чтения вместо самодельной модели трассы
+  (`848f15a`, `346eb20`): 601-строчный ручной deconvolver удалён; вместо него
+  detection floor и проверка allele dropout, если праймер лежит на варианте.
+  ICE/TIDE/Poly Peak — внешние инструменты, а не реимплементация.
+- [ ] **Sanger (остаток):** гетерозиготные индели и minor allele ~15–20% —
+  только предупреждение, пока не подключён внешний deconvolver.
 - [ ] **CRISPR:** screen several spacers; activity scoring; crisprScore/Bowtie;
   reporter/readout kinetics.
 - [ ] **dPCR:** Poisson/partition/LOD/minor-fraction model; не только Tm.
@@ -170,6 +189,9 @@
 - [x] `in_silico_pcr()` IUPAC/mismatch/real products; near-match warning.
 - [x] Generic haplotype track/population checks; examples with known proportions.
 - [x] Template/plot fixes (noses, short-feature letters, boxes, Sanger roles).
+- [x] `dev/test.R` пишет лог и тайминги в `dev/logs/` (`df17b7d`): отметки
+  `[+MM:SS]`, `started_at`/`ended_at`, `lobstr` по файлам; 17-минутный `--full`
+  больше не надо перезапускать, чтобы узнать, что он делал.
 
 ## ZA. Целевые интерфейсы и швы (codebase-design)
 
@@ -333,10 +355,13 @@ checkout. Никаких N агентов с `git checkout` в одном кат
 `tests/testthat/helper-*`, shared tests. Один владелец.
 
 **Lean test loop (сделано):**
-- `Rscript dev/test.R` — 1378 pass, **64 s** (shared contracts; дефолт).
-- `Rscript dev/test.R --scheme crispr` — ~66 s.
-- `Rscript dev/test.R --full` — 3164 pass, **9m45**, external checks on, 0 skips.
+- `Rscript dev/test.R` — 1414 pass, **1m28s** (shared contracts; дефолт).
+- `Rscript dev/test.R --scheme crispr` — ~1m10s.
+- `Rscript dev/test.R --full` — ≈17 мин, external checks on, 0 skips; pass-счёт
+  не переписан после волны Z2/Z3/Z5/Z9 — смотреть `dev/logs/latest-summary.md`.
 - `Rscript dev/check.R --quick` — **38 s**; `--no-render` — **44 s**.
+- Каждый прогон (`df17b7d`) пишет лог и тайминги в `dev/logs/` (по файлам и,
+  в последовательном режиме, по тестам); цифры брать оттуда, а не из списка.
 
 **Wave 1 — сделано (`e5a581a`), disjoint paths:**
 
@@ -347,12 +372,37 @@ checkout. Никаких N агентов с `git checkout` в одном кат
 | sanger-physics | `../tidymarkers-agent-sanger` | `feat/sanger-physics` | `R/marker_sanger.R`, `tests/testthat/test-sanger.R` | `vignettes/**`, other `R/**` |
 | lamp-physics | `../tidymarkers-agent-lamp` | `feat/lamp-physics` | `R/marker_lamp.R`, `tests/testthat/test-lamp.R` | `vignettes/**`, other `R/**` |
 
-**Wave 2 — после Wave 0/1:**
-- dPCR Tm calibration — только после engine/conditions seam и калибровочной базы.
-- Vignettes — один агент на файл, строго после code-агентов; никто не делит
-  `markers-kasp.Rmd`/`markers-gel.Rmd`/`markers-probe.Rmd`/
-  `markers-isothermal.Rmd`/`markers-crispr-sequencing.Rmd`.
-- Decision/plot split — после `Evaluation`, тот же owner, что и Wave 0.
+**Wave 1b — сделано и слито (Z2/Z3/Z5/Z9):**
+
+| Branch | Commits | Landed |
+|---|---|---|
+| `feat/z2-criterion` | `2647884` → `f494a50` | реестр критериев, уровни без дрейфа |
+| `feat/z3-conditions` | `8990d2e` | `reaction_conditions()`/`scheme_conditions()`, thermo принимает условия |
+| `feat/z5-specificity` | `cfb3638` | `specificity_policy()`/`specificity_verdict()` |
+| `feat/z9-sanger` | `848f15a` → `346eb20` | объявленный предел Sanger, ручной deconvolver удалён |
+
+Worktrees `../tidymarkers-agent-{z2-criterion,z3-conditions,z5-specificity,z9-sanger}`
+слиты; удалять только после `git worktree list`. `.tools` в worktree — симлинк,
+не коммитить.
+
+**Wave 2 — следующие worktree. Пути строго непересекающиеся:**
+
+| Agent | Branch | Owns | Not |
+|---|---|---|---|
+| z3-callsites | `feat/z3-callsites` | `R/marker_rpa.R`, `R/marker_assemble.R`, `R/marker_pool.R`, `R/marker_design.R`, `R/marker_primer_pairs.R`, `R/marker_castpcr.R`, `R/marker_duplex.R` + их тесты | `R/marker_plot_methods.R` (у plots-style) |
+| gates-general | `feat/gates-general` | `R/marker_checks.R`, `R/marker_decision.R`, `R/marker_schemes.R`, `test-decision.R`, `test-technology.R` | `R/marker_criteria.R` |
+| degenerate-pcr | `feat/degenerate-pcr` | `R/marker_specificity.R`, `test-insilico-pcr.R` | `test-specificity.R` |
+| haplotype-track | `feat/haplotype-track` | `R/marker_haplotypes.R`, `test-haplotypes.R` | `R/marker_plot_methods.R` |
+
+`feat/checks-rename` **слит с `gates-general`**: перевод `MARKER_FAMILY_CHECKS`
+label → `id` — это тот же файл, и два владельца гарантированно конфликтуют.
+
+**Wave 2b — после merge 2a (один владелец файла):**
+- `plots-style` (`feat/plots-style`): `R/marker_plot_methods.R`, `R/marker_plots.R`,
+  SVG-рендер, `test-plot-methods.R`; заодно закрывает call sites
+  `dimer_thermo()`/`primer_tm()` в этом файле (`:155`, `:350`, `:757`) и рисует
+  haplotype-track через seam из `marker_haplotypes.R`.
+- Vignette-ветки — последними, по одной на файл.
 
 ### ZP2. Merge order
 
@@ -381,6 +431,18 @@ Commit only on feat/<slug>; verify git branch --show-current before commit.
 - Two agents editing the same vignette or shared helper.
 - Parallel dPCR calibration before Tm engine/benchmark.
 - Merge without the gate, or deleting a worktree before merge.
+
+### ZP5. Здоровье тестов: вернуть `--full` к ~10 минутам
+
+- `--full` вырос 10 → ≈17 мин после волны Z3/Z5. Быстрый прогон для гейта —
+  `dev/test.R` (1m28s), страдает только релизный путь, но 17 минут платятся
+  на каждом полном прогоне.
+- Источник роста — по-хитовые unit-утверждения: `test-specificity.R` (133
+  `expect_`), `test-oligo-dg.R` (64), `test-dimer.R` (34). Свернуть в табличные
+  кейсы: один вызов движка на таблицу, `expect_*` по вектору.
+- Гейт не ослаблять: внешние сверки (BLAST+, Rsubread, rprimer, SOCK) остаются.
+- Цель — `--full` ≤ 10 мин; контроль по `dev/logs/latest-summary.md` (топ
+  медленных файлов), а не по ощущениям.
 
 ## Y. Следующий слой: конструктор технологий, цели по области, специфичность  [план]
 
