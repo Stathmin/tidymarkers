@@ -391,13 +391,19 @@ Worktrees `../tidymarkers-agent-{z2-criterion,z3-conditions,z5-specificity,z9-sa
 |---|---|---|---|
 | z3-callsites | `feat/z3-callsites` | `R/marker_rpa.R`, `R/marker_assemble.R`, `R/marker_pool.R`, `R/marker_design.R`, `R/marker_primer_pairs.R`, `R/marker_castpcr.R`, `R/marker_duplex.R` + их тесты | `R/marker_plot_methods.R` (у plots-style) |
 | gates-general | `feat/gates-general` | `R/marker_checks.R`, `R/marker_decision.R`, `R/marker_schemes.R`, `test-decision.R`, `test-technology.R` | `R/marker_criteria.R` |
-| degenerate-pcr | `feat/degenerate-pcr` | `R/marker_specificity.R`, `test-insilico-pcr.R` | `test-specificity.R` |
-| haplotype-track | `feat/haplotype-track` | `R/marker_haplotypes.R`, `test-haplotypes.R` | `R/marker_plot_methods.R` |
+| degenerate-pcr | `feat/degenerate-pcr` | `R/marker_specificity.R`, `test-insilico-pcr.R`, `test-specificity.R` | `R/marker_scan.R` |
 
 `feat/checks-rename` **слит с `gates-general`**: перевод `MARKER_FAMILY_CHECKS`
 label → `id` — это тот же файл, и два владельца гарантированно конфликтуют.
+`haplotype-track` в эту волну не идёт: его проводка трогает
+`R/marker_rpa.R`/`marker_caps.R`/`marker_crispr.R`, то есть файлы
+`z3-callsites`, — иначе два агента правят один файл.
 
 **Wave 2b — после merge 2a (один владелец файла):**
+- `haplotype-track` (`feat/haplotype-track`): частота/гаплотип — во все схемы
+  (CAPS site, CRISPR guide/PAM, LAMP/RPA primer sites, SSR null alleles);
+  отсутствие частоты = `NA`, не вес 1. После `z3-callsites`, т.к. нужен
+  `marker_rpa.R`.
 - `plots-style` (`feat/plots-style`): `R/marker_plot_methods.R`, `R/marker_plots.R`,
   SVG-рендер, `test-plot-methods.R`; заодно закрывает call sites
   `dimer_thermo()`/`primer_tm()` в этом файле (`:155`, `:350`, `:757`) и рисует
