@@ -27,8 +27,9 @@ library(knitr)
 
 Cas12a направляется спейсером ~20 nt и требует PAM (для Cas12a обычно TTTV)
 рядом с протоспейсером. При совпадении активируется коллатеральная
-dsDNA-нуклеазная активность, которая режет репортер — сигнал усиливается.
-Cas13 работает по РНК-мишени и не требует PAM; специфичность задаёт спейсер.
+ssDNase-активность, которая режет ssDNA-репортер — сигнал усиливается.
+Cas13 работает по РНК-мишени; PAM не нужен, но есть PFS (Cas13a — избегать G
+на 3′ фланге, Cas13b — 5′ D-PFS); специфичность задаёт спейсер.
 [Chen et al. (2018)](https://doi.org/10.1126/science.aar6245),
 [Gootenberg et al. (2017)](https://doi.org/10.1126/science.aam9321).
 
@@ -82,8 +83,9 @@ design_sanger_marker(genome, snp, flank = 500)
   спейсере/PAM/seed; PAM и seed — [Addgene CRISPR Guide](https://www.addgene.org/guides/crispr/),
   мисматчи в seed — [Kleinstiver et al. (2016)](https://doi.org/10.1038/nbt.3620).
 
-- **PAM под конкретный вариант Cas.** **В пакете:** только `cas12a` (5'-TTTV) и
-  `cas13` (PAM-free); для других ферментов/PAM (Cas12b/Cas12i/Cas12j, Cas9,
+PAM/PFS под конкретный вариант Cas.** **В пакете:** `cas12a` (5'-TTTV),
+  `cas13`/`cas13a` (3′ non-G PFS) и `cas13b` (5′ D-PFS); для других
+  ферментов/PAM (Cas12b/Cas12i/Cas12j, Cas9,
   Cas14, инженерные Cas12a с изменённым PAM) отдельной модели нет. Для
   инженерной Cas12a `cas = "cas12a"` применит TTTV, даже если у фермента другой
   PAM. **Рекомендация:** брать PAM из таблицы для реального фермента

@@ -84,7 +84,18 @@ step("lintr", function() {
   ok("no lints")
 })
 
-# 3. spelling ---------------------------------------------------------------
+# 3. docs/artifacts graph ---------------------------------------------------
+step("docs/artifacts", function() {
+  for (script in c("dev/check-docs.R", "dev/check-artifacts.R")) {
+    status <- system2(file.path(R.home("bin"), "Rscript"), script)
+    if (!identical(as.integer(status), 0L)) {
+      stop(script, " failed (status ", status, ")")
+    }
+  }
+  ok("docs index and artifact manifest are consistent and fresh")
+})
+
+# 4. spelling ---------------------------------------------------------------
 step("spelling", function() {
   if (!spelling) return(message("  skip (pass --spelling; the docs are Russian)"))
   if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
@@ -96,7 +107,7 @@ step("spelling", function() {
   ok("no unknown words")
 })
 
-# 4. figures ----------------------------------------------------------------
+# 5. figures ----------------------------------------------------------------
 step("figures (auto-render)", function() {
   if (no_render) {
     return(message("  skip (--no-render)"))
@@ -122,7 +133,7 @@ step("figures (auto-render)", function() {
   ok("generated figures are in sync with the engine")
 })
 
-# 5. install smoke ----------------------------------------------------------
+# 6. install smoke ----------------------------------------------------------
 step("install (smoke)", function() {
   lib <- tempfile("kasp-check-lib-")
   dir.create(lib)
@@ -140,7 +151,7 @@ step("install (smoke)", function() {
   ok("the package installs cleanly")
 })
 
-# 6. R CMD check ------------------------------------------------------------
+# 7. R CMD check ------------------------------------------------------------
 step("R CMD check", function() {
   if (!full) return(message("  skip (pass --full to build and check)"))
   status <- system2("R", c("CMD", "check", "--no-manual", "--as-cran", "."))

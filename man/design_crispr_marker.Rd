@@ -8,7 +8,7 @@ design_crispr_marker(
   genome,
   snp,
   flank = 200L,
-  cas = c("cas12a", "cas13"),
+  cas = c("cas12a", "cas13", "cas13a", "cas13b"),
   strand = c("both", "+", "-"),
   spacer_lengths = NULL,
   gc_range = NULL,
@@ -27,8 +27,9 @@ design_crispr_marker(
 
 \item{flank}{template half-width.}
 
-\item{cas}{\code{"cas12a"} (DETECTR; needs a PAM) or \code{"cas13"} (SHERLOCK;
-PAM-free).}
+\item{cas}{\code{"cas12a"} (DETECTR; needs a 5'-TTTV PAM), \code{"cas13"} or
+\code{"cas13a"} (SHERLOCK; no DNA PAM, 3' non-G PFS), or \code{"cas13b"}
+(5' D-PFS; the 3' PFS is not enforced).}
 
 \item{strand}{guide placement: \code{"both"} (default), or \code{"+"}/\code{"-"}.  Cas13
 cleaves ssRNA, so its guide must match the \emph{transcribed} strand (the one the
@@ -37,7 +38,8 @@ when that orientation is known, otherwise both are tried and the choice is
 the caller's to validate.}
 
 \item{spacer_lengths}{guide spacer lengths to try (default: 20-23 nt for
-Cas12a, 22-28 nt for Cas13).}
+Cas12a, 26-28 nt for Cas13a/\code{"cas13"} around the ~28 nt LwaCas13a spacer,
+and 28-30 nt for Cas13b).}
 
 \item{gc_range}{accepted guide GC window (default 0.35-0.65).}
 
@@ -58,29 +60,33 @@ track; when absent, CRISPR warns that guide/PAM conservation is unchecked.}
 \item{BPPARAM}{optional \code{BiocParallel} backend for the guide-specificity scan.}
 }
 \value{
-a \code{marker_crispr} list (\code{snp}, \code{cas}, \code{strand}, \code{guide}, \code{pam},
-\code{guide_start}, \code{guide_end}, \code{seed_offset}, \code{gc}, \code{amplicon}, \code{off_target},
-\code{gates}, \code{relaxed}), or \code{NULL} (with a message) when no guide / amplicon
-passes the hard gates.
+a \code{marker_crispr} list (\code{snp}, \code{cas}, \code{strand}, \code{guide}, \code{pam}, \code{pfs},
+\code{pfs_side}, \code{guide_start}, \code{guide_end}, \code{seed_offset}, \code{gc}, \code{amplicon},
+\code{off_target}, \code{gates}, \code{relaxed}), or \code{NULL} (with a message) when no
+guide / amplicon passes the hard gates.  \code{pam} is \code{NA} for Cas13;
+\code{pfs}/\code{pfs_side} are \code{NA} for Cas12a.
 }
 \description{
 The Cas-mediated detection analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: an isothermal
 RPA pre-amplification pair straddles the variant and a guide RNA is
 placed so its spacer covers the variant, with the variant in the seed or
-critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer; Cas13
-is PAM-free.  The guide must also be unique in the genome (no off-target
-protospacer).  The collateral-cleavage readout itself is not simulated, so this
-returns a well-formed guide plus its pre-amplification amplicon, not a
-predicted signal.
+critical region.  For Cas12a a 5'-TTTV PAM must license the protospacer.
+Cas13 has no DNA PAM (it targets ssRNA), but it is not PFS-free: Cas13a needs
+a non-G base immediately 3' of the target protospacer, and Cas13b needs a
+5' D-PFS (A/U/G, i.e. not C).  The guide must also be unique in the genome
+(no off-target protospacer).  The collateral-cleavage readout itself is not
+simulated, so this returns a well-formed guide plus its pre-amplification
+amplicon, not a predicted signal.
 }
 \details{
 The guide is chosen best-first among all candidates whose pre-amplification
 pair also passes \emph{that chemistry's} composition filters (RPA, never a KASP
 PCR), so a guide is only returned when its amplicon is designable too.
 The soft gates (amplicon window, GC, spacer length) are relaxed one at a
-time, least grave first, only when no guide clears them all; the PAM
-(Cas12a), the seed/critical region and guide specificity (no off-target
-protospacer) are hard - no guide is returned past them.
+time, least grave first, only when no guide clears them all; the PAM/PFS,
+the seed/critical region and guide specificity (no off-target protospacer)
+are hard - no guide is returned past them.  For \code{cas13b} the 3' NAN/NNA PFS
+is not enforced, and the designer warns about that gap.
 }
 \examples{
 \dontrun{

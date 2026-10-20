@@ -9,6 +9,7 @@ design_sanger_marker(
   snp,
   flank = 500L,
   min_dist = KASP_SANGER_LIMITS$min_dist,
+  read_length = KASP_SANGER_LIMITS$read_length,
   min_product = KASP_SANGER_LIMITS$amplicon[1L],
   max_product = KASP_SANGER_LIMITS$amplicon[2L],
   lengths = 18:25,
@@ -27,6 +28,10 @@ design_sanger_marker(
 
 \item{min_dist}{minimal distance from the variant to each amplicon end (the
 read start / primer binding site).}
+
+\item{read_length}{usable read span from the sequencing primer's 5' end.  A
+variant farther than this is not reliably callable; the design still
+returns, but warns and flags that side in \verb{$seq_primers$usable}.}
 
 \item{min_product, max_product}{the accepted amplicon window.}
 

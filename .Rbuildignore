@@ -4,6 +4,7 @@
 ^\.Rprofile$
 ^results$
 ^report$
+^docs$
 ^vignettes/figures/.*[.]png$
 ^graphify-out$
 ^_pkgdown\.yml$

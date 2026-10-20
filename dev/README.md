@@ -80,8 +80,8 @@ Rscript dev/render-gallery.R
 ```
 
 Прогоняет реальные дизайнеры на синтетической матрице и кладёт по одному
-`plot(marker)` в `vignettes/figures/<scheme>.png`; эти PNG вставляют
-`vignettes/markers-*.Rmd` через `include_graphics()`.
+`plot(marker)` в `vignettes/figures/<scheme>.svg` (tracked) и `.png` (local,
+в `.gitignore`); виньетки вставляют SVG через `include_graphics()`.
 
 ## `bench.R` — время и память по функциям
 
