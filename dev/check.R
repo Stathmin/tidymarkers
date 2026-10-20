@@ -6,18 +6,27 @@
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean
-#    3. spelling -- only with `--spelling` (the prose is Russian, so an English
+#    3. docs/INDEX.md and the artifact manifest are consistent and fresh
+#    4. spelling -- only with `--spelling` (the prose is Russian, so an English
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
-#    4. figures -- regenerate the figures from the engine and fail if a committed
+#    5. figures -- regenerate the figures from the engine and fail if a committed
 #       one (man/figures) changed, so the diagrams never drift from the pipeline
 #       (see dev/render-all.R).  By default only the fast, offline decision trees
 #       are refreshed; `--render` also redraws the heavy panels (target panel, FRI
 #       demo - need genome data/OligoArrayAux).  Skip the step with `--no-render`.
-#    5. install smoke -- R CMD INSTALL must succeed
-#    6. R CMD check -- only with `--full` (slow; builds and checks the tarball)
+#    6. install smoke -- R CMD INSTALL must succeed
+#    7. R CMD check -- only with `--full` (slow; builds and checks the tarball)
+#
+#  Modes:
+#    --quick  routine loop: steps 1-3 only (roxygen, styler, lintr, docs/artifacts);
+#             --spelling still adds step 4
+#    default  the gate before a change lands: steps 1-3 + figures + install smoke
+#             (spelling stays opt-in with --spelling)
+#    --full   release gate: default + R CMD check --as-cran, which runs the
+#             complete test suite (biology/external cross-checks included)
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
-#  Run:  Rscript dev/check.R [--full] [--spelling] [--render] [--no-render]
+#  Run:  Rscript dev/check.R [--quick] [--full] [--spelling] [--render] [--no-render]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
@@ -25,10 +34,22 @@ root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", sc
 setwd(root)
 
 full <- "--full" %in% commandArgs(trailingOnly = TRUE)
+quick <- "--quick" %in% commandArgs(trailingOnly = TRUE)
 spelling <- "--spelling" %in% commandArgs(trailingOnly = TRUE)
 render <- "--render" %in% commandArgs(trailingOnly = TRUE)
 no_render <- "--no-render" %in% commandArgs(trailingOnly = TRUE)
+if (quick && (full || render)) {
+  stop("--quick is the routine loop; use --full/--render for the release gate", call. = FALSE)
+}
 failed <- character()
+
+message("mode: ", if (quick) {
+  "quick (routine loop)"
+} else if (full) {
+  "full (release gate)"
+} else {
+  "gate (install smoke)"
+})
 
 ok <- function(...) message("  ok   ", ...)
 
@@ -97,6 +118,7 @@ step("docs/artifacts", function() {
 
 # 4. spelling ---------------------------------------------------------------
 step("spelling", function() {
+  if (quick && !spelling) return(message("  skip (--quick)"))
   if (!spelling) return(message("  skip (pass --spelling; the docs are Russian)"))
   if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
   words <- spelling::spell_check_package()
@@ -109,6 +131,9 @@ step("spelling", function() {
 
 # 5. figures ----------------------------------------------------------------
 step("figures (auto-render)", function() {
+  if (quick) {
+    return(message("  skip (--quick)"))
+  }
   if (no_render) {
     return(message("  skip (--no-render)"))
   }
@@ -135,6 +160,7 @@ step("figures (auto-render)", function() {
 
 # 6. install smoke ----------------------------------------------------------
 step("install (smoke)", function() {
+  if (quick) return(message("  skip (--quick; the install smoke is in the default/release gate)"))
   lib <- tempfile("kasp-check-lib-")
   dir.create(lib)
   on.exit(unlink(lib, recursive = TRUE), add = TRUE)
