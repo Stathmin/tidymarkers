@@ -269,49 +269,66 @@ Graphify сейчас индексирует код и doc-headings, но **не
 ожидает node-link list (проверено). Поэтому docs/artifacts слой делаем через
 manifest + generated Markdown, а не через sidecar JSON.
 
-- [ ] **`docs/INDEX.md` — единый вход.** Все README/AGENTS/CONTRIBUTING/ROADMAP/
+- [x] **`docs/INDEX.md` — единый вход.** Все README/AGENTS/CONTRIBUTING/ROADMAP/
   NEWS/INVENTORY/vignettes/dev-docs; каждая ссылка проверяется на существование.
-- [ ] **`docs/artifacts.yml` — источник истины.** Для каждого артефакта:
+- [x] **`docs/artifacts.yml` — источник истины.** Для каждого артефакта:
   `path`, `kind` (figure/decision/table/benchmark), `generator`, `inputs`,
   `input_hash`, `output_hash`, `docs`, `code`, `status`.
-- [ ] **`dev/check-docs.R`.** Нет orphan-документа; нет broken relative link;
+- [x] **`dev/check-docs.R`.** Нет orphan-документа; нет broken relative link;
   каждый `include_graphics()` имеет manifest-entry; обратные ссылки совпадают.
-- [ ] **`dev/check-artifacts.R`.** Нет orphan-файла в `vignettes/figures`,
+- [x] **`dev/check-artifacts.R`.** Нет orphan-файла в `vignettes/figures`,
   `man/figures`, `results/plot-smoke`; все пути manifest существуют; входной хеш
   не изменился; выходной хеш совпадает — иначе **stale** и gate fail.
-- [ ] **`docs/generated/artifacts.md`.** Один heading на артефакт со ссылками
+- [x] **`docs/generated/artifacts.md`.** Один heading на артефакт со ссылками
   на generator/source/docs; `graphify update . --no-cluster` после генерации.
   Heading label = путь артефакта, чтобы `graphify query "caps.svg"` находил
   docs/code, даже если самого файла нет в AST-графе.
 - [ ] **`targets` (Suggests).** `tar_outdated()`/`tar_make()` для gallery,
-  decision graphs и vignettes; manifest обновляется из `tar_meta()`.
-- [ ] **Gate.** `dev/check.R` вызывает docs/artifacts checks; graphify остаётся
+  decision graphs и vignettes; manifest обновляется из `tar_meta()`. Сейчас
+  freshness держат `dev/render-gallery.R` + `dev/artifacts.R --write/--check`;
+  `targets` — следующий шаг, не блокер.
+- [x] **Gate.** `dev/check.R` вызывает docs/artifacts checks; graphify остаётся
   developer tool (`--graphify` opt-in), не CI-зависимость.
 - [ ] **Graphify health.** `diagnose multigraph` сейчас показывает 41
   same-endpoint collapse и 291 external node без `source_file`; учитывать как
   ограничение ориентации, не как доказательство корректности.
+- **Состояние:** реализовано в Wave 1 (коммиты `9193e6c`/`e5a581a`).
+  `docs/artifacts.yml` хеширует весь `R/`, поэтому **любая** правка `R/` делает
+  20 SVG stale: после неё — `dev/render-gallery.R`, затем `dev/artifacts.R --write`.
+  PNG галереи git-ignored; SVG коммитятся.
 
 ## ZP. Параллельный rollout (coordination)
 
 Правило: **ветки изолируют историю, не рабочее дерево.** Один clone = один
 checkout. Никаких N агентов с `git checkout` в одном каталоге.
 
-### ZP0. Base snapshot — блокер
-- [ ] Сейчас: **144 незакоммиченных пути**, только worktree `main` (`2077c46`).
-  Worktree из `HEAD` был бы stale и не содержал бы текущую работу.
-- [ ] Перед запуском: зафиксировать базу (`wip/roadmap-base` или merge в `main`)
-  с явного разрешения. Пока базы нет — параллельный rollout не стартует.
-- [ ] После snapshot: `git worktree add ../tidymarkers-<slug> -b <branch> wip/roadmap-base`.
+### ZP0. Base snapshot — блокер  [done]
+- [x] Snapshot сделан: ветка `wip/roadmap-base` (коммит `2785097`, 163 файла),
+  затем Wave 1 (`e5a581a`) и Wave 0 (`5e31a1a`).
+- [x] `main` не трогали (`2077c46`); слияние в `main` — отдельным решением.
+- [x] Worktree-only правило соблюдено: агентские ветки слиты и удалены,
+  остался один worktree (`main`-clone на `wip/roadmap-base`).
+- [x] **Grace-период:** 9 untracked `R/`-файлов, 5 vignettes и 24 man/dev файла
+  были реальным исходником и закоммичены; PNG галереи — local-only, SVG — tracked.
+- [ ] Новые worktree — только от `wip/roadmap-base`.
 
 ### ZP1. Волны и ownership
 
-**Wave 0 — последовательно (shared files):**
-`Evaluation`/status, `MarkerContext`/`ReactionConditions`/`Engines`,
-`marker_haplotypes` population seam. Файлы: `R/marker_checks.R`,
-`R/marker_plot_methods.R`, `R/marker_core.R`, `R/marker_thermo.R`,
-`R/marker_haplotypes.R`, `tests/testthat/helper-*`, shared tests. Один владелец.
+**Wave 0 — сделано (`5e31a1a`), последовательно (shared files):**
+`Evaluation`/status (`marker_check_status()`, `evaluation_verdict()`),
+`MarkerContext`/`ReactionConditions`/`Engines` (`marker_run_context()`,
+`reaction_conditions()`, `marker_engines()`), KASP-plot нейтральный статус
+(`1bc1798`). Файлы: `R/marker_checks.R`, `R/marker_plot_methods.R`,
+`R/marker_core.R`, `R/marker_thermo.R`, `R/marker_haplotypes.R`,
+`tests/testthat/helper-*`, shared tests. Один владелец.
 
-**Wave 1 — параллельно, disjoint paths:**
+**Lean test loop (сделано):**
+- `Rscript dev/test.R` — 1374 pass, **68 s** (shared contracts; дефолт).
+- `Rscript dev/test.R --scheme crispr` — ~66 s.
+- `Rscript dev/test.R --full` — 3164 pass, **9m45**, external checks on, 0 skips.
+- `Rscript dev/check.R --quick` — **38 s**; `--no-render` — **43 s**.
+
+**Wave 1 — сделано (`e5a581a`), disjoint paths:**
 
 | Agent | Worktree | Branch | Owns | Forbidden |
 |---|---|---|---|---|
