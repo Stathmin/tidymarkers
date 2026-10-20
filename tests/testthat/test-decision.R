@@ -143,6 +143,54 @@ test_that("a discovered scheme's own gate nodes are stamped too (C13)", {
   expect_equal(st("caps:gate:gate_caps_site"), "ok")
 })
 
+test_that("an unknown check is stamped unknown, never ok", {
+  fake <- list(
+    scheme = "snp",
+    selection = list(),
+    evaluation = tibble::tibble(
+      criterion = c("amplicon length (bp)", "AS Tm (C)", "COM GC"),
+      pass = c(FALSE, FALSE, TRUE),
+      status = marker_check_status(c("unknown", "fail", "pass"))
+    )
+  )
+  nd <- tibble::as_tibble(marker_decision_graph(fake))
+  st <- function(lab) nd$status[match(lab, nd$label)]
+  expect_equal(st("amplicon length (bp)"), "unknown")
+  expect_equal(st("AS Tm (C)"), "violated")
+  expect_equal(st("COM GC"), "ok")
+  # a check with no evaluation row is neutral, not silently green
+  expect_equal(st("AS GC"), "neutral")
+})
+
+test_that("a not_applicable check is neutral, not ok", {
+  fake <- list(
+    scheme = "snp",
+    selection = list(),
+    evaluation = tibble::tibble(
+      criterion = "amplicon length (bp)",
+      pass = FALSE,
+      status = marker_check_status("not_applicable")
+    )
+  )
+  nd <- tibble::as_tibble(marker_decision_graph(fake))
+  expect_equal(nd$status[match("amplicon length (bp)", nd$label)], "neutral")
+})
+
+test_that("a legacy evaluation without a status still maps NA to unknown", {
+  fake <- list(
+    scheme = "snp",
+    selection = list(),
+    evaluation = tibble::tibble(
+      criterion = c("amplicon length (bp)", "AS Tm (C)"),
+      pass = c(NA, FALSE)
+    )
+  )
+  nd <- tibble::as_tibble(marker_decision_graph(fake))
+  st <- function(lab) nd$status[match(lab, nd$label)]
+  expect_equal(st("amplicon length (bp)"), "unknown")
+  expect_equal(st("AS Tm (C)"), "violated")
+})
+
 test_that("site-level checks read the assay's site and linked skips", {
   p <- kasp_primers()
   good <- marker_design_checks(list(

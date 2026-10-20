@@ -294,11 +294,23 @@ marker_decision_graph <- function(assay = NULL, scheme = NULL) {
       )
     }
     if (!is.null(ev)) {
-      bad <- ev$criterion[!is.na(ev$pass) & !ev$pass]
-      unknown <- ev$criterion[is.na(ev$pass)]
+      # Prefer the explicit status; fall back to the legacy logical for an
+      # `$evaluation` written before statuses existed (NA was `unknown`).
+      st <- if ("status" %in% names(ev)) {
+        as.character(marker_check_status(ev$status))
+      } else {
+        ifelse(is.na(ev$pass), "unknown", ifelse(ev$pass, "pass", "fail"))
+      }
+      bad <- ev$criterion[st == "fail"]
+      unknown <- ev$criterion[st == "unknown"]
+      not_app <- ev$criterion[st == "not_applicable"]
+      passed <- ev$criterion[st == "pass"]
+      # unknown is its own colour (grey), never `ok`; a check that does not
+      # apply is neutral; only an evaluated pass turns a node green.
+      status[nodes$kind == "check" & nodes$label %in% not_app] <- "neutral"
       status[nodes$kind == "check" & nodes$label %in% bad] <- "violated"
       status[nodes$kind == "check" & nodes$label %in% unknown] <- "unknown"
-      status[nodes$kind == "check" & !nodes$label %in% c(bad, unknown)] <- "ok"
+      status[nodes$kind == "check" & nodes$label %in% passed] <- "ok"
     }
     nodes$status <- status
   }

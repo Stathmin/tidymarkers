@@ -124,7 +124,8 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   if (!nrow(checks)) {
     return(tibble::tibble(
       stage = character(), criterion = character(), observed = numeric(),
-      limit = character(), pass = logical(), detail = character(), level = character()
+      limit = character(), pass = logical(), status = marker_check_status(),
+      detail = character(), level = character()
     ))
   }
   field <- function(x, nm) if (!is.null(x) && nm %in% names(x)) x[[nm]] else NULL
@@ -407,9 +408,19 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
       pass[i] <- is.finite(amp) && dplyr::between(amp, win[1L], win[2L])
     }
   }
+  # Family checks belong only to their own marker class; elsewhere they are not
+  # applicable, so they neither pass nor doom.  A check with no observed value
+  # (missing data or an engine that was not run) is unknown, never a pass.
+  status <- rep("unknown", nrow(checks))
+  fam_labs <- MARKER_FAMILY_CHECKS[[family]] %||% character(0)
+  status[checks$label %in% fam_labs & !native] <- "not_applicable"
+  evaluated <- status != "not_applicable" & is.finite(observed) & !is.na(pass)
+  status[evaluated] <- ifelse(pass[evaluated], "pass", "fail")
+  status <- marker_check_status(status)
   out <- tibble::tibble(
     stage = checks$stage, criterion = checks$label, observed = observed,
-    limit = checks$limit, pass = pass, detail = NA_character_, level = checks$level
+    limit = checks$limit, pass = marker_check_pass(status), status = status,
+    detail = NA_character_, level = checks$level
   )
   # internal hand-off for the display adapter; not part of the public table
   attr(out, "thermo") <- thermo
@@ -429,13 +440,18 @@ marker_primer_checks <- function(marker, scheme, genome = NULL, limits = KASP_LI
   generic <- marker_generic_checks(marker, scheme, genome, limits)
   thermo <- attr(generic, "thermo")
   base <- generic[generic$criterion %in% KASP_CHECK_PRIMER, , drop = FALSE]
-  keep <- !is.na(base$observed) & !is.na(base$pass)
+  keep <- !is.na(base$status)
   out <- if (any(keep)) {
     name <- check_short(base$criterion[keep])
     tibble::tibble(
       level = base$level[keep],
       name = name,
-      status = dplyr::if_else(base$pass[keep], "ok", "broken"),
+      status = dplyr::case_when(
+        as.character(base$status[keep]) == "pass" ~ "ok",
+        as.character(base$status[keep]) == "fail" ~ "broken",
+        as.character(base$status[keep]) == "unknown" ~ "unknown",
+        TRUE ~ "not_applicable"
+      ),
       value = format_check_value(name, base$observed[keep])
     )
   } else {
@@ -448,8 +464,10 @@ marker_primer_checks <- function(marker, scheme, genome = NULL, limits = KASP_LI
       nm, thermo$tm,
       function(primer, tm) {
         win <- marker_tm_window(scheme, primer)
-        status <- if (is.null(win) || !is.finite(tm)) {
-          "neutral"
+        status <- if (is.null(win)) {
+          "not_applicable"
+        } else if (!is.finite(tm)) {
+          "unknown"
         } else if (dplyr::between(tm, win[1L], win[2L])) {
           "ok"
         } else {
@@ -475,6 +493,11 @@ plot_marker_checks <- function(marker, scheme, genome = NULL) {
   if (!nrow(checks)) {
     return(NULL)
   }
+  # The tumbler palette has ok / broken / neutral only: an unevaluated or
+  # inapplicable check is drawn neutral (never green).
+  display <- c(ok = "ok", broken = "broken", unknown = "neutral", not_applicable = "neutral")
+  checks$status <- unname(display[checks$status])
+  checks$status[is.na(checks$status)] <- "neutral"
   checks$level <- factor(checks$level, levels = c("site", "feature", "alignment", "specificity"))
   tumbler_plot(checks)
 }
