@@ -36,6 +36,7 @@ Other KASP plan:
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
 \code{\link[=marker_primers]{marker_primers()}},
+\code{\link[=marker_run_context]{marker_run_context()}},
 \code{\link[=marker_solve]{marker_solve()}},
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tech]{marker_tech()}}

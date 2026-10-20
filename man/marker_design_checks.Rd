@@ -17,9 +17,11 @@ marker_design_checks(assay, limits = KASP_LIMITS, scheme = NULL)
 }
 \value{
 tibble with \code{stage}, \code{criterion}, \code{observed}, \code{limit}, \code{pass},
-\code{detail} and \code{level}.  Criteria cover the target \emph{site}, each \emph{feature}
-oligo, the \emph{alignment}, and \emph{off-target} specificity - as far as the scheme
-has them.
+\code{status}, \code{detail} and \code{level}.  \code{status} is a factor (\code{pass}, \code{fail},
+\code{unknown}, \code{not_applicable}); \code{pass} is its logical view
+(\code{status == "pass"}), kept for existing callers.  Criteria cover the
+target \emph{site}, each \emph{feature} oligo, the \emph{alignment}, and \emph{off-target}
+specificity - as far as the scheme has them.
 }
 \description{
 Turns the prose design manual into a tidy pass/fail table so "good" and

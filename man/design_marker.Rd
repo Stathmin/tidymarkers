@@ -26,7 +26,7 @@ is honoured by the KASP scheme).}
 
 \item{...}{passed to the per-scheme designer (e.g. \code{flank}).}
 
-\item{context}{optional \code{\link[=marker_context]{marker_context()}} supplying \code{variants}/\code{haplotypes}
+\item{context}{optional \code{\link[=marker_run_context]{marker_run_context()}} supplying \code{variants}/\code{haplotypes}
 (and, for later seams, \code{population}, \code{conditions}, \code{engines}).  Must be
 named; supplied through \code{...} before this argument it would bind there.}
 }

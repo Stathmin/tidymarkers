@@ -21,7 +21,10 @@ mk_assay <- function() {
       n_products = c(1L, 0L), width = c(90L, NA_integer_)
     ),
     efficiency = tibble::tibble(discrimination = 0.9),
-    specificity = tibble::tibble(primer = names(p), seed = "ACGT", hits = 1L)
+    specificity = tibble::tibble(primer = names(p), seed = "ACGT", hits = 1L),
+    ideogram = list(hits = tibble::tibble(
+      primer = names(p), chrom = "Chr4", pos = 1L
+    ))
   ), class = "marker_assay")
 }
 

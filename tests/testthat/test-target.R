@@ -49,7 +49,7 @@ test_that("design_marker walks the chemistries and returns the first that works"
 test_that("a context does not change dispatch or the no-context result", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
-  ctx <- marker_context(genome)
+  ctx <- marker_run_context(genome)
   # "asq" has no designer in this build: both calls report the same null verdict
   expect_null(marker_design_at(NULL, NULL, "asq"))
   expect_null(marker_design_at(NULL, NULL, "asq", context = ctx))
@@ -62,7 +62,7 @@ test_that("a context does not change dispatch or the no-context result", {
 test_that("design_markers accepts a context and keeps its result", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   loci <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
-  ctx <- marker_context(genome)
+  ctx <- marker_run_context(genome)
   a <- design_markers(genome, loci, scheme = "asq")
   b <- design_markers(genome, loci, scheme = "asq", context = ctx)
   expect_identical(a, b)
@@ -75,6 +75,6 @@ test_that("a plan layer cannot masquerade as a design context", {
   layer <- marker_context(variants = tibble::tibble(chrom = "Chr1", pos = 1L, alt = "A"))
   expect_error(
     marker_design_at(genome, snp, "asq", context = layer),
-    "marker_context\\(genome"
+    "marker_run_context\\(genome"
   )
 })

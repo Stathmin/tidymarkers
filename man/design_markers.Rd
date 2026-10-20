@@ -17,7 +17,7 @@ ladder.}
 
 \item{...}{passed to the per-scheme designer (e.g. \code{flank}).}
 
-\item{context}{optional \code{\link[=marker_context]{marker_context()}} supplying \code{variants}/\code{haplotypes}
+\item{context}{optional \code{\link[=marker_run_context]{marker_run_context()}} supplying \code{variants}/\code{haplotypes}
 for every locus (passed to the per-scheme designer).}
 }
 \value{

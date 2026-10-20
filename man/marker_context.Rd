@@ -4,15 +4,7 @@
 \alias{marker_context}
 \title{Add variant / haplotype context to a plan}
 \usage{
-marker_context(
-  genome = NULL,
-  variants = NULL,
-  population = NULL,
-  haplotypes = NULL,
-  conditions = NULL,
-  engines = NULL,
-  options = list()
-)
+marker_context(variants = NULL, haplotypes = NULL)
 }
 \arguments{
 \item{variants}{a tidy variant table (\code{chrom}, \code{pos}, and either \code{alt} or
@@ -42,6 +34,7 @@ Other KASP plan:
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
 \code{\link[=marker_primers]{marker_primers()}},
+\code{\link[=marker_run_context]{marker_run_context()}},
 \code{\link[=marker_solve]{marker_solve()}},
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tech]{marker_tech()}},

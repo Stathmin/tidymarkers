@@ -73,7 +73,7 @@ rescue_strategy <- function(schemes = NULL) {
 #' @param scheme a scheme id (see [marker_schemes()]), or `NULL` for the full rescue
 #'   ladder.
 #' @param ... passed to the per-scheme designer (e.g. `flank`).
-#' @param context optional [marker_context()] supplying `variants`/`haplotypes`
+#' @param context optional [marker_run_context()] supplying `variants`/`haplotypes`
 #'   for every locus (passed to the per-scheme designer).
 #' @return a one-row-per-locus tibble: `chrom`, `pos`, `ref`, `alt`, `scheme` (the
 #'   winner, or `NA`) and `ok`.
