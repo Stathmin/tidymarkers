@@ -43,6 +43,52 @@ marker_check_pass <- function(status) {
   as.character(marker_check_status(status)) == "pass"
 }
 
+#' Assemble an evaluation table
+#'
+#' The one constructor every scheme's acceptance checks go through, KASP or
+#' not.  It owns the status policy: only an evaluated `TRUE` is `pass`, a
+#' non-finite observation is `unknown` (never a silent pass), and a check that
+#' belongs to another marker class is `not_applicable` (neither pass nor fail).
+#' Keeping this in one place means the KASP evaluator and the generic
+#' non-KASP evaluator cannot drift apart.
+#'
+#' @param stage,criterion,observed,limit,level column vectors, one entry per
+#'   check.
+#' @param pass logical; the raw test outcome.  `NA` means "not evaluated".
+#' @param detail optional per-check detail (mostly `NA`).
+#' @param not_applicable logical; rows that the marker class does not have.
+#' @param textual criteria whose observation is deliberately textual (`NA`
+#'   numeric is not missing data for them).
+#' @return the acceptance-check tibble described in [marker_design_checks()].
+#' @keywords internal
+#' @noRd
+marker_evaluation_table <- function(stage, criterion, observed, limit, pass,
+                                    detail = rep(NA_character_, length(criterion)),
+                                    level,
+                                    not_applicable = rep(FALSE, length(criterion)),
+                                    textual = character()) {
+  observed <- as.numeric(observed)
+  pass <- as.logical(pass)
+  not_applicable <- as.logical(not_applicable) & !is.na(not_applicable)
+  status <- rep("unknown", length(criterion))
+  evaluated <- !not_applicable & !is.na(pass)
+  status[evaluated] <- ifelse(pass[evaluated], "pass", "fail")
+  missing_obs <- !is.finite(observed) & !criterion %in% textual
+  status[missing_obs & !not_applicable] <- "unknown"
+  status[not_applicable] <- "not_applicable"
+  status <- marker_check_status(status)
+  tibble::tibble(
+    stage = as.character(stage),
+    criterion = as.character(criterion),
+    observed = observed,
+    limit = as.character(limit),
+    pass = marker_check_pass(status),
+    status = status,
+    detail = as.character(detail),
+    level = as.character(level)
+  )
+}
+
 #' Check an assembled assay against the KASP acceptance criteria
 #'
 #' Turns the prose design manual into a tidy pass/fail table so "good" and
@@ -291,30 +337,23 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
       pass[i] <- bar$test(observed[i])
     }
   }
-  status <- ifelse(is.na(pass), "unknown", ifelse(pass, "pass", "fail"))
   # The KASP path is reached by a `marker_assay` (or an unclassed mock): family
   # checks that belong to another marker class do not apply here rather than
   # being silently unknown.
   native <- identical(class(assay)[1L], paste0("marker_", scheme))
   fam_labs <- MARKER_FAMILY_CHECKS[[marker_scheme(scheme)$family]] %||% character(0)
-  status[crit$label %in% fam_labs & !native] <- "not_applicable"
-  # Missing data is `unknown`, never a pass.  Several checks used to coerce an
-  # `NA` to TRUE (a dropout with no value, an uncomputed off-target count, an
-  # empty dimer table); this one place makes the rule uniform.  The one check
-  # whose value is deliberately textual (`target site class`) is exempt - its
-  # `observed` is NA by construction, not because data are missing.
-  missing_obs <- !is.finite(observed) & !crit$label %in% "target site class"
-  status[missing_obs & status != "not_applicable"] <- "unknown"
-  status <- marker_check_status(status)
-  tibble::tibble(
+  marker_evaluation_table(
     stage = crit$stage,
     criterion = crit$label,
     observed = observed,
     limit = limit,
-    pass = marker_check_pass(status),
-    status = status,
+    pass = pass,
     detail = vapply(rows, function(r) r$detail %||% NA_character_, character(1)),
-    level = crit$level
+    level = crit$level,
+    not_applicable = crit$label %in% fam_labs & !native,
+    # the one check whose value is deliberately textual: its NA observation is
+    # the absence of a number, not the absence of data
+    textual = "target site class"
   )
 }
 

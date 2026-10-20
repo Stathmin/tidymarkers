@@ -59,13 +59,18 @@
   а не «pass».
 
 ### Z1. Вердикт и статусы  [P0]
-- [~] `NA` больше не проходит `select_with_ladder()`; DAG получил статус
-  `unknown`; но acceptance/verdict всё ещё не различает `unknown` и
-  `not_applicable`.
-- [ ] Ввести тип `pass | fail | unknown | not_applicable` для каждой проверки.
+- [x] `NA` больше не проходит `select_with_ladder()`; DAG получил статус
+  `unknown`; acceptance/verdict различает `unknown` и `not_applicable`.
+- [x] Ввести тип `pass | fail | unknown | not_applicable` для каждой проверки.
   `marker_design_checks()` возвращает его; `marker_decision_graph()` и
   `marker_readout()` считают вердикт только из `pass`, а `unknown` не считают
   успехом. Тест: любой `NA` не даёт «all checks pass».
+- [x] Один конструктор `Evaluation` на все пути: KASP (`marker_design_checks()`)
+  и non-KASP (`marker_generic_checks()`) собирают таблицу через
+  `marker_evaluation_table()`, поэтому политика статусов (raw `TRUE` без
+  наблюдения → `unknown`, чужая family-проверка → `not_applicable`) живёт в
+  одном месте. Тесты: `test-kasp-checks.R` (конструктор + оба пути),
+  `test-plot-methods.R` (нет наблюдения → не pass).
 - [ ] Гейты, которые не могут провалиться (`gate_lamp_variant = TRUE`,
   `duplex homologous = NA`), сделать конструкторскими инвариантами или
   `not_applicable`, а не декоративными гейтами.
@@ -318,15 +323,16 @@ checkout. Никаких N агентов с `git checkout` в одном кат
 `Evaluation`/status (`marker_check_status()`, `evaluation_verdict()`),
 `MarkerContext`/`ReactionConditions`/`Engines` (`marker_run_context()`,
 `reaction_conditions()`, `marker_engines()`), KASP-plot нейтральный статус
-(`1bc1798`). Файлы: `R/marker_checks.R`, `R/marker_plot_methods.R`,
+(`1bc1798`), единый `marker_evaluation_table()` для KASP и generic evaluator.
+Файлы: `R/marker_checks.R`, `R/marker_plot_methods.R`,
 `R/marker_core.R`, `R/marker_thermo.R`, `R/marker_haplotypes.R`,
 `tests/testthat/helper-*`, shared tests. Один владелец.
 
 **Lean test loop (сделано):**
-- `Rscript dev/test.R` — 1374 pass, **68 s** (shared contracts; дефолт).
+- `Rscript dev/test.R` — 1378 pass, **64 s** (shared contracts; дефолт).
 - `Rscript dev/test.R --scheme crispr` — ~66 s.
 - `Rscript dev/test.R --full` — 3164 pass, **9m45**, external checks on, 0 skips.
-- `Rscript dev/check.R --quick` — **38 s**; `--no-render` — **43 s**.
+- `Rscript dev/check.R --quick` — **38 s**; `--no-render` — **44 s**.
 
 **Wave 1 — сделано (`e5a581a`), disjoint paths:**
 

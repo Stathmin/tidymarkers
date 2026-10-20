@@ -122,10 +122,9 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   crit <- marker_criteria(scheme = scheme, limits = limits)
   checks <- crit[crit$role == "check", , drop = FALSE]
   if (!nrow(checks)) {
-    return(tibble::tibble(
+    return(marker_evaluation_table(
       stage = character(), criterion = character(), observed = numeric(),
-      limit = character(), pass = logical(), status = marker_check_status(),
-      detail = character(), level = character()
+      limit = character(), pass = logical(), level = character()
     ))
   }
   field <- function(x, nm) if (!is.null(x) && nm %in% names(x)) x[[nm]] else NULL
@@ -411,16 +410,11 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   # Family checks belong only to their own marker class; elsewhere they are not
   # applicable, so they neither pass nor doom.  A check with no observed value
   # (missing data or an engine that was not run) is unknown, never a pass.
-  status <- rep("unknown", nrow(checks))
   fam_labs <- MARKER_FAMILY_CHECKS[[family]] %||% character(0)
-  status[checks$label %in% fam_labs & !native] <- "not_applicable"
-  evaluated <- status != "not_applicable" & is.finite(observed) & !is.na(pass)
-  status[evaluated] <- ifelse(pass[evaluated], "pass", "fail")
-  status <- marker_check_status(status)
-  out <- tibble::tibble(
+  out <- marker_evaluation_table(
     stage = checks$stage, criterion = checks$label, observed = observed,
-    limit = checks$limit, pass = marker_check_pass(status), status = status,
-    detail = NA_character_, level = checks$level
+    limit = checks$limit, pass = pass, level = checks$level,
+    not_applicable = checks$label %in% fam_labs & !native
   )
   # internal hand-off for the display adapter; not part of the public table
   attr(out, "thermo") <- thermo

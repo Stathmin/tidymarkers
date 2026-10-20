@@ -103,6 +103,22 @@ test_that("marker_design_checks evaluates a non-KASP marker", {
   expect_s3_class(marker_decision_graph(x, scheme = "caps"), "tbl_graph")
 })
 
+test_that("a non-KASP check without an observation is unknown, not a pass", {
+  x <- structure(
+    list(
+      snp = stub_snp(),
+      primers = list(
+        forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
+      )
+    ),
+    class = "marker_caps"
+  )
+  ch <- marker_design_checks(x, scheme = "caps")
+  amp <- ch$criterion == "amplicon length (bp)"
+  expect_equal(as.character(ch$status[amp]), "unknown")
+  expect_false(ch$pass[amp])
+})
+
 test_that("Tm guidelines are method-specific, not KASP gates", {
   expect_equal(marker_tm_window("taqman", "probe_REF"), c(65, 72))
   expect_equal(marker_tm_window("taqman", "forward"), c(58, 62))

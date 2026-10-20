@@ -61,6 +61,24 @@ test_that("check statuses keep pass/fail, and missing data is unknown not pass",
   expect_false(ch$pass[i])
 })
 
+test_that("the evaluation constructor owns the status policy", {
+  out <- marker_evaluation_table(
+    stage = c("alignment", "feature", "feature"),
+    criterion = c("amplicon length (bp)", "target site class", "worst hairpin dG37"),
+    observed = c(NA, NA, NA),
+    limit = c("[50, 100]", NA, "-3"),
+    pass = c(TRUE, TRUE, NA),
+    detail = c(NA, "biallelic", NA),
+    level = c("alignment", "feature", "feature"),
+    not_applicable = c(FALSE, FALSE, TRUE),
+    textual = "target site class"
+  )
+  # missing data beats a raw TRUE; a textual check is exempt; a family check
+  # that does not apply is not_applicable rather than unknown
+  expect_equal(as.character(out$status), c("unknown", "pass", "not_applicable"))
+  expect_equal(out$pass, c(FALSE, TRUE, FALSE))
+})
+
 test_that("evaluation_verdict dooms on a fail and ignores not_applicable", {
   # a failed criterion dooms
   a <- good_assay()
