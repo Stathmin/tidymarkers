@@ -54,8 +54,11 @@ passed silently.  When absent the design still returns, but
 }
 \value{
 a \code{marker_sanger} list (\code{snp}, \code{primers}, \code{amplicon}, \code{seq_primers},
-\code{selection}, \code{allele_dropout}, \code{allele_dropout_risk}), or \code{NULL} (with a
-message) when no unique pair passes the gates.
+\code{selection}, \code{readout}, \code{allele_dropout}, \code{allele_dropout_risk}), or \code{NULL}
+(with a message) when no unique pair passes the gates.  \code{readout} is the
+declared limit (\code{SANGER_DETECTION}): the minor-allele floor, and
+\code{status = "not_modelled"} because this package designs the amplicon, it does
+not call the trace.
 }
 \description{
 The amplicon analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a single flanking pair
@@ -70,21 +73,17 @@ declares is evaluated here (C7); a soft one may be relaxed to its floor, in the
 declared order, and the result records which were (\verb{$selection}).
 }
 \details{
-It does \strong{not} simulate the chromatogram, so it returns a well-formed,
-unique amplicon, not a predicted trace; the trace side is
-\code{\link[=sanger_deconvolve]{sanger_deconvolve()}}.
+It does \strong{not} simulate or read the chromatogram, so it returns a
+well-formed, unique amplicon, not a predicted trace.  \verb{$readout} states that
+limit (\code{status = "not_modelled"}, the minor-allele floor, and the tools that
+do read a trace), so the absence of a trace model is visible in the result.
+A known population variant under a primer is flagged as allele dropout when
+\code{population} is supplied (\verb{$allele_dropout}, \verb{$allele_dropout_risk}).
 }
 \examples{
 \dontrun{
 genome <- ath_genome()
 design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
 }
-}
-\seealso{
-Other KASP Sanger:
-\code{\link[=sanger_allele_fraction]{sanger_allele_fraction()}},
-\code{\link[=sanger_deconvolve]{sanger_deconvolve()}},
-\code{\link[=sanger_example_trace]{sanger_example_trace()}},
-\code{\link[=sanger_indel_estimate]{sanger_indel_estimate()}}
 }
 \concept{KASP Sanger}

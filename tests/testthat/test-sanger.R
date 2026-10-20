@@ -189,153 +189,29 @@ test_that("sanger DAG obeys the contract", {
   expect_dag_invariants("sanger")
 })
 
+
 # ---------------------------------------------------------------------------
-# The read-out half: deconvolving an observed 4-channel trace
+# The read-out is a stated limit, not a home-rolled chromatogram model
 # ---------------------------------------------------------------------------
 
-# An unambiguous primary read (no repeats, so a shift cannot align by accident).
-trace_primary <- "ACGATCGTAGCTAGCATCGATTGAC"
-# A minor allele that differs from the primary at *every* base (the complement),
-# so a heterozygote can never be mistaken for a homozygote.
-het_minor <- chartr("ACGT", "TGCA", trace_primary)
-
-test_that("the detection floor is one uncalibrated constant", {
+test_that("the Sanger read-out limit is declared, uncalibrated and tool-named", {
   expect_identical(SANGER_DETECTION$floor, 0.15)
   expect_identical(SANGER_DETECTION$mixed, 0.20)
   expect_false(SANGER_DETECTION$calibrated)
-  expect_gte(SANGER_DETECTION$mixed, SANGER_DETECTION$floor)
-  d <- sanger_deconvolve(sanger_example_trace(trace_primary))
-  expect_false(any(d$calibrated))
-})
-
-test_that("a 50/50 heterozygote is called mixed at every position", {
-  secondary <- het_minor
-  tr <- sanger_example_trace(trace_primary, secondary = secondary, fraction = 0.5)
-  d <- sanger_deconvolve(tr)
-  expect_true(all(d$mixed))
-  expect_true(all(d$status == "mixed"))
-  expect_equal(unique(d$alt_fraction), 0.5)
-  # the primary and minor calls are the two bases actually in the trace
-  expect_equal(d$ref, strsplit(trace_primary, "")[[1L]])
-  expect_equal(d$alt, strsplit(secondary, "")[[1L]])
-  expect_equal(unique(d$call_quality), 0)
-  f <- sanger_allele_fraction(tr, 1L)
-  expect_equal(f$alt_fraction, 0.5)
-  expect_true(f$above_floor)
-})
-
-test_that("a 20/80 minor allele is mixed, an 18/82 one is only unknown", {
-  secondary <- het_minor
-  tr <- sanger_example_trace(trace_primary, secondary = secondary, fraction = 0.2)
-  d <- sanger_deconvolve(tr)
-  expect_true(all(d$status == "mixed"))
-  expect_true(all(abs(d$alt_fraction - 0.2) < 1e-3))
-  expect_true(sanger_allele_fraction(tr, 1L)$above_floor)
-  # just under the heterozygote threshold: a real minor peak, but not a call
-  tr2 <- sanger_example_trace(trace_primary, secondary = secondary, fraction = 0.18)
-  d2 <- sanger_deconvolve(tr2)
-  expect_false(any(d2$mixed))
-  expect_true(all(d2$status == "unknown"))
-  expect_true(all(abs(d2$alt_fraction - 0.18) < 1e-3))
-  expect_false(sanger_allele_fraction(tr2, 1L)$above_floor)
-})
-
-test_that("a 5/95 trace is below the floor and is never called a confident homozygote", {
-  secondary <- het_minor
-  tr <- sanger_example_trace(trace_primary, secondary = secondary, fraction = 0.05)
-  d <- sanger_deconvolve(tr)
-  expect_false(any(d$mixed))
-  # the minor peak is reported (its fraction is not hidden), but the call is
-  # `noise`: below the floor a minor allele is not callable from the trace
-  expect_true(all(abs(d$alt_fraction - 0.05) < 1e-3))
-  expect_true(all(d$status == "noise"))
-  f <- sanger_allele_fraction(tr, 1L)
-  expect_false(f$above_floor)
-  expect_equal(f$status, "noise")
-  expect_equal(f$alt_fraction, 0.05)
-})
-
-test_that("a homozygote has no minor allele, a tie-free single peak", {
-  tr <- sanger_example_trace(trace_primary)
-  d <- sanger_deconvolve(tr)
-  expect_true(all(d$status == "homozygous"))
-  expect_false(any(d$mixed))
-  expect_equal(d$alt, rep("", nrow(d)))
-  expect_true(all(d$alt_fraction == 0))
-  expect_equal(d$ref, strsplit(trace_primary, "")[[1L]])
-  expect_true(all(d$call_quality == 1))
-  # no mixed stretch either, so an indel cannot be claimed
-  expect_message(i <- sanger_indel_estimate(tr), "no visible heterozygous indel")
-  expect_true(is.na(i$indel_size))
-  expect_true(is.na(i$pos))
-})
-
-test_that("an unknown position is reported, not guessed", {
-  withr::local_envvar(LANGUAGE = "en")
-  expect_message(expect_null(sanger_allele_fraction(sanger_example_trace(trace_primary), 999L)), "not in")
-})
-
-test_that("a matrix trace and a pos column are accepted; rows stay aligned", {
-  tr <- sanger_example_trace(trace_primary, secondary = het_minor, fraction = 0.5)
-  m <- as.matrix(tr[, c("pos", "A", "C", "G", "T")])
-  d <- sanger_deconvolve(m)
-  expect_s3_class(d, "tbl_df")
-  expect_equal(d$pos, tr$pos)
-  expect_true(all(d$mixed))
-  d2 <- sanger_deconvolve(tr[, c("A", "C", "G", "T")])
-  expect_equal(d2$pos, seq_len(nrow(tr)))
-  expect_error(sanger_deconvolve(tr[, c("A", "C")]), "missing channel")
-})
-
-test_that("bleed-through is corrected by the supplied matrix", {
-  # a clean 50/50 trace: A+T against C+G, with a constant instrument floor so
-  # each channel's baseline is that floor and the minor peak survives it
-  base <- data.frame(
-    pos = 1:4,
-    A = c(500, 10, 10, 500),
-    C = c(10, 500, 500, 10),
-    G = c(10, 500, 500, 10),
-    T = c(500, 10, 10, 500),
-    base = c("A", "C", "C", "A")
+  expect_identical(SANGER_DETECTION$status, "not_modelled")
+  expect_true(all(c("sangerseqR", "sangeranalyseR") %in% SANGER_DETECTION$tools))
+  W <- bseq(1200L, 2L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  ref <- substr(W, 600L, 600L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 600L, ref = ref, alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
   )
-  # 10% of every dye leaks into the next channel
-  leak <- diag(4)
-  leak[cbind(2:4, 1:3)] <- 0.1
-  leaked <- base
-  leaked[, c("A", "C", "G", "T")] <- as.matrix(base[, c("A", "C", "G", "T")]) %*% t(leak)
-  uncorrected <- sanger_deconvolve(leaked, bleed = NULL)
-  corrected <- sanger_deconvolve(leaked, bleed = solve(t(leak)))
-  # the leak shifts the ratio away from 0.5; the correction brings it back
-  expect_gt(max(abs(uncorrected$alt_fraction - 0.5)), 0.01)
-  expect_lt(
-    max(abs(corrected$alt_fraction - 0.5)),
-    max(abs(uncorrected$alt_fraction - 0.5))
-  )
-  expect_true(all(corrected$status == "mixed"))
-})
-
-test_that("a heterozygous deletion is located and sized heuristically", {
-  # the minor allele is the primary with bases 12-15 deleted: up to position 11
-  # the two alleles agree, from 12 on the trace is mixed (the deletion's first
-  # *visible* position is the base after the deleted stretch)
-  minor <- paste0(substr(trace_primary, 1L, 11L), substr(trace_primary, 16L, nchar(trace_primary)))
-  tr <- sanger_example_trace(trace_primary, secondary = minor, fraction = 0.5, shift_at = 12L)
-  i <- sanger_indel_estimate(tr)
-  expect_equal(i$pos, 12L)
-  expect_equal(i$indel_size, -4L)
-  expect_equal(i$confidence, "heuristic")
-  expect_false(i$calibrated)
-  expect_equal(i$heterozygous_fraction, 0.5)
-  # a clean trace has no site to report
-  expect_message(sanger_indel_estimate(sanger_example_trace(trace_primary)), "no visible")
-})
-
-test_that("a clean trace yields no indel estimate, and a below-floor mixture is invisible", {
-  # 5% minor allele: the mix is under the floor, so the stretch is not mixed
-  minor <- paste0(substr(trace_primary, 1L, 11L), substr(trace_primary, 16L, nchar(trace_primary)))
-  tr <- sanger_example_trace(trace_primary, secondary = minor, fraction = 0.05, shift_at = 12L)
-  expect_message(i <- sanger_indel_estimate(tr), "no visible heterozygous indel")
-  expect_true(is.na(i$indel_size))
+  m <- suppressWarnings(design_sanger_marker(genome, snp, flank = 500L))
+  # the result states what it does not model, so a missing trace model is never
+  # mistaken for a passing read-out check
+  expect_identical(m$readout$status, "not_modelled")
+  expect_identical(m$readout$floor, SANGER_DETECTION$floor)
+  expect_output(print(m), "read-out: not modelled")
 })
 
 test_that("design_sanger_marker flags a population variant under a primer, not a silent pass", {
