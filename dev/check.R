@@ -20,6 +20,9 @@
 #  Modes:
 #    --quick  routine loop: steps 1-3 only (roxygen, styler, lintr, docs/artifacts);
 #             --spelling still adds step 4
+#    --no-artifacts  skip step 3 (docs/artifacts).  Use in an isolated worktree:
+#             the manifest hashes all of R/, so any edit makes 20 figures stale;
+#             the coordinator regenerates it once, after the merge
 #    default  the gate before a change lands: steps 1-3 + figures + install smoke
 #             (spelling stays opt-in with --spelling)
 #    --full   release gate: default + R CMD check --as-cran, which runs the
@@ -27,6 +30,7 @@
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
 #  Run:  Rscript dev/check.R [--quick] [--full] [--spelling] [--render] [--no-render]
+#                            [--no-artifacts]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
@@ -38,6 +42,7 @@ quick <- "--quick" %in% commandArgs(trailingOnly = TRUE)
 spelling <- "--spelling" %in% commandArgs(trailingOnly = TRUE)
 render <- "--render" %in% commandArgs(trailingOnly = TRUE)
 no_render <- "--no-render" %in% commandArgs(trailingOnly = TRUE)
+no_artifacts <- "--no-artifacts" %in% commandArgs(trailingOnly = TRUE)
 if (quick && (full || render)) {
   stop("--quick is the routine loop; use --full/--render for the release gate", call. = FALSE)
 }
@@ -107,6 +112,9 @@ step("lintr", function() {
 
 # 3. docs/artifacts graph ---------------------------------------------------
 step("docs/artifacts", function() {
+  if (no_artifacts) {
+    return(message("  skip (--no-artifacts; regenerate after the merge)"))
+  }
   for (script in c("dev/check-docs.R", "dev/check-artifacts.R")) {
     status <- system2(file.path(R.home("bin"), "Rscript"), script)
     if (!identical(as.integer(status), 0L)) {
