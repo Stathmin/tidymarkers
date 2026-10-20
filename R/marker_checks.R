@@ -9,6 +9,40 @@ longest_run <- function(seq) {
   max(nchar(stringr::str_extract_all(seq, "([ACGT])\\1*")[[1L]]))
 }
 
+# ---------------------------------------------------------------------------
+#  check statuses
+# ---------------------------------------------------------------------------
+# One vocabulary for what an acceptance check says about a marker:
+#   pass           - evaluated, inside the bar
+#   fail           - evaluated, outside the bar
+#   unknown        - could not be evaluated (missing data, engine unavailable);
+#                    never a pass
+#   not_applicable - the check does not apply to this marker class (e.g. a
+#                    CAPS-only check on a KASP assay); neither a pass nor a fail
+MARKER_CHECK_STATUS_LEVELS <- c("pass", "fail", "unknown", "not_applicable")
+
+#' Construct a check-status vector
+#' @param status character; `NA` (or anything unrecognised) becomes `"unknown"`.
+#' @return a `forcats` factor with levels `pass`, `fail`, `unknown`,
+#'   `not_applicable`.
+#' @keywords internal
+#' @noRd
+marker_check_status <- function(status = character()) {
+  status <- as.character(status)
+  status[is.na(status) | !status %in% MARKER_CHECK_STATUS_LEVELS] <- "unknown"
+  forcats::fct(status, levels = MARKER_CHECK_STATUS_LEVELS)
+}
+
+#' The legacy logical `pass` view of a status
+#'
+#' Only an evaluated `pass` is `TRUE`; `unknown` and `not_applicable` are
+#' deliberately not successes.
+#' @keywords internal
+#' @noRd
+marker_check_pass <- function(status) {
+  as.character(marker_check_status(status)) == "pass"
+}
+
 #' Check an assembled assay against the KASP acceptance criteria
 #'
 #' Turns the prose design manual into a tidy pass/fail table so "good" and
@@ -39,9 +73,11 @@ longest_run <- function(seq) {
 #'   [marker_schemes()]); `NULL` (the default) uses `assay$scheme`, falling back to
 #'   `"snp"`.
 #' @return tibble with `stage`, `criterion`, `observed`, `limit`, `pass`,
-#'   `detail` and `level`.  Criteria cover the target *site*, each *feature*
-#'   oligo, the *alignment*, and *off-target* specificity - as far as the scheme
-#'   has them.
+#'   `status`, `detail` and `level`.  `status` is a factor (`pass`, `fail`,
+#'   `unknown`, `not_applicable`); `pass` is its logical view
+#'   (`status == "pass"`), kept for existing callers.  Criteria cover the
+#'   target *site*, each *feature* oligo, the *alignment*, and *off-target*
+#'   specificity - as far as the scheme has them.
 #' @examples
 #' \dontrun{
 #' assay <- assemble_kasp_assay(genome, snp)
@@ -255,13 +291,74 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
       pass[i] <- bar$test(observed[i])
     }
   }
+  status <- ifelse(is.na(pass), "unknown", ifelse(pass, "pass", "fail"))
+  # The KASP path is reached by a `marker_assay` (or an unclassed mock): family
+  # checks that belong to another marker class do not apply here rather than
+  # being silently unknown.
+  native <- identical(class(assay)[1L], paste0("marker_", scheme))
+  fam_labs <- MARKER_FAMILY_CHECKS[[marker_scheme(scheme)$family]] %||% character(0)
+  status[crit$label %in% fam_labs & !native] <- "not_applicable"
+  # Missing data is `unknown`, never a pass.  Several checks used to coerce an
+  # `NA` to TRUE (a dropout with no value, an uncomputed off-target count, an
+  # empty dimer table); this one place makes the rule uniform.  The one check
+  # whose value is deliberately textual (`target site class`) is exempt - its
+  # `observed` is NA by construction, not because data are missing.
+  missing_obs <- !is.finite(observed) & !crit$label %in% "target site class"
+  status[missing_obs & status != "not_applicable"] <- "unknown"
+  status <- marker_check_status(status)
   tibble::tibble(
     stage = crit$stage,
     criterion = crit$label,
     observed = observed,
     limit = limit,
-    pass = pass,
+    pass = marker_check_pass(status),
+    status = status,
     detail = vapply(rows, function(r) r$detail %||% NA_character_, character(1)),
     level = crit$level
   )
+}
+
+#' Is an evaluation usable?
+#'
+#' Collapses an acceptance-check table into one verdict: `"usable"` only when
+#' every *applicable* check is `pass`.  A `fail` (or a legacy `pass = FALSE`)
+#' is `"doomed"`; an `unknown` row keeps the verdict `"unknown"` instead of
+#' silently passing.  `not_applicable` rows are ignored - a check that does not
+#' apply can neither certify nor doom a marker.
+#'
+#' @param x a checks tibble (see [marker_design_checks()]), or a marker/assay
+#'   whose `$evaluation` is read, falling back to [marker_design_checks()].
+#' @param limits thresholds; see [marker_design_checks()].
+#' @return a single character: `"usable"`, `"doomed"` or `"unknown"`.
+#' @keywords internal
+#' @noRd
+evaluation_verdict <- function(x, limits = KASP_LIMITS) {
+  ev <- if (is.data.frame(x)) {
+    x
+  } else {
+    x$evaluation %||% tryCatch(
+      marker_design_checks(x, limits = limits),
+      error = function(e) NULL
+    )
+  }
+  if (is.null(ev) || !nrow(ev)) {
+    return("unknown")
+  }
+  status <- if ("status" %in% names(ev)) {
+    as.character(marker_check_status(ev$status))
+  } else if ("pass" %in% names(ev)) {
+    ifelse(is.na(ev$pass), "unknown", ifelse(ev$pass, "pass", "fail"))
+  } else {
+    rep("unknown", nrow(ev))
+  }
+  if (any(status == "fail")) {
+    return("doomed")
+  }
+  if (any(status == "unknown")) {
+    return("unknown")
+  }
+  if (!any(status == "pass")) {
+    return("unknown")
+  }
+  "usable"
 }

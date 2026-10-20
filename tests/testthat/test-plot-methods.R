@@ -131,6 +131,36 @@ test_that("non-KASP checks report one observed Tm per primer", {
   expect_true(all(nchar(tm$value) <= 4L))
 })
 
+test_that("the check column shows unknown and not_applicable, never ok", {
+  x <- structure(
+    list(
+      snp = stub_snp(),
+      amplicon = tibble::tibble(start = 250L, end = 350L),
+      primers = list(
+        forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
+      )
+    ),
+    class = "marker_caps"
+  )
+  checks <- marker_primer_checks(x, "caps")
+  # no genome/ideogram -> the off-target count was not computed: unknown
+  off <- checks[checks$name == "off-target", ]
+  expect_equal(nrow(off), 1L)
+  expect_equal(off$status, "unknown")
+  expect_false(any(checks$status == "ok" & checks$name == "off-target"))
+  # RPA has no Tm guideline, so its Tm rows are not_applicable, not neutral-ok
+  class(x) <- "marker_rpa"
+  skip_if_no_oligoarrayaux()
+  rpa <- marker_primer_checks(x, "rpa")
+  tm <- rpa[grepl("^Tm ", rpa$name), ]
+  expect_true(nrow(tm) >= 1L)
+  expect_true(all(tm$status == "not_applicable"))
+  # the plot adapter maps both to neutral (never green) and still draws
+  p <- plot_marker_checks(x, "rpa")
+  expect_s3_class(p, "ggplot")
+  expect_setequal(p$data$status[p$data$name %in% tm$name], "neutral")
+})
+
 test_that("a fragment readout names the repeat formula and the observed sizes", {
   x <- structure(
     list(

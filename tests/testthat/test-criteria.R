@@ -117,8 +117,12 @@ test_that("marker_design_checks returns exactly the registry's checks, in order"
     ch <- marker_design_checks(crit_mock(sc), scheme = sc)
     expect_equal(ch$criterion, checks$label, info = sc)
     expect_equal(ch$limit, checks$limit, info = sc)
-    # a KASP mock cannot supply CAPS/LAMP/RPA/... fields; those checks are NA.
-    # Every check that is actually evaluable must pass.
-    expect_true(all(ch$pass[!is.na(ch$pass)]), info = sc)
+    # a KASP mock cannot supply CAPS/LAMP/RPA/... fields; those checks are
+    # unknown/not_applicable and must never be reported as a failure.  Every
+    # check that is actually evaluable must pass, and `pass` is exactly the
+    # logical view of `status`.
+    expect_false(any(ch$status == "fail"), info = sc)
+    expect_true(all(ch$pass[ch$status == "pass"]), info = sc)
+    expect_equal(ch$pass, ch$status == "pass", info = sc)
   }
 })
