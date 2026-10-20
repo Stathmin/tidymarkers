@@ -23,18 +23,26 @@
 #   * the pair must amplify exactly one product genome-wide, or the chromatogram
 #     is a mixture of two templates.
 #
-#  The read-out is not simulated (no chromatogram model), so this returns a
-#  well-formed, unique amplicon with the variant correctly placed, plus the
-#  sequencing primers that read into it, not a trace.  The read *physics* that
-#  are modelled are geometric: the variant must sit between `min_dist` and
-#  `read_length` bp of the sequencing primer's 5' end.  What is deliberately
-#  NOT modelled (and not pretended to be):
-#   * heterozygous indel deconvolution (ICE / TIDE / Poly Peak Parser), so a
-#     mixed indel trace is not resolved into its two alleles;
-#   * a minor allele below ~15-20% of the trace, which can sit under the
-#     chromatogram's call threshold;
-#   * peak heights / spacing / base qualities themselves - `read_length` is the
-#     only proxy for read quality.
+#  The designer itself never simulates a chromatogram: it returns a well-formed,
+#  unique amplicon with the variant correctly placed, plus the sequencing primers
+#  that read into it.  The read *physics* that are modelled there are geometric:
+#  the variant must sit between `min_dist` and `read_length` bp of the sequencing
+#  primer's 5' end.
+#
+#  The read-out half is separate and works on an *observed* 4-channel trace
+#  supplied by the caller (this file never invents intensities):
+#   * sanger_deconvolve() baseline-normalises the channels, subtracts an optional
+#     bleed-through matrix, calls a primary and a secondary base per position and
+#     reports the minor allele's fraction and a call quality;
+#   * sanger_allele_fraction() reads one position;
+#   * sanger_indel_estimate() is a deliberately simple heuristic for a heterozygous
+#     indel: the point where the trace turns mixed fixes the indel site, the
+#     length is the shift that best realigns the secondary channel (no ICE/TIDE).
+#  The detection floor is one constant, SANGER_DETECTION: a minor allele below
+#  floor (~15%) is never called a heterozygote (it is `unknown`), a call above
+#  mixed (~20%) is `mixed`, and the band in between is reported as `unknown`.
+#  The floor is a literature default, not a calibration of the caller's
+#  instrument, hence `calibrated = FALSE` - every read-out record carries it.
 #
 #  Selection is real (not decorative): every gate declared by scheme_def_sanger()
 #  is computed here and applied by select_with_ladder() (C7).  The cheap margins
@@ -55,6 +63,21 @@ KASP_SANGER_LIMITS <- list(
   gc = c(0.40, 0.60),
   min_dist = 50L,
   read_length = 700L
+)
+
+# The chromatogram read-out limits - the single source of truth for every
+# sanger_*() read-out helper, docs and tests.  `floor` is the minor-allele
+# fraction below which a secondary peak is not distinguishable from noise: a
+# mixed call there would be a false heterozygote, so it is `unknown`.  `mixed` is
+# the fraction from which a heterozygote is called (between the default ~15-20%
+# visibility limit of a minor peak in a dideoxy trace).  `calibrated = FALSE`:
+# both are a literature default for a generic capillary instrument, not a
+# calibration of the caller's own trace (a real calibration needs panels of
+# known mixes, e.g. TIDE/ICE's dilution series).
+SANGER_DETECTION <- list(
+  floor = 0.15,
+  mixed = 0.20,
+  calibrated = FALSE
 )
 
 # How far each *soft* Sanger gate may be relaxed - the bounded floor the ladder
@@ -395,6 +418,461 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
   )
 }
 
+# =============================================================================
+#  Read-out: deconvolving an observed 4-channel trace
+# =============================================================================
+#  A chromatogram is logged by the caller as one row per position and four
+#  integer intensities; nothing here invents data.  The model is the standard
+#  additive one used by basecallers:
+#
+#    I_c(pos) ~ baseline_c + bleed(x) + sum over alleles of f_a * peak_a(pos)
+#
+#  so after a local baseline subtraction and an optional fixed bleed-through
+#  matrix the channel intensities are proportional to allele amount: the
+#  primary (largest) channel is the major allele, the largest of the rest is the
+#  minor allele, and the minor-allele fraction is second / (primary + second).
+#  The fraction is a *linear* mixture, which is exactly what sanger_allele_fraction()
+#  reports; the detection floor then decides what may be claimed from it.
+#
+#  Assumptions (all documented, none estimated):
+#   * peaks are already tracked, so `pos` is one base of the read, not a time
+#     sample, and a mixed position has both bases in the same `pos` row;
+#   * the local baseline is the rolling minimum of each channel (the mean of the
+#     peaks' minima when the trace is shorter than the window);
+#   * bleed-through is a fixed, caller-supplied matrix (identity by default): it
+#     is a property of the dye set / instrument, not something a single trace can
+#     identify;
+#   * `noise` (if not supplied) is the median of the local maxima of the
+#     baseline-corrected channels - a per-trace proxy for the minor peak a
+#     basecaller would ignore.
+
+# The bases in chromatogram channel order.
+SANGER_BASES <- c("A", "C", "G", "T")
+
+# Rolling minimum of a numeric vector, centred, `half` positions each side.
+sanger_rolling_min <- function(x, half) {
+  n <- length(x)
+  i <- seq_len(n)
+  vapply(i, function(k) min(x[pmax(1L, k - half):pmin(n, k + half)]), numeric(1))
+}
+
+# The caller's trace as an n x 4 numeric matrix, with the position labels.
+sanger_channels <- function(trace) {
+  if (is.matrix(trace)) {
+    trace <- as.data.frame(trace)
+  }
+  if (!is.data.frame(trace) && !is.list(trace)) {
+    cli::cli_abort(gettext("`trace` must be a data.frame or a matrix (one row per position)."))
+  }
+  missing <- setdiff(SANGER_BASES, names(trace))
+  if (length(missing)) {
+    cli::cli_abort(gettext("`trace` is missing channel column(s): {paste(missing, collapse = ', ')}."))
+  }
+  x <- vapply(SANGER_BASES, function(b) as.numeric(trace[[b]]), numeric(nrow(trace)))
+  x <- matrix(x, ncol = 4L)
+  if (!nrow(x)) {
+    cli::cli_abort(gettext("`trace` has no positions."))
+  }
+  if (any(!is.finite(x))) {
+    cli::cli_abort(gettext("`trace` channel intensities must all be finite."))
+  }
+  list(
+    x = x,
+    pos = if ("pos" %in% names(trace)) as.integer(trace$pos) else seq_len(nrow(x)),
+    base = if ("base" %in% names(trace)) toupper(as.character(trace$base)) else NULL
+  )
+}
+
+# Baseline-corrected channels folded for the local baseline of each channel.
+# `baseline` is one of "local" (rolling minimum at `baseline_window`), "none", or
+# a numeric scalar subtracted from every channel (a dark-current offset).
+sanger_correct_channels <- function(ch, baseline = "local", baseline_window = 5L,
+                                    bleed = NULL) {
+  x <- ch$x
+  # a constant per-channel baseline (the channel's minimum over the read) is the
+  # dark-current floor; a *rolling* baseline would subtract a local minor peak
+  # together with its own baseline and erase exactly what we are looking for.
+  # With a bleed matrix the correction comes first: subtracting the floor before
+  # it would mix the floor of one channel into the next.
+  # with a bleed matrix the floor is subtracted first (it is a per-channel
+  # additive offset, not a dye signal) and subtracted again after the correction
+  # in case the leakage left a residue
+  observed <- correct_minus_baseline(if (is.null(bleed)) x else pmax(x, 0), baseline)
+  corrected <- observed
+  if (!is.null(bleed)) {
+    if (!is.matrix(bleed) || !identical(dim(bleed), c(4L, 4L))) {
+      cli::cli_abort(gettext("`bleed` must be a 4 x 4 matrix (the correction that undoes the dye overlap)."))
+    }
+    # corrected = observed x bleed, row by row with plain vectors (matrix
+    # subassignment is avoided: `corr[row, ] <- vals` silently keeps only the
+    # last element on this build, and `rbind` of row vectors is unambiguous)
+    rows <- vector("list", nrow(observed))
+    for (row in seq_len(nrow(observed))) {
+      obs <- observed[row, ]
+      vals <- numeric(4L)
+      for (col in seq_len(4L)) {
+        vals[col] <- sum(obs * bleed[, col])
+      }
+      rows[[row]] <- vals
+    }
+    corrected <- do.call(rbind, rows)
+    corrected <- pmax(corrected, 0)
+  }
+  # baseline subtraction, row by row with plain vectors: matrix arithmetic on
+  # this build's matrices is not reliable, and `pb` is a vector by construction
+  corrected <- correct_minus_baseline(corrected, baseline)
+  corrected
+}
+
+# `max(x - baseline_row, 0)` applied row by row (see sanger_correct_channels).
+correct_minus_baseline <- function(x, baseline) {
+  n <- nrow(x)
+  known <- identical(baseline[[1L]], "local") || identical(baseline[[1L]], "none")
+  numeric_ok <- is.numeric(baseline) && length(baseline) == 1L && is.finite(baseline)
+  if (!known && !numeric_ok) {
+    cli::cli_abort(gettext("`baseline` must be \"local\", \"none\" or one finite number."))
+  }
+  mins <- if (identical(baseline[[1L]], "local")) {
+    # the instrument floor is the smallest value any channel reaches; a
+    # per-channel minimum can *be* the minor peak (a channel that is minor at
+    # most positions has its smallest value at a real peak)
+    rep(min(x), ncol(x))
+  } else if (identical(baseline[[1L]], "none")) {
+    rep(0, ncol(x))
+  } else {
+    rep(as.numeric(baseline), ncol(x))
+  }
+  rows <- vapply(seq_len(n), function(row) {
+    pmax(x[row, ] - mins, 0)
+  }, numeric(ncol(x)))
+  t(rows)
+}
+
+# The per-trace noise proxy: the median of the channels' *interquartile* level is
+# too high (it would swallow a 20% peak), so use the smallest above-baseline
+# signal a channel ever carries - the floor a basecaller would ignore.  The
+# `noise` argument of sanger_deconvolve() overrides it.
+sanger_noise <- function(x) {
+  above <- apply(x, 2L, min)
+  stats::median(above) + 1e-9
+}
+
+#' Deconvolve an observed Sanger trace into per-position allele calls
+#'
+#' The read-out half of the Sanger scheme.  Takes a 4-channel chromatogram
+#' (one row per position; `A`/`C`/`G`/`T` intensities), removes a local baseline
+#' and an optional bleed-through, then calls a primary (major) and a secondary
+#' (minor) base per position and reports the minor allele's fraction.  The
+#' fraction is a linear mixture, so no deconvolution of base composition is
+#' needed - the only hard part is deciding *what the fraction licenses*.
+#'
+#' The detection floor is [SANGER_DETECTION] (`floor` ~15%):
+#' * `status = "mixed"` when the minor fraction is at or above `mixed` (~20%)
+#'   and the minor peak stands above the trace noise - a heterozygote;
+#' * `status = "unknown"` for a minor peak below `mixed` (it may be a real minor
+#'   allele under the visibility limit, or noise).  It is never reported as a
+#'   confident homozygote, and a trace with no secondary peak at all is
+#'   `status = "homozygous"`;
+#' * `status = "noise"` when the secondary peak is not above the trace noise.
+#'
+#' `ref`/`alt` are the two called bases in conventional order (primary first),
+#' not the reference genome's alleles: the trace carries no genome position, so
+#' callers wanting a REF/ALT frame should compare `ref`/`alt` with the target
+#' row themselves.  `calibrated = FALSE` says the floor is a literature default,
+#' not a calibration of the caller's instrument.
+#' @param trace a data.frame or matrix with `A`, `C`, `G`, `T` intensity columns
+#'   and an optional `pos` or `base` column (the label; `pos` defaults to
+#'   `seq_len(nrow(trace))`).
+#' @param baseline `"local"` (a constant per-channel minimum), `"none"`, or one
+#'   number subtracted from every channel (a dark-current offset).
+#' @param baseline_window unused; kept so callers that pass it do not break.
+#' @param bleed optional 4 x 4 *correction* matrix (dye by observed channel):
+#'   `corrected = observed %*% bleed`, i.e. the inverse of the instrument's
+#'   leakage matrix; `NULL` (no bleed-through) by default.
+#' @param noise the minor-peak height treated as noise; defaults to the median of
+#'   the per-channel maxima of the corrected trace.
+#' @param floor,mixed the minor-allele fraction limits; default [SANGER_DETECTION].
+#' @return a tibble (`pos`, `base`, `ref`, `alt`, `alt_fraction`, `mixed`,
+#'   `call_quality`, `status`, `calibrated`) with one row per position.
+#' @examples
+#' # a 50/50 A/G heterozygote: every position carries both peaks at half height
+#' het <- sanger_example_trace("AG", fraction = 0.5)
+#' sanger_deconvolve(het)
+#' @family KASP Sanger
+#' @export
+sanger_deconvolve <- function(trace, baseline = "local", baseline_window = 5L,
+                              bleed = NULL, noise = NULL,
+                              floor = SANGER_DETECTION$floor,
+                              mixed = SANGER_DETECTION$mixed) {
+  ch <- sanger_channels(trace)
+  x <- sanger_correct_channels(ch, baseline, baseline_window, bleed)
+  nz <- if (is.null(noise)) sanger_noise(x) else as.numeric(noise)[1L]
+  # an explicit argmax: `max.col()` is not reliable on this build's 4-column
+  # double matrices, and this loop is also trivially readable
+  top <- vapply(seq_len(nrow(x)), function(i) which.max(x[i, ]), integer(1))
+  second <- vapply(seq_len(nrow(x)), function(i) {
+    v <- x[i, ]
+    v[top[i]] <- -Inf
+    which.max(v)
+  }, integer(1))
+  p <- vapply(seq_len(nrow(x)), function(i) x[i, top[i]], numeric(1))
+  # A 50/50 mixture ties the two channels, and the argmax then has no basis to
+  # pick a primary base.  The trace's own `base` (the basecaller's primary call)
+  # breaks the tie when the trace carries one.
+  if (!is.null(ch$base)) {
+    k <- match(ch$base, SANGER_BASES)
+    for (i in seq_len(nrow(x))) {
+      if (is.na(k[i]) || top[i] == k[i] || x[i, k[i]] != p[i]) next
+      top[i] <- k[i]
+      v <- x[i, ]
+      v[top[i]] <- -Inf
+      second[i] <- which.max(v)
+    }
+    p <- vapply(seq_len(nrow(x)), function(i) x[i, top[i]], numeric(1))
+  }
+  s <- vapply(seq_len(nrow(x)), function(i) x[i, second[i]], numeric(1))
+  tot <- p + s
+  frac <- ifelse(tot > 0, s / tot, NA_real_)
+  # `above`: the secondary peak stands above the trace noise (a real second
+  # peak, not a bump).  `visible`: it also reaches the detection floor.  Only a
+  # `visible` peak is eligible to be called `mixed`; a visible peak under the
+  # mixed threshold is `unknown` - never `homozygous`.
+  above <- s > nz & p > nz
+  # A minor peak that clears the noise but stays under `floor` is not visible:
+  # it cannot be told from a bump, so the position is `noise` - a minor allele
+  # below the floor is simply not callable from this trace.  From `floor` up to
+  # `mixed` the peak is real but too low for a heterozygote, so the call is
+  # `unknown` (never a confident homozygote); from `mixed` up it is `mixed`.
+  visible <- above & frac >= floor & frac <= 1 - floor
+  mixed_ok <- visible & frac >= mixed & frac <= 1 - mixed
+  status <- rep("homozygous", nrow(x))
+  status <- ifelse(above & !visible, "noise", status)
+  status <- ifelse(visible & !mixed_ok, "unknown", status)
+  status <- ifelse(mixed_ok, "mixed", status)
+  frac <- ifelse(status == "homozygous", 0, frac)
+  alt <- ifelse(status == "homozygous", "", SANGER_BASES[second])
+  tibble::tibble(
+    pos = ch$pos,
+    base = if (is.null(ch$base)) NA_character_ else ch$base,
+    ref = SANGER_BASES[top],
+    alt = alt,
+    alt_fraction = round(frac, 4L),
+    mixed = mixed_ok,
+    call_quality = round(ifelse(tot > 0, (p - s) / tot, 0), 4L),
+    status = status,
+    calibrated = SANGER_DETECTION$calibrated
+  )
+}
+
+#' The minor-allele fraction at one position of a Sanger trace
+#'
+#' The one-position read of [sanger_deconvolve()], with the detection floor
+#' spelled out: `above_floor` is `TRUE` only when the minor peak clears the trace
+#' noise *and* reaches [SANGER_DETECTION]`$mixed`; between `floor` and `mixed` the
+#' status is `unknown` (a real minor allele cannot be excluded, a confident
+#' homozygote cannot be claimed), below `floor` it is `homozygous` only when no
+#' secondary peak stands above the noise at all.  Never a confident homozygous
+#' call for a visible minor peak under the floor.
+#' @param trace a 4-channel trace, as for [sanger_deconvolve()].
+#' @param pos the position to read (matched against the trace's `pos` column; a
+#'   plain index when the trace has no `pos`).
+#' @param ... passed to [sanger_deconvolve()] (`baseline`, `bleed`, ...).
+#' @return a tibble (`pos`, `ref`, `alt`, `alt_fraction`, `call_quality`,
+#'   `status`, `above_floor`, `floor`, `calibrated`), one row, or `NULL` with a
+#'   message when the position is not in the trace.
+#' @examples
+#' sanger_allele_fraction(sanger_example_trace("AG", fraction = 0.2), 1L)
+#' @family KASP Sanger
+#' @export
+sanger_allele_fraction <- function(trace, pos, ...) {
+  if (length(pos) != 1L) {
+    cli::cli_abort(gettext("`pos` must be one position."))
+  }
+  d <- sanger_deconvolve(trace, ...)
+  row <- d[d$pos == as.integer(pos), , drop = FALSE]
+  if (!nrow(row)) {
+    cli::cli_inform(gettext("Position {pos} is not in the Sanger trace."))
+    return(NULL)
+  }
+  # the plain minor share, independent of the call: a 5% minor allele keeps its
+  # 0.05 even though it is not called a heterozygote
+  tibble::tibble(
+    pos = row$pos, ref = row$ref, alt = row$alt,
+    alt_fraction = minor_fraction(trace, row$pos, ...),
+    call_quality = row$call_quality,
+    status = row$status,
+    above_floor = row$status == "mixed",
+    floor = SANGER_DETECTION$floor,
+    calibrated = SANGER_DETECTION$calibrated
+  )
+}
+
+# The minor-channel share second / (primary + second) at one position, with no
+# floor applied (the number, before the detection rule interprets it).
+minor_fraction <- function(trace, pos, ...) {
+  ch <- sanger_channels(trace)
+  x <- sanger_correct_channels(ch, ...)
+  i <- match(as.integer(pos), ch$pos)
+  v <- x[i, ]
+  top <- which.max(v)
+  s <- max(v[-top])
+  round(s / (v[top] + s), 4L)
+}
+
+#' Estimate a heterozygous indel from a Sanger trace
+#'
+#' A deliberate heuristic, not a deconvolution (no TIDE / ICE / Poly Peak
+#' Parser).  A heterozygous indel superposes two sequences from the indel
+#' onwards, so the trace stops being a single base per position at the indel and
+#' the secondary channel starts to follow a *shifted* copy of the primary one.
+#' The function finds the first position after the clean lead where the trace is
+#' mixed ([sanger_deconvolve()]`$status`), then scores every signed shift `d` in
+#' `-max_size:max_size` by the correlation between the minor-channel fraction of
+#' the interior positions and the primary-channel fraction shifted by `d` (each
+#' channel scaled by the calling strength, so the two halves compare like for
+#' like).  The best `d` is the indel size: negative = deletion, positive =
+#' insertion.
+#'
+#' The assumptions are strong and stated on purpose: the two alleles are equally
+#' amplified from `start` on (a fraction well below the detection floor cannot be
+#' seen at all), the trace is not re-phased by the caller (some basecallers infer
+#' a new spacing after a mixed call, which defeats the realignment), and the
+#' lead is clean so the first mixed position is the indel site.  The result says
+#' `confidence = "heuristic"`; it is a hypothesis to test, not a call.
+#' @param trace a 4-channel trace, as for [sanger_deconvolve()].
+#' @param start first position of the *clean lead* the indel follows; the search
+#'   for the indel site starts here (default: the first position of the trace).
+#' @param max_size largest indel size to score, in bases.
+#' @param window number of positions after the site used to realign.
+#' @param floor the minor fraction below which a position is not mixed; default
+#'   [SANGER_DETECTION]`$floor`.
+#' @param ... passed to [sanger_deconvolve()].
+#' @return a tibble (`pos`, `indel_size`, `heterozygous_fraction`,
+#'   `n_positions`, `correlation`, `confidence`, `calibrated`), one row; `pos` and
+#'   `indel_size` are `NA` (with a message) when no mixed stretch is found.
+#' @examples
+#' trace <- sanger_example_trace(c("ACGTACGTAAAA", "ACGTACGTCCCC"), fraction = 0.5, shift = -4L)
+#' sanger_indel_estimate(trace)
+#' @family KASP Sanger
+#' @export
+sanger_indel_estimate <- function(trace, start = NULL, max_size = 10L, window = 40L,
+                                  floor = SANGER_DETECTION$floor, ...) {
+  d <- sanger_deconvolve(trace, floor = floor, mixed = floor, ...)
+  # the indel site is the first mixed position of the *longest* clean lead: a
+  # low-level noise bump before the real indel would otherwise be picked
+  hit <- d$status != "homozygous" & d$status != "noise"
+  if (!is.null(start)) {
+    hit <- hit & d$pos >= start[1L]
+  }
+  if (!any(hit)) {
+    cli::cli_inform(gettext("No mixed stretch above the detection floor: the trace has no visible heterozygous indel."))
+    return(tibble::tibble(
+      pos = NA_integer_, indel_size = NA_integer_, heterozygous_fraction = NA_real_,
+      n_positions = 0L, correlation = NA_real_, confidence = "heuristic",
+      calibrated = SANGER_DETECTION$calibrated
+    ))
+  }
+  i0 <- which(hit)[1L]
+  # score over a window that starts `max_size` before the site, so every candidate
+  # shift has real overlap; the reported site stays the first mixed position
+  lo <- max(1L, i0 - as.integer(max_size))
+  idx <- seq.int(lo, min(nrow(d), i0 + as.integer(window) - 1L))
+  # the minor allele's share, read only where the trace is actually mixed (a
+  # deletion leaves homologous positions homozygous at 0, which would drag a
+  # plain median of the window to 0)
+  mixed_idx <- which(hit & seq_along(hit) >= i0 & seq_along(hit) <= i0 + as.integer(window) - 1L)
+  frac <- if (length(mixed_idx)) stats::median(d$alt_fraction[mixed_idx], na.rm = TRUE) else NA_real_
+  sizes <- seq.int(-as.integer(max_size), as.integer(max_size))
+  # for a shift `sz` the minor allele's base at j equals the major allele's base
+  # at j - sz, so count how many mixed positions agree with the major base at
+  # the shifted source: the largest count is the indel size
+  score <- vapply(sizes, function(sz) {
+    src <- idx - sz
+    ok <- idx >= i0 & idx <= nrow(d) & src >= 1L & src <= nrow(d) & nzchar(d$alt[idx])
+    if (sum(ok) < 3L) {
+      return(0)
+    }
+    sum(d$alt[idx[ok]] == d$ref[src[ok]]) / sum(ok)
+  }, numeric(1))
+  best <- sizes[which.max(score)]
+  tibble::tibble(
+    pos = as.integer(d$pos[i0]),
+    indel_size = as.integer(best),
+    heterozygous_fraction = round(frac, 4L),
+    n_positions = sum(hit),
+    correlation = round(max(score), 4L),
+    confidence = "heuristic",
+    calibrated = SANGER_DETECTION$calibrated
+  )
+}
+
+#' A deterministic example Sanger trace
+#'
+#' Builds a 4-channel trace in the linear-mixture model [sanger_deconvolve()]
+#' assumes, for tests and examples: a primary sequence, an optional second
+#' sequence (the minor allele) superimposed from its first position, and an
+#' optional shift of the second sequence from a given position (a heterozygous
+#' insertion, positive, or deletion, negative - the second sequence is the one
+#' with the indel).  Intensities are deterministic (a flat peak per base with a
+#' small fixed noise floor), so every caller sees the same numbers.
+#' @param primary the primary (major) base sequence.
+#' @param secondary an optional superimposed sequence; `NULL` for a plain read.
+#' @param fraction the minor allele's fraction of the mixture.
+#' @param shift signed length of the second sequence's indel, in bases.
+#' @param shift_at position of `secondary` (in `primary` coordinates) where the
+#'   minor allele's own bases start; the minor copy is
+#'   `secondary[shift_at:length(secondary)]` placed from `shift_at + shift`
+#'   (positive = the minor allele carries an insertion, negative = a deletion).
+#' @param peak the major-allele peak height; every channel also carries a flat
+#'   1% of it as an instrument floor, so no position is exactly zero.
+#' @return a tibble with `pos`, `base` and the four channel columns.
+#' @examples
+#' sanger_example_trace("ACGTACGT", fraction = 0.3)
+#' @family KASP Sanger
+#' @export
+sanger_example_trace <- function(primary, secondary = NULL, fraction = 0.5, shift = 0L,
+                                 shift_at = 1L, peak = 1000) {
+  primary <- toupper(strsplit(paste(primary, collapse = ""), "")[[1L]])
+  second <- if (is.null(secondary)) {
+    character(0)
+  } else {
+    toupper(strsplit(paste(secondary, collapse = ""), "")[[1L]])
+  }
+  # the minor copy is the tail of `secondary` from `shift_at`, displaced by
+  # `shift`: before `shift_at` the two alleles are identical, so the trace is
+  # clean there and turns mixed exactly at the indel
+  second <- second[seq_along(second) >= shift_at]
+  at <- as.integer(shift_at) + as.integer(shift) + seq_along(second) - 1L
+  # the read has exactly the primary's length: a minor allele longer than the
+  # primary (an insertion) is clipped past the read end
+  second <- second[at <= length(primary)]
+  at <- at[at <= length(primary)]
+  n <- length(primary)
+  x <- matrix(0, n, 4L)
+  add <- function(mat, letters, positions, weight) {
+    for (k in seq_along(positions)) {
+      pos <- positions[k]
+      code <- match(letters[k], SANGER_BASES)
+      if (is.na(code) || pos < 1L || pos > n) next
+      old <- mat[pos, code]
+      mat[pos, code] <- old + weight
+    }
+    mat
+  }
+  frac_s <- if (length(second)) fraction else 0
+  frac_p <- if (length(second)) 1 - fraction else 1
+  x <- add(x, primary, seq_along(primary), frac_p * peak)
+  x <- add(x, second, at, frac_s * peak)
+  # a per-position flat floor of 1% of the major peak (below the detection floor
+  # by a wide margin): present in every channel, so it never distorts a ratio
+  x <- x + 0.01 * (if (frac_p > 0) peak else 0)
+  out <- tibble::as_tibble(as.data.frame(x, stringsAsFactors = FALSE))
+  names(out) <- SANGER_BASES
+  out <- tibble::add_column(out, pos = seq_len(n), .before = 1L)
+  out <- tibble::add_column(out, base = c(primary, rep(NA_character_, n - length(primary))), .after = 1L)
+  out
+}
+
 #' Design a Sanger sequencing marker at a variant
 #'
 #' The amplicon analogue of [assemble_kasp_assay()]: a single flanking pair
@@ -409,7 +887,8 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' declared order, and the result records which were (`$selection`).
 #'
 #' It does **not** simulate the chromatogram, so it returns a well-formed,
-#' unique amplicon, not a predicted trace.
+#' unique amplicon, not a predicted trace; the trace side is
+#' [sanger_deconvolve()].
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width (must leave room for the amplicon).
@@ -422,10 +901,17 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' @param lengths primer lengths to try.
 #' @param tm_range,gc_range accepted primer windows.
 #' @param check_unique when `TRUE`, require exactly one [in_silico_pcr()] product.
+#' @param population optional population table already used by the package's
+#'   haplotype-aware markers (`haplotype`, `freq`, `chrom`, `pos`, `ref`, `alt`,
+#'   see [marker_attach_haplotypes()]).  A known variant under a PCR or read
+#'   primer interferes with that primer's binding (allele dropout), so it is
+#'   **warned and flagged** in `$allele_dropout` + `$allele_dropout_risk`, not
+#'   passed silently.  When absent the design still returns, but
+#'   `$allele_dropout_risk` is `NA` and a warning says the check was not run.
 #' @param ... passed to [in_silico_pcr()] (e.g. `BPPARAM`).
 #' @return a `marker_sanger` list (`snp`, `primers`, `amplicon`, `seq_primers`,
-#'   `selection`), or `NULL` (with a message) when no unique pair passes the
-#'   gates.
+#'   `selection`, `allele_dropout`, `allele_dropout_risk`), or `NULL` (with a
+#'   message) when no unique pair passes the gates.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -440,7 +926,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
                                  max_product = KASP_SANGER_LIMITS$amplicon[2L],
                                  lengths = 18:25, tm_range = KASP_SANGER_LIMITS$tm,
                                  gc_range = KASP_SANGER_LIMITS$gc,
-                                 check_unique = TRUE, ...) {
+                                 check_unique = TRUE, population = NULL, ...) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   amp_pad <- KASP_SANGER_FLOOR$amplicon
@@ -516,7 +1002,83 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     seq_primers = seq_primers,
     selection = list(relaxed = sel$relaxed, violated = sel$violated)
   )
-  structure(out, class = "marker_sanger")
+  out <- structure(out, class = "marker_sanger")
+  if (is.null(population)) {
+    out$allele_dropout <- tibble::tibble()
+    out$allele_dropout_risk <- NA
+    cli::cli_warn(c(
+      gettext("Sanger: no population variants supplied; primer-over-variant allele dropout is not checked."),
+      "i" = gettext("`allele_dropout_risk` is unknown, not a pass.")
+    ))
+    return(out)
+  }
+  h <- normalise_haplotypes(population)
+  hits <- sanger_primer_variants(out, h)
+  out$allele_dropout <- hits
+  out$allele_dropout_risk <- nrow(hits) > 0L
+  if (nrow(hits)) {
+    cli::cli_warn(c(
+      gettext("Sanger: {nrow(hits)} population variant(s) fall under a primer (allele-dropout risk)."),
+      "i" = gettext(
+        "A variant in a primer binding site can lose that allele (or the whole product); see `$allele_dropout`."
+      )
+    ))
+  }
+  marker_attach_haplotypes(out, population, snp)
+}
+
+#' Population variants that fall under a designed Sanger primer
+#'
+#' Allele dropout is a *primer-binding* problem: a variant in the 17-25 nt a
+#' primer anneals to can weaken that primer for the haplotype carrying it, so the
+#' amplicon (or that allele) disappears in a fraction of the population.  Every
+#' primer's binding site is mapped to plus-strand coordinates (the reverse
+#' primers cover `start..start + length - 1` on the minus strand, the same span
+#' on the plus strand) and every population variant inside a span is reported.
+#' The target position itself is excluded: the variant is placed at least
+#' `min_dist` from both read starts and never under a primer by construction.
+#' @param marker a `marker_sanger` object.
+#' @param haplotypes a normalised population table.
+#' @return a tibble (`primer`, `start`, `end`, `pos`, `haplotype`, `freq`, `risk`),
+#'   one row per variant per primer, or an empty tibble.
+#' @keywords internal
+#' @noRd
+sanger_primer_variants <- function(marker, haplotypes) {
+  h <- haplotypes[haplotypes$chrom == marker$snp$chrom[1L] & haplotypes$pos != marker$snp$pos[1L], ,
+    drop = FALSE
+  ]
+  if (!nrow(h)) {
+    return(tibble::tibble())
+  }
+  amp <- marker$amplicon
+  sp <- marker$seq_primers
+  spans <- tibble::tibble(
+    primer = c("PCR_F", "PCR_R", "read_F", "read_R"),
+    start = c(
+      amp$start[1L],
+      amp$end[1L] - nchar(marker$primers$reverse) + 1L,
+      sp$forward_start %||% amp$start[1L],
+      sp$reverse_start %||% (amp$end[1L] - nchar(sp$reverse) + 1L)
+    )
+  ) |>
+    dplyr::mutate(end = .data$start + c(
+      nchar(marker$primers$forward), nchar(marker$primers$reverse),
+      nchar(sp$forward), nchar(sp$reverse)
+    ) - 1L) |>
+    dplyr::distinct(.data$primer, .data$start, .data$end)
+  hits <- lapply(seq_len(nrow(spans)), function(i) {
+    inside <- h$pos >= spans$start[i] & h$pos <= spans$end[i]
+    if (!any(inside)) {
+      return(NULL)
+    }
+    tibble::tibble(
+      primer = spans$primer[i], start = spans$start[i], end = spans$end[i],
+      pos = h$pos[inside], haplotype = h$haplotype[inside], freq = h$freq[inside],
+      risk = "allele dropout"
+    )
+  })
+  out <- purrr::list_rbind(hits)
+  if (is.null(out)) tibble::tibble() else out
 }
 
 #' @export
@@ -542,6 +1104,11 @@ print.marker_sanger <- function(x, ...) {
   }
   if (length(x$selection$relaxed)) {
     cat("  relaxed:", paste(x$selection$relaxed, collapse = ", "), "\n")
+  }
+  if (isTRUE(x$allele_dropout_risk)) {
+    cat("  allele-dropout risk:", nrow(x$allele_dropout), "population variant(s) under a primer\n")
+  } else if (identical(x$allele_dropout_risk, NA)) {
+    cat("  allele-dropout: not checked (no population variants supplied)\n")
   }
   invisible(x)
 }

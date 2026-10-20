@@ -16,6 +16,7 @@ design_sanger_marker(
   tm_range = KASP_SANGER_LIMITS$tm,
   gc_range = KASP_SANGER_LIMITS$gc,
   check_unique = TRUE,
+  population = NULL,
   ...
 )
 }
@@ -41,12 +42,20 @@ returns, but warns and flags that side in \verb{$seq_primers$usable}.}
 
 \item{check_unique}{when \code{TRUE}, require exactly one \code{\link[=in_silico_pcr]{in_silico_pcr()}} product.}
 
+\item{population}{optional population table already used by the package's
+haplotype-aware markers (\code{haplotype}, \code{freq}, \code{chrom}, \code{pos}, \code{ref}, \code{alt},
+see \code{\link[=marker_attach_haplotypes]{marker_attach_haplotypes()}}).  A known variant under a PCR or read
+primer interferes with that primer's binding (allele dropout), so it is
+\strong{warned and flagged} in \verb{$allele_dropout} + \verb{$allele_dropout_risk}, not
+passed silently.  When absent the design still returns, but
+\verb{$allele_dropout_risk} is \code{NA} and a warning says the check was not run.}
+
 \item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
 }
 \value{
 a \code{marker_sanger} list (\code{snp}, \code{primers}, \code{amplicon}, \code{seq_primers},
-\code{selection}), or \code{NULL} (with a message) when no unique pair passes the
-gates.
+\code{selection}, \code{allele_dropout}, \code{allele_dropout_risk}), or \code{NULL} (with a
+message) when no unique pair passes the gates.
 }
 \description{
 The amplicon analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: a single flanking pair
@@ -62,12 +71,20 @@ declared order, and the result records which were (\verb{$selection}).
 }
 \details{
 It does \strong{not} simulate the chromatogram, so it returns a well-formed,
-unique amplicon, not a predicted trace.
+unique amplicon, not a predicted trace; the trace side is
+\code{\link[=sanger_deconvolve]{sanger_deconvolve()}}.
 }
 \examples{
 \dontrun{
 genome <- ath_genome()
 design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
 }
+}
+\seealso{
+Other KASP Sanger:
+\code{\link[=sanger_allele_fraction]{sanger_allele_fraction()}},
+\code{\link[=sanger_deconvolve]{sanger_deconvolve()}},
+\code{\link[=sanger_example_trace]{sanger_example_trace()}},
+\code{\link[=sanger_indel_estimate]{sanger_indel_estimate()}}
 }
 \concept{KASP Sanger}
