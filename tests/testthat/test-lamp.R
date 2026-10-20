@@ -34,6 +34,79 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   expect_output(print.marker_lamp(m), "FIP:")
 })
 
+test_that("lamp_geometry accepts a well-formed inner-primer pair", {
+  # plus-strand template coordinates for the fixture design: F2 ends at the
+  # variant (300), B1/B2 sit downstream, and both 3' termini are G/C clamps.
+  fip <- list(
+    primer = "AGACCGCTAGAGTGCGCCAACGACAATATCCGCGAGTGAGATTC",
+    arm5 = c(238L, 257L), arm3 = c(277L, 300L)
+  )
+  bip <- list(
+    primer = "AGGTGCGGACATAGCTGTAGGATGCTCAACACAAATTCCCGCTGC",
+    arm5 = c(324L, 346L), arm3 = c(363L, 384L)
+  )
+  g <- lamp_geometry(fip, bip, max_product = 300L)
+  expect_true(g$ok)
+  expect_equal(g$f2_b2_distance, 85L)
+  expect_equal(g$loop_length, 23L)
+  expect_equal(unname(g$loops), c(19L, 23L, 16L))
+  expect_true(g$f2_b2_ok)
+  expect_true(g$loop_ok)
+  expect_true(g$fip_3p_stable)
+  expect_true(g$bip_3p_stable)
+  expect_true(all(g$checks))
+  expect_length(g$failed, 0L)
+  expect_length(g$messages, 0L)
+})
+
+test_that("lamp_geometry names a failed loop / 3'-end geometry", {
+  # B1 starts on the F2 terminus (zero-length loop) and FIP's 3' end folds back
+  # on itself (TTTTCAAAA), so both named checks must fail.
+  fip <- list(primer = "TTTTCAAAA", arm5 = c(238L, 257L), arm3 = c(277L, 300L))
+  bip <- list(primer = "ACGTACGTACGTACGCGG", arm5 = c(301L, 320L), arm3 = c(363L, 384L))
+  g <- lamp_geometry(fip, bip, max_product = 300L)
+  expect_false(g$ok)
+  expect_true(g$f2_b2_ok)
+  expect_false(g$loop_ok)
+  expect_false(g$fip_3p_stable)
+  expect_true(g$bip_3p_stable)
+  expect_setequal(g$failed, c("loop_length", "fip_3p_stability"))
+  expect_match(paste(g$messages, collapse = " "), "loop")
+  expect_match(paste(g$messages, collapse = " "), "FIP 3' end")
+})
+
+test_that("lamp_geometry flags an F2-B2 span above the amplicon ceiling", {
+  fip <- list(
+    primer = "AGACCGCTAGAGTGCGCCAACGACAATATCCGCGAGTGAGATTC",
+    arm5 = c(238L, 257L), arm3 = c(277L, 300L)
+  )
+  bip <- list(
+    primer = "AGGTGCGGACATAGCTGTAGGATGCTCAACACAAATTCCCGCTGC",
+    arm5 = c(324L, 346L), arm3 = c(363L, 384L)
+  )
+  g <- lamp_geometry(fip, bip, max_product = 60L)
+  expect_false(g$f2_b2_ok)
+  expect_true(g$loop_ok)
+  expect_match(paste(g$messages, collapse = " "), "F2-B2 distance")
+})
+
+test_that("design_lamp_marker surfaces failed inner-primer geometry", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  snp <- f$snp
+  # FIP's 3'-terminal base is the ALT by construction; a T ALT is not a G/C
+  # clamp, so the set must be returned with a warning and `geometry$ok = FALSE`.
+  snp$alt <- "T"
+  m <- NULL
+  expect_warning(
+    m <- design_lamp_marker(f$genome, snp, flank = 150L),
+    "geometry check failed"
+  )
+  expect_s3_class(m, "marker_lamp")
+  expect_false(m$geometry$ok)
+  expect_true("fip_3p_stability" %in% m$geometry$failed)
+})
+
 test_that("lamp_fuse reverse-complements the 5' loop arm in both orientations", {
   # non-palindromic arms: the 5' arm is A/C-only, the 3' arm A/C-only, so each
   # fused primer stays free of inverted repeats (the G/T complement cannot pair).

@@ -41,6 +41,12 @@
 #      (Shirshikov et al. 2019, PeerJ 7:e6801).  We realise the 3'-end placement
 #      (the one a mismatch actually blocks).
 #
+#  Allele specificity and controls: one returned set is ALT-specific.  FIP's 3'
+#  base reads the ALT allele, so a REF-only template yields no signal; a REF
+#  sample and a failed reaction are therefore indistinguishable.  A paired ALT
+#  set / internal control is NOT generated here - it remains a roadmap item
+#  (ROADMAP Z9), and this designer must not be described as providing one.
+#
 #  Threshold provenance / assumptions:
 #    * outer Tm window c(55, 62) C and inner (binding-arm) Tm window c(55, 65) C
 #      are the rule-of-thumb bands above expressed in the package's TmCalculator
@@ -93,6 +99,24 @@ LAMP_DIMER_SLACK <- 2L # allow this many more bp in a cross-dimer run
 # the LAMP cross-dimer gate.
 LAMP_CROSS_RUN <- 8L
 LAMP_SELFCOMP <- 6L
+
+# Geometry limits for the inner (FIP/BIP) pair.  These are diagnostics layered on
+# top of the decision gates: the primer *choice* is unchanged, but a selected set
+# whose geometry is physically implausible is reported (and warned about) instead
+# of being accepted silently.
+#
+# F2-B2 distance = plus-strand bases from the 3' terminus of F2 (FIP's
+# displacement arm) to the 3' terminus of B2 (BIP's) inclusive.  The B1 site and a
+# single-stranded loop sit between the two arms, so the floor is two loop minima;
+# the inner span can never exceed the amplicon ceiling (the caller passes it).
+LAMP_F2B2_MIN <- 2L * LAMP_LOOP_MIN
+# 3'-end stability of an inner primer: the terminal base should be a G/C clamp
+# and the 3' end must not fold back on an internal region (duplex_selfcomp()).
+LAMP_3P_BASES <- 5L
+LAMP_3P_CLAMP <- c("G", "C")
+# Deliberately weak dG floor for the terminal 5-mer (terminal_dg(), kcal/mol):
+# FIP's 3'-terminal base is the ALT allele, so it cannot always be a strong clamp.
+LAMP_3P_DG_MAX <- -0.5
 
 #' The LAMP scheme definition (registry row + decision stage)
 #'
@@ -355,6 +379,107 @@ lamp_bip <- function(seq, after, arm_lengths, tm_range, gc_range, target_tm, min
   lamp_fuse(sites, sites, target_tm, min_loop, reverse = TRUE)
 }
 
+#' Geometry / physics checks for one FIP/BIP pair
+#'
+#' A LAMP set can pass every thermodynamic gate and still be geometrically
+#' degenerate.  This reports the F2-B2 inner distance, the single-stranded loops
+#' (the F1-F2 and B1-B2 intra-primer loops plus the F2-B1 loop between the inner
+#' primers), and the 3' end of each inner primer.  These are diagnostics, not new
+#' hard selection gates: FIP's 3' base is the ALT allele and is therefore not free
+#' to be chosen as an ideal G/C clamp.  A failed check is meant to be surfaced by
+#' the caller (see `design_lamp_marker()`), never silently accepted.
+#' @param fip,bip inner-primer records (`primer`, `arm5`, `arm3`; plus-strand
+#'   template coordinates).
+#' @param max_product amplicon ceiling; the F2-B2 span cannot exceed it.
+#' @return a named list with the observed values and their `*_ok` flags (see the
+#'   body), plus `ok`, `failed` and `messages` summarising the failed checks.
+#' @keywords internal
+#' @noRd
+# =============================================================================
+#  Geometry / physics checks for the inner (FIP/BIP) pair
+# =============================================================================
+#  The F2-B2 distance, the single-stranded loops and the inner primers' 3' ends
+#  are reported here; `design_lamp_marker()` warns when any of them fails.
+lamp_geometry <- function(fip, bip, max_product = 300L) {
+  # F2 and B2 are the inner primers' displacement (3') arms; their 3' termini
+  # bound the amplifiable core.
+  f2_b2 <- bip$arm3[2L] - fip$arm3[2L] + 1L
+  loops <- c(
+    fip_f1f2 = fip$arm3[1L] - fip$arm5[2L] - 1L,
+    f2_b1 = bip$arm5[1L] - fip$arm3[2L] - 1L,
+    bip_b1b2 = bip$arm3[1L] - bip$arm5[2L] - 1L
+  )
+  last_base <- function(p) substr(p, nchar(p), nchar(p))
+  clamps <- c(FIP = last_base(fip$primer), BIP = last_base(bip$primer))
+  folds <- c(
+    FIP = duplex_selfcomp(fip$primer)$fold,
+    BIP = duplex_selfcomp(bip$primer)$fold
+  )
+  # terminal_dg() is the package's 3'-stability (GC-clamp) diagnostic.  Report it
+  # when the external engine is available; absence is unknown, not a failure.
+  dg <- if (has_oligoarrayaux()) {
+    rlang::set_names(
+      terminal_dg(c(fip$primer, bip$primer), n = LAMP_3P_BASES),
+      c("FIP", "BIP")
+    )
+  } else {
+    c(FIP = NA_real_, BIP = NA_real_)
+  }
+  stable_3p <- function(nm) {
+    !folds[[nm]] && clamps[[nm]] %in% LAMP_3P_CLAMP &&
+      (is.na(dg[[nm]]) || dg[[nm]] <= LAMP_3P_DG_MAX)
+  }
+  short_loops <- names(loops)[loops < LAMP_LOOP_MIN]
+  checks <- c(
+    f2_b2_distance = f2_b2 >= LAMP_F2B2_MIN && f2_b2 <= max_product,
+    loop_length = length(short_loops) == 0L,
+    fip_3p_stability = stable_3p("FIP"),
+    bip_3p_stability = stable_3p("BIP")
+  )
+  unstable_msg <- function(nm) {
+    bits <- c(
+      if (!clamps[[nm]] %in% LAMP_3P_CLAMP) sprintf("terminal base %s is not G/C", clamps[[nm]]),
+      if (folds[[nm]]) "3' end folds back on an internal region",
+      if (!is.na(dg[[nm]]) && dg[[nm]] > LAMP_3P_DG_MAX) {
+        sprintf("terminal dG %.2f > %.2f kcal/mol", dg[[nm]], LAMP_3P_DG_MAX)
+      }
+    )
+    sprintf("%s 3' end is unstable: %s", nm, paste(bits, collapse = "; "))
+  }
+  messages <- c(
+    f2_b2_distance = sprintf(
+      "F2-B2 distance %d bp is outside [%d, %d]", f2_b2, LAMP_F2B2_MIN, max_product
+    ),
+    loop_length = sprintf(
+      "single-stranded loop(s) %s shorter than %d nt",
+      paste(short_loops, collapse = "/"), LAMP_LOOP_MIN
+    ),
+    fip_3p_stability = unstable_msg("FIP"),
+    bip_3p_stability = unstable_msg("BIP")
+  )
+  list(
+    f2_b2_distance = f2_b2,
+    f2_b2_range = c(LAMP_F2B2_MIN, max_product),
+    f2_b2_ok = unname(checks[["f2_b2_distance"]]),
+    loop_length = unname(loops[["f2_b1"]]),
+    loops = loops,
+    loop_min = LAMP_LOOP_MIN,
+    loop_ok = unname(checks[["loop_length"]]),
+    fip_3p_clamp = unname(clamps[["FIP"]]),
+    bip_3p_clamp = unname(clamps[["BIP"]]),
+    fip_3p_fold = unname(folds[["FIP"]]),
+    bip_3p_fold = unname(folds[["BIP"]]),
+    fip_3p_dg = unname(dg[["FIP"]]),
+    bip_3p_dg = unname(dg[["BIP"]]),
+    fip_3p_stable = unname(checks[["fip_3p_stability"]]),
+    bip_3p_stable = unname(checks[["bip_3p_stability"]]),
+    checks = checks,
+    ok = all(checks),
+    failed = names(checks)[!checks],
+    messages = unname(messages[!checks])
+  )
+}
+
 #' The first loop primer (LF or LB) fitting a loop window
 #'
 #' Loop primers are optional accelerators: they anneal inside a single-stranded
@@ -561,6 +686,18 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
   )
   soft <- c("gate_lamp_amplicon", "gate_lamp_outer_tm", "gate_lamp_cross_dimer")
   relaxed <- soft[vapply(soft, function(g) isFALSE(gates[[g]]), logical(1))]
+  # Geometry/physics diagnostics on the set actually returned.  A failure is
+  # surfaced (warning + `geometry$ok = FALSE`) rather than silently accepted; it
+  # is not folded into the ladder because FIP's 3'-terminal base is the ALT allele
+  # and cannot always be an ideal G/C clamp.
+  geo <- lamp_geometry(fip, bip, max_product = max_product)
+  if (!isTRUE(geo$ok)) {
+    cli::cli_warn(c(
+      gettext("LAMP primer-set geometry check failed."),
+      rlang::set_names(geo$messages, rep("*", length(geo$messages))),
+      i = gettext("The set is returned with `geometry$ok = FALSE`; inspect the named check(s).")
+    ))
+  }
   out <- list(
     snp = snp,
     primers = primers,
@@ -577,6 +714,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     variant_primer = "FIP",
     gates = gates,
     relaxed = relaxed,
+    geometry = geo,
     compatibility = pick$compat
   )
   structure(out, class = "marker_lamp")
@@ -597,6 +735,9 @@ print.marker_lamp <- function(x, ...) {
   if ("LB" %in% names(x$primers)) cat("  LB:", x$primers$LB, "\n")
   if (length(x$relaxed)) {
     cat("  (relaxed:", paste(x$relaxed, collapse = ", "), ")\n")
+  }
+  if (!is.null(x$geometry) && !isTRUE(x$geometry$ok)) {
+    cat("  geometry FAILED:", paste(x$geometry$failed, collapse = ", "), "\n")
   }
   invisible(x)
 }
