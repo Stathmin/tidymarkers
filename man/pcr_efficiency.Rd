@@ -44,6 +44,8 @@ pcr_efficiency("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
 \seealso{
 Other KASP thermodynamics:
 \code{\link[=dimer_thermo]{dimer_thermo()}},
+\code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
+\code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=primer_thermo]{primer_thermo()}},
 \code{\link[=primer_tm]{primer_tm()}},

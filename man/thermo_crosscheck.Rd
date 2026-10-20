@@ -36,6 +36,8 @@ thermo_crosscheck(c("GAAGGTGACCAAGTTCATGCT", "TTTTGGCGCGCCGATATATAT"))
 \seealso{
 Other KASP thermodynamics:
 \code{\link[=dimer_thermo]{dimer_thermo()}},
+\code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
+\code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},

@@ -26,6 +26,7 @@ capabilities(engines$specificity)
 \seealso{
 Other KASP engines:
 \code{\link[=capabilities]{capabilities()}},
-\code{\link[=reaction_conditions]{reaction_conditions()}}
+\code{\link[=reaction_conditions]{reaction_conditions()}},
+\code{\link[=scheme_conditions]{scheme_conditions()}}
 }
 \concept{KASP engines}

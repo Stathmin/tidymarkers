@@ -157,9 +157,14 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' @param DMSO DMSO concentration (%), as in a KASP master mix; it lowers Tm.
 #'   `NULL` (the default) uses `conditions$DMSO`.
 #' @param nn_table nearest-neighbour parameter table (see details).
-#' @param conditions reaction conditions from [reaction_conditions()]; its
-#'   `Na`, `Mg`, `dNTPs` and `DMSO` fields are used.  `temperature` does not
-#'   enter the nearest-neighbour Tm calculation.
+#' @param conditions reaction conditions from [reaction_conditions()] (or
+#'   [scheme_conditions()], or a partial named list); its `Na`, `Mg`, `dNTPs` and
+#'   `DMSO` fields are used.  `temperature` does not enter the nearest-neighbour
+#'   Tm calculation (the NN model gives Tm directly), so passing
+#'   `scheme_conditions("lamp")` shifts the Tm only through the buffer fields.
+#'   `NULL` uses [reaction_conditions()], i.e. the package's historical numbers.
+#'   For an isothermal method whose buffer this model does not represent (RPA's
+#'   crowded recombinase buffer) the Tm is informational, not a gate.
 #' @return a numeric vector of Tm (C), one per oligo.
 #' @examples
 #' primer_tm("GAAGGTGACCAAGTTCATGCT")
@@ -168,7 +173,7 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' @family KASP thermodynamics
 #' @export
 primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
-                      conditions = reaction_conditions()) {
+                      conditions = NULL) {
   conditions <- as_reaction_conditions(conditions)
   DMSO <- DMSO %||% conditions$DMSO
   seq <- as.character(seq)
@@ -262,6 +267,79 @@ oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL,
   } else {
     purrr::list_c(bp_lapply(seq_len(n), one, BPPARAM))
   }
+}
+
+#' Hairpin (self-folding) dG at a scheme's reaction temperature
+#'
+#' The hairpin counterpart of a temperature-aware [dimer_thermo()]: the same
+#' OligoArrayAux folding engine, evaluated at the temperature the chemistry runs
+#' at ([scheme_conditions()]) instead of a fixed 37 C, and with the salt taken
+#' from the conditions object.  A higher temperature destabilises the fold, so
+#' `dg` is never more negative than at 37 C for the same sequence.
+#'
+#' The duplex counterpart's signature (`dimer_thermo(primers, BPPARAM,
+#' conditions)`) lives in `R/marker_qc.R`; this helper and [duplex_dg_thermo()]
+#' exist so callers that need the reaction temperature do not have to go through a
+#' global.  Passing a conditions object with its default `temperature` (37 C)
+#' reproduces the historical numbers exactly.
+#'
+#' @param seq oligo(s) 5'->3'.
+#' @param conditions reaction conditions from [reaction_conditions()] or
+#'   [scheme_conditions()]; `Na` (mM) and `temperature` (C) are used.  `NULL` uses
+#'   [reaction_conditions()], i.e. 50 mM / 37 C, the package's historical numbers.
+#' @param BPPARAM optional `BiocParallel` backend.
+#' @return a numeric vector of dG (kcal/mol), one per oligo; more negative = a
+#'   more stable fold.  `NA_real_` without OligoArrayAux.
+#' @examples
+#' \dontrun{
+#' hairpin_dg_thermo("GAAGGTGACCAAGTTCATGCT", conditions = scheme_conditions("lamp"))
+#' }
+#' @seealso [primer_tm()], [duplex_dg_thermo()], [scheme_conditions()]
+#' @family KASP thermodynamics
+#' @export
+hairpin_dg_thermo <- function(seq, conditions = NULL, BPPARAM = NULL) {
+  conditions <- as_reaction_conditions(conditions)
+  oligo_dg_vec(
+    as.character(seq),
+    BPPARAM = BPPARAM,
+    na = conditions$Na / 1000, temp = conditions$temperature
+  )
+}
+
+#' Duplex (oligo pair) dG at a scheme's reaction temperature
+#'
+#' The temperature-aware counterpart of [dimer_thermo()] for named oligo pairs:
+#' the same `hybrid-min` engine, with salt and temperature taken from the
+#' conditions object.  [dimer_thermo()] itself already honours a
+#' `conditions$temperature` (its default is 37 C, the historical behaviour); this
+#' vector helper is the one-oligo-per-element form the per-candidate loops and
+#' their tests use, so a scheme can evaluate its dimers at its own temperature
+#' without changing any existing caller.
+#'
+#' @param seq1,seq2 oligo vectors 5'->3', paired element-wise.
+#' @param conditions reaction conditions from [reaction_conditions()] or
+#'   [scheme_conditions()]; `Na` (mM) and `temperature` (C) are used.  `NULL` uses
+#'   [reaction_conditions()], i.e. 50 mM / 37 C.
+#' @param BPPARAM optional `BiocParallel` backend.
+#' @return a numeric vector of dG (kcal/mol); more negative = a stronger duplex.
+#'   `NA_real_` without OligoArrayAux.
+#' @examples
+#' \dontrun{
+#' duplex_dg_thermo(
+#'   "GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC",
+#'   conditions = scheme_conditions("pcr")
+#' )
+#' }
+#' @seealso [dimer_thermo()], [hairpin_dg_thermo()], [scheme_conditions()]
+#' @family KASP thermodynamics
+#' @export
+duplex_dg_thermo <- function(seq1, seq2, conditions = NULL, BPPARAM = NULL) {
+  conditions <- as_reaction_conditions(conditions)
+  oligo_dg_vec(
+    as.character(seq1), as.character(seq2),
+    BPPARAM = BPPARAM,
+    na = conditions$Na / 1000, temp = conditions$temperature
+  )
 }
 
 #' PCR amplification efficiency of primer/target pairs (DECIPHER)
