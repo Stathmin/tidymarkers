@@ -171,7 +171,7 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     lab <- checks$label[i]
     # family checks only make sense on the matching marker class; a KASP mock
     # graded as e.g. `caps` must get NA, not a fabricated pass/fail.
-    if (lab %in% (MARKER_FAMILY_CHECKS[[family]] %||% character(0)) && !native) {
+    if (lab %in% marker_family_check_labels(family) && !native) {
       next
     }
     if (identical(lab, "amplicon length (bp)")) {
@@ -415,7 +415,7 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   # Family checks belong only to their own marker class; elsewhere they are not
   # applicable, so they neither pass nor doom.  A check with no observed value
   # (missing data or an engine that was not run) is unknown, never a pass.
-  fam_labs <- MARKER_FAMILY_CHECKS[[family]] %||% character(0)
+  fam_labs <- marker_family_check_labels(family)
   out <- marker_evaluation_table(
     stage = checks$stage, criterion = checks$label, observed = observed,
     limit = checks$limit, pass = pass, level = checks$level,

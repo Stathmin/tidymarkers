@@ -116,7 +116,7 @@ test_that("family checks are not_applicable to another marker class", {
     class = "marker_caps"
   )
   ch <- marker_design_checks(x, scheme = "lamp")
-  fam <- ch$criterion %in% MARKER_CHECK_LAMP
+  fam <- ch$criterion %in% unname(names(MARKER_CHECK_LAMP))
   expect_true(all(ch$status[fam] == "not_applicable"))
   expect_false(any(ch$pass[fam]))
   expect_false(any(ch$status == "fail"))
