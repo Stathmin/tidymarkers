@@ -33,6 +33,7 @@ prose <- c(
   "fetched; not extractable (no validation-rate table)" = "not_extractable",
   "fetched; not extractable (no validation-rate number)" = "not_extractable",
   "blocked: no OA full text" = "unfetched",
+  "blocked" = "unfetched",
   "fetched-not-extractable: the row describes a different paper" =
     "not_extractable",
   "fetched; blocked on licence" = "fulltext-read-no-assertion"

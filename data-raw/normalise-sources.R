@@ -57,13 +57,18 @@ if (length(pmc_keys)) {
 # Levels mean only ONE thing: how far into the document we actually read.
 access_map <- c(
   "fulltext" = "fulltext", "full text" = "fulltext",
-  "open" = "fulltext", "full text (Tables 1-2)" = "fulltext",
+  "open" = "fulltext", "open access" = "fulltext",
+  "full text (Tables 1-2)" = "fulltext",
   "full text (Tables 4, 6, 7)" = "fulltext",
+  "fulltext+supplement" = "supplement",
   "full text + supplement" = "supplement",
   "full text + supplements (mmc1-mmc4)" = "supplement",
   "supplement" = "supplement",
   "abstract" = "abstract",
   "stub" = "stub", "blocked" = "stub",
+  # a documented NEGATIVE SEARCH is its own level: it records that we looked and
+  # there is no paper, which is not the same as a paper we could not open
+  "not found" = "not found",
   "transcribed" = "transcribed",
   "source" = "source",
   "closed" = "closed access", "closed access" = "closed access",
@@ -90,6 +95,20 @@ nodoi <- is.na(s$doi) | !nzchar(s$doi)
 if (any(nodoi)) {
   s$doi[nodoi] <- "DOI-UNRESOLVED"
   changed <- c(changed, paste("marked no-DOI rows:", paste(s$key[nodoi], collapse = ", ")))
+}
+
+## 4b. When a row HAS a DOI, it must live in the doi column ------------------
+# Workers pasted the DOI into `identifier` (the prose field) and left `doi`
+# empty, so 29 of 39 backlog rows appeared to have no identifier at all. The
+# DOI is part of the prose; it also belongs in its own greppable column.
+if ("identifier" %in% names(s)) {
+  pulled <- regmatches(s$identifier, regexpr("10\\.[0-9]{4,9}/[^ )\"';,]+", s$identifier))
+  need <- (is.na(s$doi) | !nzchar(s$doi) | s$doi == "DOI-UNRESOLVED") &
+    lengths(pulled) == 1L
+  if (any(need)) {
+    s$doi[need] <- unlist(pulled[need])
+    changed <- c(changed, sprintf("pulled a DOI out of `identifier` for %d row(s)", sum(need)))
+  }
 }
 
 ## 5. `verified` is logical; prose moves to `access_detail` -------------------
