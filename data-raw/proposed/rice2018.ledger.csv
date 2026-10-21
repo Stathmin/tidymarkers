@@ -1,0 +1,3 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"rice2018","rice2018_kasp_validation.csv","test","test-probes-rice2018.R","KASP validation rate","18 summary rows from Table S5, all 24 printed counts and 12 printed percentages recomputed; Table S6 (647 marker-cross rows, 121 assays) re-aggregates exactly to the cross-level block"
+"rice2018","rice2018_marker_cross.csv","test","test-probes-rice2018.R","per-combination validation","647 per marker-cross rows; the paper's prose not-met total (232) and its count of unvalidated not-met combinations (31) are each 3 low against its own rows (235 and 34) - recorded, not corrected"

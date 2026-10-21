@@ -1,0 +1,2 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"rice2024","rice2024_kasp_error_rates.csv","test","test-probes-rice2024.R","per-marker KASP error rate","54 rows from Table 3 with the paper's own FPR/FNR definitions; three rates per marker (a RILs FPR column is not printed); printed (n; %) frequencies recomputed where the panel total allows"
