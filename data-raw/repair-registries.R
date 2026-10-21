@@ -60,6 +60,14 @@ retire <- function(d, label, keycol = "key") {
 }
 
 s <- read_csv(src)
+# an EMPTY string is not NA to any reader downstream: normalise it first, or the
+# DOI-shaped guard reports `belv2024 => ` with nothing after the arrow and the
+# message cannot be acted on
+for (cn in c("doi", "pmid", "pmcid", "year")) {
+  if (cn %in% names(s)) {
+    s[[cn]][!is.na(s[[cn]]) & as.character(s[[cn]]) == ""] <- NA
+  }
+}
 # order matters: decide which ROWS exist BEFORE rewriting cells
 s <- retire(s, "scientific_sources")
 # A `_note` row is a comment about another row, not a source, and is identified
@@ -101,6 +109,23 @@ s <- read_csv(src)
 b <- read_csv(bl)
 l <- read_csv(led)
 
+# `write.csv(na="NA")` writes the two characters NA; read_csv with
+# na.strings="NA" turns them back. But a cell that was genuinely EMPTY comes
+# back as "" and no guard can say what it meant. Fill the documented sentinel.
+for (nm in c("s", "b")) {
+  d <- get(nm)
+  if ("doi" %in% names(d)) {
+    blank <- is.na(d$doi) | !nzchar(d$doi)
+    if (any(blank)) {
+      d$doi[blank] <- "DOI-UNRESOLVED"
+      assign(nm, d)
+      cat(sprintf("  %-24s marked %d blank doi -> DOI-UNRESOLVED\n", nm, sum(blank)))
+    }
+  }
+}
+utils::write.csv(s, src, row.names = FALSE, na = "NA")
+utils::write.csv(b, bl, row.names = FALSE, na = "NA")
+
 stopifnot(!anyDuplicated(s$key), !anyDuplicated(b$key),
           !anyDuplicated(paste(l$source_key, l$extract)))
 stopifnot(all(!is.na(s$key) & nzchar(s$key)))
@@ -112,9 +137,15 @@ if (any(bad_doi)) {
   stop("DOI not DOI-shaped and not the sentinel:\n",
        paste("  ", s$key[bad_doi], "=>", s$doi[bad_doi], collapse = "\n"))
 }
-if (any(unres) && any(is.na(s$pmcid[unres]))) {
-  stop("DOI-UNRESOLVED row(s) with no PMCID: ",
-       paste(s$key[unres], collapse = ", "))
+# A row with no DOI must still be reachable: by PMCID, or -- for a documented
+# negative search -- by the query log that proves the search happened.
+neg_search <- !is.na(s$access) & s$access == "not found"
+reachable <- !is.na(s$pmcid) & nzchar(s$pmcid) |
+  (neg_search & !is.na(s$access_detail) & nzchar(s$access_detail))
+unreach <- unres & !reachable
+if (any(unreach)) {
+  stop("DOI-UNRESOLVED row(s) with no PMCID and no search log: ",
+       paste(s$key[unreach], collapse = ", "))
 }
 
 # required-text columns are non-empty, except a row that is a software record

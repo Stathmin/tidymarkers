@@ -33,10 +33,12 @@ test_that("scientific_sources: every row names a source and how far it was read"
   # and five prose variants ('full text (Tables 4, 6, 7)'), which would have made
   # the column unfilterable. Detail belongs in `access_detail`, never here.
   expect_true(all(s$access %in% c("fulltext", "abstract", "stub", "transcribed",
-                                  "supplement", "source", "closed access")),
+                                  "supplement", "source", "closed access",
+                                  "not found")),
               label = paste(setdiff(unique(s$access),
                                     c("fulltext", "abstract", "stub", "transcribed",
-                                      "supplement", "source", "closed access")),
+                                      "supplement", "source", "closed access",
+                                      "not found")),
                             collapse = ", "))
   # a closed-access row may say nothing numeric
   closed <- s[s$access == "closed access", ]
@@ -49,9 +51,12 @@ test_that("scientific_sources: every row names a source and how far it was read"
   # sentinel is greppable and says the question is still open.
   unresolved <- s$doi == "DOI-UNRESOLVED"
   expect_true(all(grepl("^10\\.[0-9]{4,9}/", s$doi[!unresolved])))
-  # and a row with no DOI must be reachable by PMCID, or it cannot be found again
-  expect_true(all(!is.na(s$pmcid[unresolved]) & nzchar(s$pmcid[unresolved])),
-              label = "no-DOI rows carry a PMCID")
+  # and a row with no DOI must be reachable: by PMCID, or -- for a documented
+  # negative search -- by the query log that shows the search happened. The
+  # point is that someone else can find it again, whatever `find` means here.
+  reachable <- (!is.na(s$pmcid) & nzchar(s$pmcid)) |
+    (s$access == "not found" & !is.na(s$access_detail) & nzchar(s$access_detail))
+  expect_true(all(reachable[unresolved]), label = "no-DOI rows are re-findable")
   # a row that has been VERIFIED must say when
   expect_true(all(!s$verified | !is.na(s$verified_on)))
 })

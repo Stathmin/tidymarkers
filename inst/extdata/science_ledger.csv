@@ -42,3 +42,9 @@
 "sharplab2021","sharplab2021_primers.csv","config","test-kasp-platforms.R","maize KASP assay constructs",NA
 "maize_kasp2020","maize_kasp2020_assays.csv","config","test-kasp-platforms.R","genome-wide maize KASP assay set with no per-assay outcome",NA
 "maize_kasp2020","maize_kasp2020_outcomes.csv","test","test-kasp-platforms.R","work success 92% is amplified, usable is 71%",NA
+"dong2015","dpcr_dong_poisson_residual.csv","test","test-dpcr-dong.R","Poisson conversion is measurable, not assumed",NA
+"dong2015","dpcr_dong_poisson_summary.csv","test","test-dpcr-dong.R","per-platform Poisson residual is small but nonzero",NA
+"mps2024","dpcr_mps_ecoli_dilution.csv","test","test-dpcr-mps-ecoli.R","a dPCR panel is a real multi-assay measurement set",NA
+"mps2024","dpcr_mps_ecoli_limits.csv","test","test-dpcr-mps-ecoli.R","working range is set by precision, not by linearity",NA
+"cheng2021","sanger_bda_braf_calls.csv","test","test-sanger-bda-braf.R","the Sanger floor is a property of the caller, not of the chemistry",NA
+"cheng2021","sanger_bda_braf_floor.csv","test","test-sanger-bda-braf.R","a measured Sanger VAF floor exists and is pipeline-specific",NA
