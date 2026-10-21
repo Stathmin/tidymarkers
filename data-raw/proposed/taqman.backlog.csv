@@ -1,0 +1,8 @@
+"key","family","what_it_would_anchor","identifier","status","verified","verified_on"
+"wheat2019","taqman","link-level TaqMan call rate and concordance on a crop SNP panel","doi:10.1371/journal.pone.0217222","landed: open access, extract in inst/extdata/taqman_*",TRUE,"2026-10-21"
+"citrus2020","taqman","probe-length and SNP-position composition of a TaqMan-MGB crop assay set","doi:10.1270/jsbbs.19142","landed: open access, extract in inst/extdata/taqman_*",TRUE,"2026-10-21"
+"znavsmgb2014","taqman","probe Tm / length trade-off against mismatch tolerance","doi:10.1186/2251-6581-13-26","landed: open access, extract in inst/extdata/taqman_*",TRUE,"2026-10-21"
+"apol1_2019","taqman","failure mode of a predesigned TaqMan assay on a deletion haplotype","doi:10.1016/j.ekir.2018.09.018","landed: open access, extract in inst/extdata/taqman_*",TRUE,"2026-10-21"
+"yao2006","taqman","number of mismatches a conventional TaqMan probe still detects (up to 5)","doi:10.1016/j.mcp.2006.03.003 (PMID 16704921)","blocked: closed access; EPMC inEPMC:N inPMC:N hasPDF:N, only URL 'Subscription required'",TRUE,"2026-10-21"
+"stadhouders2010","taqman","mismatch POSITION dependence of 5'-nuclease discrimination","doi:10.2353/jmoldx.2010.090035 (PMID 19952061, PMC2797725)","blocked: PMC OA service 404 HTML, EPMC fullTextXML HTTP 500, PMC page reCAPTCHA, efetch stub",TRUE,"2026-10-21"
+"lna2004","taqman","LNA-base discrimination in real-time PCR probes","doi:10.1093/nar/gnh046 (PMID 15047860)","blocked: closed access (no OA copy, no usable PMCID)",TRUE,"2026-10-21"
