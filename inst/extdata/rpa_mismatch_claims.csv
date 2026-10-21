@@ -1,0 +1,8 @@
+"claim","paper_says","table_shows","agrees","note","evidence_tier","source_file","doi"
+"terminal mismatch most detrimental to reaction success","C-C (0.59)","C-C (RS logit -4.43)",TRUE,"BRIEF/ABSTRACT SAYS C-T and G-A; TABLE RANKS C-C then G-A (C-T is rank 5). Landed: the table.","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"terminal mismatch second most detrimental","G-A (0.62)","G-A (RS logit -4.31)",TRUE,"","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"terminal mismatches with P >= 0.05 for reaction success","T-G (0.98) and A-C (0.98)","A-C T-G",TRUE,"","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"terminal mismatches significant on all three metrics","8 of 12","9 of 12 (terminal block, all metrics)",TRUE,"","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"terminal mismatches with success probability below 0.8","a quarter of all possible terminal mismatches","A-A A-G C-C G-A",FALSE,"RECORDED, NOT ENFORCED: an explicit 0.8 cut puts 4 of 12 below 0.8 -- A-A A-G C-C G-A -- while the paper names C-C and G-A as the detrimental ones","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"unique mismatch combinations with P < 0.05 on reaction success","159 with P < 0.05 (50.4%)","159",TRUE,"","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"
+"unique mismatch combinations significant on all metrics","106/315","85",FALSE,"RECORDED, NOT ENFORCED: printed stars give 85 rows significant on all four metrics, not 106","primary table (supplement S1)","supplements/mmc1.xlsx","10.1016/j.jmoldx.2022.08.005"

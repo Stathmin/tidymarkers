@@ -1,0 +1,7 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"rpa_mismatch_class","rpa_mismatch_terminal.csv","test","test-rpa-sources.R","rpa_terminal_class_logodds","12 terminal single-mismatch logistic coefficients plus the model intercept; C-C and G-A worst, reproducing the paper's printed 0.59 and 0.62"
+"rpa_mismatch_class","rpa_mismatch_position.csv","test","test-rpa-sources.R","rpa_position_class_logodds","36 two-mismatch position classes; the non-terminal offset is read from the pattern and checked"
+"rpa_mismatch_class","rpa_mismatch_claims.csv","report","test-rpa-sources.R","rpa_claim_audit","the paper's own count claims re-derived from the printed stars; 106/315 and the 0.8 quarter are recorded as NOT reproducible"
+"asrpa_mdr","rpa_asrpa_mdr_calls.csv","test","test-rpa-sources.R","rpa_asrpa_field_call_rate","six 2x2 call tables; labelled as call agreement, never as a mismatch weight"
+"asrpa_sickle","rpa_asrpa_sickle_calls.csv","test","test-rpa-sources.R","rpa_asrpa_genotype_call_rate","allele-level sensitivity/specificity over 91 samples"
+"badolo2012","none","report","none","nothing moved","record corrected: insecticide-resistance monitoring, contains no LAMP or primer content"
