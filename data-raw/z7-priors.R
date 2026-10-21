@@ -71,9 +71,12 @@ mean_pct <- vapply(sites, function(s) {
 }, numeric(1))
 best_site <- sites[[which.max(mean_pct)]]
 if (best_site != "3rd") {
-  stop("the per-class numbers put the optimum at the ", best_site,
-       ", not the 3rd base; do not state the 3rd-base rule from memory")
+  stop(
+    "the per-class numbers put the optimum at the ", best_site,
+    ", not the 3rd base; do not state the 3rd-base rule from memory"
+  )
 }
+
 
 ## --- 3. the prior table ------------------------------------------------------
 priors <- data.frame(
@@ -111,17 +114,18 @@ priors <- data.frame(
     "ordinal", "ordinal", "none (flag only)", "ordinal",
     "continuous", "equivalence", "continuous", "ordinal"
   ),
-  position = c(0L, 0L, 0L, 0L, -3L, -3L, -2L, -2L),
+  position = c(0L, 0L, 0L, 0L, -3L, -3L, -3L, -2L),
   contradicted_by = c(
     NA_character_, NA_character_, NA_character_, NA_character_,
     "ye2001 (-2); numbering conventions differ (see position_note)",
-    NA_character_, "lefever2019 (-3 optimum, qPCR)", "lefever2019; liu2012"
+    NA_character_, "lefever2019 agrees on -3; ye2001 (-2) disagrees", "lefever2019 + liu2012 (-3); Ye 2001 (-2) is the fallback rule"
   ),
   position_note = c(
     "", "", "", "",
     "Lefever's 'position 3' is the 4th nucleotide from the 3' end; in our offset convention that is -3",
-    "", "Liu's '3rd base' is the 3rd nucleotide from the 3' end, i.e. -2 in our convention",
-    "Ye's -2 is our '3rd base from the 3' end', i.e. the same site Liu measured"
+    "",
+    "Liu's '3rd base' is the 3rd nucleotide from the 3' end, i.e. the same site the decision files at -3 (arms_mismatch_position.csv)",
+    "Ye's -2 is the penultimate base; the decided extra-mismatch default is -3 (Liu 2012 + Lefever 2019), Ye's -2 is the fallback for a context_dependent terminal class"
   ),
   measured = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
   evidence = c(

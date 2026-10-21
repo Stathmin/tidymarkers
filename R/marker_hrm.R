@@ -49,6 +49,104 @@ KASP_RELAX_HRM <- c("gate_hrm_tm")
 # does *not* restate a gate (C14).
 KASP_TIERS_HRM <- c(tier1 = "variant centrality (melt domain)", tier2 = "Tm balance")
 
+# ---- resolvability (decided, Q2 / hrm_resolvability) --------------------------
+# HRM's outcome is a DIFFERENCE of melting peaks, not a yes/no property of a SNP.
+# `HRM_DTM_RESOLVABLE` is the smallest homozygote-vs-homozygote dTm called
+# resolvable, in C.  Source: JSBBS 2018 (10.1270/jsbbs.18048) states "a dTm value
+# > 0.5 C guaranteed accurate genotyping" ON A LIGHT CYCLER 96 and adds that some
+# class III/IV markers still genotyped at 0.2-0.3 C - so this is a conservative
+# DEFAULT FOR THAT PLATFORM, not a physical constant.  The lookup is the paper's
+# own per-bimorphism measured minimum (Supplemental Table 2/5); any pair absent
+# from it has no measurement and returns `NA` ("unknown"), never a guess.
+HRM_DTM_RESOLVABLE <- 0.5
+
+# Measured dTm by bimorphism: `min` = smallest dTm still called polymorphic on
+# that substitution class (so a class can fail the 0.5 C default and still be
+# resolvable), `mean` = the typical value.  Asserted against the extract by
+# `tests/testthat/test-hrm-jsbbs2018.R`.
+HRM_BIMORPHISM_DTM <- list(
+  "A/C" = c(min = 0.5139, mean = 0.5886),
+  "A/G" = c(min = 0.2447, mean = 0.6486),
+  "C/G" = c(min = 0.1976, mean = 0.1976),
+  "C/T" = c(min = 0.3915, mean = 0.6922),
+  "G/T" = c(min = 0.3671, mean = 0.5187)
+)
+
+#' Will HRM resolve the two homozygotes of this SNP?
+#'
+#' Answers "is there a dTm to read", from the bimorphism of the pair - the one
+#' input every fetched source measured it for.  `resolvable` when the class mean
+#' clears the threshold (the class is what a designer can expect); `marginal`
+#' when the mean falls short but the class still produced markers above the
+#' threshold (it can work, it is not dependable); `below_threshold` when no
+#' member of the class reached it.  A bimorphism with no landed measurement is
+#' `unknown`, because no fetched source reports a dTm for it.  A multi-locus
+#' panel is NOT answered per SNP: the outcome there is a partition of control
+#' genotypes (3 loci left 14/36 controls in 7 indistinguishable pairs), so the
+#' caller must run the panel, not ask.
+#' @param ref,alt the two alleles (a base or an IUPAC code; a homozygote pair
+#'   such as `"A"`/`"G"`).
+#' @param dg3bp `|dG3bp|` of the 3-bp window, or `NA`; recorded, not thresholded
+#'   (the free-energy filter is a filter, never a guarantee).
+#' @param product amplicon length in bp, or `NA`.
+#' @param threshold the pass threshold (default [HRM_DTM_RESOLVABLE]).
+#' @return a classed list: `bimorphism`, `status`
+#'   (`resolvable`/`marginal`/`below_threshold`/`unknown`), `dtm_min`, `dtm_mean`,
+#'   `threshold`, `product`, `dg3bp`, `evidence`.
+#' @keywords internal
+#' @noRd
+hrm_resolvability <- function(ref, alt, dg3bp = NA_real_, product = NA_real_,
+                              threshold = HRM_DTM_RESOLVABLE) {
+  pair <- sort(unique(toupper(c(as.character(ref)[1L], as.character(alt)[1L]))))
+  # a genotype, not a set of alleles: two distinct bases make a homozygote
+  # comparison; anything else (identical bases, an IUPAC code, an indel) is a
+  # question this lookup has no measurement for
+  pair <- if (length(pair) == 2L) sort(pair) else character(0)
+  bimo <- if (length(pair) == 2L && all(pair %in% c("A", "C", "G", "T"))) {
+    paste(pair, collapse = "/")
+  } else {
+    NA_character_
+  }
+  known <- !is.na(bimo) && bimo %in% names(HRM_BIMORPHISM_DTM)
+  dtm <- if (known) HRM_BIMORPHISM_DTM[[bimo]] else c(min = NA_real_, mean = NA_real_)
+  status <- if (!known) {
+    "unknown"
+  } else if (dtm[["mean"]] >= threshold) {
+    "resolvable"
+  } else if (dtm[["min"]] >= threshold) {
+    "marginal"
+  } else {
+    "below_threshold"
+  }
+  structure(
+    list(
+      bimorphism = bimo,
+      status = status,
+      dtm_min = unname(dtm[["min"]]),
+      dtm_mean = unname(dtm[["mean"]]),
+      threshold = threshold,
+      product = as.numeric(product),
+      dg3bp = as.numeric(dg3bp),
+      evidence = if (known) "measured (LightCycler 96, JSBBS 2018)" else "none landed"
+    ),
+    class = "marker_hrm_resolvability"
+  )
+}
+
+#' Print an HRM resolvability answer
+#' @param x a [hrm_resolvability()] result.
+#' @param ... unused.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+print.marker_hrm_resolvability <- function(x, ...) {
+  cli::cli_inform(c(
+    "i" = "HRM {x$bimorphism}: {x$status}",
+    "*" = "dTm min {round(x$dtm_min, 2)} C, mean {round(x$dtm_mean, 2)} C, threshold {x$threshold} C"
+  ))
+  invisible(x)
+}
+
 # How far the ladder may widen the flanking primers' Tm window (C, each side)
 # when nothing clears the strict one: a bounded, reachable floor (C8).
 HRM_TM_FLOOR <- 2

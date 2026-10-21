@@ -10,8 +10,16 @@ test_that("design_as_primers ranks candidates and the top one is the best", {
     lengths = 20:22, stab_ats = c(NA, 2L)
   )
   expect_gt(nrow(d), 1L)
-  expect_true(all(diff(d$discrimination) <= 1e-9)) # non-increasing
-  expect_equal(d$discrimination[1L], max(d$discrimination))
+  # the order is the decided position policy first (-3, then the -2 fallback,
+  # then no mismatch), then discrimination within each policy class
+  rank <- match(d$stab_policy, c("default", "fallback", "none", "other"))
+  expect_equal(rank, sort(rank))
+  nonincreasing <- function(x) all(diff(x) <= 1e-9)
+  expect_true(all(vapply(split(d$discrimination, rank), nonincreasing, logical(1))))
+  # the default (-3) is ranked ahead of the fallback wherever both exist; this
+  # grid asks for no -3, so every mismatched row is the fallback and the policy
+  # has nothing to reorder
+  expect_false(any(d$stab_policy == "default"))
   expect_gt(d$discrimination[1L], 0) # a real allele mismatch discriminates
   expect_gt(d$ref_on[1L], d$ref_off[1L]) # on-target beats off-target
 })
