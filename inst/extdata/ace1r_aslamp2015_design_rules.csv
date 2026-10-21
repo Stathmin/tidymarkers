@@ -1,0 +1,6 @@
+"statement","position_relative_to_3p_end","verbatim","calibration","source_doi"
+"Mutation carried on the 5' end of the inner primers FIP and BIP:",,TRUE,"uncalibrated; recorded, not averaged with any PCR-family rule","10.1186/s12936-015-0968-9"
+"An additional mismatched nucleotide at the PENULTIMATE position of each specific primer, stated in the Results and repeated in the Fig. 1 legend ('Lower-case letters in BA8 and BA9 show additional mismatch')","penultimate (position -2)",TRUE,"uncalibrated; recorded, not averaged with any PCR-family rule","10.1186/s12936-015-0968-9"
+"Outer primers B3 and F3 are identical between the two primer sets, i.e. discrimination rests entirely on the inner primers",,TRUE,"uncalibrated; recorded, not averaged with any PCR-family rule","10.1186/s12936-015-0968-9"
+"A design putting the mutation at the 3' end of BIP plus one extra mismatch FAILED to distinguish the alleles (Discussion), attributed to GC-rich template","0",TRUE,"uncalibrated; recorded, not averaged with any PCR-family rule","10.1186/s12936-015-0968-9"
+"Specificity was obtained only when the mutation was appended to BOTH inner primers; discrimination is reported as a time window within a fixed observation period, not as a binary band",,TRUE,"uncalibrated; recorded, not averaged with any PCR-family rule","10.1186/s12936-015-0968-9"
