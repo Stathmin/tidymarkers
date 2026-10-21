@@ -97,13 +97,21 @@ if (any(nodoi)) {
 # test reads it as logical, so a prose value is a type error, not a label.
 if (!is.logical(s$verified)) {
   raw <- as.character(s$verified)
-  s$verified <- ifelse(toupper(raw) == "TRUE", TRUE,
-                ifelse(toupper(raw) == "FALSE" | grepl("^NOT fetched", raw), FALSE,
-                       grepl("fetched", raw)))
+  # vectorised assign() here was a bug: the right-hand sides are length-1 in
+  # places and R recycles them along the whole column, so ONE prose value wrote
+  # "TRUE" into every row's access_detail. Assign element-wise, per row.
+  s$verified <- vapply(raw, function(v) {
+    if (toupper(v) == "TRUE") TRUE
+    else if (toupper(v) == "FALSE" || grepl("^NOT fetched", v)) FALSE
+    else grepl("fetched", v)
+  }, logical(1), USE.NAMES = FALSE)
+  for (i in seq_along(raw)) {
+    if (!is.na(raw[i]) && !toupper(raw[i]) %in% c("TRUE", "FALSE")) {
+      s$access_detail[i] <- paste(na.omit(c(s$access_detail[i], "verified:", raw[i])),
+                                  collapse = " ")
+    }
+  }
   changed <- c(changed, "normalised `verified` to logical; original prose kept in `access_detail`")
-  s$access_detail <- ifelse(!is.na(raw) & !toupper(raw) %in% c("TRUE", "FALSE"),
-                            paste(na.omit(c(s$access_detail, "verified:", raw)), collapse = " "),
-                            s$access_detail)
 }
 
 ## 6. A closed-access row must SAY it was not read -------------------------

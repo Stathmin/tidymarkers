@@ -33,7 +33,13 @@ test_that("ledger: the use vocabulary is closed, and blocked rows carry a reason
   # `report` = a second extract from the same source that is a REPORTED CLAIM
   # (what the paper asserts in prose/abstract), kept beside the measured table so
   # the two can be compared. It is a first-class level, not a stray value.
-  expect_true(all(l$use %in% c("test", "artefact", "rule", "report", "blocked")))
+  # `report` = a second extract from the same source that is a REPORTED CLAIM
+  # (what the paper asserts in prose/abstract), kept beside the measured table so
+  # the two can be compared. `config` = an extract that is design INPUT (primer
+  # triples, oligo sequences) rather than a measured outcome: it feeds the design
+  # path, but no test asserts a verdict from it, and saying so is the point.
+  expect_true(all(l$use %in% c("test", "artefact", "rule", "report", "config",
+                               "blocked")))
   # a blocked row is the honest state: read, extracted, consumed by nothing yet
   blocked <- l$use == "blocked"
   expect_true(all(!is.na(l$reason[blocked]) & nzchar(l$reason[blocked])))
