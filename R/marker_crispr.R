@@ -56,16 +56,72 @@
 #  it is graded only on its own chemistry's composition - never on KASP Tm/GC.
 # =============================================================================
 
-# Cas12a's PAM-proximal seed is the mismatch-critical region; for Cas13 the
-# critical region is central (no PAM, no PAM-proximal seed).
+# Cas12a's PAM-proximal seed is where the variant must sit for the guide to read
+# it as allele-specific; for Cas13 the critical region is central (no PAM, no
+# PAM-proximal seed).  `crispr_seed_evidence()` carries what was measured about
+# the magnitude, which this constant does not encode.
 CRISPR_SEED_LEN <- 8L
+
+#' What the literature measured about a seed mismatch (evidence, not a gate)
+#'
+#' `crispr_seed_gate()` is a POSITION rule: it says where a variant must sit, not
+#' that a seed mismatch abolishes activity.  The one source that measures the
+#' magnitude (Commun Biol 2024, 40 activators x 8 crRNAs, endpoint trans-cleavage
+#' fluorescence, mutant/WT ratio; 1.0 = no discrimination) says:
+#' * an UNMODIFIED crRNA does not discriminate at all: every single mismatch over
+#'   positions 1-20 stays in 0.767-1.394;
+#' * on the optimised crRNA `M39` a single seed mismatch (positions 1-8) still
+#'   transmits 0.373-0.968 of WT signal - reduced, not abolished;
+#' * two adjacent mismatches are usually stronger (17 of 19 below 0.5 vs 8 of 20
+#'   singles) but the ordering FAILS at the spacer ends, so it is a trend and not
+#'   a filter.
+#' Since the package cannot predict the ratio for a given target, the honest
+#' report is `unknown` on the magnitude; the gate never passes because a position
+#' is merely inside the seed.  See
+#' `data-raw/proposed/crispr_seed_rule.decision.md`.
+#' @return a classed list of the measured evidence.
+#' @keywords internal
+#' @noRd
+crispr_seed_evidence <- function() {
+  structure(
+    list(
+      gate = "position only: the variant must sit in the PAM-proximal seed",
+      ratio_range = c(min = 0.3728637, max = 0.9679837),
+      unmodified_crrna_range = c(0.766701, 1.393679),
+      n_seed_singles = 20L,
+      adjacent_better = "17 of 19 adjacent doubles below 0.5 vs 8 of 20 singles; fails at the last two positions",
+      magnitude = "unknown - no model predicts the ratio for a target",
+      source = "10.1038/s42003-024-07173-7",
+      calibrated = FALSE
+    ),
+    class = "marker_crispr_seed_evidence"
+  )
+}
+
+#' The seed MISSES what it was described as measuring
+#'
+#' @param x a [crispr_seed_evidence()] result.
+#' @param ... unused.
+#' @return `x`, invisibly.
+#' @keywords internal
+#' @noRd
+print.marker_crispr_seed_evidence <- function(x, ...) {
+  cli::cli_inform(c(
+    "i" = x$gate,
+    "*" = "single seed mismatch keeps {x$ratio_range[[1L]]}-{x$ratio_range[[2L]]} of WT signal (measured)",
+    "*" = "magnitude: {x$magnitude}"
+  ))
+  invisible(x)
+}
 
 #' Does the variant sit in the guide's discriminating region?
 #'
-#' Cas12a needs the variant in the PAM-proximal seed; Cas13 needs it in the
-#' central critical region.  The candidate grid enforces this while it is built,
-#' so the gate re-checks the chosen guide (a constructor invariant) rather than
-#' returning an unconditional `TRUE`.
+#' A POSITION rule, not a magnitude one.  Cas12a needs the variant in the
+#' PAM-proximal seed; Cas13 needs it in the central critical region.  The
+#' candidate grid enforces this while it is built, so the gate re-checks the
+#' chosen guide (a constructor invariant) rather than returning an unconditional
+#' `TRUE`.  Being inside the seed does not mean a single mismatch abolishes
+#' activity - see [crispr_seed_evidence()] for what was measured.
 #' @param cas the effector.
 #' @param len spacer length.
 #' @param v_off the variant's offset in the spacer (0-based, PAM-proximal end).
