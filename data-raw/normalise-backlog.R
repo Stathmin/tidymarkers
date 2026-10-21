@@ -26,6 +26,7 @@ norm <- c(
 )
 # prose -> canonical, with an optional note that must be preserved
 prose <- c(
+  "landed: open access, extract in inst/extdata/taqman_*" = "extracted",
   "fetched + extracted" = "extracted",
   "fetched; landed as evidence_tier = weak only" = "extracted",
   "fetched, not extractable in this environment" = "not_extractable",
