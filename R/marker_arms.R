@@ -49,6 +49,47 @@ KASP_TIERS_ARMS <- c(
 KASP_ARMS_WINDOW <- list(band_gap = 20L, control = c(200L, 800L), tm_spread = 5L)
 KASP_ARMS_GAP_FLOOR <- 10L # bp: the band gap may be relaxed to a PAGE-resolvable 10 bp
 
+# ---- extra-mismatch position (decided, see data-raw/proposed/arms_mismatch_position.decision.md)
+# Where a deliberate (stabilising) mismatch goes, counted negative from the
+# primer's 3' end.  Two controlled scans at two chemistries peak at -3: Liu 2012
+# (1686 AS primers; 25.1 / 32.9 / 29.1 % specific at the 2nd / 3rd / 4th base)
+# and Lefever 2019 (qPCR, positions 1-5, optimum at position 3).  -2 has no
+# controlled measurement behind it (Ye 2001 is a rule; Zhu 2021's -2 primer is a
+# primer_scan with a figure-only ranking), so it is a FALLBACK for the one case
+# the literature already calls uncertain - a `context_dependent` terminal class -
+# not a competing default.  Directional, not calibrated: no dG is attached.
+ARMS_EXTRA_MISMATCH_POSITION <- -3L
+ARMS_EXTRA_MISMATCH_FALLBACK <- -2L
+
+#' Where the deliberate extra mismatch goes for a terminal-mismatch class
+#'
+#' The decided default is -3 (Liu 2012 + Lefever 2019, the two measured scans).
+#' -2 is returned only for a terminal class the severity table itself calls
+#' `context_dependent`, where the marginal position is the historical rule of
+#' thumb (Ye 2001) and no measurement contradicts using it.  Any other class -
+#' including one with no severity entry - keeps the measured default; a class
+#' with no measurement at all is `NA`, so a caller can report `unknown` rather
+#' than guess.  See `data-raw/proposed/arms_mismatch_position.decision.md`.
+#' @param terminal_class the Kwok severity class of the 3'-terminal mismatch
+#'   (`"severe"`, `"moderate"`, `"minimal"`, `"context_dependent"`), or `NA`.
+#' @return an integer position (-3 or -2), or `NA`.
+#' @keywords internal
+#' @noRd
+arms_extra_mismatch_position <- function(terminal_class) {
+  cls <- as.character(terminal_class)[1L]
+  if (length(terminal_class) != 1L || is.na(cls) || !nzchar(cls)) {
+    return(NA_integer_)
+  }
+  allowed <- c("severe", "moderate", "minimal", "context_dependent")
+  if (!cls %in% allowed) {
+    return(NA_integer_)
+  }
+  if (identical(cls, "context_dependent")) {
+    return(as.integer(ARMS_EXTRA_MISMATCH_FALLBACK))
+  }
+  as.integer(ARMS_EXTRA_MISMATCH_POSITION)
+}
+
 #' The window the ARMS designer selects against (and the gate limits display)
 #' @keywords internal
 #' @noRd

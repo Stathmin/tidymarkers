@@ -38,7 +38,9 @@ the mirror-image primer extending upstream.  Both are valid KASP layouts.}
 \item{lengths}{AS-primer lengths to try.}
 
 \item{stab_ats}{positions (from the 3' end) for the stabilising mismatch;
-\code{NA} = none.}
+\code{NA} = none.  The decided policy ranks \link{ARMS_EXTRA_MISMATCH_POSITION} first
+and \link{ARMS_EXTRA_MISMATCH_FALLBACK} second (\code{stab_policy} records which row
+carries which); a position outside \code{stab_ats} is never invented.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
 

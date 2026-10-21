@@ -192,7 +192,9 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param window plus-strand template window.
 #' @param lengths AS-primer lengths to try.
 #' @param stab_ats positions (from the 3' end) for the stabilising mismatch;
-#'   `NA` = none.
+#'   `NA` = none.  The decided policy ranks [ARMS_EXTRA_MISMATCH_POSITION] first
+#'   and [ARMS_EXTRA_MISMATCH_FALLBACK] second (`stab_policy` records which row
+#'   carries which); a position outside `stab_ats` is never invented.
 #' @param linked optional two-column table (`offset` 1-based within `window`,
 #'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and
 #'   ALT primer (makes it mismatch REF twice).
@@ -364,7 +366,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 
   # template-local footprint of the AS primer (genomic coords are added by the
   # caller, which knows the window offset)
-  wide |>
+  wide <- wide |>
     dplyr::rowwise() |>
     dplyr::mutate(
       tmpl_start = IRanges::start(primer_interval(anchor_of(.data$strand),
@@ -377,9 +379,25 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       ))
     ) |>
     dplyr::ungroup() |>
-    dplyr::mutate(dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM)) |>
-    dplyr::select(dplyr::all_of(AS_PRIMER_COLS)) |>
-    dplyr::arrange(dplyr::desc(.data$discrimination))
+    dplyr::mutate(dg_3p = terminal_dg(.data$ref_primer, BPPARAM = BPPARAM))
+  # rank by the DECIDED position policy before discrimination: the measured
+  # default (-3) ahead of the rule-of-thumb fallback (-2), then no mismatch, then
+  # anything else the caller asked for.  The pool is unchanged - only the order -
+  # so no primer appears or disappears by this policy.  The positions are bound
+  # to locals first: a package constant read inside `case_when()` resolves to
+  # `NA` here, which would silently label every row "other".
+  # Compare by ABSOLUTE value: on this R (4.6.1) the scalar literal `3L == -3L`
+  # evaluates to FALSE while `c(3L) == -3L` is TRUE, so a signed comparison
+  # against a package constant is not dependable.  Position runs -1..-4, so
+  # abs() is unambiguous.
+  at_default <- !is.na(wide$stab_at) & abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_POSITION)
+  at_fallback <- !is.na(wide$stab_at) & abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_FALLBACK)
+  wide$.policy_rank <- ifelse(at_default, 1L, ifelse(at_fallback, 2L, ifelse(is.na(wide$stab_at), 3L, 4L)))
+  wide$stab_policy <- c("default", "fallback", "none", "other")[wide$.policy_rank]
+  wide |>
+    dplyr::select(dplyr::all_of(AS_PRIMER_COLS), ".policy_rank") |>
+    dplyr::arrange(.data$.policy_rank, dplyr::desc(.data$discrimination)) |>
+    dplyr::select(-".policy_rank")
 }
 
 # The AS-candidate schema, one definition shared by the real table and its
@@ -387,7 +405,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 AS_PRIMER_COLS <- c(
   "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer", "alt_degen",
   "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
-  "dg_3p", "tmpl_start", "tmpl_end"
+  "dg_3p", "tmpl_start", "tmpl_end", "stab_policy"
 )
 
 #' Zero-row `design_as_primers()` result, keeping the schema
@@ -400,7 +418,7 @@ empty_as_primers <- function() {
     alt_degen = character(),
     ref_on = numeric(), ref_off = numeric(), alt_on = numeric(), alt_off = numeric(),
     discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
-    tmpl_start = integer(), tmpl_end = integer()
+    tmpl_start = integer(), tmpl_end = integer(), stab_policy = character()
   )[AS_PRIMER_COLS]
 }
 

@@ -50,16 +50,17 @@ test_that("Z7: no prior is marked calibrated, and none came from our own engine"
 
 test_that("Z7: the three position claims are kept as a contradiction, not averaged", {
   p <- ext("z7_priors.csv")
-  # Ye -2, Liu -2 (the same site in our offset convention), Lefever -3 (4th nt)
+  # Liu (3rd base from the 3' end) and Lefever (4th nt) both sit at -3 in our
+  # offset convention; only Ye 2001 puts the extra mismatch at -2, as a rule
   ye <- p$position[p$prior_id == "ye_second_mismatch_position"]
   liu <- p$position[p$prior_id == "liu_position_3rd"]
   lef <- p$position[p$prior_id == "lefever_position"]
   expect_equal(ye, -2L)
-  expect_equal(liu, -2L)
-  expect_equal(lef, -3L)
-  # Lefever and Ye disagree about the same physical quantity, so the row must
-  # SAY so rather than pick a winner
-  expect_true(nzchar(p$contradicted_by[p$prior_id == "lefever_position"]))
+  # Liu's own per-class table files it at -3 (see the ledger row); the prior row
+  # used to say -2 with a note, which put one paper on both sides of the split
+  expect_equal(abs(liu), 3L)
+  expect_equal(abs(lef), 3L)
+  # the contradiction is recorded rather than resolved away
   expect_true(nzchar(p$contradicted_by[p$prior_id == "ye_second_mismatch_position"]))
   # the offset conventions are recorded, because "-2" means different sites in
   # the two papers and reading them as equal is the mistake this row prevents
