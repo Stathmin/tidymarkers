@@ -82,7 +82,7 @@ KASP_GATE_LIMIT_INDEL_SIZE <- c(
   gate_indel_size_tm = glue::glue(
     "both primers Tm within [{KASP_INDEL_SIZE_LIMITS$tm[1L]}, {KASP_INDEL_SIZE_LIMITS$tm[2L]}] C"
   ),
-  gate_indel_size_structure = "hairpin/homodimer dG37 >= limit",
+  gate_indel_size_structure = "hairpin/homodimer dG (reaction T) >= limit",
   gate_indel_size_unique = "no off-target exact primer hits; exactly one in-silico product"
 )
 # Human-readable limit, relaxation floor and hard-stop reason per gate (the

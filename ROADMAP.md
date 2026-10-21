@@ -93,17 +93,18 @@
   «почему у всех маркеров одинаковый список»: списки разные, но типы проверок
   общие — так и должно быть).
 
-### Z3. Условия реакции  [P1]  — объект сделан (`8990d2e`), проводка не закончена
+### Z3. Условия реакции  [P1]  — сделано (`8990d2e`, проводка `feat/z3-callsites`)
 - [x] `reaction_conditions()` / `scheme_conditions(scheme)` (`R/marker_core.R`);
   `primer_tm()`, `hairpin_dg_thermo()`, `duplex_dg_thermo()`, `dimer_thermo()`
   принимают `conditions`; ΔG больше не прибит к 37 °C для всех схем.
-- [ ] Проводка по call sites (сейчас везде дефолт 50 mM / 37 °C):
-  `R/marker_rpa.R:143` (RPA — 37–42 °C, важнее всего),
-  `R/marker_assemble.R:831`, `R/marker_pool.R:48`; `primer_tm()` без условий —
-  `R/marker_design.R:74,275,534`, `R/marker_primer_pairs.R:41`,
-  `R/marker_castpcr.R:268`, `R/marker_duplex.R:182`. Схема должна подставлять
-  свои условия сама, а не только по явному аргументу.
-- [ ] RPA не получает PCR-Tm как гейт (сейчас информационно — закрепить тестом).
+- [x] Проводка по call sites: схемы подставляют свои условия сами.
+  `dimer_thermo()` — RPA (42 °C), сборка KASP (схема ассая), пул/пробирка
+  (`primer_set_compatibility()`/`tube_compatibility()` получают `conditions`,
+  LAMP — 65 °C); `primer_tm()` — `design_common_primers()`,
+  `design_as_primers()*`, `primer_candidates()` и их помощники. Чистый
+  ΔG-эффект дают только `dimer_thermo()`/`oligo_dg_vec()`: `primer_tm()` от
+  температуры не зависит (NN-модель), поэтому все Tm численно не изменились.
+- [x] RPA не получает PCR-Tm как гейт (закреплено тестом).
 
 ### Z4. Движки и capabilities  [P1]
 - [ ] Thermo/specificity/scoring — интерфейсы с `capabilities()`. Если движок

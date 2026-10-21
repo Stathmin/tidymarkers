@@ -21,10 +21,14 @@
 #' @param strand `"+"` (primer equals the plus strand) or `"-"` (reverse
 #'   complement).
 #' @param tm_range,gc_range accepted windows.
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
+#'   enter the nearest-neighbour Tm.
 #' @return tibble with `start`, `len`, `end`, `primer`, `tm`, `gc`.
 #' @keywords internal
 #' @noRd
-primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_range, gc_range) {
+primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_range, gc_range,
+                              conditions = NULL) {
   strand <- match.arg(strand)
   s <- as.character(seq)
   n <- nchar(s)
@@ -38,7 +42,7 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
     d$primer <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(d$primer)))
   }
   d <- dplyr::filter(d, !has_run(.data$primer), !has_repeat(.data$primer))
-  d$tm <- primer_tm(d$primer)
+  d$tm <- primer_tm(d$primer, conditions = conditions)
   d$gc <- gc_frac(d$primer)
   dplyr::filter(
     d, dplyr::between(.data$tm, tm_range[1L], tm_range[2L]),
@@ -56,13 +60,18 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
 #' @param snp_i 1-based variant position on `seq`.
 #' @param lengths probe lengths to try.
 #' @param tm_range,gc_range accepted windows.
+#' @param conditions reaction conditions for [primer_tm()] (see
+#'   `primer_candidates()`; `NULL` keeps the historical buffer).
 #' @return a tibble (see `primer_candidates()`), possibly zero rows.
 #' @keywords internal
 #' @noRd
-spanning_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
+spanning_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range,
+                                      conditions = NULL) {
   n <- nchar(as.character(seq))
   starts <- seq.int(max(1L, snp_i - max(lengths) + 1L), min(n, snp_i))
-  primer_candidates(seq, starts, lengths, "+", tm_range, gc_range) |>
+  primer_candidates(seq, starts, lengths, "+", tm_range, gc_range,
+    conditions = conditions
+  ) |>
     dplyr::filter(.data$start <= snp_i, .data$end >= snp_i)
 }
 

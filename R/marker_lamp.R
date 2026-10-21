@@ -239,15 +239,22 @@ lamp_revcomp <- function(x) {
 #' grid is returned instead.  `strand` selects whether the returned `primer` is
 #' the plus strand (`"+"`, a forward primer) or its reverse complement (`"-"`, a
 #' reverse primer that extends leftward) - the outer B3 must be the latter.
+#' @param tm_range,gc_range accepted windows.
+#' @param strand `"+"` or `"-"` (see [primer_candidates()]).
+#' @param conditions reaction conditions for [primer_tm()] (see
+#'   [primer_candidates()]; `NULL` keeps the historical buffer).
 #' @keywords internal
 #' @noRd
-lamp_candidates <- function(seq, starts, lengths, tm_range, gc_range, strand = "+") {
+lamp_candidates <- function(seq, starts, lengths, tm_range, gc_range, strand = "+",
+                            conditions = NULL) {
   empty <- tibble::tibble(
     start = integer(0), len = integer(0), end = integer(0),
     primer = character(0), tm = numeric(0), gc = numeric(0)
   )
   out <- tryCatch(
-    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range),
+    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range,
+      conditions = conditions
+    ),
     error = function(e) NULL
   )
   if (is.null(out)) empty else out
@@ -521,9 +528,12 @@ lamp_loop <- function(seq, lo, hi, tm_range, gc_range, target_tm, reverse) {
 #' [primer_set_compatibility()] over the named primers, with the cross-dimer run
 #' threshold optionally raised by `slack` (the ladder's soft relaxation).
 #' Non-ACGT marks (a probe abasic site) are treated as `N`.
+#' @param slack extra base pairs allowed on each rule (the ladder's relaxation).
+#' @param conditions reaction conditions for the reported dimer dG; defaults to
+#'   `scheme_conditions("lamp")`.
 #' @keywords internal
 #' @noRd
-lamp_pool_compatibility <- function(primers, slack = 0L) {
+lamp_pool_compatibility <- function(primers, slack = 0L, conditions = scheme_conditions("lamp")) {
   oligos <- unlist(primers, use.names = TRUE)
   oligos <- gsub("[^ACGTNacgtn]", "N", toupper(oligos))
   oligos <- oligos[nzchar(oligos)]
@@ -532,7 +542,8 @@ lamp_pool_compatibility <- function(primers, slack = 0L) {
     return(NULL)
   }
   primer_set_compatibility(oligos,
-    min_cross_run = LAMP_CROSS_RUN + slack, max_selfcomp = LAMP_SELFCOMP + slack
+    min_cross_run = LAMP_CROSS_RUN + slack, max_selfcomp = LAMP_SELFCOMP + slack,
+    conditions = conditions
   )
 }
 

@@ -108,13 +108,16 @@ KASP_TIERS_RPA <- c(
 # An empty primer_candidates() result (every candidate carries a homopolymer run or
 # an SSR) makes the shared screener fail in primer_tm(); RPA probes very narrow
 # windows, so guard it here and treat "no candidates" as an empty grid.
-rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range) {
+rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range,
+                           conditions = NULL) {
   empty <- tibble::tibble(
     start = integer(0), len = integer(0), end = integer(0),
     primer = character(0), tm = numeric(0), gc = numeric(0)
   )
   out <- tryCatch(
-    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range),
+    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range,
+      conditions = conditions
+    ),
     error = function(e) NULL
   )
   if (is.null(out)) empty else out
@@ -124,15 +127,18 @@ rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range) {
 #'
 #' The recombinase cannot work through strong primer secondary structure or
 #' dimers, so each oligo must be palindrome-free and the hairpin / homodimer /
-#' cross-dimer dG37 must clear the shared KASP thresholds.  When OligoArrayAux is
+#' cross-dimer dG (at the RPA operating temperature, [scheme_conditions()]
+#' `"rpa"`) must clear the shared KASP thresholds.  When OligoArrayAux is
 #' unavailable the check is skipped (the metric cannot be computed) rather than
 #' failing the design.  Reuses [has_palindrome()] and [dimer_thermo()].
 #' @param pair a pair list from `pair_to_list()` (`forward`, `reverse`).
 #' @param BPPARAM optional `BiocParallel` backend for [dimer_thermo()].
+#' @param conditions reaction conditions for the dimer dG; defaults to
+#'   `scheme_conditions("rpa")`.
 #' @return a single logical.
 #' @keywords internal
 #' @noRd
-rpa_structure_ok <- function(pair, BPPARAM = NULL) {
+rpa_structure_ok <- function(pair, BPPARAM = NULL, conditions = scheme_conditions("rpa")) {
   if (!has_oligoarrayaux()) {
     return(TRUE)
   }
@@ -140,7 +146,7 @@ rpa_structure_ok <- function(pair, BPPARAM = NULL) {
   if (any(has_palindrome(p))) {
     return(FALSE)
   }
-  dg <- dimer_thermo(p, BPPARAM = BPPARAM)
+  dg <- dimer_thermo(p, BPPARAM = BPPARAM, conditions = conditions)
   self <- dg$dg[dg$a == dg$b]
   cross <- dg$dg[dg$a != dg$b]
   all(self >= KASP_LIMITS$homodimer_dg) && all(cross >= KASP_LIMITS$duplex_dg)
@@ -510,7 +516,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
   out$compatibility <- tube_compatibility(c(
     forward = out$primers$forward, reverse = out$primers$reverse,
     probe = out$probe$sequence
-  ))
+  ), conditions = scheme_conditions("rpa"))
   structure(out, class = "marker_rpa")
 }
 
@@ -611,7 +617,7 @@ scheme_def_rpa <- function() {
     gate_limit = c(
       gate_rpa_variant = "variant at a primer 3' end (no probe) or under the exo probe",
       gate_rpa_primer_len = glue::glue("each primer within [{primer_lo}, {primer_hi}] nt (length, not Tm)"),
-      gate_rpa_structure = glue::glue("no palindrome; dimer dG37 >= {KASP_LIMITS$homodimer_dg}"),
+      gate_rpa_structure = glue::glue("no palindrome; dimer dG at 42 C >= {KASP_LIMITS$homodimer_dg}"),
       gate_rpa_probe = paste0(
         "probe ", probe_lo, "-", probe_hi, " nt; THF >= ", RPA_PROBE_THF_5P,
         " nt 5' / >= ", RPA_PROBE_THF_3P, " nt 3'; variant under probe (when used)"

@@ -171,7 +171,7 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
   out$compatibility <- tube_compatibility(c(
     amp_forward = out$amplification$forward, amp_reverse = out$amplification$reverse,
     extension = out$extension$primer
-  ))
+  ), conditions = scheme_conditions("snapshot"))
 
   # ---- C7: the declared gates are all evaluated on the winner ----------------
   d <- scheme_def_snapshot()
@@ -361,7 +361,7 @@ scheme_def_snapshot <- function() {
         "GC {SNAPSHOT_EXT_GC[1L] * 100}-{SNAPSHOT_EXT_GC[2L] * 100} %, no run >= 4, no SSR"
       ),
       gate_snapshot_unique = "exactly one perfect extension-primer site in the genome",
-      gate_snapshot_structure = glue::glue("hairpin/homodimer dG37 >= {KASP_LIMITS$hairpin_dg}"),
+      gate_snapshot_structure = glue::glue("hairpin/homodimer dG (reaction T) >= {KASP_LIMITS$hairpin_dg}"),
       gate_snapshot_tm = glue::glue("extension primer Tm within [{SNAPSHOT_EXT_TM[1]}, {SNAPSHOT_EXT_TM[2]}] C"),
       gate_snapshot_amplicon = glue::glue("amplicon within [{SNAPSHOT_AMPLICON[1]}, {SNAPSHOT_AMPLICON[2]}] bp")
     ),
