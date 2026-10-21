@@ -91,8 +91,8 @@ taqman_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range) {
 #' @return the mismatch dG (numeric scalar, `NA` when OligoArrayAux is absent).
 #' @keywords internal
 #' @noRd
-taqman_mismatch_dg <- function(probe, variant_pos, alt) {
-  if (!has_oligoarrayaux()) {
+taqman_mismatch_dg <- function(probe, variant_pos, alt, engines = NULL) {
+  if (!engine_has("duplex_dg", engines)) {
     return(NA_real_)
   }
   on <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(probe)))
@@ -137,7 +137,8 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
                                  primer_lengths = 18:25, probe_lengths = 18:25,
                                  primer_tm = KASP_LIMITS$com_tm,
                                  probe_tm = c(56, 72),
-                                 gc_range = KASP_LIMITS$gc, min_centrality = 0.5, ...) {
+                                 gc_range = KASP_LIMITS$gc, min_centrality = 0.5,
+                                 engines = NULL, ...) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
@@ -185,7 +186,9 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   cand$ordered <- cand$tm >= primer_hot
   cand$mismatch_dg <- vapply(
     seq_len(nrow(cand)),
-    function(i) taqman_mismatch_dg(cand$primer[i], cand$variant_pos[i], alt),
+    function(i) {
+      taqman_mismatch_dg(cand$primer[i], cand$variant_pos[i], alt, engines = engines)
+    },
     numeric(1)
   )
   best <- cand[order(-cand$centrality, -cand$ordered, -cand$mismatch_dg, -cand$tm), ][1L, ]
@@ -221,7 +224,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   comp_ok <- substr(ref_probe, 1L, 1L) != "G" &&
     probe_gc_obs >= gc_range[1L] && probe_gc_obs <= gc_range[2L] &&
     !has_run(ref_probe) && !has_repeat(ref_probe)
-  if (has_oligoarrayaux()) {
+  if (engine_has("duplex_dg", engines)) {
     hairpin <- oligo_dg_vec(ref_probe)
     homodimer <- oligo_dg_vec(ref_probe, ref_probe)
   } else {
@@ -270,7 +273,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   out$selection <- sel
 
   # the readout this scheme *does* model: per-allele probe discrimination
-  if (has_oligoarrayaux()) {
+  if (engine_has("duplex_dg", engines)) {
     out$readout <- probe_discrimination(
       tmpl$seq, si,
       tibble::tibble(

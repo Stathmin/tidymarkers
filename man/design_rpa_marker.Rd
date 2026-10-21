@@ -15,7 +15,8 @@ design_rpa_marker(
   probe_len = RPA_PROBE_LEN,
   gc_range = RPA_GC,
   tm_range = RPA_NO_TM,
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  engines = NULL
 )
 }
 \arguments{

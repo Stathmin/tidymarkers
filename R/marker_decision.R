@@ -32,46 +32,24 @@
 #' @noRd
 marker_decision_stages <- function(scheme = "snp") {
   info <- marker_scheme(scheme)
-  stages <- list()
-  if (info$family %in% c("kasp", "multiplex", "asq")) {
-    stages$as <- list(
-      id = "as", label = "AS primer",
-      gates = KASP_GATES_AS, relax = KASP_RELAX_AS, tiers = KASP_TIERS_AS
+  # which stages the scheme runs is declared once, in marker_builtin_stages()
+  # (R/marker_stages.R): the `as`/`pair` stages are shared by the KASP family
+  # (`kasp`, `multiplex`, `asq`), every other stage belongs to its own family.
+  builtins <- marker_builtin_stages()
+  runs <- vapply(builtins, function(st) info$family %in% st$schemes, logical(1))
+  stages <- lapply(builtins[runs], function(st) {
+    list(
+      id = st$scope, label = st$label,
+      gates = marker_stage_constants(st, "gates"),
+      relax = marker_stage_constants(st, "relax"),
+      tiers = marker_stage_constants(st, "tiers")
     )
-    stages$pair <- list(
-      id = "pair", label = "AS x COM pair",
-      gates = KASP_GATES_PAIR, relax = KASP_RELAX_PAIR, tiers = KASP_TIERS_PAIR
-    )
-  }
-  if (info$family == "multiplex") {
-    stages$duplex <- list(
-      id = "duplex", label = "duplex compatibility",
-      gates = KASP_GATES_DUPLEX, relax = KASP_RELAX_DUPLEX, tiers = KASP_TIERS_DUPLEX
-    )
-  }
-  if (info$family == "asq") {
-    stages$asq <- list(
-      id = "asq", label = "ASQ primer geometry",
-      gates = KASP_GATES_ASQ, relax = KASP_RELAX_ASQ, tiers = KASP_TIERS_ASQ
-    )
-  }
-  if (info$family == "caps") {
-    stages$caps <- list(
-      id = "caps", label = "CAPS digest",
-      gates = KASP_GATES_CAPS, relax = KASP_RELAX_CAPS, tiers = KASP_TIERS_CAPS
-    )
-  }
-  if (info$family == "arms") {
-    stages$arms <- list(
-      id = "arms", label = "ARMS bands",
-      gates = KASP_GATES_ARMS, relax = KASP_RELAX_ARMS, tiers = KASP_TIERS_ARMS
-    )
-  }
-  if (info$family == "hrm") {
-    stages$hrm <- list(
-      id = "hrm", label = "HRM amplicon",
-      gates = KASP_GATES_HRM, relax = KASP_RELAX_HRM, tiers = KASP_TIERS_HRM
-    )
+  })
+  # the ids are the stage names, not the scopes (the shared stages carry the
+  # scope "kasp")
+  names(stages) <- names(builtins)[runs]
+  for (nm in names(stages)) {
+    stages[[nm]]$id <- nm
   }
   # discovered schemes (R/marker_<scheme>.R) contribute their own stage
   stages <- c(stages, extra_decision_stages(scheme))

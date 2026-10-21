@@ -15,7 +15,8 @@ design_dpcr_marker(
   gc_range = c(0.4, 0.6),
   probe_lengths = 18:25,
   probe_gc = c(0.4, 0.6),
-  probe_tm_margin = 8
+  probe_tm_margin = 8,
+  engines = NULL
 )
 }
 \arguments{

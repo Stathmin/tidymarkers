@@ -387,6 +387,33 @@ capabilities.marker_engines <- function(engine, capability = NULL, ...) {
   if (any(values == "true")) TRUE else if (any(values == "false")) FALSE else "unknown"
 }
 
+#' Does the run's thermo engine have a capability?
+#'
+#' The seam the design code asks through instead of probing the tool itself.
+#' A [marker_run_context()] may carry an `engines` adapter ([marker_engines()]);
+#' the call sites consult *that* table, so a caller who supplies a different
+#' adapter gets that adapter's answer.  With no context (or no `engines` in it)
+#' the declaration is taken from [marker_engines()], which is the live probe:
+#' `duplex_dg` / `hairpin_dg` are `has_oligoarrayaux()`.  Anything but a `TRUE`
+#' in the table is a *no* - an undeclared or `"unknown"` capability is not
+#' evidence that the engine can do it.
+#'
+#' @param capability a `thermo` capability name (`"tm"`, `"duplex_dg"`, ...).
+#' @param engines optional [marker_run_context()] (its `engines` slot is read) or
+#'   a `marker_engines` registry; `NULL` uses the live [marker_engines()].
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+engine_has <- function(capability, engines = NULL) {
+  if (inherits(engines, "marker_run_context")) {
+    engines <- engines$engines
+  }
+  if (is.null(engines)) {
+    engines <- marker_engines()
+  }
+  isTRUE(capabilities(engines$thermo, capability))
+}
+
 #' OligoArrayAux duplex / hairpin free energy
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or

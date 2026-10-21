@@ -500,6 +500,9 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = 
   ctx <- marker_run_context_args(context, variants, haplotypes)
   variants <- ctx$variants
   haplotypes <- ctx$haplotypes
+  # the run's engines travel with the design, so a designer consults the
+  # capability table the caller supplied rather than probing the tool itself
+  engines <- if (inherits(context, "marker_run_context")) context$engines else NULL
   # `primer` is deliberately absent: it is not a genotyping chemistry (no allele
   # is read) but the marker-agnostic "any primer pair" QC subset, so it has no
   # locus-level designer and is documentation-only (C13).  Its criteria remain
@@ -520,6 +523,9 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = 
     caps = design_caps_marker(genome, snp, haplotypes = haplotypes, ...),
     arms = design_arms_marker(genome, snp, ...),
     hrm = design_hrm_marker(genome, snp, ...),
+    taqman = design_taqman_marker(genome, snp, engines = engines, ...),
+    dpcr = design_dpcr_marker(genome, snp, engines = engines, ...),
+    rpa = design_rpa_marker(genome, snp, BPPARAM = BPPARAM, engines = engines, ...),
     {
       # a discovered scheme (R/marker_<scheme>.R) supplies its own designer; a
       # composed technology dispatches to its base designer
@@ -534,6 +540,7 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = 
         if ("variants" %in% fm) ctx$variants <- variants
         if ("haplotypes" %in% fm) ctx$haplotypes <- haplotypes
         if ("BPPARAM" %in% fm) ctx$BPPARAM <- BPPARAM
+        if ("engines" %in% fm) ctx$engines <- engines
         rlang::exec(f, genome, snp, !!!ctx, ...)
       }
     }
