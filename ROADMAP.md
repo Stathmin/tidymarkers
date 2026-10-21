@@ -44,6 +44,12 @@
 | 9 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
 | 10 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | `R/marker_checks.R` (сборка) + `R/marker_engines_versions.R` (штамп) | `test-engine-stamp.R` | нет |
 
+Сделано швов (не в очереди, коммит `33ebedf`): `ZA2.1` (шов
+`engine_has()`), `ZA2.2` (`marker_generic_checks()` в `marker_checks.R`),
+`ZA2.3` (одна таблица стадий, `R/marker_stages.R`). Остаток `ZA2.1` — 13
+литералов `has_oligoarrayaux()` в схемах без параметра `engines`; уходят
+вместе с `Z0.1`/`Z5.1`.
+
 Ниже секции разобраны по тому же шаблону.
 
 ## Приоритет (пересмотрено после второго внешнего разбора)
@@ -797,32 +803,51 @@ ro <- scheme$readout(m, context)
 | YAML-технология | `yaml` | ручная сериализация | `yaml` | нет (`Y1`) |
 | Отчёты/таблицы | `knitr::kable`/`gt` | ручной текст | опционально Suggests | частично |
 
-#### ZA2.1. `capabilities()` объявлена, но никто её не спрашивает
+#### ZA2.1. `capabilities()` объявлена, но никто её не спрашивает — **сделано**
 
-Граф (`graphify`, 2026-10-21) даёт узлу `capabilities()` (`R/marker_core.R:353`)
+Граф (`graphify`, 2026-10-21) дал узлу `capabilities()` (`R/marker_core.R`)
 **степень 2**: `marker_core.R` (contains) и `cli::cli_abort()` (calls). Вызовов
-из `R/` нет.
+из `R/` не было.
 
-Правка: ни один дизайнер и ни один `gate_*` не читает `capabilities()`, поэтому
-гейт не умеет ослабнуть, когда движок не имеет возможности (`blast` без `rBLAST`,
-`duplex_dg` без OligoArrayAux). Все такие места сейчас — литералы.
-Проверка: `test-capabilities.R` — фейковый движок с `blast = FALSE`;
-соответствующий гейт возвращает `unknown`, а не `pass`.
-Блокер: нет. Делать **до** `Z0.1` и `Z5.1`: без этого ослаблять нечего.
-Следствие: таблица возможностей остаётся документацией, а не контролем; тест
-на «движок отсутствует» проходит по счастливой случайности.
+Сделано (коммит `33ebedf`): один шов `engine_has(capability, engines)`
+(`R/marker_core.R`) принимает либо `marker_run_context` (читает его слот
+`engines`), либо реестр `marker_engines()`, и при `NULL` падает на живой
+`has_oligoarrayaux()`. Объявленная возможность даёт `TRUE`; необъявленная и
+`"unknown"` — `FALSE`, никогда не проход. `marker_design_at()` прокидывает
+`context$engines` в дизайнеры TaqMan/dPCR/RPA (новый аргумент `engines = NULL`),
+и их пробы dG/readout спрашивают шов.
+Проверка: `tests/testthat/test-capabilities.R` (10 проходят) — контекст с
+`duplex_dg = FALSE` делает `mismatch_dg` равным `NA` (жёсткий гейт добивает,
+а не пропускает), дефолтный контекст воспроизводит прямой дизайн байт-в-байт.
+Осталось: 13 литералов `has_oligoarrayaux()` в `marker_assemble.R`,
+`marker_thermo.R`, `marker_lamp.R`, `marker_sanger.R`, `marker_snapshot.R`,
+`marker_plot_methods.R` — их схемы ещё не принимают `engines`; переносить вместе
+с `Z0.1`/`Z5.1`, где эти гейты будут ослабляться.
 
-#### ZA2.2. `marker_generic_checks()` живёт в файле методов рисования
+#### ZA2.2. `marker_generic_checks()` живёт в файле методов рисования — **сделано**
 
-Определена в `R/marker_plot_methods.R:118`, вызывается только из
-`marker_primer_checks()` (там же, `:439`). Граф: степень 6, ни одного вызова из
-`R/marker_checks.R` — хотя по смыслу это проверка, и `marker_checks.R:244`
-вызывает свою ветку отдельно.
-Правка: перенести в `R/marker_checks.R`, оставив в plot-файле только
-адаптер раскладки.
-Проверка: существующие тесты plot/checks без изменений проходят.
-Блокер: нет.
-Следствие: чтение `marker_checks.R` не даёт полной картины проверок.
+Была в `R/marker_plot_methods.R:118`, вызывалась только из
+`marker_primer_checks()` там же, ни одного вызова из `R/marker_checks.R`.
+
+Сделано (коммит `33ebedf`): функция перенесена в `R/marker_checks.R`, в
+plot-файле остался `marker_primer_checks()` — адаптер раскладки.
+Проверка: `dev/test.R "plot-methods|criteria|decision"` = 1593 pass, 0 fail.
+
+#### ZA2.3. Семь стадий селекции были объявлены четыре раза — **сделано**
+
+До правки `stage_gates`/`stage_relax`/`stage_tiers`/`level_of` в
+`R/marker_criteria.R` плюс шесть блоков `if (family == …)` в
+`R/marker_decision.R`: новая встроенная стадия требовала четырёх правок,
+которые могли молча разойтись.
+
+Сделано (коммит `33ebedf`): `marker_builtin_stages()` в `R/marker_stages.R` —
+одна запись на стадию (`label`, имена констант gates/relax/tiers, `level`,
+`scope`, `schemes`); `criterion_spec()` и `marker_decision_stages()` читают её.
+Членство в стадии перечисляется, а не выводится из семейства: `duplex`
+(семейство `multiplex`) и `asq` тоже проходят общие стадии `as`/`pair`.
+Проверка: `criterion_spec()` (191 строка, оба набора лимитов) и
+`marker_decision_stages()` для всех восьми схем идентичны фикстурам, снятым
+до правки.
 
 ### ZA3. Home-rolled → проверенный импорт
 
@@ -879,7 +904,7 @@ ro <- scheme$readout(m, context)
    против `KASP_CHECK_*`, см. `Z2.1`).
 2. [~] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
    есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
-   `capabilities()` не имеет потребителей (`ZA2.1`), и штамп
+   `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп
    не доезжает до `Evaluation` (`ZW2.2`).
 3. [ ] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
    Проверка: `ZA7` contract-test `design/evaluate/tracks/decision/readout`.
