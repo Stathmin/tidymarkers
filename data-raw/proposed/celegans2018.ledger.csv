@@ -1,0 +1,2 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"celegans2018","celegans2018_arms_primers.csv","test","test-probes-celegans2018.R","primer mismatch incorporation","4 primers and their -2 mismatch read from the paper, with the mismatch-incorporation claim explicitly labelled weak (no numbers exist)"

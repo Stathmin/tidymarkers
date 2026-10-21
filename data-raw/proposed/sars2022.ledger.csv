@@ -1,0 +1,3 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"sars2022","sars2022_dmas_ct.csv","test","test-probes-sars2022.R","double-mismatch Ct gap","42 per-sample Ct pairs from Table 3; gaps recomputed and the paper's 14.3-18.8 range reproduced from its own rows, with the 4-vs-38 split made explicit"
+"sars2022","sars2022_dmas_primers.csv","test","test-probes-sars2022.R","artificial mismatch at -3","5 oligos read from Table 1 MARKUP (<underline> = artificial mismatch, <bold italic> = 3' base); both forward primers differ only at the 3' base"

@@ -1,0 +1,2 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"liu2012_arms","liu2012_outcomes.csv","test","test-z7-priors.R","deliberate-mismatch design grid","re-verified this pass: 1686 primers in S1, site totals 554/575/557, all 12 site x class denominators reproduce from S1; 96 SNP sites is the sequence-validation subset, not the design set"
