@@ -10,6 +10,16 @@
 #  The table is deliberately forgiving: an engine that is not installed is
 #  reported with `version = NA` and `available = FALSE` rather than omitted, so
 #  a missing engine is visible in the manifest instead of disappearing.
+#
+#  `marker_engine_stamp()` keeps that contract too.  An earlier version dropped
+#  unavailable engines, which made a stamp that had silently lost BLAST
+#  indistinguishable from one taken on a machine that never had it -- exactly
+#  the failure this file exists to prevent.  It now always carries all seven
+#  entries, with NA for a missing engine, and `marker_engine_stamp_field()`
+#  flattens it to ONE string for a CSV or JSON column.
+#
+#  Roles are fixed here on purpose: the stamp format must not depend on which
+#  engines happen to be installed, or two manifests would not line up.
 # =============================================================================
 
 #' Versions of every engine an Evaluation depends on
@@ -59,18 +69,60 @@ marker_engine_versions <- function() {
     dplyr::mutate(available = !is.na(.data$version), .after = "version")
 }
 
+# The engines a manifest must always name, in a stable order.  Adding one here
+# changes the stamp format, so it is a deliberate act, not a side effect.
+marker_engine_names <- c("DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+",
+                         "Biostrings", "Rsamtools", "R")
+
 #' A version stamp for an Evaluation or an artifact manifest
 #'
 #' `stamp` is the tight, serialisable form: a named character vector of
-#' `engine = version` (unavailable engines are omitted), plus the R version.
+#' `engine = version`, plus the R version.  Every engine is present even when
+#' it is not installed, in which case its value is `NA` -- a stamp that silently
+#' omitted an engine could not be told apart from one taken without it.
 #' Writing it next to a result makes a later disagreement attributable.
-#' @return a named character vector.
+#'
+#' @return a named character vector, one entry per engine (never empty).
 #' @examples
 #' marker_engine_stamp()
 #' @family KASP utilities
 #' @export
 marker_engine_stamp <- function() {
   v <- marker_engine_versions()
-  v <- v[v$available, , drop = FALSE]
-  rlang::set_names(v$version, v$engine)
+  # index by name, not by row order, so a missing engine yields NA rather than
+  # shifting its neighbour's version into its slot
+  rlang::set_names(
+    v$version[match(marker_engine_names, v$engine)],
+    marker_engine_names
+  )
+}
+
+#' A one-column form of the engine stamp
+#'
+#' `fmt = "csv"` gives `DECIPHER=3.8.1;OligoArrayAux=3.8.1;...`, safe to embed as
+#' a single CSV cell.  `fmt = "json"` gives a JSON object, e.g. to nest under a
+#' manifest's `"engines"` key.  An unavailable engine is written as the literal
+#' `NA` rather than dropped, for the reason above.
+#'
+#' @param fmt `"csv"` (default) or `"json"`.
+#' @param stamp a stamp from [marker_engine_stamp()]; recomputed if `NULL`.
+#' @return a length-one character vector (JSON may be `NA` if it cannot encode).
+#' @examples
+#' marker_engine_stamp_field()
+#' marker_engine_stamp_field("json")
+#' @family KASP utilities
+#' @export
+marker_engine_stamp_field <- function(fmt = c("csv", "json"), stamp = NULL) {
+  fmt <- match.arg(fmt)
+  if (is.null(stamp)) stamp <- marker_engine_stamp()
+  # NA -> "NA" so a missing engine stays visible in the serialised form
+  vals <- stamp
+  vals[is.na(vals)] <- "NA"
+  if (identical(fmt, "csv")) {
+    return(paste0(names(vals), "=", vals, collapse = ";"))
+  }
+  tryCatch(
+    as.character(jsonlite::toJSON(as.list(vals), auto_unbox = TRUE)),
+    error = function(e) NA_character_
+  )
 }

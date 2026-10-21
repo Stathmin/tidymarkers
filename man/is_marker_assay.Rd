@@ -21,6 +21,9 @@ is_marker_assay(list())
 \seealso{
 Other KASP utilities:
 \code{\link[=has_oligoarrayaux]{has_oligoarrayaux()}},
+\code{\link[=marker_engine_stamp]{marker_engine_stamp()}},
+\code{\link[=marker_engine_stamp_field]{marker_engine_stamp_field()}},
+\code{\link[=marker_engine_versions]{marker_engine_versions()}},
 \code{\link[=marker_install_tools]{marker_install_tools()}},
 \code{\link[=print.marker_assay]{print.marker_assay()}},
 \code{\link[=print.marker_doomed]{print.marker_doomed()}},
