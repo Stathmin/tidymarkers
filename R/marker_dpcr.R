@@ -164,7 +164,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
                                min_product = 60L, max_product = 150L, lengths = 18:25,
                                tm_range = c(44, 50), gc_range = c(0.40, 0.60),
                                probe_lengths = 18:25, probe_gc = c(0.40, 0.60),
-                               probe_tm_margin = 8) {
+                               probe_tm_margin = 8, engines = NULL) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
@@ -245,7 +245,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
   comp_ok <- substr(probe$primer, 1L, 1L) != "G" &&
     probe_gc_obs >= probe_gc[1L] && probe_gc_obs <= probe_gc[2L] &&
     !has_run(probe$primer) && !has_repeat(probe$primer)
-  if (has_oligoarrayaux()) {
+  if (engine_has("duplex_dg", engines)) {
     hairpin <- oligo_dg_vec(probe$primer)
     homodimer <- oligo_dg_vec(probe$primer, probe$primer)
   } else {
@@ -290,7 +290,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
   out$selection <- sel
 
   # the readout this scheme *does* model: per-allele probe discrimination
-  if (has_oligoarrayaux()) {
+  if (engine_has("duplex_dg", engines)) {
     p_start <- probe$start
     p_end <- probe$end
     p_strand <- probe$strand

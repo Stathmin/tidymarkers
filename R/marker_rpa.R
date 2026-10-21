@@ -138,8 +138,9 @@ rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range,
 #' @return a single logical.
 #' @keywords internal
 #' @noRd
-rpa_structure_ok <- function(pair, BPPARAM = NULL, conditions = scheme_conditions("rpa")) {
-  if (!has_oligoarrayaux()) {
+rpa_structure_ok <- function(pair, BPPARAM = NULL, conditions = scheme_conditions("rpa"),
+                             engines = NULL) {
+  if (!engine_has("duplex_dg", engines)) {
     return(TRUE)
   }
   p <- c(forward = pair$forward, reverse = pair$reverse)
@@ -407,7 +408,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
                               probe_len = RPA_PROBE_LEN,
                               gc_range = RPA_GC,
                               tm_range = RPA_NO_TM,
-                              BPPARAM = NULL) {
+                              BPPARAM = NULL, engines = NULL) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
@@ -436,7 +437,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
     amp_lo <- if ("gate_rpa_amplicon" %in% relaxed) min_product - RPA_AMPLICON_RELAX else min_product
     amp_hi <- if ("gate_rpa_amplicon" %in% relaxed) max_product + RPA_AMPLICON_RELAX else max_product
     pair <- rpa_pair(tmpl$seq, si, design_probe, lengths, amp_lo, amp_hi, tm_range, gc_range)
-    if (is.null(pair) || !rpa_structure_ok(pair, BPPARAM)) {
+    if (is.null(pair) || !rpa_structure_ok(pair, BPPARAM, engines = engines)) {
       return(NULL)
     }
     probe <- NULL
@@ -489,7 +490,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
     gate_rpa_primer_len = all(
       dplyr::between(c(nchar(pair$forward), nchar(pair$reverse)), min(strict_len), max(strict_len))
     ),
-    gate_rpa_structure = if (has_oligoarrayaux()) TRUE else NA,
+    gate_rpa_structure = if (engine_has("duplex_dg", engines)) TRUE else NA,
     gate_rpa_probe = rpa_probe_gate(probe, pick$probe_relaxed),
     gate_rpa_amplicon = dplyr::between(pair$product, min_product, max_product)
   )

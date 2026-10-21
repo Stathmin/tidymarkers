@@ -588,49 +588,13 @@ marker_check_spec <- function(ways, classes, limits) {
 criterion_spec <- function(limits = KASP_LIMITS) {
   # a gate's scope is the scheme that declares its constant; the `as`/`pair`
   # stages are shared by the KASP family, the rest belong to their own scheme.
-  # Resolved lazily (`mget`) because marker_criteria.R is sourced before them.
-  gate_scope <- c(
-    as = "kasp", pair = "kasp", duplex = "duplex", asq = "asq",
-    caps = "caps", arms = "arms", hrm = "hrm"
-  )
-  # Only the built-in stages are listed here.  A discovered scheme's stage
-  # (lax, ssr, sanger, ...) is appended by extra_stage_rows(), so listing it here
-  # too would emit its gates twice.
-  stage_gates <- c(
-    as = "KASP_GATES_AS", pair = "KASP_GATES_PAIR", duplex = "KASP_GATES_DUPLEX",
-    asq = "KASP_GATES_ASQ", caps = "KASP_GATES_CAPS", arms = "KASP_GATES_ARMS",
-    hrm = "KASP_GATES_HRM"
-  )
-  stage_relax <- c(
-    as = "KASP_RELAX_AS", pair = "KASP_RELAX_PAIR", duplex = "KASP_RELAX_DUPLEX",
-    asq = "KASP_RELAX_ASQ", caps = "KASP_RELAX_CAPS", arms = "KASP_RELAX_ARMS",
-    hrm = "KASP_RELAX_HRM"
-  )
-  stage_tiers <- c(
-    as = "KASP_TIERS_AS", pair = "KASP_TIERS_PAIR", duplex = "KASP_TIERS_DUPLEX",
-    asq = "KASP_TIERS_ASQ", caps = "KASP_TIERS_CAPS", arms = "KASP_TIERS_ARMS",
-    hrm = "KASP_TIERS_HRM"
-  )
-  # `mget()` names its result after the constants, so re-key it by stage id
-  gate_labels <- stats::setNames(
-    mget(unname(stage_gates), envir = asNamespace("tidymarkers")),
-    names(stage_gates)
-  )
-  relax_labels <- stats::setNames(
-    mget(unname(stage_relax), envir = asNamespace("tidymarkers")),
-    names(stage_relax)
-  )
-  tier_labels <- stats::setNames(
-    mget(unname(stage_tiers), envir = asNamespace("tidymarkers")),
-    names(stage_tiers)
-  )
-  # the AS stage's criteria report at feature level; every other stage's at
-  # alignment level (as the old stage_rows() calls declared one by one)
-  level_of <- c(
-    as = "feature", pair = "alignment", duplex = "alignment",
-    asq = "alignment", caps = "alignment", arms = "alignment",
-    hrm = "alignment"
-  )
+  # One spec for all of them: marker_builtin_stages() (R/marker_stages.R).
+  builtins <- marker_builtin_stages()
+  gate_labels <- lapply(builtins, marker_stage_constants, what = "gates")
+  relax_labels <- lapply(builtins, marker_stage_constants, what = "relax")
+  tier_labels <- lapply(builtins, marker_stage_constants, what = "tiers")
+  gate_scope <- vapply(builtins, `[[`, character(1), "scope")
+  level_of <- vapply(builtins, `[[`, character(1), "level")
   # A gate's bar is the scheme's published limit text, and its relaxation margin
   # (the floor) is a ladder property, not a threshold on the observed value, so a
   # gate carries `bounds = NULL` and its prose as `values`.  The rows whose
@@ -671,23 +635,25 @@ criterion_spec <- function(limits = KASP_LIMITS) {
     out
   }
   # The `as` / `pair` stages are shared by the whole KASP family; every other
-  # built-in stage belongs to one scheme.
+  # built-in stage belongs to one scheme (see marker_builtin_stages()).
   marker_core <- c(KASP_SCHEME_CORE, extra_family_schemes("kasp"))
-  stage_scheme <- c(
-    as = "kasp", pair = "kasp", duplex = "duplex", asq = "asq",
-    caps = "caps", arms = "arms", hrm = "hrm"
-  )
-  stages <- purrr::map(names(stage_gates), function(stage) {
-    g <- gate_labels[[stage]]
-    t <- tier_labels[[stage]]
+  stage_scheme <- as.list(gate_scope)
+  for (nm in names(builtins)) {
+    if (length(builtins[[nm]]$schemes) > 1L) {
+      stage_scheme[[nm]] <- marker_core
+    }
+  }
+  stages <- lapply(names(builtins), function(nm) {
+    g <- gate_labels[[nm]]
+    t <- tier_labels[[nm]]
     d <- dplyr::bind_rows(
-      if (length(g)) gate_rows(stage, g) else NULL,
-      if (length(t)) tier_rows(stage, t) else NULL
+      if (length(g)) gate_rows(nm, g) else NULL,
+      if (length(t)) tier_rows(nm, t) else NULL
     )
     if (!nrow(d)) {
       return(NULL)
     }
-    member <- if (stage %in% c("as", "pair")) marker_core else stage_scheme[[stage]]
+    member <- stage_scheme[[nm]]
     d$schemes <- rep(list(member), nrow(d))
     d
   })

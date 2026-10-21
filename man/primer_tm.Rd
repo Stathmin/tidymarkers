@@ -4,7 +4,13 @@
 \alias{primer_tm}
 \title{Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)}
 \usage{
-primer_tm(seq, DMSO = NULL, nn_table = NN_TABLE, conditions = NULL)
+primer_tm(
+  seq,
+  DMSO = NULL,
+  nn_table = NN_TABLE,
+  conditions = NULL,
+  salt_method = NULL
+)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
@@ -22,6 +28,18 @@ Tm calculation (the NN model gives Tm directly), so passing
 \code{NULL} uses \code{\link[=reaction_conditions]{reaction_conditions()}}, i.e. the package's historical numbers.
 For an isothermal method whose buffer this model does not represent (RPA's
 crowded recombinase buffer) the Tm is informational, not a gate.}
+
+\item{salt_method}{monovalent-salt correction passed to
+\code{TmCalculator::tm_calculate()}.  \code{NULL} keeps the engine default
+(\code{"Schildkraut2010"}, Schildkraut & Lifson 1965, \verb{16.6*log10[Na+]}), so
+existing designs do not move.  A caller who has a measured buffer can ask
+for a modern form: \code{"Owczarzy2004"} / \code{"Owczarzy2008"} (Owczarzy et al.
+2004, 2008, which correct \code{1/T} and include a duplex-length term) or
+\code{"SantaLucia1998-1"} / \code{"SantaLucia1998-2"} (SantaLucia 1998,
+\verb{11.7*log10[Na+]}).  This is a level shift, not a precision gain: on the
+mm2020 oracle (500 mM Na equivalent, no Mg) the default reads 16.9 C low
+and Owczarzy 2008 reads 9.3 C low, with the same correlation; see
+\code{.tmp/sdd/report-tmfix.md}.}
 }
 \value{
 a numeric vector of Tm (C), one per oligo.
