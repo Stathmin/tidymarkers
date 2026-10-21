@@ -284,6 +284,38 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       tm = primer_tm(.data$ref_primer, conditions = conditions),
       gc = gc_frac(.data$ref_primer)
     )
+  # the package's soft mismatch index: a G:T / A:C 3' wobble is the class
+  # `specificity_policy()` already marks, and the one a deliberate extra mismatch
+  # exists to rescue (Ye 2001's weak terminal class).  The pair is the AS primer's
+  # own 3' base against the REF allele - `make_as_primer()` can run longer than
+  # `as_length`, so the primer's full length is the right index.
+  term_base <- substr(cfgs$ref_primer, nchar(cfgs$ref_primer), nchar(cfgs$ref_primer))
+  on <- rep(as.character(ref)[1L], nrow(cfgs))
+  # the package's soft mismatch index, by the same four pairs `wobble_mismatch()`
+  # classifies (C:T / A:G / G:T / A:C) but as a direct element-wise test: the
+  # helper sorts a whole vector when given more than one pair
+  # a 3' wobble on Ts: a T opposite G or C at the primer's terminal base, which
+  # is exactly Kwok's `minimal` class (T:G, T:C, T:T).  Read off the pair rather
+  # than through `wobble_mismatch()`, which sorts the WHOLE vector when given
+  # more than one pair (checked: it answers FALSE for a batch whose single-pair
+  # calls are TRUE).
+  wobble <- c("G:T", "C:T", "T:T")
+  term_pair <- vapply(seq_along(term_base), function(i) {
+    paste(sort(c(term_base[[i]], on[[i]])), collapse = ":")
+  }, character(1))
+  weak_pairs <- term_pair %in% wobble
+  cfgs$weak_terminal <- !is.na(cfgs$stab_at) & weak_pairs
+  cfgs$weak_terminal[is.na(cfgs$weak_terminal)] <- FALSE
+  # `pmap()` below sees every remaining column, so the policy flag is kept on
+  # its own table and joined back by key once the configurations survive
+  # kept on its own table and joined back, because purrr::pmap() takes its
+  # argument names from the column ORDER of `cfgs`
+  policy <- tibble::tibble(
+    strand = cfgs[["strand"]], as_length = cfgs[["as_length"]],
+    stab_at = cfgs[["stab_at"]], stab_base = cfgs[["stab_base"]],
+    weak_terminal = cfgs[["weak_terminal"]]
+  )
+  cfgs <- dplyr::select(cfgs, -"weak_terminal")
   if (!is.null(gc_range)) {
     cfgs <- dplyr::filter(cfgs, dplyr::between(.data$gc, gc_range[1L], gc_range[2L]))
   }
@@ -294,11 +326,27 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   if (nrow(cfgs) == 0L) {
     return(empty_as_primers())
   }
+  cfgs$.row_key <- paste(
+    cfgs[["strand"]], cfgs[["as_length"]], cfgs[["stab_at"]], cfgs[["stab_base"]],
+    sep = "\r"
+  )
+  policy$.row_key <- paste(
+    policy[["strand"]], policy[["as_length"]], policy[["stab_at"]], policy[["stab_base"]],
+    sep = "\r"
+  )
+  # `purrr::pmap()` names its arguments from the column order, so it is given an
+  # explicit list; the policy flag joins the scoring by the same key
+  cfg_list <- list(
+    strand = cfgs[["strand"]], as_length = cfgs[["as_length"]],
+    stab_at = cfgs[["stab_at"]], stab_base = cfgs[["stab_base"]],
+    ref_primer = cfgs[["ref_primer"]], tm = cfgs[["tm"]], gc = cfgs[["gc"]],
+    weak_terminal = policy$weak_terminal[match(cfgs$.row_key, policy$.row_key)]
+  )
 
   # the on/off targets per configuration and per ALT allele, scored in ONE
   # batched DECIPHER call; a multi-allelic site is scored against every ALT and
   # reduced conservatively below
-  pairs <- purrr::pmap(cfgs, function(strand, as_length, stab_at, stab_base, ref_primer, tm, gc) {
+  pairs <- purrr::pmap(cfg_list, function(strand, as_length, stab_at, stab_base, ref_primer, tm, gc, weak_terminal) {
     L <- as_length
     # binding window on the plus strand (REF), and each ALT haplotype carrying
     # the linked substitutions as well
@@ -323,7 +371,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
         primer = c(ref_primer, ref_primer, alt_primer, alt_primer),
         target = c(t_ref, t_alt, t_alt, t_ref),
         strand = strand, as_length = L, stab_at = stab_at, stab_base = stab_base,
-        ref_primer = ref_primer, alt_primer = alt_primer, tm = tm, gc = gc
+        ref_primer = ref_primer, alt_primer = alt_primer, tm = tm, gc = gc,
+        weak_terminal = weak_terminal
       )
     }) |>
       purrr::list_rbind()
@@ -343,7 +392,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     tidyr::pivot_wider(
       id_cols = c(
         "strand", "as_length", "stab_at", "stab_base",
-        "ref_primer", "alt_primer", "tm", "gc"
+        "ref_primer", "alt_primer", "tm", "gc", "weak_terminal"
       ),
       names_from = "which", values_from = "eff"
     ) |>
@@ -356,6 +405,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       alt_primer = .data$alt_primer[which.min(.data$alt_on)],
       tm = dplyr::first(.data$tm),
       gc = dplyr::first(.data$gc),
+      weak_terminal = dplyr::first(.data$weak_terminal),
       ref_on = dplyr::first(.data$ref_on),
       ref_off = max(.data$ref_off),
       alt_on = min(.data$alt_on),
@@ -383,16 +433,20 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   # rank by the DECIDED position policy before discrimination: the measured
   # default (-3) ahead of the rule-of-thumb fallback (-2), then no mismatch, then
   # anything else the caller asked for.  The pool is unchanged - only the order -
-  # so no primer appears or disappears by this policy.  The positions are bound
-  # to locals first: a package constant read inside `case_when()` resolves to
-  # `NA` here, which would silently label every row "other".
-  # Compare by ABSOLUTE value: on this R (4.6.1) the scalar literal `3L == -3L`
-  # evaluates to FALSE while `c(3L) == -3L` is TRUE, so a signed comparison
-  # against a package constant is not dependable.  Position runs -1..-4, so
-  # abs() is unambiguous.
-  at_default <- !is.na(wide$stab_at) & abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_POSITION)
-  at_fallback <- !is.na(wide$stab_at) & abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_FALLBACK)
-  wide$.policy_rank <- ifelse(at_default, 1L, ifelse(at_fallback, 2L, ifelse(is.na(wide$stab_at), 3L, 4L)))
+  # so no primer appears or disappears by this policy.  A -2 row is the fallback
+  # ONLY when the terminal mismatch is weak; otherwise it is just another
+  # position the caller asked for.  Positions are compared by ABSOLUTE value:
+  # on this R (4.6.1) the scalar literal `3L == -3L` is FALSE while
+  # `c(3L) == -3L` is TRUE, so a signed comparison against a constant is not
+  # dependable; position runs -1..-4, so abs() is unambiguous.
+  rank_default <- !is.na(wide$stab_at) & abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_POSITION)
+  rank_fallback <- !is.na(wide$stab_at) &
+    abs(wide$stab_at) == abs(ARMS_EXTRA_MISMATCH_FALLBACK) &
+    wide$weak_terminal
+  wide$.policy_rank <- ifelse(
+    rank_default, 1L,
+    ifelse(rank_fallback, 2L, ifelse(is.na(wide$stab_at), 3L, 4L))
+  )
   wide$stab_policy <- c("default", "fallback", "none", "other")[wide$.policy_rank]
   wide |>
     dplyr::select(dplyr::all_of(AS_PRIMER_COLS), ".policy_rank") |>
@@ -405,7 +459,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 AS_PRIMER_COLS <- c(
   "strand", "as_length", "stab_at", "stab_base", "ref_primer", "alt_primer", "alt_degen",
   "ref_on", "ref_off", "alt_on", "alt_off", "discrimination", "tm", "gc",
-  "dg_3p", "tmpl_start", "tmpl_end", "stab_policy"
+  "dg_3p", "tmpl_start", "tmpl_end", "weak_terminal", "stab_policy"
 )
 
 #' Zero-row `design_as_primers()` result, keeping the schema
@@ -418,7 +472,8 @@ empty_as_primers <- function() {
     alt_degen = character(),
     ref_on = numeric(), ref_off = numeric(), alt_on = numeric(), alt_off = numeric(),
     discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
-    tmpl_start = integer(), tmpl_end = integer(), stab_policy = character()
+    tmpl_start = integer(), tmpl_end = integer(), weak_terminal = logical(),
+    stab_policy = character()
   )[AS_PRIMER_COLS]
 }
 

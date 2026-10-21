@@ -22,10 +22,13 @@ layers, never averaged:
 1. **The terminal base (−1) carries the discrimination.** A lone terminal
    mismatch is `unknown` at the specificity policy, never a pass. The extra
    mismatch is a *rescuer* for a weak terminal class, not a substitute for it.
-2. **The extra mismatch goes at −3 by default.** −2 is used **only** when the
-   call is itself uncertain — when the terminal class is one Kwok 1990 calls
-   `context_dependent`. That is exactly the case a rule of thumb was invented
-   for, so the fallback keeps more assays alive without pretending to measure.
+2. **The extra mismatch goes at −3 by default.** −2 is the **fallback, for a
+   weak terminal class**: Ye 2001 arranges strong/medium/weak terminal classes and
+   the extra mismatch is a rescue for the *weak* ones, so a weak terminal base
+   (the package's own index: T:G / T:C / T:T, i.e. Kwok's `minimal` class, plus
+   the G:T / A:C wobble `specificity_policy()` already flags) gets −2. Every
+   other class, including `context_dependent`, keeps the measured −3: the
+   rule of thumb is not measured, and we do not spend it where it is not needed.
 
 ## Rationale, and its limits
 
@@ -71,10 +74,11 @@ condemn — and we already carry many constraints.
 * `R/marker_arms.R`: `ARMS_EXTRA_MISMATCH_POSITION <- -3L`,
   `ARMS_EXTRA_MISMATCH_FALLBACK <- -2L`, and
   `arms_extra_mismatch_position(terminal_class)` — −3 by default, −2 only for
-  `context_dependent`, `NA` for a class with no measurement.
+  `minimal` (the weak terminal class), `NA` for a class with no measurement.
 * `R/marker_design.R`: `design_as_primers()` ranks the chosen position first,
-  the fallback second, no-mismatch third, and any other position last, and
-  records the applied rule (`stab_policy`) on each row. The pool is unchanged;
+  the fallback second (only when that configuration's terminal base is weak),
+  no-mismatch third, and any other position last, and records the rule and the
+  weak-terminal flag on each row. The pool is unchanged;
   only the order is.
 
 Both are directional: no primer is added or removed by the policy, so a design
