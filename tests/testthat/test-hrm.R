@@ -88,6 +88,20 @@ test_that("the hrm DAG obeys the contract", {
   expect_dag_invariants("hrm")
 })
 
+test_that("an HRM marker is graded on its bimorphism's measured resolvability", {
+  skip_if_no_oligoarrayaux()
+  f <- hrm_fixture()
+  m <- design_hrm_marker(f$genome, f$snp, flank = 150L)
+  ev <- marker_design_checks(m, scheme = "hrm")
+  row <- ev[ev$criterion == "family_hrm_resolvable", ]
+  expect_equal(nrow(row), 1L)
+  # the decision's row answers "is there a curve to read", from the source's own
+  # per-bimorphism dTm, and it is a check (it reports), not a gate
+  expect_true(row$status %in% c("pass", "unknown"))
+  expect_match(row$detail, "measured \\(LightCycler 96")
+  expect_equal(row$observed, 0.5886, tolerance = 1e-3) # the A/C class mean
+})
+
 test_that("plot_hrm_amplicon draws the marker and rejects other objects", {
   skip_if_no_oligoarrayaux()
   f <- hrm_fixture()

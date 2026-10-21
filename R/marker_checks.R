@@ -242,6 +242,11 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     # the generic evaluator is display-agnostic, so the population layer is
     # appended here, where every chemistry's table passes through (Z6)
     out <- marker_generic_checks(assay, scheme, limits = limits)
+    # HRM's own decided criterion: a bimorphism with a measured dTm is graded
+    # against it, so "designable" always says whether there is a curve to read
+    if (identical(scheme, "hrm")) {
+      out <- dplyr::bind_rows(out, hrm_resolvability_row(assay))
+    }
     return(marker_with_population_checks(out, assay))
   }
   crit <- marker_criteria(limits, scheme = scheme)

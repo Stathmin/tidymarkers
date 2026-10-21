@@ -30,10 +30,16 @@
 #     curve for reasons that have nothing to do with the variant.  This is a
 #     real requirement but a soft one - a couple of degrees can be absorbed by
 #     the annealing temperature - so it is the ladder's rung, not a hard block.
-#   - The variant must sit in the melt domain and under NEITHER primer (a primer
+#   * The variant must sit in the melt domain and under NEITHER primer (a primer
 #     whose 3' end abuts the variant starts to read the allele itself - that is
 #     allele-specific PCR, not HRM).  That is enforced *structurally* by the
 #     designer's flanking geometry (a clearance on each side), not by a gate.
+#   * Resolvability is a DIFFERENCE of melting peaks, not a property of a SNP:
+#     `hrm_resolvability()` grades the bimorphism against the source's own
+#     measured dTm, and `hrm_resolvability_row()` puts that into the evaluation
+#     so an HRM marker never reports "designable" without saying whether its
+#     class has a curve to read (decision:
+#     data-raw/proposed/hrm_resolvability.decision.md).
 # =============================================================================
 
 # ---- the HRM selection stage --------------------------------------------------
@@ -145,6 +151,50 @@ print.marker_hrm_resolvability <- function(x, ...) {
     "*" = "dTm min {round(x$dtm_min, 2)} C, mean {round(x$dtm_mean, 2)} C, threshold {x$threshold} C"
   ))
   invisible(x)
+}
+
+#' The HRM resolvability row of an evaluation table (decided criterion)
+#'
+#' Every HRM marker is graded on whether its bimorphism has a melting difference
+#' to read.  `resolvable` passes, `marginal` does not (`unknown` in the table,
+#' since the class mean - not this SNP - is what falls short), `below_threshold`
+#' and `unknown` report `unknown` too: no fetched source measures a dTm for the
+#' pair, so nothing is known and nothing is claimed.  No design is failed by it
+#' - the scheme has no per-SNP dTm to fail it with - and the reason is carried in
+#' `detail` so a report can say which way it leans.
+#' @param marker an HRM marker.
+#' @return a one-row evaluation tibble (empty when the target alleles are
+#'   unknown).
+#' @keywords internal
+#' @noRd
+hrm_resolvability_row <- function(marker) {
+  empty <- marker_evaluation_table(
+    stage = character(), criterion = character(), observed = numeric(),
+    limit = character(), pass = logical(), level = character()
+  )
+  snp <- marker$snp
+  if (is.null(snp) || !nrow(snp) || anyNA(c(snp$ref[1L], snp$alt[1L]))) {
+    return(empty)
+  }
+  r <- hrm_resolvability(snp$ref[1L], snp$alt[1L])
+  if (identical(r$status, "unknown")) {
+    return(empty)
+  }
+  amp <- marker$amplicon
+  product <- if (!is.null(amp) && "product" %in% names(amp)) as.numeric(amp$product[1L]) else NA_real_
+  marker_evaluation_table(
+    stage = "check",
+    criterion = "family_hrm_resolvable",
+    observed = r$dtm_mean,
+    limit = glue::glue(">= {r$threshold} C class mean dTm"),
+    pass = identical(r$status, "resolvable"),
+    detail = glue::glue(
+      "{r$bimorphism}: {r$status}; dTm min {round(r$dtm_min, 2)} C, ",
+      "mean {round(r$dtm_mean, 2)} C; {r$evidence}",
+      if (is.na(product)) "" else ", amplicon {as.integer(product)} bp"
+    ),
+    level = "family"
+  )
 }
 
 # How far the ladder may widen the flanking primers' Tm window (C, each side)
