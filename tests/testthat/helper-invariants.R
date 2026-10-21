@@ -17,8 +17,12 @@
 # `evaluation_verdict()` returns "unknown" -- an artifact of the accessor, not a
 # verdict.  Comparing through this helper is what keeps M2 from failing on that.
 design_outcome <- function(m) {
-  if (is.null(m)) return("none")
-  if (inherits(m, "marker_doomed")) return("doomed")
+  if (is.null(m)) {
+    return("none")
+  }
+  if (inherits(m, "marker_doomed")) {
+    return("doomed")
+  }
   evaluation_verdict(m)
 }
 
@@ -102,8 +106,10 @@ make_assay <- function(as_ref, as_alt, com, ref = "T", alt = "C", amplicon = 49L
   structure(
     list(
       scheme = "snp",
-      snp = tibble::tibble(chrom = "5B", pos = as.integer(pos),
-                           ref = ref, alt = alt, alt2 = NA_character_),
+      snp = tibble::tibble(
+        chrom = "5B", pos = as.integer(pos),
+        ref = ref, alt = alt, alt2 = NA_character_
+      ),
       assay = tibble::tibble(
         start = 1L, end = as.integer(amplicon), len = as.integer(amplicon),
         as_ref = as_ref, as_alt = as_alt, as_alt_degen = FALSE,
@@ -130,8 +136,10 @@ make_assay <- function(as_ref, as_alt, com, ref = "T", alt = "C", amplicon = 49L
         dg = c(-1, cross, -3, -1, cross, -1)
       ),
       efficiency = list(discrimination = disc),
-      site = tibble::tibble(n_alt = 1L, alt_covered = 1L, disc = TRUE,
-                            class = "biallelic")
+      site = tibble::tibble(
+        n_alt = 1L, alt_covered = 1L, disc = TRUE,
+        class = "biallelic"
+      )
     ),
     class = "marker_assay"
   )
@@ -141,6 +149,7 @@ make_assay <- function(as_ref, as_alt, com, ref = "T", alt = "C", amplicon = 49L
 makhoul_assay <- function(i = 1L) {
   p <- makhoul_primers()
   make_assay(p$fam[[i]], p$hex[[i]], p$common[[i]],
-             ref = substr(gsub("[^ACGT]", "", p$snp_kasp[[i]]), 1L, 1L),
-             alt = substr(gsub("[^ACGT]", "", p$snp_kasp[[i]]), 2L, 2L))
+    ref = substr(gsub("[^ACGT]", "", p$snp_kasp[[i]]), 1L, 1L),
+    alt = substr(gsub("[^ACGT]", "", p$snp_kasp[[i]]), 2L, 2L)
+  )
 }

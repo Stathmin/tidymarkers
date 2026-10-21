@@ -18,16 +18,20 @@
 #  re-run the generator and require the CSV on disk to be byte-identical.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 kasp_run <- function(script) {
   skip_if_not_installed("pkgload")
   if (!requireNamespace("fs", quietly = TRUE)) skip("fs not installed")
   root <- normalizePath(test_path("../.."), mustWork = FALSE)
-  skip_if(!file.exists(file.path(root, "data-raw", script)),
-          paste("generator", script, "not present"))
+  skip_if(
+    !file.exists(file.path(root, "data-raw", script)),
+    paste("generator", script, "not present")
+  )
   old <- getwd()
   setwd(root)
   on.exit(setwd(old), add = TRUE)
@@ -36,8 +40,12 @@ kasp_run <- function(script) {
   # the generators print a one-line summary; capture it, and let any stop()
   # from a disagreed assertion escape as the failure
   invisible(utils::capture.output(
-    suppressMessages(source(file.path(root, "data-raw", script), local = new.env())),
-    type = "output"))
+    suppressMessages(source(
+      file.path(root, "data-raw", script),
+      local = new.env()
+    )),
+    type = "output"
+  ))
   TRUE
 }
 
@@ -50,12 +58,15 @@ test_that("KASP wheat_platform2019: the 30 assays are the 30 the paper made", {
   expect_equal(nlevels(factor(a$assay)), 30L)
   expect_false(anyDuplicated(a$assay) > 0)
   # the worksheet lists the assays; it does NOT list an outcome for any of them
-  expect_false(any(grepl("^outcome$|design_outcome|work_outcome|assay_worked",
-                         names(a))))
+  expect_false(any(grepl(
+    "^outcome$|design_outcome|work_outcome|assay_worked",
+    names(a)
+  )))
   # a KASP primer triple per assay, and the two allele-specific primers differ
   # at their 3' base -- the assay construct
-  expect_true(all(nzchar(a$kasp_allele1) & nzchar(a$kasp_allele2) &
-                  nzchar(a$kasp_common)))
+  expect_true(all(
+    nzchar(a$kasp_allele1) & nzchar(a$kasp_allele2) & nzchar(a$kasp_common)
+  ))
   expect_true(all(a$kasp_allele1_3p != a$kasp_allele2_3p))
   # the 3' bases are in the target's bracketed alleles, in some orientation;
   # how many needed the complement is recorded rather than silently fixed
@@ -76,8 +87,10 @@ test_that("KASP wheat_platform2019: every outcome count closes on the paper's ow
   # design: 39/50, 49/50, 49/50 -- each with denominator 50
   d <- get("design_success")
   # TaqMan 39, KASP 49, rhAmp 49 (the paper's sentence order)
-  expect_equal(d$n_numerator[match(c("TaqMan", "KASP", "rhAmp"), d$platform)],
-               c(39L, 49L, 49L))
+  expect_equal(
+    d$n_numerator[match(c("TaqMan", "KASP", "rhAmp"), d$platform)],
+    c(39L, 49L, 49L)
+  )
   expect_true(all(d$n_denominator == 50L))
   # the Methods "39" is flagged as ambiguous and is NOT KASP's number
   amb <- get("all_passed_design_criteria")
@@ -106,7 +119,7 @@ test_that("KASP wheat_platform2019: every outcome count closes on the paper's ow
 
 test_that("KASP wheat_platform2019: cluster metrics keep their units and their footnote", {
   m <- ext("wheat_platform2019_cluster_metrics.csv")
-  expect_equal(nrow(m), 12L)                       # 3 platforms x 4 metrics
+  expect_equal(nrow(m), 12L) # 3 platforms x 4 metrics
   expect_equal(length(unique(m$platform)), 3L)
   expect_equal(length(unique(m$metric)), 4L)
   # values are platform means in the paper's own units; call quality is a
@@ -137,7 +150,7 @@ test_that("KASP sharplab2021: 50 markers, 46 polymorphic, and the 92% is not a d
   expect_equal(nrow(a), 50L)
   expect_equal(sort(a$no), 1:50)
   expect_equal(sum(a$assay_worked), 46L)
-  expect_true(all(a$design_success))            # a primer triple exists for all 50
+  expect_true(all(a$design_success)) # a primer triple exists for all 50
   expect_false(anyDuplicated(a$marker) > 0)
   # the crosses are exactly the rows with no PIC in the 20-line panel
   expect_true(all(is.na(a$pic_20_lines) == (a$polymorphism_1212_vs_b73 != "\u221a")))
@@ -148,7 +161,7 @@ test_that("KASP sharplab2021: 50 markers, 46 polymorphic, and the 92% is not a d
   expect_equal(r$n_denominator, 50L)
   expect_equal(r$n_numerator / r$n_denominator, 0.92)
   d <- o[o$quantity == "design_success", ]
-  expect_equal(d$n_numerator, d$n_denominator)  # 50/50
+  expect_equal(d$n_numerator, d$n_denominator) # 50 of 50 lines
   # there is a SEPARATE amplification ratio, kept as printed and not counted
   amp <- o[o$quantity == "amplified_20_lines", ]
   expect_equal(amp$value_printed, "98.5%")
@@ -229,9 +242,11 @@ test_that("KASP family: the three sources do not yield one poolable rate", {
   # the three "success" numbers a reader would want to compare are defined
   # differently, and each file says so in its own column
   expect_true(grepl("pre-validated wheat", w$outcome_definition[
-    w$quantity == "design_success" & w$platform == "KASP"]))
+    w$quantity == "design_success" & w$platform == "KASP"
+  ]))
   expect_true(grepl("1212 x B73|1212 and B73", s$note[
-    s$quantity == "polymorphic_1212_vs_b73"]))
+    s$quantity == "polymorphic_1212_vs_b73"
+  ]))
   # the maize work rate is defined on the LM11 x CML25 parent pair, and the
   # usable rate (71%) exists as its own row
   expect_true(any(grepl("LM11", m$outcome_definition)))

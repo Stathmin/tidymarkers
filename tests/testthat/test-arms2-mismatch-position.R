@@ -43,9 +43,11 @@ test_that("Liu 2012 is filed at the position its own percentages support", {
   expect_equal(nrow(liu), 1L)
   expect_equal(liu$position, -3L)
   # the sentence printed in `discrimination` must rank -3 above -2 and -4
-  pcts <- as.numeric(regmatches(liu$discrimination,
-                                gregexpr("[0-9]+\\.[0-9]+", liu$discrimination))[[1L]])
-  expect_equal(which.max(pcts), 2L)  # -2, -3, -4 in that order
+  pcts <- as.numeric(regmatches(
+    liu$discrimination,
+    gregexpr("[0-9]+\\.[0-9]+", liu$discrimination)
+  )[[1L]])
+  expect_equal(which.max(pcts), 2L) # -2, -3, -4 in that order
 })
 
 test_that("no row was invented without a source file or a quote", {

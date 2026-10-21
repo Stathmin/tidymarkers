@@ -1,5 +1,5 @@
 # =============================================================================
-#  tests/testthat/test-polyploid-cotton2023.R
+#  test-polyploid-cotton2023
 # =============================================================================
 #  Cotton is the family's NEGATIVE control on the homeolog axis: an AADD
 #  allotetraploid screened on cluster separation alone, in which two assays
@@ -7,8 +7,10 @@
 #  tests pin the per-assay classification and the "not stated" claim.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("polyploid/cotton2023: 11 tested, 8 usable, 3 bad, per assay", {
@@ -50,13 +52,19 @@ test_that("polyploid/cotton2023: the CSV still matches Table 3 in the XML", {
   skip_if_not_installed("xml2")
   doc <- xml2::xml_ns_strip(xml2::read_xml(xml_path))
   tabs <- xml2::xml_find_all(doc, ".//table-wrap")
-  cap <- vapply(tabs, function(t) paste(xml2::xml_text(
-    xml2::xml_find_all(t, ".//caption")), collapse = " "), character(1))
+  cap <- vapply(tabs, function(t) {
+    paste(xml2::xml_text(
+      xml2::xml_find_all(t, ".//caption")
+    ), collapse = " ")
+  }, character(1))
   hit <- grep("KASP assay screening results", cap, fixed = TRUE)
   expect_length(hit, 1L)
   rows <- xml2::xml_find_all(tabs[[hit]], ".//tr")
-  cells <- lapply(rows, function(r) gsub("[[:space:]]+", " ", xml2::xml_text(
-    xml2::xml_find_all(r, ".//td|.//th"))))
+  cells <- lapply(rows, function(r) {
+    gsub("[[:space:]]+", " ", xml2::xml_text(
+      xml2::xml_find_all(r, ".//td|.//th")
+    ))
+  })
   ids <- Filter(function(r) length(r) == 6L && grepl("^i[0-9]", r[[1L]]), cells)
   expect_equal(length(ids), 11L)
   verdicts <- vapply(ids, `[[`, character(1), 6L)

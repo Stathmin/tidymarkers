@@ -61,8 +61,10 @@ test_that("ZW0 M2: under a swap, the AS 3' bases exchange between FAM and HEX", 
   # base must follow the allele, not the primer slot.
   p <- makhoul_primers()
   for (i in seq_len(nrow(p))) {
-    expect_false(p$fam_3p[[i]] == p$hex_3p[[i]],
-                 label = paste(p$assay[[i]], "must have different AS 3' bases"))
+    expect_false(
+      p$fam_3p[[i]] == p$hex_3p[[i]],
+      label = paste(p$assay[[i]], "must have different AS 3' bases")
+    )
   }
   # a design whose two AS primers share a 3' base cannot read the allele at all;
   # this is the negative control for the assertion above
@@ -89,8 +91,10 @@ test_that("ZW0 M3: shifting the coordinate frame does not change a design verdic
   g2 <- marker_genome(f2, blast_db = marker_blast_index(marker_genome(f2)))
 
   design_at <- function(g, pos) {
-    suppressWarnings(tryCatch(marker_design_at(g, locus_at(core, pos), "snp"),
-                              error = function(e) NULL))
+    suppressWarnings(tryCatch(
+      marker_design_at(g, locus_at(core, pos), "snp"),
+      error = function(e) NULL
+    ))
   }
   # the same LOCAL position in the core, in each frame
   off1 <- nchar(pad)
@@ -103,9 +107,11 @@ test_that("ZW0 M3: shifting the coordinate frame does not change a design verdic
     # frame test.  When the same algorithm picks different candidates in the two
     # frames, that is a finding about search determinism (see the test below),
     # not about the coordinate frame, and must not be smuggled into this one.
-    if (inherits(m1, "marker_assay") && inherits(m2, "marker_assay") &&
+    if (
+      inherits(m1, "marker_assay") && inherits(m2, "marker_assay") &&
         identical(m1$assay$as_ref, m2$assay$as_ref) &&
-        identical(m1$assay$com, m2$assay$com)) {
+        identical(m1$assay$com, m2$assay$com)
+    ) {
       found <- list(m1 = m1, m2 = m2)
       break
     }
@@ -120,8 +126,10 @@ test_that("ZW0 M3: shifting the coordinate frame does not change a design verdic
   e2 <- found$m2$evaluation[!found$m2$evaluation$criterion %in% contig_wide, ]
   expect_equal(as.character(e1$criterion), as.character(e2$criterion))
   expect_equal(as.character(e1$status), as.character(e2$status))
-  expect_equal(evaluation_verdict(found$m1$evaluation),
-               evaluation_verdict(found$m2$evaluation))
+  expect_equal(
+    evaluation_verdict(found$m1$evaluation),
+    evaluation_verdict(found$m2$evaluation)
+  )
 })
 
 test_that("ZW0 M4: renaming the chromosome changes nothing but the label", {
@@ -129,8 +137,10 @@ test_that("ZW0 M4: renaming the chromosome changes nothing but the label", {
   g <- indexed_syn_genome(gen)
   m1 <- NULL
   for (pos in c(230L, 220L, 245L, 260L, 275L)) {
-    m1 <- suppressWarnings(tryCatch(marker_design_at(g, locus_at(gen$seq, pos), "snp"),
-                                    error = function(e) NULL))
+    m1 <- suppressWarnings(tryCatch(
+      marker_design_at(g, locus_at(gen$seq, pos), "snp"),
+      error = function(e) NULL
+    ))
     if (inherits(m1, "marker_assay")) break
   }
   skip_if(!inherits(m1, "marker_assay"), "no probe locus designed")

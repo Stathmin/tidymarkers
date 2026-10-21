@@ -3,12 +3,15 @@
 
 cp_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("the three comp2018 files exist with required columns", {
-  for (f in c("lamp_comp2018_separation.csv", "lamp_comp2018_design_space.csv",
-              "lamp_comp2018_durations.csv")) {
+  for (f in c(
+    "lamp_comp2018_separation.csv", "lamp_comp2018_design_space.csv",
+    "lamp_comp2018_durations.csv"
+  )) {
     d <- cp_read(f)
     expect_gt(nrow(d), 0L)
     expect_true(all(c("outcome_definition", "evidence_tier", "source_file") %in% names(d)))

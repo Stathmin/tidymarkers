@@ -27,8 +27,11 @@ test_that("mismatch positions recomputed from the sequences match the CSV", {
   expect_length(ref, 1L)
   for (i in seq_len(nrow(d))) {
     got <- mismatch_positions(d$sequence[i], ref)
-    stated <- if (d$mismatch_positions[i] == "0") integer(0) else
+    stated <- if (d$mismatch_positions[i] == "0") {
+      integer(0)
+    } else {
       as.integer(strsplit(d$mismatch_positions[i], ";")[[1L]])
+    }
     expect_equal(got, stated, info = d$primer_group[i])
     expect_equal(length(got), d$n_mismatch[i], info = d$primer_group[i])
   }
@@ -67,12 +70,15 @@ test_that("unscored primers carry no outcome values", {
 })
 
 test_that("the CSV still matches the fetched Table S1 when it is present", {
-  lit <- test_path("../../.tmp/lit/sorghum_arms2021/supplements/s001",
-                   "foods-1353494-supplementary.pdf")
+  lit <- test_path(
+    "../../.tmp/lit/sorghum_arms2021/supplements/s001",
+    "foods-1353494-supplementary.pdf"
+  )
   skip_if_not(file.exists(lit), "sorghum supplement not fetched here")
   tf <- tempfile(fileext = ".txt")
   system2("pdftotext", c("-layout", shQuote(lit), shQuote(tf)),
-          stdout = TRUE, stderr = TRUE)
+    stdout = TRUE, stderr = TRUE
+  )
   skip_if_not(file.exists(tf), "pdftotext unavailable")
   lines <- readLines(tf, warn = FALSE)
   unlink(tf)
@@ -80,7 +86,8 @@ test_that("the CSV still matches the fetched Table S1 when it is present", {
   hit <- Filter(length, regmatches(lines, regexec(pat, lines)))
   seqs <- stats::setNames(
     vapply(hit, `[[`, character(1), 3L),
-    gsub("[[:space:]]+", "_", tolower(vapply(hit, `[[`, character(1), 2L))))
+    gsub("[[:space:]]+", "_", tolower(vapply(hit, `[[`, character(1), 2L)))
+  )
   d <- sorghum_csv()
   expect_equal(nrow(d), length(seqs))
   expect_equal(seqs[d$primer_group], d$sequence, ignore_attr = TRUE)

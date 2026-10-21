@@ -17,7 +17,7 @@ test_that("ijms2022: every control is accounted for in each partition", {
   expect_equal(unique(part$n_controls_total), 36L)
   # the number of classes is the sum over classes present
   expect_equal(sum(part$n_classes), 1L + 6L + 2L + 3L + 1L)
-  expect_equal(sum(part$class_size == 1L), 1L)   # exactly one singleton
+  expect_equal(sum(part$class_size == 1L), 1L) # exactly one singleton
 
   unr <- read_ext("hrm_ijms2022_unresolvable_3snp.csv")
   pairs <- unr[unr$melt_class == "pair (unresolvable)", ]
@@ -48,8 +48,10 @@ test_that("ijms2022: dTm is physical and rises with the number of T alleles", {
   # for one T at three different loci) - the neighbours differ, so only the
   # between-count relation is asserted.
   by_n <- tapply(dtm$dtm_c, dtm$n_t_alleles, range)
-  expect_true(all(vapply(by_n[-1L], function(z) z[[1L]], numeric(1)) >=
-                    vapply(by_n[-length(by_n)], function(z) z[[2L]], numeric(1))))
+  expect_true(all(
+    vapply(by_n[-1L], function(z) z[[1L]], numeric(1)) >=
+      vapply(by_n[-length(by_n)], function(z) z[[2L]], numeric(1))
+  ))
 })
 
 test_that("jsbbs2018: dTm distributions are physical and conditioned", {
@@ -88,9 +90,12 @@ test_that("ddPCR: LoB varies across conditions and no conversion rate ships", {
   lob <- cpn$cp_ul[cpn$limit_type == "LoB"]
   expect_equal(length(lob), 5L)
   expect_gt(max(lob) / min(lob), 2)
-  for (f in c("dpcr_cpn_lob_variability.csv", "dpcr_aml_idh_limits.csv",
-              "dpcr_kit_d816v_limits.csv"))
+  for (f in c(
+    "dpcr_cpn_lob_variability.csv", "dpcr_aml_idh_limits.csv",
+    "dpcr_kit_d816v_limits.csv"
+  )) {
     expect_false(any(grepl("conversion|sensitivity_rate", names(read_ext(f)))))
+  }
 })
 
 test_that("Sanger floor: sourced, bounded, and not usable as calibration", {
@@ -103,15 +108,21 @@ test_that("Sanger floor: sourced, bounded, and not usable as calibration", {
 })
 
 test_that("generators reproduce the shipped extracts when sources are present", {
-  skip_if(!dir.exists(testthat::test_path("..", "..", ".tmp", "lit")),
-          "source tree .tmp/lit not fetched in this checkout")
-  gens <- c("ijms2022.R", "jsbbs2018.R", "aml_idh_ddpcr.R", "kit_d816v_ddpcr.R",
-            "cpn_ddpcr_lob.R", "sanger_floor.R")
+  skip_if(
+    !dir.exists(testthat::test_path("..", "..", ".tmp", "lit")),
+    "source tree .tmp/lit not fetched in this checkout"
+  )
+  gens <- c(
+    "ijms2022.R", "jsbbs2018.R", "aml_idh_ddpcr.R", "kit_d816v_ddpcr.R",
+    "cpn_ddpcr_lob.R", "sanger_floor.R"
+  )
   repo <- testthat::test_path("..", "..")
   for (g in gens) {
     out <- suppressMessages(system2(
-      file.path(R.home("bin"), "Rscript"), c("--vanilla", file.path(repo, "data-raw", g)),
-      stdout = TRUE, stderr = TRUE))
+      file.path(R.home("bin"), "Rscript"),
+      c("--vanilla", file.path(repo, "data-raw", g)),
+      stdout = TRUE, stderr = TRUE
+    ))
     expect_null(attr(out, "status"), info = paste(g, paste(out, collapse = "\n")))
   }
 })

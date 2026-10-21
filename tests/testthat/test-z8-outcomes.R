@@ -16,8 +16,10 @@
 #  thing in each paper, so the definition travels with the count.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("Z8: every conversion row keeps its denominator and its failures", {
@@ -156,8 +158,10 @@ test_that("Z8 LAMP: AS-LAMP calls are counts against a sequencing truth set", {
 test_that("Z8 LAMP: discrimination is a time window with explicit censoring", {
   t <- ext("ace1r_aslamp2015_time_to_positive.csv")
   expect_gt(nrow(t), 0L)
-  expect_true(all(c("time_to_positive_min", "observation_window_min",
-                    "censoring") %in% names(t)))
+  expect_true(all(c(
+    "time_to_positive_min", "observation_window_min",
+    "censoring"
+  ) %in% names(t)))
   # the non-target allele is NOT called "negative": it is censored at the window
   cens <- t[!is.na(t$censoring) & nzchar(t$censoring), ]
   expect_gt(nrow(cens), 0L)

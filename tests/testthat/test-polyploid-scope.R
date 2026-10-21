@@ -1,5 +1,5 @@
 # =============================================================================
-#  tests/testthat/test-polyploid-scope.R
+#  test-polyploid-scope
 # =============================================================================
 #  Cross-source invariants for the polyploid breadth pass.  Each polyploid CSV
 #  speaks its own vocabulary; these tests are the only place the family is read
@@ -26,16 +26,22 @@ POLY_FILES <- c(
 )
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("polyploid scope: every source carries ploidy and homeolog_handled", {
   for (nm in names(POLY_FILES)) {
     d <- ext(POLY_FILES[[nm]])
-    expect_true(all(c("ploidy", "homeolog_handled", "outcome_definition",
-                      "evidence_tier", "source_file", "key") %in% names(d)),
-                label = nm)
+    expect_true(
+      all(c(
+        "ploidy", "homeolog_handled", "outcome_definition",
+        "evidence_tier", "source_file", "key"
+      ) %in% names(d)),
+      label = nm
+    )
     expect_true(all(d$ploidy %in% PLOIDY), label = nm)
     expect_true(all(d$homeolog_handled %in% HOMEOLOG), label = nm)
     expect_true(all(nzchar(d$outcome_definition)), label = nm)
@@ -77,8 +83,10 @@ test_that("polyploid scope: 'worked' means different things and is not pooled", 
   expect_equal(d$n_assays[[3L]], 81587)
   # no file carries a column named like a pooled cross-source rate
   for (nm in names(POLY_FILES)) {
-    expect_false(any(grepl("pooled|overall_rate|combined_rate",
-                           names(ext(POLY_FILES[[nm]])))), label = nm)
+    expect_false(any(grepl(
+      "pooled|overall_rate|combined_rate",
+      names(ext(POLY_FILES[[nm]]))
+    )), label = nm)
   }
 })
 

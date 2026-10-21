@@ -15,8 +15,10 @@
 #      unbounded. The tests below keep the two apart.
 
 ext_probe <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"), progress = FALSE)
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA"), progress = FALSE
+  )
 }
 
 test_that("probes/sars2022: the two forward primers differ only at the 3' base", {
@@ -50,8 +52,9 @@ test_that("probes/sars2022: a gap exists only in the four cross-reacting samples
   expect_equal(nrow(d) - nrow(with_gap), 38L)
   # the gap is exactly Ct(non-matching) - Ct(matching), never a model value
   expect_equal(with_gap$ct_gap,
-               as.numeric(with_gap$ct_nonmatching) - with_gap$ct_matching,
-               tolerance = 1e-9)
+    as.numeric(with_gap$ct_nonmatching) - with_gap$ct_matching,
+    tolerance = 1e-9
+  )
   # and no gap is invented for the other samples
   expect_true(all(is.na(d$ct_gap[!d$nonmatching_reaction_detected])))
 })

@@ -16,8 +16,10 @@
 ## --- shared readers ---------------------------------------------------------
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("scientific_sources: every row names a source and how far it was read", {
@@ -32,14 +34,24 @@ test_that("scientific_sources: every row names a source and how far it was read"
   # CLOSED: a probing batch of workers added 'open', 'subscription', 'blocked'
   # and five prose variants ('full text (Tables 4, 6, 7)'), which would have made
   # the column unfilterable. Detail belongs in `access_detail`, never here.
-  expect_true(all(s$access %in% c("fulltext", "abstract", "stub", "transcribed",
-                                  "supplement", "source", "closed access",
-                                  "not found")),
-              label = paste(setdiff(unique(s$access),
-                                    c("fulltext", "abstract", "stub", "transcribed",
-                                      "supplement", "source", "closed access",
-                                      "not found")),
-                            collapse = ", "))
+  expect_true(
+    all(s$access %in% c(
+      "fulltext", "abstract", "stub", "transcribed",
+      "supplement", "source", "closed access",
+      "not found"
+    )),
+    label = paste(
+      setdiff(
+        unique(s$access),
+        c(
+          "fulltext", "abstract", "stub", "transcribed",
+          "supplement", "source", "closed access",
+          "not found"
+        )
+      ),
+      collapse = ", "
+    )
+  )
   # a closed-access row may say nothing numeric
   closed <- s[s$access == "closed access", ]
   if (nrow(closed)) {
@@ -166,8 +178,10 @@ test_that("makhoul: the supplement fixture still reproduces the paper's totals",
   d <- ext("makhoul_design_strategies.csv")
   expect_equal(nrow(d), 15L)
   ok <- function(col) sum(d[[col]] == "Correct cluster", na.rm = TRUE)
-  expect_equal(c(ok("s1_flanks_only"), ok("s2_single_ref"), ok("s3_multi_sanger")),
-               c(3L, 8L, 11L))
+  expect_equal(
+    c(ok("s1_flanks_only"), ok("s2_single_ref"), ok("s3_multi_sanger")),
+    c(3L, 8L, 11L)
+  )
   # every row carries the definition of the outcome it records
   expect_true(all(!is.na(d$outcome_def) & nzchar(d$outcome_def)))
   expect_true(all(d$doi == "10.1007/s00122-020-03608-x"))
@@ -198,8 +212,10 @@ test_that("scientific_backlog: verified means an extract was written", {
   #   fulltext-read-no-assertion     -- read, deliberately no CSV (say why)
   #   not_extractable                -- read, no usable table
   #   fetched-not-extractable: <why> -- read, the row described another paper
-  allowed <- c("unfetched", "fetched", "extracted",
-               "fulltext-read-no-assertion", "not_extractable")
+  allowed <- c(
+    "unfetched", "fetched", "extracted",
+    "fulltext-read-no-assertion", "not_extractable"
+  )
   expect_true(all(b$status %in% allowed | grepl("^fetched-not-extractable: ", b$status)))
   # `verified` may only be TRUE on a row whose extract really exists, and every
   # such row says when

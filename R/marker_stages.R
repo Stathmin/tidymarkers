@@ -36,24 +36,40 @@
 #' @noRd
 marker_builtin_stages <- function() {
   stage <- function(label, gates, relax, tiers, level, scope, schemes) {
-    list(label = label, gates = gates, relax = relax, tiers = tiers,
-         level = level, scope = scope, schemes = schemes)
+    list(
+      label = label, gates = gates, relax = relax, tiers = tiers,
+      level = level, scope = scope, schemes = schemes
+    )
   }
   list(
-    as = stage("AS primer", "KASP_GATES_AS", "KASP_RELAX_AS", "KASP_TIERS_AS",
-               "feature", "kasp", c("kasp", "multiplex", "asq")),
-    pair = stage("AS x COM pair", "KASP_GATES_PAIR", "KASP_RELAX_PAIR",
-                 "KASP_TIERS_PAIR", "alignment", "kasp", c("kasp", "multiplex", "asq")),
-    duplex = stage("duplex compatibility", "KASP_GATES_DUPLEX", "KASP_RELAX_DUPLEX",
-                   "KASP_TIERS_DUPLEX", "alignment", "duplex", "multiplex"),
-    asq = stage("ASQ primer geometry", "KASP_GATES_ASQ", "KASP_RELAX_ASQ",
-                "KASP_TIERS_ASQ", "alignment", "asq", "asq"),
-    caps = stage("CAPS digest", "KASP_GATES_CAPS", "KASP_RELAX_CAPS",
-                 "KASP_TIERS_CAPS", "alignment", "caps", "caps"),
-    arms = stage("ARMS bands", "KASP_GATES_ARMS", "KASP_RELAX_ARMS",
-                 "KASP_TIERS_ARMS", "alignment", "arms", "arms"),
-    hrm = stage("HRM amplicon", "KASP_GATES_HRM", "KASP_RELAX_HRM",
-                "KASP_TIERS_HRM", "alignment", "hrm", "hrm")
+    as = stage(
+      "AS primer", "KASP_GATES_AS", "KASP_RELAX_AS", "KASP_TIERS_AS",
+      "feature", "kasp", c("kasp", "multiplex", "asq")
+    ),
+    pair = stage(
+      "AS x COM pair", "KASP_GATES_PAIR", "KASP_RELAX_PAIR",
+      "KASP_TIERS_PAIR", "alignment", "kasp", c("kasp", "multiplex", "asq")
+    ),
+    duplex = stage(
+      "duplex compatibility", "KASP_GATES_DUPLEX", "KASP_RELAX_DUPLEX",
+      "KASP_TIERS_DUPLEX", "alignment", "duplex", "multiplex"
+    ),
+    asq = stage(
+      "ASQ primer geometry", "KASP_GATES_ASQ", "KASP_RELAX_ASQ",
+      "KASP_TIERS_ASQ", "alignment", "asq", "asq"
+    ),
+    caps = stage(
+      "CAPS digest", "KASP_GATES_CAPS", "KASP_RELAX_CAPS",
+      "KASP_TIERS_CAPS", "alignment", "caps", "caps"
+    ),
+    arms = stage(
+      "ARMS bands", "KASP_GATES_ARMS", "KASP_RELAX_ARMS",
+      "KASP_TIERS_ARMS", "alignment", "arms", "arms"
+    ),
+    hrm = stage(
+      "HRM amplicon", "KASP_GATES_HRM", "KASP_RELAX_HRM",
+      "KASP_TIERS_HRM", "alignment", "hrm", "hrm"
+    )
   )
 }
 

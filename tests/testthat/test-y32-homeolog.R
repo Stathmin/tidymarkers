@@ -17,18 +17,24 @@
 #    3. they are independent columns of the artifact, never one "3' base" field.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("Y3.2: the rule source says the allele sits on the AS primer", {
   r <- ext("polymarker_design_rules.csv")
   expect_gt(nrow(r), 6L)
   # every rule names the file, the method and the line it was read from
-  expect_true(all(c("rule_id", "role", "scope", "source_file", "source_method",
-                    "quoted", "calibrated", "doi") %in% names(r)))
-  expect_true(all(r$source_file == "lib/bio/PolyploidTools/SNP.rb" |
-                    grepl("primer3.rb|PrimerRegion.rb", r$source_file)))
+  expect_true(all(c(
+    "rule_id", "role", "scope", "source_file", "source_method",
+    "quoted", "calibrated", "doi"
+  ) %in% names(r)))
+  expect_true(all(
+    r$source_file == "lib/bio/PolyploidTools/SNP.rb" |
+      grepl("primer3.rb|PrimerRegion.rb", r$source_file)
+  ))
   expect_true(all(r$source_method != "" & !is.na(r$source_method)))
   # the allele axis is a real category in the source, and so is the subgenome axis
   expect_true(any(r$role == "allele-primer"))
@@ -36,8 +42,10 @@ test_that("Y3.2: the rule source says the allele sits on the AS primer", {
   # the quoted line must be reproducible from the source again, so a rule cannot
   # drift into a paraphrase
   expect_true(all(nzchar(r$quoted)))
-  expect_true(all(grepl("SEQUENCE|right_pos|snp_pos|mask|almost|homoeologous|"
-                          , r$quoted)))
+  expect_true(all(grepl(
+    "SEQUENCE|right_pos|snp_pos|mask|almost|homoeologous|",
+    r$quoted
+  )))
 })
 
 test_that("Y3.2: WITHOUT a diagnostic common base, no subgenome is claimed", {
@@ -105,8 +113,10 @@ test_that("Y3.2: the two axes are separate columns, and both are documented", {
   expect_true(grepl("allele-specific primer", allele$carried_by))
   expect_true(grepl("common primer", genome$carried_by))
   # the genome axis quotes the published sentence, so it is not our paraphrase
-  expect_true(grepl("3.? end anchored to a base, which is unique to the target subgenome",
-                    genome$verbatim))
+  expect_true(grepl(
+    "3.? end anchored to a base, which is unique to the target subgenome",
+    genome$verbatim
+  ))
   # both rows point at sources
   expect_true(all(grepl("^10\\.", h$doi)))
 })
@@ -128,8 +138,10 @@ test_that("Y3.2: the allele axis is constrained by the SNP, the genome axis is n
   expect_true(all(distinct_as == 2L))
   # and the AS 3' bases are subsets of {allele_1, allele_2} (or their complements)
   rc1 <- function(x) chartr("ACGT", "TGCA", x)
-  ok <- (g$as_fam_3p %in% c(g$snp_allele_1, g$snp_allele_2, rc1(g$snp_allele_1),
-                            rc1(g$snp_allele_2)))
+  ok <- (g$as_fam_3p %in% c(
+    g$snp_allele_1, g$snp_allele_2, rc1(g$snp_allele_1),
+    rc1(g$snp_allele_2)
+  ))
   expect_true(all(ok))
 })
 

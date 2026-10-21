@@ -4,19 +4,23 @@
 
 tq_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("the TaqMan extracts all share the common schema", {
-  for (f in c("taqman_wheat2019_platform.csv", "taqman_wheat2019_composition.csv",
-              "taqman_wheat2019_anova.csv", "taqman_wheat2019_concordance.csv",
-              "taqman_citrus2020_calls.csv", "taqman_citrus2020_probes.csv",
-              "taqman_citrus2020_amplicons.csv", "taqman_znavsmgb2014_tm.csv",
-              "taqman_znavsmgb2014_rules.csv", "taqman_apol1_2019_failure.csv")) {
+  for (f in c(
+    "taqman_wheat2019_platform.csv", "taqman_wheat2019_composition.csv",
+    "taqman_wheat2019_anova.csv", "taqman_wheat2019_concordance.csv",
+    "taqman_citrus2020_calls.csv", "taqman_citrus2020_probes.csv",
+    "taqman_citrus2020_amplicons.csv", "taqman_znavsmgb2014_tm.csv",
+    "taqman_znavsmgb2014_rules.csv", "taqman_apol1_2019_failure.csv"
+  )) {
     d <- tq_read(f)
     expect_gt(nrow(d), 0L)
-    expect_true(all(c("outcome_definition", "evidence_tier", "source_file") %in%
-                      names(d)))
+    expect_true(all(
+      c("outcome_definition", "evidence_tier", "source_file") %in% names(d)
+    ))
     expect_true(all(nzchar(d$outcome_definition)))
     expect_true(all(d$evidence_tier %in% c("strong", "moderate", "weak")))
   }
@@ -52,8 +56,9 @@ test_that("wheat2019's ANOVA blocks close internally", {
   has <- !is.na(a$F_recomputed)
   expect_identical(sum(!has), 1L)
   expect_match(a$parameter[!has], "Call quality")
-  expect_true(all(abs(a$F_recomputed[has] - a$F_reported[has]) /
-                    a$F_reported[has] < 0.05))
+  expect_true(all(
+    abs(a$F_recomputed[has] - a$F_reported[has]) / a$F_reported[has] < 0.05
+  ))
   expect_true(all(a$df_resid > 2L))
   # the separation-angle block is the one with 59 df
   expect_identical(a$df_resid[grepl("Separation angle", a$parameter)], 59L)
@@ -80,15 +85,18 @@ test_that("wheat2019's concordance pairs are percentages and centred on TaqMan",
 test_that("the TaqMan extracts still match the fetched JATS when .tmp/lit is present", {
   root <- testthat::test_path("..", "..")
   lit <- file.path(root, ".tmp", "lit")
-  skip_if_not(dir.exists(file.path(lit, "citrus2020")),
-              "fetched literature cache is absent")
+  skip_if_not(
+    dir.exists(file.path(lit, "citrus2020")),
+    "fetched literature cache is absent"
+  )
   # re-run each generator in a child R process; they stop() on any
   # disagreement with the CSV they wrote
   for (g in c("wheat2019", "citrus2020", "znavsmgb2014", "apol1_2019")) {
     f <- file.path(root, "data-raw", paste0(g, ".R"))
     skip_if_not(file.exists(f), paste("missing generator", g))
     out <- suppressWarnings(system2("Rscript", c(shQuote(f)),
-                                    stdout = TRUE, stderr = TRUE))
+      stdout = TRUE, stderr = TRUE
+    ))
     expect_null(attr(out, "status"))
   }
 })

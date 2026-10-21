@@ -1,5 +1,5 @@
 # =============================================================================
-#  tests/testthat/test-polyploid-durum2019.R
+#  test-polyploid-durum2019
 # =============================================================================
 #  The tetraploid-vs-hexaploid comparison.  The tests pin the arithmetic the
 #  paper's footnote implies:
@@ -9,8 +9,10 @@
 #    * the D-genome contrast (AABBDD vs AABB panel origin) is labelled.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("polyploid/durum2019: sub-tables sum to the combined row", {
@@ -36,8 +38,13 @@ test_that("polyploid/durum2019: the two percentage conventions are separate", {
   gap <- abs(d$failed_pct_of_assays_printed - d$failed_pct_of_assays)
   expect_lt(max(gap), 0.06)
   # and they must NOT be interchangeable: the printed 32.3 is a non-failed rate
-  expect_gt(abs(d$polymorphic_pct_of_nonfailed[[3L]] -
-                  d$polymorphic_pct_of_assays[[3L]]), 1)
+  expect_gt(
+    abs(
+      d$polymorphic_pct_of_nonfailed[[3L]] -
+        d$polymorphic_pct_of_assays[[3L]]
+    ),
+    1
+  )
   expect_true(all(grepl("NON-FAILED", d$outcome_definition)))
   expect_true(all(grepl("not KASP", d$outcome_definition)))
 })
@@ -59,13 +66,15 @@ test_that("polyploid/durum2019: the CSV still matches Table 2 in the XML", {
   skip_if_not_installed("xml2")
   doc <- xml2::xml_ns_strip(xml2::read_xml(xml_path))
   tabs <- xml2::xml_find_all(doc, ".//table-wrap")
-  cap <- vapply(tabs, function(t) paste(xml2::xml_text(
-    xml2::xml_find_all(t, ".//caption")), collapse = " "), character(1))
+  cap <- vapply(tabs, function(t) {
+    paste(xml2::xml_text(xml2::xml_find_all(t, ".//caption")), collapse = " ")
+  }, character(1))
   hit <- grep("Number of failed, polymorphic and total SNPs", cap, fixed = TRUE)
   expect_length(hit, 1L)
   rows <- xml2::xml_find_all(tabs[[hit]], ".//tr")
-  cells <- lapply(rows, function(r) xml2::xml_text(
-    xml2::xml_find_all(r, ".//td")))
+  cells <- lapply(rows, function(r) {
+    xml2::xml_text(xml2::xml_find_all(r, ".//td"))
+  })
   total_row <- Filter(function(r) length(r) == 4L && r[[1L]] == "Total", cells)
   expect_length(total_row, 1L)
   expect_equal(gsub("[^0-9]", "", total_row[[1L]][[2L]]), "81587")

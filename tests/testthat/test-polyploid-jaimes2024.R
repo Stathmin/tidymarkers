@@ -1,5 +1,5 @@
 # =============================================================================
-#  tests/testthat/test-polyploid-jaimes2024.R
+#  test-polyploid-jaimes2024
 # =============================================================================
 #  The sugarcane row is the family's AUTOPOLYPLOID anchor: no subgenome exists,
 #  so the outcome axis is allele DOSAGE, not homoeolog specificity.  What these
@@ -11,14 +11,18 @@
 #      as "not landed" rather than quietly turning into a number.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("polyploid/jaimes2024: 42 of 76 with the denominator kept", {
   j <- ext("polyploid_jaimes2024_sugarcane_dosage.csv")
-  expect_true(all(c("ploidy", "homeolog_handled", "outcome_definition",
-                    "evidence_tier", "source_file") %in% names(j)))
+  expect_true(all(c(
+    "ploidy", "homeolog_handled", "outcome_definition",
+    "evidence_tier", "source_file"
+  ) %in% names(j)))
   conv <- j[j$key == "jaimes2024", ]
   expect_equal(sort(conv$n_tested), rep(76, nrow(conv)))
   expect_equal(sum(conv$n_worked[conv$metric == "dosage assigned (n)"]), 42L)
@@ -26,7 +30,8 @@ test_that("polyploid/jaimes2024: 42 of 76 with the denominator kept", {
   expect_true(all(conv$n_worked + conv$n_failed == conv$n_tested))
   # ... and the two rows that state the same 42 (fraction / count) agree
   expect_equal(unique(conv$n_worked[conv$metric %in% c(
-    "dosage assigned (fraction)", "dosage assigned (n)")]), 42)
+    "dosage assigned (fraction)", "dosage assigned (n)"
+  )]), 42)
   # ... and the fraction row is the same ratio
   fr <- conv$value[conv$metric == "dosage assigned (fraction)"]
   expect_length(fr, 1L)

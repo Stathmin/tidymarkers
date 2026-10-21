@@ -270,10 +270,12 @@ test_that("the measured oracle ranks with primer_tm() and is not silently shifte
   canon <- m[m$mismatch_class == "canonical", ]
   expect_equal(nrow(canon), 64L)
   pred <- primer_tm(canon$top_18,
-    conditions = reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0))
+    conditions = reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+  )
   expect_equal(cor(pred, canon$measured_tm_c), 0.958, tolerance = 0.01)
   expect_equal(cor(pred, canon$measured_tm_c, method = "spearman"), 0.941,
-               tolerance = 0.01)
+    tolerance = 0.01
+  )
   # the KNOWN bias: the salt term works, the residual is unexplained, and a
   # constant "correction" is exactly what this band forbids
   expect_equal(mean(pred - canon$measured_tm_c), -16.86, tolerance = 0.1)

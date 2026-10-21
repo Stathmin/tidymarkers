@@ -13,8 +13,10 @@
 #  mix primer non-discrimination, locus non-polymorphism and readout failure.
 
 ext_probe <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"), progress = FALSE)
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA"), progress = FALSE
+  )
 }
 
 test_that("probes/rice2018: Table S5 is 3 levels x 2 strata x 3 marker types", {
@@ -31,16 +33,20 @@ test_that("probes/rice2018: Table S5 is 3 levels x 2 strata x 3 marker types", {
 
 test_that("probes/rice2018: Total really is Existing + Novel in every stratum", {
   o <- ext_probe("rice2018_kasp_validation.csv")
-  for (lv in unique(o$level)) for (fc in unique(o$filter_criteria)) {
-    s <- o[o$level == lv & o$filter_criteria == fc, ]
-    stopifnot(nrow(s) == 3L)
-    tot <- s[s$marker_type == "Total", ]
-    ex <- s[s$marker_type == "Existing", ]
-    nov <- s[s$marker_type == "Novel", ]
-    expect_equal(tot$n_validated, ex$n_validated + nov$n_validated,
-                 info = paste(lv, fc))
-    expect_equal(tot$n_not_validated, ex$n_not_validated + nov$n_not_validated,
-                 info = paste(lv, fc))
+  for (lv in unique(o$level)) {
+    for (fc in unique(o$filter_criteria)) {
+      s <- o[o$level == lv & o$filter_criteria == fc, ]
+      stopifnot(nrow(s) == 3L)
+      tot <- s[s$marker_type == "Total", ]
+      ex <- s[s$marker_type == "Existing", ]
+      nov <- s[s$marker_type == "Novel", ]
+      expect_equal(tot$n_validated, ex$n_validated + nov$n_validated,
+        info = paste(lv, fc)
+      )
+      expect_equal(tot$n_not_validated, ex$n_not_validated + nov$n_not_validated,
+        info = paste(lv, fc)
+      )
+    }
   }
 })
 
@@ -93,14 +99,23 @@ test_that("probes/rice2018: the extract still matches the fetched supplement", {
   unlink(txt)
   # the six count rows are printed verbatim; a hand-edit of the CSV would break
   # at least one of them
-  printed <- c("48", "30", "5", "78", "335", "394", "18", "158", "201", "31",
-               "7124", "12637", "1610", "3465", "5177", "1036")
+  printed <- c(
+    "48", "30", "5", "78", "335", "394", "18", "158", "201", "31",
+    "7124", "12637", "1610", "3465", "5177", "1036"
+  )
   joined <- paste(lay, collapse = "\n")
   expect_true(all(vapply(printed, function(p) {
     grepl(paste0("criteria[[:space:]]+(?:[0-9.]+[[:space:]]+)*", p, "([[:space:]]|$)"),
-          joined, perl = TRUE)
+      joined,
+      perl = TRUE
+    )
   }, logical(1))))
   o <- ext_probe("rice2018_kasp_validation.csv")
-  expect_equal(o$n_validated[o$level == "CROSS--LEVEL" & o$filter_criteria == "met" &
-                               o$marker_type == "Total"], 394L)
+  expect_equal(
+    o$n_validated[
+      o$level == "CROSS--LEVEL" & o$filter_criteria == "met" &
+        o$marker_type == "Total"
+    ],
+    394L
+  )
 })

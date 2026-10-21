@@ -5,8 +5,10 @@
 #  per-sample table the paper cites is NOT in the supplement.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("SNaPshot vs Sanger: three genes, two populations each", {

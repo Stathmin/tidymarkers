@@ -19,15 +19,19 @@
 #  end, Lefever 2019 measures the optimum at the 4th.  All three stay.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("Z7: every prior row names its source, its evidence level and a prediction", {
   p <- ext("z7_priors.csv")
   expect_equal(nrow(p), 8L)
-  expect_true(all(c("prior_id", "source_key", "prediction", "testable_form",
-                    "position", "evidence", "calibrated", "doi") %in% names(p)))
+  expect_true(all(c(
+    "prior_id", "source_key", "prediction", "testable_form",
+    "position", "evidence", "calibrated", "doi"
+  ) %in% names(p)))
   expect_false(any(is.na(p$prediction) | !nzchar(p$prediction)))
   expect_true(all(grepl("^10\\.", p$doi)))
   ladder <- c("rule of thumb", "vendor guideline", "primary literature", "fitted here")
@@ -89,8 +93,10 @@ test_that("Z7: the single-mismatch dCq extract is the figure the prior cites", {
 test_that("Z7: Kwok's severity classes are the published ones, verbatim", {
   d <- ext("mismatch_discrimination.csv")
   k <- d[d$table == "kwok_3prime_severity", ]
-  expect_setequal(k$mismatch_class,
-                  c("severe", "moderate", "minimal", "context_dependent"))
+  expect_setequal(
+    k$mismatch_class,
+    c("severe", "moderate", "minimal", "context_dependent")
+  )
   mem <- function(cls) {
     trimws(strsplit(k$members[k$mismatch_class == cls], ",", fixed = TRUE)[[1L]])
   }

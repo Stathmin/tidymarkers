@@ -59,7 +59,12 @@ test_that("liew2004 bands are secondary_cited, never measured", {
   v <- stats::setNames(l$value, l$quantity)
   expect_lt(v[["dtm_at_to_gc_lower_c"]], v[["dtm_at_to_gc_upper_c"]])
   expect_lt(v[["dtm_other_substitutions_upper_c"]], v[["dtm_at_to_gc_lower_c"]])
-  expect_equal(unname(v[["homozygote_resolved_pct_gundry"]] +
-                      v[["nn_symmetric_bp_neutral_pct_gundry"]]), 100)
+  expect_equal(
+    unname(
+      v[["homozygote_resolved_pct_gundry"]] +
+        v[["nn_symmetric_bp_neutral_pct_gundry"]]
+    ),
+    100
+  )
   expect_true(all(grepl("NOT MEASURED HERE", l$outcome_definition, fixed = TRUE)))
 })

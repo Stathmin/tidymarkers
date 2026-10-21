@@ -1,5 +1,5 @@
 # =============================================================================
-#  tests/testthat/test-polyploid-gao2022.R
+#  test-polyploid-gao2022
 # =============================================================================
 #  A nested outcome chain carried as three rows, so that a later reader cannot
 #  collapse it into one rate.  The tests pin:
@@ -9,19 +9,25 @@
 #    * the workbook's allele-prime end is recorded, not assumed.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("polyploid/gao2022: 77 -> 49 -> 24 is strict and in order", {
   g <- ext("polyploid_gao2022_sugarcane_chain.csv")
   expect_equal(nrow(g), 3L)
-  expect_equal(g$tier, c("selected", "genotyped in both parents",
-                         "in line with the map"))
+  expect_equal(g$tier, c(
+    "selected", "genotyped in both parents",
+    "in line with the map"
+  ))
   expect_equal(g$n, c(77, 49, 24))
   expect_true(all(diff(g$n) < 0))
-  expect_true(all(c("ploidy", "homeolog_handled", "outcome_definition",
-                    "evidence_tier", "source_file") %in% names(g)))
+  expect_true(all(c(
+    "ploidy", "homeolog_handled", "outcome_definition",
+    "evidence_tier", "source_file"
+  ) %in% names(g)))
   expect_true(all(g$ploidy == "auto-polyploid"))
   expect_true(all(g$homeolog_handled %in% c("not stated", "not applicable", "no")))
 })

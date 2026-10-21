@@ -4,12 +4,15 @@
 
 lfd_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
-lfd_files <- c("lamp_snp_lamp_lfd2025_primers.csv",
-               "lamp_snp_lamp_lfd2025_detection.csv",
-               "lamp_snp_lamp_lfd2025_conditions.csv",
-               "lamp_snp_lamp_lfd2025_contradictions.csv")
+lfd_files <- c(
+  "lamp_snp_lamp_lfd2025_primers.csv",
+  "lamp_snp_lamp_lfd2025_detection.csv",
+  "lamp_snp_lamp_lfd2025_conditions.csv",
+  "lamp_snp_lamp_lfd2025_contradictions.csv"
+)
 
 test_that("the LFD extract files exist and carry the required columns", {
   for (f in lfd_files) {

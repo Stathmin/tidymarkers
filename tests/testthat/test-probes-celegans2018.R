@@ -14,15 +14,19 @@
 #  as a measured rate.
 
 ext_probe <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"), progress = FALSE)
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA"), progress = FALSE
+  )
 }
 
 test_that("probes/celegans2018: four primers, and the mismatch is at -2", {
   p <- ext_probe("celegans2018_arms_primers.csv")
   expect_equal(nrow(p), 4L)
-  expect_setequal(p$primer, c("flanking_forward", "flanking_reverse",
-                              "wt_reverse", "n3441_forward"))
+  expect_setequal(p$primer, c(
+    "flanking_forward", "flanking_reverse",
+    "wt_reverse", "n3441_forward"
+  ))
   as <- p[!is.na(p$mismatch_added), ]
   expect_equal(nrow(as), 2L)
   expect_setequal(as$mismatch_added, c("GC", "TG"))
@@ -32,8 +36,10 @@ test_that("probes/celegans2018: four primers, and the mismatch is at -2", {
   # is written template-first, so the n3441 primer's "TG" is read as "GT" on
   # the primer strand.
   primer_pair <- tolower(c(GC = "gc", TG = "gt"))[as$mismatch_added]
-  expect_equal(substr(as$sequence, nchar(as$sequence) - 2L, nchar(as$sequence) - 1L),
-               unname(primer_pair))
+  expect_equal(
+    substr(as$sequence, nchar(as$sequence) - 2L, nchar(as$sequence) - 1L),
+    unname(primer_pair)
+  )
 })
 
 test_that("probes/celegans2018: each allele-specific primer carries its allele", {
