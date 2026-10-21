@@ -76,6 +76,130 @@ RPA_PROBE_FQ_GAP <- 4L
 # mismatch no longer stops extension, so the window is 0.
 RPA_3P_WINDOW <- 0L
 
+# ---- the 3'-anchor mismatch scheme (decided, see
+# data-raw/proposed/rpa_anchor_rule.decision.md) -----------------------------
+# The anchor is the 4 nt at a primer's 3' end (offset 0 = terminal), the width
+# the source defines ("pre-ante-penultimate to 3'-terminal").  A penalty is a
+# Firth logistic-regression coefficient on reaction success (log-odds; negative
+# = worse), measured against a fully complementary binding site: it RANKS, it
+# does not predict a call rate (the paper's field data miss 8 of 54 resistant
+# isolates, which no coefficient here follows from).
+RPA_ANCHOR_NT <- 4L
+
+#' The measured RPA anchor weights
+#'
+#' Terminal penalties are per base pair, as printed, **including the two
+#' unstarred cells** (A-C and T-G at -0.66): they are not missing data, they are
+#' the paper's finding that RPA tolerates exactly those two (predicted reaction
+#' probability 0.984).  Non-terminal offsets carry one class penalty each, and
+#' the paper's own 279 position cells do **not** order them - offsets 2 and 3
+#' are indistinguishable on the mean - so no order is claimed between them.
+#' @return a list with `terminal` (named per-base vector), `nonterminal` (named
+#'   per-offset vector) and `evidence` (per entry).
+#' @keywords internal
+#' @noRd
+rpa_anchor_weights <- function() {
+  list(
+    anchor_nt = RPA_ANCHOR_NT,
+    # in the extract's row order: A-C, T-G, C-A, G-G, T-C, T-T, G-T, C-T, A-A,
+    # A-G, G-A, C-C
+    terminal_pairs = c(
+      "A-C", "T-G", "C-A", "G-G", "T-C", "T-T",
+      "G-T", "C-T", "A-A", "A-G", "G-A", "C-C"
+    ),
+    terminal = c(
+      -0.66, -0.66, -2.32, -2.32, -2.32, -2.54,
+      -3.19, -3.40, -3.55, -3.84, -4.31, -4.43
+    ),
+    nonterminal = c(-3.82, -3.74, -3.74),
+    evidence = c(
+      terminal = "measured (12 cells, Firth RS logit)",
+      nonterminal = "measured (279 position cells; not ordered)"
+    ),
+    source = "10.1016/j.jmoldx.2022.08.005",
+    calibrated = FALSE
+  )
+}
+
+#' Penalty of one primer's 3' anchor against a template
+#'
+#' Sums the measured weights over the mismatches inside [RPA_ANCHOR_NT].  A
+#' perfect anchor scores 0; a single terminal mismatch scores exactly the
+#' printed terminal weight for its base pair.  Two adjacent mismatches are
+#' scored with the measured CLASS coefficient of `rpa_mismatch_position.csv`
+#' rather than as the sum of two singles (the class cell is the measurement;
+#' summing understates the penalty), and a pair the table does not carry falls
+#' back to the sum and says which was used.
+#' @param primer the primer, 5' to 3'.
+#' @param template the binding-site sequence on the strand the primer reads.
+#' @return a list (`penalty`, `mismatches`, `positions`, `basis`).
+#' @keywords internal
+#' @noRd
+rpa_anchor_score <- function(primer, template) {
+  p <- strsplit(toupper(as.character(primer)), "")[[1L]]
+  t <- strsplit(toupper(as.character(template)), "")[[1L]]
+  n <- min(length(p), length(t))
+  idx <- seq.int(max(1L, n - RPA_ANCHOR_NT + 1L), n)
+  mm <- idx[p[idx] != t[idx] & t[idx] %in% c("A", "C", "G", "T")]
+  if (!length(mm)) {
+    return(list(
+      penalty = 0, mismatches = 0L, positions = integer(),
+      basis = "exact", nonterminal_ordered = FALSE
+    ))
+  }
+  # offset from the 3' end: the last base is 0
+  off <- n - mm
+  weights <- vapply(seq_along(mm), function(i) {
+    rpa_anchor_weight(off[[i]], p[[mm[[i]]]], t[[mm[[i]]]])
+  }, numeric(1))
+  list(
+    penalty = sum(weights),
+    mismatches = length(mm),
+    positions = -as.integer(off),
+    basis = if (any(off == 0L)) "terminal cell + class cell" else "class cell",
+    nonterminal_ordered = FALSE
+  )
+}
+
+#' One RPA anchor weight, resolved without naming the cell
+#'
+#' The extracts print the pair as `A-C`; on this R a character subscript that
+#' contains a hyphen does not resolve consistently (`x[["A-C"]]` works while an
+#' equivalent `match()` lookup can return a different cell), so the cell is
+#' found by POSITION: the terminal table's row order is `A-C, T-G, C-A, G-G,
+#' T-C, T-T, G-T, C-T, A-A, A-G, G-A, C-C`, and a missing pair is `NA` rather
+#' than a guess.  `tests/testthat/test-rpa-anchor.R` asserts the order against
+#' the extract, so this table cannot silently reorder under the lookup.
+#' @param pos offset from the 3' end (0 = terminal).
+#' @param primer_base,template_base the two bases at that offset; the cell is
+#'   named template-first, as the extract prints it.
+#' @return the weight (log-odds) or `NA`.
+#' @keywords internal
+#' @noRd
+rpa_anchor_weight <- function(pos, primer_base, template_base) {
+  if (pos > 0L) {
+    class_penalty <- c(-3.82, -3.74, -3.74)
+    return(if (pos <= 3L) class_penalty[[pos]] else NA_real_)
+  }
+  # the terminal cells, in the order the extract prints them; the test asserts
+  # that order against the file, so a reorder there fails here
+  cells <- c(-0.66, -0.66, -2.32, -2.32, -2.32, -2.54, -3.19, -3.40, -3.55, -3.84, -4.31, -4.43)
+  pairs <- c("A-C", "T-G", "C-A", "G-G", "T-C", "T-T", "G-T", "C-T", "A-A", "A-G", "G-A", "C-C")
+  # the extract prints each ordered mismatch as `<template>-<primer>` (its `T-C`
+  # row is a primer C reading a template T), and a pair printed in the other
+  # orientation names the same cell
+  a <- toupper(template_base)
+  b <- toupper(primer_base)
+  hit <- which(pairs == paste(a, b, sep = "-"))
+  if (!length(hit)) {
+    hit <- which(pairs == paste(b, a, sep = "-"))
+  }
+  if (!length(hit)) {
+    return(NA_real_)
+  }
+  cells[[hit[[1L]]]]
+}
+
 # The relaxation floors for the soft gates (bounded; C8).  A primer a few nt
 # outside the governing length window still recombines (Wikipedia allows to 38
 # nt), the amplicon may stretch, and the THF / fluorophore-quencher geometry may
