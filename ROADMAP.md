@@ -513,29 +513,26 @@ Worktrees `../tidymarkers-agent-{z2-criterion,z3-conditions,z5-specificity,z9-sa
 слиты; удалять только после `git worktree list`. `.tools` в worktree — симлинк,
 не коммитить.
 
-**Wave 2 — следующие worktree. Пути строго непересекающиеся:**
+**Wave 2a — сделано и слито (`87433a8`, `0368d3b`).**
 
-| Agent | Branch | Owns | Not |
-|---|---|---|---|
-| z3-callsites | `feat/z3-callsites` | `R/marker_rpa.R`, `R/marker_assemble.R`, `R/marker_pool.R`, `R/marker_design.R`, `R/marker_primer_pairs.R`, `R/marker_castpcr.R`, `R/marker_duplex.R` + их тесты | `R/marker_plot_methods.R` (у plots-style) |
-| gates-general | `feat/gates-general` | `R/marker_checks.R`, `R/marker_decision.R`, `R/marker_schemes.R`, `test-decision.R`, `test-technology.R` | `R/marker_criteria.R` |
-| degenerate-pcr | `feat/degenerate-pcr` | `R/marker_specificity.R`, `test-insilico-pcr.R`, `test-specificity.R` | `R/marker_scan.R` |
+| Agent | Branch | Landed |
+|---|---|---|
+| z3-callsites | `feat/z3-callsites` | каждый thermo call site получает `scheme_conditions()`; LAMP 65 °C, RPA 42 °C; подписи гейтов больше не обещают dG37 |
+| gates-general | `feat/gates-general` | `MARKER_FAMILY_CHECKS` — id критериев; population/haplotype fail → вердикт; `NA`-частота = `unknown` |
+| degenerate-pcr | `feat/degenerate-pcr` | позиции мисматчей в собственной 5′→3′ ориентации праймера, терминальный мисматч доминирует, лестница весов из `specificity_policy()` |
 
-`feat/checks-rename` **слит с `gates-general`**: перевод `MARKER_FAMILY_CHECKS`
-label → `id` — это тот же файл, и два владельца гарантированно конфликтуют.
-`haplotype-track` в эту волну не идёт: его проводка трогает
-`R/marker_rpa.R`/`marker_caps.R`/`marker_crispr.R`, то есть файлы
-`z3-callsites`, — иначе два агента правят один файл.
+Проверено на integration-ветке: lean **1676 pass**, затронутые схемы **2267 pass**,
+0 fail, 0 warn; styler/lintr/roxygen чисто; фигуры решений перерисованы и
+манифест обновлён.
 
-**Wave 2b — после merge 2a (один владелец файла):**
+**Wave 2b — следующие worktree (один владелец файла):**
 - `haplotype-track` (`feat/haplotype-track`): частота/гаплотип — во все схемы
   (CAPS site, CRISPR guide/PAM, LAMP/RPA primer sites, SSR null alleles);
-  отсутствие частоты = `NA`, не вес 1. После `z3-callsites`, т.к. нужен
-  `marker_rpa.R`.
+  отсутствие частоты = `NA`, не вес 1. Файлы `marker_rpa.R`/`marker_caps.R`/
+  `marker_crispr.R` освободились после 2a.
 - `plots-style` (`feat/plots-style`): `R/marker_plot_methods.R`, `R/marker_plots.R`,
-  SVG-рендер, `test-plot-methods.R`; заодно закрывает call sites
-  `dimer_thermo()`/`primer_tm()` в этом файле (`:155`, `:350`, `:757`) и рисует
-  haplotype-track через seam из `marker_haplotypes.R`.
+  SVG-рендер, `test-plot-methods.R`; заодно закрывает оставшиеся call sites
+  `dimer_thermo()`/`primer_tm()` в этом файле (`:155`, `:350`, `:757`).
 - Vignette-ветки — последними, по одной на файл.
 
 ### ZP2. Merge order
