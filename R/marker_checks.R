@@ -89,6 +89,96 @@ marker_evaluation_table <- function(stage, criterion, observed, limit, pass,
   )
 }
 
+#' The ALT alleles of a marker's population
+#'
+#' One entry per distinct ALT *allele*: two haplotypes carrying the same ALT base
+#' are the same allele, so requiring both to carry a frequency would call a
+#' perfectly measured biallelic site unknown.
+#' @param marker a marker with `$haplotypes` and `$snp`.
+#' @return a tibble with `alt` (the allele) and `freq` (its frequency, `NA` when
+#'   none of its haplotypes carries one); empty when the target or its ALT allele
+#'   is not known.
+#' @keywords internal
+#' @noRd
+marker_alt_alleles <- function(marker, pos = marker$snp$pos[1L], ref = marker$snp$ref[1L]) {
+  h <- marker$haplotypes
+  empty <- tibble::tibble(alt = character(), freq = numeric())
+  has_cols <- all(c("pos", "alt", "freq") %in% names(h))
+  if (is.null(h) || !nrow(h) || anyNA(c(pos, ref)) || !has_cols) {
+    return(empty)
+  }
+  h <- h[h$pos == pos, , drop = FALSE]
+  h$alt <- as.character(h$alt)
+  h <- h[h$alt != as.character(ref), , drop = FALSE]
+  if (!nrow(h)) {
+    return(empty)
+  }
+  alt <- unique(h$alt)
+  tibble::tibble(
+    alt = alt,
+    freq = vapply(alt, function(b) {
+      f <- h$freq[h$alt == b]
+      if (!length(f) || all(is.na(f))) NA_real_ else sum(f, na.rm = TRUE)
+    }, numeric(1))
+  )
+}
+
+#' Population and haplotype checks as acceptance rows
+#'
+#' [marker_population_checks()] reports the population facts as display rows
+#' (`ok` / `broken`, a formatted `value`).  The verdict needs the same facts in
+#' the check vocabulary, so each row becomes a `pass` / `fail` / `unknown`: a
+#' `broken` row is a `fail` (a monomorphic site, a primer sitting on a variant, a
+#' haplotype the primer cannot bind), and a row whose value could not be computed
+#' is `unknown` - never a pass.
+#'
+#' A missing ALT frequency is the one fact the display rows cannot express:
+#' `marker_attach_haplotypes()` sums the per-haplotype frequencies with
+#' `na.rm = TRUE`, so a frequency that is not known arrives as `0` and reads as a
+#' monomorphic site.  Those display rows are therefore not trusted for the
+#' frequency: `pass` is `NA` unless every ALT haplotype carries a real frequency,
+#' so an absent frequency is `unknown` rather than a fail.
+#' @param marker a marker with `$population` (see `marker_attach_haplotypes()`).
+#' @return a tibble with `name`, `observed`, `pass`, `value`; empty when the
+#'   marker carries no population.
+#' @keywords internal
+#' @noRd
+marker_population_gate <- function(marker) {
+  rows <- marker_population_checks(marker)
+  if (is.null(rows) || !nrow(rows)) {
+    return(tibble::tibble(
+      name = character(), observed = numeric(), pass = logical(), value = character()
+    ))
+  }
+  observed <- ifelse(rows$status == "ok", 1, 0)
+  pass <- rows$status == "ok"
+  # a fact whose value could not be computed is unknown, not a failure
+  unknown <- rows$value %in% c("-", "") | is.na(rows$value)
+  pass[unknown] <- NA
+  observed[unknown] <- NA_real_
+  # ALT frequency: `marker_attach_haplotypes()` sums the per-haplotype
+  # frequencies with `na.rm = TRUE`, so a frequency nobody supplied arrives as
+  # `0` and reads as a monomorphic site.  The target position decides:
+  #   * no ALT allele at the target  -> the site really is monomorphic  -> fail
+  #   * ALT allele(s), none weighted -> the frequency is not known       -> unknown
+  #   * ALT allele(s) weighted       -> the display row already graded it
+  i <- match("ALT freq", rows$name)
+  if (!is.na(i)) {
+    alt <- marker_alt_alleles(marker)
+    if (!nrow(alt)) {
+      pass[i] <- FALSE
+      observed[i] <- 0
+    } else if (anyNA(alt$freq)) {
+      pass[i] <- NA
+      observed[i] <- NA_real_
+    }
+  }
+  tibble::tibble(
+    name = rows$name, observed = observed, pass = pass,
+    value = as.character(rows$value)
+  )
+}
+
 #' Check an assembled assay against the KASP acceptance criteria
 #'
 #' Turns the prose design manual into a tidy pass/fail table so "good" and
@@ -112,6 +202,13 @@ marker_evaluation_table <- function(stage, criterion, observed, limit, pass,
 #' selection applied*, not the ideal: the gate is soft precisely because the method
 #' tolerates the deviation, so "relaxed" must not also read as "failed" (C5).  Its
 #' `limit` then carries the relaxed bar and a `(relaxed)` marker.
+#'
+#' The population layer is part of the verdict, not a warning beside it (Z6): when
+#' the assay carries `$population`, the rows of [marker_population_checks()] are
+#' appended as checks, so a CAPS site that is not polymorphic, a CRISPR guide or
+#' PAM that is not conserved, or a primer sitting on a variant is a `fail`, and an
+#' ALT frequency that is not known is `unknown` - never a pass.  The warnings are
+#' unchanged; the status is additive.
 #'
 #' @param assay result of [assemble_kasp_assay()].
 #' @param limits list of thresholds; defaults to `KASP_LIMITS`.
@@ -142,7 +239,10 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   # amplicon/primer/structure/specificity evaluator.  The KASP path below reads
   # the richer assay object only when that object is present.
   if (!inherits(assay, "marker_assay") && grepl("^marker_", class(assay)[1L])) {
-    return(marker_generic_checks(assay, scheme, limits = limits))
+    # the generic evaluator is display-agnostic, so the population layer is
+    # appended here, where every chemistry's table passes through (Z6)
+    out <- marker_generic_checks(assay, scheme, limits = limits)
+    return(marker_with_population_checks(out, assay))
   }
   crit <- marker_criteria(limits, scheme = scheme)
   crit <- crit[crit$role == "check", ]
@@ -341,8 +441,8 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   # checks that belong to another marker class do not apply here rather than
   # being silently unknown.
   native <- identical(class(assay)[1L], paste0("marker_", scheme))
-  fam_labs <- MARKER_FAMILY_CHECKS[[marker_scheme(scheme)$family]] %||% character(0)
-  marker_evaluation_table(
+  fam_labs <- marker_family_check_labels(marker_scheme(scheme)$family)
+  out <- marker_evaluation_table(
     stage = crit$stage,
     criterion = crit$label,
     observed = observed,
@@ -355,6 +455,39 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     # the absence of a number, not the absence of data
     textual = "target site class"
   )
+  marker_with_population_checks(out, assay)
+}
+
+#' Append the population / haplotype checks to a design-check table
+#'
+#' The population rows are chemistry-independent, so any marker carrying
+#' `$population` gets them; a marker without one is returned unchanged.  The row
+#' name is the criterion: `ALT freq` (the target is polymorphic in the supplied
+#' population), `haplotypes` / `ALT haplotypes` (the population has both), and
+#' `hap covered` (the designed primers bind the haplotypes they must).  Their
+#' level is the target site, and no limit is published for them.
+#'
+#' The `detail` column already holds the site class for the one textual check, so
+#' the rows are appended rather than rebuilt.
+#' @param out a checks tibble (see `marker_evaluation_table()`).
+#' @param marker the marker or assay the table was built from.
+#' @return `out`, with the population rows appended when the marker has any.
+#' @keywords internal
+#' @noRd
+marker_with_population_checks <- function(out, marker) {
+  pop <- marker_population_gate(marker)
+  if (!nrow(pop)) {
+    return(out)
+  }
+  extra <- marker_evaluation_table(
+    stage = rep("assay", nrow(pop)),
+    criterion = pop$name,
+    observed = pop$observed,
+    limit = rep(NA_character_, nrow(pop)),
+    pass = pop$pass,
+    level = rep("site", nrow(pop))
+  )
+  dplyr::bind_rows(out, extra)
 }
 
 #' Is an evaluation usable?
@@ -364,6 +497,13 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
 #' is `"doomed"`; an `unknown` row keeps the verdict `"unknown"` instead of
 #' silently passing.  `not_applicable` rows are ignored - a check that does not
 #' apply can neither certify nor doom a marker.
+#'
+#' A marker's *population* layer is part of this verdict (Z6).  When `x` is a
+#' marker or assay carrying `$population`, its haplotype facts are folded in from
+#' [marker_population_checks()] even if `$evaluation` was stored before those rows
+#' existed: a site that is not polymorphic in the supplied population, or a primer
+#' that cannot bind the haplotypes it must, dooms the marker, and a frequency that
+#' is not known makes the verdict `"unknown"` rather than `"usable"`.
 #'
 #' @param x a checks tibble (see [marker_design_checks()]), or a marker/assay
 #'   whose `$evaluation` is read, falling back to [marker_design_checks()].
@@ -383,6 +523,11 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
   if (is.null(ev) || !nrow(ev)) {
     return("unknown")
   }
+  # a stored `$evaluation` predates the population rows: fold them in read-only,
+  # so the verdict cannot certify a marker the population data contradicts
+  if (!is.data.frame(x)) {
+    ev <- marker_with_population_checks(ev, x)
+  }
   status <- if ("status" %in% names(ev)) {
     as.character(marker_check_status(ev$status))
   } else if ("pass" %in% names(ev)) {
@@ -400,4 +545,47 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
     return("unknown")
   }
   "usable"
+}
+
+#' The weakest evidence rung behind an evaluation's passing checks
+#'
+#' A verdict says a design cleared a set of bars; it says nothing about where
+#' those bars came from.  This returns the **weakest** rung among the checks that
+#' actually `pass` (the minimum of the ordered `evidence` ladder, see
+#' [criterion_evidence()]), ignoring `fail`, `unknown` and `not_applicable` rows -
+#' a check that did not pass cannot vouch for anything.  `NA` when nothing passes
+#' (or when the checks carry no rung).
+#'
+#' The rule this exists to state: a `"usable"` verdict whose evidence is
+#' `"rule_of_thumb"` certifies THAT THE DESIGN PASSED THIS PACKAGE'S HEURISTICS,
+#' not that the threshold is validated.  It is deliberately not a fifth verdict
+#' string.
+#' @param x a checks tibble (see [marker_design_checks()]) or a marker/assay
+#'   whose `$evaluation` is read, exactly as for [evaluation_verdict()].
+#' @param criteria the criterion registry the rungs are read from (see
+#'   `criterion_spec()`).
+#' @return a single evidence rung (an ordered factor level, as character) or
+#'   `NA_character_`.
+#' @keywords internal
+#' @noRd
+evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS)) {
+  ev <- if (is.data.frame(x)) x else x$evaluation
+  if (is.null(ev) || !nrow(ev)) {
+    return(NA_character_)
+  }
+  status <- if ("status" %in% names(ev)) {
+    as.character(marker_check_status(ev$status))
+  } else if ("pass" %in% names(ev)) {
+    ifelse(is.na(ev$pass), "unknown", ifelse(ev$pass, "pass", "fail"))
+  } else {
+    rep("unknown", nrow(ev))
+  }
+  passed <- ev$criterion[status == "pass"]
+  # a check's rung is its criterion's; a row the registry does not know has none
+  rung <- criteria$evidence[match(passed, criteria$id)]
+  rung <- rung[!is.na(rung)]
+  if (!length(rung)) {
+    return(NA_character_)
+  }
+  as.character(min(rung))
 }

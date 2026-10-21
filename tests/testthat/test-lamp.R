@@ -34,6 +34,39 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   expect_output(print.marker_lamp(m), "FIP:")
 })
 
+test_that("LAMP cross-dimer dG is evaluated at the LAMP temperature, not 37 C (Z3)", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  m <- design_lamp_marker(f$genome, f$snp, flank = 150L)
+  lamp <- scheme_conditions("lamp")
+  set <- unlist(m$primers)
+  # the reported joint screen is the scheme-temperature evaluation
+  expect_equal(m$compatibility$dg, primer_set_compatibility(set, conditions = lamp)$dg)
+  # pair for pair, the same value dimer_thermo() returns at 65 C
+  dg <- dimer_thermo(set, conditions = lamp)
+  expect_equal(
+    m$compatibility$dg,
+    purrr::map2_dbl(m$compatibility$a, m$compatibility$b, function(x, y) {
+      dg$dg[(dg$a == x & dg$b == y) | (dg$a == y & dg$b == x)][[1L]]
+    })
+  )
+  cold <- primer_set_compatibility(set)
+  # 65 C is the top of the LAMP window: every duplex is weaker than at 37 C, so
+  # the screen is not failing a set on a 37 C-only number
+  expect_true(all(m$compatibility$dg > cold$dg))
+  # ... and the verdict is a base-pair-run screen: it does not read `conditions`,
+  # so it (and so the ladder rung and the returned set) cannot move.  Compare
+  # against the rung the set was accepted at: its `slack` widens the run rules
+  # only, never the temperature.
+  slack <- if ("gate_lamp_cross_dimer" %in% m$relaxed) LAMP_DIMER_SLACK else 0L
+  expect_equal(m$compatibility$pass, lamp_pool_compatibility(m$primers, slack, conditions = NULL)$pass)
+  # the helper's default is the LAMP scheme, and the ladder's slack only widens
+  # the run rules (never the temperature)
+  expect_equal(lamp_pool_compatibility(m$primers)$dg, m$compatibility$dg)
+  relaxed <- lamp_pool_compatibility(m$primers, slack = 3L)
+  expect_equal(relaxed$dg, m$compatibility$dg)
+})
+
 test_that("lamp_geometry accepts a well-formed inner-primer pair", {
   # plus-strand template coordinates for the fixture design: F2 ends at the
   # variant (300), B1/B2 sit downstream, and both 3' termini are G/C clamps.

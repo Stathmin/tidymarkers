@@ -16,7 +16,8 @@ design_as_primers_indel(
   ions = PCR_EFF$ions,
   gc_range = NULL,
   tm_range = NULL,
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  conditions = NULL
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ design_as_primers_indel(
 dropped \strong{before} the DECIPHER calls.  \code{NULL} keeps every candidate.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend for the batched DECIPHER calls.}
+
+\item{conditions}{reaction conditions for \code{\link[=primer_tm]{primer_tm()}} (\code{NULL} = the
+historical 50 mM Na / 37 C buffer).  Only the buffer fields of \code{conditions}
+enter the nearest-neighbour Tm.}
 }
 \value{
 tidy tibble of candidates: \code{allele} (\code{ref}/\code{alt}), \code{strand},

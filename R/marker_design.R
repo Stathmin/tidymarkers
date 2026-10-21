@@ -28,6 +28,9 @@
 #' @param min_gc,max_gc GC bounds.
 #' @param tm_range accepted Tm window (C).
 #' @param n number of candidates to return.
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
+#'   enter the nearest-neighbour Tm, so no scheme changes a number today.
 #' @return a tibble of candidates (`com`, `len`, `gap`, `start`, `end`, `com_gc`,
 #'   `com_tm`, `run`, `ssr`, `rank`).
 #' @examples
@@ -39,7 +42,7 @@
 design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
                                   gaps = 18:80, target_tm = COM_TM_TARGET,
                                   min_gc = 0.40, max_gc = 0.60,
-                                  tm_range = c(57, 64), n = 5L) {
+                                  tm_range = c(57, 64), n = 5L, conditions = NULL) {
   wlen <- length(window)
   plus <- identical(strand, "+")
   grid <- tidyr::crossing(L = lengths, gap = gaps)
@@ -71,7 +74,7 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
   cand <- cand |>
     dplyr::mutate(
       com_gc = gc_frac(.data$com),
-      com_tm = primer_tm(.data$com),
+      com_tm = primer_tm(.data$com, conditions = conditions),
       run = has_run(.data$com),
       ssr = has_repeat(.data$com)
     ) |>
@@ -199,6 +202,9 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param temp,P,ions as in [pcr_efficiency()].
 #' @param BPPARAM optional `BiocParallel` backend; the batched DECIPHER call and
 #'   the 3'-stability map are run across cores (`NULL` = serial).
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
+#'   enter the nearest-neighbour Tm.
 #' @return a tibble, one row per primer configuration, with `strand`,
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
 #'   `ref_on`/`ref_off`/`alt_on`/`alt_off`, `discrimination`, `tm`, `gc`,
@@ -208,7 +214,8 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = KASP_AS_LENGTHS, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
-                              linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
+                              linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL,
+                              conditions = NULL) {
   ref_len <- nchar(ref)
   alts <- unique(as.character(alt))
   alts <- alts[!is.na(alts) & nzchar(alts)]
@@ -272,7 +279,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
           )
         }
       ),
-      tm = primer_tm(.data$ref_primer),
+      tm = primer_tm(.data$ref_primer, conditions = conditions),
       gc = gc_frac(.data$ref_primer)
     )
   if (!is.null(gc_range)) {
@@ -455,6 +462,9 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #' @param gc_range,tm_range optional accepted windows; candidates outside them are
 #'   dropped **before** the DECIPHER calls.  `NULL` keeps every candidate.
 #' @param BPPARAM optional `BiocParallel` backend for the batched DECIPHER calls.
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
+#'   enter the nearest-neighbour Tm.
 #' @examples
 #' \dontrun{
 #' tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
@@ -465,7 +475,8 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     strands = c("+", "-"), lengths = 18:32,
                                     temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
-                                    gc_range = NULL, tm_range = NULL, BPPARAM = NULL) {
+                                    gc_range = NULL, tm_range = NULL, BPPARAM = NULL,
+                                    conditions = NULL) {
   ref_len <- nchar(ref)
   alt_len <- nchar(alt)
   if (ref_len == alt_len) {
@@ -531,7 +542,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
 
   # apply the caller's GC/Tm window before the DECIPHER calls (the caller drops
   # those rows afterwards anyway); an empty result is left for the caller
-  cand$tm <- primer_tm(cand$primer)
+  cand$tm <- primer_tm(cand$primer, conditions = conditions)
   cand$gc <- gc_frac(cand$primer)
   if (!is.null(gc_range)) {
     cand <- dplyr::filter(cand, dplyr::between(.data$gc, gc_range[1L], gc_range[2L]))

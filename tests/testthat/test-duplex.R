@@ -141,6 +141,43 @@ test_that("the duplex topology gate enforces both declared readouts", {
   expect_identical(as.character(wrong$status[wrong$gate == "gate_duplex_targets"]), "fail")
 })
 
+test_that("the duplex stage computes its Tm at the duplex scheme's conditions (Z3)", {
+  a <- mk_assay(P_RUN6, P_RUN6, P_CLEAN)
+  assays <- list(a, a)
+  set <- c(P_RUN6, P_RUN6, P_CLEAN, P_RUN6, P_RUN6, P_CLEAN) # both loci's oligos
+  duplex_tm <- primer_tm(set, conditions = scheme_conditions("duplex"))
+  m <- duplex_metrics(
+    assays, "presence-absence", FALSE, c(0, 200), 200L, 5L, 100L,
+    conditions = scheme_conditions("duplex")
+  )
+  expect_equal(length(m$tm), length(set))
+  expect_equal(m$tm, duplex_tm)
+  # the scheme reaches the gates and the ladder, and both read the same metrics
+  cc <- duplex_compatibility(assays,
+    readout = "presence-absence", homologous = FALSE,
+    tm_window = c(0, 200), min_cross_run = 100L,
+    conditions = scheme_conditions("duplex")
+  )
+  tg <- cc$gate == "gate_duplex_tm"
+  # the two loci contribute the same oligos, so the spread is the P_RUN6/P_CLEAN gap
+  expect_equal(cc$observed[tg], max(duplex_tm) - min(duplex_tm))
+  sel <- duplex_selection(assays,
+    readout = "presence-absence", homologous = FALSE,
+    tm_window = c(0, 200), min_cross_run = 100L,
+    conditions = scheme_conditions("duplex")
+  )
+  expect_equal(sel$metrics$tm, duplex_tm)
+  # the default (no conditions) is the historical buffer, so the seam is opt-in
+  legacy <- duplex_metrics(assays, "presence-absence", FALSE, c(0, 200), 200L, 5L, 100L)
+  expect_equal(legacy$tm, primer_tm(set))
+  # only the buffer fields of a conditions object enter the NN Tm: every scheme
+  # shares them, so a duplex Tm is identical across schemes (a no-op today)
+  expect_equal(
+    duplex_tm,
+    primer_tm(set, conditions = scheme_conditions("lamp"))
+  )
+})
+
 test_that("the duplex DAG obeys the contract and shows the real, computed gates", {
   expect_dag_invariants("duplex")
   s <- marker_decision_schema("duplex")

@@ -14,7 +14,8 @@ design_common_primers(
   min_gc = 0.4,
   max_gc = 0.6,
   tm_range = c(57, 64),
-  n = 5L
+  n = 5L,
+  conditions = NULL
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ design_common_primers(
 \item{tm_range}{accepted Tm window (C).}
 
 \item{n}{number of candidates to return.}
+
+\item{conditions}{reaction conditions for \code{\link[=primer_tm]{primer_tm()}} (\code{NULL} = the
+historical 50 mM Na / 37 C buffer).  Only the buffer fields of \code{conditions}
+enter the nearest-neighbour Tm, so no scheme changes a number today.}
 }
 \value{
 a tibble of candidates (\code{com}, \code{len}, \code{gap}, \code{start}, \code{end}, \code{com_gc},

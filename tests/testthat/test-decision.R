@@ -357,3 +357,87 @@ test_that("a relaxed winner is graded at the relaxed bar, not the ideal (C5)", {
   expect_true(relaxed$pass[relaxed$criterion == "amplicon length (bp)"])
   expect_true(grepl("relaxed", relaxed$limit[relaxed$criterion == "amplicon length (bp)"]))
 })
+
+# ---- Z2: family membership is held as criterion ids ---------------------------
+# `MARKER_CHECK_*` / `MARKER_FAMILY_CHECKS` name registry ids; the label printed
+# anywhere is resolved through the registry, so the two cannot drift.
+# each constant against one scheme family that carries it (`taqman`/`ssr` stand
+# in for the probe / size checks, which those families share)
+family_constants <- function() {
+  list(
+    caps = MARKER_CHECK_CAPS, lamp = MARKER_CHECK_LAMP, rpa = MARKER_CHECK_RPA,
+    crispr = MARKER_CHECK_CRISPR, taqman = MARKER_CHECK_PROBE,
+    sanger = MARKER_CHECK_SANGER, ssr = MARKER_CHECK_SIZE
+  )
+}
+
+test_that("family checks are registry ids, resolved to labels through it", {
+  spec <- criterion_spec()
+  consts <- family_constants()
+  for (fam in names(consts)) {
+    ids <- as.vector(consts[[fam]])
+    # an id, not a human label: it is a registry id and not a registry label
+    expect_true(all(ids %in% spec$id), info = fam)
+    expect_length(intersect(ids, spec$label), 0L)
+    expect_true(all(grepl("^family_[a-z0-9_]+$", ids)), info = fam)
+    # the label is the registry's own row, in the same order
+    expect_equal(
+      marker_family_check_labels(fam),
+      spec$label[match(ids, spec$id)],
+      info = fam
+    )
+    # every family in MARKER_FAMILY_CHECKS resolves to a non-empty label vector
+    for (f in names(MARKER_FAMILY_CHECKS)) {
+      expect_true(length(marker_family_check_labels(f)) > 0L, info = f)
+    }
+  }
+  # a family that shares a vector resolves through the same table
+  expect_identical(marker_family_check_labels("taqman"), marker_family_check_labels("dpcr"))
+  expect_identical(marker_family_check_labels("ssr"), marker_family_check_labels("indel_size"))
+  # an unknown family is empty, never an error
+  expect_length(marker_family_check_labels("nope"), 0L)
+})
+
+test_that("the printed label of every family id is unchanged (no figure drift)", {
+  # the committed figures and `dev/check.R` pin this text: a criterion's display
+  # label must still be the one the family list used to carry, byte for byte
+  labels <- c(
+    "restriction site defined", "restriction site separates alleles",
+    "band gap (bp)", "digest sums to amplicon",
+    "restriction site conserved (population)",
+    "FIP 3' ALT", "inner arm Tm balance (C)", "inner arms inside amplicon",
+    "variant at FIP 3' end",
+    "primer length (nt)", "THF off variant", "RPA probe spans variant",
+    "variant under primer/probe",
+    "PAM valid", "variant in seed", "guide spans variant",
+    "guide/PAM conserved (population)", "off-target protospacers (n)",
+    "probe spans variant", "probe Tm - primer Tm (C)",
+    "ASP 3' discrimination", "extension 3' at variant",
+    "variant-read distance (bp)", "read primers inside amplicon",
+    "read primer pair defined",
+    "repeat unit (nt)", "repeat copies",
+    "REF/ALT size difference (bp)", "fragment size (bp)"
+  )
+  printed <- unique(unlist(lapply(names(MARKER_FAMILY_CHECKS), marker_family_check_labels)))
+  expect_setequal(printed, labels)
+
+  # the same label reaches the DAG and the text export for every scheme that
+  # owns the check, so neither can print an id
+  spec <- criterion_spec()
+  for (sc in marker_schemes()$scheme) {
+    fam <- marker_scheme(sc)$family
+    ids <- as.vector(MARKER_FAMILY_CHECKS[[fam]] %||% character(0))
+    if (!length(ids)) {
+      next
+    }
+    labels_of <- stats::setNames(marker_family_check_labels(fam), ids)
+    nodes <- marker_decision_schema(sc)$nodes
+    txt <- marker_decision_text(sc)
+    for (id in ids) {
+      expect_true(id %in% nodes$name, info = paste(sc, id))
+      expect_identical(nodes$label[match(id, nodes$name)], unname(labels_of[[id]]), info = paste(sc, id))
+      # the text export prints the label, and never the id
+      expect_true(any(grepl(unname(labels_of[[id]]), txt, fixed = TRUE)), info = paste(sc, id))
+    }
+  }
+})

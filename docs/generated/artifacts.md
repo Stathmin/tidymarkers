@@ -38,7 +38,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `71b8c0eb2daef1059d320ca5e5efc414`
+- output_hash: `91bfbf70884a81108d8ae85159ffb692`
 
 ## man/figures/decision-multiplex.png
 
@@ -49,7 +49,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `6c981fa641efdf993d29b5ea96b4a557`
+- output_hash: `129e4c2924d2f2d66bbe80827732a3e3`
 
 ## vignettes/figures/arms.svg
 

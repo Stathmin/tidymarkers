@@ -458,7 +458,11 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
     stats::setNames(alt_primers[ok], paste0("AS_alt_", alt_hap[ok]))
   )
   prim <- prim[!duplicated(prim)]
-  compat <- if (length(prim) > 1L) primer_set_compatibility(prim) else NULL
+  compat <- if (length(prim) > 1L) {
+    primer_set_compatibility(prim, conditions = scheme_conditions("lax"))
+  } else {
+    NULL
+  }
   pool_ok <- is.null(compat) || all(compat$pass)
   verdict <- if (doomed || !any(ok)) {
     "fail"

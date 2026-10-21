@@ -33,7 +33,8 @@ family_checks <- function(scheme) {
     KASP_CHECK_PRIMER,
     if ("site" %in% classes) KASP_CHECK_SITE,
     if ("as" %in% classes) KASP_CHECK_AS,
-    MARKER_FAMILY_CHECKS[[fam]] %||% character(0)
+    # the family constants hold criterion ids; the registry labels are their names
+    unname(names(MARKER_FAMILY_CHECKS[[fam]])) %||% character(0)
   )
 }
 
@@ -41,6 +42,13 @@ test_that("marker_criteria declares gates, tiers and checks with metadata", {
   crit <- marker_criteria()
   expect_setequal(unique(crit$role), c("gate", "tier", "check"))
   expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order", "schemes") %in% names(crit)))
+  # ZW4: the spec carries the evidence rung (the public view does not expose it yet),
+  # right after the deprecated `calibrated` column so no existing column moves
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  expect_true(all(c("source", "calibrated", "evidence") %in% names(spec)))
+  expect_equal(
+    match("evidence", names(spec)), match("calibrated", names(spec)) + 1L
+  )
   expect_true(all(crit$stage %in% c(
     "site", "as", "pair", "duplex", "asq", "caps", "arms", "hrm", "assay",
     marker_schemes()$scheme
@@ -63,7 +71,7 @@ test_that("marker_criteria declares gates, tiers and checks with metadata", {
 
 test_that("the check classes partition the registered checks", {
   labels <- marker_criteria()$label[marker_criteria()$role == "check"]
-  family_labels <- unique(unlist(MARKER_FAMILY_CHECKS, use.names = FALSE))
+  family_labels <- unique(unlist(lapply(MARKER_FAMILY_CHECKS, names), use.names = FALSE))
   expect_setequal(
     c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS, family_labels), labels
   )
