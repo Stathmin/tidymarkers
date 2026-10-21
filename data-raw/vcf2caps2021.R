@@ -24,6 +24,15 @@
 #  reporting 10 single-cut markers x 30 plants each (Table 1, Fig 8), and the
 #  outcome of every marker is stated IN PROSE.
 #
+#  Exactly what is TABULATED vs ASSERTED, since this is the one CAPS number a
+#  prior session flagged as unverified:
+#    TABULATED - Table 1 only: marker name, primers, enzyme, and the 10/10/10
+#      per-marker genotype design (30 plants per marker).  NOT a call table.
+#    ASSERTED (prose) - the per-marker agreement between predicted and observed
+#      genotype class; for 3_363 the count of five reclassified plants; for
+#      3_300 and 6_022 merely "single supposed heterozygotes" (no count).
+#    FIG 8 is a gel IMAGE and carries no table-wrap; this build has no
+#      supplementary material (no <supplementary-material> element).
 #  WHAT THIS FILE LANDS vs WHAT IT DOES NOT
 #
 #  * LANDS (counts the prose states unambiguously, verified by matching the
