@@ -169,21 +169,26 @@ sources <- tibble::tribble(
   "full text fetched and read; evidence that Ye's -2 rule is not the measured optimum",
 
   "polymarker_source",
-  paste("Ramirez-Gonzalez RH, Uauy C, Caccamo M. PolyMarker source code",
-        "(lib/Bio/PolyploidTools/SNP.rb)"),
-  "GitHub (Informatics-John-Innes-Centre/bio-polymarker)", 2015L,
+  paste("Ramirez-Gonzalez RH, Uauy C, Caccamo M. PolyMarker: a fast and flexible",
+        "tool to design polymorphic molecular markers from polyploid genome assemblies",
+        "(source read at VERSION 1.3.3, commit d4a4578)"),
+  "Bioinformatics (source: GitHub Informatics-John-Innes-Centre/bio-polymarker)", 2015L,
   "10.1093/bioinformatics/btv069", NA_character_, NA_character_,
   "source", TRUE, verified_on,
-  "how a homeolog-specific KASP construct actually separates A/B/D (Y3.2)",
+  "how a homeolog-specific KASP construct actually separates A/B/D (Y3.2); rate of successful designs (benchmark)",
   paste("primer_3_all_strings pins the AS primers onto the SNP",
-        "(SEQUENCE_FORCE_LEFT_END) and designs the common primer from the",
-        "chromosome-specific position (SEQUENCE_FORCE_RIGHT_END) for the",
-        "chromosome_specific / almost_chromosome_specific classes; verbatim:",
-        "'the common primer is used to incorporate the chromosome specific variants",
-        "when possible'. Design-rule labels in this file: Specific_for /",
-        "Semi_specific_for / Non_specific / Homoeologous /",
-        "Non_homoeologous (the five mask strings found there)"),
-  "read in the source; no conversion rate"
+        "(seq_original[pr.snp_pos] / seq_snp[pr.snp_pos], SEQUENCE_FORCE_LEFT_END).",
+        "Subgenome specificity is the COMMON primer: for each mask position",
+        "marked chromosome_specific or almost_chromosome_specific it passes",
+        "right_pos => pos, i.e. SEQUENCE_FORCE_RIGHT_END on that base. A mask base",
+        "is upper-cased only when every other subgenome differs from the target AND",
+        "all genomes are represented (different == expected_snps && from_group ==",
+        "genomes_count). With no such position the common primer is designed with",
+        "no force (chromosome_nonspecific). The construct has no field saying",
+        "WHICH primer carries the subgenome: it is implied by the force.",
+        "Transcribed with line locators into polymarker_design_rules.csv by",
+        "data-raw/polymarker-source.R"),
+  "read in the source; the three Y3.2 claims are quoted with method+line; no conversion rate is taken from it"
 )
 # Rows that once carried numbers nobody could source are provenance-only now:
 # Ye's Table 2 primer Tms and the Grewal 2022 residual were both traced back to

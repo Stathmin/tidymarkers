@@ -1,0 +1,5 @@
+"allele_pair","primer_3p","match_base","off_base","mismatch","match_eff","off_eff","margin","engine","calibrated","terminal_floor"
+"G:A","G","C","T",TRUE,0.9966,0.2727,0.7239,"tidymarkers::pcr_efficiency (DECIPHER CalculateEfficiencyPCR)",FALSE,0.0034
+"A:G","A","T","T",FALSE,0.9928,0.9928,0,"tidymarkers::pcr_efficiency (DECIPHER CalculateEfficiencyPCR)",FALSE,0.0072
+"C:A","C","G","T",TRUE,0.9957,0.3399,0.6559,"tidymarkers::pcr_efficiency (DECIPHER CalculateEfficiencyPCR)",FALSE,0.0043
+"A:A","A","T","T",FALSE,0.9928,0.9928,0,"tidymarkers::pcr_efficiency (DECIPHER CalculateEfficiencyPCR)",FALSE,0.0072
