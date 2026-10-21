@@ -60,7 +60,7 @@ if (!nzchar(system.file(package = "tidymarkers"))) {
 # The cross-scheme contracts.  Matching on file names keeps this independent of
 # test content: a renamed contract file is a deliberate edit here, not a silent
 # drop from the routine gate.
-shared <- c("criteria", "decision", "kasp-checks", "plot-methods", "technology")
+shared <- c("criteria", "decision", "falsifiable", "kasp-checks", "plot-methods", "technology")
 
 args <- commandArgs(trailingOnly = TRUE)
 full <- "--full" %in% args
