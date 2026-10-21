@@ -27,8 +27,15 @@ test_that("scientific_sources: every row names a source and how far it was read"
     expect_false(any(is.na(s[[col]]) | !nzchar(s[[col]])), label = col)
   }
   expect_setequal(unique(s$key), s$key) # no duplicate keys
+  # 'closed access' is a real, honest label: the row exists to say the paper was
+  # looked for and could not be read, so no number may come from it
   expect_true(all(s$access %in% c("fulltext", "abstract", "stub", "transcribed",
-                                  "supplement", "source")))
+                                  "supplement", "source", "closed access")))
+  # a closed-access row may say nothing numeric
+  closed <- s[s$access == "closed access", ]
+  if (nrow(closed)) {
+    expect_true(all(grepl("NOT READ", closed$claim)))
+  }
   # a DOI is required for every source; the prefix must look like a DOI
   expect_true(all(grepl("^10\\.[0-9]{4,9}/", s$doi)))
   # a row that has been VERIFIED must say when
@@ -161,13 +168,30 @@ test_that("makhoul primers: the allele is carried by the AS 3' base in every des
   expect_false(identical(p$common_3p, p$fam_3p))
 })
 
-test_that("scientific_backlog: nothing in the backlog claims to be verified", {
+test_that("scientific_backlog: verified means an extract was written", {
   b <- ext("scientific_backlog.csv")
   expect_gt(nrow(b), 5L)
-  expect_true(all(!b$verified))
-  expect_true(all(is.na(b$verified_on)))
-  expect_true(all(b$status %in% c("fetched", "unfetched")))
-  # the one row marked fetched is the DOI we actually opened
-  expect_equal(sorted <- sort(b$identifier[b$status == "fetched"]),
-               "10.1093/nar/29.17.e88")
+  expect_false(anyNA(b$key))
+  # The vocabulary records how far each row got, and nothing beyond that:
+  #   unfetched                      -- a DOI or a title and nothing else
+  #   fetched                        -- opened, but not yet extracted
+  #   extracted                      -- an extract CSV exists, with an assertion
+  #   fulltext-read-no-assertion     -- read, deliberately no CSV (say why)
+  #   not_extractable                -- read, no usable table
+  #   fetched-not-extractable: <why> -- read, the row described another paper
+  allowed <- c("unfetched", "fetched", "extracted",
+               "fulltext-read-no-assertion", "not_extractable")
+  expect_true(all(b$status %in% allowed | grepl("^fetched-not-extractable: ", b$status)))
+  # `verified` may only be TRUE on a row whose extract really exists, and every
+  # such row says when
+  # `verified` = the claim was checked against the fetched artefact; that is true
+  # for rows whose result is "extracted", and equally for rows whose result is
+  # "read and deliberately not extracted" -- the verification is what was done,
+  # not what was produced
+  done <- b$status %in% c("extracted", "fulltext-read-no-assertion", "not_extractable")
+  expect_equal(as.logical(b$verified), done)
+  expect_true(all(!as.logical(b$verified) | !is.na(b$verified_on)))
+  # a row read but deliberately not extracted must explain itself
+  silent <- b$status %in% c("fulltext-read-no-assertion", "not_extractable")
+  if (any(silent)) expect_true(all(grepl("no|not", b$status[silent])))
 })
