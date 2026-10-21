@@ -26,15 +26,18 @@ test_that("every required engine reports a non-empty version string", {
     v <- stamp[[engine]]
     expect_false(is.na(v), info = paste(engine, "is not installed on this machine"))
     expect_true(is.character(v) && nzchar(v),
-                info = paste(engine, "reported an empty version"))
+      info = paste(engine, "reported an empty version")
+    )
   }
 })
 
 test_that("a missing engine is written as NA, not dropped", {
   # the regression this guards: filtering on `available` made a four-engine
   # stamp silently become a three-engine one
-  fake <- c(DECIPHER = "3.8.1", OligoArrayAux = NA_character_,
-            TmCalculator = "1.1.2", `BLAST+` = "2.16.0+")
+  fake <- c(
+    DECIPHER = "3.8.1", OligoArrayAux = NA_character_,
+    TmCalculator = "1.1.2", `BLAST+` = "2.16.0+"
+  )
   csv <- marker_engine_stamp_field("csv", stamp = fake)
   expect_type(csv, "character")
   expect_length(csv, 1L)
@@ -50,7 +53,8 @@ test_that("the stamp flattens to CSV and JSON for a manifest column", {
   expect_false(grepl("[,\n]", csv))
   for (engine in REQUIRED_ENGINES) {
     expect_true(grepl(paste0(engine, "="), csv, fixed = TRUE),
-                info = paste(engine, "missing from the CSV field"))
+      info = paste(engine, "missing from the CSV field")
+    )
   }
 
   js <- marker_engine_stamp_field("json")

@@ -6,8 +6,10 @@
 #  absence of a per-plant table as a stated fact rather than a silence.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("VCF2CAPS: the headline is a readable key/value table", {
@@ -22,15 +24,19 @@ test_that("VCF2CAPS: the headline is a readable key/value table", {
   # the design was 10 non-cleavable homs + 10 hets + 10 cleavable homs
   expect_equal(get("n_plants_each"), 3 * 10)
   # the per-marker observations reconcile with the counts above
-  expect_equal(get("n_plant_x_marker_observations"),
-               get("n_markers_verified") * get("n_plants_each"))
+  expect_equal(
+    get("n_plant_x_marker_observations"),
+    get("n_markers_verified") * get("n_plants_each")
+  )
 })
 
 test_that("VCF2CAPS: the wording groups partition the ten markers", {
   h <- ext("vcf2caps2021_headline.csv")
-  groups <- c("exact_match", "weaker_cleavable_allele", "close_single_het",
-              "five_noncleavable_reclassified", "cleavable_hom_read_as_het_banding",
-              "het_read_as_noncleavable")
+  groups <- c(
+    "exact_match", "weaker_cleavable_allele", "close_single_het",
+    "five_noncleavable_reclassified", "cleavable_hom_read_as_het_banding",
+    "het_read_as_noncleavable"
+  )
   g <- h$value[h$quantity %in% groups]
   expect_length(g, length(groups))
   expect_equal(sum(g), 10)

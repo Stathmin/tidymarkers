@@ -42,11 +42,13 @@ test_that("the measurement matrix is 40 activators x 8 crRNAs and complete", {
   expect_false(anyNA(ratio$mean_fc_vs_wt))
   ## the ratio is computed from the triplicates it sits next to, not read
   expect_equal(ratio$mean_fluorescence,
-               rowMeans(ratio[, c("replicate_1", "replicate_2", "replicate_3")]),
-               tolerance = 1e-9)
+    rowMeans(ratio[, c("replicate_1", "replicate_2", "replicate_3")]),
+    tolerance = 1e-9
+  )
   expect_equal(ratio$mean_fc_vs_wt,
-               ratio$mean_fluorescence / ratio$wt_mean_fluorescence_same_crrna,
-               tolerance = 1e-9)
+    ratio$mean_fluorescence / ratio$wt_mean_fluorescence_same_crrna,
+    tolerance = 1e-9
+  )
 })
 
 test_that("the WT row is the reference: ratio exactly 1 in every crRNA", {
@@ -80,7 +82,8 @@ test_that("two adjacent mismatches are usually, but NOT always, stronger than on
   ## The test asserts the trend plus the weakest observed double, so a future
   ## re-extraction that changes either is caught.
   wide <- reshape(ratio[ratio$n_mismatch > 0, c("crrna", "mutation", "mean_fc_vs_wt")],
-                  idvar = "mutation", timevar = "crrna", direction = "wide")
+    idvar = "mutation", timevar = "crrna", direction = "wide"
+  )
   names(wide) <- sub("^mean_fc_vs_wt\\.", "", names(wide))
   dbl <- wide[grepl("&", wide$mutation), setdiff(names(wide), "mutation")]
   sgl <- wide[!grepl("&", wide$mutation), setdiff(names(wide), "mutation")]

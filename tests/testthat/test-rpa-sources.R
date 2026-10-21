@@ -8,15 +8,19 @@
 #  hand-edited CSV fails the suite without needing the papers on disk.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("rpa_mismatch_terminal: 12 classes, probabilities and ranking", {
   d <- ext("rpa_mismatch_terminal.csv")
   expect_equal(nrow(d), 12L)
-  expect_setequal(names(d)[1:5], c("pattern", "terminal_mismatch", "RS_logit",
-                                   "RS_ci_95", "RS_p_star"))
+  expect_setequal(names(d)[1:5], c(
+    "pattern", "terminal_mismatch", "RS_logit",
+    "RS_ci_95", "RS_p_star"
+  ))
   expect_true(all(grepl("^[?ACGT]{4}-[?ACGT]{4}$", d$pattern)))
   # every terminal class is the unnamed base of both 4-letter blocks
   expect_equal(substr(d$pattern, 4L, 4L), substr(d$terminal_mismatch, 1L, 1L))
@@ -35,13 +39,14 @@ test_that("rpa_mismatch_terminal: 12 classes, probabilities and ranking", {
   lo <- vapply(num, function(x) as.numeric(x[1L]), numeric(1))
   hi <- vapply(num, function(x) as.numeric(x[2L]), numeric(1))
   expect_true(all(d$RS_logit >= lo & d$RS_logit <= hi))
-  expect_true(all(c("outcome_definition", "evidence_tier", "source_file")
-                  %in% names(d)))
+  expect_true(all(
+    c("outcome_definition", "evidence_tier", "source_file") %in% names(d)
+  ))
 })
 
 test_that("rpa_mismatch_position: 279 rows from the 36 printed position classes", {
   d <- ext("rpa_mismatch_position.csv")
-  expect_equal(nrow(d), 279L)  # every mismatch cell of the 36 printed classes
+  expect_equal(nrow(d), 279L) # every mismatch cell of the 36 printed classes
   expect_true(all(d$terminal_offset == 0L))
   expect_true(all(d$nonterminal_offset %in% 1:3))
   expect_true(all(grepl("^[?ACGT]{4}-[?ACGT]{4}$", d$pattern)))
@@ -56,8 +61,10 @@ test_that("rpa_mismatch_position: 279 rows from the 36 printed position classes"
 test_that("rpa_mismatch_claims: disagreements with the table are recorded", {
   d <- ext("rpa_mismatch_claims.csv")
   expect_true(nrow(d) >= 6L)
-  expect_true(all(c("claim", "paper_says", "table_shows", "agrees",
-                    "evidence_tier") %in% names(d)))
+  expect_true(all(c(
+    "claim", "paper_says", "table_shows", "agrees",
+    "evidence_tier"
+  ) %in% names(d)))
   # the abstract's C-T claim is contradicted by the table and must say so
   top <- d$claim == "terminal mismatch most detrimental to reaction success"
   expect_match(d$note[top], "C-T")
@@ -75,19 +82,25 @@ test_that("rpa_asrpa_mdr: call rates, and they are labelled as call rates", {
   combined <- grepl("combined", d$assay)
   expect_equal(sum(d$FN[combined]), 8L)
   expect_equal(sum(d$TP[combined] + d$FN[combined]), 54L)
-  # the quantity is explicitly NOT a mismatch effect
-  expect_true(all(grepl("CALL AGREEMENT, not a mismatch effect",
-                        d$outcome_definition, fixed = TRUE)))
+  expect_true(all(grepl(
+    "CALL AGREEMENT, not a mismatch effect",
+    d$outcome_definition,
+    fixed = TRUE
+  )))
 })
 
 test_that("rpa_asrpa_sickle: calls against genotype and the 91-sample denominator", {
   d <- ext("rpa_asrpa_sickle_calls.csv")
   expect_equal(nrow(d), 2L)
   expect_true(all(d$n_samples == 91L))
-  expect_equal(round(100 * d$sensitivity_n / d$sensitivity_d, 1),
-               d$sensitivity_pct)
-  expect_equal(round(100 * d$specificity_n / d$specificity_d, 1),
-               d$specificity_pct)
+  expect_equal(
+    round(100 * d$sensitivity_n / d$sensitivity_d, 1),
+    d$sensitivity_pct
+  )
+  expect_equal(
+    round(100 * d$specificity_n / d$specificity_d, 1),
+    d$specificity_pct
+  )
   expect_equal(round(100 * d$accuracy_n / d$accuracy_d, 1), d$accuracy_pct)
   expect_true(all(d$n_samples_excluded == 18L))
   expect_true(all(grepl("CALL AGREEMENT", d$outcome_definition)))
@@ -99,9 +112,11 @@ test_that("rpa generators reproduce their CSVs when the sources are present", {
   # writes to be byte-identical to the one we ship. A stale or hand-edited CSV
   # fails here even though the assertions inside the generator pass.
   repo <- test_path("..", "..")
-  keys <- c(rpa_mismatch_class = "rpa_mismatch_terminal.csv",
-            asrpa_mdr = "rpa_asrpa_mdr_calls.csv",
-            asrpa_sickle = "rpa_asrpa_sickle_calls.csv")
+  keys <- c(
+    rpa_mismatch_class = "rpa_mismatch_terminal.csv",
+    asrpa_mdr = "rpa_asrpa_mdr_calls.csv",
+    asrpa_sickle = "rpa_asrpa_sickle_calls.csv"
+  )
   for (key in names(keys)) {
     src <- file.path(repo, ".tmp", "lit", key)
     skip_if(!dir.exists(src), paste("source not fetched:", key))
@@ -110,33 +125,43 @@ test_that("rpa generators reproduce their CSVs when the sources are present", {
     dir.create(out_dir, recursive = TRUE)
 
     body <- readLines(file.path(repo, "data-raw", paste0(key, ".R")),
-                      warn = FALSE)
+      warn = FALSE
+    )
     # Rebuild the child's environment: `root` points at a scratch library, the
     # script's `--file=` names the real generator (so it resolves its own
     # helper correctly), and the missing `--dir` makes it read .tmp/lit/<key>
     # from the repo root we setwd() into.
     runner <- file.path(tmp, "run.R")
     body <- readLines(file.path(repo, "data-raw", paste0(key, ".R")),
-                      warn = FALSE)
-    start <- grep("^(script <- grep|suppressPackageStartupMessages)",
-                  body)[1L]
+      warn = FALSE
+    )
+    start <- grep(
+      "^(script <- grep|suppressPackageStartupMessages)",
+      body
+    )[1L]
     writeLines(c(
       sprintf("root <- %s", deparse(normalizePath(tmp))),
       sprintf("file_arg <- %s", deparse(normalizePath(file.path(
-        repo, "data-raw", paste0(key, ".R"))))),
+        repo, "data-raw", paste0(key, ".R")
+      )))),
       sprintf("dir_arg <- %s", deparse(normalizePath(src))),
-      paste0("commandArgs <- function(...) c(paste0(\"--file=\", file_arg), ",
-             "paste0(\"--dir=\", dir_arg))"),
+      paste0(
+        "commandArgs <- function(...) c(paste0(\"--file=\", file_arg), ",
+        "paste0(\"--dir=\", dir_arg))"
+      ),
       sprintf("setwd(%s)", deparse(normalizePath(repo))),
-      body[start:length(body)]), runner)
+      body[start:length(body)]
+    ), runner)
 
     st <- system2(file.path(R.home("bin"), "Rscript"),
-                  c("--vanilla", shQuote(runner)),
-                  stdout = FALSE, stderr = FALSE)
+      c("--vanilla", shQuote(runner)),
+      stdout = FALSE, stderr = FALSE
+    )
     expect_equal(st, 0L, label = paste("generator exit status:", key))
     fresh <- readLines(file.path(out_dir, keys[[key]]), warn = FALSE)
     shipped <- readLines(test_path("../../inst/extdata", keys[[key]]),
-                         warn = FALSE)
+      warn = FALSE
+    )
     expect_identical(fresh, shipped)
   }
 })

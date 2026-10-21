@@ -32,18 +32,27 @@
 #' @export
 marker_engine_versions <- function() {
   pkg_version <- function(pkg) {
-    if (!requireNamespace(pkg, quietly = TRUE)) return(NA_character_)
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      return(NA_character_)
+    }
     tryCatch(as.character(utils::packageVersion(pkg)), error = function(e) NA_character_)
   }
   exe_version <- function(cmd, args = "--version") {
     path <- Sys.which(cmd)
-    if (!nzchar(path)) return(NA_character_)
+    if (!nzchar(path)) {
+      return(NA_character_)
+    }
     out <- tryCatch(suppressWarnings(system2(path, args, stdout = TRUE, stderr = TRUE)),
-                    error = function(e) character())
-    if (!length(out)) return(NA_character_)
+      error = function(e) character()
+    )
+    if (!length(out)) {
+      return(NA_character_)
+    }
     # first line that carries a number ("blastn: 2.16.0+", "hybrid-min 3.8.1")
     hit <- grep("[0-9]+\\.[0-9]+", out, value = TRUE)
-    if (!length(hit)) return(NA_character_)
+    if (!length(hit)) {
+      return(NA_character_)
+    }
     sub("^.*?([0-9]+\\.[0-9][0-9.]*[^ ]*).*$", "\\1", hit[[1L]])
   }
   oa <- tryCatch(oligoarrayaux_paths(), error = function(e) NULL)
@@ -71,8 +80,10 @@ marker_engine_versions <- function() {
 
 # The engines a manifest must always name, in a stable order.  Adding one here
 # changes the stamp format, so it is a deliberate act, not a side effect.
-marker_engine_names <- c("DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+",
-                         "Biostrings", "Rsamtools", "R")
+marker_engine_names <- c(
+  "DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+",
+  "Biostrings", "Rsamtools", "R"
+)
 
 #' A version stamp for an Evaluation or an artifact manifest
 #'

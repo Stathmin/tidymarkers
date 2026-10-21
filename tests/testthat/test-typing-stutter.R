@@ -7,13 +7,15 @@
 #  prints in Tables 3 and 4.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("stutter: the file is a per-locus slope model with both measures", {
   d <- ext("stutter_woerner2017.csv")
-  expect_equal(nrow(d), 20L)                       # 10 loci x 2 measures
+  expect_equal(nrow(d), 20L) # 10 loci x 2 measures
   expect_equal(length(unique(d$locus)), 10L)
   expect_setequal(unique(d$measure), c("PAL", "LUS"))
   # the two measures cover the same loci, so a slope is comparable

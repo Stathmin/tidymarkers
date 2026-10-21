@@ -3,15 +3,18 @@
 
 bd_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("the five badolo_kdr2012 files exist with required columns", {
-  for (f in c("lamp_badolo_kdr2012_primers.csv",
-              "lamp_badolo_kdr2012_time_to_positive.csv",
-              "lamp_badolo_kdr2012_counts.csv",
-              "lamp_badolo_kdr2012_metrics.csv",
-              "lamp_badolo_kdr2012_contradictions.csv")) {
+  for (f in c(
+    "lamp_badolo_kdr2012_primers.csv",
+    "lamp_badolo_kdr2012_time_to_positive.csv",
+    "lamp_badolo_kdr2012_counts.csv",
+    "lamp_badolo_kdr2012_metrics.csv",
+    "lamp_badolo_kdr2012_contradictions.csv"
+  )) {
     d <- bd_read(f)
     expect_gt(nrow(d), 0L)
     expect_true(all(c("outcome_definition", "evidence_tier", "source_file") %in% names(d)))
@@ -66,8 +69,10 @@ test_that("non-target arms are censored at the 75-min window, never timed", {
   expect_identical(nrow(tp), 10L)
   expect_true(all(tp$observation_window_min == 75L))
   expect_true(all(is.na(tp$time_to_positive_min[!tp$is_target])))
-  expect_true(all(grepl("not amplified within 75 min",
-                        tp$censoring[!tp$is_target])))
+  expect_true(all(grepl(
+    "not amplified within 75 min",
+    tp$censoring[!tp$is_target]
+  )))
   expect_true(all(tp$time_to_positive_min <= tp$observation_window_min, na.rm = TRUE))
   # the heterozygote is the slowest DETECTED arm of both sets: it sits ON the cut-off
   het <- tp$time_to_positive_min[tp$template == "gDNA kdr-w/+"]

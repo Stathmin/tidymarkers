@@ -4,7 +4,8 @@
 
 tq_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("citrus2020 is a complete 48 x 8 call matrix", {
@@ -18,8 +19,10 @@ test_that("citrus2020 is a complete 48 x 8 call matrix", {
   pr <- tq_read("taqman_citrus2020_probes.csv")
   for (i in seq_len(nrow(pr))) {
     g <- q$genotype[q$marker == pr$marker[i]]
-    expect_identical(sort(unique(strsplit(paste(g, collapse = ""), "")[[1]])),
-                     sort(c(pr$fam_marked[i], pr$hex_marked[i])))
+    expect_identical(
+      sort(unique(strsplit(paste(g, collapse = ""), "")[[1]])),
+      sort(c(pr$fam_marked[i], pr$hex_marked[i]))
+    )
   }
   # (the paper's separate "Polymorphism" sub-table lists the same pairs in a
   # DIFFERENT marker order and disagrees on three rows -- SI306 A/G vs probes

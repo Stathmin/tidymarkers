@@ -6,16 +6,20 @@
 #  false-negative rate printed for the population it was tested on.
 
 ext_probe <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"), progress = FALSE)
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA"), progress = FALSE
+  )
 }
 
 test_that("probes/rice2024: 54 markers, three rates each, all proportions", {
   d <- ext_probe("rice2024_kasp_error_rates.csv")
   expect_equal(nrow(d), 54L)
   expect_false(anyDuplicated(d$marker) > 0L)
-  for (nm in c("fpr_nil_population", "fnr_nil_population", "fnr_ril_population",
-               "max_error_rate")) {
+  for (nm in c(
+    "fpr_nil_population", "fnr_nil_population", "fnr_ril_population",
+    "max_error_rate"
+  )) {
     if (nm == "max_error_rate") next
     x <- d[[nm]]
     expect_true(all(x >= 0 & x <= 1), info = nm)
@@ -29,9 +33,12 @@ test_that("probes/rice2024: 54 markers, three rates each, all proportions", {
 test_that("probes/rice2024: max_error_rate is the max of the printed rates", {
   d <- ext_probe("rice2024_kasp_error_rates.csv")
   expect_equal(d$max_error_rate,
-               pmax(d$fpr_nil_population, d$fnr_nil_population,
-                    d$fnr_ril_population),
-               tolerance = 1e-12)
+    pmax(
+      d$fpr_nil_population, d$fnr_nil_population,
+      d$fnr_ril_population
+    ),
+    tolerance = 1e-12
+  )
 })
 
 test_that("probes/rice2024: the rates are small but never zero for every marker", {

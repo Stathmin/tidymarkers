@@ -8,8 +8,10 @@
 #  row which is blocked says why.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 ledger <- function() ext("science_ledger.csv")
@@ -21,8 +23,10 @@ test_that("ledger: every row joins a registered source to an existing extract", 
   # one synthetic key for extracts that no single paper owns (shared priors,
   # engine probes); every other key must name a registered source
   expect_true(all(l$source_key[l$source_key != "corpus_shared"] %in% s$key))
-  expect_true(all(c("source_key", "extract", "use", "test_file",
-                    "verdict_moved") %in% names(l)))
+  expect_true(all(c(
+    "source_key", "extract", "use", "test_file",
+    "verdict_moved"
+  ) %in% names(l)))
   expect_false(any(is.na(l$source_key) | !nzchar(l$source_key)))
   expect_false(any(is.na(l$verdict_moved) | !nzchar(l$verdict_moved)))
   # no duplicated (source, extract) pair: one row per claim
@@ -40,8 +44,10 @@ test_that("ledger: the use vocabulary is closed, and blocked rows carry a reason
   # the two can be compared. `config` = an extract that is design INPUT (primer
   # triples, oligo sequences) rather than a measured outcome: it feeds the design
   # path, but no test asserts a verdict from it, and saying so is the point.
-  expect_true(all(l$use %in% c("test", "artefact", "rule", "report", "config",
-                               "blocked")))
+  expect_true(all(l$use %in% c(
+    "test", "artefact", "rule", "report", "config",
+    "blocked"
+  )))
   # a blocked row is the honest state: read, extracted, consumed by nothing yet
   blocked <- l$use == "blocked"
   # `blocked` is the only level that may be consumed by nothing, so it is the
@@ -93,15 +99,19 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
   live <- l[l$use != "blocked", ]
   # a table may legitimately combine rows from several papers; what must hold is
   # that the row's own source is among the DOIs it cites
-  pooled <- c("conversion_rates.csv", "mismatch_discrimination.csv",
-              "kasp_homeolog_axes.csv")
+  pooled <- c(
+    "conversion_rates.csv", "mismatch_discrimination.csv",
+    "kasp_homeolog_axes.csv"
+  )
   for (i in seq_len(nrow(live))) {
     e <- live$extract[[i]]
     # a non-extract row names a registry or a deliberately unwritten file; the
     # DOI check only applies to a real CSV on disk
     if (!file.exists(test_path("../../inst/extdata", e))) next
-    d <- readr::read_csv(test_path("../../inst/extdata", e), show_col_types = FALSE,
-                         na = c("", "NA"))
+    d <- readr::read_csv(test_path("../../inst/extdata", e),
+      show_col_types = FALSE,
+      na = c("", "NA")
+    )
     if (!"doi" %in% names(d)) next
     want <- s$doi[s$key == live$source_key[[i]]]
     # an extract shared by the whole corpus belongs to no single paper, so there
@@ -114,8 +124,10 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
       if (length(want) && !is.na(want) && nzchar(want)) {
         # no DOI exists for this paper anywhere; its PMCID is the identifier,
         # and the registry's citation must say which article that PMCID is
-        expect_true(grepl(want, s$citation[s$key == live$source_key[[i]]],
-                          fixed = TRUE), label = paste(e, "names", want))
+        expect_true(
+          grepl(want, s$citation[s$key == live$source_key[[i]]], fixed = TRUE),
+          label = paste(e, "names", want)
+        )
         next
       }
       # a software source is registered by URL and cited by its paper DOI

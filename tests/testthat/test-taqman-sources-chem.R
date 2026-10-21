@@ -4,7 +4,8 @@
 
 tq_read <- function(name) {
   utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
-                  stringsAsFactors = FALSE)
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("znavsmgb2014's Tm ladder is monotone and internally consistent", {

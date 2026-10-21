@@ -4,8 +4,10 @@ test_that("crisprBase registry table is complete and has no seed/PFS slot", {
   reg <- utils::read.csv(path, stringsAsFactors = FALSE)
 
   ## the enumeration the report makes: 8 nucleases, Cas13d only, no LwaCas13a
-  expect_setequal(reg$key,
-    c("AsCas12a", "CasRx", "Csm", "enAsCas12a", "MAD7", "SaCas9", "SpCas9", "SpG"))
+  expect_setequal(
+    reg$key,
+    c("AsCas12a", "CasRx", "Csm", "enAsCas12a", "MAD7", "SaCas9", "SpCas9", "SpG")
+  )
   expect_false("LwaCas13a" %in% reg$key)
 
   ## slot names parsed from the class sources: no seed and no PFS slot anywhere

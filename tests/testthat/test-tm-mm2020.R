@@ -23,8 +23,8 @@
 #      * stability: a hand-edited CSV breaks the internal invariants below.
 #
 #  What is NOT asserted: absolute agreement, or any claim that primer_tm()
-#  reproduces published Tm at the conventional 1.5 mM Mg2+.  See
-#  data-raw/proposed/tm_oracle_status.md.
+#  reproduces published Tm at the conventional 1.5 mM Mg2+.  The oracle status
+#  file is data-raw/proposed/tm_oracle_status.md.
 
 mm2020_path <- function() {
   test_path("../../inst/extdata/tm_mm2020_s1_measured.csv")
@@ -39,8 +39,12 @@ test_that("ZW3/mm2020: the landed table still matches the paper's own totals", {
 
   # 64 canonical + 576 single + 1728 double + 1728 triple, as the paper states
   expect_equal(
-    as.integer(table(factor(d$mismatch_class,
-                            levels = c("canonical", "single", "double", "triple")))),
+    as.integer(
+      table(factor(
+        d$mismatch_class,
+        levels = c("canonical", "single", "double", "triple")
+      ))
+    ),
     c(64L, 576L, 1728L, 1728L)
   )
   # every duplex is the same 19-mer scaffold
@@ -48,8 +52,10 @@ test_that("ZW3/mm2020: the landed table still matches the paper's own totals", {
   expect_true(all(nchar(d$bottom_18) == 19L))
   # canonical rows are perfect Watson-Crick duplexes
   comp <- chartr("ACGT", "TGCA", d$top_18)
-  expect_true(all(d$bottom_18[d$mismatch_class == "canonical"] ==
-                  comp[d$mismatch_class == "canonical"]))
+  expect_true(all(
+    d$bottom_18[d$mismatch_class == "canonical"] ==
+      comp[d$mismatch_class == "canonical"]
+  ))
   # buffer is stated and is sodium-only
   expect_true(all(d$na_mm == 50))
   expect_true(all(d$mg_mm == 0))
@@ -80,7 +86,8 @@ test_that("ZW3/mm2020: primer_tm() ranks the 64 canonical duplexes with measurem
   can <- d[d$mismatch_class == "canonical", ]
 
   tm <- primer_tm(can$top_18,
-                  conditions = reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0))
+    conditions = reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+  )
   expect_length(tm, 64L)
   expect_true(all(is.finite(tm)))
 
@@ -118,7 +125,9 @@ test_that("ZW3/mm2020: the documented salt_method option moves the level, not th
   expect_lt(mean(ow - can$measured_tm_c) - mean(sk - can$measured_tm_c), 9)
   expect_lt(mean(ow - can$measured_tm_c), -5)
   expect_equal(stats::cor(ow, can$measured_tm_c),
-               stats::cor(sk, can$measured_tm_c), tolerance = 0.01)
+    stats::cor(sk, can$measured_tm_c),
+    tolerance = 0.01
+  )
 
   # NO systematic failure in LENGTH. The 4096 oracle rows are all 19-mers, so
   # longer/shorter variants are built by truncation/extension of the same
@@ -130,7 +139,7 @@ test_that("ZW3/mm2020: the documented salt_method option moves the level, not th
     s <- substr(paste0(can$top_18, "ATCGTACGT"), 1L, L)
     mean(primer_tm(s, conditions = cond, salt_method = "Owczarzy2008") - can$measured_tm_c)
   }, 0)
-  expect_gt(max(bias_len) - min(bias_len), 6)  # admit the drift
+  expect_gt(max(bias_len) - min(bias_len), 6) # admit the drift
   expect_lt(max(bias_len) - min(bias_len), 16) # but bound it
   # monotone: a longer duplex must not read FURTHER below the 19-mer truth
   expect_true(bias_len[[1L]] < bias_len[[2L]] && bias_len[[2L]] < bias_len[[3L]])
@@ -143,11 +152,14 @@ test_that("ZW3/mm2020: the documented salt_method option moves the level, not th
   # removes the whole -16.9 C at the oracle's 50 mM.
   nas <- c(20, 50, 100, 200, 500)
   bias_na <- vapply(nas, function(na) {
-    mean(primer_tm(can$top_18,
-                   conditions = reaction_conditions(Na = na, Mg = 0, dNTPs = 0, DMSO = 0),
-                   salt_method = "Owczarzy2008") - can$measured_tm_c)
+    mean(
+      primer_tm(can$top_18,
+        conditions = reaction_conditions(Na = na, Mg = 0, dNTPs = 0, DMSO = 0),
+        salt_method = "Owczarzy2008"
+      ) - can$measured_tm_c
+    )
   }, 0)
-  expect_true(all(diff(bias_na) > 0))               # monotone in Na
+  expect_true(all(diff(bias_na) > 0)) # monotone in Na
   slope100 <- stats::coef(stats::lm(bias_na ~ nas))[[2L]] * 100
   expect_gt(slope100, 2.5)
   expect_lt(slope100, 4.5)
@@ -157,8 +169,14 @@ test_that("ZW3/mm2020: the documented salt_method option moves the level, not th
   expect_gt(zero_mM, 200)
   expect_lt(zero_mM, 500)
   # the default (Schildkraut) never crosses: it is still -0.3 C at 500 mM
-  expect_lt(mean(primer_tm(can$top_18,
-    conditions = reaction_conditions(Na = 500, Mg = 0, dNTPs = 0, DMSO = 0)) - can$measured_tm_c), 0)
+  expect_lt(
+    mean(
+      primer_tm(can$top_18,
+        conditions = reaction_conditions(Na = 500, Mg = 0, dNTPs = 0, DMSO = 0)
+      ) - can$measured_tm_c
+    ),
+    0
+  )
 })
 
 test_that("ZW3/mm2020: the model separates a perfect duplex from a triple mismatch", {
@@ -174,6 +192,8 @@ test_that("ZW3/mm2020: the model separates a perfect duplex from a triple mismat
   expect_gt(hi, lo)
 
   # direction agrees with the measurement for this pair
-  expect_gt(d$measured_tm_c[match("GCG/CGC", d$central_trimer)],
-            d$measured_tm_c[match("CCC/CCC", d$central_trimer)])
+  expect_gt(
+    d$measured_tm_c[match("GCG/CGC", d$central_trimer)],
+    d$measured_tm_c[match("CCC/CCC", d$central_trimer)]
+  )
 })

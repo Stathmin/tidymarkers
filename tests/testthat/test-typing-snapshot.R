@@ -7,17 +7,21 @@
 #  or if the prose claims stop matching the table they were compared against.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../inst/extdata", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 proposed <- function(name) {
-  readr::read_csv(test_path("../../data-raw/proposed", name), show_col_types = FALSE,
-                  na = c("", "NA"))
+  readr::read_csv(test_path("../../data-raw/proposed", name),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
 }
 
 test_that("SNaPshot sensitivity: the grid is complete and physically possible", {
   d <- ext("snapshot2026_sensitivity.csv")
-  expect_equal(nrow(d), 70L)                       # 14 loci x 5 inputs
+  expect_equal(nrow(d), 70L) # 14 loci x 5 inputs
   expect_equal(length(unique(d$locus)), 14L)
   expect_setequal(unique(d$rna_input_label), c("10ng", "5ng", "1ng", "0.5ng", "0.1ng"))
   expect_false(anyDuplicated(d[c("locus", "rna_input_ng")]) > 0L)
@@ -62,7 +66,7 @@ test_that("SNaPshot sensitivity: the prose-vs-table comparison is honest", {
 
 test_that("SNaPshot specificity: the 500-sample matrix is self-consistent", {
   s <- ext("snapshot2026_specificity.csv")
-  expect_equal(nrow(s), 95L)                        # 19 loci x 5 fluids
+  expect_equal(nrow(s), 95L) # 19 loci x 5 fluids
   expect_true(all(s$n_samples == 100L))
   expect_true(all(s$n_detected >= 0L & s$n_detected <= 100L))
   expect_equal(s$detection_rate_pct, round(100 * s$n_detected / s$n_samples, 1L))
