@@ -6,7 +6,8 @@
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean
-#    3. docs/INDEX.md and the artifact manifest are consistent and fresh
+#    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
+#       are consistent and fresh
 #    4. spelling -- only with `--spelling` (the prose is Russian, so an English
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
 #    5. figures -- regenerate the figures from the engine and fail if a committed
@@ -18,8 +19,8 @@
 #    7. R CMD check -- only with `--full` (slow; builds and checks the tarball)
 #
 #  Modes:
-#    --quick  routine loop: steps 1-3 only (roxygen, styler, lintr, docs/artifacts);
-#             --spelling still adds step 4
+#    --quick  routine loop: steps 1-3 only (roxygen, styler, lintr, criterion
+#             fixtures, docs/artifacts); --spelling still adds step 4
 #    --no-artifacts  skip step 3 (docs/artifacts).  Use in an isolated worktree:
 #             the manifest hashes all of R/, so any edit makes 20 figures stale;
 #             the coordinator regenerates it once, after the merge
@@ -110,7 +111,18 @@ step("lintr", function() {
   ok("no lints")
 })
 
-# 3. docs/artifacts graph ---------------------------------------------------
+# 3. criterion fixtures + docs/artifacts graph ------------------------------
+step("criterion fixtures", function() {
+  # ZW1: a criterion without a fail fixture (or an exemption with a reason) must
+  # block the pull request, not just fail a test later.  The ledger lives in
+  # tests/testthat/helper-criterion-fixtures.R, which the script sources.
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-criteria.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-criteria.R failed (status ", status, ")")
+  }
+  ok("every registered criterion has a fail fixture or a reasoned exemption")
+})
+
 step("docs/artifacts", function() {
   if (no_artifacts) {
     return(message("  skip (--no-artifacts; regenerate after the merge)"))
