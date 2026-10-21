@@ -41,3 +41,7 @@ graphify-out/
 
 # local test logs and timings (machine-specific; see dev/README.md)
 dev/logs/
+
+# scratch downloads (papers, supplements, tool builds)
+.tmp/
+.tmp-probe*
