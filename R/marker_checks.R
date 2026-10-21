@@ -546,3 +546,46 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
   }
   "usable"
 }
+
+#' The weakest evidence rung behind an evaluation's passing checks
+#'
+#' A verdict says a design cleared a set of bars; it says nothing about where
+#' those bars came from.  This returns the **weakest** rung among the checks that
+#' actually `pass` (the minimum of the ordered `evidence` ladder, see
+#' [criterion_evidence()]), ignoring `fail`, `unknown` and `not_applicable` rows -
+#' a check that did not pass cannot vouch for anything.  `NA` when nothing passes
+#' (or when the checks carry no rung).
+#'
+#' The rule this exists to state: a `"usable"` verdict whose evidence is
+#' `"rule_of_thumb"` certifies THAT THE DESIGN PASSED THIS PACKAGE'S HEURISTICS,
+#' not that the threshold is validated.  It is deliberately not a fifth verdict
+#' string.
+#' @param x a checks tibble (see [marker_design_checks()]) or a marker/assay
+#'   whose `$evaluation` is read, exactly as for [evaluation_verdict()].
+#' @param criteria the criterion registry the rungs are read from (see
+#'   `criterion_spec()`).
+#' @return a single evidence rung (an ordered factor level, as character) or
+#'   `NA_character_`.
+#' @keywords internal
+#' @noRd
+evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS)) {
+  ev <- if (is.data.frame(x)) x else x$evaluation
+  if (is.null(ev) || !nrow(ev)) {
+    return(NA_character_)
+  }
+  status <- if ("status" %in% names(ev)) {
+    as.character(marker_check_status(ev$status))
+  } else if ("pass" %in% names(ev)) {
+    ifelse(is.na(ev$pass), "unknown", ifelse(ev$pass, "pass", "fail"))
+  } else {
+    rep("unknown", nrow(ev))
+  }
+  passed <- ev$criterion[status == "pass"]
+  # a check's rung is its criterion's; a row the registry does not know has none
+  rung <- criteria$evidence[match(passed, criteria$id)]
+  rung <- rung[!is.na(rung)]
+  if (!length(rung)) {
+    return(NA_character_)
+  }
+  as.character(min(rung))
+}
