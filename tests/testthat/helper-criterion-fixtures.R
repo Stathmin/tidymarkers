@@ -620,22 +620,30 @@ zw1_registered_ids <- function(limits = KASP_LIMITS) {
   sort(unique(spec$id[spec$role %in% c("gate", "check")]))
 }
 
-# Split the registered ids into exempt (with a reason) / fixture-backed /
-# uncovered.  `uncovered` is a tibble, never a bare count, so a failure can name
-# every criterion that has no proof.
+# The ledger: what the registry publishes (`registered`) and the evidence the
+# repo offers for it (`fixtures`, `exempt`).  Nothing derived is stored here:
+# coverage and staleness are computed from these three fields at CALL time
+# (`zw1_ledger_coverage()`), so editing `$fixtures` or `$exempt` can never leave
+# a cached answer behind that quietly accepts a dropped row.
 zw1_ledger <- function(limits = KASP_LIMITS) {
-  ids <- zw1_registered_ids(limits)
-  exempt <- zw1_exemptions()
-  fixtures <- zw1_fail_fixtures()
   list(
-    registered = ids,
-    fixtures = fixtures,
-    exempt = exempt,
+    registered = zw1_registered_ids(limits),
+    fixtures = zw1_fail_fixtures(),
+    exempt = zw1_exemptions()
+  )
+}
+
+# Derive coverage from what the ledger says right now.  `registered` is a
+# parameter (defaulting to the ledger's own id list) so a ledger carrying its
+# own set of published ids is still judged against those ids.
+zw1_ledger_coverage <- function(ledger, registered = ledger$registered) {
+  cited <- c(ledger$fixtures$id, names(ledger$exempt))
+  list(
+    uncovered = sort(setdiff(registered, cited)),
     # an exemption of a criterion that no longer exists is stale, not evidence
-    stale_exemptions = sort(setdiff(names(exempt), ids)),
+    stale_exemptions = sort(setdiff(names(ledger$exempt), registered)),
     # a fixture row for a criterion that no longer exists is stale too
-    stale_fixtures = sort(setdiff(fixtures$id, ids)),
-    uncovered = tibble::tibble(id = ids[!ids %in% c(names(exempt), fixtures$id)])
+    stale_fixtures = sort(setdiff(ledger$fixtures$id, registered))
   )
 }
 
@@ -643,8 +651,9 @@ zw1_ledger <- function(limits = KASP_LIMITS) {
 #   - every registration is exempt with a non-empty reason, or backed by exactly
 #     one non-empty `tests/testthat/<file>.R::<test>` string
 #   - exemptions and fixtures name registered ids (a stale row fails)
-zw1_ledger_problems <- function(ledger) {
+zw1_ledger_problems <- function(ledger, registered = ledger$registered) {
   problems <- character(0)
+  coverage <- zw1_ledger_coverage(ledger, registered)
   ex <- ledger$exempt
   if (length(ex) && (is.null(names(ex)) || anyNA(names(ex)) || any(!nzchar(names(ex))))) {
     problems <- c(problems, "an exemption has no criterion id (a named vector is required)")
@@ -658,10 +667,10 @@ zw1_ledger_problems <- function(ledger) {
       "a criterion is exempt twice: ", paste(unique(names(ex)[duplicated(names(ex))]), collapse = ", ")
     ))
   }
-  if (length(ledger$stale_exemptions)) {
+  if (length(coverage$stale_exemptions)) {
     problems <- c(problems, paste0(
       "a stale exemption names an id the registry no longer has: ",
-      paste(ledger$stale_exemptions, collapse = ", ")
+      paste(coverage$stale_exemptions, collapse = ", ")
     ))
   }
   fx <- ledger$fixtures
@@ -676,10 +685,10 @@ zw1_ledger_problems <- function(ledger) {
       "a criterion has more than one fixture row: ", paste(unique(fx$id[duplicated(fx$id)]), collapse = ", ")
     ))
   }
-  if (length(ledger$stale_fixtures)) {
+  if (length(coverage$stale_fixtures)) {
     problems <- c(problems, paste0(
       "a stale fixture names an id the registry no longer has: ",
-      paste(ledger$stale_fixtures, collapse = ", ")
+      paste(coverage$stale_fixtures, collapse = ", ")
     ))
   }
   both <- intersect(names(ex), fx$id)
@@ -722,17 +731,19 @@ zw1_citation_exists <- function(citation) {
   test %in% headers
 }
 
-# Step 3 of the rule: no registered id is left uncovered.  The message names
-# every uncovered criterion with its label and says exactly how to satisfy it.
-zw1_uncovered_problems <- function(ledger, limits = KASP_LIMITS) {
-  unc <- ledger$uncovered
-  if (!nrow(unc)) {
+# Step 3 of the rule: no registered id is left uncovered.  Coverage is derived
+# from the ledger as passed in, never read from a stored field, so a removed
+# fixture row is reported here.  The message names every uncovered criterion
+# with its label and says exactly how to satisfy it.
+zw1_uncovered_problems <- function(ledger, registered = ledger$registered, limits = KASP_LIMITS) {
+  uncovered <- zw1_ledger_coverage(ledger, registered)$uncovered
+  if (!length(uncovered)) {
     return(character(0))
   }
   spec <- criterion_spec(limits)
-  label <- spec$label[match(unc$id, spec$id)]
+  label <- spec$label[match(uncovered, spec$id)]
   paste0(
-    "criterion ", unc$id, " (", label, ") has no fail fixture: ",
+    "criterion ", uncovered, " (", label, ") has no fail fixture: ",
     "add a fail fixture to tests/testthat/test-falsifiable.R or an exemption with a reason"
   )
 }
@@ -740,12 +751,12 @@ zw1_uncovered_problems <- function(ledger, limits = KASP_LIMITS) {
 # The whole rule, as one vector of problems (empty means the ledger is honest).
 # `dev/check-criteria.R` and `test-falsifiable.R` both call this, so the PR gate
 # and the test cannot disagree about what "covered" means.
-zw1_ledger_violations <- function(ledger = zw1_ledger()) {
+zw1_ledger_violations <- function(ledger = zw1_ledger(), registered = ledger$registered) {
   cited <- unique(c(ledger$fixtures$test, zw1_status_citations()$test))
   missing <- cited[!vapply(cited, zw1_citation_exists, logical(1))]
   c(
-    zw1_ledger_problems(ledger),
-    zw1_uncovered_problems(ledger),
+    zw1_ledger_problems(ledger, registered),
+    zw1_uncovered_problems(ledger, registered),
     if (length(missing)) {
       paste0(
         "a cited test does not exist (renamed or removed): ", paste(missing, collapse = "; "),

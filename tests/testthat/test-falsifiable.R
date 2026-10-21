@@ -269,9 +269,10 @@ zw1_status_of <- function(ch, criterion) {
 
 test_that("every registered criterion is exempt with a reason or has a fail fixture", {
   ledger <- zw1_ledger()
+  coverage <- zw1_ledger_coverage(ledger)
   # the registry is walked, not a hand-kept list: gates and checks both count
   expect_gt(length(ledger$registered), 0L)
-  expect_equal(nrow(ledger$fixtures) + length(ledger$exempt) + nrow(ledger$uncovered),
+  expect_equal(nrow(ledger$fixtures) + length(ledger$exempt) + length(coverage$uncovered),
     length(ledger$registered),
     info = "every registered gate/check id is exactly one of fixture-backed, exempt or uncovered"
   )
@@ -279,10 +280,12 @@ test_that("every registered criterion is exempt with a reason or has a fail fixt
   # an exemption is a named reason, never a bare key
   expect_true(all(nzchar(trimws(ledger$exempt))))
   # a stale row (an id the registry no longer has) is a lie, not evidence
-  expect_length(ledger$stale_exemptions, 0L)
-  expect_length(ledger$stale_fixtures, 0L)
+  expect_length(coverage$stale_exemptions, 0L)
+  expect_length(coverage$stale_fixtures, 0L)
   # nothing may be left without proof; report the ids and labels, never a count
-  expect_equal(nrow(ledger$uncovered), 0L, info = paste(zw1_uncovered_problems(ledger), collapse = "\n"))
+  expect_equal(length(coverage$uncovered), 0L,
+    info = paste(zw1_uncovered_problems(ledger), collapse = "\n")
+  )
 })
 
 test_that("every cited fail fixture names a real test in this repo", {
@@ -299,29 +302,63 @@ test_that("every cited fail fixture names a real test in this repo", {
 test_that("a new criterion id without a fixture fails the gate, not just the test", {
   # the pull-request gate applies the same rule to the same table
   expect_length(zw1_ledger_violations(), 0L)
-  # a criterion that is not on the ledger is reported by id, with its label and
-  # the exact remedy - so the gate names what to add instead of a bare count
+  # a criterion the registry publishes but the ledger does not cover is reported
+  # by id, with its label and the exact remedy - so the gate names what to add
+  # instead of a bare count
   ledger <- zw1_ledger()
-  fake <- ledger
-  fake$uncovered <- tibble::tibble(id = "gate_zw1_fake")
-  problems <- zw1_uncovered_problems(fake)
+  published <- c(ledger$registered, "gate_zw1_fake")
+  problems <- zw1_uncovered_problems(ledger, published)
   expect_length(problems, 1L)
   expect_match(problems, "gate_zw1_fake", fixed = TRUE)
   expect_match(problems, "add a fail fixture to tests/testthat/test-falsifiable.R or an exemption with a reason",
     fixed = TRUE
   )
+  expect_true(any(grepl("gate_zw1_fake", zw1_ledger_violations(ledger, published), fixed = TRUE)))
   # a fixture row for an id the registry dropped is stale and also fails
   stale <- ledger
-  fake_row <- tibble::tibble(
-    id = "gate_zw1_fake", test = ledger$fixtures$test[1L]
+  stale$fixtures <- rbind(
+    stale$fixtures[0L, ],
+    tibble::tibble(id = "gate_zw1_fake", test = ledger$fixtures$test[1L])
   )
-  stale$fixtures <- rbind(stale$fixtures[0L, ], fake_row)
-  stale$stale_fixtures <- sort(setdiff(stale$fixtures$id, stale$registered))
   expect_true(any(grepl("stale fixture", zw1_ledger_problems(stale))))
+  expect_match(zw1_ledger_problems(stale), "gate_zw1_fake", fixed = TRUE)
+  # an exemption for an id the registry dropped is stale too
+  stale_exempt <- ledger
+  stale_exempt$exempt <- stats::setNames("needs a genome this suite does not carry", "gate_zw1_fake")
+  expect_match(zw1_ledger_problems(stale_exempt), "stale exemption", fixed = TRUE)
+  expect_match(zw1_ledger_problems(stale_exempt), "gate_zw1_fake", fixed = TRUE)
   # an exemption with an empty reason is not an exemption
   blank <- ledger
   blank$exempt <- stats::setNames("", "gate_zw1_fake")
   expect_true(any(grepl("empty reason", zw1_ledger_problems(blank))))
+})
+
+test_that("coverage is derived from the ledger, so a removed row is a violation", {
+  # a cached coverage answer would let a deleted row pass silently: this is the
+  # hole the gate exists to close, so both removals are checked by id
+  ledger <- zw1_ledger()
+  expect_length(zw1_ledger_violations(ledger), 0L)
+
+  dropped <- ledger$fixtures$id[1L]
+  without_fixture <- ledger
+  without_fixture$fixtures <- ledger$fixtures[-1L, ]
+  problems <- zw1_ledger_violations(without_fixture)
+  expect_length(problems, 1L)
+  expect_match(problems, paste0("criterion ", dropped, " ("), fixed = TRUE)
+  expect_match(problems, "has no fail fixture", fixed = TRUE)
+
+  # the same hole via an exemption: an id covered only by an exemption is clean
+  # until that exemption is dropped, and then reported by name
+  target <- ledger$fixtures$id[1L]
+  exempted <- ledger
+  exempted$fixtures <- ledger$fixtures[-1L, ]
+  exempted$exempt <- stats::setNames("needs a genome this suite does not carry", target)
+  expect_length(zw1_ledger_violations(exempted), 0L)
+
+  exempted$exempt <- stats::setNames(character(0), character(0))
+  problems <- zw1_ledger_violations(exempted)
+  expect_length(problems, 1L)
+  expect_match(problems, paste0("criterion ", target, " ("), fixed = TRUE)
 })
 
 test_that("each site / assay criterion really fails when its driver is applied", {
