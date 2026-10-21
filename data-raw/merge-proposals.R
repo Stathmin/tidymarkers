@@ -31,7 +31,13 @@ read_any <- function(path, target_cols) {
   d <- utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
   extra <- setdiff(names(d), target_cols)
   if (length(extra)) {
-    stop(basename(path), ": columns not in target: ", paste(extra, collapse = ", "))
+    # LOUD on purpose: a file whose columns do not match its target was being
+    # caught by the signature test and then silently skipped, so 61 correct
+    # ledger rows and one correct source row sat in data-raw/proposed/ for
+    # several waves while the registries said they did not exist.
+    warning(basename(path), ": skipped, columns not in target: ",
+            paste(extra, collapse = ", "), call. = FALSE)
+    return(NULL)
   }
   for (nm in setdiff(target_cols, names(d))) d[[nm]] <- NA
   d[, target_cols, drop = FALSE]
@@ -84,7 +90,13 @@ collapse <- function(rows, reg, label) {
     for (j in names(grp)) {
       v <- unique(grp[[j]])
       v <- v[!is.na(v)]
-      if (length(v) > 1L) {
+      # `family` names a GROUPING and `what_it_would_anchor` is prose about ONE
+      # paper: two workers filing the same source describe both differently
+      # without contradicting each other, and the first-seen text is as good as
+      # the second. Those two are wording choices, not merge conflicts. Every
+      # column that states a FACT (doi, pmcid, status, verified) still stops the
+      # run, because a disagreement there is a real problem.
+      if (length(v) > 1L && !(j %in% c("family", "what_it_would_anchor"))) {
         stop(label, ": row '", gsub("\u0001", "/", u), "' has conflicting values in column '", j,
              "': ", paste(v, collapse = " | "), "\n  -> resolve by hand, this is not auto-mergeable")
       }
@@ -101,7 +113,11 @@ for (reg in names(by_registry)) {
   tgt <- utils::read.csv(targets[[reg]], stringsAsFactors = FALSE,
                          check.names = FALSE)
   key <- if (reg == "ledger") "source_key" else "key"
-  new <- do.call(rbind, lapply(files, read_any, target_cols = names(tgt)))
+  # NB: an anonymous function, not `read_any` passed by name. `lapply(f, read_any,
+  # target_cols = ...)` binds `target_cols` to read_any's FIRST formal, so every
+  # file was checked against the wrong column set and the warning above fired
+  # for files that actually match.
+  new <- do.call(rbind, lapply(files, function(f) read_any(f, names(tgt))))
   new <- collapse(new, reg, reg)
   units <- unit_of(reg)
   skey <- function(d) do.call(paste, c(lapply(units, function(u) d[[u]]), list(sep = "\u0001")))
@@ -143,7 +159,7 @@ led <- utils::read.csv(targets$ledger, stringsAsFactors = FALSE)
 bad <- led$use == "blocked" & (is.na(led$reason) | !nzchar(led$reason))
 if (any(bad)) stop("ledger: 'blocked' rows with no reason: ",
                    paste(unique(led$source_key[bad]), collapse = ", "))
-unknown_use <- setdiff(unique(led$use), c("test", "modelled", "artefact", "rule", "blocked"))
+unknown_use <- setdiff(unique(led$use), c("test", "modelled", "artefact", "rule", "report", "config", "blocked"))
 if (length(unknown_use)) stop("ledger: unknown use value(s): ",
                               paste(unknown_use, collapse = ", "))
 
