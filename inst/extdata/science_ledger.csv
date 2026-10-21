@@ -1,36 +1,44 @@
-source_key,extract,use,test_file,verdict_moved,reason
-kwok1990,mismatch_discrimination.csv,test,test-z7-priors.R,3'-terminal severity class,
-kwok1990,z7_priors.csv,test,test-z7-priors.R,kwok_severity_order,
-lefever2019,lefever_single_mismatch.csv,test,test-z7-priors.R,offset of the artificial mismatch,
-lefever2019,z7_priors.csv,test,test-z7-priors.R,lefever_position,
-liu2012_arms,liu2012_outcomes.csv,test,test-z7-priors.R,mismatch site (2nd/3rd/4th),
-ye2001,mismatch_discrimination.csv,test,test-z7-priors.R,ye_second_mismatch_position,
-makhoul2020,makhoul_design_strategies.csv,test,test-z8-outcomes.R,design_outcome(assay): KASP usable / not usable,
-makhoul2020,makhoul_kasp_primers.csv,artefact,test-y32-homeolog.R,artifact$common_3p (subgenome axis),
-grewal2020,grewal_kasp_axes.csv,test,test-y32-homeolog.R,artifact$as_fam_3p / artifact$as_hex_3p (allele axis),
-grewal2020,kasp_homeolog_axes.csv,test,test-y32-homeolog.R,"the two axes are separate columns, never one",
-grewal2020,conversion_rates.csv,test,test-z8-outcomes.R,conversion_rates: gate-pass -> usable counts,
-ramirezgonzalez2015,conversion_rates.csv,test,test-z8-outcomes.R,conversion_rates: outcome_scale stays ordinal,
-ramirezgonzalez2014,conversion_rates.csv,test,test-z8-outcomes.R,conversion_rates: outcome_scale stays ordinal,
-grewal2022_amblyopyrum,conversion_rates.csv,test,test-z8-outcomes.R,conversion_rates: failure classes are not pooled,
-polymarker_source,polymarker_design_rules.csv,rule,test-y32-homeolog.R,"constraint: the common primer 3' base is the subgenome anchor, also SHOWN as artifact$subgenome_anchor",
-newton1989,mismatch_discrimination.csv,test,test-z7-priors.R,mechanism prior only: a mismatched 3' base is not a primer,
-ye2001_primer_set,ye2001_primer_set.csv (deliberately not written),blocked,,none yet (provenance only),the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce
-desilva2009,desilva2009_outcomes.csv,test,test-z8-outcomes.R,hrm: outcome counts with their own denominators,
-ace1r_aslamp2015,ace1r_aslamp2015_counts.csv,test,test-z8-outcomes.R,"lamp: time-to-positive window, not a binary call",
-liu2016_caps,liu2016_caps_funnel.csv,test,test-z8-outcomes.R,caps: restriction-site conversion rate,
-soybean_est_caps,soybean_est_caps_funnel.csv,test,test-z8-outcomes.R,caps: restriction-site conversion rate,
-snap2caps,snap2caps_markers.csv,test,test-z8-outcomes.R,caps: dCAPS site creation,
-jak2v617f_ddpcr,jak2v617f_ddpcr_limits.csv,test,test-z8-outcomes.R,dpcr: LoB / LoD of a partition readout,
-celegans2018,celegans2018_arms_primers.csv,test,test-probes-celegans2018.R,primer mismatch incorporation,
-rice2018,rice2018_kasp_validation.csv,test,test-probes-rice2018.R,KASP validation rate,
-rice2018,rice2018_marker_cross.csv,test,test-probes-rice2018.R,per-combination validation,
-rice2024,rice2024_kasp_error_rates.csv,test,test-probes-rice2024.R,per-marker KASP error rate,
-sars2022,sars2022_dmas_ct.csv,test,test-probes-sars2022.R,double-mismatch Ct gap,
-sars2022,sars2022_dmas_primers.csv,test,test-probes-sars2022.R,artificial mismatch at -3,
-rpa_mismatch_class,rpa_mismatch_terminal.csv,test,test-rpa-sources.R,rpa_terminal_class_logodds,
-rpa_mismatch_class,rpa_mismatch_position.csv,test,test-rpa-sources.R,rpa_position_class_logodds,
-rpa_mismatch_class,rpa_mismatch_claims.csv,report,test-rpa-sources.R,rpa_claim_audit,
-asrpa_mdr,rpa_asrpa_mdr_calls.csv,test,test-rpa-sources.R,rpa_asrpa_field_call_rate,
-asrpa_sickle,rpa_asrpa_sickle_calls.csv,test,test-rpa-sources.R,rpa_asrpa_genotype_call_rate,
-badolo2012,none,blocked,NA,nothing moved,"read in full: insecticide-resistance monitoring with no LAMP or primer content; the backlog row described a different paper, so there is nothing to extract"
+"source_key","extract","use","test_file","verdict_moved","reason"
+"kwok1990","mismatch_discrimination.csv","test","test-z7-priors.R","3'-terminal severity class",NA
+"kwok1990","z7_priors.csv","test","test-z7-priors.R","kwok_severity_order",NA
+"lefever2019","lefever_single_mismatch.csv","test","test-z7-priors.R","offset of the artificial mismatch",NA
+"lefever2019","z7_priors.csv","test","test-z7-priors.R","lefever_position",NA
+"liu2012_arms","liu2012_outcomes.csv","test","test-z7-priors.R","mismatch site (2nd/3rd/4th)",NA
+"ye2001","mismatch_discrimination.csv","test","test-z7-priors.R","ye_second_mismatch_position",NA
+"makhoul2020","makhoul_design_strategies.csv","test","test-z8-outcomes.R","design_outcome(assay): KASP usable / not usable",NA
+"makhoul2020","makhoul_kasp_primers.csv","artefact","test-y32-homeolog.R","artifact$common_3p (subgenome axis)",NA
+"grewal2020","grewal_kasp_axes.csv","test","test-y32-homeolog.R","artifact$as_fam_3p / artifact$as_hex_3p (allele axis)",NA
+"grewal2020","kasp_homeolog_axes.csv","test","test-y32-homeolog.R","the two axes are separate columns, never one",NA
+"grewal2020","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: gate-pass -> usable counts",NA
+"ramirezgonzalez2015","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: outcome_scale stays ordinal",NA
+"ramirezgonzalez2014","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: outcome_scale stays ordinal",NA
+"grewal2022_amblyopyrum","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: failure classes are not pooled",NA
+"polymarker_source","polymarker_design_rules.csv","rule","test-y32-homeolog.R","constraint: the common primer 3' base is the subgenome anchor, also SHOWN as artifact$subgenome_anchor",NA
+"newton1989","mismatch_discrimination.csv","test","test-z7-priors.R","mechanism prior only: a mismatched 3' base is not a primer",NA
+"ye2001_primer_set","ye2001_primer_set.csv (deliberately not written)","blocked","","none yet (provenance only)","the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"
+"desilva2009","desilva2009_outcomes.csv","test","test-z8-outcomes.R","hrm: outcome counts with their own denominators",NA
+"ace1r_aslamp2015","ace1r_aslamp2015_counts.csv","test","test-z8-outcomes.R","lamp: time-to-positive window, not a binary call",NA
+"liu2016_caps","liu2016_caps_funnel.csv","test","test-z8-outcomes.R","caps: restriction-site conversion rate",NA
+"soybean_est_caps","soybean_est_caps_funnel.csv","test","test-z8-outcomes.R","caps: restriction-site conversion rate",NA
+"snap2caps","snap2caps_markers.csv","test","test-z8-outcomes.R","caps: dCAPS site creation",NA
+"jak2v617f_ddpcr","jak2v617f_ddpcr_limits.csv","test","test-z8-outcomes.R","dpcr: LoB / LoD of a partition readout",NA
+"celegans2018","celegans2018_arms_primers.csv","test","test-probes-celegans2018.R","primer mismatch incorporation",NA
+"rice2018","rice2018_kasp_validation.csv","test","test-probes-rice2018.R","KASP validation rate",NA
+"rice2018","rice2018_marker_cross.csv","test","test-probes-rice2018.R","per-combination validation",NA
+"rice2024","rice2024_kasp_error_rates.csv","test","test-probes-rice2024.R","per-marker KASP error rate",NA
+"sars2022","sars2022_dmas_ct.csv","test","test-probes-sars2022.R","double-mismatch Ct gap",NA
+"sars2022","sars2022_dmas_primers.csv","test","test-probes-sars2022.R","artificial mismatch at -3",NA
+"rpa_mismatch_class","rpa_mismatch_terminal.csv","test","test-rpa-sources.R","rpa_terminal_class_logodds",NA
+"rpa_mismatch_class","rpa_mismatch_position.csv","test","test-rpa-sources.R","rpa_position_class_logodds",NA
+"rpa_mismatch_class","rpa_mismatch_claims.csv","report","test-rpa-sources.R","rpa_claim_audit",NA
+"asrpa_mdr","rpa_asrpa_mdr_calls.csv","test","test-rpa-sources.R","rpa_asrpa_field_call_rate",NA
+"asrpa_sickle","rpa_asrpa_sickle_calls.csv","test","test-rpa-sources.R","rpa_asrpa_genotype_call_rate",NA
+"badolo2012","none","blocked",NA,"nothing moved","read in full: insecticide-resistance monitoring with no LAMP or primer content; the backlog row described a different paper, so there is nothing to extract"
+"wheat_platform2019","wheat_platform2019_kasp_assays.csv","config","test-kasp-platforms.R","design vs work success (not a single conversion rate)",NA
+"wheat_platform2019","wheat_platform2019_platform_outcomes.csv","test","test-kasp-platforms.R","design 49/50 KASP vs 6.5% of 2784 assay x sample points unamplified",NA
+"wheat_platform2019","wheat_platform2019_cluster_metrics.csv","test","test-kasp-platforms.R","cluster separation / compactness / NTC distance / call quality",NA
+"sharplab2021","sharplab2021_assays.csv","test","test-kasp-platforms.R","the 92% denominator: polymorphism between 1212 and B73",NA
+"sharplab2021","sharplab2021_outcomes.csv","test","test-kasp-platforms.R","design / amplification / polymorphism are three different rates",NA
+"sharplab2021","sharplab2021_primers.csv","config","test-kasp-platforms.R","maize KASP assay constructs",NA
+"maize_kasp2020","maize_kasp2020_assays.csv","config","test-kasp-platforms.R","genome-wide maize KASP assay set with no per-assay outcome",NA
+"maize_kasp2020","maize_kasp2020_outcomes.csv","test","test-kasp-platforms.R","work success 92% is amplified, usable is 71%",NA

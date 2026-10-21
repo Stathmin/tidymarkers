@@ -36,7 +36,7 @@ root <- if (length(script)) {
 setwd(root)
 dir.create(file.path(root, ".tmp", "lit", "sharplab2021"), recursive = TRUE,
            showWarnings = FALSE)
-source(file.path(root, "data-raw", "kasp_lib.R"))
+if (!exists("kasp_write_checked")) source(file.path(root, "data-raw", "kasp_lib.R"))
 
 DATE_VERIFIED <- "2026-10-21"
 DOI <- "10.1186/s12870-021-02932-8"
@@ -200,7 +200,11 @@ markers$pic_20_printed_cell <- ifelse(is.na(markers$pic_20_lines), "--",
                                       format(markers$pic_20_lines, nsmall = 2L))
 markers$doi <- DOI
 markers$evidence_tier <- "measured"
-markers$source_file <- basename(xlsx)
+# the identity of the SOURCE document is a property of the paper, not of where
+# this checkout happened to keep the file: a fresh clone has only the vendored
+# copy, and naming that copy made the write-check fail on a line whose numbers
+# agreed. The basename is the published supplement name.
+markers$source_file <- "12870_2021_2932_MOESM4_ESM.xlsx"
 markers$source_table <- "Additional file 4 (sheet '3'), rows 10-59"
 markers$date_verified <- DATE_VERIFIED
 markers$conversion_definition <- paste(
@@ -267,7 +271,7 @@ summary_out <- data.frame(
            "recomputed from the two printed counts"),
   pic_note = c(NA_character_, NA_character_, NA_character_, NA_character_,
                NA_character_, NA_character_, pic_discrepancy),
-  doi = DOI, evidence_tier = "measured", source_file = basename(xml_path),
+  doi = DOI, evidence_tier = "measured", source_file = "fulltext.xml",
   source_table = "Results / Methods text",
   date_verified = DATE_VERIFIED,
   stringsAsFactors = FALSE
@@ -294,7 +298,7 @@ prim$alleles_match <- vapply(seq_len(nrow(prim)), function(i) {
 }, logical(1))
 prim$doi <- DOI
 prim$evidence_tier <- "measured"
-prim$source_file <- basename(xlsx)
+prim$source_file <- "12870_2021_2932_MOESM4_ESM.xlsx"
 prim$source_table <- "Additional file 4, columns I-K"
 prim <- prim[c("marker", "snp", "primer_fa", "primer_fd", "primer_r",
                "as_3p_differs", "alleles_on_primers", "alleles_printed",

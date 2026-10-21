@@ -170,10 +170,17 @@ kasp_write_checked <- function(tbl, path) {
       nl <- min(length(on_disk), length(written))
       first_bad <- which(on_disk[seq_len(nl)] != written[seq_len(nl)])[1L]
       if (is.na(first_bad)) first_bad <- nl + 1L
+      # Report the byte that differs, not just the line: two lines that look
+      # identical in a 160-char window differ somewhere past it (an xlsx cell's
+      # trailing space, or a hyphen the workbook stores as U+2212).
+      a <- on_disk[first_bad]; b <- written[first_bad]
+      j <- which(strsplit(a, "", fixed = TRUE)[[1]] !=
+                 strsplit(b, "", fixed = TRUE)[[1]])[1]
+      if (is.na(j)) j <- min(nchar(a), nchar(b)) + 1L
       stop("the CSV on disk disagrees with the recomputed table; first differing ",
-           "line is ", first_bad, ":\n  on disk: ",
-           substr(on_disk[first_bad], 1L, 160L), "\n  recomputed: ",
-           substr(written[first_bad], 1L, 160L))
+           "line is ", first_bad, " at character ", j, ":\n  on disk: ",
+           substr(a, max(1L, j - 40L), j + 60L), "\n  recomputed: ",
+           substr(b, max(1L, j - 40L), j + 60L))
     }
   }
   readr::write_csv(tbl, path, na = "")
