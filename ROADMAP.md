@@ -33,16 +33,19 @@
 
 | # | пункт | правка (где) | проверка | блокер |
 |---|---|---|---|---|
-| 1 | `Q1` снять три неподтверждённые заявки | `R/marker_taqman.R` (L20-27, L46-53), `R/marker_readout.R` (таблица `notes`), дока `polyploid` | `test-taqman.R`, `test-readout.R`, `test-polyploid-scope.R` | нет — правка на одну правку |
-| 2 | `Q2` решить 5 дизайн-предложений | `data-raw/proposed/*.proposal.md` → код или явный отказ | proposal закрыт строкой решения | решение владельца проекта |
+| 1 | `Q1` снять три неподтверждённые заявки | `R/marker_taqman.R` (L20-27, L46-53), `R/marker_readout.R` (таблица `notes`), дока `polyploid` | `test-taqman.R`, `test-readout.R`, `test-polyploid-scope.R` | нет |
+| 2 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | **снят** (`Q2` принят: −3 по умолчанию, слабый класс → −2) |
 | 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | `R/marker_crispr.R` (`crispr_guide_candidates()`) | `test-crispr.R`: PFS-тест на оба эффектора | нет |
-| 4 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | `Q2` (позиция −2/−3), `Z7.3` |
-| 5 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | `R/marker_checks.R` (различитель типа мисматча) | `test-kasp-checks.R` | нет |
-| 6 | `Z9.1` LAMP: paired ALT набор / internal control | `R/marker_lamp.R` (см. комментарий L46-47) | `test-lamp.R` | нет |
-| 7 | `Z9.2` HRM: порог `dTm` как измеряемая величина | `R/marker_hrm.R` (`gate_hrm_tm` рядом) | `test-hrm-jsbbs2018.R` | `Q2` (hrm_resolvability) |
-| 8 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
-| 9 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
-| 10 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | `R/marker_checks.R` (сборка) + `R/marker_engines_versions.R` (штамп) | `test-engine-stamp.R` | нет |
+| 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | `R/marker_checks.R` (различитель типа мисматча) | `test-kasp-checks.R` | нет |
+| 5 | `Z9.1` LAMP: paired ALT набор / internal control | `R/marker_lamp.R` (см. комментарий L46-47) | `test-lamp.R` | нет |
+| 6 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
+| 7 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
+| 8 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | `R/marker_checks.R` (сборка) + `R/marker_engines_versions.R` (штамп) | `test-engine-stamp.R` | нет |
+
+Снято из очереди 2026-10-21: `Q2` (все пять решений приняты, см. таблицу ниже) и
+`Z9.2` (HRM `dTm` перестал быть «порогом без величины»: `hrm_resolvability()`
+даёт статус по классу биморфизма, критерий `family_hrm_resolvable` виден в каждой
+HRM-оценке).
 
 Сделано швов (не в очереди, коммит `33ebedf`): `ZA2.1` (шов
 `engine_has()`), `ZA2.2` (`marker_generic_checks()` в `marker_checks.R`),
@@ -122,68 +125,35 @@ ESI Table S1 — 4096 измеренных Tm).
   используются ни одним тестом; `z7_engine_probe.csv` (match vs **off**-аллель)
   заменяет его для Z7.
 
-### Открытые решения (`data-raw/proposed/*.proposal.md`)
+### Решения (`data-raw/proposed/*.decision.md`)
 
-Восемь `*.proposal.md` — это решения по уже влитым данным, а не код. **Из них в
-`R/` не применено ничего**; `merge-proposals.R --apply` их не переносит.
-Правило: пока решение не принято, артефакт говорит «данных нет», а не
-«данные против» — так устроены тесты, которые это утверждают.
+**Все пять дизайн-решений `Q2` приняты 2026-10-21** (коммиты `02af399`, `c9b5d86`,
+`f6c0b6d`, `f68b0cd`, `ba17f8c`, `08700e6`). Каждое закрыто тремя строками
+(статус, правка в `R/` или явное «не меняем», тест), и у каждого есть
+`.decision.md` с моделью, обоснованием и **названными противоречиями**. Файл
+`.proposal.md` остаётся записью доказательств и после решения не правится.
 
-Каждое решение закрывается **тремя строками**: (1) `Status:` → `decided` и дата,
-(2) какая правка в `R/` следует из решения (файл и функция) либо явное «в `R/` не
-меняем» с причиной, (3) тест, который это утверждает. Предложение без третьей
-строки остаётся открытым.
-
-| файл | что предлагается | что делать |
+| решение | итог | где в коде / тесте |
 |---|---|---|
-| `arms_mismatch_position.proposal.md` | −3 по умолчанию (Liu 2012 + Lefever 2019 — измерения); Ye 2001 −2 → историческое правило, не измерение; Zhu 2021 не поддерживает −2, пока не извлечены Cq из Fig S2 | правит `z7_priors.csv` — т.е. `Z7.1` |
-| `rpa_anchor_rule.proposal.md` | веса якорей RPA; открыты S1 vs S2 для нетерминальных классов и вопрос, 0 или NA у незвёздных терминальных ячеек | проверка на 279 клетках уже извлечена, новых статей не нужно; правка — `R/marker_rpa.R` (`rpa_variant_gate()`) |
-| `crispr_seed_rule.proposal.md` | `CRISPR_SEED_LEN`/`crispr_seed_gate()` — правило позиции без величины; предлагается формулировка величины (одиночный seed-миссматч оставляет ~0.37–0.97 сигнала) и отказ от «двойной всегда лучше» как жёсткого фильтра | правка — `R/marker_crispr.R`; проверка — `test-crispr-communbiol.R` |
-| `hrm_resolvability.proposal.md` | `dTm >= 0.5 °C` как порог **для LightCycler 96** (источник сам называет его инструментозависимым); `\|ΔΔG°3bp\| > 1.0` — фильтр, не гарантия; 3-локусные панели — партиция, а не флаг | порог уже в источнике; правка — `R/marker_hrm.R`, проверка — `test-hrm-jsbbs2018.R` |
-| `kasp_z8_scope.proposal.md` | KASP-«конверсия» — минимум 4 разные величины (design/manufacture/work/usable); `conversion_rates.csv` **не** меняется; 6.5% wheat_platform2019 — доля assay×sample, не ассей | добавляет guard в `test-z8-outcomes.R`; в `R/` не меняем |
-| `polyploid_scope.proposal.md` | никогда не выдавать один «polyploid conversion rate»; `test-polyploid-scope.R` уже это утверждает; остаток — alias `homeolog`/`homoeolog` в пользовательской доке, без переименования | дока + одна строка в тексте решения; в `R/` не меняем |
-| `taqman_status.proposal.md` | `R/marker_taqman.R` заявляет порог ΔG мисматча, которого нет ни в одной открытой статье; предлагается снять заявку, а не подбирать число | `Q1` ниже — снять заявку |
-| `lamp_status.proposal.md` | не строить кинетическую/специфичную модель LAMP на четырёх источниках, где 8 плеч на 2 SNP; пару `badolo2012` оставить строкой-коррекцией | `Q1` ниже — снять заявку |
-| `tm_oracle_status.md` | **не** статус предложения, а отчёт: почему измеренный набор не якорь при смещении −16.86 °C | `ZW3.4` ниже |
+| `arms_mismatch_position` | **−3 по умолчанию**; −2 — fallback только для слабого терминального класса (T:G/T:C/T:T); классы не выравниваются числом | `R/marker_arms.R` (`ARMS_EXTRA_MISMATCH_POSITION`, `arms_extra_mismatch_position()`), `design_as_primers()` ранжирует и пишет `stab_policy`/`weak_terminal`; `test-arms-mismatch-position.R` |
+| `rpa_anchor_rule` | якорь 4 nt; веса **ранжируют**, не предсказывают частоту вызова; нетерминальные смещения **не упорядочены** (279 клеток: −3.82 / −3.74 / −3.74) | `R/marker_rpa.R` (`RPA_ANCHOR_NT`, `rpa_anchor_weights()`, `rpa_anchor_score()`); `test-rpa-anchor.R` |
+| `crispr_seed_rule` | затвор — правило **позиции**; величина измерена (0.37–0.97 сигнала) и подаётся как `unknown`; «двойной всегда лучше» — тренд, не фильтр | `R/marker_crispr.R` (`crispr_seed_evidence()`); `test-crispr-seed.R` |
+| `hrm_resolvability` | порог `dTm >= 0.5 °C` — **для LightCycler 96 и для среднего по классу**; `marginal` не понижается до `pass`; панель — партиция | `R/marker_hrm.R` (`hrm_resolvability()`, `hrm_resolvability_row()`), критерий `family_hrm_resolvable`; `test-hrm-jsbbs2018.R`, `test-hrm.R` |
+| `kasp_z8_scope` | конверсия — 4 разные величины; разные определения **не объединяются**; `assay_x_sample` — не ассей | в `R/` **не меняем** (свойство данных); guard в `test-z8-outcomes.R` |
 
-Три из них (`taqman_status`, `lamp_status`, `polyploid_scope`) по существу
-**уже согласуются с кодом** — решать там нечего, кроме явной записи, что заявка
-снята. Это `Q1`, и он делается без научного решения. Пять остальных трогают
-дизайн-параметры и ждут `Q2`.
+**Что решения НЕ закрыли — и это теперь вход в работу:**
 
-### Q1. Снять три заявки, которые код всё равно не подтверждает
+- `Z7.1` (сам параметр намеренного мисматча) разблокирован: позиция есть. Осталось
+  провести её через `marker_technology()` и golden-вердикты.
+- `Z8.1`/`Z8.3`: guard для конверсий написан, но отрицательных строк
+  (`outcome = failed`) по-прежнему мало — это **новые статьи**, не код.
+- `Z0.4` (KASP: мисматч как кинетика) — следующий по очереди, `R/marker_checks.R`.
+- Три решения `Q1` (`taqman_status`, `lamp_status`, `polyploid_scope`) остаются
+  текстовой правкой; `polyploid_scope` ещё ждёт alias `homeolog`/`homoeolog` в доке.
 
-Не научное решение: данные уже говорят «нет», код говорит обратное.
+Правило неизменно: пока решение не принято, артефакт говорит «данных нет», а не
+«данные против». `merge-proposals.R --apply` предложения в код не переносит.
 
-- **правка.** `R/marker_taqman.R`: комментарий L46-53 выдаёт `TAQMAN_MISMATCH_DG
-  <- 1.5` за установленный порог, а `taqman_status.proposal.md` показывает, что
-  ни одна открытая статья не печатает ни порога ΔG, ни ΔCt matched vs mismatched.
-  Заменить обоснование на «правило без измерения; см. proposal», пометить
-  критерий `evidence = "rule_of_thumb"` (он уже там) и **не** выдавать вердикт
-  «проба не дискриминирует» как научный факт — только как порог пакета.
-  `R/marker_readout.R` — таблица `notes` уже честно пишет
-  `"isothermal amplification kinetics not modelled"` для LAMP; правка там не
-  нужна, нужна ссылка из `marker_taqman.R` на неё. `polyploid_scope` — alias
-  `homolog`/`homoeolog` в доке (уже есть в `specificity_policy`).
-- **проверка.** Три существующих теста: `test-taqman.R` (комментарий-контракт:
-  порог не назван измеренным), `test-readout.R` (`simulated = FALSE` для LAMP),
-  `test-polyploid-scope.R` (нет единого polyploid rate). Всё зелёное — значит
-  правка текстовая, и вердикты не сдвигаются.
-- **блокер.** Нет.
-- **следствие.** Пользователь читает «порог 1.5 kcal/mol» как физическое свойство
-  TaqMan, и `unknown` в отчёте выглядит как недоработка модели, а не как
-  отсутствие данных.
-
-### Q2. Решить пять дизайн-предложений
-
-- **правка.** По строке решения в каждом `data-raw/proposed/*.proposal.md`
-  (см. таблицу выше) и следующая из неё правка в `R/`.
-- **проверка.** Названный в строке решения тест; для `kasp_z8_scope` — guard в
-  `test-z8-outcomes.R`.
-- **блокер.** Решение владельца проекта: `arms_mismatch_position` (позиция −2 vs
-  −3) и `rpa_anchor_rule` (S1 vs S2, 0 или `NA`) — выбор модели, а не факт.
-- **следствие.** `Z7.1` не может начаться: параметр намеренного мисматча без
-  позиции не строится. Отсюда `Q2` стоит выше `Z7` в очереди.
 ## Открытая работа — сводка (детали — в `INVENTORY.md` по номеру раздела)
 
 ### §U. Другие PCR-маркеры и внешние приоры
@@ -438,7 +408,12 @@ ESI Table S1 — 4096 измеренных Tm).
 разные измерения.
 
 Осталось:
-- [ ] **`Z7.1` Параметр deliberate mismatch.** Для KASP/ARMS/AS-LAMP/AS-RPA/
+- [~] **`Z7.1` Параметр deliberate mismatch.** **Позиция решена** (`Q2`,
+  2026-10-21): −3 по умолчанию, −2 только для слабого терминального класса;
+  `design_as_primers()` уже ранжирует по этому правилу и пишет `stab_policy` +
+  `weak_terminal` (`test-arms-mismatch-position.R`). Остаток — протащить выбор
+  через `marker_technology()` и подтвердить неизменность golden-вердиктов.
+  Прежнее описание: Для KASP/ARMS/AS-LAMP/AS-RPA/
   CRISPR (SHERLOCK synthetic mismatches): позиция, тип, predicted ΔΔG.
   Слабая пара `transition` перестаёт быть только «риск».
   Правка: `R/marker_arms.R` (`design_as_primers()`) + `R/marker_technology.R`
@@ -447,8 +422,7 @@ ESI Table S1 — 4096 измеренных Tm).
   (`z7_engine_probe`).
   Проверка: `test-z7-priors.R` + golden-вердикты (`f494a50`-дисциплина: вердикт
   не сдвигается без указания движка — `ZW2.3`).
-  Блокер: `Q2` (`arms_mismatch_position`) — позиция −2 vs −3 не средняя
-  величина; `Z7.3` (якорь).
+  Блокер: снят (`Q2`); `Z7.3` (якорь) по-прежнему только directional.
   Следствие: transition-SNP в KASP сегодня помечается и отбрасывается, хотя
   второй мисматч — ровно то, что этот случай исправляет.
 - [ ] **`Z7.2` Совместимость якоря по химии.** Liu/Lefever измерены на
@@ -558,15 +532,16 @@ ddPCR JAK2 (LoB 0.002% / LoD 0.005% / LoQ 0.01% — три разных опре
   Проверка: `test-lamp.R` — маркер без пары ALT получает `unknown`, а не `pass`.
   Блокер: нет.
   Следствие: отрицательный LAMP-вызов сегодня неотличим от неработавшей реакции.
-- [ ] **`Z9.2` HRM: порог `dTm` как измеряемая величина.** SNP-class awareness
-  (A/T class 4, Liew 2004), melt-domain/uMELT, heteroduplex; `dTm >= 0.5 °C`
-  годится **только для LightCycler 96** (источник сам называет его
-  инструментозависимым); `|ΔΔG°3bp| > 1.0` — фильтр, не гарантия; 3-локусные
-  панели — партиция, а не флаг. A/T-предупреждение уже есть, модели плавления нет.
-  Правка: `R/marker_hrm.R` рядом с `gate_hrm_tm` (`KASP_GATES_HRM`/`KASP_RELAX_HRM`).
-  Проверка: `test-hrm-jsbbs2018.R` (пересчёт из источника).
-  Блокер: `Q2` (`hrm_resolvability`).
-  Следствие: 0.5 °C на другом приборе — не порог, а число из чужого PDF.
+- [~] **`Z9.2` HRM: порог `dTm` как измеряемая величина.** **Решено и влито**
+  (`Q2`, `hrm_resolvability.decision.md`): `hrm_resolvability()` даёт статус по
+  классу биморфизма из измеренных `dTm`, порог 0.5 °C применяется к **среднему
+  класса** и назван порогом LightCycler 96; `marginal` не повышается до `pass`;
+  панель — партиция. Критерий `family_hrm_resolvable` виден в каждой HRM-оценке.
+  Остаток (не блокер, код не меняет): melt-домен/uMELT-модель и heteroduplex —
+  это `§V` (readout), и начинать их можно только с набором «условия → исход».
+  Проверка: `test-hrm-jsbbs2018.R`, `test-hrm.R`.
+  Следствие: 0.5 °C на другом приборе — не порог, а число из чужого PDF; теперь
+  это записано в модели, а не в комментарии.
 - [ ] **`Z9.3` TaqMan: MGB/LNA-пробы (короткие пробы)** и правила, специфичные
   для probe Tm/MGB. Правка: `R/marker_taqman.R` — MGB/LNA как
   `rule_of_thumb`-модификатор (сдвиг окна, не новая модель).

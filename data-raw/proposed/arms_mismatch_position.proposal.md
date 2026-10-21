@@ -1,5 +1,9 @@
 # Proposal: the deliberate-mismatch position contradiction (−2 vs −3)
 
+> **DECIDED 2026-10-21** — see `arms_mismatch_position.decision.md`: implemented as `ARMS_EXTRA_MISMATCH_POSITION` / `arms_extra_mismatch_position()` and ranked by `design_as_primers()`. The status
+> line below is the state this file was written in; it is kept as the evidence
+> record and is not edited after the decision.
+
 Status: **open, and still open on purpose.** No position is averaged, weighted or
 preferred anywhere in this package. This file records the state of the evidence
 after the batch-2 search (`feat/sci-arms2`), with a count of independent

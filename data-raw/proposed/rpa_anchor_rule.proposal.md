@@ -1,5 +1,9 @@
 # Proposal — a 3'-anchor mismatch weight scheme for RPA primer design
 
+> **DECIDED 2026-10-21** — see `rpa_anchor_rule.decision.md`: implemented as `RPA_ANCHOR_NT` / `rpa_anchor_weights()` / `rpa_anchor_score()` in `R/marker_rpa.R`. The status
+> line below is the state this file was written in; it is kept as the evidence
+> record and is not edited after the decision.
+
 Status: **proposal only.** No file under `R/` was touched. Everything below is
 re-derivable with `Rscript data-raw/rpa_mismatch_class.R`, which re-reads
 `.tmp/lit/rpa_mismatch_class/supplements/mmc1.xlsx` and `fulltext.xml` and

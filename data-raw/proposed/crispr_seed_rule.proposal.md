@@ -1,5 +1,9 @@
 # Proposed correction to the Cas12a seed rule — from measured data
 
+> **DECIDED 2026-10-21** — see `crispr_seed_rule.decision.md`: the gate stays a POSITION rule; the measured magnitude is `crispr_seed_evidence()`. The status
+> line below is the state this file was written in; it is kept as the evidence
+> record and is not edited after the decision.
+
 Status: **proposal only.** Nothing in `R/` has been edited. The coordinator decides.
 Every clause below cites a row (or set of rows) in a landed extract.
 

@@ -1,5 +1,9 @@
 # HRM resolvability criterion — proposal (no code changes made)
 
+> **DECIDED 2026-10-21** — see `hrm_resolvability.decision.md`: implemented as `HRM_DTM_RESOLVABLE` / `hrm_resolvability()` and the `family_hrm_resolvable` criterion row. The status
+> line below is the state this file was written in; it is kept as the evidence
+> record and is not edited after the decision.
+
 Status: **proposal only**. `R/` is untouched. Every clause below cites a CSV row
 that exists in `inst/extdata/` and a generator that re-derives it.
 

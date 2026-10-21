@@ -333,6 +333,10 @@ marker_as_zone_metrics <- function(as_cand, clean_3p, vpos, vweight, as_exclude,
       win3p_start = dplyr::if_else(.data$strand == "+", .data$as_end - clean_3p + 1L, .data$as_start + 1L),
       win3p_end = dplyr::if_else(.data$strand == "+", .data$as_end - 1L, .data$as_start + clean_3p - 1L),
       n_3p = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b) {
+        # clean_3p = 0 collapses the window; an empty range would abort IRanges
+        if (is.na(a) || is.na(b) || a > b) {
+          return(0L)
+        }
         count_variants_in(IRanges::IRanges(a, b), vpos, as_exclude)
       }),
       n_var = purrr::map2_int(.data$as_start, .data$as_end, function(a, b) {
