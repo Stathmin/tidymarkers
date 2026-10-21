@@ -13,28 +13,29 @@
                     segments in wheat introgression lines","The Plant Genome","2022","10.1002/tpg2.20193","35102721","PMC12807185",TRUE,"",NA
 "makhoul2020","sources",TRUE,"crossref","Overcoming polyploidy pitfalls: a user guide for effective SNP conversion into KASP markers in wheat","Theoretical and Applied Genetics","2020","10.1007/s00122-020-03608-x","32500260","PMC7360542",TRUE,"",NA
 "lefever2019","sources",TRUE,"crossref","Cost-effective and robust genotyping using double-mismatch allele-specific quantitative PCR","Scientific Reports","2019","10.1038/s41598-019-38581-z","30770838","PMC6377641",TRUE,"",NA
-"polymarker_source","sources",TRUE,"url",NA,NA,NA,"https://github.com/Informatics-John-Innes-Centre/bio-polymarker",NA,NA,FALSE,"","software repository; provenance only, not evidence"
+"polymarker_source","sources",TRUE,"crossref","PolyMarker: A fast polyploid primer design pipeline","Bioinformatics","2015","10.1093/bioinformatics/btv069","25649618","PMC4765872",TRUE,"",NA
+"desilva2009","sources",TRUE,"crossref","Determining the effectiveness of High Resolution Melting analysis for SNP genotyping and mutation scanning at the TP53 locus","BMC Genetics","2009","10.1186/1471-2156-10-5","19222838","PMC2648999",TRUE,"",NA
+"ace1r_aslamp2015","sources",TRUE,"crossref","Detection of G119S ace-1
+                     
+                R
+               mutation in field-collected Anopheles gambiae mosquitoes using allele-specific loop-mediated isothermal amplification (AS-LAMP) method","Malaria Journal","2015","10.1186/s12936-015-0968-9","26620269","PMC4665897",TRUE,"",NA
+"jak2v617f_ddpcr","sources",TRUE,"crossref","Laboratory-developed Droplet Digital PCR Assay for Quantification of the JAK2V617F Mutation","Global Medical Genetics","2024","10.1055/s-0044-1785537","38585044","PMC10994690",TRUE,"",NA
+"liu2016_caps","sources",TRUE,"crossref","Development of cleaved amplified polymorphic sequence markers and a CAPS-based genetic linkage map in watermelon (&lt;i&gt;Citrullus lanatus&lt;/i&gt; [Thunb.] Matsum. and Nakai) constructed using whole-genome re-sequencing data","Breeding Science","2016","10.1270/jsbbs.66.244","27162496","PMC4785002",TRUE,"",NA
+"soybean_est_caps","sources",TRUE,"crossref","Mining and Identification of SNP from EST Sequences and Convertion of CAPS Markers in Soybean","ACTA AGRONOMICA SINICA","2010","10.3724/SP.J.1006.2010.00574",NA,NA,FALSE,"",NA
+"snap2caps","sources",TRUE,"crossref","SNP2CAPS: a SNP and INDEL analysis tool for CAPS marker development","Nucleic Acids Research","2004","10.1093/nar/gnh006","14704362","PMC373308",FALSE,"",NA
+"vonahsen2001","sources",TRUE,"crossref","Oligonucleotide Melting Temperatures under PCR Conditions: Nearest-Neighbor Corrections for Mg2+, Deoxynucleotide Triphosphate, and Dimethyl Sulfoxide Concentrations with Comparison to Alternative Empirical Formulas","Clinical Chemistry","2001","10.1093/clinchem/47.11.1956","11673362",NA,FALSE,"",NA
+"dnamate","sources",TRUE,"crossref","dnaMATE: a consensus melting temperature prediction server for short DNA sequences","Nucleic Acids Research","2005","10.1093/nar/gki379","15980538","PMC1160140",TRUE,"",NA
+"huguet2017","sources",TRUE,"crossref","Derivation of nearest-neighbor DNA parameters in magnesium from single molecule experiments","Nucleic Acids Research","2017","10.1093/nar/gkx1161","29177444","PMC5728412",TRUE,"",NA
+"liu2012_arms","sources",TRUE,"crossref","An improved allele-specific PCR primer design method for SNP marker analysis and its application","Plant Methods","2012","10.1186/1746-4811-8-34","22920499","PMC3495711",TRUE,"",NA
 "ayyadevara2000","backlog",TRUE,"crossref","Discrimination of Primer 3′-Nucleotide Mismatch by Taq DNA Polymerase during Polymerase Chain Reaction","Analytical Biochemistry","2000","10.1006/abio.2000.4635","10933850",NA,FALSE,"",NA
-"liu2012_arms","backlog",TRUE,"crossref","An improved allele-specific PCR primer design method for SNP marker analysis and its application","Plant Methods","2012","10.1186/1746-4811-8-34","22920499","PMC3495711",TRUE,"",NA
 "stadhouders2010","backlog",TRUE,"crossref","The Effect of Primer-Template Mismatches on the Detection and Quantification of Nucleic Acids Using the 5′ Nuclease Assay","The Journal of Molecular Diagnostics","2010","10.2353/jmoldx.2010.090035","19948821","PMC2797725",FALSE,"",NA
 "yao2006","backlog",TRUE,"crossref","Evaluation of minor groove binding probe and Taqman probe PCR assays: Influence of mismatches and template complexity on quantification","Molecular and Cellular Probes","2006","10.1016/j.mcp.2006.03.003","16704921",NA,FALSE,"",NA
 "artemis2024","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
 "gootenberg2017_cas13a","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
 "rpa_mismatch_class","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
 "liew2004","backlog",TRUE,"crossref","Genotyping of Single-Nucleotide Polymorphisms by High-Resolution Melting of Small Amplicons","Clinical Chemistry","2004","10.1373/clinchem.2004.032136","15229148",NA,FALSE,"",NA
-"vonahsen2001","backlog",TRUE,"crossref","Oligonucleotide Melting Temperatures under PCR Conditions: Nearest-Neighbor Corrections for Mg2+, Deoxynucleotide Triphosphate, and Dimethyl Sulfoxide Concentrations with Comparison to Alternative Empirical Formulas","Clinical Chemistry","2001","10.1093/clinchem/47.11.1956","11673362",NA,FALSE,"",NA
-"huguet2017","backlog",TRUE,"crossref","Derivation of nearest-neighbor DNA parameters in magnesium from single molecule experiments","Nucleic Acids Research","2017","10.1093/nar/gkx1161","29177444","PMC5728412",TRUE,"",NA
-"dnamate","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-"liu2016_caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-"soybean_est_caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-"badolo2012","backlog",TRUE,"crossref","Three years of insecticide resistance monitoring in Anopheles gambiae in Burkina Faso: resistance on the rise?","Malaria Journal","2012","10.1186/1475-2875-11-232","22799568","PMC3489511",TRUE,"",NA
-"ace1r_aslamp2015","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-"desilva2009","backlog",TRUE,"crossref","Optimization of selection contribution and mate allocations in monoecious tree breeding populations","BMC Genetics","2009","10.1186/1471-2156-10-70","19895684","PMC2776599",TRUE,"",NA
-"jak2v617f_ddpcr","backlog",TRUE,"crossref","Laboratory-developed Droplet Digital PCR Assay for Quantification of the JAK2V617F Mutation","Global Medical Genetics","2024","10.1055/s-0044-1785537","38585044","PMC10994690",TRUE,"",NA
-"snap2caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-"vcf2caps2021","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-NA,"backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"badolo2012","backlog",TRUE,"crossref","Three years of insecticide resistance monitoring in Anopheles gambiae in Burkina Faso: resistance on the rise?","Malaria Journal","2012","10.1186/1475-2875-11-232",NA,NA,FALSE,"",NA
+"vcf2caps2021","backlog",TRUE,"crossref","VCF2CAPS–A high-throughput CAPS marker design from VCF files and its test-use on a genotyping-by-sequencing (GBS) dataset","PLOS Computational Biology","2021","10.1371/journal.pcbi.1008980","34014924","PMC8186816",TRUE,"",NA
 "fondevila2017","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
-NA,"backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
 "lna2004","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
 "znavsmgb2014","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA

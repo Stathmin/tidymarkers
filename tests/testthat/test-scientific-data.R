@@ -28,16 +28,30 @@ test_that("scientific_sources: every row names a source and how far it was read"
   }
   expect_setequal(unique(s$key), s$key) # no duplicate keys
   # 'closed access' is a real, honest label: the row exists to say the paper was
-  # looked for and could not be read, so no number may come from it
+  # looked for and could not be read, so no number may come from it. The set is
+  # CLOSED: a probing batch of workers added 'open', 'subscription', 'blocked'
+  # and five prose variants ('full text (Tables 4, 6, 7)'), which would have made
+  # the column unfilterable. Detail belongs in `access_detail`, never here.
   expect_true(all(s$access %in% c("fulltext", "abstract", "stub", "transcribed",
-                                  "supplement", "source", "closed access")))
+                                  "supplement", "source", "closed access")),
+              label = paste(setdiff(unique(s$access),
+                                    c("fulltext", "abstract", "stub", "transcribed",
+                                      "supplement", "source", "closed access")),
+                            collapse = ", "))
   # a closed-access row may say nothing numeric
   closed <- s[s$access == "closed access", ]
   if (nrow(closed)) {
     expect_true(all(grepl("NOT READ", closed$claim)))
   }
-  # a DOI is required for every source; the prefix must look like a DOI
-  expect_true(all(grepl("^10\\.[0-9]{4,9}/", s$doi)))
+  # a DOI is required for every source; the prefix must look like a DOI, EXCEPT
+  # for the explicit sentinel a resolved-but-doi-less article carries. A blank
+  # cell is forbidden because it is indistinguishable from a dropped field; the
+  # sentinel is greppable and says the question is still open.
+  unresolved <- s$doi == "DOI-UNRESOLVED"
+  expect_true(all(grepl("^10\\.[0-9]{4,9}/", s$doi[!unresolved])))
+  # and a row with no DOI must be reachable by PMCID, or it cannot be found again
+  expect_true(all(!is.na(s$pmcid[unresolved]) & nzchar(s$pmcid[unresolved])),
+              label = "no-DOI rows carry a PMCID")
   # a row that has been VERIFIED must say when
   expect_true(all(!s$verified | !is.na(s$verified_on)))
 })
