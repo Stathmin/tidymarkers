@@ -797,6 +797,33 @@ ro <- scheme$readout(m, context)
 | YAML-технология | `yaml` | ручная сериализация | `yaml` | нет (`Y1`) |
 | Отчёты/таблицы | `knitr::kable`/`gt` | ручной текст | опционально Suggests | частично |
 
+#### ZA2.1. `capabilities()` объявлена, но никто её не спрашивает
+
+Граф (`graphify`, 2026-10-21) даёт узлу `capabilities()` (`R/marker_core.R:353`)
+**степень 2**: `marker_core.R` (contains) и `cli::cli_abort()` (calls). Вызовов
+из `R/` нет.
+
+Правка: ни один дизайнер и ни один `gate_*` не читает `capabilities()`, поэтому
+гейт не умеет ослабнуть, когда движок не имеет возможности (`blast` без `rBLAST`,
+`duplex_dg` без OligoArrayAux). Все такие места сейчас — литералы.
+Проверка: `test-capabilities.R` — фейковый движок с `blast = FALSE`;
+соответствующий гейт возвращает `unknown`, а не `pass`.
+Блокер: нет. Делать **до** `Z0.1` и `Z5.1`: без этого ослаблять нечего.
+Следствие: таблица возможностей остаётся документацией, а не контролем; тест
+на «движок отсутствует» проходит по счастливой случайности.
+
+#### ZA2.2. `marker_generic_checks()` живёт в файле методов рисования
+
+Определена в `R/marker_plot_methods.R:118`, вызывается только из
+`marker_primer_checks()` (там же, `:439`). Граф: степень 6, ни одного вызова из
+`R/marker_checks.R` — хотя по смыслу это проверка, и `marker_checks.R:244`
+вызывает свою ветку отдельно.
+Правка: перенести в `R/marker_checks.R`, оставив в plot-файле только
+адаптер раскладки.
+Проверка: существующие тесты plot/checks без изменений проходят.
+Блокер: нет.
+Следствие: чтение `marker_checks.R` не даёт полной картины проверок.
+
 ### ZA3. Home-rolled → проверенный импорт
 
 - `spec_bind()`/ручная сборка строк → `purrr::list_rbind()`/`vctrs::vec_rbind()`.
@@ -851,7 +878,8 @@ ro <- scheme$readout(m, context)
    здесь же:** свести две оси класса checking к одной (`marker_check_classes()`
    против `KASP_CHECK_*`, см. `Z2.1`).
 2. [~] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
-   Есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`) и штамп
+   есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
+   `capabilities()` не имеет потребителей (`ZA2.1`), и штамп
    не доезжает до `Evaluation` (`ZW2.2`).
 3. [ ] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
    Проверка: `ZA7` contract-test `design/evaluate/tracks/decision/readout`.
@@ -883,7 +911,11 @@ ro <- scheme$readout(m, context)
 - У каждого criterion один bounds-object и `source`/`calibrated`.
 - Fake thermo/specificity engines дают deterministic тесты без OligoArrayAux.
 - Golden-тесты: criterion-id, evaluation-table и track-rows; не пиксели.
-- После каждого шага — `graphify update .` (если CLI установлен) и `dev/check.R`.
+- После каждого шага — `graphify update .` и `dev/check.R`.
+- Граф как ориентир, не как доказательство: узлы `stage_gates`/`stage_relax`/
+  `stage_tiers` (`R/marker_criteria.R:599/604/608`) в граф не попадают — это
+  локальные векторы, поэтому о трёх параллельных картах стадий граф молчит.
+  Проверять чтением, а не запросом.
 
 ### ZA8. Docs/artifacts graph и freshness
 
@@ -917,8 +949,12 @@ manifest + generated Markdown, а не через sidecar JSON.
   Проверка: `tar_make()` производит те же хеши, `dev/check-artifacts.R` зелёный.
   Блокер: нет (тот же шаг, что `Z8.2` — любой из двух порядков допустим).
   Следствие: каждый ручной прогон — шанс забыть `--write` и закоммитить stale SVG.
-- [ ] **`ZA8.2` Graphify health.** `diagnose multigraph` показывает 41
-  same-endpoint collapse и 291 external node без `source_file`.
+- [ ] **`ZA8.2` Graphify health.** Прогон 2026-10-21 (`--code-only`, 277 файлов):
+  5718 узлов, 7187 рёбер, 316 сообществ; **0** same-endpoint collapse, **0**
+  external refs, **0** import cycles. Остаётся **322** узла без `source_file` —
+  это C-парсер vendored-кода (lobstr и подобное), не дефект репозитория.
+  «Бог-узлы» графа — `plot_primers()` (46), `plot_decision_tree()` (38),
+  `plot_marker_map()` (33): центр тяжести кода — рисование, а не наука.
   Правка: нет — учитывать как **ограничение ориентации**, не как доказательство
   корректности (строка в отчёте `docs/generated/artifacts.md`).
   Проверка: `dev/check-docs.R` — ограничение названо.
