@@ -609,7 +609,13 @@ count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
   if (is.null(vpos)) {
     return(NA_integer_)
   }
-  v <- unique(vpos[!is.na(vpos) & !(vpos %in% exclude)])
+  # `exclude` defaults to NA; `%in%` never yields NA for an NA pattern, so a
+  # bare `!(vpos %in% exclude)` would keep every position and then build
+  # zero-width ranges from a duplicated one.
+  v <- unique(vpos[!is.na(vpos)])
+  if (length(exclude) && !all(is.na(exclude))) {
+    v <- v[!(v %in% exclude[!is.na(exclude)])]
+  }
   if (!length(v)) {
     return(0L)
   }
