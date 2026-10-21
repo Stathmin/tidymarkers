@@ -18,7 +18,9 @@ test_that("ledger: every row joins a registered source to an existing extract", 
   l <- ledger()
   expect_gt(nrow(l), 10L)
   s <- ext("scientific_sources.csv")
-  expect_true(all(l$source_key %in% s$key))
+  # one synthetic key for extracts that no single paper owns (shared priors,
+  # engine probes); every other key must name a registered source
+  expect_true(all(l$source_key[l$source_key != "corpus_shared"] %in% s$key))
   expect_true(all(c("source_key", "extract", "use", "test_file",
                     "verdict_moved") %in% names(l)))
   expect_false(any(is.na(l$source_key) | !nzchar(l$source_key)))
@@ -42,8 +44,12 @@ test_that("ledger: the use vocabulary is closed, and blocked rows carry a reason
                                "blocked")))
   # a blocked row is the honest state: read, extracted, consumed by nothing yet
   blocked <- l$use == "blocked"
-  expect_true(all(!is.na(l$reason[blocked]) & nzchar(l$reason[blocked])))
-  expect_true(all(is.na(l$reason[!blocked])))
+  # `blocked` is the only level that may be consumed by nothing, so it is the
+  # only one carrying a reason; `report` rows say what a paper CLAIMS, and the
+  # reason field is where that file's status lives (test-science-ledger.R:46).
+  explicit <- blocked | l$use == "report"
+  expect_true(all(!is.na(l$reason[explicit]) & nzchar(l$reason[explicit])))
+  expect_true(all(is.na(l$reason[!explicit])))
   # and a blocked row is the only kind that may skip naming a test
   expect_true(all(is.na(l$test_file[blocked])))
 })
@@ -58,11 +64,14 @@ test_that("ledger: every named test file exists and actually reads its extract",
     src <- readLines(f, warn = FALSE)
     # the extract name, or its stem, must appear in the test: otherwise the row
     # claims a consumer that stopped reading the data
-    stem <- sub("\\.csv$", "", basename(used$extract[[i]]))
-    expect_true(
-      any(grepl(stem, src, fixed = TRUE)),
-      label = paste(used$test_file[[i]], "reads", stem, sep = " / ")
-    )
+    # a row may claim SEVERAL extracts (one paper, several tables); every one
+    # of them must be read by the named test
+    for (stem in trimws(strsplit(used$extract[[i]], ",", fixed = TRUE)[[1L]])) {
+      expect_true(
+        any(grepl(stem, src, fixed = TRUE)),
+        label = paste(used$test_file[[i]], "reads", stem, sep = " / ")
+      )
+    }
   }
 })
 
@@ -70,7 +79,9 @@ test_that("ledger: the extracts it names exist (unless the row is blocked)", {
   l <- ledger()
   live <- l[l$use != "blocked", ]
   for (e in unique(live$extract)) {
-    expect_true(file.exists(test_path("../../inst/extdata", e)), label = e)
+    for (one in trimws(strsplit(e, ",", fixed = TRUE)[[1L]])) {
+      expect_true(file.exists(test_path("../../inst/extdata", one)), label = one)
+    }
   }
 })
 
@@ -93,6 +104,10 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
                          na = c("", "NA"))
     if (!"doi" %in% names(d)) next
     want <- s$doi[s$key == live$source_key[[i]]]
+    # an extract shared by the whole corpus belongs to no single paper, so there
+    # is no own source to check it against; its row says so in its key
+    if (!length(want) || is.na(want[[1L]])) next
+    want <- want[[1L]]
     # a software source is registered by URL and cited by its paper DOI
     if (!grepl("^10\\.", want)) {
       want <- s$pmcid[s$key == live$source_key[[i]]]
@@ -113,6 +128,23 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
     # own source is among them
     expect_true(want %in% got, label = paste(e, "cites", want))
   }
+})
+
+test_that("ledger: no measured source is left without an entry", {
+  l <- ledger()
+  s <- ext("scientific_sources.csv")
+  expect_length(setdiff(s$key, l$source_key), 0L)
+})
+
+test_that("ledger: every backlog row marked extracted carries an entry", {
+  # A backlog row is a literature search result; its status says how far we got.
+  # `extracted` is the claim that something was pulled out and used, so it must
+  # have a ledger row. The polyploid pass is why: four of its sources were
+  # marked extracted while their extracts belonged to no registered source.
+  l <- ledger()
+  b <- ext("scientific_backlog.csv")
+  mined <- b$key[!is.na(b$status) & b$status == "extracted"]
+  expect_length(setdiff(mined, l$source_key), 0L)
 })
 
 test_that("ledger: the three axes the review asked for are all covered", {

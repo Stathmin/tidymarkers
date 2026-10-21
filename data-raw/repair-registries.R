@@ -60,6 +60,7 @@ retire <- function(d, label, keycol = "key") {
 }
 
 s <- read_csv(src)
+before_keys <- s$key
 # an EMPTY string is not NA to any reader downstream: normalise it first, or the
 # DOI-shaped guard reports `belv2024 => ` with nothing after the arrow and the
 # message cannot be acted on
@@ -88,6 +89,18 @@ if (any(all_na)) {
   cat(sprintf("  %-24s dropping %d all-NA row(s)\n", "scientific_sources", sum(all_na)))
   s <- s[!all_na, , drop = FALSE]
 }
+# A row must never Vanish between reading and writing. It happened: a source
+# landed on one branch while `retire()` derived its drop set from a hard-coded
+# key map, and the file came back one row shorter with no message.
+no_lost_rows <- function(before, after, label) {
+  if (!identical(sort(before), sort(after))) {
+    stop(label, ": row keys changed on write; lost: ",
+         paste(setdiff(before, after), collapse = ", "), " gained: ",
+         paste(setdiff(after, before), collapse = ", "))
+  }
+  invisible(NULL)
+}
+no_lost_rows(before_keys, s$key, "scientific_sources")
 utils::write.csv(s, src, row.names = FALSE, na = "NA")
 
 b <- read_csv(bl)
@@ -102,6 +115,13 @@ l <- na_strings(l, "science_ledger")
 l <- l[!apply(is.na(l), 1, all), , drop = FALSE]
 # `blocked` implies a reason and nothing else carries one
 l$reason[l$use != "blocked"] <- NA_character_
+# A row must never Vanish between reading and writing. It happened: a source
+# landed on one branch while `retire()` derived its drop set from a hard-coded
+# key map, and the file came back one row shorter with no message. Duplicate
+# (source, extract) pairs are dropped for the same reason: the earlier row wins,
+# because the later one was seeded by a classifier that did not read the file.
+l$reason <- ifelse(is.na(l$reason) | !nzchar(l$reason), NA_character_, l$reason)
+l <- l[!duplicated(paste(l$source_key, l$extract)), , drop = FALSE]
 utils::write.csv(l, led, row.names = FALSE, na = "NA")
 
 ## 3. Re-assert the invariants the tests own ---------------------------------

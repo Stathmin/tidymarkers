@@ -59,6 +59,14 @@ for (f in prop_files) {
   d <- utils::read.csv(f, stringsAsFactors = FALSE, check.names = FALSE, nrows = 1)
   sig <- signature_of(d)
   if (sig == "unknown") {
+    # A file whose NAME says which registry it belongs to must never pass
+    # silently: polyploid.rows.csv carried the sources signature, so its four
+    # sources and four ledger rows sat unread while its extracts showed up as
+    # ORPHAN. Unrecognised stray proposals are still only a message.
+    if (grepl("^(sources|ledger|backlog)\\.", basename(f))) {
+      stop(basename(f), ": named for a registry but its columns match no signature (got: ",
+           paste(names(d), collapse = ", "), ")")
+    }
     message("  SKIP (not a registry proposal): ", basename(f))
     next
   }
@@ -169,12 +177,22 @@ all_csv <- basename(dir_ls(ext(".")))
 registries <- c("scientific_sources.csv", "scientific_backlog.csv",
                 "science_ledger.csv", "source_resolution.csv",
                 "conversion_rates.csv")
+# Raw downloads and binaries are provenance, NOT extracts: an .xml / .fa / .xlsx
+# beside a sourced .csv is the file the .csv was transcribed from, and no ledger
+# row ever claims it. Listing them here keeps the orphan check about CSVs.
+provenance_ext <- c("xml", "fa", "fasta", "xlsx", "bib")
+all_csv <- basename(dir_ls(ext(".")))
+all_csv <- all_csv[tolower(tools::file_ext(all_csv)) == "csv"]
 claimed <- unique(unlist(strsplit(led$extract, ",", fixed = TRUE)))
+claimed <- trimws(claimed[!is.na(claimed) & claimed != "none"])
 orphans <- setdiff(all_csv, c(claimed, registries))
 if (length(orphans)) {
   cat("\nORPHAN extracts (on disk, no ledger row):\n  ",
       paste(orphans, collapse = "\n  "), "\n")
   cat("  NOTE: source_resolution.csv is generated; conversion_rates.csv is legacy.\n")
+  # Fail the gate: a landed extract nobody claims is exactly the state the
+  # polyploid merge left behind, and it read as a NOTE for four waves.
+  stop("orphan extracts: ", length(orphans), " file(s) read by no ledger row")
 } else {
   cat("\nEvery extract is claimed by a ledger row.\n")
 }
