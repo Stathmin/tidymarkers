@@ -17,11 +17,11 @@ test_that("the decided default is -3 and the fallback is -2", {
   expect_equal(ARMS_EXTRA_MISMATCH_FALLBACK, -2L)
 })
 
-test_that("the fallback is used only for a context_dependent terminal class", {
+test_that("the fallback is spent on the weak terminal class only", {
   expect_equal(arms_extra_mismatch_position("severe"), -3L)
   expect_equal(arms_extra_mismatch_position("moderate"), -3L)
-  expect_equal(arms_extra_mismatch_position("minimal"), -3L)
-  expect_equal(arms_extra_mismatch_position("context_dependent"), -2L)
+  expect_equal(arms_extra_mismatch_position("minimal"), -2L)
+  expect_equal(arms_extra_mismatch_position("context_dependent"), -3L)
   # no severity class -> no position policy: `NA`, never a guess
   expect_true(is.na(arms_extra_mismatch_position(NA_character_)))
   expect_true(is.na(arms_extra_mismatch_position("")))
@@ -76,12 +76,12 @@ test_that("the AS engine ranks -3 ahead of -2 at equal discrimination", {
   rank <- match(out$stab_policy, c("default", "fallback", "none", "other"))
   # the order is the policy, not discrimination: default first, then fallback
   expect_equal(rank, sort(rank))
-  # rows WITH a mismatch carry the policy, in policy order
-  with_mm <- out[!is.na(out$stab_at), ]
-  expect_equal(unique(with_mm$stab_policy), c("default", "fallback"))
-  # every -3 row is the default, every -2 row the fallback
+  # every -3 row is the default; a -2 row is the fallback only where the
+  # terminal base is a weak one
   expect_true(all(out$stab_policy[!is.na(out$stab_at) & out$stab_at == -3L] == "default"))
-  expect_true(all(out$stab_policy[!is.na(out$stab_at) & out$stab_at == -2L] == "fallback"))
+  expect_true(all(!out$stab_policy[!is.na(out$stab_at) & out$stab_at == -3L] == "fallback"))
+  mm2 <- out[!is.na(out$stab_at) & out$stab_at == -2L, ]
+  expect_true(all(mm2$stab_policy == ifelse(mm2$weak_terminal, "fallback", "other")))
   # the policy reorders, it does not delete: both positions are still returned
   expect_setequal(unique(stats::na.omit(out$stab_at)), c(2L, 3L))
 })

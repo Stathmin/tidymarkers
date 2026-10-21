@@ -55,21 +55,30 @@ KASP_ARMS_GAP_FLOOR <- 10L # bp: the band gap may be relaxed to a PAGE-resolvabl
 # (1686 AS primers; 25.1 / 32.9 / 29.1 % specific at the 2nd / 3rd / 4th base)
 # and Lefever 2019 (qPCR, positions 1-5, optimum at position 3).  -2 has no
 # controlled measurement behind it (Ye 2001 is a rule; Zhu 2021's -2 primer is a
-# primer_scan with a figure-only ranking), so it is a FALLBACK for the one case
-# the literature already calls uncertain - a `context_dependent` terminal class -
-# not a competing default.  Directional, not calibrated: no dG is attached.
+# primer_scan with a figure-only ranking), so it is a FALLBACK, not a competing
+# default.  The fallback applies to the terminal mismatch's own severity: Ye 2001
+# arranges strong/medium/weak terminal classes and the extra mismatch is a rescue
+# for the WEAK ones, so a weak terminal class - or, on the package's own index, a
+# G:T / A:C wobble at the 3' end - gets -2.  Everything else keeps the measured
+# -3.  Both are directional: no dG is attached.
 ARMS_EXTRA_MISMATCH_POSITION <- -3L
 ARMS_EXTRA_MISMATCH_FALLBACK <- -2L
 
-#' Where the deliberate extra mismatch goes for a terminal-mismatch class
+#' Where the deliberate extra mismatch goes
 #'
 #' The decided default is -3 (Liu 2012 + Lefever 2019, the two measured scans).
-#' -2 is returned only for a terminal class the severity table itself calls
-#' `context_dependent`, where the marginal position is the historical rule of
-#' thumb (Ye 2001) and no measurement contradicts using it.  Any other class -
-#' including one with no severity entry - keeps the measured default; a class
-#' with no measurement at all is `NA`, so a caller can report `unknown` rather
-#' than guess.  See `data-raw/proposed/arms_mismatch_position.decision.md`.
+#' -2 is the fallback, and it is chosen by the terminal mismatch's OWN severity,
+#' because that is the variable the rule of thumb is about (Ye 2001 arranges
+#' strong/medium/weak terminal classes; mismatches in one class are treated
+#' alike):
+#' * `severe` (A:G, G:A, C:C) - no help: an extra mismatch cannot rescue a
+#'   terminal pair the polymerase already reads well;
+#' * `minimal` (T:G, T:C, T:T) - the historical -2 (Ye 2001), which exists for
+#'   exactly this weak class;
+#' * `moderate` (A:A) and `context_dependent` (G:G) - the conservative -3: the
+#'   weak-class rule is not measured, and these classes are not that weak;
+#' * no class at all - `NA`, so a caller reports `unknown` rather than guess.
+#' See `data-raw/proposed/arms_mismatch_position.decision.md`.
 #' @param terminal_class the Kwok severity class of the 3'-terminal mismatch
 #'   (`"severe"`, `"moderate"`, `"minimal"`, `"context_dependent"`), or `NA`.
 #' @return an integer position (-3 or -2), or `NA`.
@@ -80,14 +89,16 @@ arms_extra_mismatch_position <- function(terminal_class) {
   if (length(terminal_class) != 1L || is.na(cls) || !nzchar(cls)) {
     return(NA_integer_)
   }
-  allowed <- c("severe", "moderate", "minimal", "context_dependent")
-  if (!cls %in% allowed) {
+  pos <- c(
+    severe = ARMS_EXTRA_MISMATCH_POSITION,
+    moderate = ARMS_EXTRA_MISMATCH_POSITION,
+    minimal = ARMS_EXTRA_MISMATCH_FALLBACK,
+    context_dependent = ARMS_EXTRA_MISMATCH_POSITION
+  )
+  if (!cls %in% names(pos)) {
     return(NA_integer_)
   }
-  if (identical(cls, "context_dependent")) {
-    return(as.integer(ARMS_EXTRA_MISMATCH_FALLBACK))
-  }
-  as.integer(ARMS_EXTRA_MISMATCH_POSITION)
+  as.integer(pos[[cls]])
 }
 
 #' The window the ARMS designer selects against (and the gate limits display)
