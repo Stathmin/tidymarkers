@@ -131,8 +131,6 @@ test_that("the evidence rung reaches the verdict, without a new verdict string",
   ch <- marker_design_checks(ev_good_assay())
   expect_equal(evaluation_verdict(ch), "usable")
   expect_equal(evaluation_evidence(ch), "rule_of_thumb")
-  # the verdict vocabulary itself is untouched
-  expect_true(all(c("usable", "doomed", "unknown") %in% c("usable", "doomed", "unknown")))
 
   # a marker that fails every check has nothing passing, hence no rung
   doomed <- tibble::tibble(criterion = ch$criterion, pass = FALSE, status = "fail")
@@ -140,6 +138,28 @@ test_that("the evidence rung reaches the verdict, without a new verdict string",
   expect_true(is.na(evaluation_evidence(doomed)))
   # no rows at all is likewise no evidence
   expect_true(is.na(evaluation_evidence(tibble::tibble())))
+
+  # the verdict vocabulary itself is untouched: every branch of
+  # evaluation_verdict() - all pass, a fail, an unevaluated check, nothing that
+  # actually passed, and no rows at all - still answers from exactly this closed
+  # set, so the evidence rung is a second axis and not a fifth verdict string
+  vocabulary <- c("usable", "doomed", "unknown")
+  no_status <- ch
+  no_status$status <- NA_character_
+  # passes on paper only: neither not_applicable nor unknown is a real pass
+  nothing_passed <- ch
+  nothing_passed$status <- "not_applicable"
+  verdicts <- vapply(
+    list(ch, doomed, no_status, nothing_passed, tibble::tibble()),
+    evaluation_verdict, character(1)
+  )
+  expect_equal(
+    setdiff(verdicts, vocabulary), character(),
+    info = paste("verdicts:", paste(verdicts, collapse = ", "))
+  )
+  # ...and the branches above really do reach more than one of them, so the
+  # subset check above is not passing on a single degenerate answer
+  expect_gte(length(unique(verdicts)), 2L)
 })
 
 test_that("evaluation_evidence takes the weakest rung among passing checks only", {
