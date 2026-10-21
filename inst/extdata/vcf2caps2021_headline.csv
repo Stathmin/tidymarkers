@@ -1,0 +1,11 @@
+quantity,value
+n_markers_verified,10
+n_plants_each,30
+n_plant_x_marker_observations,300
+exact_match,2
+weaker_cleavable_allele,1
+close_single_het,3
+five_noncleavable_reclassified,1
+cleavable_hom_read_as_het_banding,1
+het_read_as_noncleavable,2
+marker_3_363_reclassified_as_het,5
