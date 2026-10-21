@@ -1,0 +1,12 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"lamp_comp2018","lamp_comp2018_separation.csv","test","test-lamp-comp2018.R","endpoint separation, not a binary call",NA
+"lamp_comp2018","lamp_comp2018_durations.csv","config","test-lamp-comp2018.R","time budget",NA
+"lamp_comp2018","lamp_comp2018_design_space.csv","config","test-lamp-comp2018.R","design space",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_tt.csv","test","test-lamp-mismatch_rtlamp2019.R","mismatch position vs time-to-positive",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_position_rules.csv","test","test-lamp-mismatch_rtlamp2019.R","position ranking",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_contradictions.csv","report","test-lamp-mismatch_rtlamp2019.R","authors' own claim kept beside the measurement",NA
+"snp_lamp_lfd2025","lamp_snp_lamp_lfd2025_detection.csv","test","test-lamp-snp_lamp_lfd2025.R","dipstick allele detection",NA
+"snp_lamp_lfd2025","lamp_snp_lamp_lfd2025_conditions.csv","config","test-lamp-snp_lamp_lfd2025.R","assay conditions",NA
+"badolo_kdr2012","lamp_badolo_kdr2012_time_to_positive.csv","test","test-lamp-ace1r.R","non-target censored at the window",NA
+"badolo_kdr2012","lamp_badolo_kdr2012_primers.csv","config","test-lamp-ace1r.R","B2 terminal dinucleotides",NA
+"lamp_mismatch_scan_negative",NA,"blocked",NA,"no position-wise LAMP mismatch scan exists","six Europe PMC queries screened; none reports time-to-positive per mismatch position for allele discrimination with a stated enzyme"

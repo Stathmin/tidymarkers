@@ -1,0 +1,6 @@
+"key","family","what_it_would_anchor","identifier","status","verified","verified_on","doi","pmcid","pmid","note"
+"lamp_comp2018","LAMP","competitive SNP-LAMP: allele discrimination as an endpoint fluorescence ratio","10.1016/j.crmeth.2022.100242","extracted","TRUE","2026-10-21","10.1016/j.crmeth.2022.100242","PMC9308130",NA,NA
+"mismatch_rtlamp2019","LAMP","LAMP primer mismatch TOLERANCE by position (time-to-positive), not discrimination","10.3389/fmicb.2019.01056","extracted","TRUE","2026-10-21","10.3389/fmicb.2019.01056","PMC6518337",NA,NA
+"snp_lamp_lfd2025","LAMP","SNP-LAMP with a dipstick readout: per-allele detection with a time window","10.3390/diagnostics15172183","extracted","TRUE","2026-10-21","10.3390/diagnostics15172183","PMC12428009",NA,NA
+"badolo_kdr2012","LAMP","the LAMP kdr-w rule: B2 terminal dinucleotide plus a second deliberate mismatch","10.1186/1475-2875-11-227","extracted","TRUE","2026-10-21","10.1186/1475-2875-11-227","PMC3407793",NA,NA
+"lamp_mismatch_scan_negative","LAMP","documented negative: no systematic position-wise LAMP mismatch scan for allele discrimination","no paper exists (see .tmp/sdd/report-lamp.md)","extracted","TRUE","2026-10-21","DOI-UNRESOLVED",NA,NA,NA
