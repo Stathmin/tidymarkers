@@ -89,14 +89,76 @@ test_that("ZW3/mm2020: primer_tm() ranks the 64 canonical duplexes with measurem
   expect_gt(stats::cor(tm, can$measured_tm_c), 0.9)
   expect_gt(stats::cor(tm, can$measured_tm_c, method = "spearman"), 0.85)
 
-  # the LEVEL offset is real and must not be silently "fixed": if the model
-  # ever lands within 2 C of these measurements at their own salt, someone has
-  # introduced a hidden correction and this anchor has gone vacuous
+  # The LEVEL offset is real. It is the WHOLE of the default salt term:
+  # Schildkraut & Lifson 1965, 16.6*log10(0.05) = -21.6 C, minus the 1 M
+  # reference being ~+4.7 C high. salt_method = "none" puts us ABOVE the
+  # measurement, so the term is present and working; removing it is worse.
+  # "Fixing" it by adding a constant is what this band forbids.
   bias <- mean(tm - can$measured_tm_c)
   expect_lt(bias, -10)
   expect_gt(bias, -25)
-  # and it is an offset, not noise
   expect_lt(stats::sd(tm - can$measured_tm_c), 2)
+})
+
+test_that("ZW3/mm2020: the documented salt_method option moves the level, not the ranking", {
+  skip_if_not(file.exists(mm2020_path()), "tm_mm2020 CSV not present")
+  d <- utils::read.csv(mm2020_path(), stringsAsFactors = FALSE)
+  can <- d[d$mismatch_class == "canonical", ]
+  cond <- reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+
+  sk <- primer_tm(can$top_18, conditions = cond, salt_method = "Schildkraut2010")
+  ow <- primer_tm(can$top_18, conditions = cond, salt_method = "Owczarzy2008")
+
+  # NULL must keep the engine default: existing designs must not move
+  expect_equal(primer_tm(can$top_18, conditions = cond), sk, tolerance = 1e-9)
+
+  # Owczarzy 2008 closes about 7.5 of the 16.9 C with the SAME correlation;
+  # both bands are measured, not asked for, and both are still far from [58, 63]
+  expect_gt(mean(ow - can$measured_tm_c) - mean(sk - can$measured_tm_c), 6)
+  expect_lt(mean(ow - can$measured_tm_c) - mean(sk - can$measured_tm_c), 9)
+  expect_lt(mean(ow - can$measured_tm_c), -5)
+  expect_equal(stats::cor(ow, can$measured_tm_c),
+               stats::cor(sk, can$measured_tm_c), tolerance = 0.01)
+
+  # NO systematic failure in LENGTH. The 4096 oracle rows are all 19-mers, so
+  # longer/shorter variants are built by truncation/extension of the same
+  # scaffold and scored against the ORIGINAL 19-mer measurement -- an
+  # approximation, stated as such. The bias drift across 16-25 nt is 11.2 C
+  # (bias grows for short oligos, as an end effect must). Asserted as a band,
+  # not as "small", because the drift is real and this test says so.
+  bias_len <- vapply(c(16L, 19L, 25L), function(L) {
+    s <- substr(paste0(can$top_18, "ATCGTACGT"), 1L, L)
+    mean(primer_tm(s, conditions = cond, salt_method = "Owczarzy2008") - can$measured_tm_c)
+  }, 0)
+  expect_gt(max(bias_len) - min(bias_len), 6)  # admit the drift
+  expect_lt(max(bias_len) - min(bias_len), 16) # but bound it
+  # monotone: a longer duplex must not read FURTHER below the 19-mer truth
+  expect_true(bias_len[[1L]] < bias_len[[2L]] && bias_len[[2L]] < bias_len[[3L]])
+
+  # NO systematic failure in Na. bias rises with [Na+] because that IS the
+  # salt term: +3.36 C per 100 mM over 20-500 mM, +14.4 C per decade of Na.
+  # A "small slope" assertion here would be false, so the test asserts the
+  # measured band PLUS the two facts that make it a salt term and not a
+  # constant offset: it crosses zero at ~340 mM, and it is the same term that
+  # removes the whole -16.9 C at the oracle's 50 mM.
+  nas <- c(20, 50, 100, 200, 500)
+  bias_na <- vapply(nas, function(na) {
+    mean(primer_tm(can$top_18,
+                   conditions = reaction_conditions(Na = na, Mg = 0, dNTPs = 0, DMSO = 0),
+                   salt_method = "Owczarzy2008") - can$measured_tm_c)
+  }, 0)
+  expect_true(all(diff(bias_na) > 0))               # monotone in Na
+  slope100 <- stats::coef(stats::lm(bias_na ~ nas))[[2L]] * 100
+  expect_gt(slope100, 2.5)
+  expect_lt(slope100, 4.5)
+  expect_equal(bias_na[nas == 50], mean(ow - can$measured_tm_c), tolerance = 0.1)
+  zero_mM <- -stats::coef(stats::lm(bias_na ~ nas))[[1L]] /
+    stats::coef(stats::lm(bias_na ~ nas))[[2L]]
+  expect_gt(zero_mM, 200)
+  expect_lt(zero_mM, 500)
+  # the default (Schildkraut) never crosses: it is still -0.3 C at 500 mM
+  expect_lt(mean(primer_tm(can$top_18,
+    conditions = reaction_conditions(Na = 500, Mg = 0, dNTPs = 0, DMSO = 0)) - can$measured_tm_c), 0)
 })
 
 test_that("ZW3/mm2020: the model separates a perfect duplex from a triple mismatch", {
