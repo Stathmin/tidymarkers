@@ -15,7 +15,7 @@
 "grewal2022_amblyopyrum","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: failure classes are not pooled",NA
 "polymarker_source","polymarker_design_rules.csv","rule","test-y32-homeolog.R","constraint: the common primer 3' base is the subgenome anchor, also SHOWN as artifact$subgenome_anchor",NA
 "newton1989","mismatch_discrimination.csv","test","test-z7-priors.R","mechanism prior only: a mismatched 3' base is not a primer",NA
-"ye2001_primer_set","ye2001_primer_set.csv (deliberately not written)","blocked","","none yet (provenance only)","the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"
+"ye2001_primer_set","ye2001_primer_set.csv (deliberately not written)","blocked",NA,"none yet (provenance only)","the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"
 "desilva2009","desilva2009_outcomes.csv","test","test-z8-outcomes.R","hrm: outcome counts with their own denominators",NA
 "ace1r_aslamp2015","ace1r_aslamp2015_counts.csv","test","test-z8-outcomes.R","lamp: time-to-positive window, not a binary call",NA
 "liu2016_caps","liu2016_caps_funnel.csv","test","test-z8-outcomes.R","caps: restriction-site conversion rate",NA
@@ -48,3 +48,14 @@
 "mps2024","dpcr_mps_ecoli_limits.csv","test","test-dpcr-mps-ecoli.R","working range is set by precision, not by linearity",NA
 "cheng2021","sanger_bda_braf_calls.csv","test","test-sanger-bda-braf.R","the Sanger floor is a property of the caller, not of the chemistry",NA
 "cheng2021","sanger_bda_braf_floor.csv","test","test-sanger-bda-braf.R","a measured Sanger VAF floor exists and is pipeline-specific",NA
+"lamp_comp2018","lamp_comp2018_separation.csv","test","test-lamp-comp2018.R","endpoint separation, not a binary call",NA
+"lamp_comp2018","lamp_comp2018_durations.csv","config","test-lamp-comp2018.R","time budget",NA
+"lamp_comp2018","lamp_comp2018_design_space.csv","config","test-lamp-comp2018.R","design space",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_tt.csv","test","test-lamp-mismatch_rtlamp2019.R","mismatch position vs time-to-positive",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_position_rules.csv","test","test-lamp-mismatch_rtlamp2019.R","position ranking",NA
+"mismatch_rtlamp2019","lamp_mismatch_rtlamp2019_contradictions.csv","report","test-lamp-mismatch_rtlamp2019.R","authors' own claim kept beside the measurement",NA
+"snp_lamp_lfd2025","lamp_snp_lamp_lfd2025_detection.csv","test","test-lamp-snp_lamp_lfd2025.R","dipstick allele detection",NA
+"snp_lamp_lfd2025","lamp_snp_lamp_lfd2025_conditions.csv","config","test-lamp-snp_lamp_lfd2025.R","assay conditions",NA
+"badolo_kdr2012","lamp_badolo_kdr2012_time_to_positive.csv","test","test-lamp-badolo_kdr2012.R","non-target censored at the window",NA
+"badolo_kdr2012","lamp_badolo_kdr2012_primers.csv","config","test-lamp-badolo_kdr2012.R","B2 terminal dinucleotides",NA
+"lamp_mismatch_scan_negative",NA,"blocked",NA,"no position-wise LAMP mismatch scan exists","six Europe PMC queries screened; none reports time-to-positive per mismatch position for allele discrimination with a stated enzyme"
