@@ -1,0 +1,4 @@
+quantity,value_vaf_pct,value_copies_per_ul,reported_cv_pct,definition
+LoB,0.002,0.043,NA,"CLSI EP17-A2 limit of blank: 40 NTC + 40 negative controls, repeated twice (80 negative + 40 NTC reactions); 'with a minimum requirement of more than one positive droplet'. The paper does not name the false-positive rate, so we do not assume 5%."
+LoD,0.005,NA,76,"CLSI EP17-A2 limit of detection: samples at 0.01 and 0.005% VAF, each assayed 20 times; the LoD is the lowest level still called positive. Reported with 'a CV of approximately 76%' - that CV is carried verbatim and is a property of the LoD measurement, not the precision table."
+LoQ,0.01,0.193,76,Concentration-based limit of quantification as the paper defines it (0.01% VAF = 0.193 copies/uL in a 20-uL system). The paper's linearity section separately gives an EP06 range of 0.01%-100% VAF.

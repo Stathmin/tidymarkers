@@ -1,0 +1,11 @@
+family,change,n,pct,outcome_definition,doi
+Transversions,AT→TA,20027,27.7%,NA,10.1270/jsbbs.66.244
+Transversions,AC→CA,19527,27.0%,NA,10.1270/jsbbs.66.244
+Transversions,TG→GT,19704,27.3%,NA,10.1270/jsbbs.66.244
+Transversions,CG→GC,13027,18.0%,NA,10.1270/jsbbs.66.244
+Transitions,CT→TC,76633,49.95%,NA,10.1270/jsbbs.66.244
+Transitions,AG→GA,76775,50.05%,NA,10.1270/jsbbs.66.244
+Indels,A,7170,37.2%,NA,10.1270/jsbbs.66.244
+Indels,T,7359,38.2%,NA,10.1270/jsbbs.66.244
+Indels,C,2380,12.4%,NA,10.1270/jsbbs.66.244
+Indels,G,2359,12.2%,NA,10.1270/jsbbs.66.244
