@@ -87,7 +87,7 @@ ATH_CHROM_MAP <- c(
 # Design targets / thresholds (named, so they are not magic numbers)
 AS_TM_TARGET <- 58 # preferred AS-primer Tm (C); kept below the common primer
 COM_TM_TARGET <- 60 # preferred common-primer Tm (C); KASP wants COM Tm >= AS Tm
-HAIRPIN_DG_WARN <- -3 # flag hairpins with dG37 below this (kcal/mol)
+HAIRPIN_DG_WARN <- -3 # flag hairpins with a reaction-temperature dG below this (kcal/mol)
 SEED_K <- 15L # 3'-seed length for the fast specificity screen
 SEED_MISMATCH <- 1L
 
@@ -128,9 +128,9 @@ KASP_LIMITS <- list(
   com_tm = c(58, 63), # C  (EasyKASP aims ~59.9-62.9)
   gc = c(0.40, 0.60), # fraction
   max_run = 4L, # longest homopolymer tolerated is max_run - 1
-  hairpin_dg = -3, # dG37 (kcal/mol); must be >= this
-  duplex_dg = -9, # cross-dimer dG37; must be >= this
-  homodimer_dg = -9, # self-dimer dG37; must be >= this
+  hairpin_dg = -3, # hairpin dG at the reaction temperature (kcal/mol); must be >= this
+  duplex_dg = -9, # cross-dimer dG at the reaction temperature; must be >= this
+  homodimer_dg = -9, # self-dimer dG at the reaction temperature; must be >= this
   discrimination = 0.5, # Taq on- minus off-target efficiency
   discrimination_margin = 0.1, # near-miss band: [min_disc - margin, min_disc) reads as medium risk
   footprint_dropout = 0.10 # expected fraction of templates lost to footprint variants

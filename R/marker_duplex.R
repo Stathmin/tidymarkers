@@ -170,16 +170,19 @@ duplex_selfcomp <- function(primer) {
 #' @param readout `"co-dominant"` (one cassette per locus) or `"presence-absence"`.
 #' @param homologous are the two loci homologous? (see `duplex_compatibility()`).
 #' @param tm_window,max_amplicon,max_selfcomp,min_cross_run the duplex limits.
+#' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
+#'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
+#'   enter the nearest-neighbour Tm.
 #' @return a list of scalars/vectors (see the body).
 #' @keywords internal
 #' @noRd
 duplex_metrics <- function(assays, readout, homologous, tm_window, max_amplicon,
-                           max_selfcomp, min_cross_run) {
+                           max_selfcomp, min_cross_run, conditions = NULL) {
   primers <- lapply(assays, function(a) {
     c(a$assay$as_ref[1L], a$assay$as_alt[1L], a$assay$com[1L])
   })
   all_pr <- unlist(primers, use.names = FALSE)
-  tm <- primer_tm(all_pr)
+  tm <- primer_tm(all_pr, conditions = conditions)
   # the declared topology and the loci's relationship must agree: a shared-cassette
   # duplex (co-dominant, one cassette per locus) is the dKASP build and pairs
   # *homologous* genes, so one common primer serves both (Jiang 2023); the
@@ -234,8 +237,10 @@ duplex_metrics <- function(assays, readout, homologous, tm_window, max_amplicon,
 #'   `"presence-absence"` (mxKASP / Multi-KASP: a dominant call).
 #' @param homologous are the two loci homologous?  `TRUE` for dKASP, `FALSE` for
 #'   mxKASP/Multi-KASP, `NA` when undeclared (the gate then notes it).
-#' @param tm_window,max_amplicon,max_selfcomp,min_cross_run the duplex limits (see
-#'   the published rules in the file header).
+#' @param max_selfcomp,min_cross_run the soft self-complementarity and hard
+#'   cross-dimer limits.
+#' @param conditions reaction conditions for [primer_tm()] (see
+#'   `duplex_metrics()`; `NULL` keeps the historical buffer).
 #' @return a tidy tibble `gate`, `observed`, `limit`, `pass`, `detail`.
 #' @keywords internal
 #' @noRd
@@ -243,10 +248,12 @@ duplex_compatibility <- function(assays, readout = c("co-dominant", "presence-ab
                                  homologous = NA, tm_window = DUPLEX_TM_WINDOW,
                                  max_amplicon = DUPLEX_MAX_AMPLICON,
                                  max_selfcomp = DUPLEX_MAX_SELFCOMP,
-                                 min_cross_run = DUPLEX_MIN_CROSS_RUN) {
+                                 min_cross_run = DUPLEX_MIN_CROSS_RUN,
+                                 conditions = NULL) {
   readout <- match.arg(readout)
   m <- duplex_metrics(
-    assays, readout, homologous, tm_window, max_amplicon, max_selfcomp, min_cross_run
+    assays, readout, homologous, tm_window, max_amplicon, max_selfcomp, min_cross_run,
+    conditions = conditions
   )
   gate <- c(
     "gate_duplex_targets", "gate_duplex_complement", "gate_duplex_tm",
@@ -295,6 +302,8 @@ duplex_compatibility <- function(assays, readout = c("co-dominant", "presence-ab
 #' @param assays a list of two assembled assays (one per locus).
 #' @param readout,homologous,tm_window,max_amplicon,max_selfcomp,min_cross_run see
 #'   `duplex_compatibility()`.
+#' @param conditions reaction conditions for [primer_tm()] (see
+#'   `duplex_metrics()`; `NULL` keeps the historical buffer).
 #' @return list with `pick` (the `select_with_ladder()` result) and `metrics`.
 #' @keywords internal
 #' @noRd
@@ -302,10 +311,12 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
                              homologous = NA, tm_window = DUPLEX_TM_WINDOW,
                              max_amplicon = DUPLEX_MAX_AMPLICON,
                              max_selfcomp = DUPLEX_MAX_SELFCOMP,
-                             min_cross_run = DUPLEX_MIN_CROSS_RUN) {
+                             min_cross_run = DUPLEX_MIN_CROSS_RUN,
+                             conditions = NULL) {
   readout <- match.arg(readout)
   m <- duplex_metrics(
-    assays, readout, homologous, tm_window, max_amplicon, max_selfcomp, min_cross_run
+    assays, readout, homologous, tm_window, max_amplicon, max_selfcomp, min_cross_run,
+    conditions = conditions
   )
   # one row per candidate pairing: the two best per-locus designs are fixed, so
   # the duplex stage has exactly one candidate and the ladder bounds how far its
@@ -389,8 +400,12 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
         "Duplex: `homologous` is undeclared; the topology gate is not_applicable and the pairing cannot pass."
       ))
     }
-    compat <- duplex_compatibility(assays, readout, homologous)
-    sel <- duplex_selection(assays, readout, homologous)
+    compat <- duplex_compatibility(assays, readout, homologous,
+      conditions = scheme_conditions("duplex")
+    )
+    sel <- duplex_selection(assays, readout, homologous,
+      conditions = scheme_conditions("duplex")
+    )
     # a hard gate has floor 0 and is never lowered, so `best = NULL` means a hard
     # failure (DOOMED); a non-empty `violated` means the soft cap was relaxed
     verdict <- if (is.null(sel$pick$best)) {

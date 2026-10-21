@@ -18,7 +18,8 @@ design_as_primers(
   linked = NULL,
   gc_range = NULL,
   tm_range = NULL,
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  conditions = NULL
 )
 }
 \arguments{
@@ -51,6 +52,10 @@ afterwards anyway).  \code{NULL} keeps every configuration.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; the batched DECIPHER call and
 the 3'-stability map are run across cores (\code{NULL} = serial).}
+
+\item{conditions}{reaction conditions for \code{\link[=primer_tm]{primer_tm()}} (\code{NULL} = the
+historical 50 mM Na / 37 C buffer).  Only the buffer fields of \code{conditions}
+enter the nearest-neighbour Tm.}
 }
 \value{
 a tibble, one row per primer configuration, with \code{strand},

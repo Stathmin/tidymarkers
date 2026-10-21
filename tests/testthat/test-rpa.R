@@ -101,6 +101,34 @@ test_that("the RPA variant gate checks the actual placement", {
   expect_false(rpa_variant_gate("none", 100L, fwd_end = 100L))
 })
 
+test_that("RPA dimers are screened at the RPA temperature, not 37 C (Z3)", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  m <- design_rpa_marker(f$genome, f$snp, flank = 200L)
+  p <- c(forward = m$primers$forward, reverse = m$primers$reverse)
+  rpa <- scheme_conditions("rpa")
+  hot <- dimer_thermo(p, conditions = rpa)
+  cold <- dimer_thermo(p)
+  # same rows, same names: only the dG moves
+  expect_equal(hot$a, cold$a)
+  expect_equal(hot$b, cold$b)
+  # 42 C is the top of RPA's window: a weaker duplex at every pair, so a dimer
+  # screen can never fail on a number that is only stable at 37 C
+  expect_true(all(hot$dg > cold$dg))
+  # the reported tube screen is exactly the scheme-temperature evaluation
+  oligos <- c(forward = m$primers$forward, reverse = m$primers$reverse)
+  expect_equal(m$compatibility$dg, primer_set_compatibility(oligos, conditions = rpa)$dg)
+  cold_pool <- primer_set_compatibility(oligos)
+  expect_true(all(m$compatibility$dg > cold_pool$dg))
+  # the verdict is the run screen, which no temperature touches
+  expect_equal(m$compatibility$pass, cold_pool$pass)
+  # the structure gate is evaluated at the same conditions, and it sees the
+  # returned (clean) pair
+  expect_true(rpa_structure_ok(list(forward = p[["forward"]], reverse = p[["reverse"]])))
+  # the gate label states the temperature it is evaluated at
+  expect_match(scheme_def_rpa()$gate_limit[["gate_rpa_structure"]], "42 C")
+})
+
 test_that("scheme_def_rpa describes the chemistry's gates, tiers and stage", {
   d <- scheme_def_rpa()
   expect_equal(d$scheme, "rpa")

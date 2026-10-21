@@ -233,7 +233,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
   out$compatibility <- tube_compatibility(c(
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
     probe_ref = out$probes$probe[1L], probe_alt = out$probes$probe[2L]
-  ))
+  ), conditions = scheme_conditions("dpcr"))
 
   # ---- C7: the declared gates are all evaluated on the winner ----------------
   # The scans above already *enforce* the hard gates (Tm/GC windows, the 5'-G and
@@ -432,7 +432,7 @@ scheme_def_dpcr <- function() {
     gate_limit = c(
       gate_dpcr_probe_comp = glue::glue("GC {gc[1L] * 100}-{gc[2L] * 100} %, no 5' G, no run >= 4"),
       gate_dpcr_probe_specific = "exactly one perfect probe site in the genome",
-      gate_dpcr_probe_structure = glue::glue("probe hairpin/homodimer dG37 >= {KASP_LIMITS$hairpin_dg}"),
+      gate_dpcr_probe_structure = glue::glue("probe hairpin/homodimer dG (reaction T) >= {KASP_LIMITS$hairpin_dg}"),
       gate_dpcr_probe_tm = glue::glue("probe Tm >= primer Tm + {pmar} C"),
       # the annealing window the designer applies (design_dpcr_marker's tm_range
       # default): a real parameterised value, never a `[lo, hi]` (C9)

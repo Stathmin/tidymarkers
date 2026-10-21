@@ -40,9 +40,9 @@ loss of target (never a tolerated primer mismatch).}
 }
 \value{
 tibble \code{chrom}, \code{start}, \code{end}, \code{width}, \code{n_mismatch},
-\code{mismatch_positions}, \code{three_prime_mismatch}, \code{seed_mismatch},
-\code{three_prime_terminal}, \code{penalty}, \code{f_penalty}, \code{r_penalty}, \code{score} (one
-row per product).
+\code{mismatch_positions}, \code{f_mismatch_positions}, \code{r_mismatch_positions},
+\code{three_prime_mismatch}, \code{seed_mismatch}, \code{three_prime_terminal}, \code{penalty},
+\code{f_penalty}, \code{r_penalty}, \code{score} (one row per product).
 }
 \description{
 Uses IUPAC-aware \code{Biostrings::matchPattern()} to find forward and reverse
@@ -52,13 +52,28 @@ test must amplify exactly one product per allele.
 }
 \details{
 Every product also carries its primer mismatches (\code{n_mismatch} = the worse of
-the two primers), where they sit (\code{mismatch_positions}, list-column,
-1-based from each searched primer's 5' end: the forward primer, and the
-reverse complement of the reverse primer), how many fall in the last
-\code{THREE_PRIME_WINDOW} nt (\code{three_prime_mismatch}; \verb{f_*}/\verb{r_*} for each primer)
-and in the seed (\code{seed_mismatch}), and a weighted \code{penalty} / \code{score}.  Those
-columns are always present and are \code{0}/empty for a perfect product, so the
-original \code{chrom}/\code{start}/\code{end}/\code{width} contract is unchanged.
+the two primers), where they sit, how close they are to the extendable end,
+and a weighted penalty.  Positions are 1-based from each primer's \strong{own}
+5' end: \code{f_mismatch_positions} for the forward primer, \code{r_mismatch_positions}
+for the reverse one (the reverse primer is searched as its reverse complement,
+so its plus-strand positions are mirrored back - position 1 there is the
+reverse primer's 3'-terminal base).  \code{mismatch_positions} is the union of the
+two and is therefore only meaningful as a set, not by position.
+
+A mismatch in the last \code{THREE_PRIME_TERMINAL} (3) nt of \emph{either} primer sets
+\code{three_prime_terminal} and carries the policy's \code{weight_terminal}, so it always
+dominates a mismatch elsewhere and no scheme tolerates it.  A degenerate code
+that still covers the genomic base is a match, counted once, so neither
+degeneracy nor a scheme radius can double-count it.  \code{three_prime_mismatch}
+(last \code{THREE_PRIME_WINDOW} = 5 nt) and \code{seed_mismatch} (last \code{seed_len} nt)
+are the sums over both primers.
+
+The penalty is the sum over the two primers of the scheme's position ladder
+(\code{weight_middle}, \code{weight_seed}, \code{weight_three_prime}, \code{weight_terminal} of
+\code{\link[=specificity_policy]{specificity_policy()}}), so an RPA product with several middle mismatches
+scores differently from a PCR one.  A degenerate primer can only be scanned
+exactly (it is reported as exact matches, with a warning); a one-base radius
+over an ambiguous code is not a well-defined distance.
 
 Passing a \code{scheme} makes the search \emph{policy-aware}: the scan radius is the
 policy's \code{max_mismatch} and a product is kept only when the policy tolerates

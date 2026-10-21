@@ -76,8 +76,10 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
 #
 # The last 5 nt are the 3' window the PCR/KASP literature singles out; the
 # position ladder (middle < seed < last 5 < terminal) is a heuristic, not a
-# calibrated free-energy model - see mismatch_weights().
+# calibrated free-energy model - see mismatch_weights().  A mismatch in the
+# last THREE_PRIME_TERMINAL nt is a 3'-terminal mismatch (no extension).
 THREE_PRIME_WINDOW <- 5L
+THREE_PRIME_TERMINAL <- 3L
 
 # IUPAC primer code -> the bases it covers (Biostrings' DNA alphabet)
 IUPAC_BASES <- list(
@@ -90,7 +92,8 @@ IUPAC_BASES <- list(
 
 # Columns every in-silico PCR product carries, in order, after the legacy four
 PCR_MISMATCH_COLUMNS <- c(
-  "n_mismatch", "mismatch_positions", "three_prime_mismatch",
+  "n_mismatch", "mismatch_positions", "f_mismatch_positions",
+  "r_mismatch_positions", "three_prime_mismatch",
   "seed_mismatch", "three_prime_terminal", "penalty"
 )
 
@@ -126,8 +129,11 @@ exact_seed_counts <- function(seeds, genome) {
 #' A mismatch near the primer's 3' terminus destabilises the annealed end far
 #' more than one in the middle, because extension starts there; the seed region
 #' (the 3'-terminal `seed_len` nt, the mismatch-critical region of an
-#' allele-specific primer) sits just behind it.  The weights are a monotone
-#' ladder - 3'-terminal > seed > middle - not a free-energy calculation.
+#' allele-specific primer) sits just behind it.  The ladder is the scheme's own
+#' (`weight_seed`, `weight_three_prime`, `weight_terminal` of
+#' [specificity_policy()]), so RPA's tolerant filaments are not scored like a
+#' proofreading polymerase.  It is a monotone heuristic, not a free-energy
+#' calculation.
 #' @param n_nt primer length.
 #' @param scheme chemistry (see [specificity_policy()]).
 #' @param seed_len seed length (default: the policy's).
@@ -137,29 +143,54 @@ exact_seed_counts <- function(seeds, genome) {
 mismatch_weights <- function(n_nt, scheme = "pcr", seed_len = NULL) {
   pol <- specificity_policy(scheme)
   seed_len <- seed_len %||% pol$seed_len
-  w <- rep(1, n_nt)
+  n_nt <- as.integer(n_nt)
+  if (!n_nt) {
+    return(numeric())
+  }
+  w <- rep(pol$weight_middle, n_nt)
   seed <- seq.int(max(1L, n_nt - seed_len + 1L), n_nt)
-  w[seed] <- if (pol$mode == "crispr") 4 else 3
-  tail5 <- seq.int(max(1L, n_nt - THREE_PRIME_WINDOW + 1L), n_nt)
-  w[tail5] <- 8
-  w[n_nt] <- 12
+  w[seed] <- pol$weight_seed
+  tail5 <- seq.int(max(1L, n_nt - pol$three_prime_window + 1L), n_nt)
+  w[tail5] <- pol$weight_three_prime
+  w[tail_terminal(n_nt)] <- pol$weight_terminal
   w
+}
+
+#' Last `THREE_PRIME_TERMINAL` positions of `n_nt` (5'->3', 1-based)
+#' @keywords internal
+#' @noRd
+tail_terminal <- function(n_nt) {
+  seq.int(max(1L, n_nt - THREE_PRIME_TERMINAL + 1L), n_nt)
 }
 
 #' Mismatch profile of one primer hit against the genomic footprint
 #'
+# Each mismatching position is counted once, at its heaviest role, so a
+# degenerate code plus `max_mismatch` cannot double-count (a seed position is
+# not also added as a generic mismatch):
+#   terminal (last 3 nt) > last-5 window > seed > middle.
 #' Compares the searched (plus-strand) primer pattern with the subject slice it
 #' matched.  IUPAC codes in the primer are expanded, so a degenerate position
 #' that still covers the subject base is a *match*, not a mismatch; an N in the
 #' subject never mismatches (it matches anything).  Mismatch positions are
-#' reported 1-based from the 5' end of the primer (i.e. the plus-strand pattern
-#' for the forward primer, the plus-strand reverse complement for the reverse).
+#' reported 1-based from the 5' end of the primer, i.e. in the primer's own
+#' 5'->3' orientation - but `pattern` here is the *plus-strand* pattern, so the
+#' reverse primer's positions are mirrored back by [plus_to_primer()] in
+#' [primer_hit_table()].
+#'
+#' Every mismatching position is counted once, at its heaviest role (the masks
+#' are nested: terminal <= last-5 window <= seed <= middle), so a degenerate
+#' code plus a search radius can never double-count one position.  A terminal
+#' mismatch contributes `weight_terminal` each and dominates the sum; the other
+#' mismatches contribute their ladder weight divided by one more than the
+#' terminal count.
 #' @param pattern searched primer as a character string (plus strand).
 #' @param subject_seq the genomic slice of the same width (character).
 #' @param scheme chemistry.
 #' @param seed_len seed length override (`NA` = the policy's).
-#' @return `n_mismatch`, `mismatch_positions` (list), `three_prime_mismatch`,
-#'   `seed_mismatch`, `three_prime_terminal`, `penalty`.
+#' @return `n_mismatch`, `mismatch_positions` (list, plus-strand),
+#'   `three_prime_mismatch`, `seed_mismatch`, `terminal_mismatch`,
+#'   `three_prime_terminal`, `penalty`.
 #' @keywords internal
 #' @noRd
 mismatch_profile <- function(pattern, subject_seq, scheme = "pcr", seed_len = NA_integer_) {
@@ -169,18 +200,53 @@ mismatch_profile <- function(pattern, subject_seq, scheme = "pcr", seed_len = NA
   mm <- which(!mapply(iupac_covers, pat, sub, USE.NAMES = FALSE))
   n_mm <- length(mm)
   pos <- as.integer(mm)
-  tail5 <- if (n_nt) seq.int(max(1L, n_nt - THREE_PRIME_WINDOW + 1L), n_nt) else integer()
+  if (!n_nt) {
+    return(list(
+      n_mismatch = 0L, mismatch_positions = list(integer()),
+      three_prime_mismatch = 0L, seed_mismatch = 0L, terminal_mismatch = 0L,
+      three_prime_terminal = FALSE, penalty = 0
+    ))
+  }
   s_len <- if (is.na(seed_len)) specificity_policy(scheme)$seed_len else seed_len
-  seed <- if (n_nt) seq.int(max(1L, n_nt - s_len + 1L), n_nt) else integer()
-  penalty <- if (n_mm == 0L) 0 else sum(mismatch_weights(n_nt, scheme, s_len)[pos])
+  w <- mismatch_weights(n_nt, scheme, s_len)
+  # A mismatch in the last THREE_PRIME_TERMINAL nt stops extension, so its
+  # penalty is the scheme's terminal weight times the number of terminal
+  # mismatches.  Ordinary mismatches then add their ladder weight *discounted*
+  # by the terminal ones: same-role mismatches add up, but no number of
+  # elsewhere mismatches can outscore a 3'-terminal one.  A terminal mismatch
+  # therefore always dominates, and an exact 3' end is never penalised for a
+  # mismatch elsewhere.
+  term_w <- max(max(w), 0)
+  # positional in the primer's frame here; the masks are logical, so a mismatch
+  # is in a region earlier in the ladder unless a later region claims it
+  terminal <- pos %in% tail_terminal(n_nt)
+  penalty <- sum(terminal) * term_w +
+    sum(w[pos[!terminal]]) / (sum(terminal) + 1L)
   list(
     n_mismatch = n_mm,
     mismatch_positions = list(pos),
-    three_prime_mismatch = sum(pos %in% tail5),
-    seed_mismatch = sum(pos %in% seed),
-    three_prime_terminal = n_nt > 0L && n_nt %in% pos,
+    three_prime_mismatch = sum(pos %in% seq.int(max(1L, n_nt - THREE_PRIME_WINDOW + 1L), n_nt)),
+    seed_mismatch = sum(pos %in% seq.int(max(1L, n_nt - s_len + 1L), n_nt)),
+    terminal_mismatch = sum(terminal),
+    three_prime_terminal = sum(terminal) > 0L,
     penalty = penalty
   )
+}
+
+#' Convert a plus-strand mismatch position to the primer's own 5'->3' position
+#'
+#' The reverse primer is searched as its reverse complement (the plus strand),
+#' so a position counted there runs 3'->5' of the primer: 1 on the plus strand
+#' is the reverse primer's 3'-terminal base.  Mirroring maps position `p` back
+#' to `n_nt - p + 1`, otherwise the report would call the 5' end the 3' end.
+#' @param pos integer positions on the searched (plus-strand) pattern.
+#' @param n_nt primer length.
+#' @param reverse is the searched pattern the reverse complement of the primer?
+#' @return integer positions 1-based from the primer's 5' end.
+#' @keywords internal
+#' @noRd
+plus_to_primer <- function(pos, n_nt, reverse) {
+  if (reverse) n_nt - pos + 1L else pos
 }
 
 #' Does an IUPAC primer code cover a subject base?
@@ -204,14 +270,41 @@ iupac_covers <- function(code, base) {
 #'
 #' One `matchPattern()` pass per primer (`fixed = FALSE`, so IUPAC-aware) with
 #' the mismatch profile of every hit computed against its genomic footprint.
+#' The search is exact-or-radius as asked: a mismatched replacement character in
+#' the pattern is the only way a terminal mismatch can be scanned here, because
+#' a base-space radius over the pattern cannot see the pattern's own last bases.
+#' Mismatch degree therefore comes from [mismatch_profile()] on the footprint,
+#' never from the search window.
+#' `pattern` is the plus-strand pattern searched; `side` says which primer it
+#' is, so the reported positions and the 3'-terminal flag are in the primer's
+#' own 5'->3' orientation (the reverse primer is searched as its reverse
+#' complement, whose plus-strand positions are mirrored back).
+#' @param pattern the plus-strand pattern to search (IUPAC-aware).
+#' @param genome DNAStringSet.
+#' @param max_mismatch search radius.
+#' @param scheme chemistry.
+#' @param seed_len seed length override (`NA` = the policy's).
+#' @param side `"f"` (forward) or `"r"` (reverse complement searched).
 #' @keywords internal
 #' @noRd
-primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = NA_integer_) {
+primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = NA_integer_,
+                             side = c("f", "r")) {
+  # An IUPAC primer cannot be scanned with a mismatch radius (the radius is a
+  # base-space distance, not a code distance); scoring it exactly is a degraded,
+  # not a faithful, answer, so say so rather than only raising the error.
   if (max_mismatch > 0L && grepl("[^ACGT]", pattern)) {
-    cli::cli_abort(c(
-      gettext("`max_mismatch > 0` needs the primer to be unambiguous."),
-      i = gettext("Pass a concrete primer, or pass a `scheme` for scoring with an exact search.")
-    ))
+    rlang::warn(gettext(paste(
+      "A degenerate primer cannot be scanned with `max_mismatch > 0`;",
+      "only its exact (IUPAC-aware) matches are scored."
+    )), class = "tidymarkers_degenerate_exact")
+  }
+  side <- match.arg(side)
+  orient <- function(prof) {
+    pos <- plus_to_primer(prof$mismatch_positions[[1L]], nchar(pattern), side == "r")
+    # an AsIs element keeps the column a vector of integer vectors (a bare list
+    # of length 1 would be treated as a column and nested)
+    prof$mismatch_positions <- list(structure(sort(pos), class = "AsIs"))
+    prof
   }
   scan_one <- function(nm) {
     worker_biostrings()
@@ -224,7 +317,9 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       return(NULL)
     }
     footprint <- as.character(hits)
-    prof <- lapply(footprint, function(seq) mismatch_profile(pattern, seq, scheme, seed_len))
+    prof <- lapply(footprint, function(seq) {
+      orient(mismatch_profile(pattern, seq, scheme, seed_len))
+    })
     tibble::tibble(
       chrom = nm,
       start = IRanges::start(hits),
@@ -233,6 +328,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       mismatch_positions = lapply(prof, `[[`, "mismatch_positions"),
       three_prime_mismatch = vapply(prof, `[[`, integer(1), "three_prime_mismatch"),
       seed_mismatch = vapply(prof, `[[`, integer(1), "seed_mismatch"),
+      terminal_mismatch = vapply(prof, `[[`, integer(1), "terminal_mismatch"),
       three_prime_terminal = vapply(prof, `[[`, logical(1), "three_prime_terminal"),
       penalty = vapply(prof, `[[`, numeric(1), "penalty")
     )
@@ -244,7 +340,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       chrom = character(), start = integer(), end = integer(),
       n_mismatch = integer(), mismatch_positions = list(integer()),
       three_prime_mismatch = integer(), seed_mismatch = integer(),
-      three_prime_terminal = logical(), penalty = numeric()
+      terminal_mismatch = integer(), three_prime_terminal = logical(), penalty = numeric()
     )
   }
   out
@@ -258,13 +354,28 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #' test must amplify exactly one product per allele.
 #'
 #' Every product also carries its primer mismatches (`n_mismatch` = the worse of
-#' the two primers), where they sit (`mismatch_positions`, list-column,
-#' 1-based from each searched primer's 5' end: the forward primer, and the
-#' reverse complement of the reverse primer), how many fall in the last
-#' `THREE_PRIME_WINDOW` nt (`three_prime_mismatch`; `f_*`/`r_*` for each primer)
-#' and in the seed (`seed_mismatch`), and a weighted `penalty` / `score`.  Those
-#' columns are always present and are `0`/empty for a perfect product, so the
-#' original `chrom`/`start`/`end`/`width` contract is unchanged.
+#' the two primers), where they sit, how close they are to the extendable end,
+#' and a weighted penalty.  Positions are 1-based from each primer's **own**
+#' 5' end: `f_mismatch_positions` for the forward primer, `r_mismatch_positions`
+#' for the reverse one (the reverse primer is searched as its reverse complement,
+#' so its plus-strand positions are mirrored back - position 1 there is the
+#' reverse primer's 3'-terminal base).  `mismatch_positions` is the union of the
+#' two and is therefore only meaningful as a set, not by position.
+#'
+#' A mismatch in the last `THREE_PRIME_TERMINAL` (3) nt of *either* primer sets
+#' `three_prime_terminal` and carries the policy's `weight_terminal`, so it always
+#' dominates a mismatch elsewhere and no scheme tolerates it.  A degenerate code
+#' that still covers the genomic base is a match, counted once, so neither
+#' degeneracy nor a scheme radius can double-count it.  `three_prime_mismatch`
+#' (last `THREE_PRIME_WINDOW` = 5 nt) and `seed_mismatch` (last `seed_len` nt)
+#' are the sums over both primers.
+#'
+#' The penalty is the sum over the two primers of the scheme's position ladder
+#' (`weight_middle`, `weight_seed`, `weight_three_prime`, `weight_terminal` of
+#' [specificity_policy()]), so an RPA product with several middle mismatches
+#' scores differently from a PCR one.  A degenerate primer can only be scanned
+#' exactly (it is reported as exact matches, with a warning); a one-base radius
+#' over an ambiguous code is not a well-defined distance.
 #'
 #' Passing a `scheme` makes the search *policy-aware*: the scan radius is the
 #' policy's `max_mismatch` and a product is kept only when the policy tolerates
@@ -289,9 +400,9 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #'   case-insensitive match is the only tolerated state; a mismatch is a hard
 #'   loss of target (never a tolerated primer mismatch).
 #' @return tibble `chrom`, `start`, `end`, `width`, `n_mismatch`,
-#'   `mismatch_positions`, `three_prime_mismatch`, `seed_mismatch`,
-#'   `three_prime_terminal`, `penalty`, `f_penalty`, `r_penalty`, `score` (one
-#'   row per product).
+#'   `mismatch_positions`, `f_mismatch_positions`, `r_mismatch_positions`,
+#'   `three_prime_mismatch`, `seed_mismatch`, `three_prime_terminal`, `penalty`,
+#'   `f_penalty`, `r_penalty`, `score` (one row per product).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -313,12 +424,15 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   # the reverse primer binds the minus strand, so its reverse complement is the
   # plus-strand pattern to search
   rev <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(r_primer)))
+  # the score ladder is the scheme's; without a scheme it is pcr's (the
+  # historical weights), so the bare call keeps its scoring
+  scoring <- policy$mode %||% "pcr"
   min_width <- max(nchar(f_primer), nchar(r_primer))
   chroms <- genome_chroms(genome)
   scan_one <- function(nm) {
     worker_biostrings()
-    fh <- primer_hit_table(f_primer, genome[nm], radius, scheme %||% "pcr")
-    rh <- primer_hit_table(rev, genome[nm], radius, scheme %||% "pcr")
+    fh <- primer_hit_table(f_primer, genome[nm], radius, scoring, side = "f")
+    rh <- primer_hit_table(rev, genome[nm], radius, scoring, side = "r")
     if (nrow(fh) == 0L || nrow(rh) == 0L) {
       return(NULL)
     }
@@ -340,6 +454,8 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
           recursive = TRUE
         )))
       }),
+      f_mismatch_positions = f$mismatch_positions,
+      r_mismatch_positions = r$mismatch_positions,
       three_prime_mismatch = f$three_prime_mismatch + r$three_prime_mismatch,
       seed_mismatch = f$seed_mismatch + r$seed_mismatch,
       three_prime_terminal = f$three_prime_terminal | r$three_prime_terminal,
@@ -363,7 +479,6 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   if (is.null(out)) {
     out <- empty_pcr_products()
   }
-  out$score <- hit_score(out)
   out$score <- hit_score(out)
   # an explicit ordering: a zero-row table must keep the same column contract
   # (`list_rbind()` of an all-`NULL` list yields a column-less data frame)
@@ -417,6 +532,8 @@ empty_pcr_products <- function() {
   )
   out[["n_mismatch"]] <- integer()
   out[["mismatch_positions"]] <- list(integer())
+  out[["f_mismatch_positions"]] <- list(integer())
+  out[["r_mismatch_positions"]] <- list(integer())
   out[["three_prime_mismatch"]] <- integer()
   out[["seed_mismatch"]] <- integer()
   out[["three_prime_terminal"]] <- logical()
@@ -609,20 +726,24 @@ build_blast_db <- function(genome, path = fs::path(marker_cache_dir(), "tair10.f
 SPECIFICITY_POLICIES <- list(
   pcr = list(
     mode = "pcr", max_mismatch = 1L, seed_len = 5L, seed_max = 0L,
-    three_prime_max = 0L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_
+    three_prime_max = 0L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_,
+    weight_middle = 1, weight_seed = 3, weight_three_prime = 8, weight_terminal = 12
   ),
   rpa = list(
     mode = "rpa", max_mismatch = 4L, seed_len = 5L, seed_max = 2L,
-    three_prime_max = 1L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_
+    three_prime_max = 1L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_,
+    weight_middle = 1, weight_seed = 2, weight_three_prime = 5, weight_terminal = 12
   ),
   crispr = list(
     mode = "crispr", max_mismatch = 5L, seed_len = 8L, seed_max = 1L,
     three_prime_max = 2L, requires_pam = TRUE, pam = "TTTV", pfs = "weak",
-    critical_from = 1L, critical_to = 8L
+    critical_from = 1L, critical_to = 8L,
+    weight_middle = 1, weight_seed = 4, weight_three_prime = 8, weight_terminal = 12
   ),
   paralog = list(
     mode = "paralog", max_mismatch = 4L, seed_len = 8L, seed_max = 1L,
-    three_prime_max = 1L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_
+    three_prime_max = 1L, requires_pam = FALSE, pam = NA_character_, pfs = NA_character_,
+    weight_middle = 1, weight_seed = 2, weight_three_prime = 5, weight_terminal = 12
   )
 )
 
@@ -653,6 +774,23 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #' | `crispr` (Cas9/Cas12/Cas13) | 5 | 8 | 1 | 2 | yes (Cas12a `TTTV`) |
 #' | `paralog` (homeolog/homolog) | 4 | 8 | 1 | 1 | no |
 #'
+#' Position ladder (per-position weight of a mismatch, 5'->3' of the primer):
+#'
+#' | scheme | `weight_middle` | `weight_seed` | `weight_three_prime` | `weight_terminal` |
+#' |---|---|---|---|---|
+#' | `pcr` | 1 | 3 | 8 | 12 |
+#' | `rpa` | 1 | 2 | 5 | 12 |
+#' | `crispr` | 1 | 4 | 8 | 12 |
+#' | `paralog` | 1 | 2 | 5 | 12 |
+#'
+#' `weight_seed` applies to the 3'-terminal `seed_len` nt, `weight_three_prime`
+#' to the last `three_prime_window` (5) nt and `weight_terminal` to the last 3 nt
+#' - the 3'-terminal mismatch that stops extension.  RPA/LAMP tolerate several
+#' mismatches, so a middle mismatch costs less there than for a proofreading
+#' polymerase; the terminal weight is the same everywhere, because no chemistry
+#' extends from a mismatched 3' end.  The pcr row is the historical scoring, so
+#' `pcr`/`kasp` callers' scores are unchanged.
+#'
 #' Biological basis:
 #' * **PCR/KASP** - extension begins at the 3' terminus: a 3'-terminal mismatch
 #'   is a hard loss (never a tolerated mismatch), 0 mismatches are allowed in the
@@ -676,8 +814,9 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #'   carries a named `weight` vector with the per-position ladder (5'->3').
 #' @return a `specificity_policy` list: `mode`, `max_mismatch`, `seed_len`,
 #'   `seed_max`, `three_prime_max`, `three_prime_window`, `requires_pam`, `pam`,
-#'   `pfs`, `critical_from`/`critical_to` (CRISPR), `priors` (the tolerance row as
-#'   a one-row tibble) and `calibrated` (`FALSE`).
+#'   `pfs`, `critical_from`/`critical_to` (CRISPR), the position ladder
+#'   (`weight_middle`, `weight_seed`, `weight_three_prime`, `weight_terminal`),
+#'   `priors` (the tolerance row as a one-row tibble) and `calibrated` (`FALSE`).
 #' @examples
 #' specificity_policy("kasp")$max_mismatch
 #' specificity_policy("rpa")$max_mismatch
@@ -727,6 +866,11 @@ print.specificity_policy <- function(x, ...) {
   cat("<specificity_policy:", x$mode, "(heuristic, calibrated =", x$calibrated, ")>\n")
   cat("  max_mismatch", x$max_mismatch, "| seed", x$seed_max, "of", x$seed_len,
     "| last", x$three_prime_window, "nt", x$three_prime_max, "\n",
+    sep = " "
+  )
+  cat("  weights: middle", x$weight_middle, "| seed", x$weight_seed,
+    "| last", x$three_prime_window, "nt", x$weight_three_prime,
+    "| terminal", x$weight_terminal, "\n",
     sep = " "
   )
   if (x$requires_pam) cat("  PAM", x$pam, "required (a changed PAM = loss of target)\n")

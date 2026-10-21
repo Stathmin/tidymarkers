@@ -16,8 +16,9 @@ carries a named \code{weight} vector with the per-position ladder (5'->3').}
 \value{
 a \code{specificity_policy} list: \code{mode}, \code{max_mismatch}, \code{seed_len},
 \code{seed_max}, \code{three_prime_max}, \code{three_prime_window}, \code{requires_pam}, \code{pam},
-\code{pfs}, \code{critical_from}/\code{critical_to} (CRISPR), \code{priors} (the tolerance row as
-a one-row tibble) and \code{calibrated} (\code{FALSE}).
+\code{pfs}, \code{critical_from}/\code{critical_to} (CRISPR), the position ladder
+(\code{weight_middle}, \code{weight_seed}, \code{weight_three_prime}, \code{weight_terminal}),
+\code{priors} (the tolerance row as a one-row tibble) and \code{calibrated} (\code{FALSE}).
 }
 \description{
 Encodes the \emph{known biology} each chemistry imposes on a target site: how many
@@ -35,6 +36,25 @@ literature states, they are not fitted to an assay dataset.
    \code{paralog} (homeolog/homolog) \tab 4 \tab 8 \tab 1 \tab 1 \tab no \cr
 }
 
+
+Position ladder (per-position weight of a mismatch, 5'->3' of the primer):\tabular{lllll}{
+   scheme \tab \code{weight_middle} \tab \code{weight_seed} \tab \code{weight_three_prime} \tab \code{weight_terminal} \cr
+   \code{pcr} \tab 1 \tab 3 \tab 8 \tab 12 \cr
+   \code{rpa} \tab 1 \tab 2 \tab 5 \tab 12 \cr
+   \code{crispr} \tab 1 \tab 4 \tab 8 \tab 12 \cr
+   \code{paralog} \tab 1 \tab 2 \tab 5 \tab 12 \cr
+}
+
+
+\code{weight_seed} applies to the 3'-terminal \code{seed_len} nt, \code{weight_three_prime}
+to the last \code{three_prime_window} (5) nt and \code{weight_terminal} to the last 3 nt
+\itemize{
+\item the 3'-terminal mismatch that stops extension.  RPA/LAMP tolerate several
+mismatches, so a middle mismatch costs less there than for a proofreading
+polymerase; the terminal weight is the same everywhere, because no chemistry
+extends from a mismatched 3' end.  The pcr row is the historical scoring, so
+\code{pcr}/\code{kasp} callers' scores are unchanged.
+}
 
 Biological basis:
 \itemize{

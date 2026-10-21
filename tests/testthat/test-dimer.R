@@ -42,6 +42,19 @@ test_that("dimer_thermo honours a custom reaction temperature and salt", {
   expect_false(isTRUE(all.equal(d37$dg, d_salt$dg)))
 })
 
+test_that("a KASP assay's reported dG is its scheme-temperature evaluation (Z3)", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  a <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, flank = 150L))
+  # the assembler threads its own scheme into the reported screen
+  expect_equal(a$scheme, "snp")
+  set <- c(AS_ref = a$tails[["AS_ref"]], AS_alt = a$tails[["AS_alt"]], COM = a$tails[["COM"]])
+  expect_equal(a$complementarity, dimer_thermo(set, conditions = scheme_conditions("snp")))
+  # the verdict is unchanged: a 60 C dG that is >= 37 C is still >= 37 C
+  cold <- dimer_thermo(set, conditions = reaction_conditions())
+  expect_true(all(a$complementarity$dg >= cold$dg - 1e-8))
+})
+
 test_that("dimer_thermo accepts a partial conditions list", {
   skip_if_no_oligoarrayaux()
   p <- c(A = "ACGTACGTACGTACGTACGT", B = "TTTTGGGGCCCCAAAATTTT")

@@ -359,3 +359,65 @@ test_that("specificity_policy encodes the chemistry tolerances", {
   expect_gt(w[20L], w[16L])
   expect_gt(w[16L], w[10L])
 })
+
+test_that("the policy table carries the per-scheme position ladder", {
+  fields <- c("weight_middle", "weight_seed", "weight_three_prime", "weight_terminal")
+  pcr <- specificity_policy("pcr")
+  rpa <- specificity_policy("rpa")
+  crispr <- specificity_policy("crispr")
+  # pcr is the historical scoring: its weights must not drift
+  expect_equal(unname(unlist(pcr[fields])), c(1, 3, 8, 12))
+  expect_equal(unname(unlist(specificity_policy("kasp")[fields])), c(1, 3, 8, 12))
+  for (pol in list(pcr, rpa, crispr)) {
+    expect_true(all(fields %in% names(pol)))
+    expect_true(all(unlist(pol[fields]) > 0))
+    # a terminal mismatch is never the cheap position, whatever the chemistry
+    expect_gt(pol$weight_terminal, pol$weight_three_prime)
+    expect_gt(pol$weight_three_prime, pol$weight_middle)
+  }
+  # RPA tolerates mismatches: the middle and the seed cost less than for PCR,
+  # and its seed weighs less than its last-5 window
+  expect_lt(rpa$weight_seed, pcr$weight_seed)
+  expect_lt(rpa$weight_three_prime, pcr$weight_three_prime)
+  expect_lt(rpa$weight_seed, rpa$weight_three_prime)
+  # the same terminal rule everywhere (no chemistry extends a mismatched 3' end)
+  expect_equal(rpa$weight_terminal, pcr$weight_terminal)
+  # crispr weighs its PAM-proximal seed heavier than pcr does
+  expect_gt(crispr$weight_seed, pcr$weight_seed)
+  # the ladder vector agrees with the fields
+  w <- specificity_policy("rpa", length = 20L)$weight
+  expect_equal(w[5L], rpa$weight_middle)
+  expect_equal(w[15L], rpa$weight_middle)
+  expect_equal(w[16L], rpa$weight_three_prime)
+  expect_equal(w[20L], rpa$weight_terminal)
+})
+
+test_that("a degenerate primer is scored exactly, never rescuing a 3'-terminal mismatch", {
+  # S covers C: an exact IUPAC match, and the reverse primer's site runs 3'->5'
+  # on the plus strand, so the site's LAST base is the primer's 3'-terminal one
+  genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
+    "ACCAACCAAC", "ACCTACGTAC", "CCAAAGGGTCCAAAAGGGTCC", z5_rc(z5_r), "CCAACCAACC"
+  )))
+  pr <- in_silico_pcr("ACSTACGTAC", z5_r, genome)
+  expect_equal(nrow(pr), 1L)
+  expect_equal(pr$n_mismatch, 0L)
+  expect_equal(pr$penalty, 0)
+  # the reverse primer's site, with its 3'-terminal base swapped
+  r_site <- z5_rc(z5_r)
+  bases <- strsplit(r_site, "", fixed = TRUE)[[1L]]
+  bases[length(bases)] <- "G"
+  g <- Biostrings::DNAStringSet(c(chr1 = paste0(
+    "ACCAACCAAC", "ACCTACGTAC", "CCAAAGGGTCCAAAAGGGTCC", paste(bases, collapse = ""),
+    "CCAACCAACC"
+  )))
+  # the degenerate primer is scanned exactly, so the hit is the exact degenerate
+  # site (the forward primer is a match, not a mismatch) and the product is the
+  # one carrying the reverse primer's 3'-terminal substitution
+  term <- suppressWarnings(in_silico_pcr("ACSTACGTAC", z5_r, g, max_mismatch = 1L))
+  term <- term[term$width == 51L, , drop = FALSE]
+  expect_equal(nrow(term), 1L)
+  expect_length(unlist(term$f_mismatch_positions), 0L)
+  expect_true(term$three_prime_terminal)
+  expect_true(1L %in% unlist(term$r_mismatch_positions))
+  expect_equal(term$r_penalty, 12L * 1)
+})
