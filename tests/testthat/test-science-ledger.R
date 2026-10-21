@@ -30,7 +30,10 @@ test_that("ledger: every row joins a registered source to an existing extract", 
 
 test_that("ledger: the use vocabulary is closed, and blocked rows carry a reason", {
   l <- ledger()
-  expect_true(all(l$use %in% c("test", "artefact", "rule", "blocked")))
+  # `report` = a second extract from the same source that is a REPORTED CLAIM
+  # (what the paper asserts in prose/abstract), kept beside the measured table so
+  # the two can be compared. It is a first-class level, not a stray value.
+  expect_true(all(l$use %in% c("test", "artefact", "rule", "report", "blocked")))
   # a blocked row is the honest state: read, extracted, consumed by nothing yet
   blocked <- l$use == "blocked"
   expect_true(all(!is.na(l$reason[blocked]) & nzchar(l$reason[blocked])))
@@ -77,12 +80,26 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
               "kasp_homeolog_axes.csv")
   for (i in seq_len(nrow(live))) {
     e <- live$extract[[i]]
+    # a non-extract row names a registry or a deliberately unwritten file; the
+    # DOI check only applies to a real CSV on disk
+    if (!file.exists(test_path("../../inst/extdata", e))) next
     d <- readr::read_csv(test_path("../../inst/extdata", e), show_col_types = FALSE,
                          na = c("", "NA"))
     if (!"doi" %in% names(d)) next
     want <- s$doi[s$key == live$source_key[[i]]]
     # a software source is registered by URL and cited by its paper DOI
-    if (!grepl("^10\\.", want)) want <- "10.1093/bioinformatics/btv069"
+    if (!grepl("^10\\.", want)) {
+      want <- s$pmcid[s$key == live$source_key[[i]]]
+      if (length(want) && !is.na(want) && nzchar(want)) {
+        # no DOI exists for this paper anywhere; its PMCID is the identifier,
+        # and the registry's citation must say which article that PMCID is
+        expect_true(grepl(want, s$citation[s$key == live$source_key[[i]]],
+                          fixed = TRUE), label = paste(e, "names", want))
+        next
+      }
+      # a software source is registered by URL and cited by its paper DOI
+      want <- "10.1093/bioinformatics/btv069"
+    }
     if (e %in% pooled) next
     got <- unique(stats::na.omit(as.character(d$doi)))
     # a table may legitimately combine rows from several papers (a pooled
