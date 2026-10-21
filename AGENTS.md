@@ -19,7 +19,20 @@ Always prefix commands with:
 ```sh
 export PATH=/opt/R-4.6.1/bin:/root/development/tidymarkers/.tools/bin:$PATH
 export UNAFOLDDAT=/root/development/tidymarkers/.tools/share/oligoarrayaux
+export R_LIBS_SITE=/opt/R-4.6.1/lib/R/library
 ```
+
+`R_LIBS_USER` is not the project library, and the `.tmp-rt/lib` path in old handoffs
+is dead. `R_LIBS_SITE` puts the R 4.6.1 site library after the two system ones; check
+it with `vapply(c("GenomicRanges", "Rsamtools", "TmCalculator", "tidygraph",
+"DECIPHER"), requireNamespace, logical(1), quietly = TRUE)` → all `TRUE`.
+Do **not** set `R_LIBS` to that path: R then puts it first and loads system-R's
+`rlang.so`, and every package needing rlang fails with
+`undefined symbol: R_MakeMissingBinding`. `ggforce` is the tell: it resolves and
+`GenomicRanges` does not (or the reverse) means the library order is wrong.
+`/opt/R-4.6.1/lib/R/library/ggforce` is a broken 0.5.0 build
+(`undefined symbol: R_getRegisteredNamespace`); the working copy is 0.4.2 from
+`/usr/lib/R/site-library`, and the package only uses `facet_zoom` and `geom_arc`.
 
 Then the usual commands:
 

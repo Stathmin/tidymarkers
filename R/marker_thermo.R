@@ -5,6 +5,68 @@
 #  2. Thermodynamics via packages
 # =============================================================================
 
+#' Give a function a new enclosing environment, keeping its formals and body
+#'
+#' The result is a fresh closure, so rebinding it cannot mutate the caller's
+#' copy of `FUN`.  `base::` is explicit on purpose: here the unqualified
+#' `body<-` is not found, and the assignment then silently leaves `FUN`
+#' unchanged -- which looks exactly like a working rebinding.
+#' @param FUN a closure.
+#' @param env its new enclosing environment.
+#' @return `FUN` with `environment()` set to `env`.
+#' @keywords internal
+#' @noRd
+rebind <- function(FUN, env) {
+  args <- formals(FUN)
+  out <- function(...) NULL
+  formals(out) <- args
+  base::body(out) <- base::body(FUN)
+  environment(out) <- env
+  out
+}
+
+#' Re-home the package's functions into one plain environment
+#'
+#' Serializing a function whose enclosing environment is this namespace ships
+#' only its *name*, and the worker rebinds the name to the installed namespace.
+#' A function re-homed into a plain environment that is not a namespace or global
+#' environment is serialized *with* that environment's contents instead, and the
+#' contents are this package's own definitions.
+#'
+#' The names the task closure uses but does not bind itself (`genome`, `radius`
+#' in a scan over a genome) are read from its own enclosing environment, and
+#' travel as themselves; a name the task does bind -- a local `scan_one` -- is
+#' rebuilt here, so it sees the carrier too.
+#' @param FUN the task closure.
+#' @return a copy of `FUN` closed over the carrier.
+#' @keywords internal
+#' @noRd
+source_carrier <- function(FUN) {
+  ns <- parent.env(environment())
+  here <- environment(FUN)
+  carrier <- list2env(as.list(here, all.names = TRUE), parent = globalenv())
+  for (n in sort(ls(ns, all.names = TRUE))) {
+    if (exists(n, envir = carrier, inherits = FALSE)) {
+      next
+    }
+    obj <- get(n, envir = ns)
+    # functions and plain data only: everything else here is an environment
+    # (this very namespace, the S3 table), which serializes by reference -- a
+    # worker would then reload the installed one and be back to stale code
+    if (is.function(obj)) {
+      assign(n, rebind(obj, carrier), envir = carrier)
+    } else if (is.atomic(obj) || is.list(obj)) {
+      assign(n, obj, envir = carrier)
+    }
+  }
+  for (n in ls(here, all.names = TRUE)) {
+    if (is.function(get(n, envir = here))) {
+      assign(n, rebind(get(n, envir = here), carrier), envir = carrier)
+    }
+  }
+  carrier
+}
+
 #' GC fraction and homopolymer-run test
 #' @keywords internal
 #' @noRd
@@ -44,15 +106,39 @@ worker_biostrings <- function() requireNamespace("Biostrings", quietly = TRUE)
 #' `BPPARAM` (`MulticoreParam(RNGseed = 1)`); the design kernels here are
 #' deterministic, so nothing needs seeding (`bpoptions(RNGseed = )` is not
 #' supported by BiocParallel).
+#'
+#' On a socket backend the worker resolves a package closure against the
+#' *installed* copy when one is present: BiocParallel exports the enclosing
+#' environment of the task, and that environment's parent is the namespace the
+#' function was found in.  A `load_all()` session therefore runs stale installed
+#' code in the worker -- the same call that works serially fails there with
+#' "unused argument".  For a **serial** backend the task runs in this session,
+#' where the namespace is already current, so nothing is rewritten.
 #' @keywords internal
 #' @noRd
 bp_lapply <- function(X, FUN, BPPARAM) {
+  if (!serial_backend(BPPARAM)) {
+    # a worker process resolves every package name against the *installed* copy;
+    # hand it this session's definitions instead (see source_carrier())
+    FUN <- rebind(FUN, source_carrier(FUN))
+  }
   BiocParallel::bplapply(
     X, FUN,
     BPPARAM = BPPARAM,
     BPOPTIONS = BiocParallel::bpoptions(progressbar = interactive())
   )
 }
+
+#' Does this backend run the task in this session?
+#' @param BPPARAM a [BiocParallel::BiocParallelParam()] object.
+#' @return `TRUE` for the serial and fork backends, which need no carrier;
+#'   `FALSE` for a socket backend, which starts fresh R processes.
+#' @keywords internal
+#' @noRd
+serial_backend <- function(BPPARAM) {
+  methods::is(BPPARAM, "SerialParam") || methods::is(BPPARAM, "MulticoreParam")
+}
+
 
 #' Tandem repeats (simple sequence repeats) in a sequence
 #'
