@@ -135,7 +135,7 @@ KASP_GATE_HARD_LABEL <- c(
 # placeholder (C9) - and assembled from the schemes' own entries like the labels.
 KASP_GATE_LIMIT <- c(
   gate_discrimination = "discrimination >= min_disc",
-  gate_structure = "hairpin/homodimer dG37 >= limit",
+  gate_structure = "hairpin/homodimer dG (reaction T) >= limit",
   gate_tm = "COM Tm >= AS Tm",
   gate_amplicon = glue::glue("amplicon within [{KASP_LIMITS$amplicon[1L]}, {KASP_LIMITS$amplicon[2L]}] bp"),
   gate_com_footprint = "COM dropout <= tol",

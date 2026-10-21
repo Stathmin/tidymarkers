@@ -182,15 +182,20 @@ marker_dropout_batch <- function(tmpl, off, vpos, valt, vweight, use_eff, BPPARA
 #' Returns the table (`ref_primer`/`alt_primer`, efficiencies, `discrimination`,
 #' `tm`, `gc`, `as_length`, `strand`, genomic footprints `as_*`/`as_alt_*`), or a
 #' `marker_doomed` object when no candidate clears the filters.
+#' @param strands which AS-primer orientations to search (see [design_as_primers()]).
+#' @param conditions reaction conditions passed to [design_as_primers()]
+#'   (`NULL` keeps the historical buffer).
 #' @keywords internal
 #' @noRd
 marker_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_range,
-                                 min_gc, max_gc, linked_off, ref_len, alt_len, BPPARAM) {
+                                 min_gc, max_gc, linked_off, ref_len, alt_len, BPPARAM,
+                                 conditions = NULL) {
   if (!is_indel) {
     raw_as <- design_as_primers(
       tmpl$seq, tmpl$snp_i, snp$ref, alt_pass,
       strands = strands, linked = linked_off,
-      gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
+      gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM,
+      conditions = conditions
     )
     if (nrow(raw_as) == 0L) {
       return(marker_doomed(gettext("No AS primer passed the GC/Tm filter."), "as", snp, tmpl))
@@ -220,7 +225,8 @@ marker_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm
   } else {
     ind <- design_as_primers_indel(
       tmpl$seq, tmpl$snp_i, snp$ref, snp$alt,
-      strands = strands, gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM
+      strands = strands, gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM,
+      conditions = conditions
     )
     if (nrow(ind) == 0L) {
       return(marker_doomed(gettext("No indel AS primer passed the GC/Tm filter."), "as", snp, tmpl))
@@ -559,6 +565,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 scheme = "snp", on_offtarget = NULL,
                                 cores = getOption("tidymarkers.cores", 1L), BPPARAM = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
+  # the scheme's own reaction conditions, so every dG this assay reports is
+  # evaluated at the temperature the chemistry actually runs at (Z3)
+  conditions <- scheme_conditions(scheme)
   # Y3: the specificity policy.  A `unique` chemistry never returns a marker whose
   # leading pairing fails the genome-level screen - it is doomed with the reason
   # (no silent warn-and-return); `multicopy`/`off`/`homeolog-aware` keep the
@@ -617,7 +626,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   as_cand <- marker_as_candidates(
     tmpl, snp, alt_pass, is_indel, off, strands, tm_range, min_gc, max_gc,
-    linked_off, ref_len, alt_len, BPPARAM
+    linked_off, ref_len, alt_len, BPPARAM,
+    conditions = conditions
   )
   if (is_kasp_doomed(as_cand)) {
     return(as_cand)
@@ -649,7 +659,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # closes.  design_common_primers() works in TEMPLATE coordinates, so its
   # anchor is the template-local variant anchor (not the genomic one).
   common <- design_common_primers(tmpl$seq, as_anchor(tmpl$snp_i, ref_len, best_as$strand),
-    strand = best_as$strand, tm_range = tm_range, n = 60L
+    strand = best_as$strand, tm_range = tm_range, n = 60L,
+    conditions = conditions
   ) |>
     dplyr::mutate(
       com_homodimer = oligo_dg_vec(.data$com, .data$com, BPPARAM = BPPARAM),
@@ -680,7 +691,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         .data$com, .data$com_start, .data$com_end,
         .data$strand != "+", .data$n_var, vblock
       ),
-      # the COM primer's 3'-terminal dG37 (README section 3: a low 3'-end
+      # the COM primer's 3'-terminal dG (README section 3: a low 3'-end
       # stability), ranked by the pair stage's "COM 3' end weakness" tier
       com_dg_3p = terminal_dg(.data$com, BPPARAM = BPPARAM),
       as_ref = best_as$ref_primer, as_alt = best_as$alt_primer,
@@ -828,7 +839,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
     thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x, BPPARAM = BPPARAM), name = .y)) |>
       purrr::list_rbind(),
-    complementarity = dimer_thermo(primers, BPPARAM = BPPARAM),
+    complementarity = dimer_thermo(primers, BPPARAM = BPPARAM, conditions = conditions),
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
     selection = list(

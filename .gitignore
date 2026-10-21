@@ -1,47 +1,77 @@
-# generated / heavy artefacts
-results/*
-!results/.gitkeep
-.venv/
-.tools
-.deps/
-.i18n-lib/
-.tmp-rt/
+# -- all ignored files, so a stray print() in a test cannot dirty the tree -----
+.Rbuildignore
 
-# curated demo data must be tracked
-!inst/
+# book build output
+_book/
+docs/_book/
+*.epub
 
-# R
+# pkgdown / site output
+_site/
+docs/reference/
+docs/articles/
+pkgdown/
+inst/doc/*.html
+
+# RStudio / editor / OS
 .Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj.user
+.DS_Store
+.Trash-*
+Thumbs.db
+*~
+*.swp
+*.swo
 
-# rendered report
-report/*.html
-vignettes/*.html
-vignettes/*_files/
-report/*.nb.html
-
-# R CMD check / build artefacts
+# test + check artefacts
 *.Rcheck/
 *.tar.gz
+revdep/
+tests/testthat/_snaps/**/*.new.md
+tests/testthat/Rplots.pdf
 
-/.quarto/
-_site/
-lecture/*_cache/
-lecture/*_files/
-report/*_cache/
-report/*_files/
+# renv / packrat
+renv/library/
+renv/staging/
+renv/python/
+packrat/lib*/
+packrat/src/
 
-# generated gallery rasters are local; vignettes embed the tracked SVG
-vignettes/figures/*.png
+# julia / duckdb / compiled
+*.jl.cov
+*.jl.so
+*.so
+*.dll
+*.dylib
+src/*.o
+src/*.o.tmp
+src/*.so
+src/*.dll
 
-# local graphify index (developer tool, not a product input)
+# knitr / quarto caches
+*_cache/
+*_files/
+*.utf8.md
+*.knit.md
+.cache/
+
+# python sidecars (graphify, tool builds)
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+
+# graphify output
 graphify-out/
 
 # local test logs and timings (machine-specific; see dev/README.md)
 dev/logs/
 
-# fetched literature and probe scratch (never committed)
+# fetched literature and probe scratch (never committed); the science pass
+# and the roadmap snapshot each added this block, and .tmp/ is shared by both
 .tmp/
 .tmp-probe*

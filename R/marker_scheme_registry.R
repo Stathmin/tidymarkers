@@ -86,15 +86,20 @@ extra_stage_rows <- function() {
   purrr::map(defs, function(d) {
     gates <- d$gates
     tiers <- d$tiers
+    # a discovered scheme's stage rows carry the same defaults as the built-in
+    # ones (see criterion_spec()): its gates/tiers are package assumptions, never
+    # sourced, so they sit on the weakest rung of the evidence ladder
     dplyr::bind_rows(
       tibble::tibble(
         stage = d$scheme, role = "gate", id = paste0(d$scheme, ":gate:", gates),
+        scope = d$scheme,
         label = unname(d$gate_short[gates]), level = "alignment",
         hard = !(gates %in% d$relax), limit = unname(d$gate_limit[gates]),
         order = seq_along(gates), schemes = rep(list(d$scheme), length(gates))
       ),
       tibble::tibble(
         stage = d$scheme, role = "tier", id = paste0(d$scheme, ":tier:", names(tiers)),
+        scope = d$scheme,
         label = unname(tiers), level = "alignment", hard = FALSE,
         limit = "maximise (per-tier bottleneck min)", order = seq_along(tiers),
         schemes = rep(list(d$scheme), length(tiers))

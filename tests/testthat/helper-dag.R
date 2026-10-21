@@ -89,7 +89,8 @@ expect_dag_invariants <- function(scheme) {
     KASP_CHECK_PRIMER,
     if ("site" %in% classes) KASP_CHECK_SITE,
     if ("as" %in% classes) KASP_CHECK_AS,
-    MARKER_FAMILY_CHECKS[[info$family]] %||% character(0)
+    # the family constants hold criterion ids; the labels are their names
+    unname(names(MARKER_FAMILY_CHECKS[[info$family]])) %||% character(0)
   )
   chk <- crit$label[crit$role == "check"]
   rogue <- setdiff(chk, allowed)

@@ -76,34 +76,55 @@ KASP_CHECK_AS <- c(
 
 # Family-specific checks.  These are not KASP checks, so they use the MARKER_
 # prefix.  The generic primer QC checks above still apply to every scheme.
+#
+# Membership is held as criterion **ids** (see `criterion_spec()`), never as
+# labels: the id is the stable key, the label is presentation.  Each vector is
+# named by its label, the way `tibble::tribble()` names its columns - a printf
+# aid only, never a source of truth.  `as.vector()` is the id view; the display
+# label is asked of the registry through `marker_family_check_labels()`, so a
+# criterion can be reworded in one place without orphaning a family list.
 MARKER_CHECK_CAPS <- c(
-  "restriction site defined", "restriction site separates alleles",
-  "band gap (bp)", "digest sums to amplicon",
-  "restriction site conserved (population)"
+  "restriction site defined" = "family_caps_site_defined",
+  "restriction site separates alleles" = "family_caps_site_separates",
+  "band gap (bp)" = "family_caps_band_gap",
+  "digest sums to amplicon" = "family_caps_digest_spans",
+  "restriction site conserved (population)" = "family_caps_site_conserved"
 )
 MARKER_CHECK_LAMP <- c(
-  "FIP 3' ALT", "inner arm Tm balance (C)",
-  "inner arms inside amplicon", "variant at FIP 3' end"
+  "FIP 3' ALT" = "family_lamp_fip_alt",
+  "inner arm Tm balance (C)" = "family_lamp_inner_tm_balance",
+  "inner arms inside amplicon" = "family_lamp_inner_inside",
+  "variant at FIP 3' end" = "family_lamp_fip_variant"
 )
 MARKER_CHECK_RPA <- c(
-  "primer length (nt)", "THF off variant",
-  "RPA probe spans variant", "variant under primer/probe"
+  "primer length (nt)" = "family_rpa_primer_length",
+  "THF off variant" = "family_rpa_thf_off",
+  "RPA probe spans variant" = "family_rpa_probe_spans",
+  "variant under primer/probe" = "family_rpa_variant_under"
 )
 MARKER_CHECK_CRISPR <- c(
-  "PAM valid", "variant in seed", "guide spans variant",
-  "guide/PAM conserved (population)", "off-target protospacers (n)"
+  "PAM valid" = "family_crispr_pam",
+  "variant in seed" = "family_crispr_seed",
+  "guide spans variant" = "family_crispr_guide_spans",
+  "guide/PAM conserved (population)" = "family_crispr_conserved",
+  "off-target protospacers (n)" = "family_crispr_offtarget"
 )
 MARKER_CHECK_PROBE <- c(
-  "probe spans variant", "probe Tm - primer Tm (C)",
-  "ASP 3' discrimination", "extension 3' at variant"
+  "probe spans variant" = "family_probe_spans",
+  "probe Tm - primer Tm (C)" = "family_probe_tm_delta",
+  "ASP 3' discrimination" = "family_probe_asp_discrimination",
+  "extension 3' at variant" = "family_probe_extension"
 )
 MARKER_CHECK_SANGER <- c(
-  "variant-read distance (bp)", "read primers inside amplicon",
-  "read primer pair defined"
+  "variant-read distance (bp)" = "family_sanger_read_distance",
+  "read primers inside amplicon" = "family_sanger_primers_inside",
+  "read primer pair defined" = "family_sanger_pair_defined"
 )
 MARKER_CHECK_SIZE <- c(
-  "repeat unit (nt)", "repeat copies",
-  "REF/ALT size difference (bp)", "fragment size (bp)"
+  "repeat unit (nt)" = "family_size_repeat_unit",
+  "repeat copies" = "family_size_repeat_copies",
+  "REF/ALT size difference (bp)" = "family_size_delta",
+  "fragment size (bp)" = "family_size_fragment"
 )
 
 MARKER_FAMILY_CHECKS <- list(
@@ -119,6 +140,29 @@ MARKER_FAMILY_CHECKS <- list(
   ssr = MARKER_CHECK_SIZE,
   indel_size = MARKER_CHECK_SIZE
 )
+
+#' The display labels of a family's checks
+#'
+#' `MARKER_FAMILY_CHECKS` / `MARKER_CHECK_*` hold criterion ids; text is printed
+#' from labels.  This is the one place the two meet, so a caller that compares or
+#' prints a family's checks - the plot check column, a test, a report - asks here
+#' instead of carrying its own label vector.
+#' @param family a scheme family (see `marker_schemes()`); `NULL`/unknown yields
+#'   `character(0)`.
+#' @return the registry labels of that family's checks, in registry order.
+#' @keywords internal
+#' @noRd
+marker_family_check_labels <- function(family) {
+  ids <- MARKER_FAMILY_CHECKS[[family]] %||% character(0)
+  if (!length(ids)) {
+    return(character(0))
+  }
+  # the registry's own table, keyed by id, holds the display label: read it there
+  # rather than from the constant's `names`, which are a printf aid only
+  fam <- criterion_spec()
+  label <- fam$label[match(as.character(ids), fam$id)]
+  label[!is.na(label)]
+}
 
 # family -> the non-primer check classes that chemistry obeys.  Keyed by `family`
 # (not by scheme), so a discovered chemistry inherits its family's set with no
@@ -259,27 +303,48 @@ marker_scheme <- function(scheme = "snp") {
 #' `KASP_CHECK_AS` criterion to the families with an allele-anchoring primer.  A
 #' discovered scheme is tagged from its `family`, never per-scheme, so a new
 #' chemistry is one row in `KASP_FAMILY_CHECKS`.
-#' @param label the check labels (see [marker_criteria()]).
-#' @return a list of scheme-id vectors, one per label.
+#' @param id the check one row at a time - its `label`, the key the three KASP
+#'   classes are declared with.  A family check's label is mapped back to its id
+#'   (`check_schemes()` is also called with `MARKER_CHECK_*` ids directly), so a
+#'   family vector's own `names` are dropped first.
+#' @return a list of scheme-id vectors, one per check.
 #' @keywords internal
 #' @noRd
-check_schemes <- function(label) {
+check_schemes <- function(id) {
+  # every key here is a *value*: a family `MARKER_CHECK_*` vector carries its
+  # label as a diagnostic name, never as content
+  id <- unname(as.character(id))
+  # the probe and size checks serve families that share one vector, so their
+  # membership is decided where it already lives, in MARKER_FAMILY_CHECKS, and
+  # read back as ids
+  member <- function(fam) unname(as.character(MARKER_FAMILY_CHECKS[[fam]] %||% character(0)))
+  family_ids <- unique(unlist(lapply(names(MARKER_FAMILY_CHECKS), member)))
+  # a label the family table carries -> its id (checked before the three KASP
+  # classes, whose labels are never family labels).  Built from MARKER_FAMILY_CHECKS
+  # alone, never through `criterion_spec()`, which calls this function.
+  pairs <- unlist(unname(lapply(names(MARKER_FAMILY_CHECKS), function(fam) {
+    x <- MARKER_FAMILY_CHECKS[[fam]] %||% character(0)
+    stats::setNames(unname(as.character(x)), unname(names(x)))
+  })))
+  label <- names(pairs)[match(id, names(pairs))]
+  is_family_label <- !is.na(label)
+  id[is_family_label] <- unname(pairs[label[is_family_label]])
   s <- marker_schemes()
-  family <- function(f) KASP_FAMILY_CHECKS[[f]] %||% character(0)
-  in_class <- function(cls) {
-    s$scheme[vapply(s$family, function(f) cls %in% family(f), logical(1))]
+  family <- function(fam) KASP_FAMILY_CHECKS[[fam]] %||% character(0)
+  in_class <- function(klass) {
+    s$scheme[vapply(s$family, function(fam) klass %in% family(fam), logical(1))]
   }
-  lapply(label, function(l) {
+  lapply(id, function(l) {
     if (l %in% KASP_CHECK_PRIMER) {
       s$scheme
     } else if (l %in% KASP_CHECK_SITE) {
       in_class("site")
     } else if (l %in% KASP_CHECK_AS) {
       in_class("as")
+    } else if (l %in% family_ids) {
+      s$scheme[vapply(s$family, function(fam) l %in% member(fam), logical(1))]
     } else {
-      s$scheme[vapply(s$family, function(f) {
-        l %in% (MARKER_FAMILY_CHECKS[[f]] %||% character(0))
-      }, logical(1))]
+      character(0)
     }
   })
 }

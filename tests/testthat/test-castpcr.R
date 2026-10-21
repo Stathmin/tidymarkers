@@ -62,6 +62,33 @@ test_that("design_castpcr_marker detects the MUTANT allele, with a WT blocker an
   expect_output(print(m), "marker_castpcr")
 })
 
+test_that("castPCR thermo is evaluated at its own reaction conditions (Z3)", {
+  skip_if_no_oligoarrayaux()
+  f <- castpcr_fixture()
+  m <- design_castpcr_marker(f$genome, f$snp, flank = 150L)
+  scheme <- scheme_conditions("castpcr")
+  # the ASP Tm is primer_tm() under the scheme's conditions, not the bare default
+  expect_equal(m$primers$as_tm, primer_tm(m$primers$as_primer, conditions = scheme))
+  # the reported joint dimer dG is the scheme-temperature value, and a PCR scheme
+  # at 60 C is weaker than the historical 37 C (so the numbers did move).  The
+  # screen pools every distinct oligo, so its rows are not one per input oligo.
+  oligos <- c(
+    as_primer = m$primers$as_primer, common = m$primers$forward,
+    mate = m$primers$reverse, probe = m$probe$sequence, blocker = m$blocker$sequence
+  )
+  # tube_compatibility() pools the distinct oligos (a shared primer counted once)
+  oligos <- oligos[!duplicated(oligos)]
+  expect_equal(m$compatibility$dg, primer_set_compatibility(oligos, conditions = scheme)$dg)
+  expect_equal(
+    m$compatibility$dg,
+    primer_set_compatibility(oligos, conditions = reaction_conditions(temperature = 60))$dg
+  )
+  cold <- primer_set_compatibility(oligos)
+  expect_true(all(m$compatibility$dg > cold$dg))
+  # ... but the verdict is a run-based screen, so it does not change
+  expect_equal(m$compatibility$pass, cold$pass)
+})
+
 test_that("design_castpcr_marker declines non-substitution alleles", {
   withr::local_envvar(LANGUAGE = "en")
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))

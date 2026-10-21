@@ -94,9 +94,10 @@ marker_amplicon_window <- function(family = "kasp", limits = KASP_LIMITS) {
 # `"family"` for the per-family acceptance checks), the `stage`/`role` that place
 # it in the pipeline, the `level` it reports at, a `kind` (`numeric` /
 # `categorical` / `boolean`), the `bounds` it is judged against, the `units` they
-# are in, where the number comes from (`source`) and whether it was `calibrated`
-# against held-out data (almost none are), and the `evaluator` that produces the
-# observed value.
+# are in, where the number comes from (`source`), the strength of the evidence
+# behind it (`evidence`, see `CRITERION_EVIDENCE`) and the `evaluator` that
+# produces the observed value.  `calibrated` is a deprecated boolean view of the
+# `evidence` rung (ZW4).
 #
 # `bounds` is the *threshold*, a list-column resolved lazily from the limit
 # object so a caller's `limits=` is honoured exactly as before:
@@ -116,6 +117,53 @@ CRITERION_TIER_LIMIT <- "maximise (per-tier bottleneck min)"
 
 # Criterion kinds: a numeric bar, a set of allowed levels, or a tested predicate.
 CRITERION_KINDS <- c("numeric", "categorical", "boolean")
+
+# The evidence ladder, ascending: where a threshold comes from.  The order is the
+# comparison (`>=` is meaningful), so the rungs are held in exactly this order.
+CRITERION_EVIDENCE <- c(
+  "rule_of_thumb", "vendor_guideline", "primary_literature", "fitted_here"
+)
+
+#' The evidence rung of a criterion
+#'
+#' A threshold is only as good as where it came from, so every criterion row
+#' carries its evidence on an ordered ladder:
+#' `"rule_of_thumb"` < `"vendor_guideline"` < `"primary_literature"` <
+#' `"fitted_here"`.  This is the single definition of that vocabulary.
+#'
+#' The result is an ordered factor with `levels = CRITERION_EVIDENCE`, so `>`
+#' compares rungs and printing names the one in force.  `NULL` and `NA` are `NA`
+#' (unset); anything else must be one of the four machine values - an unknown
+#' string aborts rather than silently degrading to the weakest rung.
+#'
+#' **The migration from `calibrated`:** `calibrated = TRUE` means
+#' `"fitted_here"`, and `calibrated = FALSE` means `"rule_of_thumb"` (nothing
+#' weaker was ever recorded).  `calibrated = NA` means `NA`.  The boolean survives
+#' only as a deprecated read of this ladder.
+#' @param x a character vector of evidence rungs, or an existing factor.
+#' @return an ordered factor with levels `CRITERION_EVIDENCE`.
+#' @keywords internal
+#' @noRd
+criterion_evidence <- function(x = NULL) {
+  if (is.null(x)) {
+    x <- NA_character_
+  }
+  x <- as.character(x)
+  bad <- unique(x[!is.na(x) & !x %in% CRITERION_EVIDENCE])
+  if (length(bad)) {
+    cli::cli_abort(c(
+      "Unknown criterion evidence: {.val {bad}}.",
+      "i" = "Allowed values, weakest first: {.val {CRITERION_EVIDENCE}}."
+    ))
+  }
+  factor(x, levels = CRITERION_EVIDENCE, ordered = TRUE)
+}
+
+# The one migration rule `calibrated` -> `evidence` (see `criterion_evidence()`).
+criterion_evidence_from_flag <- function(calibrated) {
+  calibrated <- as.logical(calibrated)
+  criterion_evidence(ifelse(calibrated, "fitted_here", "rule_of_thumb"))
+}
 
 
 
@@ -176,10 +224,25 @@ criterion_limit_text <- function(kind, bounds) {
 # role, one level): `ids` are the stable ids, `values` the constant's entries
 # (names + values, or the declared prose), `bounds` the thresholds.  A `bounds`
 # element may be NULL, in which case the declared prose is the limit.
+#
+# `calibrated` is deprecated (ZW4): pass `evidence` instead.  It is still
+# accepted and still emitted (so existing readers keep working), derived from
+# the rung by the migration rule; `lifecycle` is not a dependency of this
+# package, so the old argument works silently rather than warning.
 criterion_tbl <- function(id, scope, stage, role, label, level, kind, bounds,
-                          units, source, calibrated, evaluator, values = NULL) {
+                          units, source, calibrated = NULL, evaluator,
+                          values = NULL, evidence = NULL) {
   n <- length(id)
   stopifnot(all(kind %in% CRITERION_KINDS))
+  if (is.null(evidence)) {
+    rung <- if (is.null(calibrated)) {
+      criterion_evidence(rep(NA_character_, n))
+    } else {
+      criterion_evidence_from_flag(calibrated)
+    }
+  } else {
+    rung <- criterion_evidence(rep(evidence, length.out = n))
+  }
   tibble::tibble(
     id = id,
     scope = rep(scope, length.out = n),
@@ -191,7 +254,8 @@ criterion_tbl <- function(id, scope, stage, role, label, level, kind, bounds,
     bounds = bounds,
     units = units,
     source = rep(source, length.out = n),
-    calibrated = rep(calibrated, length.out = n),
+    calibrated = rep(as.logical(calibrated %||% NA), length.out = n),
+    evidence = rung,
     evaluator = evaluator,
     hard = FALSE,
     limit = mapply(criterion_limit_text, kind, bounds, USE.NAMES = FALSE) |>
@@ -446,6 +510,7 @@ marker_family_check_spec <- function() {
     units = ways$units,
     source = ways$source,
     calibrated = FALSE,
+    evidence = "rule_of_thumb",
     evaluator = ways$evaluator,
     hard = FALSE,
     limit = ways$limit
@@ -485,7 +550,8 @@ marker_check_spec <- function(ways, classes, limits) {
   criterion_tbl(
     id = ways$id, scope = scope, stage = stage, role = "check",
     label = ways$label, level = ways$level, kind = ways$kind, bounds = b,
-    units = ways$units, source = ways$source, calibrated = FALSE,
+    units = ways$units, source = ways$source,
+    calibrated = FALSE,
     evaluator = ways$evaluator
   )
 }
@@ -501,9 +567,11 @@ marker_check_spec <- function(ways, classes, limits) {
 #' against (a list-column: `c(min, max)` with `NA` for an open side,
 #' `c(min, "exclusive", x)` for a strict `<`, the allowed levels, or the literal
 #' predicate), the `units`, where the threshold comes from (`source`;
-#' `"package assumption"` where no literature value was claimed), whether it was
-#' `calibrated` on held-out data, and the `evaluator` that produces the observed
-#' value.
+#' `"package assumption"` where no literature value was claimed), the
+#' `evidence` rung behind it (an ordered factor, see
+#' [criterion_evidence()]; every row on this base is `"rule_of_thumb"` because no
+#' source was ever claimed for these numbers), and the `evaluator` that produces
+#' the observed value.
 #'
 #' This is internal because `bounds` is only meaningful together with the
 #' `limits` in force; [marker_criteria()] is the public view, and its `limit`
@@ -512,7 +580,9 @@ marker_check_spec <- function(ways, classes, limits) {
 #' bars (Z2).
 #' @param limits thresholds (see [marker_design_checks()]).
 #' @return tibble, one row per registered criterion (a `family` column names the
-#'   family a `scope = "family"` row belongs to).
+#'   family a `scope = "family"` row belongs to).  The `calibrated` column is
+#'   **deprecated** (ZW4): it is the boolean view of `evidence`, still emitted so
+#'   existing readers keep working; read `evidence` instead.
 #' @keywords internal
 #' @noRd
 criterion_spec <- function(limits = KASP_LIMITS) {
@@ -576,6 +646,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
       bounds = vector("list", length(g)),
       units = rep(NA_character_, length(g)),
       source = "package assumption", calibrated = FALSE,
+      evidence = "rule_of_thumb",
       evaluator = rep("selector", length(g)),
       values = scheme_label("limit", g)
     )
@@ -592,6 +663,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
       bounds = vector("list", length(t)),
       units = rep(NA_character_, length(t)),
       source = "package assumption", calibrated = FALSE,
+      evidence = "rule_of_thumb",
       evaluator = rep("tier", length(t)),
       values = rep(CRITERION_TIER_LIMIT, length(t))
     )
@@ -625,6 +697,9 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   checks <- marker_check_spec(ways, marker_check_classes(), limits)
   checks <- dplyr::bind_rows(checks, marker_family_check_spec())
   checks$order <- seq_len(nrow(checks))
+  # `schemes` is decided by the check's *class* (marker-agnostic / site / allele
+  # specific / family), which the class rules recognise by their registered
+  # labels; family membership itself is by id (see `check_schemes()`).
   checks$schemes <- check_schemes(checks$label)
 
   extra <- extra_stage_rows()
@@ -635,15 +710,22 @@ criterion_spec <- function(limits = KASP_LIMITS) {
     extra$units <- NA_character_
     extra$source <- "package assumption"
     extra$calibrated <- FALSE
+    extra$evidence <- "rule_of_thumb"
     extra$evaluator <- extra$role
   }
 
   out <- dplyr::bind_rows(stages, checks, extra)
+  # `evidence` is appended right after the deprecated `calibrated` so that no
+  # existing column moves (downstream code indexes the spec positionally).
   cols <- c(
     "id", "scope", "family", "stage", "role", "label", "level", "kind",
-    "bounds", "units", "source", "calibrated", "evaluator", "hard", "limit",
-    "order", "schemes"
+    "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
+    "limit", "order", "schemes"
   )
+  # `bind_rows()` drops an ordered factor's class when the other side of the bind
+  # is a plain character column, so the ladder is re-imposed once, on the whole
+  # spec: every constructor above names a rung, this makes it the ordered factor.
+  out$evidence <- criterion_evidence(out$evidence)
   out[, intersect(cols, names(out)), drop = FALSE]
 }
 
