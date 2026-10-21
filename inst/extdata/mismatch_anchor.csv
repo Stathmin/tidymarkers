@@ -1,0 +1,5 @@
+allele_pair,transition,template_pair,match_eff,off_eff,predicted_margin,engine,calibrated,evidence
+G:A,TRUE,T:C,0.8845,0.8851,-6e-4,DECIPHER CalculateEfficiencyPCR (pcr_efficiency),FALSE,fitted here
+A:G,TRUE,C:T,0.4562,0.4547,0.0015,DECIPHER CalculateEfficiencyPCR (pcr_efficiency),FALSE,fitted here
+C:A,FALSE,T:G,0.0114,0.0102,0.0012,DECIPHER CalculateEfficiencyPCR (pcr_efficiency),FALSE,fitted here
+A:A,FALSE,T:T,0.4547,0.4547,0,DECIPHER CalculateEfficiencyPCR (pcr_efficiency),FALSE,fitted here

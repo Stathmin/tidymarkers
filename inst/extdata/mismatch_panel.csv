@@ -1,0 +1,5 @@
+primer_3p,template_3p,pair,rc_pair,efficiency
+A,C,A:C,C:A,0.4562
+C,C,C:C,C:C,0.0114
+G,C,G:C,C:G,0.8851
+T,C,T:C,C:T,0.3317

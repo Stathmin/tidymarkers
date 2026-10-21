@@ -1,0 +1,40 @@
+"key","origin","resolved","source","title","journal","year","doi","pmid","pmcid","oa","assets","note"
+"newton1989","sources",TRUE,"crossref","Analysis of any point mutation in DNA. The amplification refractory mutation system (ARMS)","Nucleic Acids Research","1989","10.1093/nar/17.7.2503","2785681","PMC317639",FALSE,"",NA
+"kwok1990","sources",TRUE,"crossref","Effects of primer-template mismatches on the polymerase chain reaction: Human immunodeficiency virus type 1 model studies","Nucleic Acids Research","1990","10.1093/nar/18.4.999","2179874","PMC330356",FALSE,"",NA
+"ye2001","sources",TRUE,"crossref","An efficient procedure for genotyping single nucleotide polymorphisms","Nucleic Acids Research","2001","10.1093/nar/29.17.e88","11522844","PMC55900",FALSE,"",NA
+"ye2001_primer_set","sources",TRUE,"crossref","An efficient procedure for genotyping single nucleotide polymorphisms","Nucleic Acids Research","2001","10.1093/nar/29.17.e88","11522844","PMC55900",FALSE,"",NA
+"ramirezgonzalez2015","sources",TRUE,"crossref","PolyMarker: A fast polyploid primer design pipeline","Bioinformatics","2015","10.1093/bioinformatics/btv069","25649618","PMC4765872",TRUE,"",NA
+"ramirezgonzalez2014","sources",TRUE,"crossref","<scp>RNA</scp>‐<scp>S</scp>eq bulked segregant analysis enables the identification of high‐resolution genetic markers for breeding in hexaploid wheat","Plant Biotechnology Journal","2015","10.1111/pbi.12281","25382230",NA,FALSE,"",NA
+"grewal2020","sources",TRUE,"crossref","Rapid identification of homozygosity and site of wild relative introgressions in wheat through chromosome‐specific
+                    <scp>KASP</scp>
+                    genotyping assays","Plant Biotechnology Journal","2020","10.1111/pbi.13241","31465620","PMC7004896",TRUE,"",NA
+"grewal2022_amblyopyrum","sources",TRUE,"crossref","Chromosome‐specific KASP markers for detecting
+                    <i>Amblyopyrum muticum</i>
+                    segments in wheat introgression lines","The Plant Genome","2022","10.1002/tpg2.20193","35102721","PMC12807185",TRUE,"",NA
+"makhoul2020","sources",TRUE,"crossref","Overcoming polyploidy pitfalls: a user guide for effective SNP conversion into KASP markers in wheat","Theoretical and Applied Genetics","2020","10.1007/s00122-020-03608-x","32500260","PMC7360542",TRUE,"",NA
+"lefever2019","sources",TRUE,"crossref","Cost-effective and robust genotyping using double-mismatch allele-specific quantitative PCR","Scientific Reports","2019","10.1038/s41598-019-38581-z","30770838","PMC6377641",TRUE,"",NA
+"polymarker_source","sources",TRUE,"url",NA,NA,NA,"https://github.com/Informatics-John-Innes-Centre/bio-polymarker",NA,NA,FALSE,"","software repository; provenance only, not evidence"
+"ayyadevara2000","backlog",TRUE,"crossref","Discrimination of Primer 3′-Nucleotide Mismatch by Taq DNA Polymerase during Polymerase Chain Reaction","Analytical Biochemistry","2000","10.1006/abio.2000.4635","10933850",NA,FALSE,"",NA
+"liu2012_arms","backlog",TRUE,"crossref","An improved allele-specific PCR primer design method for SNP marker analysis and its application","Plant Methods","2012","10.1186/1746-4811-8-34","22920499","PMC3495711",TRUE,"",NA
+"stadhouders2010","backlog",TRUE,"crossref","The Effect of Primer-Template Mismatches on the Detection and Quantification of Nucleic Acids Using the 5′ Nuclease Assay","The Journal of Molecular Diagnostics","2010","10.2353/jmoldx.2010.090035","19948821","PMC2797725",FALSE,"",NA
+"yao2006","backlog",TRUE,"crossref","Evaluation of minor groove binding probe and Taqman probe PCR assays: Influence of mismatches and template complexity on quantification","Molecular and Cellular Probes","2006","10.1016/j.mcp.2006.03.003","16704921",NA,FALSE,"",NA
+"artemis2024","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"gootenberg2017_cas13a","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"rpa_mismatch_class","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"liew2004","backlog",TRUE,"crossref","Genotyping of Single-Nucleotide Polymorphisms by High-Resolution Melting of Small Amplicons","Clinical Chemistry","2004","10.1373/clinchem.2004.032136","15229148",NA,FALSE,"",NA
+"vonahsen2001","backlog",TRUE,"crossref","Oligonucleotide Melting Temperatures under PCR Conditions: Nearest-Neighbor Corrections for Mg2+, Deoxynucleotide Triphosphate, and Dimethyl Sulfoxide Concentrations with Comparison to Alternative Empirical Formulas","Clinical Chemistry","2001","10.1093/clinchem/47.11.1956","11673362",NA,FALSE,"",NA
+"huguet2017","backlog",TRUE,"crossref","Derivation of nearest-neighbor DNA parameters in magnesium from single molecule experiments","Nucleic Acids Research","2017","10.1093/nar/gkx1161","29177444","PMC5728412",TRUE,"",NA
+"dnamate","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"liu2016_caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"soybean_est_caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"badolo2012","backlog",TRUE,"crossref","Three years of insecticide resistance monitoring in Anopheles gambiae in Burkina Faso: resistance on the rise?","Malaria Journal","2012","10.1186/1475-2875-11-232","22799568","PMC3489511",TRUE,"",NA
+"ace1r_aslamp2015","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"desilva2009","backlog",TRUE,"crossref","Optimization of selection contribution and mate allocations in monoecious tree breeding populations","BMC Genetics","2009","10.1186/1471-2156-10-70","19895684","PMC2776599",TRUE,"",NA
+"jak2v617f_ddpcr","backlog",TRUE,"crossref","Laboratory-developed Droplet Digital PCR Assay for Quantification of the JAK2V617F Mutation","Global Medical Genetics","2024","10.1055/s-0044-1785537","38585044","PMC10994690",TRUE,"",NA
+"snap2caps","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"vcf2caps2021","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+NA,"backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"fondevila2017","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+NA,"backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"lna2004","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
+"znavsmgb2014","backlog",FALSE,NA,NA,NA,NA,NA,NA,NA,FALSE,"",NA
