@@ -625,6 +625,9 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   checks <- marker_check_spec(ways, marker_check_classes(), limits)
   checks <- dplyr::bind_rows(checks, marker_family_check_spec())
   checks$order <- seq_len(nrow(checks))
+  # `schemes` is decided by the check's *class* (marker-agnostic / site / allele
+  # specific / family), which the class rules recognise by their registered
+  # labels; family membership itself is by id (see `check_schemes()`).
   checks$schemes <- check_schemes(checks$label)
 
   extra <- extra_stage_rows()
