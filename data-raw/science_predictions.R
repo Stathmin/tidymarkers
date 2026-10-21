@@ -42,9 +42,13 @@ source_doi <- function(key) {
     if (!grepl("^10\\.", d)) d <- source_doi_fallback
     return(d)
   }
-  # a script may be named for the backlog key (liu2012_arms) or for the paper
-  # (liu2012); accept either, but require exactly one
+  # a script may be named for the backlog key or for the paper; accept either,
+  # but require exactly one. The polyploid pass named its scripts with a
+  # polyploid- suffix, so a ledger row for it found no script at all and the
+  # generator refused to run -- the rows lived in a proposal file that the
+  # registry-by-signature rule never read.
   cand <- fs::path(root, "data-raw", paste0(c(key, sub("_arms$", "", key)), "-supplement.R"))
+  cand <- c(cand, fs::path(root, "data-raw", paste0("polyploid-", key, ".R")))
   cand <- cand[file.exists(cand)]
   if (length(cand) != 1L) {
     stop("no registry row and no single extract script for ", key)
@@ -86,21 +90,42 @@ ledger <- do.call(rbind, list(
   row("grewal2022_amblyopyrum", "conversion_rates.csv", "test", "test-z8-outcomes.R", "conversion_rates: failure classes are not pooled", NA_character_),
   row("polymarker_source", "polymarker_design_rules.csv", "rule", "test-y32-homeolog.R", "constraint: the common primer 3' base is the subgenome anchor, also SHOWN as artifact$subgenome_anchor", NA_character_),
   row("newton1989", "mismatch_discrimination.csv", "test", "test-z7-priors.R", "mechanism prior only: a mismatched 3' base is not a primer", NA_character_),
-  row("ye2001_primer_set", "ye2001_primer_set.csv (deliberately not written)", "blocked", NA_character_, "none yet (provenance only)", "the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"),
+  row("ye2001_primer_set", "none", "blocked", NA_character_, "none yet (provenance only)", "the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"),
   row("desilva2009", "desilva2009_outcomes.csv", "test", "test-z8-outcomes.R", "hrm: outcome counts with their own denominators", NA_character_),
   row("ace1r_aslamp2015", "ace1r_aslamp2015_counts.csv", "test", "test-z8-outcomes.R", "lamp: time-to-positive window, not a binary call", NA_character_),
   row("liu2016_caps", "liu2016_caps_funnel.csv", "test", "test-z8-outcomes.R", "caps: restriction-site conversion rate", NA_character_),
   row("soybean_est_caps", "soybean_est_caps_funnel.csv", "test", "test-z8-outcomes.R", "caps: restriction-site conversion rate", NA_character_),
   row("snap2caps", "snap2caps_markers.csv", "test", "test-z8-outcomes.R", "caps: dCAPS site creation", NA_character_),
-  row("jak2v617f_ddpcr", "jak2v617f_ddpcr_limits.csv", "test", "test-z8-outcomes.R", "dpcr: LoB / LoD of a partition readout", NA_character_)
+  row("jak2v617f_ddpcr", "jak2v617f_ddpcr_limits.csv", "test", "test-z8-outcomes.R", "dpcr: LoB / LoD of a partition readout", NA_character_),
+  # polyploid pass: each file is the outcome of one design question, and the
+  # verdict is what the matching test pins (dosage axis, nested chain, the
+  # tetraploid/hexaploid split, and a negative cotton datapoint)
+  row("gao2022", "polyploid_gao2022_sugarcane_chain.csv", "test", "test-polyploid-gao2022.R", "the nested selection chain is strictly decreasing (77 > 49 > 24) and only the workbook tier is labelled measured", NA_character_),
+  row("jaimes2024", "polyploid_jaimes2024_sugarcane_dosage.csv", "test", "test-polyploid-jaimes2024.R", "the autopolyploid outcome axis is DOSAGE not homoeologs: 42 of 76 SNPs assigned a dose", NA_character_),
+  row("durum2019", "polyploid_durum2019_hexaploid_vs_tetraploid.csv", "test", "test-polyploid-durum2019.R", "the tetraploid vs hexaploid difference is carried by the split rows, which add up to the total", NA_character_),
+  row("cotton2023", "polyploid_cotton2023_kasp_screen.csv", "test", "test-polyploid-cotton2023.R", "a negative datapoint: 8 of 11 cotton KASP markers usable, so polyploidy is not uniformly favourable", NA_character_),
+  row("citrus2020", "taqman_citrus2020_amplicons.csv,taqman_citrus2020_calls.csv,taqman_citrus2020_probes.csv", "test", "test-taqman-sources-citrus.R", "probe/SNP composition and the call matrix move together: a call cannot be counted without its probe context", NA_character_),
+  row("apol1_2019", "taqman_apol1_2019_failure.csv", "test", "test-taqman-sources.R", "a predesigned TaqMan assay's failure MODE on a deletion haplotype: no amplification and mis-typed G calls on 1,110 samples", NA_character_),
+  row("wheat2019", "taqman_wheat2019_anova.csv,taqman_wheat2019_composition.csv,taqman_wheat2019_concordance.csv,taqman_wheat2019_platform.csv", "test", "test-taqman-sources.R", "platform performance on a plant call matrix: a platform rate cannot be quoted without the design it came from", NA_character_),
+  row("znavsmgb2014", "taqman_znavsmgb2014_rules.csv,taqman_znavsmgb2014_tm.csv", "rule", "test-taqman-sources-chem.R", "3'-MGB vs conventional TaqMan mismatch tolerance: the rule is applied, not merely cited", NA_character_),
+  row("dnamate", "none", "blocked", NA_character_, "nothing moved", "dnamate tabulates no Tm of its own and the 348 oligo Tms it advertises belong to doi:10.1093/bioinformatics/bdt066, so citing dnamate would attribute another paper's data to it"),
+  row("huguet2017", "none", "blocked", NA_character_, "nothing moved", "the nearest-neighbour magnesium parameters were regenerated, but Fig. S10 is a raster and S2-S6 are parameter sets, so no measured Tm set could be landed"),
+  row("vonahsen2001", "none", "blocked", NA_character_, "nothing moved", "closed access, and the 475 Tms it reports were 'obtained ... or compiled' rather than tabulated, so not even their provenance could be checked")
 ))
 
 ## --- checks -------------------------------------------------------------------
 # Every registry row finishes with its own `DOI <- "..."` constant, so the
 # identifier of record is the script's, not this file's.
 for (i in seq_len(nrow(ledger))) {
-  ext <- ledger$extract[[i]]
-  if (ledger$use[[i]] == "blocked") next
+  files <- trimws(strsplit(ledger$extract[[i]], ",", fixed = TRUE)[[1L]])
+  files <- files[!is.na(files) & files != "none"]
+  if (ledger$use[[i]] == "blocked") {
+    if (length(files)) stop("a blocked row may not name an extract: ", files[[1L]])
+    next
+  }
+  if (!length(files)) stop("a non-blocked row must name an extract")
+  for (ext in files) {
+
   path <- fs::path(out_dir, ext)
   if (!file.exists(path)) stop("ledger names an extract that does not exist: ", ext)
   d <- utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
@@ -118,6 +143,7 @@ for (i in seq_len(nrow(ledger))) {
       stop(ext, " does not cite ", want, " (it cites: ",
            paste(unique(got), collapse = ", "), ")")
     }
+  }
   }
 }
 
@@ -138,6 +164,19 @@ for (f in unique(stats::na.omit(ledger$test_file))) {
 # every blocked row carries its reason, and every non-blocked row does not
 if (any(ledger$use == "blocked" & is.na(ledger$reason))) stop("a blocked row has no reason")
 if (any(ledger$use != "blocked" & !is.na(ledger$reason))) stop("a non-blocked row carries a reason")
+
+# The write REPLACES the file with this list. Rows this script does not know
+# (seeded by data-raw/wave5-ledger-gap.R and data-raw/wave5-ledger-classify.R
+# from the wave 4 registry, and added by data-raw/merge-proposals.R from the
+# workers' proposals) would otherwise vanish on every run. Read first, then
+# write the UNION: what this script knows plus what the registry recorded.
+kept <- utils::read.csv(fs::path(out_dir, "science_ledger.csv"),
+                        stringsAsFactors = FALSE, na.strings = c("NA", ""),
+                        colClasses = "character")
+kept$reason <- ifelse(is.na(kept$reason) | !nzchar(kept$reason), NA_character_, kept$reason)
+key <- function(d) paste(d$source_key, d$extract)
+kept <- kept[!key(kept) %in% key(ledger), , drop = FALSE]
+ledger <- rbind(ledger, kept[, names(ledger), drop = FALSE])
 
 utils::write.csv(ledger, fs::path(out_dir, "science_ledger.csv"), row.names = FALSE, na = "")
 

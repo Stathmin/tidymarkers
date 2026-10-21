@@ -35,6 +35,8 @@ if (length(dup_notes)) {
 pmc_keys <- grep("^PMC[0-9]+$", s$key, value = TRUE)
 if (length(pmc_keys)) {
   rename <- c(
+    # Already renamed by data-raw/repair-registries.R. Kept here so the map
+    # stays complete if a later wave starts from the old PMC id.
     PMC13020337 = "snapshot_str2026",   # STR/cSNP SNaPshot sensitivity study
     PMC13644189 = "csnp14p2026",        # 14-plex cSNP SNaPshot panel
     PMC5704242  = "woerner_stutter2017" # STR stutter in MPS data
