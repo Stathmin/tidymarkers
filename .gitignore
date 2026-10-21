@@ -40,6 +40,12 @@ renv/python/
 packrat/lib*/
 packrat/src/
 
+# local tool builds (OligoArrayAux for UNAFOLDDAT; see dev/README.md)
+.tools/
+.tmp-rt/
+.deps/
+.i18n-lib/
+
 # julia / duckdb / compiled
 *.jl.cov
 *.jl.so
