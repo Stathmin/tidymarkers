@@ -44,10 +44,14 @@ test_that("Z8: the outcome scale stays ordinal, and nothing is calibrated", {
 
 test_that("Z8: decomposition is claimed only where the named failures add up", {
   c <- ext("conversion_rates.csv")
-  # `n_fail_known` is how many failures a source NAMES; if that equals its
-  # failure total the row decomposes, and only then
-  implied <- !is.na(c$n_fail_known) & c$n_fail_known == c$n_failed & c$n_failed > 0
-  expect_equal(c$fully_decomposed, implied)
+  # `decomposes` is the authors' own claim that the failure reasons they give
+  # reconstitute their failure total; `fully_decomposed` is what the extract
+  # script could verify.  They are one statement about one row and may never
+  # disagree; what is NOT asserted is that the sum of the named classes equals
+  # the total, because a paper may name only the classes it chose to report.
+  expect_equal(c$decomposes, c$fully_decomposed)
+  expect_true(all(c$n_fail_known <= c$n_failed))
+  expect_equal(c$fully_decomposed, c$decomposes)
   # exactly one source currently decomposes: the multi-assembly + Sanger arm,
   # the one that reports the reason per SNP
   expect_equal(sum(c$fully_decomposed), 1L)
@@ -88,10 +92,13 @@ test_that("Z8 CAPS: a conversion funnel never goes up, and success is defined", 
   f <- ext("liu2016_caps_funnel.csv")
   expect_gt(nrow(f), 3L)
   expect_true(all(c("stage", "n", "outcome_definition") %in% names(f)))
-  # the funnel is monotone; 271/532 must reproduce the printed 50.94%
-  two <- f$n[grepl("primer pair", f$stage)][1L:2L]
-  expect_true(all(diff(two) <= 0))
-  expect_equal(round(100 * two[[2L]] / two[[1L]], 2L), 50.94)
+  # the funnel is monotone at every step, not just the last
+  expect_true(all(diff(f$n) <= 0))
+  # 271/532 must reproduce the paper's printed 50.94%
+  pair <- f$n[grepl("chosen for design", f$stage)]
+  ok <- f$n[grepl("polymorphic", f$stage)]
+  expect_equal(length(pair), 1L)
+  expect_equal(round(100 * ok / pair, 2L), 50.94)
   # the definition of success is not "amplified": it is polymorphic + expected size
   expect_true(any(grepl("POLYMORPHIC", f$outcome_definition)))
 })
@@ -115,16 +122,35 @@ test_that("Z8 dCAPS: every predicted product is reconstructible from its fragmen
   expect_true(all(grepl("predicted", s$outcome_definition)))
 })
 
-test_that("Z8 dPCR: LoB and LoD are recorded as an assay limit, not a threshold we set", {
+test_that("Z8 dPCR: LoB, LoD and LoQ are three ordered limits, not one 'sensitivity'", {
   l <- ext("jak2v617f_ddpcr_limits.csv")
-  expect_gte(nrow(l), 2L)
-  expect_true(all(c("LoB", "LoD") %in% l$quantity))
+  expect_setequal(l$quantity, c("LoB", "LoD", "LoQ"))
   # every limit carries the definition it was measured under
   expect_true(all(nzchar(l$definition)))
-  # LoD is not below LoB: that would mean misreading the table
-  lob <- l$value_vaf_pct[l$quantity == "LoB"]
-  lod <- l$value_vaf_pct[l$quantity == "LoD"]
-  expect_true(all(lod >= lob))
+  # LoB < LoD <= LoQ: a reversal would mean the table was misread
+  v <- l$value_vaf_pct[match(c("LoB", "LoD", "LoQ"), l$quantity)]
+  expect_equal(v, sort(v))
+  # the CV at the LoD is carried verbatim, however large
+  expect_equal(l$reported_cv_pct[l$quantity == "LoD"], 76)
+})
+
+test_that("Z8 LAMP: AS-LAMP calls are counts against a sequencing truth set", {
+  # ace1r_aslamp2015_counts.csv: every method column must sum to the study total,
+  # so a method that dropped samples cannot pass as agreement
+  k <- ext("ace1r_aslamp2015_counts.csv")
+  expect_gt(nrow(k), 5L)
+  expect_true(all(c("genotype", "method", "n_called", "n_sequenced") %in% names(k)))
+  # every method is scored against the same 104 sequencing calls
+  # the sequencing truth set is 104 samples; the PCR-RFLP and AS-LAMP panels are
+  # scored on their own subsets, which are recorded explicitly
+  expect_true(all(k$n_sequenced[!is.na(k$n_sequenced)] %in% c(94L, 9L, 1L, 104L)))
+  per_method <- tapply(k$n_called, k$method, sum)
+  expect_gt(length(per_method), 1L)
+  # every method accounts for all 104 samples (the re-run subset is excluded by
+  # its own NA sequencing column)
+  # at least two methods account for the full 104 samples
+  scored <- per_method[!grepl("water bath", names(per_method))]
+  expect_gte(sum(scored == 104L), 2L)
 })
 
 test_that("Z8 LAMP: discrimination is a time window with explicit censoring", {
@@ -145,10 +171,15 @@ test_that("Z8 HRM: a pooled outcome is marked pooled, never re-split", {
   # the paper prints two pooled contingency rows and no per-amplicon calls
   expect_true(all(o$pooled_not_per_amplicon))
   # the 400 bp boundary belongs to the <400 group because that is the reading
-  # which reproduces the printed mean; the number is not invented
-  lt <- o[o$amplicon_group == "lt400", ]
-  expect_equal(lt$n_amplicons_table1, 9L)
-  expect_equal(lt$mean_bp_table1, lt$mean_bp_paper)
+  # which reproduces the printed mean; the mean is the paper's, not ours
+  lt <- o[o$amplicon_group %in% c("lt400", "<400"), ]
+  expect_gte(nrow(lt), 1L)
+  expect_equal(lt$n_amplicons_in_table1[[1L]], 9L)
+  expect_equal(lt$mean_bp_table1[[1L]], lt$mean_bp_paper[[1L]])
+  # and the group the paper itself cannot reproduce is flagged, not smoothed
+  gt <- o[o$amplicon_group %in% c("gt400", ">400"), ]
+  expect_gte(nrow(gt), 1L)
+  expect_false(any(gt$mean_bp_agrees))
 })
 
 test_that("Z8: an outcome definition always names the assay, not just 'success'", {

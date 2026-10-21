@@ -77,6 +77,15 @@ test_that("Z7: Liu's 3rd-base claim is what its own per-class table says", {
   expect_equal(unname(which.max(mean_pct)), 2L) # 3rd
 })
 
+test_that("Z7: the single-mismatch dCq extract is the figure the prior cites", {
+  # lefever_single_mismatch.csv is why the Lefever prior exists, so the prior row
+  # and the extract must agree on what was measured
+  l <- ext("lefever_single_mismatch.csv")
+  expect_gt(nrow(l), 0L)
+  expect_true(all(c("snp", "ddCq_hom_1", "min_ddCq", "calibrated") %in% names(l)))
+  expect_false(any(l$calibrated))
+})
+
 test_that("Z7: Kwok's severity classes are the published ones, verbatim", {
   d <- ext("mismatch_discrimination.csv")
   k <- d[d$table == "kwok_3prime_severity", ]
