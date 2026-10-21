@@ -51,7 +51,8 @@ test_that("in_silico_pcr finds a product with one mismatch in a primer", {
   expect_equal(nrow(pr), 1L)
   expect_equal(pr$start, 1L)
   expect_equal(pr$end, 12L)
-  expect_equal(nrow(in_silico_pcr("ACGT", "TGCA", genome)), 0L)
+  # exact mode still finds nothing; the near-match warning is asserted below
+  expect_equal(nrow(suppressWarnings(in_silico_pcr("ACGT", "TGCA", genome))), 0L)
 })
 
 test_that("exact mode warns when a one-mismatch product is hidden", {
