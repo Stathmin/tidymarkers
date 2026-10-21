@@ -1,0 +1,5 @@
+"assay","primer_set","template_genotype","time_to_positive_min","time_is_approximate","non_target_amplified_before_cutoff","observation_window_min","censoring","non_target_genotype"
+"AS-LAMP, G119S ace-1R","wild-type (ace-1S) specific","Ace1SS",50,TRUE,FALSE,75,"non-target allele not amplified within 75 min; Tp exceeds the window, it is not measured","Ace1RR"
+"AS-LAMP, G119S ace-1R","wild-type (ace-1S) specific","Ace1RS",64,TRUE,FALSE,75,"non-target allele not amplified within 75 min; Tp exceeds the window, it is not measured","Ace1RR"
+"AS-LAMP, G119S ace-1R","resistance (ace-1R) specific","Ace1RR",51,TRUE,FALSE,75,"non-target allele not amplified within 75 min; Tp exceeds the window, it is not measured","Ace1SS"
+"AS-LAMP, G119S ace-1R","resistance (ace-1R) specific","Ace1RS",55,TRUE,FALSE,75,"non-target allele not amplified within 75 min; Tp exceeds the window, it is not measured","Ace1SS"

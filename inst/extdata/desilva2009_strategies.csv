@@ -1,0 +1,6 @@
+"genetic_situation","hrm_solution","doi"
+"No common SNP in the amplicon","Direct HRM analysis","10.1186/1471-2156-10-5"
+"Only one common SNP in the amplicon","Sometimes it is possible to distinguish directly the three groups (Figure 1)Otherwise, spike-in or unlabelled probe is needed (Figure 2)","10.1186/1471-2156-10-5"
+"Two SNPs in the amplicon, one is common the other is rare","Spike-in when possible (Figure 3); otherwise, use unlabeled probe for the common SNP, and perform mutation scanning for the rare one (Figure 4)","10.1186/1471-2156-10-5"
+"Two or more common SNPs in the amplicon","Use an unlabeled probe for each SNP (Figure 5)","10.1186/1471-2156-10-5"
+"Two SNPs in two different amplicons","When Tm of 2 amplicons is different, it is possible to perform multiplex PCR (Figure 6)","10.1186/1471-2156-10-5"
