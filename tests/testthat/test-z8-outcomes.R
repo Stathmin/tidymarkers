@@ -193,3 +193,31 @@ test_that("Z8: an outcome definition always names the assay, not just 'success'"
   expect_true(all(nzchar(m$outcome_def)))
   expect_true(grepl("KASP cluster", m$outcome_def[[1L]]))
 })
+
+test_that("Z8.3: a KASP conversion rate names which of the four quantities it is", {
+  # Decision: data-raw/proposed/kasp_z8_scope.decision.md.  A conversion rate is
+  # design, manufacture, work or usable - and rates with different definitions
+  # are never pooled or compared (the 6.5 % wheat_platform2019 figure is a
+  # fraction of assay x sample points, not of assays).
+  c <- ext("conversion_rates.csv")
+  def <- if ("conversion_definition" %in% names(c)) c$conversion_definition else rep(NA_character_, nrow(c))
+  # the column may be absent only while it is being introduced; the moment a row
+  # carries it, it must be populated and must distinguish definitions
+  if (any(!is.na(def))) {
+    expect_false(any(is.na(def) | !nzchar(def)))
+    rate <- ifelse(
+      !is.na(c$n_designed) & c$n_designed > 0L,
+      round(c$n_success / c$n_designed, 6),
+      NA_real_
+    )
+    key <- paste(rate, def)
+    # two rows may share a value only if they share a definition
+    dup <- stats::ave(key, key, FUN = length)
+    expect_true(all(dup[!is.na(rate)] <= 1L))
+  }
+  # the assay-x-sample scope, when recorded, is never an assay conversion
+  if ("scope" %in% names(c)) {
+    xs <- c[!is.na(c$scope) & c$scope == "assay_x_sample", ]
+    expect_true(all(!is.na(xs$conversion_definition)))
+  }
+})
