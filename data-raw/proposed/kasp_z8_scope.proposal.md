@@ -1,5 +1,9 @@
 # KASP conversion: which rates may be decomposed into design vs work
 
+> **DECIDED 2026-10-21** — see `kasp_z8_scope.decision.md`: no `R/` change; the guard lives in `tests/testthat/test-z8-outcomes.R`. The status
+> line below is the state this file was written in; it is kept as the evidence
+> record and is not edited after the decision.
+
 Status: proposal from the sci-kasp worker. **Nothing in this file has been
 applied** to `inst/extdata/conversion_rates.csv` or `R/`. Per the brief, that
 table is not edited; this note states what the three new extracts do and do not
