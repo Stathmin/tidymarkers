@@ -24,3 +24,6 @@
 ^\.tmp-rt$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.tmp$
+^\.tmp/
+^\.tools/bin$
