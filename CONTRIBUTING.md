@@ -21,8 +21,15 @@ testthat::test_local()
 roxygen2::roxygenise()
 
 # полная проверка
+#   Rscript dev/check.R            # гейт репозитория (см. merge gate ниже)
 #   R CMD build . && R CMD check --no-manual tidymarkers_*.tar.gz
 ```
+
+## Merge gate
+
+`Rscript dev/check.R` должен проходить: документация и артефакты, `styler`,
+`lintr`, roxygen-синхронизация, фигуры и install smoke. `--full` добавляет
+`R CMD check --as-cran`.
 
 ## Стиль
 
