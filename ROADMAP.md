@@ -35,8 +35,8 @@
 |---|---|---|---|---|
 | 1 | `Q1` снять три неподтверждённые заявки | **готово 2026-10-22**: `data-raw/proposed/{taqman,lamp}_status.decision.md`, `polyploid_scope` уже решён | `test-taqman-status.R`, `test-lamp-status.R` | **закрыт** |
 | 2 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | **снят** (`Q2` принят: −3 по умолчанию, слабый класс → −2) |
-| 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | `R/marker_crispr.R` (`crispr_guide_candidates()`) | `test-crispr.R`: PFS-тест на оба эффектора | нет |
-| 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | `R/marker_checks.R` (различитель типа мисматча) | `test-kasp-checks.R` | нет |
+| 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | **готово (проверено)**: `pfs`/`pfs_side` в `crispr_guide_candidates()`, Cas12a → `NA` | `test-crispr*` (181 pass) | **закрыт** |
+| 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | **готово (проверено)**: `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» | `test-kasp-mismatch-type.R`, `test-kasp-checks.R` (70 pass) | **закрыт** |
 | 5 | `Z9.1` LAMP: paired ALT набор / internal control | **готово**: `paired` в `design_lamp_marker()` | `test-lamp.R` (267 pass) | **закрыт** |
 | 6 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
 | 7 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
@@ -147,7 +147,7 @@ ESI Table S1 — 4096 измеренных Tm).
   провести её через `marker_technology()` и golden-вердикты.
 - `Z8.1`/`Z8.3`: guard для конверсий написан, но отрицательных строк
   (`outcome = failed`) по-прежнему мало — это **новые статьи**, не код.
-- `Z0.4` (KASP: мисматч как кинетика) — следующий по очереди, `R/marker_checks.R`.
+- `Z0.4` (KASP: мисматч как кинетика) **закрыт**: класс терминального мисматча виден в оценке.
 - Все три решения `Q1` приняты 2026-10-22: `taqman_status`, `lamp_status`,
   `polyploid_scope` лежат как `*.decision.md` в `data-raw/proposed/`. TaqMan и
   LAMP — только текстовой правкой (константы остаются, меняется статус «по
@@ -246,7 +246,8 @@ ESI Table S1 — 4096 измеренных Tm).
   Блокер: `Z11.2` (он и владеет правкой текста; дублировать её здесь нельзя).
   Следствие: пока текста нет, заявление `[~]` держится только комментарием в
   `R/`, а виньетка противоречит коду.
-- [ ] **`Z0.1` Cas13 — не «PAM-free» без оговорок.** Cas13a: слабое предпочтение
+- [x] **`Z0.1` Cas13 — не «PAM-free» без оговорок.** Cas13a: слабое предпочтение
+  **Готово (проверено 2026-10-22).** `crispr_guide_candidates()` несёт `pfs` и `pfs_side` (Cas13a 3′ H, Cas13b 5′ D), Cas12a — `NA`; длина спейсера — параметр. `test-crispr*`: 181 pass.
   PFS (избегать G на 3′ фланге); Cas13b: D-PFS.
   Правка: `R/marker_crispr.R` — `cas = "cas13a" | "cas13b"` уже есть
   (`crispr_guide_candidates()`, L103-140: сторона PFS, диапазон спейсера), остались
@@ -269,7 +270,8 @@ ESI Table S1 — 4096 измеренных Tm).
   dPCR-ассays без данных.
 - [x] **`Z0.3` LAMP F1c/B1c > F2/B2.** `lamp_fuse()` фильтрует `t1 > t2`;
   FIP 3′ несёт ALT, а не REF.
-- [ ] **`Z0.4` KASP: «Taq не продлевает 3′ мисматч» — кинетика, не бинарность.**
+- [x] **`Z0.4` KASP: «Taq не продлевает 3′ мисматч» — кинетика, не бинарность.**
+  **Готово (проверено 2026-10-22).** `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» с классом в `observed`/`detail`. `test-kasp-mismatch-type.R` + `test-kasp-checks.R`: 70 pass.
   Правка: `R/marker_checks.R` (`marker_design_checks()`, проверки AS 3′-окна) +
   `R/marker_evaluation_table()` — различитель **типа** мисматча
   (transition/transversion, G:T / A:C wobble) как `unknown`/риск, а не `pass`;
