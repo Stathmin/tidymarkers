@@ -76,7 +76,7 @@ artifacts:
   inputs:
   - R/marker_arms.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 73a305cbfc1179f0c4fbd6c0152d8c33
+  input_hash: 278b8894f7e106609a373d78355dd616
   output_hash: 746f58c2b64c3fb1a8fd4a5842779b0e
   docs: vignettes/markers-gel.Rmd
   status: verified

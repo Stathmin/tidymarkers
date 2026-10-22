@@ -101,6 +101,32 @@ arms_extra_mismatch_position <- function(terminal_class) {
   as.integer(pos[[cls]])
 }
 
+#' The policy label for a primer's stabilising mismatch (Z7.1)
+#'
+#' `stab_at` is the stabilising mismatch's distance from the 3' end, as
+#' `design_as_primers()` stores it in its configuration table (a positive count:
+#' 3 = the third base from the 3' end).  `ARMS_EXTRA_MISMATCH_POSITION` and its
+#' fallback are the same positions written as signed 3'-relative offsets (-3,
+#' -2), which is how the decision file counts them; the comparison is therefore
+#' on the magnitude.  `NA` means no second mismatch.
+#' @param stab_at a positive distance from the 3' end, or `NA`.
+#' @return one of `"none"`, `"default"`, `"fallback"`, or `"other"`.
+#' @keywords internal
+#' @noRd
+arms_stab_policy <- function(stab_at) {
+  if (length(stab_at) != 1L || is.na(stab_at)) {
+    return("none")
+  }
+  from_3p <- abs(as.integer(stab_at))
+  if (identical(from_3p, abs(ARMS_EXTRA_MISMATCH_POSITION))) {
+    return("default")
+  }
+  if (identical(from_3p, abs(ARMS_EXTRA_MISMATCH_FALLBACK))) {
+    return("fallback")
+  }
+  "other"
+}
+
 #' The window the ARMS designer selects against (and the gate limits display)
 #' @keywords internal
 #' @noRd
@@ -252,6 +278,11 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   cand <- tidyr::crossing(o = seq_len(nrow(outer)), i = seq_len(nrow(fwd)), j = seq_len(nrow(rev))) |>
     dplyr::mutate(
       ref_primer = fwd$ref_primer[.data$i], alt_primer = rev$alt_primer[.data$j],
+      # Z7.1: carry the chosen deliberate-mismatch position with the primer, so
+      # the winner reports which policy row produced it
+      ref_stab_at = fwd$stab_at[.data$i],
+      alt_stab_at = rev$stab_at[.data$j],
+      weak_terminal = fwd$weak_terminal[.data$i] | rev$weak_terminal[.data$j],
       ref_start = fwd$tmpl_start[.data$i], ref_end = fwd$tmpl_end[.data$i],
       alt_start = rev$tmpl_start[.data$j], alt_end = rev$tmpl_end[.data$j],
       outer_forward = outer$forward[.data$o], outer_reverse = outer$reverse[.data$o],
@@ -300,11 +331,19 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
     inner = list(
       ref = list(
         primer = best$ref_primer, start = best$ref_start + off,
-        end = best$ref_end + off, strand = "+"
+        end = best$ref_end + off, strand = "+",
+        # Z7.1: which deliberate-mismatch position this primer carries.  The
+        # chosen `stab_at` and the weak-terminal flag used to be computed in
+        # design_as_primers() and then dropped here, so a caller could not tell
+        # which policy produced the primer it was given.
+        stab_at = best$ref_stab_at, weak_terminal = best$weak_terminal,
+        stab_policy = arms_stab_policy(best$ref_stab_at)
       ),
       alt = list(
         primer = best$alt_primer, start = best$alt_start + off,
-        end = best$alt_end + off, strand = "-"
+        end = best$alt_end + off, strand = "-",
+        stab_at = best$alt_stab_at, weak_terminal = best$weak_terminal,
+        stab_policy = arms_stab_policy(best$alt_stab_at)
       )
     ),
     bands = tibble::tibble(
@@ -329,6 +368,13 @@ print.marker_arms <- function(x, ...) {
   cat("  outer:", x$outer$product, "bp\n")
   cat("  REF band:", x$bands$size[x$bands$band == "REF"], "bp (inner F:", x$inner$ref$primer, ")\n")
   cat("  ALT band:", x$bands$size[x$bands$band == "ALT"], "bp (inner R:", x$inner$alt$primer, ")\n")
+  # Z7.1: which deliberate-mismatch position the inner primers carry
+  pol <- x$inner$ref$stab_policy %||% "none"
+  if (identical(pol, "none")) {
+    cat("  stabilising mismatch: none\n")
+  } else {
+    cat("  stabilising mismatch:", x$inner$ref$stab_at, "from the 3' end (", pol, ")\n")
+  }
   invisible(x)
 }
 

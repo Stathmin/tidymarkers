@@ -96,3 +96,53 @@ test_that("a caller who asks for another position gets it, marked as not-policy"
   expect_true(all(out$stab_policy == "other"))
   expect_true(all(out$stab_at == 4L))
 })
+
+test_that("the signed policy constant is not a stab_ats distance", {
+  # ARMS_EXTRA_MISMATCH_POSITION is a signed 3'-relative offset (-3); the
+  # designer's `stab_ats` are positive distances from the 3' end (3).  Passing
+  # the constant straight in used to place the mismatch past the 5' end in
+  # silence, so a technology composed with it did not design at all.
+  expect_error(
+    design_as_primers("ACGTACGTACGTACGTACGT", 10L, "A", "C",
+      strands = "+", stab_ats = ARMS_EXTRA_MISMATCH_POSITION
+    ),
+    "must be positive"
+  )
+  # the distance form is accepted and its magnitude is the policy's position
+  expect_identical(abs(ARMS_EXTRA_MISMATCH_POSITION), 3L)
+})
+
+test_that("the chosen position survives into the returned marker (Z7.1)", {
+  skip_if_no_oligoarrayaux()
+  g <- ath_genome()
+  snp <- pick_target_snp(ensembl_variants("4", 1500000L, 1560000L), g, ensembl_gene("AT4G00650"))
+  m <- suppressWarnings(design_arms_marker(g, snp, flank = 200L))
+  testthat::skip_if(is.null(m), "no ARMS design at this locus")
+  # the winner names the policy row that produced it, on both inner primers
+  for (side in c("ref", "alt")) {
+    p <- m$inner[[side]]
+    expect_true("stab_at" %in% names(p))
+    expect_true("stab_policy" %in% names(p))
+    expect_true(p$stab_policy %in% c("none", "default", "fallback", "other"))
+  }
+  # a position that is reported is the one the policy chose
+  if (!is.na(m$inner$ref$stab_at)) {
+    expect_true(m$inner$ref$stab_policy %in% c("default", "fallback"))
+    expect_equal(abs(m$inner$ref$stab_at), abs(ARMS_EXTRA_MISMATCH_POSITION))
+  }
+})
+
+test_that("a technology carries the decided position through marker_technology()", {
+  skip_if_no_oligoarrayaux()
+  g <- ath_genome()
+  snp <- pick_target_snp(ensembl_variants("4", 1500000L, 1560000L), g, ensembl_gene("AT4G00650"))
+  # the distance form the designer takes
+  marker_technology("arms_z71_dist",
+    base = "arms",
+    params = list(stab_ats = abs(ARMS_EXTRA_MISMATCH_POSITION)), overwrite = TRUE
+  )
+  m <- suppressWarnings(marker_design_at(g, snp, scheme = "arms_z71_dist", flank = 200L))
+  testthat::skip_if(is.null(m), "no ARMS design at this locus")
+  expect_identical(m$inner$ref$stab_at, abs(ARMS_EXTRA_MISMATCH_POSITION))
+  expect_identical(m$inner$ref$stab_policy, "default")
+})
