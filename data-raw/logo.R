@@ -65,10 +65,22 @@ tree_tf <- sprintf(
 )
 
 ## the helix ----------------------------------------------------------------
-#  To scale: 10 nm of the 2 nm-wide duplex is 2.86 turns (3.4 nm pitch).
-turns <- 2.86
-y_top <- 54; y_bot <- 190          # helix vertical span
-amp   <- 56                        # half-width of the projected cylinder
+#  A helix is recognisable only if its projected aspect is about right: the ratio
+#  of pitch to diameter sets the angle at which the strands cross the axis, and
+#  that angle is what says "double helix" rather than "stack of flat loops".
+#  B-DNA (3.4 nm pitch, 2 nm diameter) crosses at 28 degrees above horizontal,
+#  i.e. |dx/dy| = 2*pi*amp*turns/span = 1.85 at the crossing.
+#
+#  At a true 10 nm scale the duplex would be 2.86 turns wide 2 nm, i.e. amp ~14:
+#  a narrow ribbon that no longer winds around the Tree.  The composition needs
+#  the strands out at amp 48, just clear of the sephirot (x 85..155) -- and at
+#  that width 2.86 turns would cross at 8 degrees, flat and ribbon-like.  Cutting
+#  to 1.65 turns buys 15.6 degrees at the same width.  So both dimensions are
+#  exaggerated (width ~3.4x, pitch ~1.7x); the projected aspect goes from
+#  pitch/amp 0.85 to 1.72, against 3.40 for B-DNA.
+turns <- 1.65
+y_top <- 46; y_bot <- 182          # helix vertical span; clears the wordmark
+amp   <- 48                        # half-width of the projected cylinder
 depth <- 0.10                      # perspective: the near side reads closer
 #  Groove asymmetry.  The two backbones are not diametrically opposite around the
 #  cylinder: at a base pair they subtend ~140 degrees across the minor groove and
@@ -143,7 +155,7 @@ strand_one <- function(front) strand(x1, y1, front, accent, z1)
 strand_two <- function(front) strand(x2, y2, front, ink, z2)
 
 svg <- c(
-  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarker: a DNA helix wound around the Tree of Life">', W, H, W, H),
+  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarkers: a DNA helix wound around the Tree of Life">', W, H, W, H),
   '<style>text{font-family:Inter,Helvetica,Arial,sans-serif;}</style>',
   sprintf('<polygon points="%s" fill="%s" stroke="%s" stroke-width="7" stroke-linejoin="round"/>', hex_pts, paper, ink),
   strand_one(FALSE),
@@ -151,7 +163,7 @@ svg <- c(
   sprintf('<g transform="%s">%s</g>', tree_tf, tree),
   strand_one(TRUE),
   strand_two(TRUE),
-  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="22" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">marker</tspan></text>', cx, cy + 71.5, ink, accent),
+  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="22" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">markers</tspan></text>', cx, cy + 71.5, ink, accent),
   '</svg>')
 writeLines(svg, out_svg)
 message("wrote ", out_svg)
