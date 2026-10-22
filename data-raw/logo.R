@@ -38,7 +38,7 @@ hex_pts <- paste(sprintf("%.1f,%.1f", hexx, hexy), collapse = " ")
 
 ## colours (base palette ~ KASP FAM/HEX + a tidy accent) ----------------------
 ink     <- "#1b4965"               # border / text
-accent  <- "#d1495b"               # "kasp" accent
+accent  <- "#d1495b"               # "marker" accent
 paper   <- "#fffdf7"               # hexagon fill; the tree's knockout colour
 
 ## the Tree of Life ----------------------------------------------------------
@@ -143,7 +143,7 @@ strand_one <- function(front) strand(x1, y1, front, accent, z1)
 strand_two <- function(front) strand(x2, y2, front, ink, z2)
 
 svg <- c(
-  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarkers: a DNA helix wound around the Tree of Life">', W, H, W, H),
+  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarker: a DNA helix wound around the Tree of Life">', W, H, W, H),
   '<style>text{font-family:Inter,Helvetica,Arial,sans-serif;}</style>',
   sprintf('<polygon points="%s" fill="%s" stroke="%s" stroke-width="7" stroke-linejoin="round"/>', hex_pts, paper, ink),
   strand_one(FALSE),
@@ -151,7 +151,7 @@ svg <- c(
   sprintf('<g transform="%s">%s</g>', tree_tf, tree),
   strand_one(TRUE),
   strand_two(TRUE),
-  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="22" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">markers</tspan></text>', cx, cy + 71.5, ink, accent),
+  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="22" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">marker</tspan></text>', cx, cy + 71.5, ink, accent),
   '</svg>')
 writeLines(svg, out_svg)
 message("wrote ", out_svg)
