@@ -1,27 +1,32 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: tidymarkers 0.3.0\n"
+"Project-Id-Version: tidymarkers 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidymarkers/issues\n"
-"POT-Creation-Date: 2026-10-16 18:36+0300\n"
-"PO-Revision-Date: 2026-10-01 15:25+0300\n"
+"POT-Creation-Date: 2026-10-23 00:30+0300\n"
+"PO-Revision-Date: 2026-10-23 00:30+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: marker_alignment.R:36 marker_io.R:160 marker_io.R:244
 msgid "FASTA not found: {path}"
 msgstr "FASTA не найдена: {path}"
 
 #: marker_alignment.R:80
-msgid "Haplotype {hap} has an insertion before the reference start; cannot anchor it."
-msgstr "У гаплотипа {hap} вставка перед началом референса; невозможно привязать."
+msgid ""
+"Haplotype {hap} has an insertion before the reference start; cannot anchor "
+"it."
+msgstr ""
+"У гаплотипа {hap} вставка перед началом референса; невозможно привязать."
 
 #: marker_alignment.R:95
-msgid "Haplotype {hap} has a deletion at the reference start; cannot anchor it."
+msgid ""
+"Haplotype {hap} has a deletion at the reference start; cannot anchor it."
 msgstr "У гаплотипа {hap} делеция в начале референса; невозможно привязать."
 
 #: marker_alignment.R:145
@@ -84,153 +89,219 @@ msgstr "Скачиваю GTF Ensembl Plants в {.path {cache}}."
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr "Собираю EnsDb (однократно) из {.file {fs::path_file(gtf)}}."
 
-#: marker_arms.R:165
+#: marker_arms.R:243
 msgid "tetra-primer ARMS is implemented for single-base substitutions only."
 msgstr "тетра-праймерный ARMS реализован только для однонуклеотидных замен."
 
-#: marker_arms.R:175
+#: marker_arms.R:253
 msgid "No outer primer pair passed the Tm/GC filters."
 msgstr "Ни одна внешняя пара праймеров не прошла фильтры Tm/GC."
 
-#: marker_arms.R:183
+#: marker_arms.R:261
 msgid "No inner allele-specific primer passed the GC/Tm filter."
 msgstr "Ни один внутренний аллель-специфичный праймер не прошёл фильтр GC/Tm."
 
-#: marker_arms.R:196
+#: marker_arms.R:274
 msgid "An inner primer is missing on one strand."
 msgstr "Внутренний праймер отсутствует на одной из цепей."
 
-#: marker_arms.R:238
+#: marker_arms.R:321
 msgid "No tetra-primer set cleared even the relaxed constraints."
 msgstr "Ни один набор тетра-праймеров не прошёл даже ослабленные ограничения."
 
-#: marker_arms.R:297
+#: marker_arms.R:418
 msgid "to draw the ARMS gel"
 msgstr "для отрисовки геля ARMS"
 
-#: marker_arms.R:299
+#: marker_arms.R:420
 msgid "`marker` must be a marker_arms object (see design_arms_marker())."
 msgstr "`marker` должен быть объектом marker_arms (см. design_arms_marker())."
 
-#: marker_assemble.R:196
+#: marker_assemble.R:201 marker_assemble.R:210
 msgid "No AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер не прошёл фильтр GC/Tm."
 
-#: marker_assemble.R:214
+#: marker_assemble.R:228
 msgid "No AS primer passed the homopolymer/SSR filter."
 msgstr "Ни один AS-праймер не прошёл фильтр гомополимеров/SSR."
 
-#: marker_assemble.R:226
+#: marker_assemble.R:241
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр GC/Tm."
 
-#: marker_assemble.R:230
+#: marker_assemble.R:245
 msgid "No indel AS primer passed the homopolymer/SSR filter."
 msgstr "Ни один AS-праймер для индела не прошёл фильтр гомополимеров/SSR."
 
-#: marker_assemble.R:310
+#: marker_assemble.R:325
 msgid "No ALT primer's 3' code is the consensus of every ALT."
 msgstr "3'-код ни одного ALT-праймера не является консенсусом всех ALT."
 
-#: marker_assemble.R:358
-msgid "No AS primer survived the footprint cap (max_footprint_variants = {max_footprint_variants})."
-msgstr "Ни один AS-праймер не выдержал лимит футпринта (max_footprint_variants = {max_footprint_variants})."
+#: marker_assemble.R:377
+msgid ""
+"No AS primer survived the footprint cap (max_footprint_variants = "
+"{max_footprint_variants})."
+msgstr ""
+"Ни один AS-праймер не выдержал лимит футпринта (max_footprint_variants = "
+"{max_footprint_variants})."
 
-#: marker_assemble.R:395
+#: marker_assemble.R:414
 msgid "No AS primer survived even the relaxed constraints."
 msgstr "Ни один AS-праймер не прошёл даже ослабленные ограничения."
 
-#: marker_assemble.R:416
-msgid "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the AS 3'-terminal {clean_3p} nt."
-msgstr "У целевого SNP {snp$chrom}:{snp$pos} в 3'-концевых {clean_3p} нт AS-праймера есть {best_as$n_3p} других вариант(ов)."
+#: marker_assemble.R:435
+msgid ""
+"Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
+"AS 3'-terminal {clean_3p} nt."
+msgstr ""
+"У целевого SNP {snp$chrom}:{snp$pos} в 3'-концевых {clean_3p} нт AS-праймера "
+"есть {best_as$n_3p} других вариант(ов)."
 
-#: marker_assemble.R:418
-msgid "Allele specificity on strand {best_as$strand} may not hold across accessions."
-msgstr "Аллельная специфичность на цепи {best_as$strand} может не сохраняться между образцами."
+#: marker_assemble.R:437
+msgid ""
+"Allele specificity on strand {best_as$strand} may not hold across accessions."
+msgstr ""
+"Аллельная специфичность на цепи {best_as$strand} может не сохраняться между "
+"образцами."
 
-#: marker_assemble.R:423
+#: marker_assemble.R:442
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
-msgstr "AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим футпринтом."
+msgstr ""
+"AS-праймер перекрывает {best_as$n_var} других вариант(ов) под своим "
+"футпринтом."
 
-#: marker_assemble.R:424
+#: marker_assemble.R:443
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
-msgstr "Ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
+msgstr ""
+"Ни один кандидат с меньшим числом не прошёл фильтры GC/Tm/дискриминации."
 
-#: marker_assemble.R:430
-msgid "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below min_disc = {min_disc}."
-msgstr "Дискриминация лучшего AS-праймера = {round(best_as$discrimination, 2)} ниже min_disc = {min_disc}."
+#: marker_assemble.R:449
+msgid ""
+"Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
+"min_disc = {min_disc}."
+msgstr ""
+"Дискриминация лучшего AS-праймера = {round(best_as$discrimination, 2)} ниже "
+"min_disc = {min_disc}."
 
-#: marker_assemble.R:432
+#: marker_assemble.R:451
 msgid "Consider widening `strands` or `tm_range`."
 msgstr "Рассмотрите расширение `strands` или `tm_range`."
 
-#: marker_assemble.R:448
-msgid "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked variant(s) in the AS zone)."
-msgstr "Дизайн в {snp$chrom}:{snp$pos} держится на сцеплении ({n_link} сцепленных вариантов в зоне AS)."
+#: marker_assemble.R:467
+msgid ""
+"Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
+"variant(s) in the AS zone)."
+msgstr ""
+"Дизайн в {snp$chrom}:{snp$pos} держится на сцеплении ({n_link} сцепленных "
+"вариантов в зоне AS)."
 
-#: marker_assemble.R:450
-msgid "The ALT primer is valid only in accessions carrying the linked haplotype."
-msgstr "ALT-праймер действителен только в образцах с этим сцепленным гаплотипом."
+#: marker_assemble.R:469
+msgid ""
+"The ALT primer is valid only in accessions carrying the linked haplotype."
+msgstr ""
+"ALT-праймер действителен только в образцах с этим сцепленным гаплотипом."
 
-#: marker_assemble.R:573
-msgid "OligoArrayAux was not found: thermodynamic and structural checks will be NA."
-msgstr "OligoArrayAux не найден: термодинамические и структурные проверки будут NA."
+#: marker_assemble.R:595
+msgid ""
+"OligoArrayAux was not found: thermodynamic and structural checks will be NA."
+msgstr ""
+"OligoArrayAux не найден: термодинамические и структурные проверки будут NA."
 
-#: marker_assemble.R:574
+#: marker_assemble.R:596
 msgid "run tidymarkers::marker_install_tools() once to build it."
-msgstr "выполните tidymarkers::marker_install_tools() один раз, чтобы собрать его."
+msgstr ""
+"выполните tidymarkers::marker_install_tools() один раз, чтобы собрать его."
 
-#: marker_assemble.R:711
+#: marker_assemble.R:735
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr "Ни один кандидатный ассей не прошёл даже ослабленные ограничения."
 
-#: marker_assemble.R:761
-msgid "No screened pairing is genome-specific (an off-target hit, a second product or an inverted repeat)."
-msgstr "Ни одна проверенная пара не является геном-специфичной (off-target хит, второй продукт или инвертированный повтор)."
+#: marker_assemble.R:785
+msgid ""
+"No screened pairing is genome-specific (an off-target hit, a second product "
+"or an inverted repeat)."
+msgstr ""
+"Ни одна проверенная пара не является геном-специфичной (off-target хит, "
+"второй продукт или инвертированный повтор)."
 
-#: marker_assemble.R:768
-msgid "Top-ranked pairing failed genome-level checks; kept the next clean one ({win} of {n_screen} screened)."
-msgstr "Топовая пара не прошла геномные проверки; взята следующая чистая ({win} из {n_screen} просмотренных)."
+#: marker_assemble.R:792
+msgid ""
+"Top-ranked pairing failed genome-level checks; kept the next clean one "
+"({win} of {n_screen} screened)."
+msgstr ""
+"Топовая пара не прошла геномные проверки; взята следующая чистая ({win} из "
+"{n_screen} просмотренных)."
 
-#: marker_assemble.R:770
-msgid "Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats are screened here."
-msgstr "Ранжирование не использует геном; здесь проверяются off-target хиты, ПЦР in silico и инвертированные повторы."
+#: marker_assemble.R:794
+msgid ""
+"Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
+"are screened here."
+msgstr ""
+"Ранжирование не использует геном; здесь проверяются off-target хиты, ПЦР in "
+"silico и инвертированные повторы."
 
-#: marker_assemble.R:798
+#: marker_assemble.R:822
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr "ПЦР in silico не удалась: {conditionMessage(e)}"
 
-#: marker_assemble.R:811
+#: marker_assemble.R:835
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: marker_assemble.R:817
+#: marker_assemble.R:841
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr "BLAST-БД недоступна: {conditionMessage(e)}"
 
-#: marker_assemble.R:861
+#: marker_assemble.R:885
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
 
-#: marker_assemble.R:895 marker_assemble.R:904
-msgid "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, class {out$site$class[1L]})."
-msgstr "Мишень {snp$chrom}:{snp$pos} мультиаллельная ({out$site$n_alt[1L]} ALT, класс {out$site$class[1L]})."
+#: marker_assemble.R:919 marker_assemble.R:928
+msgid ""
+"Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
+"class {out$site$class[1L]})."
+msgstr ""
+"Мишень {snp$chrom}:{snp$pos} мультиаллельная ({out$site$n_alt[1L]} ALT, "
+"класс {out$site$class[1L]})."
 
-#: marker_assemble.R:898
-msgid "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every ALT but cannot tell them apart."
-msgstr "ALT-праймер вырожденный (3'-основание {out$site$code[1L]}): он покрывает все ALT, но не различает их."
+#: marker_assemble.R:922
+msgid ""
+"The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
+"ALT but cannot tell them apart."
+msgstr ""
+"ALT-праймер вырожденный (3'-основание {out$site$code[1L]}): он покрывает все "
+"ALT, но не различает их."
 
-#: marker_assemble.R:907
-msgid "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
+#: marker_assemble.R:931
+msgid ""
+"The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr "ALT-праймер построен только для {snp$alt}; остальные ALT не покрыты."
 
-#: marker_assemble.R:927
-msgid "The chosen assay fails structural/specificity checks: {paste(bad, collapse = '; ')}."
-msgstr "Выбранный тест не проходит проверки структуры/специфичности: {paste(bad, collapse = '; ')}."
+#: marker_assemble.R:942
+#, fuzzy
+#| msgid "FM scan failed: {conditionMessage(e)}"
+msgid "The acceptance checks could not be evaluated: {conditionMessage(e)}"
+msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: marker_assemble.R:929
-msgid "Selection does not gate these yet - inspect assay$evaluation and consider a trade-off."
-msgstr "Отбор их пока не гейтит — посмотрите assay$evaluation и рассмотрите компромисс."
+#: marker_assemble.R:943
+msgid "assay$evaluation is NULL; the verdict is unknown, not usable."
+msgstr ""
+
+#: marker_assemble.R:959
+msgid ""
+"The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
+"'; ')}."
+msgstr ""
+"Выбранный тест не проходит проверки структуры/специфичности: {paste(bad, "
+"collapse = '; ')}."
+
+#: marker_assemble.R:961
+msgid ""
+"Selection does not gate these yet - inspect assay$evaluation and consider a "
+"trade-off."
+msgstr ""
+"Отбор их пока не гейтит — посмотрите assay$evaluation и рассмотрите "
+"компромисс."
 
 #: marker_caps.R:144
 msgid "Bundled restriction-enzyme catalogue not found."
@@ -240,29 +311,42 @@ msgstr "Встроенный каталог ферментов рестрикц�
 msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgstr "Поиск dCAPS реализован только для однонуклеотидных замен."
 
-#: marker_caps.R:617
-msgid "No natural or primer-introduced (dCAPS) restriction marker here."
-msgstr "Здесь нет ни природного, ни вносимого праймером (dCAPS) рестрикционного маркера."
+#: marker_caps.R:638
+msgid ""
+"CAPS: no population haplotypes supplied; restriction-site frequency/"
+"conservation is not checked."
+msgstr ""
 
-#: marker_caps.R:653
+#: marker_caps.R:660
+msgid "No natural or primer-introduced (dCAPS) restriction marker here."
+msgstr ""
+"Здесь нет ни природного, ни вносимого праймером (dCAPS) рестрикционного "
+"маркера."
+
+#: marker_caps.R:733
 msgid "to draw the CAPS gel"
 msgstr "для отрисовки геля CAPS"
 
-#: marker_caps.R:655
+#: marker_caps.R:735
 msgid "`marker` must be a marker_caps object (see design_caps_marker())."
 msgstr "`marker` должен быть объектом marker_caps (см. design_caps_marker())."
 
-#: marker_castpcr.R:249
+#: marker_castpcr.R:255
 msgid "castPCR is implemented for single-base substitutions only."
 msgstr "castPCR реализован только для однонуклеотидных замен."
 
-#: marker_castpcr.R:262
+#: marker_castpcr.R:270
 msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
-msgstr "Ни один аллель-специфичный праймер не прошёл фильтры GC/Tm для castPCR."
+msgstr ""
+"Ни один аллель-специфичный праймер не прошёл фильтры GC/Tm для castPCR."
 
-#: marker_castpcr.R:372
-msgid "No mutant allele-specific primer, common mate, probe and WT blocker passed the castPCR filters."
-msgstr "Ни один аллель-специфичный праймер к мутанту, общий партнёр, проба и WT-блокер не прошли фильтры castPCR."
+#: marker_castpcr.R:383
+msgid ""
+"No mutant allele-specific primer, common mate, probe and WT blocker passed "
+"the castPCR filters."
+msgstr ""
+"Ни один аллель-специфичный праймер к мутанту, общий партнёр, проба и WT-"
+"блокер не прошли фильтры castPCR."
 
 #: marker_chunk.R:50
 msgid "A list source must come from haplotypes_from_alignment()."
@@ -278,7 +362,8 @@ msgstr "Источник-таблица требует `pos`/`ref`/`alt` или 
 
 #: marker_chunk.R:77
 msgid "`reference` must be one of the alignment's sequence names."
-msgstr "`reference` должен быть одним из имён последовательностей выравнивания."
+msgstr ""
+"`reference` должен быть одним из имён последовательностей выравнивания."
 
 #: marker_chunk.R:131
 msgid "The window {from}..{to} is outside the reference (1..{nchar(ref)})."
@@ -288,73 +373,188 @@ msgstr "Окно {from}..{to} вне референса (1..{nchar(ref)})."
 msgid "`chunk` must be a marker_chunk (see marker_chunk())."
 msgstr "`chunk` должен быть объектом marker_chunk (см. marker_chunk())."
 
-#: marker_core.R:122
+#: marker_core.R:175
+msgid "`{nm}` must be a single finite number."
+msgstr ""
+
+#: marker_core.R:179
+msgid "Salt, dNTP and DMSO concentrations cannot be negative."
+msgstr ""
+
+#: marker_core.R:195
+#, fuzzy
+#| msgid "`...` must be named costs, e.g. marker_costs(hrm = 1.2)."
+msgid "`conditions` must be a named list, e.g. reaction_conditions()."
+msgstr ""
+"`...` должны быть именованными стоимостями, напр. marker_costs(hrm = 1.2)."
+
+#: marker_core.R:201
+msgid "Unknown reaction condition(s): {.val {unknown}}."
+msgstr ""
+
+#: marker_core.R:202
+msgid "Allowed fields: {.val {names(defaults)}}."
+msgstr ""
+
+#: marker_core.R:259
+msgid "`scheme` must be a single scheme id."
+msgstr ""
+
+#: marker_core.R:355
+msgid "`capability` must be a single capability name."
+msgstr ""
+
+#: marker_core.R:444
 msgid "OligoArrayAux ('{bin}') was not found."
 msgstr "OligoArrayAux ('{bin}') не найден."
 
-#: marker_core.R:137
-msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+#: marker_core.R:464
+#, fuzzy
+#| msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}"
 msgstr "OligoArrayAux ('{bin}') не удалось запустить: {conditionMessage(run)}"
 
-#: marker_core.R:142
-msgid "OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
-msgstr "OligoArrayAux ('{bin}') завершился со статусом {run$status}: {trimws(run$stderr)}"
+#: marker_core.R:470
+#, fuzzy
+#| msgid ""
+#| "OligoArrayAux ('{bin}') exited with status {run$status}: "
+#| "{trimws(run$stderr)}"
+msgid ""
+"OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, "
+"collapse = ' '))}"
+msgstr ""
+"OligoArrayAux ('{bin}') завершился со статусом {run$status}: "
+"{trimws(run$stderr)}"
 
-#: marker_core.R:149
+#: marker_core.R:477
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
-msgstr "OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
+msgstr ""
+"OligoArrayAux ('{bin}') вернул неразбираемое значение dG (получено '{tok}')."
 
-#: marker_core.R:513
-msgid "Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ..."
+#: marker_core.R:847
+msgid ""
+"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
+"{cache}} ..."
 msgstr "Скачиваю геном TAIR10 (~35 МБ) из Ensembl Plants в {.path {cache}} ..."
 
-#: marker_core.R:521
-msgid "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."
-msgstr "Отбрасываю {length(dropped)} нехромосомную(ые) последовательность(и), напр. {.val {utils::head(dropped, 3L)}}."
+#: marker_core.R:855
+msgid ""
+"Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val "
+"{utils::head(dropped, 3L)}}."
+msgstr ""
+"Отбрасываю {length(dropped)} нехромосомную(ые) последовательность(и), напр. "
+"{.val {utils::head(dropped, 3L)}}."
 
-#: marker_core.R:531
-msgid "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}."
-msgstr "ath_genome(): в FASTA TAIR10 нет хромосом: {paste(missing, collapse = ', ')}."
+#: marker_core.R:865
+msgid ""
+"ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
+"collapse = ', ')}."
+msgstr ""
+"ath_genome(): в FASTA TAIR10 нет хромосом: {paste(missing, collapse = ', ')}."
 
-#: marker_core.R:533
+#: marker_core.R:867
 msgid "Ensembl deflines may have changed."
 msgstr "Возможно, изменились дефлайны Ensembl."
 
-#: marker_crispr.R:276
-msgid "No guide spacer passed the PAM / seed / specificity / GC filters with a pre-amplification pair."
-msgstr "Ни один спейсер гайда не прошёл фильтры PAM/seed/специфичности/GC вместе с преамплификационной парой."
+#: marker_crispr.R:298
+msgid "unknown Cas effector:"
+msgstr ""
 
-#: marker_decision.R:250
+#: marker_crispr.R:375
+msgid ""
+"Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled."
+msgstr ""
+
+#: marker_crispr.R:438
+#, fuzzy
+#| msgid ""
+#| "No guide spacer passed the PAM / seed / specificity / GC filters with a "
+#| "pre-amplification pair."
+msgid ""
+"No guide spacer passed the PAM/PFS / seed / specificity / GC filters with a "
+"pre-amplification pair."
+msgstr ""
+"Ни один спейсер гайда не прошёл фильтры PAM/seed/специфичности/GC вместе с "
+"преамплификационной парой."
+
+#: marker_crispr.R:492
+msgid ""
+"CRISPR: no population haplotypes supplied; guide/PAM conservation is not "
+"checked."
+msgstr ""
+
+#: marker_decision.R:288
 msgid "for the decision graph"
 msgstr "для графа решения"
 
-#: marker_decision.R:309
-msgid "to draw the decision tree"
-msgstr "для отрисовки дерева решений"
+#: marker_decision_render.R:125
+msgid ""
+"drawing the decision graph without the layout engine (fallback placement)"
+msgstr ""
 
-#: marker_design.R:77
+#: marker_decision_solver.R:75
+msgid "no TrueType font found for the decision layout"
+msgstr ""
+
+#: marker_decision_solver.R:138
+msgid "decision layout engine failed to run:"
+msgstr ""
+
+#: marker_decision_solver.R:142
+msgid "decision layout engine failed (status"
+msgstr ""
+
+#: marker_decision_solver.R:142
+msgid "):"
+msgstr ""
+
+#: marker_decision_solver.R:147
+msgid "decision layout engine returned no placement"
+msgstr ""
+
+#: marker_design.R:89
 msgid "No common primer passed the filters."
 msgstr "Ни один общий праймер не прошёл фильтры."
 
-#: marker_design.R:78
+#: marker_design.R:90
 msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
 msgstr "Расширьте `tm_range`/GC или увеличьте `flank` в snp_template()."
 
-#: marker_design.R:210
+#: marker_design.R:251
 msgid "every `alt` allele must be as long as `ref`"
 msgstr "каждый аллель `alt` должен быть той же длины, что и `ref`"
 
-#: marker_design.R:464
-msgid "design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."
-msgstr "design_as_primers_indel() требует аллели разной длины; для замены используйте design_as_primers()."
+#: marker_design.R:261
+msgid "`stab_ats` are distances from the 3' end and must be positive (or NA)."
+msgstr ""
 
-#: marker_design.R:521
+#: marker_design.R:262
+msgid "Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}"
+msgstr ""
+
+#: marker_design.R:263
+msgid "The signed policy constant means abs(): -3L -> 3L."
+msgstr ""
+
+#: marker_design.R:644
+msgid ""
+"design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
+"a substitution."
+msgstr ""
+"design_as_primers_indel() требует аллели разной длины; для замены "
+"используйте design_as_primers()."
+
+#: marker_design.R:701
 msgid "No indel AS-primer placement fit inside the design window."
-msgstr "Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
+msgstr ""
+"Ни одно размещение AS-праймера для индела не уместилось в окно дизайна."
 
 #: marker_dpcr.R:171
-msgid "dPCR allelic discrimination is implemented for single-base substitutions only."
-msgstr "Аллельная дискриминация dPCR реализована только для однонуклеотидных замен."
+msgid ""
+"dPCR allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+"Аллельная дискриминация dPCR реализована только для однонуклеотидных замен."
 
 #: marker_dpcr.R:189
 msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
@@ -364,19 +564,31 @@ msgstr "Ни одна фланкирующая пара праймеров не 
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr "Ни одна гидролизующая проба не прошла фильтры состава/Tm для dPCR."
 
-#: marker_dpcr.R:276
-msgid "The dPCR candidate failed a hard gate (probe composition, specificity, Tm ordering or primer Tm)."
-msgstr "Кандидат dPCR не прошёл жёсткий гейт (состав пробы, специфичность, порядок Tm или Tm праймеров)."
+#: marker_dpcr.R:286
+msgid ""
+"The dPCR candidate failed a hard gate (probe composition, specificity, Tm "
+"ordering or primer Tm)."
+msgstr ""
+"Кандидат dPCR не прошёл жёсткий гейт (состав пробы, специфичность, порядок "
+"Tm или Tm праймеров)."
 
-#: marker_duplex.R:346
+#: marker_duplex.R:384
 msgid "`loci` must have exactly two rows for a duplex assay."
 msgstr "`loci` должен содержать ровно две строки для дуплексного ассея."
 
-#: marker_duplex.R:373
-msgid "Duplex pairing accepted only after relaxing a soft compatibility cap."
-msgstr "Дуплексная пара принята только после ослабления мягкого предела совместимости."
+#: marker_duplex.R:400
+msgid ""
+"Duplex: `homologous` is undeclared; the topology gate is not_applicable and "
+"the pairing cannot pass."
+msgstr ""
 
-#: marker_duplex.R:375
+#: marker_duplex.R:420
+msgid "Duplex pairing accepted only after relaxing a soft compatibility cap."
+msgstr ""
+"Дуплексная пара принята только после ослабления мягкого предела "
+"совместимости."
+
+#: marker_duplex.R:422
 #, c-format
 msgid "relaxed: %s"
 msgstr "ослаблено: %s"
@@ -405,7 +617,7 @@ msgstr "для источника генома BSgenome"
 msgid "for the BSgenome genome source"
 msgstr "для источника генома BSgenome"
 
-#: marker_genome.R:150 marker_genome.R:175
+#: marker_genome.R:150 marker_genome.R:180
 msgid "Unknown sequence: {chrom}"
 msgstr "Неизвестная последовательность: {chrom}"
 
@@ -417,11 +629,43 @@ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = 
 msgid "`freq` must be one value in [0, 1] per haplotype."
 msgstr "`freq` должен быть одним значением в [0, 1] на гаплотип."
 
-#: marker_hrm.R:187
-msgid "No short flanking primer pair in the HRM amplicon window passed the Tm/GC filters."
-msgstr "Ни одна короткая фланкирующая пара в окне ампликона HRM не прошла фильтры Tm/GC."
+#: marker_haplotypes.R:331
+msgid "The marker has no `snp` row to anchor haplotypes."
+msgstr ""
 
-#: marker_hrm.R:234
+#: marker_haplotypes.R:360
+msgid ""
+"Target ALT frequency is %s%% (< %s%%); this marker may be monomorphic/rare "
+"in the supplied population."
+msgstr ""
+
+#: marker_haplotypes.R:376
+msgid ""
+"CAPS recognition site carries %d extra population variant(s); site "
+"conservation/frequency is not guaranteed."
+msgstr ""
+
+#: marker_haplotypes.R:391
+msgid ""
+"CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); "
+"conservation is not guaranteed."
+msgstr ""
+
+#: marker_hrm.R:321
+msgid ""
+"A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and "
+"a positive control."
+msgstr ""
+
+#: marker_hrm.R:347
+msgid ""
+"No short flanking primer pair in the HRM amplicon window passed the Tm/GC "
+"filters."
+msgstr ""
+"Ни одна короткая фланкирующая пара в окне ампликона HRM не прошла фильтры Tm/"
+"GC."
+
+#: marker_hrm.R:406
 msgid "`marker` must be a marker_hrm object (see design_hrm_marker())."
 msgstr "`marker` должен быть объектом marker_hrm (см. design_hrm_marker())."
 
@@ -430,20 +674,35 @@ msgid "Not an InDel size polymorphism: `ref` and `alt` are the same length."
 msgstr "Это не полиморфизм длины индела: `ref` и `alt` одной длины."
 
 #: marker_indel_size.R:154
-msgid "The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a longer indel."
-msgstr "Разница размеров REF/ALT меньше `min_gap`; используйте капиллярный электрофорез/ПААГ или более длинный индел."
+msgid ""
+"The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a "
+"longer indel."
+msgstr ""
+"Разница размеров REF/ALT меньше `min_gap`; используйте капиллярный "
+"электрофорез/ПААГ или более длинный индел."
 
 #: marker_indel_size.R:171
-msgid "No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
-msgstr "Ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC/ампликон для этого индела."
+msgid ""
+"No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
+msgstr ""
+"Ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC/ампликон для "
+"этого индела."
 
-#: marker_indel_size.R:214 marker_sanger.R:449
-msgid "No flanking pair has unique 3' ends (every candidate's 3' seed repeats in the genome)."
-msgstr "Ни у одной фланкирующей пары нет уникальных 3'-концов (3'-сид каждого кандидата повторяется в геноме)."
+#: marker_indel_size.R:214 marker_sanger.R:533
+msgid ""
+"No flanking pair has unique 3' ends (every candidate's 3' seed repeats in "
+"the genome)."
+msgstr ""
+"Ни у одной фланкирующей пары нет уникальных 3'-концов (3'-сид каждого "
+"кандидата повторяется в геноме)."
 
 #: marker_indel_size.R:216
-msgid "No flanking pair passed the InDel-size gates (gap, windows, structure, uniqueness)."
-msgstr "Ни одна фланкирующая пара не прошла гейты InDel-size (разрыв, окна, структура, уникальность)."
+msgid ""
+"No flanking pair passed the InDel-size gates (gap, windows, structure, "
+"uniqueness)."
+msgstr ""
+"Ни одна фланкирующая пара не прошла гейты InDel-size (разрыв, окна, "
+"структура, уникальность)."
 
 #: marker_io.R:62
 msgid "VCF not found: {path}"
@@ -467,15 +726,29 @@ msgstr "для произвольного доступа к индексиров
 
 #: marker_io.R:163
 msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
-msgstr "Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
+msgstr ""
+"Распаковываю {.file {fs::path_file(path)}} для индексации (однократно)."
 
 #: marker_io.R:218
 msgid "Bundled example data not found."
 msgstr "Встроенные примеры данных не найдены."
 
-#: marker_lamp.R:471
-msgid "No LAMP primer set passed the variant-placement / inner-Tm / structure / cross-dimer / amplicon filters."
-msgstr "Ни один набор праймеров LAMP не прошёл фильтры размещения варианта/внутренней Tm/структуры/кросс-димеров/ампликона."
+#: marker_lamp.R:714
+msgid ""
+"No LAMP primer set passed the variant-placement / inner-Tm / structure / "
+"cross-dimer / amplicon filters."
+msgstr ""
+"Ни один набор праймеров LAMP не прошёл фильтры размещения варианта/"
+"внутренней Tm/структуры/кросс-димеров/ампликона."
+
+#: marker_lamp.R:746
+msgid "LAMP primer-set geometry check failed."
+msgstr ""
+
+#: marker_lamp.R:748
+msgid ""
+"The set is returned with `geometry$ok = FALSE`; inspect the named check(s)."
+msgstr ""
 
 #: marker_lax.R:390
 msgid "No ALT haplotype carries the target allele; nothing to design."
@@ -486,8 +759,12 @@ msgid "no ALT primer covers {n_uncovered} ALT haplotype(s)"
 msgstr "ни один ALT-праймер не покрывает {n_uncovered} ALT-гаплотип(ов)"
 
 #: marker_lax.R:444
-msgid "the wild type also carries a baked linked allele (leakage {round(leakage, 2)})"
-msgstr "дикий тип тоже несёт впечатанный сцепленный аллель (утечка {round(leakage, 2)})"
+msgid ""
+"the wild type also carries a baked linked allele (leakage {round(leakage, "
+"2)})"
+msgstr ""
+"дикий тип тоже несёт впечатанный сцепленный аллель (утечка {round(leakage, "
+"2)})"
 
 #: marker_lax.R:447
 msgid "{n_cross} haplotype-group pairs cross-prime"
@@ -498,8 +775,12 @@ msgid "The lax tube fails the haplotype stage."
 msgstr "Пробирка lax не проходит стадию гаплотипов."
 
 #: marker_mix.R:46
-msgid "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} uM stock."
-msgstr "Запрошенная рабочая смесь ({as_uM}/{as_uM}/{com_uM} мкМ) превышает исходный раствор {stock_uM} мкМ."
+msgid ""
+"Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} "
+"uM stock."
+msgstr ""
+"Запрошенная рабочая смесь ({as_uM}/{as_uM}/{com_uM} мкМ) превышает исходный "
+"раствор {stock_uM} мкМ."
 
 #: marker_mix.R:48
 msgid "Raise `stock_uM` or lower the targets."
@@ -507,9 +788,10 @@ msgstr "Увеличьте `stock_uM` или уменьшите целевые �
 
 #: marker_mix.R:66
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
-msgstr "Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
+msgstr ""
+"Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
-#: marker_object.R:137 marker_strategy.R:91
+#: marker_object.R:137 marker_strategy.R:93
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
@@ -531,23 +813,38 @@ msgstr "Требуется `genome` (см. marker_genome())."
 
 #: marker_plan.R:262
 msgid "`...` must be named costs, e.g. marker_costs(hrm = 1.2)."
-msgstr "`...` должны быть именованными стоимостями, напр. marker_costs(hrm = 1.2)."
+msgstr ""
+"`...` должны быть именованными стоимостями, напр. marker_costs(hrm = 1.2)."
 
 #: marker_plan.R:273
-msgid "Only marker_*() layers (marker_targets(), marker_context(), marker_tech()) can be added to a marker_plan."
-msgstr "К marker_plan можно добавлять только слои marker_*() (marker_targets(), marker_context(), marker_tech())."
+msgid ""
+"Only marker_*() layers (marker_targets(), marker_context(), marker_tech()) "
+"can be added to a marker_plan."
+msgstr ""
+"К marker_plan можно добавлять только слои marker_*() (marker_targets(), "
+"marker_context(), marker_tech())."
 
 #: marker_plan.R:308
-msgid "Unknown scheme(s) in the plan: {paste(unknown, collapse = ', ')}; see marker_schemes()."
-msgstr "Неизвестная схема(ы) в плане: {paste(unknown, collapse = ', ')}; см. marker_schemes()."
+msgid ""
+"Unknown scheme(s) in the plan: {paste(unknown, collapse = ', ')}; see "
+"marker_schemes()."
+msgstr ""
+"Неизвестная схема(ы) в плане: {paste(unknown, collapse = ', ')}; см. "
+"marker_schemes()."
 
-#: marker_rpa.R:341
-msgid "RPA discrimination here is implemented for single-base substitutions only."
-msgstr "Различение аллелей методом RPA реализовано только для однонуклеотидных замен."
+#: marker_rpa.R:539
+msgid ""
+"RPA discrimination here is implemented for single-base substitutions only."
+msgstr ""
+"Различение аллелей методом RPA реализовано только для однонуклеотидных замен."
 
-#: marker_rpa.R:390
-msgid "No RPA primer pair passed the variant-placement / length / structure / amplicon filters."
-msgstr "Ни одна пара праймеров RPA не прошла фильтры размещения варианта/длины/структуры/ампликона."
+#: marker_rpa.R:588
+msgid ""
+"No RPA primer pair passed the variant-placement / length / structure / "
+"amplicon filters."
+msgstr ""
+"Ни одна пара праймеров RPA не прошла фильтры размещения варианта/длины/"
+"структуры/ампликона."
 
 #: marker_rprimer.R:31
 msgid "`seqs` must be equal length (an ungapped alignment)."
@@ -557,9 +854,43 @@ msgstr "`seqs` должны быть одинаковой длины (вырав
 msgid "for an independent oligo-design cross-check"
 msgstr "для независимой кросс-проверки дизайна олиго"
 
-#: marker_sanger.R:409 marker_sanger.R:451
+#: marker_sanger.R:400
+msgid ""
+"No usable Sanger read reaches the variant (%s): more than %s bp from the "
+"read primer."
+msgstr ""
+
+#: marker_sanger.R:403
+msgid "The amplicon is returned, but that side cannot call the variant."
+msgstr ""
+
+#: marker_sanger.R:493 marker_sanger.R:535
 msgid "No flanking pair kept the variant clear of both read starts for Sanger."
-msgstr "Ни одна фланкирующая пара не оставила вариант в стороне от обоих начал считывания для Sanger."
+msgstr ""
+"Ни одна фланкирующая пара не оставила вариант в стороне от обоих начал "
+"считывания для Sanger."
+
+#: marker_sanger.R:561
+msgid ""
+"Sanger: no population variants supplied; primer-over-variant allele dropout "
+"is not checked."
+msgstr ""
+
+#: marker_sanger.R:562
+msgid "`allele_dropout_risk` is unknown, not a pass."
+msgstr ""
+
+#: marker_sanger.R:572
+msgid ""
+"Sanger: {nrow(hits)} population variant(s) fall under a primer (allele-"
+"dropout risk)."
+msgstr ""
+
+#: marker_sanger.R:574
+msgid ""
+"A variant in a primer binding site can lose that allele (or the whole "
+"product); see `$allele_dropout`."
+msgstr ""
 
 #: marker_scan.R:45 marker_scan.R:85
 msgid "for the indexed genome scan"
@@ -570,16 +901,22 @@ msgid "NCBI BLAST+ ('blastn'/'makeblastdb') was not found."
 msgstr "NCBI BLAST+ ('blastn'/'makeblastdb') не найден."
 
 #: marker_scan.R:48 marker_scan.R:89
-msgid "Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."
-msgstr "Установите его: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."
+msgid ""
+"Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast "
+"(macOS)."
+msgstr ""
+"Установите его: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install "
+"blast (macOS)."
 
 #: marker_scan.R:49 marker_scan.R:90
 msgid "On Windows run the NCBI BLAST+ installer."
 msgstr "В Windows запустите установщик NCBI BLAST+."
 
 #: marker_scan.R:50 marker_scan.R:92
-msgid "Or point the package at an existing build with options(tidymarkers.blast = )."
-msgstr "Либо укажите пакету существующую сборку через options(tidymarkers.blast = )."
+msgid ""
+"Or point the package at an existing build with options(tidymarkers.blast = )."
+msgstr ""
+"Либо укажите пакету существующую сборку через options(tidymarkers.blast = )."
 
 #: marker_scan.R:88
 msgid "No NCBI BLAST+ found (has_blast() is FALSE)."
@@ -590,8 +927,12 @@ msgid "Or use specificity_seed() on an in-memory genome."
 msgstr "Либо используйте specificity_seed() на геноме в памяти."
 
 #: marker_scan.R:109
-msgid "Could not open a BLAST database at {db_path} (build it with marker_blast_index())."
-msgstr "Не удалось открыть BLAST-БД по пути {db_path} (постройте её через marker_blast_index())."
+msgid ""
+"Could not open a BLAST database at {db_path} (build it with "
+"marker_blast_index())."
+msgstr ""
+"Не удалось открыть BLAST-БД по пути {db_path} (постройте её через "
+"marker_blast_index())."
 
 #: marker_scan.R:165
 msgid "This indexed genome has no BLAST database attached."
@@ -599,13 +940,14 @@ msgstr "У этого индексного генома нет прикрепл�
 
 #: marker_scan.R:166
 msgid "Build one with marker_blast_index(genome) and pass it as `blast_db=`."
-msgstr "Постройте её через marker_blast_index(genome) и передайте как `blast_db=`."
+msgstr ""
+"Постройте её через marker_blast_index(genome) и передайте как `blast_db=`."
 
-#: marker_schemes.R:126
+#: marker_schemes.R:221
 msgid "Unknown specificity mode {mode} for scheme {scheme}."
 msgstr "Неизвестный режим специфичности {mode} для схемы {scheme}."
 
-#: marker_schemes.R:198
+#: marker_schemes.R:293
 msgid "Unknown marker scheme {scheme}; see marker_schemes()."
 msgstr "Неизвестная схема маркера {scheme}; см. marker_schemes()."
 
@@ -618,16 +960,22 @@ msgid "`screen` is empty."
 msgstr "`screen` пуст."
 
 #: marker_search_anim.R:300
-msgid "Design-search animation written to {.path {path}} ({length(pngs)} frames)."
-msgstr "Анимация поиска дизайна записана в {.path {path}} ({length(pngs)} кадр(ов))."
+msgid ""
+"Design-search animation written to {.path {path}} ({length(pngs)} frames)."
+msgstr ""
+"Анимация поиска дизайна записана в {.path {path}} ({length(pngs)} кадр(ов))."
 
 #: marker_search_anim.R:332
 msgid "No GIF assembler available (ImageMagick not found)."
 msgstr "Нет сборщика GIF (ImageMagick не найден)."
 
 #: marker_search_anim.R:333
-msgid "Install it: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS)."
-msgstr "Установите его: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS)."
+msgid ""
+"Install it: apt-get install imagemagick (Debian/Ubuntu), brew install "
+"imagemagick (macOS)."
+msgstr ""
+"Установите его: apt-get install imagemagick (Debian/Ubuntu), brew install "
+"imagemagick (macOS)."
 
 #: marker_search_anim.R:334
 msgid "Or assemble the `pngs` yourself (e.g. with gifski)."
@@ -637,25 +985,42 @@ msgstr "Либо соберите `pngs` сами (например, через 
 msgid "ImageMagick failed: {res$stderr}"
 msgstr "ImageMagick завершился с ошибкой: {res$stderr}"
 
-#: marker_select.R:480
-msgid "No assay cleared every hard constraint; returned the least-bad after relaxing some."
-msgstr "Ни один ассей не прошёл все жёсткие ограничения; возвращён наименее плохой после ослабления части."
+#: marker_select.R:482
+msgid ""
+"No assay cleared every hard constraint; returned the least-bad after "
+"relaxing some."
+msgstr ""
+"Ни один ассей не прошёл все жёсткие ограничения; возвращён наименее плохой "
+"после ослабления части."
 
 #: marker_snapshot.R:117
-msgid "SNaPshot single-base extension is implemented for single-base substitutions only."
-msgstr "Однонуклеотидное удлинение SNaPshot реализовано только для однонуклеотидных замен."
+msgid ""
+"SNaPshot single-base extension is implemented for single-base substitutions "
+"only."
+msgstr ""
+"Однонуклеотидное удлинение SNaPshot реализовано только для однонуклеотидных "
+"замен."
 
 #: marker_snapshot.R:130
 msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
-msgstr "Ни одна пара для амплификации не прошла фильтры Tm/GC и длины ампликона."
+msgstr ""
+"Ни одна пара для амплификации не прошла фильтры Tm/GC и длины ампликона."
 
-#: marker_snapshot.R:143
-msgid "No extension primer ended immediately 5' of the variant within the Tm/GC filters."
-msgstr "Ни один праймер удлинения не закончился непосредственно перед вариантом (5') в пределах фильтров Tm/GC."
+#: marker_snapshot.R:150
+msgid ""
+"No extension primer ended immediately 5' of the variant within the Tm/GC "
+"filters."
+msgstr ""
+"Ни один праймер удлинения не закончился непосредственно перед вариантом (5') "
+"в пределах фильтров Tm/GC."
 
-#: marker_snapshot.R:199
-msgid "The SNaPshot candidate failed a hard gate (extension placement, composition or uniqueness)."
-msgstr "Кандидат SNaPShot не прошёл жёсткий гейт (размещение удлинения, состав или уникальность)."
+#: marker_snapshot.R:206
+msgid ""
+"The SNaPshot candidate failed a hard gate (extension placement, composition "
+"or uniqueness)."
+msgstr ""
+"Кандидат SNaPShot не прошёл жёсткий гейт (размещение удлинения, состав или "
+"уникальность)."
 
 #: marker_solve.R:143
 msgid "`plan` must be a marker_plan (see marker_plan())."
@@ -665,7 +1030,7 @@ msgstr "`plan` должен быть объектом marker_plan (см. marker_
 msgid "The plan has no targets; add them with marker_targets()."
 msgstr "В плане нет мишеней; добавьте их через marker_targets()."
 
-#: marker_solve.R:212 marker_solve.R:243 marker_tubes.R:144
+#: marker_solve.R:212 marker_solve.R:243 marker_tubes.R:181
 msgid "`solved` must be a marker_solved (see marker_solve())."
 msgstr "`solved` должен быть объектом marker_solved (см. marker_solve())."
 
@@ -674,20 +1039,101 @@ msgid "to plot a solved plan"
 msgstr "для отрисовки решённого плана"
 
 #: marker_solve.R:252
-msgid "Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
-msgstr "Записано {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
+msgid ""
+"Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
+msgstr ""
+"Записано {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
 
-#: marker_specificity.R:34
+#: marker_specificity.R:42
 msgid "specificity_seed() needs an in-memory DNAStringSet."
 msgstr "specificity_seed() требует DNAStringSet в памяти."
 
-#: marker_specificity.R:35
+#: marker_specificity.R:43
 msgid "For an indexed genome use specificity_of()/specificity_blast()."
-msgstr "Для индексного генома используйте specificity_of()/specificity_blast()."
+msgstr ""
+"Для индексного генома используйте specificity_of()/specificity_blast()."
 
-#: marker_specificity.R:228
+#: marker_specificity.R:500
+msgid "A degenerate primer cannot be scanned with `max_mismatch > 0`;"
+msgstr ""
+
+#: marker_specificity.R:501
+msgid "only its exact (IUPAC-aware) matches are scored."
+msgstr ""
+
+#: marker_specificity.R:744
+msgid "%d near-match in-silico PCR product(s) with <= 1 primer mismatch"
+msgstr ""
+
+#: marker_specificity.R:745
+msgid ""
+"were found; exact mode ignores them. Set max_mismatch = 1 to include them."
+msgstr ""
+
+#: marker_specificity.R:894
 msgid "BLAST failed: {conditionMessage(e)}"
 msgstr "BLAST не удался: {conditionMessage(e)}"
+
+#: marker_specificity.R:1063
+msgid "`scheme` must be a single scheme name."
+msgstr ""
+
+#: marker_specificity.R:1073
+#, fuzzy
+#| msgid "Unknown specificity mode {mode} for scheme {scheme}."
+msgid "Unknown specificity scheme {.val {scheme}}."
+msgstr "Неизвестный режим специфичности {mode} для схемы {scheme}."
+
+#: marker_specificity.R:1075
+msgid "Use one of {.val {names(SPECIFICITY_POLICIES)}} or an alias"
+msgstr ""
+
+#: marker_specificity.R:1076
+msgid "({.val {names(SPECIFICITY_SCHEME_ALIASES)}})."
+msgstr ""
+
+#: marker_specificity.R:1150
+msgid "No genome was supplied."
+msgstr ""
+
+#: marker_specificity.R:1153
+msgid "No genome-wide engine for this genome: it is not an in-memory"
+msgstr ""
+
+#: marker_specificity.R:1154
+msgid "DNAStringSet and it has no usable BLAST database."
+msgstr ""
+
+#: marker_specificity.R:1280
+msgid "No genome-wide engine was consulted; a missing engine is never a pass."
+msgstr ""
+
+#: marker_specificity.R:1284
+msgid ""
+"No genome-wide engine for this genome; a missing engine is never a pass."
+msgstr ""
+
+#: marker_specificity.R:1294
+msgid "No in-silico PCR product at all: the primers do not amplify."
+msgstr ""
+
+#: marker_specificity.R:1296
+msgid ""
+"The guide's PAM changed: a hard loss of target, not a tolerated mismatch."
+msgstr ""
+
+#: marker_specificity.R:1298
+msgid "Every product breaks the scheme's mismatch policy."
+msgstr ""
+
+#: marker_specificity.R:1311
+#, c-format
+msgid "%d tolerated in-silico PCR products: not specific."
+msgstr ""
+
+#: marker_specificity.R:1320
+msgid "Exactly one tolerated in-silico PCR product."
+msgstr ""
 
 #: marker_ssr.R:205
 msgid "No SSR / microsatellite repeat found in the flanking window."
@@ -695,71 +1141,135 @@ msgstr "В фланкирующем окне не найден SSR/микрос�
 
 #: marker_ssr.R:220
 msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
-msgstr "Ни одна фланкирующая пара праймеров вне повтора не прошла фильтры Tm/GC."
+msgstr ""
+"Ни одна фланкирующая пара праймеров вне повтора не прошла фильтры Tm/GC."
 
 #: marker_ssr.R:257
-msgid "No flanking pair sits in unique enough sequence (every candidate's 3' seed repeats)."
-msgstr "Ни одна фланкирующая пара не сидит в достаточно уникальной последовательности (3'-сид каждого кандидата повторяется)."
+msgid ""
+"No flanking pair sits in unique enough sequence (every candidate's 3' seed "
+"repeats)."
+msgstr ""
+"Ни одна фланкирующая пара не сидит в достаточно уникальной "
+"последовательности (3'-сид каждого кандидата повторяется)."
 
 #: marker_ssr.R:259
-msgid "No flanking pair passed the SSR gates (windows, variability, one product)."
-msgstr "Ни одна фланкирующая пара не прошла гейты SSR (окна, вариабельность, один продукт)."
+msgid ""
+"No flanking pair passed the SSR gates (windows, variability, one product)."
+msgstr ""
+"Ни одна фланкирующая пара не прошла гейты SSR (окна, вариабельность, один "
+"продукт)."
 
 #: marker_strategy.R:55
-msgid "Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see marker_schemes()."
-msgstr "Неизвестная схема(ы) маркера: {paste(unknown, collapse = ', ')}; см. marker_schemes()."
+msgid ""
+"Unknown marker scheme(s): {paste(unknown, collapse = ', ')}; see "
+"marker_schemes()."
+msgstr ""
+"Неизвестная схема(ы) маркера: {paste(unknown, collapse = ', ')}; см. "
+"marker_schemes()."
 
-#: marker_taqman.R:144
-msgid "TaqMan allelic discrimination is implemented for single-base substitutions only."
-msgstr "Аллельная дискриминация TaqMan реализована только для однонуклеотидных замен."
-
-#: marker_taqman.R:159
-msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
-msgstr "Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для TaqMan."
+#: marker_taqman.R:157
+msgid ""
+"TaqMan allelic discrimination is implemented for single-base substitutions "
+"only."
+msgstr ""
+"Аллельная дискриминация TaqMan реализована только для однонуклеотидных замен."
 
 #: marker_taqman.R:172
-msgid "No composition- and position-clean hydrolysis probe passed the filters."
-msgstr "Ни одна гидролизующая проба, чистая по составу и положению, не прошла фильтры."
+msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
+msgstr ""
+"Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для "
+"TaqMan."
 
-#: marker_taqman.R:249
-msgid "The TaqMan candidate failed a hard gate (probe composition, specificity, Tm window, primer Tm or mismatch dG)."
-msgstr "Кандидат TaqMan не прошёл жёсткий гейт (состав пробы, специфичность, окно Tm, Tm праймеров или ΔG мисматча)."
+#: marker_taqman.R:183 marker_taqman.R:192
+msgid "No composition- and position-clean hydrolysis probe passed the filters."
+msgstr ""
+"Ни одна гидролизующая проба, чистая по составу и положению, не прошла "
+"фильтры."
+
+#: marker_taqman.R:281
+msgid ""
+"The TaqMan candidate failed a hard gate (probe composition, specificity, Tm "
+"window, primer Tm or mismatch dG)."
+msgstr ""
+"Кандидат TaqMan не прошёл жёсткий гейт (состав пробы, специфичность, окно "
+"Tm, Tm праймеров или ΔG мисматча)."
 
 #: marker_target.R:51
-msgid "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
-msgstr "ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
+msgid ""
+"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
+msgstr ""
+"ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
 
 #: marker_target.R:53 marker_target.R:103
 msgid "The Ensembl REST schema may have changed."
 msgstr "Возможно, изменилась схема Ensembl REST."
 
 #: marker_target.R:101
-msgid "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}."
-msgstr "ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
+msgid ""
+"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
+"', ')}."
+msgstr ""
+"ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
 
 #: marker_target.R:285
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr "После фильтрации не осталось пригодных замен (SNP/MNP)."
 
 #: marker_target.R:388
-msgid "No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
-msgstr "Ни одна мишень по рангу не дизайнится для схемы {scheme} ({nrow(cand)} испробовано)."
+msgid ""
+"No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
+msgstr ""
+"Ни одна мишень по рангу не дизайнится для схемы {scheme} ({nrow(cand)} "
+"испробовано)."
 
 #: marker_target.R:389
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr "возвращаю лучшую по рангу мишень, дизайн которой может быть doomed."
 
-#: marker_thermo.R:194
+#: marker_target.R:477
+msgid ""
+"`context` is a marker_plan() layer; pass marker_run_context(genome, ...) "
+"instead."
+msgstr ""
+
+#: marker_target.R:481
+#, fuzzy
+#| msgid "`chunk` must be a marker_chunk (see marker_chunk())."
+msgid "`context` must be a marker_run_context() object."
+msgstr "`chunk` должен быть объектом marker_chunk (см. marker_chunk())."
+
+#: marker_technology.R:84
+msgid "`name` must be a single non-empty string."
+msgstr ""
+
+#: marker_technology.R:87
+msgid "Scheme {name} already exists; pass overwrite = TRUE to replace it."
+msgstr ""
+
+#: marker_technology.R:91
+msgid "`params` must be a (possibly empty) named list."
+msgstr ""
+
+#: marker_technology.R:111
+#, fuzzy
+#| msgid "Unknown specificity mode {mode} for scheme {scheme}."
+msgid "Unknown specificity mode {specificity}."
+msgstr "Неизвестный режим специфичности {mode} для схемы {scheme}."
+
+#: marker_thermo.R:315
 msgid "Directory not found: {path}"
 msgstr "Каталог не найден: {path}"
 
-#: marker_thermo.R:268
+#: marker_thermo.R:469
 msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr "Для расчёта эффективностей ПЦР нужен OligoArrayAux ('hybrid-min')."
 
-#: marker_thermo.R:269
-msgid "run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
-msgstr "запустите marker_install_tools() или соберите его скриптом data-raw/install-oligoarrayaux.R"
+#: marker_thermo.R:470
+msgid ""
+"run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
+msgstr ""
+"запустите marker_install_tools() или соберите его скриптом data-raw/install-"
+"oligoarrayaux.R"
 
 #: marker_tools.R:175
 msgid "'{command}' failed (status {status})."
@@ -803,7 +1313,9 @@ msgstr "Инструмент sha256 не найден; пропускаю про
 
 #: marker_tools.R:242
 msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
-msgstr "Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено {got})."
+msgstr ""
+"Несовпадение контрольной суммы для {tar} (ожидалось {sha256}, получено "
+"{got})."
 
 #: marker_tools.R:248
 msgid "Configuring and building OligoArrayAux (this takes a minute) ..."
@@ -825,35 +1337,61 @@ msgstr "Сборка завершилась, но hybrid-min не вернул d
 msgid "OligoArrayAux installed in {.path {dest}}."
 msgstr "OligoArrayAux установлен в {.path {dest}}."
 
+#~ msgid "to draw the decision tree"
+#~ msgstr "для отрисовки дерева решений"
+
 #~ msgid "The two diagnostic bands are closer than `min_band_gap`."
 #~ msgstr "Две диагностические полосы ближе, чем `min_band_gap`."
 
-#~ msgid "A discriminating enzyme was found, but no flanking primer pair passed the Tm/GC filters."
-#~ msgstr "Различающий фермент найден, но ни одна фланкирующая пара праймеров не прошла фильтры Tm/GC."
+#~ msgid ""
+#~ "A discriminating enzyme was found, but no flanking primer pair passed the "
+#~ "Tm/GC filters."
+#~ msgstr ""
+#~ "Различающий фермент найден, но ни одна фланкирующая пара праймеров не "
+#~ "прошла фильтры Tm/GC."
 
 #~ msgid "A dCAPS site was found, but no primer pair passed the Tm/GC filters."
-#~ msgstr "Сайт dCAPS найден, но ни одна пара праймеров не прошла фильтры Tm/GC."
+#~ msgstr ""
+#~ "Сайт dCAPS найден, но ни одна пара праймеров не прошла фильтры Tm/GC."
 
 #~ msgid "No room upstream of the allele-specific primer for a common primer."
-#~ msgstr "Недостаточно места выше по последовательности от аллель-специфичного праймера для общего праймера."
+#~ msgstr ""
+#~ "Недостаточно места выше по последовательности от аллель-специфичного "
+#~ "праймера для общего праймера."
 
-#~ msgid "No common primer passed the Tm/GC filters within the castPCR amplicon."
+#~ msgid ""
+#~ "No common primer passed the Tm/GC filters within the castPCR amplicon."
 #~ msgstr "Ни один общий праймер не прошёл фильтры Tm/GC в ампликоне castPCR."
 
 #~ msgid "No hydrolysis probe covering the variant passed the Tm/GC filters."
-#~ msgstr "Ни одна гидролизующая проба, покрывающая вариант, не прошла фильтры Tm/GC."
+#~ msgstr ""
+#~ "Ни одна гидролизующая проба, покрывающая вариант, не прошла фильтры Tm/GC."
 
-#~ msgid "A guide spacer was found, but no pre-amplification pair passed the Tm/GC filters."
-#~ msgstr "Спейсер гайда найден, но ни одна пара для предварительной амплификации не прошла фильтры Tm/GC."
+#~ msgid ""
+#~ "A guide spacer was found, but no pre-amplification pair passed the Tm/GC "
+#~ "filters."
+#~ msgstr ""
+#~ "Спейсер гайда найден, но ни одна пара для предварительной амплификации не "
+#~ "прошла фильтры Tm/GC."
 
 #~ msgid "No short flanking primer pair passed the Tm/GC filters for HRM."
-#~ msgstr "Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для HRM."
+#~ msgstr ""
+#~ "Ни одна короткая фланкирующая пара праймеров не прошла фильтры Tm/GC для "
+#~ "HRM."
 
-#~ msgid "No FIP/BIP inner primer pair passed the loop/Tm/structure filters for LAMP."
-#~ msgstr "Ни одна внутренняя пара праймеров FIP/BIP не прошла фильтры петли/Tm/структуры для LAMP."
+#~ msgid ""
+#~ "No FIP/BIP inner primer pair passed the loop/Tm/structure filters for "
+#~ "LAMP."
+#~ msgstr ""
+#~ "Ни одна внутренняя пара праймеров FIP/BIP не прошла фильтры петли/Tm/"
+#~ "структуры для LAMP."
 
-#~ msgid "No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for LAMP."
-#~ msgstr "Ни одна внешняя пара F3/B3 не прошла фильтры Tm/GC, структуры и ампликона для LAMP."
+#~ msgid ""
+#~ "No F3/B3 outer pair passed the Tm/GC, structure and amplicon filters for "
+#~ "LAMP."
+#~ msgstr ""
+#~ "Ни одна внешняя пара F3/B3 не прошла фильтры Tm/GC, структуры и ампликона "
+#~ "для LAMP."
 
 #~ msgid "The variant does not fall between F2 and B2 (LAMP loop region)."
 #~ msgstr "Вариант не попадает между F2 и B2 (петлевая область LAMP)."
@@ -862,7 +1400,12 @@ msgstr "OligoArrayAux установлен в {.path {dest}}."
 #~ msgstr "Пара праймеров RPA не прошла фильтры структуры/димеров."
 
 #~ msgid "No exo probe covering the variant passed the geometry filters."
-#~ msgstr "Ни одна exo-проба, покрывающая вариант, не прошла фильтры геометрии."
+#~ msgstr ""
+#~ "Ни одна exo-проба, покрывающая вариант, не прошла фильтры геометрии."
 
-#~ msgid "The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico products)."
-#~ msgstr "Пара для Sanger не даёт уникальный ампликон ({nrow(hits)} продуктов in-silico ПЦР)."
+#~ msgid ""
+#~ "The Sanger pair is not a unique amplicon ({nrow(hits)} in-silico "
+#~ "products)."
+#~ msgstr ""
+#~ "Пара для Sanger не даёт уникальный ампликон ({nrow(hits)} продуктов in-"
+#~ "silico ПЦР)."

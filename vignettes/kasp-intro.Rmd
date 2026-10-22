@@ -1,8 +1,8 @@
 ---
-title: "Подбор KASP-маркеров на чистом R: за 15 минут"
+title: "KASP marker design in pure R: in 15 minutes"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Подбор KASP-маркеров на чистом R}
+  %\VignetteIndexEntry{KASP marker design in pure R}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,84 +16,87 @@ library(tidymarkers)
 library(knitr)
 ```
 
-## Что такое KASP и почему всё делают библиотеки, а не мы
+## What KASP is and why libraries do everything, not us
 
-KASP (Kompetitive Allele-Specific PCR) — точечный тест: два аллель-специфичных
-праймера (AS1/AS2) с разными флуорофорами и один общий (COM). Дискриминация
-держится на **одном** основании 3'-конца AS-праймера, поэтому качество дизайна
-решает всё. Пакет собирает дизайн из проверенных библиотек:
+KASP (Kompetitive Allele-Specific PCR) is a point test: two allele-specific
+primers (AS1/AS2) with different fluorophores and one common primer (COM).
+Discrimination rests on **one** base at the 3' end of the AS primer, so the
+quality of the design decides everything. The package builds the design from
+proven libraries:
 
-| Шаг | Библиотека |
+| Step | Library |
 |-----|------------|
 | Tm (nearest-neighbour) | `TmCalculator` |
-| Аллельная дискриминация (гибридизация + Taq) | `DECIPHER` |
-| Шпильки и димеры (ДНК, OligoArrayAux) | обёртки `oligo_dg()` / `terminal_dg()` |
-| Специфичность | `Biostrings` (`PDict`, `matchProbePair`), `rBLAST` |
+| Allelic discrimination (hybridisation + Taq) | `DECIPHER` |
+| Hairpins and dimers (DNA, OligoArrayAux) | wrappers `oligo_dg()` / `terminal_dg()` |
+| Specificity | `Biostrings` (`PDict`, `matchProbePair`), `rBLAST` |
 
-## Быстрый старт
+## Quick start
 
-Пример таблицы мишеней идёт в комплекте — без сети и без генома:
+The example target table ships with the package - no network and no genome:
 
 ```{r}
 marker_example()
 ```
 
-Рецепт реакции (`AS:AS:COM = 2:2:5`) — чистая арифметика:
+The reaction recipe (`AS:AS:COM = 2:2:5`) is pure arithmetic:
 
 ```{r}
 kasp_mix_recipe(n_reactions = 96)
 ```
 
-## Классификация вариантов и маскирование
+## Variant classification and masking
 
 ```{r}
 variant_type("G", "A")          # SNP
 variant_type("A", "AGG")        # insertion
 variant_type("AGG", "A")        # deletion
 
-# заменить прочие варианты под праймером на N (чтобы не тащить их в праймер)
+# replace other variants under the primer with N (so they are not carried into the primer)
 mask_positions("ACGTACGT", c(2, 5))
 ```
 
-## Дизайн на своём геноме
+## Design on your own genome
 
-Полный цикл читает геном (TAIR10 или любой FASTA) и варианты (VCF или Ensembl),
-поэтому здесь показан как код (тяжёлые шаги не выполняются при сборке документа):
+The full cycle reads a genome (TAIR10 or any FASTA) and variants (VCF or Ensembl),
+so it is shown here as code (the heavy steps are not run when the document is
+built):
 
 ```{r, eval = FALSE}
-genome <- ath_genome()                                  # TAIR10, кэшируется
+genome <- ath_genome()                                  # TAIR10, cached
 gene   <- ensembl_gene("AT4G00650")                     # FRI
 variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 
 snp <- pick_target_snp(variants, genome, gene)
 assay <- assemble_kasp_assay(genome, snp, variants = variants,
                              strands = c("+", "-"), tm_range = c(58, 64))
-assay                                                   # печатает сводку
+assay                                                   # prints a summary
 passes_all(assay)                                       # TRUE / FALSE
-marker_design_checks(assay)                               # построчно, что и почему
+marker_design_checks(assay)                               # row by row, what and why
 ```
 
-Свой FASTA/VCF — так же, но через читатели ввода:
+Your own FASTA/VCF - same way, but through the input readers:
 
 ```{r, eval = FALSE}
-genome <- read_genome_fasta("my.fa", seqids = c("chr1", "chr2"))  # индекс Rsamtools
-variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1")        # vroom, потоково
+genome <- read_genome_fasta("my.fa", seqids = c("chr1", "chr2"))  # Rsamtools index
+variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1")        # vroom, streaming
 ```
 
-## Пакетный дизайн
+## Batch design
 
-Для сотен локусов — таблица с вердиктом на локус (один плохой локус не роняет прогон):
+For hundreds of loci - a table with a verdict per locus (one bad locus does not
+sink the run):
 
 ```{r, eval = FALSE}
 loci <- marker_example()[c("chrom", "pos", "ref", "alt")]
-design_kasp_markers(genome, loci)   # pass / warn / fail + причина
+design_kasp_markers(genome, loci)   # pass / warn / fail + reason
 ```
 
-## Результаты и заказ
+## Results and ordering
 
 ```{r, eval = FALSE}
 write_kasp_results(assay, gene)     # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
-                                    # + IDT/LGC/tidy как подмножества колонок
+                                    # + IDT/LGC/tidy as column subsets
 ```
 
-См. также `?marker_design_checks`, `?assemble_kasp_assay`, `?kasp_mix_recipe`.
+See also `?marker_design_checks`, `?assemble_kasp_assay`, `?kasp_mix_recipe`.

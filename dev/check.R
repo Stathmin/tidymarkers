@@ -8,7 +8,8 @@
 #    2. R/ and tests/ are styler-clean and lintr-clean
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
-#    4. spelling -- only with `--spelling` (the prose is Russian, so an English
+#    4. spelling -- only with `--spelling` (the prose is English now, so spelling
+#             is meaningful but needs a WORDLIST before it can gate)
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
 #    5. figures -- regenerate the figures from the engine and fail if a committed
 #       one (man/figures, vignettes/figures/decision-*.svg) changed, so the
@@ -140,7 +141,7 @@ step("docs/artifacts", function() {
 # 4. spelling ---------------------------------------------------------------
 step("spelling", function() {
   if (quick && !spelling) return(message("  skip (--quick)"))
-  if (!spelling) return(message("  skip (pass --spelling; the docs are Russian)"))
+  if (!spelling) return(message("  skip (pass --spelling)"))
   if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
   words <- spelling::spell_check_package()
   if (nrow(words)) {

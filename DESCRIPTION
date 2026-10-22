@@ -14,8 +14,8 @@ Description: An opinionated, reproducible toolkit for designing and quality
     DECIPHER, and genome-wide specificity from Biostrings (with an optional
     rBLAST database or an Rsubread FM-index).  Annotation uses VariantAnnotation
     with a transcript database.  A reproducible Arabidopsis thaliana demo (TAIR10
-    genome and 1001 Genomes variation via Ensembl) is fetched into a user cache on
-    first use.
+    genome and 1001 Genomes variation) is downloaded from Ensembl Plants into a
+    per-user cache on first use; any other reference is supplied directly.
 License: MIT + file LICENSE
 URL: https://github.com/Stathmin/tidymarkers
 BugReports: https://github.com/Stathmin/tidymarkers/issues

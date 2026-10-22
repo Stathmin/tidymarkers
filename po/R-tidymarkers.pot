@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidymarkers 0.4.0\n"
-"POT-Creation-Date: 2026-10-16 18:36+0300\n"
+"POT-Creation-Date: 2026-10-23 00:30+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -85,175 +85,183 @@ msgstr ""
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr ""
 
-#: marker_arms.R:165
+#: marker_arms.R:243
 msgid "tetra-primer ARMS is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_arms.R:175
+#: marker_arms.R:253
 msgid "No outer primer pair passed the Tm/GC filters."
 msgstr ""
 
-#: marker_arms.R:183
+#: marker_arms.R:261
 msgid "No inner allele-specific primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_arms.R:196
+#: marker_arms.R:274
 msgid "An inner primer is missing on one strand."
 msgstr ""
 
-#: marker_arms.R:238
+#: marker_arms.R:321
 msgid "No tetra-primer set cleared even the relaxed constraints."
 msgstr ""
 
-#: marker_arms.R:297
+#: marker_arms.R:418
 msgid "to draw the ARMS gel"
 msgstr ""
 
-#: marker_arms.R:299
+#: marker_arms.R:420
 msgid "`marker` must be a marker_arms object (see design_arms_marker())."
 msgstr ""
 
-#: marker_assemble.R:196
+#: marker_assemble.R:201 marker_assemble.R:210
 msgid "No AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_assemble.R:214
+#: marker_assemble.R:228
 msgid "No AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: marker_assemble.R:226
+#: marker_assemble.R:241
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_assemble.R:230
+#: marker_assemble.R:245
 msgid "No indel AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: marker_assemble.R:310
+#: marker_assemble.R:325
 msgid "No ALT primer's 3' code is the consensus of every ALT."
 msgstr ""
 
-#: marker_assemble.R:358
+#: marker_assemble.R:377
 msgid ""
 "No AS primer survived the footprint cap (max_footprint_variants = "
 "{max_footprint_variants})."
 msgstr ""
 
-#: marker_assemble.R:395
+#: marker_assemble.R:414
 msgid "No AS primer survived even the relaxed constraints."
 msgstr ""
 
-#: marker_assemble.R:416
+#: marker_assemble.R:435
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
 msgstr ""
 
-#: marker_assemble.R:418
+#: marker_assemble.R:437
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 
-#: marker_assemble.R:423
+#: marker_assemble.R:442
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 
-#: marker_assemble.R:424
+#: marker_assemble.R:443
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 
-#: marker_assemble.R:430
+#: marker_assemble.R:449
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
 msgstr ""
 
-#: marker_assemble.R:432
+#: marker_assemble.R:451
 msgid "Consider widening `strands` or `tm_range`."
 msgstr ""
 
-#: marker_assemble.R:448
+#: marker_assemble.R:467
 msgid ""
 "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
 "variant(s) in the AS zone)."
 msgstr ""
 
-#: marker_assemble.R:450
+#: marker_assemble.R:469
 msgid ""
 "The ALT primer is valid only in accessions carrying the linked haplotype."
 msgstr ""
 
-#: marker_assemble.R:573
+#: marker_assemble.R:595
 msgid ""
 "OligoArrayAux was not found: thermodynamic and structural checks will be NA."
 msgstr ""
 
-#: marker_assemble.R:574
+#: marker_assemble.R:596
 msgid "run tidymarkers::marker_install_tools() once to build it."
 msgstr ""
 
-#: marker_assemble.R:711
+#: marker_assemble.R:735
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: marker_assemble.R:761
+#: marker_assemble.R:785
 msgid ""
 "No screened pairing is genome-specific (an off-target hit, a second product "
 "or an inverted repeat)."
 msgstr ""
 
-#: marker_assemble.R:768
+#: marker_assemble.R:792
 msgid ""
 "Top-ranked pairing failed genome-level checks; kept the next clean one "
 "({win} of {n_screen} screened)."
 msgstr ""
 
-#: marker_assemble.R:770
+#: marker_assemble.R:794
 msgid ""
 "Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
 "are screened here."
 msgstr ""
 
-#: marker_assemble.R:798
+#: marker_assemble.R:822
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:811
+#: marker_assemble.R:835
 msgid "FM scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:817
+#: marker_assemble.R:841
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:861
+#: marker_assemble.R:885
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:895 marker_assemble.R:904
+#: marker_assemble.R:919 marker_assemble.R:928
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
 msgstr ""
 
-#: marker_assemble.R:898
+#: marker_assemble.R:922
 msgid ""
 "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
 "ALT but cannot tell them apart."
 msgstr ""
 
-#: marker_assemble.R:907
+#: marker_assemble.R:931
 msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr ""
 
-#: marker_assemble.R:927
+#: marker_assemble.R:942
+msgid "The acceptance checks could not be evaluated: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_assemble.R:943
+msgid "assay$evaluation is NULL; the verdict is unknown, not usable."
+msgstr ""
+
+#: marker_assemble.R:959
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
 
-#: marker_assemble.R:929
+#: marker_assemble.R:961
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
@@ -267,27 +275,33 @@ msgstr ""
 msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_caps.R:617
+#: marker_caps.R:638
+msgid ""
+"CAPS: no population haplotypes supplied; restriction-site frequency/"
+"conservation is not checked."
+msgstr ""
+
+#: marker_caps.R:660
 msgid "No natural or primer-introduced (dCAPS) restriction marker here."
 msgstr ""
 
-#: marker_caps.R:653
+#: marker_caps.R:733
 msgid "to draw the CAPS gel"
 msgstr ""
 
-#: marker_caps.R:655
+#: marker_caps.R:735
 msgid "`marker` must be a marker_caps object (see design_caps_marker())."
 msgstr ""
 
-#: marker_castpcr.R:249
+#: marker_castpcr.R:255
 msgid "castPCR is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_castpcr.R:262
+#: marker_castpcr.R:270
 msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
 msgstr ""
 
-#: marker_castpcr.R:372
+#: marker_castpcr.R:383
 msgid ""
 "No mutant allele-specific primer, common mate, probe and WT blocker passed "
 "the castPCR filters."
@@ -317,78 +331,155 @@ msgstr ""
 msgid "`chunk` must be a marker_chunk (see marker_chunk())."
 msgstr ""
 
-#: marker_core.R:122
+#: marker_core.R:175
+msgid "`{nm}` must be a single finite number."
+msgstr ""
+
+#: marker_core.R:179
+msgid "Salt, dNTP and DMSO concentrations cannot be negative."
+msgstr ""
+
+#: marker_core.R:195
+msgid "`conditions` must be a named list, e.g. reaction_conditions()."
+msgstr ""
+
+#: marker_core.R:201
+msgid "Unknown reaction condition(s): {.val {unknown}}."
+msgstr ""
+
+#: marker_core.R:202
+msgid "Allowed fields: {.val {names(defaults)}}."
+msgstr ""
+
+#: marker_core.R:259
+msgid "`scheme` must be a single scheme id."
+msgstr ""
+
+#: marker_core.R:355
+msgid "`capability` must be a single capability name."
+msgstr ""
+
+#: marker_core.R:444
 msgid "OligoArrayAux ('{bin}') was not found."
 msgstr ""
 
-#: marker_core.R:137
-msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(run)}"
+#: marker_core.R:464
+msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}"
 msgstr ""
 
-#: marker_core.R:142
+#: marker_core.R:470
 msgid ""
-"OligoArrayAux ('{bin}') exited with status {run$status}: {trimws(run$stderr)}"
+"OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, "
+"collapse = ' '))}"
 msgstr ""
 
-#: marker_core.R:149
+#: marker_core.R:477
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
 msgstr ""
 
-#: marker_core.R:513
+#: marker_core.R:847
 msgid ""
 "Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
 "{cache}} ..."
 msgstr ""
 
-#: marker_core.R:521
+#: marker_core.R:855
 msgid ""
 "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::"
 "head(dropped, 3L)}}."
 msgstr ""
 
-#: marker_core.R:531
+#: marker_core.R:865
 msgid ""
 "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
 "collapse = ', ')}."
 msgstr ""
 
-#: marker_core.R:533
+#: marker_core.R:867
 msgid "Ensembl deflines may have changed."
 msgstr ""
 
-#: marker_crispr.R:276
-msgid ""
-"No guide spacer passed the PAM / seed / specificity / GC filters with a pre-"
-"amplification pair."
+#: marker_crispr.R:298
+msgid "unknown Cas effector:"
 msgstr ""
 
-#: marker_decision.R:250
+#: marker_crispr.R:375
+msgid ""
+"Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled."
+msgstr ""
+
+#: marker_crispr.R:438
+msgid ""
+"No guide spacer passed the PAM/PFS / seed / specificity / GC filters with a "
+"pre-amplification pair."
+msgstr ""
+
+#: marker_crispr.R:492
+msgid ""
+"CRISPR: no population haplotypes supplied; guide/PAM conservation is not "
+"checked."
+msgstr ""
+
+#: marker_decision.R:288
 msgid "for the decision graph"
 msgstr ""
 
-#: marker_decision.R:309
-msgid "to draw the decision tree"
+#: marker_decision_render.R:125
+msgid ""
+"drawing the decision graph without the layout engine (fallback placement)"
 msgstr ""
 
-#: marker_design.R:77
+#: marker_decision_solver.R:75
+msgid "no TrueType font found for the decision layout"
+msgstr ""
+
+#: marker_decision_solver.R:138
+msgid "decision layout engine failed to run:"
+msgstr ""
+
+#: marker_decision_solver.R:142
+msgid "decision layout engine failed (status"
+msgstr ""
+
+#: marker_decision_solver.R:142
+msgid "):"
+msgstr ""
+
+#: marker_decision_solver.R:147
+msgid "decision layout engine returned no placement"
+msgstr ""
+
+#: marker_design.R:89
 msgid "No common primer passed the filters."
 msgstr ""
 
-#: marker_design.R:78
+#: marker_design.R:90
 msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
 msgstr ""
 
-#: marker_design.R:210
+#: marker_design.R:251
 msgid "every `alt` allele must be as long as `ref`"
 msgstr ""
 
-#: marker_design.R:464
+#: marker_design.R:261
+msgid "`stab_ats` are distances from the 3' end and must be positive (or NA)."
+msgstr ""
+
+#: marker_design.R:262
+msgid "Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}"
+msgstr ""
+
+#: marker_design.R:263
+msgid "The signed policy constant means abs(): -3L -> 3L."
+msgstr ""
+
+#: marker_design.R:644
 msgid ""
 "design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
 "a substitution."
 msgstr ""
 
-#: marker_design.R:521
+#: marker_design.R:701
 msgid "No indel AS-primer placement fit inside the design window."
 msgstr ""
 
@@ -406,21 +497,27 @@ msgstr ""
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr ""
 
-#: marker_dpcr.R:276
+#: marker_dpcr.R:286
 msgid ""
 "The dPCR candidate failed a hard gate (probe composition, specificity, Tm "
 "ordering or primer Tm)."
 msgstr ""
 
-#: marker_duplex.R:346
+#: marker_duplex.R:384
 msgid "`loci` must have exactly two rows for a duplex assay."
 msgstr ""
 
-#: marker_duplex.R:373
+#: marker_duplex.R:400
+msgid ""
+"Duplex: `homologous` is undeclared; the topology gate is not_applicable and "
+"the pairing cannot pass."
+msgstr ""
+
+#: marker_duplex.R:420
 msgid "Duplex pairing accepted only after relaxing a soft compatibility cap."
 msgstr ""
 
-#: marker_duplex.R:375
+#: marker_duplex.R:422
 #, c-format
 msgid "relaxed: %s"
 msgstr ""
@@ -449,7 +546,7 @@ msgstr ""
 msgid "for the BSgenome genome source"
 msgstr ""
 
-#: marker_genome.R:150 marker_genome.R:175
+#: marker_genome.R:150 marker_genome.R:180
 msgid "Unknown sequence: {chrom}"
 msgstr ""
 
@@ -461,13 +558,41 @@ msgstr ""
 msgid "`freq` must be one value in [0, 1] per haplotype."
 msgstr ""
 
-#: marker_hrm.R:187
+#: marker_haplotypes.R:331
+msgid "The marker has no `snp` row to anchor haplotypes."
+msgstr ""
+
+#: marker_haplotypes.R:360
+msgid ""
+"Target ALT frequency is %s%% (< %s%%); this marker may be monomorphic/rare "
+"in the supplied population."
+msgstr ""
+
+#: marker_haplotypes.R:376
+msgid ""
+"CAPS recognition site carries %d extra population variant(s); site "
+"conservation/frequency is not guaranteed."
+msgstr ""
+
+#: marker_haplotypes.R:391
+msgid ""
+"CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); "
+"conservation is not guaranteed."
+msgstr ""
+
+#: marker_hrm.R:321
+msgid ""
+"A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and "
+"a positive control."
+msgstr ""
+
+#: marker_hrm.R:347
 msgid ""
 "No short flanking primer pair in the HRM amplicon window passed the Tm/GC "
 "filters."
 msgstr ""
 
-#: marker_hrm.R:234
+#: marker_hrm.R:406
 msgid "`marker` must be a marker_hrm object (see design_hrm_marker())."
 msgstr ""
 
@@ -486,7 +611,7 @@ msgid ""
 "No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
 msgstr ""
 
-#: marker_indel_size.R:214 marker_sanger.R:449
+#: marker_indel_size.R:214 marker_sanger.R:533
 msgid ""
 "No flanking pair has unique 3' ends (every candidate's 3' seed repeats in "
 "the genome)."
@@ -526,10 +651,19 @@ msgstr ""
 msgid "Bundled example data not found."
 msgstr ""
 
-#: marker_lamp.R:471
+#: marker_lamp.R:714
 msgid ""
 "No LAMP primer set passed the variant-placement / inner-Tm / structure / "
 "cross-dimer / amplicon filters."
+msgstr ""
+
+#: marker_lamp.R:746
+msgid "LAMP primer-set geometry check failed."
+msgstr ""
+
+#: marker_lamp.R:748
+msgid ""
+"The set is returned with `geometry$ok = FALSE`; inspect the named check(s)."
 msgstr ""
 
 #: marker_lax.R:390
@@ -568,7 +702,7 @@ msgstr ""
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 
-#: marker_object.R:137 marker_strategy.R:91
+#: marker_object.R:137 marker_strategy.R:93
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr ""
 
@@ -604,12 +738,12 @@ msgid ""
 "marker_schemes()."
 msgstr ""
 
-#: marker_rpa.R:341
+#: marker_rpa.R:539
 msgid ""
 "RPA discrimination here is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_rpa.R:390
+#: marker_rpa.R:588
 msgid ""
 "No RPA primer pair passed the variant-placement / length / structure / "
 "amplicon filters."
@@ -623,8 +757,40 @@ msgstr ""
 msgid "for an independent oligo-design cross-check"
 msgstr ""
 
-#: marker_sanger.R:409 marker_sanger.R:451
+#: marker_sanger.R:400
+msgid ""
+"No usable Sanger read reaches the variant (%s): more than %s bp from the "
+"read primer."
+msgstr ""
+
+#: marker_sanger.R:403
+msgid "The amplicon is returned, but that side cannot call the variant."
+msgstr ""
+
+#: marker_sanger.R:493 marker_sanger.R:535
 msgid "No flanking pair kept the variant clear of both read starts for Sanger."
+msgstr ""
+
+#: marker_sanger.R:561
+msgid ""
+"Sanger: no population variants supplied; primer-over-variant allele dropout "
+"is not checked."
+msgstr ""
+
+#: marker_sanger.R:562
+msgid "`allele_dropout_risk` is unknown, not a pass."
+msgstr ""
+
+#: marker_sanger.R:572
+msgid ""
+"Sanger: {nrow(hits)} population variant(s) fall under a primer (allele-"
+"dropout risk)."
+msgstr ""
+
+#: marker_sanger.R:574
+msgid ""
+"A variant in a primer binding site can lose that allele (or the whole "
+"product); see `$allele_dropout`."
 msgstr ""
 
 #: marker_scan.R:45 marker_scan.R:85
@@ -672,11 +838,11 @@ msgstr ""
 msgid "Build one with marker_blast_index(genome) and pass it as `blast_db=`."
 msgstr ""
 
-#: marker_schemes.R:126
+#: marker_schemes.R:221
 msgid "Unknown specificity mode {mode} for scheme {scheme}."
 msgstr ""
 
-#: marker_schemes.R:198
+#: marker_schemes.R:293
 msgid "Unknown marker scheme {scheme}; see marker_schemes()."
 msgstr ""
 
@@ -711,7 +877,7 @@ msgstr ""
 msgid "ImageMagick failed: {res$stderr}"
 msgstr ""
 
-#: marker_select.R:480
+#: marker_select.R:482
 msgid ""
 "No assay cleared every hard constraint; returned the least-bad after "
 "relaxing some."
@@ -727,13 +893,13 @@ msgstr ""
 msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
 msgstr ""
 
-#: marker_snapshot.R:143
+#: marker_snapshot.R:150
 msgid ""
 "No extension primer ended immediately 5' of the variant within the Tm/GC "
 "filters."
 msgstr ""
 
-#: marker_snapshot.R:199
+#: marker_snapshot.R:206
 msgid ""
 "The SNaPshot candidate failed a hard gate (extension placement, composition "
 "or uniqueness)."
@@ -747,7 +913,7 @@ msgstr ""
 msgid "The plan has no targets; add them with marker_targets()."
 msgstr ""
 
-#: marker_solve.R:212 marker_solve.R:243 marker_tubes.R:144
+#: marker_solve.R:212 marker_solve.R:243 marker_tubes.R:181
 msgid "`solved` must be a marker_solved (see marker_solve())."
 msgstr ""
 
@@ -760,16 +926,92 @@ msgid ""
 "Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
 msgstr ""
 
-#: marker_specificity.R:34
+#: marker_specificity.R:42
 msgid "specificity_seed() needs an in-memory DNAStringSet."
 msgstr ""
 
-#: marker_specificity.R:35
+#: marker_specificity.R:43
 msgid "For an indexed genome use specificity_of()/specificity_blast()."
 msgstr ""
 
-#: marker_specificity.R:228
+#: marker_specificity.R:500
+msgid "A degenerate primer cannot be scanned with `max_mismatch > 0`;"
+msgstr ""
+
+#: marker_specificity.R:501
+msgid "only its exact (IUPAC-aware) matches are scored."
+msgstr ""
+
+#: marker_specificity.R:744
+msgid "%d near-match in-silico PCR product(s) with <= 1 primer mismatch"
+msgstr ""
+
+#: marker_specificity.R:745
+msgid ""
+"were found; exact mode ignores them. Set max_mismatch = 1 to include them."
+msgstr ""
+
+#: marker_specificity.R:894
 msgid "BLAST failed: {conditionMessage(e)}"
+msgstr ""
+
+#: marker_specificity.R:1063
+msgid "`scheme` must be a single scheme name."
+msgstr ""
+
+#: marker_specificity.R:1073
+msgid "Unknown specificity scheme {.val {scheme}}."
+msgstr ""
+
+#: marker_specificity.R:1075
+msgid "Use one of {.val {names(SPECIFICITY_POLICIES)}} or an alias"
+msgstr ""
+
+#: marker_specificity.R:1076
+msgid "({.val {names(SPECIFICITY_SCHEME_ALIASES)}})."
+msgstr ""
+
+#: marker_specificity.R:1150
+msgid "No genome was supplied."
+msgstr ""
+
+#: marker_specificity.R:1153
+msgid "No genome-wide engine for this genome: it is not an in-memory"
+msgstr ""
+
+#: marker_specificity.R:1154
+msgid "DNAStringSet and it has no usable BLAST database."
+msgstr ""
+
+#: marker_specificity.R:1280
+msgid "No genome-wide engine was consulted; a missing engine is never a pass."
+msgstr ""
+
+#: marker_specificity.R:1284
+msgid ""
+"No genome-wide engine for this genome; a missing engine is never a pass."
+msgstr ""
+
+#: marker_specificity.R:1294
+msgid "No in-silico PCR product at all: the primers do not amplify."
+msgstr ""
+
+#: marker_specificity.R:1296
+msgid ""
+"The guide's PAM changed: a hard loss of target, not a tolerated mismatch."
+msgstr ""
+
+#: marker_specificity.R:1298
+msgid "Every product breaks the scheme's mismatch policy."
+msgstr ""
+
+#: marker_specificity.R:1311
+#, c-format
+msgid "%d tolerated in-silico PCR products: not specific."
+msgstr ""
+
+#: marker_specificity.R:1320
+msgid "Exactly one tolerated in-silico PCR product."
 msgstr ""
 
 #: marker_ssr.R:205
@@ -797,21 +1039,21 @@ msgid ""
 "marker_schemes()."
 msgstr ""
 
-#: marker_taqman.R:144
+#: marker_taqman.R:157
 msgid ""
 "TaqMan allelic discrimination is implemented for single-base substitutions "
 "only."
 msgstr ""
 
-#: marker_taqman.R:159
+#: marker_taqman.R:172
 msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
 msgstr ""
 
-#: marker_taqman.R:172
+#: marker_taqman.R:183 marker_taqman.R:192
 msgid "No composition- and position-clean hydrolysis probe passed the filters."
 msgstr ""
 
-#: marker_taqman.R:249
+#: marker_taqman.R:281
 msgid ""
 "The TaqMan candidate failed a hard gate (probe composition, specificity, Tm "
 "window, primer Tm or mismatch dG)."
@@ -845,15 +1087,41 @@ msgstr ""
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr ""
 
-#: marker_thermo.R:194
+#: marker_target.R:477
+msgid ""
+"`context` is a marker_plan() layer; pass marker_run_context(genome, ...) "
+"instead."
+msgstr ""
+
+#: marker_target.R:481
+msgid "`context` must be a marker_run_context() object."
+msgstr ""
+
+#: marker_technology.R:84
+msgid "`name` must be a single non-empty string."
+msgstr ""
+
+#: marker_technology.R:87
+msgid "Scheme {name} already exists; pass overwrite = TRUE to replace it."
+msgstr ""
+
+#: marker_technology.R:91
+msgid "`params` must be a (possibly empty) named list."
+msgstr ""
+
+#: marker_technology.R:111
+msgid "Unknown specificity mode {specificity}."
+msgstr ""
+
+#: marker_thermo.R:315
 msgid "Directory not found: {path}"
 msgstr ""
 
-#: marker_thermo.R:268
+#: marker_thermo.R:469
 msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr ""
 
-#: marker_thermo.R:269
+#: marker_thermo.R:470
 msgid ""
 "run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
 msgstr ""

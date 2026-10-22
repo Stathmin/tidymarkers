@@ -18,7 +18,6 @@
 ^data-raw$
 ^dev$
 ^AGENTS\.md$
-^HANDOFF\.md$
 ^\.agents$
 ^\.cursor$
 ^ROADMAP\.md$

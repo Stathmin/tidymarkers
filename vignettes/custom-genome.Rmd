@@ -1,8 +1,8 @@
 ---
-title: "Свой геном и свой VCF"
+title: "Your own genome and your own VCF"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Свой геном и свой VCF}
+  %\VignetteIndexEntry{Your own genome and your own VCF}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,53 +15,53 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(tidymarkers)
 ```
 
-Пакет не привязан к Arabidopsis: любые FASTA и VCF подходят. Тяжёлые шаги
-(чтение файлов, дизайн) здесь показаны как код и не выполняются при сборке
-документа.
+The package is not tied to Arabidopsis: any FASTA and VCF will do. The heavy steps
+(reading files, design) are shown here as code and are not run when the document
+is built.
 
-## Произвольный геном
+## Arbitrary genome
 
 ```{r, eval = FALSE}
-# индекс Rsamtools (.fai создаётся один раз) — читаем только нужные хромосомы
+# Rsamtools index (.fai is created once) - read only the needed chromosomes
 genome <- read_genome_fasta("my_assembly.fa", seqids = c("chr1", "chr2"))
 
-# или сопоставить «сырые» имена с удобными
+# or map "raw" names to convenient ones
 read_genome_fasta("my_assembly.fa",
                   chrom_map = c("1" = "chr1", "2" = "chr2"))
 ```
 
-## Свой VCF
+## Your own VCF
 
-`read_variants_vcf()` читает потоково (`vroom`), поддерживает `.vcf.gz` и
-разворачивает мультиаллельные ALT в строки; IUPAC-коды сворачиваются к `N`,
-символические аллели (`<DEL>`, `*`, `.`) отбрасываются.
+`read_variants_vcf()` reads in a streaming fashion (`vroom`), supports `.vcf.gz` and
+expands multiallelic ALT into rows; IUPAC codes are collapsed to `N`, symbolic
+alleles (`<DEL>`, `*`, `.`) are dropped.
 
 ```{r, eval = FALSE}
 variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1",
                               start = 100000, end = 200000)
-head(variants)                       # chrom, pos, ref, alt (строки)
+head(variants)                       # chrom, pos, ref, alt (rows)
 ```
 
-## Мишень, маскировка и дизайн
+## Target site, masking and design
 
-Свой вариант задаётся таблицей `chrom/pos/ref/alt` (SNP, MNP и InDel — строки):
+Your own variant is given as a `chrom/pos/ref/alt` table (SNP, MNP and InDel - rows):
 
 ```{r, eval = FALSE}
 snp <- tibble::tibble(chrom = "chr1", pos = 150001L, ref = "G", alt = "A")
 
-# замаскировать прочие варианты под праймером, чтобы не тащить их в олиго
+# mask other variants under the primer so they are not carried into the oligo
 genome[["chr1"]] <- mask_positions(genome[["chr1"]], variants$pos - 1L)
 
 assay <- assemble_kasp_assay(genome, snp, variants = variants,
-                             max_footprint_variants = 0)   # N-маскировка как ограничение
+                             max_footprint_variants = 0)   # N-masking as a limit
 assay
 ```
 
-## Пакетно
+## Batch
 
 ```{r, eval = FALSE}
 loci <- variants[order(variants$pos), ][1:200, c("chrom", "pos", "ref", "alt")]
 design_kasp_markers(genome, loci, BPPARAM = BiocParallel::MulticoreParam(4))
 ```
 
-См. также `vignettes/kasp-intro.Rmd` и `?read_variants_vcf`, `?assemble_kasp_assay`.
+See also `vignettes/kasp-intro.Rmd` and `?read_variants_vcf`, `?assemble_kasp_assay`.

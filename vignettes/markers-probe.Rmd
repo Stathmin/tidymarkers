@@ -1,8 +1,8 @@
 ---
-title: "Гидролизные зонды и минисеквенирование: TaqMan, dPCR, SNaPshot, castPCR"
+title: "Hydrolysis probes and minisequencing: TaqMan, dPCR, SNaPshot, castPCR"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Гидролизные зонды и минисеквенирование: TaqMan, dPCR, SNaPshot, castPCR}
+  %\VignetteIndexEntry{Hydrolysis probes and minisequencing: TaqMan, dPCR, SNaPshot, castPCR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,23 +16,23 @@ library(tidymarkers)
 library(knitr)
 ```
 
-На каждом рисунке — буквы последовательностей (праймеры, проба, ампликон),
-трек вариантов, геномная off-site панель и справа тот же tumbler, что у KASP.
-Общий принцип этого семейства: дискриминация живёт **на зонде** или на
-однонуклеотидной достройке, а не только на 3'-конце праймера. Поэтому
-критичны положение зонда, его Tm относительно праймеров и отсутствие
-вторичной структуры.
+Every figure shows the sequence letters (primers, probe, amplicon), the variant
+track, the genomic off-site panel, and on the right the same tumbler as for
+KASP. The common principle of this family: discrimination lives **on the
+probe** or on single-nucleotide extension, not only at the 3' end of the
+primer. Probe placement, its Tm relative to the primers, and the absence of
+secondary structure are therefore critical.
 
 ## TaqMan
 
-Две аллель-специфичные пробы (FAM/HEX) лежат между 3'-концами праймеров и
-различаются одним основанием. 5'-экзонуклеазная активность Taq расщепляет
-пробу только при совпадении, освобождая репортер. Правила: проба не должна
-начинаться с G, Tm пробы обычно на 5–10 °C выше праймеров, вариант — в
-центральной части пробы.
+Two allele-specific probes (FAM/HEX) lie between the 3' ends of the primers and
+differ by one base. The 5'-exonuclease activity of Taq cleaves the probe only
+on a match, releasing the reporter. Rules: the probe must not start with G, the
+probe Tm is usually 5–10 °C above the primers, and the variant sits in the
+central part of the probe.
 [Holland et al. (1991)](https://doi.org/10.1073/pnas.88.16.7276).
 
-```{r taqman-fig, echo = FALSE, out.width = "100%", fig.cap = "TaqMan: пара праймеров, две аллель-специфичные пробы, вариант в центре пробы."}
+```{r taqman-fig, echo = FALSE, out.width = "100%", fig.cap = "TaqMan: a primer pair, two allele-specific probes, the variant in the centre of the probe."}
 knitr::include_graphics("figures/taqman.svg")
 ```
 
@@ -43,184 +43,192 @@ design_taqman_marker(genome, snp, flank = 150)
 
 ## dPCR
 
-В цифровой ПЦР реакция разбивается на тысячи капель; число положительных
-капель переводится в концентрацию по Пуассону. Дизайн конструкта тот же, что
-у TaqMan (короткий ампликон, проба между праймерами), но количественная
-модель требует независимых капель и минимальной конкуренции.
+In digital PCR the reaction is partitioned into thousands of droplets; the
+number of positive droplets is converted into a concentration by Poisson.
+The construct design is the same as for TaqMan (a short amplicon, the probe
+between the primers), but the quantitative model requires independent droplets
+and minimal competition.
 [Hindson et al. (2011)](https://doi.org/10.1021/ac202028g),
 [Huggett et al. (2013)](https://doi.org/10.1373/clinchem.2013.206375).
 
-Пакет проектирует конструкт; разбиение на капли и пуассоновский пересчет
-**не симулируются** — это явно записано в `marker_readout()`.
+The package designs the construct; partitioning into droplets and the Poisson
+conversion are **not simulated** — this is stated explicitly in
+`marker_readout()`.
 
-```{r dpcr-fig, echo = FALSE, out.width = "100%", fig.cap = "dPCR: короткий ампликон и гидролизные пробы; модель капель не симулируется."}
+```{r dpcr-fig, echo = FALSE, out.width = "100%", fig.cap = "dPCR: a short amplicon and hydrolysis probes; the droplet model is not simulated."}
 knitr::include_graphics("figures/dpcr.svg")
 ```
 
-## SNaPshot (минисеквенирование)
+## SNaPshot (minisequencing)
 
-Один фланкирующий ампликон, затем extension-праймер, чей 3'-конец упирается в
-основание перед вариантом. Полимераза добавляет один флуоресцентно меченый
-ddNTP; цвет и размер продукта говорят, какое основание стоит в варианте.
-Праймер удлинения должен лежать внутри ампликона и не перекрывать праймеры.
+One flanking amplicon, then an extension primer whose 3' end abuts the base
+before the variant. The polymerase adds one fluorescently labelled ddNTP; the
+colour and size of the product tell you which base sits at the variant. The
+extension primer must lie inside the amplicon and must not overlap the primers.
 [Pastinen et al. (1997)](https://doi.org/10.1101/gr.7.6.606).
 
-```{r snapshot-fig, echo = FALSE, out.width = "100%", fig.cap = "SNaPshot: ампликон, extension-праймер, 3'-конец перед вариантом."}
+```{r snapshot-fig, echo = FALSE, out.width = "100%", fig.cap = "SNaPshot: an amplicon, an extension primer, the 3' end before the variant."}
 knitr::include_graphics("figures/snapshot.svg")
 ```
 
 ## castPCR
 
-castPCR — allele-specific TaqMan для низкой доли мутантного аллеля: ASP читает
-**мутантное** основание, WT-специфичный MGB-блокер подавляет дикий тип, а
-локус-специфичная проба регистрирует продукт. Ключевые требования: ASP строго
-мутант-специфичен, блокер не мешает мутанту, проба не перекрывает вариант ASP.
-Механика allele-specific PCR: [Gaudet et al. (2009)](https://doi.org/10.1007/978-1-60327-411-1_26).
+castPCR is allele-specific TaqMan for a low mutant allele fraction: the ASP
+reads the **mutant** base, a WT-specific MGB blocker suppresses the wild type,
+and a locus-specific probe registers the product. Key requirements: the ASP is
+strictly mutant-specific, the blocker does not interfere with the mutant, and
+the probe does not overlap the variant of the ASP. Mechanics of allele-specific
+PCR: [Gaudet et al. (2009)](https://doi.org/10.1007/978-1-60327-411-1_26).
 
-```{r castpcr-fig, echo = FALSE, out.width = "100%", fig.cap = "castPCR: мутант-специфичный ASP, WT-блокер и локус-специфичная проба."}
+```{r castpcr-fig, echo = FALSE, out.width = "100%", fig.cap = "castPCR: a mutant-specific ASP, a WT blocker and a locus-specific probe."}
 knitr::include_graphics("figures/castpcr.svg")
 ```
 
-## Что проверяется
+## What is checked
 
-Для всех четырёх схем общие проверки — состав олиг, отсутствие
-гомодимеров/шпилек и Tm/GC. Уникальность по совершенным сайтам считается
-для проб TaqMan/dPCR и extension-праймера SNaPshot; у castPCR её заменяют
-3'-якорь ASP и WT-блокер. `marker_readout()` отмечает, какая часть сигнала
-действительно смоделирована.
+For all four schemes the common checks are oligo composition, absence of
+homodimers/hairpins and Tm/GC. Uniqueness by perfect site is computed for the
+TaqMan/dPCR probes and the SNaPshot extension primer; in castPCR it is replaced
+by the ASP 3' anchor and the WT blocker. `marker_readout()` notes which part of
+the signal is actually modelled.
 
-## Неудачные маркеры: что пакет ловит, а что нет
+## Markers that fail: what the package catches and what it does not
 
-«Неудачный» (dud) маркер проходит сухой дизайн, но в пробирке не даёт
-сигнала, дискриминации или нужного предела обнаружения. Ниже — конкретные
-механизмы отказа; для каждого явно сказано, что пакет **проверяет**
-(гейт/acceptance), а что остаётся **рекомендацией** для экспериментальной
-валидации. Общая оговорка: термодинамические проверки (шпильки, гомодимеры,
-mismatch dG) считаются только при доступном OligoArrayAux; без него маржин
-равен `NA` и гейт формально проходит (`grade_one_marker()`), поэтому
-«зелёный» граф сам по себе не доказывает устойчивость олиг.
+A "dud" marker passes the dry design but gives no signal, no discrimination or
+no adequate limit of detection in the tube. Below are the concrete failure
+mechanisms; for each one it states explicitly what the package **checks**
+(gate/acceptance) and what remains a **recommendation** for experimental
+validation. A general caveat: thermodynamic checks (hairpins, homodimers,
+mismatch dG) are computed only when OligoArrayAux is available; without it the
+margin is `NA` and the gate formally passes (`grade_one_marker()`), so a
+"green" graph does not by itself prove that the oligos are robust.
 
 ### TaqMan
 
-**Проверяется:** состав пробы (GC 40–60 %, нет 5'-G, нет run/SSR), ровно один
-совершенный сайт каждой пробы в геноме, самоструктура, окно Tm [56, 72] °C,
-Tm праймеров [58, 63] °C, цена мисматча пробы ≥ 1.5 ккал/моль, центральность
-варианта и ампликон 60–150 bp; при OligoArrayAux дополнительно считается
-per-allele дискриминация пробы (`probe_discrimination()`).
+**Checked:** probe composition (GC 40–60%, no 5'-G, no run/SSR), exactly one
+perfect site of each probe in the genome, self-structure, Tm window [56, 72] °C,
+primer Tm [58, 63] °C, probe mismatch penalty ≥ 1.5 kcal/mol, variant
+centrality and amplicon 60–150 bp; with OligoArrayAux the per-allele
+discrimination of the probe is additionally computed (`probe_discrimination()`).
 
-- **Tm пробы не на 8–10 °C выше праймеров.** Каноническое правило qPCR
+- **Probe Tm not 8–10 °C above the primers.** The canonical qPCR rule
   [MacLeod et al. (2021)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7892852/)
-  здесь **не гейт**: из-за сжатой Tm-шкалы пакета порядок «проба горячее
-  праймеров» — только tier2-ранжирование, а жёсткое окно — абсолютное
-  [56, 72] °C. Дизайн может пройти, но в реальной смеси пробе не хватит
-  конкуренции за матрицу — проверять на своём буфере/приборе.
-- **Слишком короткая или GC-бедная проба.** Отдельного минимума длины нет:
-  кандидаты перебираются в 18–25 nt, а крайний GC отсекается окном 40–60 %.
-  Это фильтр кандидатов, а не гарантия сигнала; короткую пробу нужно
-  тестировать экспериментально.
-- **SNP под пробой, но слабая дискриминация.** Гейт требует mismatch
-  dG ≥ 1.5 ккал/моль на REF-пробе; это термодинамический прокси, а не
-  измеренная экзонуклеазная дискриминация. При отсутствии OligoArrayAux
-  гейт проходит с `NA`. Проверять разведениями аллелей и кластерами
-  endpoint-флуоресценции; механика —
+  is **not a gate** here: because of the package's compressed Tm scale, the
+  ordering "probe hotter than the primers" is only tier2 ranking, and the hard
+  window is the absolute [56, 72] °C. A design may pass, but in a real mix the
+  probe may lack competition for the template — check on your own
+  buffer/instrument.
+- **Probe too short or GC-poor.** There is no separate minimum length:
+  candidates are enumerated at 18–25 nt, and the extreme GC is filtered out by
+  the 40–60% window. This is a candidate filter, not a guarantee of signal; a
+  short probe must be tested experimentally.
+- **SNP under the probe, but weak discrimination.** The gate requires a
+  mismatch dG ≥ 1.5 kcal/mol on the REF probe; this is a thermodynamic proxy,
+  not a measured exonuclease discrimination. Without OligoArrayAux the gate
+  passes with `NA`. Check with allele dilutions and endpoint fluorescence
+  clusters; the mechanics are in
   [Holland et al. (1991)](https://doi.org/10.1073/pnas.88.16.7276).
-- **Малая доля аллеля и фон WT.** Endpoint-отношение не моделируется, как и
-  вклад дикого типа и кросс-ток между красителями. Для субпроцентных фракций
-  TaqMan не заменяет dPCR; нужны WT-контроли, NTC и серия разведений.
+- **Small allele fraction and WT background.** The endpoint ratio is not
+  modelled, nor is the contribution of the wild type or cross-talk between
+  dyes. For sub-percent fractions TaqMan is no substitute for dPCR; WT
+  controls, NTC and a dilution series are needed.
 
 ### dPCR
 
-**Проверяется:** те же состав/специфичность/структура пробы, жёсткое условие
-Tm пробы ≥ Tm праймеров + 8 °C, Tm праймеров [44, 50] °C и ампликон
-60–150 bp. `probe_discrimination()` считает on/off-эффективность (при
-OligoArrayAux), но в гейты она не входит.
+**Checked:** the same probe composition/specificity/structure, the hard
+condition probe Tm ≥ primer Tm + 8 °C, primer Tm [44, 50] °C and an amplicon of
+60–150 bp. `probe_discrimination()` computes the on/off efficiency (with
+OligoArrayAux), but it does not enter the gates.
 
-- **Состав пробы.** Кандидаты 18–25 nt, GC 40–60 %, без 5'-G; как и в
-  TaqMan, это фильтр, а не доказательство эффективности.
-- **Слабая дискриминация при варианте под пробой.** В отличие от TaqMan,
-  отдельного гейта на mismatch dG нет — таблица readout информационная.
-  Аллельную дискриминацию нужно подтверждать кластерами капель, а не только
-  dG.
-- **Доля аллеля ниже доверительного предела.** Пуассоновский пересчёт и
-  предел обнаружения **не симулируются** (`marker_readout()`): пакет не
-  отвечает, различима ли фракция мутанта. Отчитываться по dMIQE
-  [Huggett et al. (2013)](https://doi.org/10.1373/clinchem.2013.206375) с
-  доверительным интервалом и контролем числа положительных капель.
-- **Допущения партиционирования.** Независимость капель, одинаковый объём,
-  отсутствие конкуренции/ингибирования и корректность порога — не
-  проверяются; обзор ограничений —
-  [Quan et al. (2018)](https://doi.org/10.3390/s18041271), платформа —
+- **Probe composition.** Candidates 18–25 nt, GC 40–60%, no 5'-G; as in TaqMan,
+  this is a filter, not proof of efficiency.
+- **Weak discrimination with the variant under the probe.** Unlike TaqMan,
+  there is no separate gate on the mismatch dG — the readout table is
+  informational. Allelic discrimination must be confirmed with droplet
+  clusters, not only dG.
+- **Allele fraction below the limit of detection.** The Poisson conversion and
+  the limit of detection are **not simulated** (`marker_readout()`): the
+  package does not answer whether the mutant fraction is distinguishable.
+  Report per dMIQE
+  [Huggett et al. (2013)](https://doi.org/10.1373/clinchem.2013.206375) with a
+  confidence interval and a check of the number of positive droplets.
+- **Partitioning assumptions.** Droplet independence, equal volume, absence of
+  competition/inhibition and threshold correctness are not checked; a review of
+  the limitations —
+  [Quan et al. (2018)](https://doi.org/10.3390/s18041271), the platform —
   [Hindson et al. (2011)](https://doi.org/10.1021/ac202028g).
-- **Фон WT.** Учитывается только совершенный сайт пробы; вклад WT-ДНК,
-  ложноположительные капли и кросс-реактивность не моделируются — нужны
-  WT-генотипы, NTC и отрицательные капли.
+- **WT background.** Only the perfect probe site is taken into account; the
+  contribution of WT DNA, false-positive droplets and cross-reactivity are not
+  modelled — WT genotypes, NTC and negative droplets are needed.
 
 ### SNaPshot
 
-**Проверяется:** 3'-конец extension-праймера ровно на одно основание 5' от
-варианта, состав (GC 30–70 %, нет run/SSR), уникальность совершенного сайта,
-структура, Tm [50, 55] °C и ампликон 100–300 bp.
+**Checked:** the 3' end of the extension primer exactly one base 5' of the
+variant, composition (GC 30–70%, no run/SSR), perfect-site uniqueness,
+structure, Tm [50, 55] °C and an amplicon of 100–300 bp.
 
-- **Праймер слишком далеко или слишком близко.** «Далеко» отбрасывается
-  конструкцией: кандидат обязан упираться в вариант. «Близко» = ровно
-  вплотную, это и есть требование метода
-  [Pastinen et al. (1997)](https://doi.org/10.1101/gr.7.6.606); положение
-  фиксировано, поэтому свободы для «слишком близко» нет.
-- **Плохой 3'-дизайн и неполная достройка.** Идентичность 3'-основания не
-  оценивается (любое основание допустимо), а эффективность однонуклеотидной
-  достройки, включение ddNTP и высоты пиков **не симулируются**
-  (`marker_readout()`). Нужны положительные контроли и оптимизация времени
-  достройки; примеры дизайна —
+- **Primer too far or too close.** "Too far" is excluded by construction: the
+  candidate must abut the variant. "Close" means exactly adjacent, which is the
+  requirement of the method
+  [Pastinen et al. (1997)](https://doi.org/10.1101/gr.7.6.606); the placement
+  is fixed, so there is no freedom for "too close".
+- **Poor 3' design and incomplete extension.** The identity of the 3' base is
+  not scored (any base is allowed), and the efficiency of single-nucleotide
+  extension, ddNTP incorporation and peak heights are **not simulated**
+  (`marker_readout()`). Positive controls and optimisation of the extension
+  time are needed; design examples —
   [Fanis et al. (2014)](https://doi.org/10.1186/1471-2164-15-108),
   [Namdar Aligoodarzi et al. (2023)](https://doi.org/10.52547/ibj.3856).
-- **Dye/mobility.** Цвет канала и подвижность продукта в капилляре не
-  моделируются; мультиплекс и размерный стандарт проверяются только
-  экспериментально.
-- **Off-target.** Проверяется только совершенный сайт extension-праймера;
-  прайминг с 1–2 мисматчами не считается.
+- **Dye/mobility.** The channel colour and the mobility of the product in the
+  capillary are not modelled; multiplexing and the size standard are verified
+  experimentally only.
+- **Off-target.** Only the perfect site of the extension primer is checked;
+  priming with 1–2 mismatches is not computed.
 
 ### castPCR
 
-**Проверяется:** 3'-основание ASP на варианте и его предпочтение мутанту,
-наличие WT-специфичного блокера (3'-основание = WT), Tm ASP [55, 65] °C,
-Tm пробы ≥ Tm ASP + 8 °C, ампликон 50–100 bp и состав блокера; совместная
-структура олиг считается в `compatibility`, но не входит в жёсткие гейты.
+**Checked:** the ASP 3' base on the variant and its preference for the mutant,
+the presence of a WT-specific blocker (3' base = WT), ASP Tm [55, 65] °C, probe
+Tm ≥ ASP Tm + 8 °C, amplicon 50–100 bp and blocker composition; the joint
+structure of the oligos is computed in `compatibility` but does not enter the
+hard gates.
 
-- **Баланс ASP и WT-блокера.** Пакет выбирает самый длинный «чистый»
-  WT-блокер и размещает ASP, но их конкуренцию и соотношение концентраций
-  не моделирует. Подбирать эмпирически; механизм —
+- **ASP and WT blocker balance.** The package picks the longest "clean" WT
+  blocker and places the ASP, but does not model their competition or
+  concentration ratio. Tune it empirically; mechanism —
   [Barbano et al. (2015)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4686972/),
   [Roma et al. (2013)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3864078/).
-- **Блокер не подавляет WT.** Проверяются только WT-якорь и состав, а
-  эффективность подавления и вклад MGB (подъём эффективной Tm) не
-  симулируются. Нужны WT-only контроли и ΔCt; клинический формат —
+- **Blocker does not suppress WT.** Only the WT anchor and the composition are
+  checked, while the suppression efficiency and the MGB contribution (the rise
+  in effective Tm) are not simulated. WT-only controls and ΔCt are needed; the
+  clinical format —
   [Husain et al. (2023)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10334107/).
-- **Локус-проба.** Реализованы положение внутри ампликона без перекрытия с
-  ASP и Tm > ASP + 8 °C, но геномная уникальность пробы/блокера/ASP не
-  гейтится дизайнером (в отличие от TaqMan/dPCR), и MGB не моделируется.
-  Проверять BLAST/primer-BLAST.
-- **Низкая мутантная фракция.** Предел 0.1–1 % из статей не предсказывается:
-  `marker_readout()` прямо говорит, что ΔCt не симулируется. Нужна серия
-  разведений мутанта в WT-ДНК.
+- **Locus probe.** The placement inside the amplicon without overlap with the
+  ASP and Tm > ASP + 8 °C is implemented, but the genomic uniqueness of the
+  probe/blocker/ASP is not gated by the designer (unlike TaqMan/dPCR), and MGB
+  is not modelled. Check with BLAST/primer-BLAST.
+- **Low mutant fraction.** The 0.1–1% limit from the papers is not predicted:
+  `marker_readout()` states plainly that ΔCt is not simulated. A dilution
+  series of the mutant in WT DNA is needed.
 
-### Off-target и перекрёстная реакция
+### Off-target and cross-reactivity
 
-Во всех четырёх схемах уникальность считается по **совершенному** сайту
-(`max.mismatch = 0`, обе ориентации); 1–2 мисматча, 3'-затравочный прайминг
-и перекрёстная реакция проба/блокер остаются вне проверки. Для
-диагностических маркеров это обязательный внешний шаг: primer-BLAST/BLAST,
-in-silico PCR с мисматчами и отрицательные контроли. Общие правила
-специфичности qPCR —
+In all four schemes uniqueness is computed by **perfect** site
+(`max.mismatch = 0`, both orientations); 1–2 mismatches, 3'-seed priming and
+probe/blocker cross-reactivity remain outside the check. For diagnostic markers
+this is an obligatory external step: primer-BLAST/BLAST, in-silico PCR with
+mismatches and negative controls. General rules of qPCR specificity —
 [MacLeod et al. (2021)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7892852/).
 
-### Аудит решений
+### Decision audit
 
-`vignettes/figures/decision-{taqman,dpcr,snapshot,castpcr}.{svg,txt}` — это **схема**
-(`plot_decision_tree(scheme = <id>)` без `assay`), а не трассировка конкретного
-кандидата: узлы нейтральны, а блок `assay acceptance checks` только перечисляет
-критерии. SVG-рисунки — карта конструкта плюс панель проверок; ни один из них
-не показывает endpoint-кластеры, капли, электрофореграммы или ΔCt. Поэтому
-«граф прошёл» и «рисунок зелёный» — разные утверждения.
+`vignettes/figures/decision-{taqman,dpcr,snapshot,castpcr}.{svg,txt}` are the
+**scheme** (`plot_decision_tree(scheme = <id>)` without `assay`), not a trace of
+a specific candidate: the nodes are neutral, and the block
+`assay acceptance checks` only lists the criteria. The SVG figures are a map of
+the construct plus a panel of checks; none of them shows endpoint clusters,
+droplets, electropherograms or ΔCt. "The graph passed" and "the figure is
+green" are therefore different statements.
 
 ```{r, echo = FALSE, out.width = "100%"}
 knitr::include_graphics("figures/decision-taqman.svg")
@@ -238,75 +246,80 @@ knitr::include_graphics("figures/decision-snapshot.svg")
 knitr::include_graphics("figures/decision-castpcr.svg")
 ```
 
-- **Tm пробы vs праймеров.** *Видно:* у TaqMan порядок «проба выше праймеров»
-  остаётся tier2 (не гейт), у dPCR/castPCR — жёсткий +8 °C. SVG: TaqMan-пробы
-  59.4/61.3 °C при праймерах 58.7 (+0.7/+2.6), dPCR — 57.2/58.1 при 48.8
-  (+8.4/+9.3), castPCR — 67.7 при ASP 59.0 (+8.7). *Слабое место:* в
-  `probes$tm[1L]` лежит одна Tm на обе аллельные пробы; ALT-проба не
-  пересчитывается — добавить её Tm в гейт/tier.
+- **Probe Tm vs primers.** *Visible:* in TaqMan the ordering "probe above the
+  primers" stays tier2 (not a gate), in dPCR/castPCR it is a hard +8 °C. SVG:
+  TaqMan probes 59.4/61.3 °C with primers at 58.7 (+0.7/+2.6), dPCR —
+  57.2/58.1 with 48.8 (+8.4/+9.3), castPCR — 67.7 with ASP 59.0 (+8.7).
+  *Weak spot:* `probes$tm[1L]` holds a single Tm for both allelic probes; the
+  ALT probe is not recomputed — add its Tm to the gate/tier.
 
-- **Положение пробы.** *Видно:* жёсткий узел placement есть только у SNaPshot;
-  у TaqMan положение задаёт мягкий гейт centrality, у dPCR узла нет, у castPCR
-  ASP-якорь жёсткий, а локус-проба — фильтр кандидатов. *Слабое место:* граф
-  не различает «вплотную» и «с зазором» и не показывает, какая граница отсеяла
-  кандидата; при провале дизайнер возвращает `NULL`. Добавить узел зазора и
-  причину отказа.
+- **Probe placement.** *Visible:* a hard placement node exists only in
+  SNaPshot; in TaqMan the placement is set by the soft centrality gate, in dPCR
+  there is no node, in castPCR the ASP anchor is hard while the locus probe is a
+  candidate filter. *Weak spot:* the graph does not distinguish "adjacent" from
+  "with a gap" and does not show which boundary rejected a candidate; on
+  failure the designer returns `NULL`. Add a gap node and the reason for
+  rejection.
 
-- **Дискриминация мисматча.** *Видно:* TaqMan — жёсткий ΔG ≥ 1.5 ккал/моль,
-  но только для REF-пробы; dPCR — гейта нет, `probe_discrimination()` остаётся
-  информационной (DECIPHER: гибридизация × Taq, не расщепление); SNaPshot —
-  дискриминация по основанию, не по ΔG; castPCR — `alt_on − alt_off > 0`
-  (предсказанный DECIPHER запас), т.е. только знак. *Слабое место:* ALT-проба
-  TaqMan не оценена, у castPCR проходит и 0.001, а на SVG нет строки
-  discrimination/ΔG; проверять обе аллели с порогом эффекта, затем ΔCt/разведения.
+- **Mismatch discrimination.** *Visible:* TaqMan — hard ΔG ≥ 1.5 kcal/mol, but
+  for the REF probe only; dPCR — no gate, `probe_discrimination()` stays
+  informational (DECIPHER: hybridisation × Taq, not cleavage); SNaPshot —
+  discrimination by base, not by ΔG; castPCR — `alt_on − alt_off > 0` (the
+  predicted DECIPHER margin), i.e. only the sign. *Weak spot:* the ALT TaqMan
+  probe is not scored, in castPCR even 0.001 passes, and the SVG has no
+  discrimination/ΔG row; score both alleles with an effect threshold, then
+  ΔCt/dilutions.
 
-- **Низкая доля аллеля и фон WT.** *Видно:* ни в одном DAG нет узла «доля
-  аллеля», «фон WT» или «LOD»; castPCR tier1 — предсказанный запас, не LOD.
-  *Слабое место:* LOD и ΔCt не моделируются; не выводить LOD из tier1, задавать
-  его явным внешним параметром.
+- **Low allele fraction and WT background.** *Visible:* no DAG has a node for
+  "allele fraction", "WT background" or "LOD"; castPCR tier1 is a predicted
+  margin, not an LOD. *Weak spot:* LOD and ΔCt are not modelled; do not derive
+  the LOD from tier1, set it as an explicit external parameter.
 
-- **Пуассон/партиционирование.** *Видно:* у dPCR нет узла капель; при наличии
-  OligoArrayAux `marker_readout()` возвращает `simulated = TRUE` только потому,
-  что есть таблица гибридизации проб, а `readout_assumption("dpcr")` и
-  `scheme$readout` прямо говорят, что партиционирование/Пуассон не
-  моделируются. *Слабое место:* в отчёте нельзя смешивать probe-таблицу с
-  пуассоновским шагом; копии/мкл с CI и числом положительных капель остаются
-  внешними.
+- **Poisson/partitioning.** *Visible:* dPCR has no droplet node; when
+  OligoArrayAux is available `marker_readout()` returns `simulated = TRUE` only
+  because there is a probe hybridisation table, while
+  `readout_assumption("dpcr")` and `scheme$readout` state plainly that
+  partitioning/Poisson are not modelled. *Weak spot:* a report must not mix the
+  probe table with the Poisson step; copies/µl with CI and the number of
+  positive droplets remain external.
 
-- **SNaPshot: достройка, ddNTP, красители.** *Видно:* placement/состав/
-  уникальность extension — жёсткие, а Tm, ампликон и structure — **мягкие**
-  (лестница может расширить до [45, 60] °C и [50, 350] bp), хотя первый проход
-  перечисляет их как фиксированные. *Слабое место:* в графе нет 3'-концевого
-  основания, локального контекста, эффективности ddNTP, канала красителя и
-  высоты пиков; SVG — карта, не электрофореграмма. Добавить узел 3'-контекста
-  и не выдавать мягкие окна за жёсткие.
+- **SNaPshot: extension, ddNTP, dyes.** *Visible:* extension
+  placement/composition/uniqueness are hard, while Tm, amplicon and structure
+  are **soft** (the ladder can widen them to [45, 60] °C and [50, 350] bp),
+  although the first pass lists them as fixed. *Weak spot:* the graph has no
+  3'-terminal base, local context, ddNTP efficiency, dye channel or peak
+  heights; the SVG is a map, not an electropherogram. Add a 3'-context node and
+  do not present soft windows as hard.
 
-- **castPCR: ASP/блокер.** *Видно:* ASP Tm и ампликон — мягкие (±2 °C/±10 bp);
-  блокер проверяется только на наличие, 3'-основание (не mutant) и состав,
-  `selection` не хранит маржи гейтов, а в панели проверок рисунка блокера нет
-  вовсе (`marker_primers.marker_castpcr()` возвращает ASP, праймеры и пробу, но
-  не blocker). *Слабое место:* нет Tm/ΔG, MGB, non-extendable, соотношения
-  ASP:blocker и эффективности подавления; блокер должен быть отдельным узлом
-  графа и строкой панели, а не только записью в `compatibility`.
+- **castPCR: ASP/blocker.** *Visible:* ASP Tm and the amplicon are soft (±2
+  °C/±10 bp); the blocker is checked only for presence, 3' base (not mutant)
+  and composition, `selection` does not store gate margins, and the figure's
+  check panel has no blocker at all
+  (`marker_primers.marker_castpcr()` returns the ASP, the primers and the
+  probe, but not the blocker). *Weak spot:* no Tm/ΔG, MGB, non-extendable,
+  ASP:blocker ratio or suppression efficiency; the blocker should be a separate
+  graph node and panel row, not only an entry in `compatibility`.
 
-- **Off-target / cross-reactivity.** *Видно:* exact perfect-site гейты есть
-  только для проб TaqMan/dPCR и extension SNaPshot; у castPCR их нет. Строка
-  `off-target exact primer hits` в графе декларативна, а панель SVG считает
-  exact hits для всех олиг из `marker_primers()` — но у castPCR без блокера.
-  *Слабое место:* 1–2 мисматча, 3'-seed и cross-reactivity пробы/блокера не
-  считаются; перевести эту строку в исполняемый гейт или убрать из графа, а
-  mismatch-tolerant проверку оставить внешней.
+- **Off-target / cross-reactivity.** *Visible:* exact perfect-site gates exist
+  only for the TaqMan/dPCR probes and the SNaPshot extension primer; castPCR has
+  none. The `off-target exact primer hits` row in the graph is declarative,
+  while the SVG panel computes exact hits for all oligos from
+  `marker_primers()` — but for castPCR without the blocker. *Weak spot:* 1–2
+  mismatches, the 3'-seed and probe/blocker cross-reactivity are not computed;
+  turn this row into an executable gate or remove it from the graph, and keep
+  the mismatch-tolerant check external.
 
-Отдельно о свидетельстве рисунка: панель Tm оценивается по
-`marker_tm_window()` (для dPCR-праймеров 58–62 °C, для проб 65–72 °C), а не по
-гейтам (dPCR-праймеры 44–50 °C; TaqMan-проба 56–72 °C). Поэтому в SVG красные
-строки: dPCR-праймеры 48.8 °C и пробы 57.2/58.1 °C получают `broken`, хотя
-гейты их пропускают; у TaqMan пробы 59.4/61.3 °C тоже `broken` при гейте
-[56, 72]. Исправить таблицу отображения или подписать цвет как эвристику.
+A separate point about the evidence of the figure: the Tm panel is scored by
+`marker_tm_window()` (58–62 °C for dPCR primers, 65–72 °C for probes), not by
+the gates (dPCR primers 44–50 °C; TaqMan probe 56–72 °C). Hence the red rows
+in the SVG: dPCR primers at 48.8 °C and probes at 57.2/58.1 °C get `broken`
+even though the gates let them through; in TaqMan the probes at 59.4/61.3 °C
+are also `broken` although the gate is [56, 72]. Fix the mapping table or label
+the colour as a heuristic.
 
-Уточнение к первому проходу: мягкие окна — TaqMan centrality/ампликон/
-структура, dPCR ампликон/структура, SNaPshot ампликон/Tm/структура, castPCR
-ампликон/ASP Tm; лестница сдвигает их, так что это идеальные пороги, а не
-жёсткие границы. Ссылки на механизмы — те же, что выше (Holland 1991;
-Pastinen 1997; Hindson 2011; Huggett 2013; Barbano 2015; Roma 2013;
-MacLeod 2021).
+A correction to the first pass: the soft windows are TaqMan
+centrality/amplicon/structure, dPCR amplicon/structure, SNaPshot
+amplicon/Tm/structure, castPCR amplicon/ASP Tm; the ladder shifts them, so these
+are ideal thresholds, not hard boundaries. References for the mechanisms are
+the same as above (Holland 1991; Pastinen 1997; Hindson 2011; Huggett 2013;
+Barbano 2015; Roma 2013; MacLeod 2021).

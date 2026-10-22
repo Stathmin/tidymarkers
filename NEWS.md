@@ -12,8 +12,19 @@
   делает пакет, установка (`pak` + `marker_install_tools()`), quick start,
   политика выбора кандидата с двумя деревьями решения, таблица отдаваемых
   объектов, карта виньеток, ограничения. Убраны внутренние детали разработки
-  (262-пакетный renv-лок, нумерация шагов, ссылки на `lecture/`), фальшивый
-  бейдж CI (workflow в репозитории нет) и абсолютные пути.
+  (262-пакетный renv-лок, нумерация шагов, ссылки на `lecture/`) и абсолютные
+  пути.
+- **Все виньетки переведены на английский:** заголовки, `%\VignetteIndexEntry`,
+  проза, подписи к рисункам и комментарии в чанках; код, пути
+  `include_graphics()` и структура чанков не тронуты (проверяется
+  `.tmp/verify-vignettes.py` и `knitr::knit()` всех восьми файлов).
+- **CI восстановлен:** `.github/workflows/R-CMD-check.yaml` (`R CMD check
+  --as-cran` с OligoArrayAux из conda) и настоящий бейдж R-CMD-check в README,
+  вместо удалённого в `32ff844`.
+- **Каталог gettext догнан до 0.4.0:** `po/R-tidymarkers.pot` и `po/R-ru.po`
+  перегенерированы (`potools::po_extract()` / `po_update()`),
+  `inst/po/ru/LC_MESSAGES/R-tidymarkers.mo` пересобран. 262 сообщения: 199
+  переведено, 8 fuzzy, 55 новых ждут перевода (тексты не удалялись).
 - **`vignette("reading-results")` показывает продвинутый путь, а не только
   чтение файлов:** `marker_plan()` → `marker_solve()` → `marker_export()`
   (`markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` и чтение объекта
