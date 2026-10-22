@@ -74,224 +74,220 @@ artifacts:
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_arms.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 73a305cbfc1179f0c4fbd6c0152d8c33
   output_hash: 746f58c2b64c3fb1a8fd4a5842779b0e
   docs: vignettes/markers-gel.Rmd
-  code: R/marker_arms.R
   status: verified
+  code: []
 - path: vignettes/figures/asq.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 374ddf1a4d507d99f56553840f9c76c7
   output_hash: 1866334e979f251228f7059bbc003426
   docs: vignettes/markers-kasp.Rmd
-  code:
-  - R/marker_assemble.R
-  - R/marker_scheme_registry.R
   status: verified
+  code: []
 - path: vignettes/figures/caps.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_caps.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: faa3a181b7e4fbdb82e07a5ce777fc0a
   output_hash: 478253e744e0d07a1fedddb17bd65cb0
   docs: vignettes/markers-gel.Rmd
-  code: R/marker_caps.R
   status: verified
+  code: []
 - path: vignettes/figures/castpcr.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_castpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: beb9c22c892348ec56426b1772c30fb1
   output_hash: 99da3dea8a93122392383832b27ec3e0
   docs: vignettes/markers-probe.Rmd
-  code: R/marker_castpcr.R
   status: verified
+  code: []
 - path: vignettes/figures/crispr.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_crispr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 4480055f8ce65521fb496f75074925a3
   output_hash: d8f4626704256d8fcaa6d1ef78917206
   docs: vignettes/markers-crispr-sequencing.Rmd
-  code: R/marker_crispr.R
   status: verified
+  code: []
 - path: vignettes/figures/dpcr.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_dpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: a7eb945c61a322a1d2fd0b986b20ce4c
   output_hash: e521cba4cc9787bc5bf10fab4dfe153d
   docs: vignettes/markers-probe.Rmd
-  code: R/marker_dpcr.R
   status: verified
+  code: []
 - path: vignettes/figures/duplex.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_duplex.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 8821fea977668742ef330bb9e76ef4a4
   output_hash: bdaa78acba20fa6203b941b952c97dc1
   docs: vignettes/markers-kasp.Rmd
-  code: R/marker_duplex.R
   status: verified
+  code: []
 - path: vignettes/figures/hrm.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_hrm.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: bc558505c9a43b29e48b963dfe276584
   output_hash: 65761a1a184dec7452d8c1858a016376
   docs: vignettes/markers-gel.Rmd
-  code: R/marker_hrm.R
   status: verified
+  code: []
 - path: vignettes/figures/indel.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 374ddf1a4d507d99f56553840f9c76c7
   output_hash: 0c94776c57c5e1437920ea492d77ec4e
   docs: vignettes/markers-kasp.Rmd
-  code: R/marker_assemble.R
   status: verified
+  code: []
 - path: vignettes/figures/indel_size.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_indel_size.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 338aa937bf94f1ba820fc1b2d75d894d
   output_hash: 9a9a70426977084c5cc84ea9c9b0fda2
   docs: vignettes/markers-gel.Rmd
-  code: R/marker_indel_size.R
   status: verified
+  code: []
 - path: vignettes/figures/lamp.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_lamp.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: c5dd5efa28f057162e77e02f65d0487d
   output_hash: 5c75a0178dc55c0bf8ca1db51d904bd8
   docs: vignettes/markers-isothermal.Rmd
-  code: R/marker_lamp.R
   status: verified
+  code: []
 - path: vignettes/figures/lax.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_lax.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 0bfd9df08987fa20e828396209a59f17
   output_hash: 7998fb51cc5dffa1ad0e11556feca16a
   docs: vignettes/markers-kasp.Rmd
-  code: R/marker_lax.R
   status: verified
+  code: []
 - path: vignettes/figures/multi.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 374ddf1a4d507d99f56553840f9c76c7
   output_hash: 6f4c8e39c8c5a1b92e56f344975186ff
   docs: vignettes/markers-kasp.Rmd
-  code: R/marker_assemble.R
   status: verified
+  code: []
 - path: vignettes/figures/primer.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 374ddf1a4d507d99f56553840f9c76c7
   output_hash: 911db1fb414d98d171220830de5bf4bb
   docs: vignettes/markers-kasp.Rmd
-  code: R/marker_assemble.R
   status: verified
+  code: []
 - path: vignettes/figures/rpa.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_rpa.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 94841dce09da76d3de3186a4130658b7
   output_hash: 40a9449f502928b0fe307ddf663a9a58
   docs: vignettes/markers-isothermal.Rmd
-  code: R/marker_rpa.R
   status: verified
+  code: []
 - path: vignettes/figures/sanger.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_sanger.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 740435ea82172bec028e195e121460fc
   output_hash: 34e4b065aee9f797aa3352f754067998
   docs: vignettes/markers-crispr-sequencing.Rmd
-  code: R/marker_sanger.R
   status: verified
+  code: []
 - path: vignettes/figures/snapshot.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_snapshot.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 89a2cda5b7d23071017ece7091f3b029
   output_hash: ff8cd2e54523ac6c85a3896aff54e5dd
   docs: vignettes/markers-probe.Rmd
-  code: R/marker_snapshot.R
   status: verified
+  code: []
 - path: vignettes/figures/snp.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 374ddf1a4d507d99f56553840f9c76c7
   output_hash: 1866334e979f251228f7059bbc003426
   docs: vignettes/markers-kasp.Rmd
-  code:
-  - R/marker_assemble.R
-  - R/marker_scheme_registry.R
   status: verified
+  code: []
 - path: vignettes/figures/ssr.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_ssr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: 12a3113d45ffc642db17182468643a3b
   output_hash: 1107dd615d7f71a2b3f7128040883363
   docs: vignettes/markers-gel.Rmd
-  code: R/marker_ssr.R
   status: verified
+  code: []
 - path: vignettes/figures/taqman.svg
   kind: figure
   generator: dev/render-gallery.R
   inputs:
-  - R
+  - R/marker_taqman.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 4a5340aa587f27685aee4699b58dd1f2
+  input_hash: b633f183e26713f824e0dc667e98061f
   output_hash: 2cb3b074a27e73221dc1c1ef05b04903
   docs: vignettes/markers-probe.Rmd
-  code: R/marker_taqman.R
   status: verified
+  code: []
 
