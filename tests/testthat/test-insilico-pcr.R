@@ -268,3 +268,27 @@ test_that("the scheme's own policy weights the penalty", {
     expect_equal(pr$penalty, 12L * 1)
   }
 })
+
+test_that("many exact hits pair without an outer product", {
+  # A low-complexity primer has thousands of exact sites.  Pairing every forward
+  # start with every reverse end via `outer()` is a dense 1e11-cell matrix on a
+  # real genome (99.6 GB, allocation failure), although only a reverse end at
+  # least one primer width downstream of a start can be a product.  So a dense
+  # synthetic sequence must still answer, and the answer must obey that rule.
+  f <- "ACGTTGCAAGTCCTAGGTAC"
+  r <- "GCTAGGCATTGACCATGCTA"
+  # in_silico_pcr searches `f` and the reverse complement of `r` on the plus strand
+  rev <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(r)))
+  spacer <- paste0(strrep("T", 6L), "GGA")
+  unit <- paste0(f, spacer, rev)
+  genome <- Biostrings::DNAStringSet(c(chr1 = paste0(rep(unit, 40L), collapse = "")))
+  pr <- in_silico_pcr(f, r, genome, max_mismatch = 0L)
+  expect_gt(nrow(pr), 0L)
+  expect_equal(nrow(pr), nrow(dplyr::distinct(pr, .data$start, .data$end)))
+  # every product: the forward start is an `f` site and the reverse end an
+  # `rev` site, at least one primer width apart
+  expect_true(all(pr$end - pr$start + 1L >= nchar(f)))
+  chr <- as.character(genome[["chr1"]])
+  expect_true(all(unname(substr(chr, pr$start, pr$start + nchar(f) - 1L)) == f))
+  expect_true(all(unname(substr(chr, pr$end - nchar(r) + 1L, pr$end)) == rev))
+})

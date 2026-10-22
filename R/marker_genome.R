@@ -169,6 +169,11 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
   start <- as.integer(start)
   end <- as.integer(end)
   if (!inherits(genome, "marker_genome")) {
+    # the whole sequence needs no copy: `subseq()` of a full range memcpys the
+    # chromosome, and a genome-scale scan asks for it once per primer pair
+    if (start == 1L && end == length(genome[[chrom]])) {
+      return(genome[[chrom]])
+    }
     return(Biostrings::subseq(genome[[chrom]], start = start, end = end))
   }
   raw <- genome$seqnames[[chrom]]

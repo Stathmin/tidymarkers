@@ -495,10 +495,9 @@ primer_hits <- function(primers, genome, BPPARAM = NULL) {
       # matchPattern(fixed = FALSE) keeps IUPAC degenerate primers usable.
       pats <- unique(c(p, as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))))
       pos <- purrr::list_c(purrr::map(pats, function(pt) {
-        IRanges::start(Biostrings::matchPattern(
-          Biostrings::DNAString(pt), subject,
-          fixed = FALSE
-        ))
+        # a genomic N must never satisfy a primer: `fixed = FALSE` lets a subject
+        # N match anything, which turns every N run into thousands of hits
+        IRanges::start(exact_pattern_hits(pt, subject, 0L))
       }))
       if (!length(pos)) {
         return(NULL)
