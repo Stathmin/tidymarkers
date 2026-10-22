@@ -90,6 +90,27 @@ IUPAC_BASES <- list(
   N = c("A", "C", "G", "T")
 )
 
+#' Table: which IUPAC code covers which subject base
+#'
+#' The primer is the row, the subject base the column, so
+#' `cover[primer_code, subject_base]` is one logical answer per position, with no
+#' per-base call.  `N` in the subject is covered by every code (an ambiguous
+#' genomic base is not evidence of a mismatch), and `N` as a primer code covers
+#' every base.  A subject base outside the alphabet (an `NA` past a sequence end)
+#' is never covered.
+#' @return logical matrix, both dimnames the IUPAC codes.
+#' @keywords internal
+#' @noRd
+iupac_cover_table <- function() {
+  codes <- names(IUPAC_BASES)
+  cover <- matrix(FALSE, length(codes), length(codes), dimnames = list(codes, codes))
+  for (code in codes) {
+    cover[code, IUPAC_BASES[[code]]] <- TRUE
+    cover[code, "N"] <- TRUE
+  }
+  cover
+}
+
 # Columns every in-silico PCR product carries, in order, after the legacy four
 PCR_MISMATCH_COLUMNS <- c(
   "n_mismatch", "mismatch_positions", "f_mismatch_positions",
@@ -169,7 +190,7 @@ tail_terminal <- function(n_nt) {
 # degenerate code plus `max_mismatch` cannot double-count (a seed position is
 # not also added as a generic mismatch):
 #   terminal (last 3 nt) > last-5 window > seed > middle.
-#' Compares the searched (plus-strand) primer pattern with the subject slice it
+#' Compares the searched (plus-strand) primer pattern with the subject slice(s) it
 #' matched.  IUPAC codes in the primer are expanded, so a degenerate position
 #' that still covers the subject base is a *match*, not a mismatch; an N in the
 #' subject never mismatches (it matches anything).  Mismatch positions are
@@ -185,7 +206,10 @@ tail_terminal <- function(n_nt) {
 #' mismatches contribute their ladder weight divided by one more than the
 #' terminal count.
 #' @param pattern searched primer as a character string (plus strand).
-#' @param subject_seq the genomic slice of the same width (character).
+#' @param subject the genomic slice(s) of the same width (character); one
+#'   slice is a scalar and several are a vector, so a whole hit table costs one
+#'   call.  A slice shorter than the pattern has `NA` subject bases past its end,
+#'   which are never mismatches - exactly what a search near a sequence edge sees.
 #' @param scheme chemistry.
 #' @param seed_len seed length override (`NA` = the policy's).
 #' @return `n_mismatch`, `mismatch_positions` (list, plus-strand),
@@ -193,13 +217,8 @@ tail_terminal <- function(n_nt) {
 #'   `three_prime_terminal`, `penalty`.
 #' @keywords internal
 #' @noRd
-mismatch_profile <- function(pattern, subject_seq, scheme = "pcr", seed_len = NA_integer_) {
+mismatch_profile <- function(pattern, subject, scheme = "pcr", seed_len = NA_integer_) {
   n_nt <- nchar(pattern)
-  pat <- strsplit(pattern, "", fixed = TRUE)[[1L]]
-  sub <- strsplit(subject_seq, "", fixed = TRUE)[[1L]]
-  mm <- which(!mapply(iupac_covers, pat, sub, USE.NAMES = FALSE))
-  n_mm <- length(mm)
-  pos <- as.integer(mm)
   if (!n_nt) {
     return(list(
       n_mismatch = 0L, mismatch_positions = list(integer()),
@@ -207,8 +226,38 @@ mismatch_profile <- function(pattern, subject_seq, scheme = "pcr", seed_len = NA
       three_prime_terminal = FALSE, penalty = 0
     ))
   }
+  n_sub <- length(subject)
+  # every slice is exactly the pattern's width, so one unlisting gives a matrix
+  # of bases in row = position order; a short slice (search near a sequence end)
+  # leaves NA past its end, and NA is never a mismatch
+  sub <- strsplit(subject, "", fixed = TRUE)
+  sub <- unlist(lapply(sub, function(x) {
+    n_pad <- max(0L, n_nt - length(x))
+    c(x, rep(NA_character_, n_pad))[seq_len(n_nt)]
+  }), use.names = FALSE)
+  # which pattern code covers which subject base, as a 15 x 15 table built once
+  # per call (a set test, not a per-base `%in%`: `%in%` against a multi-base code
+  # compares element-wise and would miss N), and an N in the subject always a
+  # match.  This is one matrix index for a whole genome-wide hit table: a
+  # low-complexity primer returns ~180k hits, and a per-hit call cost seconds.
+  cover <- iupac_cover_table()
+  pat_code <- match(strsplit(pattern, "", fixed = TRUE)[[1L]], rownames(cover))
+  sub_code <- match(sub, rownames(cover))
+  sub_code[is.na(sub_code)] <- match("N", rownames(cover))
+  covered <- cover[cbind(rep(pat_code, length.out = length(sub_code)), sub_code)]
+  # column-major: the bases are in hit-then-position order already
+  mism <- matrix(!covered, nrow = n_nt)
   s_len <- if (is.na(seed_len)) specificity_policy(scheme)$seed_len else seed_len
   w <- mismatch_weights(n_nt, scheme, s_len)
+  if (n_sub > 1L) {
+    return(mismatch_profile_grid(mism, n_sub, w, s_len))
+  }
+  # an `NA` in `mism` is never a mismatch (an `N` subject base, or a slice past
+  # the sequence end).  This R's `which()` treats `NA` as unset and can return
+  # `0`, so the test is written so no `NA` reaches it; a single hit is a
+  # one-column matrix, so the positions are its TRUE rows
+  pos <- which(mism == TRUE)
+  n_mm <- length(pos)
   # A mismatch in the last THREE_PRIME_TERMINAL nt stops extension, so its
   # penalty is the scheme's terminal weight times the number of terminal
   # mismatches.  Ordinary mismatches then add their ladder weight *discounted*
@@ -230,6 +279,51 @@ mismatch_profile <- function(pattern, subject_seq, scheme = "pcr", seed_len = NA
     terminal_mismatch = sum(terminal),
     three_prime_terminal = sum(terminal) > 0L,
     penalty = penalty
+  )
+}
+
+#' The same profile for many hit slices, in one vectorised pass
+#'
+#' A genome-wide one-mismatch scan of a low-complexity primer returns tens of
+#' thousands of hits, and profiling them one at a time cost ~0.4 s per 200
+#' (a projected 400-500 s for a single primer).  The mismatch matrix is n_nt x
+#' n_hits, so every per-hit number is a column sum of one masked matrix, and the
+#' positions are one `row()`/`col()` split.  Behaviour is identical to the
+#' per-hit loop; it is the same masks, not a re-derivation.
+#' @param mism logical matrix, `n_nt` rows x one column per hit.
+#' @param n_hits number of hit columns.
+#' @param w the scheme's per-position weights (5'->3', length `n_nt`).
+#' @param s_len seed length.
+#' @keywords internal
+#' @noRd
+mismatch_profile_grid <- function(mism, n_hits, w, s_len) {
+  n_nt <- nrow(mism)
+  term_w <- max(max(w), 0)
+  # `NA` is a covered base (an `N` subject base, or past a sequence end), never a
+  # mismatch; this R's `row()`/`col()`/`which()` treat `NA` as unset, so it is
+  # dropped once, up front, and the matrix is a plain logical from here on
+  mism[is.na(mism)] <- FALSE
+  terminal <- row(mism) %in% tail_terminal(n_nt) & mism
+  n_term <- colSums(terminal)
+  # ordinary mismatches add their ladder weight discounted by the terminal count;
+  # the matrix product sums the weight of every non-terminal mismatch per hit
+  penalty <- n_term * term_w + (w %*% (mism & !terminal))[1L, ] / (n_term + 1L)
+  pos <- row(mism)[mism]
+  cols <- col(mism)[mism]
+  list(
+    n_mismatch = as.integer(colSums(mism)),
+    mismatch_positions = split(pos, factor(cols, levels = seq_len(n_hits))),
+    three_prime_mismatch = as.integer(colSums(mism[
+      seq.int(max(1L, n_nt - THREE_PRIME_WINDOW + 1L), n_nt), ,
+      drop = FALSE
+    ])),
+    seed_mismatch = as.integer(colSums(mism[
+      seq.int(max(1L, n_nt - s_len + 1L), n_nt), ,
+      drop = FALSE
+    ])),
+    terminal_mismatch = as.integer(n_term),
+    three_prime_terminal = n_term > 0L,
+    penalty = as.numeric(penalty)
   )
 }
 
@@ -300,10 +394,14 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
   }
   side <- match.arg(side)
   orient <- function(prof) {
-    pos <- plus_to_primer(prof$mismatch_positions[[1L]], nchar(pattern), side == "r")
-    # an AsIs element keeps the column a vector of integer vectors (a bare list
-    # of length 1 would be treated as a column and nested)
-    prof$mismatch_positions <- list(structure(sort(pos), class = "AsIs"))
+    prof$mismatch_positions <- lapply(prof$mismatch_positions, function(pos) {
+      # an AsIs element keeps the column a vector of integer vectors (a bare list
+      # of length 1 would be treated as a column and nested).  A forward hit is
+      # already ascending, so only a mirrored one needs sorting
+      pos <- plus_to_primer(pos, nchar(pattern), side == "r")
+      if (side == "r") pos <- sort(pos)
+      structure(as.integer(pos), class = "AsIs")
+    })
     prof
   }
   scan_one <- function(nm) {
@@ -317,20 +415,18 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       return(NULL)
     }
     footprint <- as.character(hits)
-    prof <- lapply(footprint, function(seq) {
-      orient(mismatch_profile(pattern, seq, scheme, seed_len))
-    })
+    prof <- orient(mismatch_profile(pattern, footprint, scheme, seed_len))
     tibble::tibble(
       chrom = nm,
       start = IRanges::start(hits),
       end = IRanges::end(hits),
-      n_mismatch = vapply(prof, `[[`, integer(1), "n_mismatch"),
-      mismatch_positions = lapply(prof, `[[`, "mismatch_positions"),
-      three_prime_mismatch = vapply(prof, `[[`, integer(1), "three_prime_mismatch"),
-      seed_mismatch = vapply(prof, `[[`, integer(1), "seed_mismatch"),
-      terminal_mismatch = vapply(prof, `[[`, integer(1), "terminal_mismatch"),
-      three_prime_terminal = vapply(prof, `[[`, logical(1), "three_prime_terminal"),
-      penalty = vapply(prof, `[[`, numeric(1), "penalty")
+      n_mismatch = prof$n_mismatch,
+      mismatch_positions = prof$mismatch_positions,
+      three_prime_mismatch = prof$three_prime_mismatch,
+      seed_mismatch = prof$seed_mismatch,
+      terminal_mismatch = prof$terminal_mismatch,
+      three_prime_terminal = prof$three_prime_terminal,
+      penalty = prof$penalty
     )
   }
   res <- lapply(genome_chroms(genome), scan_one)
