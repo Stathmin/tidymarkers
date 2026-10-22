@@ -121,9 +121,12 @@ marker_engine_stamp <- function() {
 #' @param x a checks tibble (see [marker_design_checks()]).
 #' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
 #' @examples
+#' \dontrun{
+#' # needs the TAIR10 genome and Ensembl Plants variation (network on first use)
 #' g <- ath_genome()
 #' snp <- pick_target_snp(ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6), g, ensembl_gene("AT4G00650"))
 #' marker_evaluation_stamp(marker_design_checks(snp))
+#' }
 #' @family KASP utilities
 #' @export
 marker_evaluation_stamp <- function(x) {

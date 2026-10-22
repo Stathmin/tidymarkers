@@ -32,6 +32,10 @@ reference:
     contents:
       - has_concept("KASP checks")
       - has_concept("KASP QC")
+  - title: "Plan and export"
+    desc: "Targets, chemistry costs, the solver and its tidy export"
+    contents:
+      - has_concept("KASP plan")
   - title: "Plots"
     desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
     contents:

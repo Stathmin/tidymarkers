@@ -24,9 +24,12 @@ A \code{dplyr} verb or \code{bind_rows()} drops attributes, so use
 \code{\link[=marker_with_stamp]{marker_with_stamp()}} to put the stamp back after combining tables.
 }
 \examples{
+\dontrun{
+# needs the TAIR10 genome and Ensembl Plants variation (network on first use)
 g <- ath_genome()
 snp <- pick_target_snp(ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6), g, ensembl_gene("AT4G00650"))
 marker_evaluation_stamp(marker_design_checks(snp))
+}
 }
 \seealso{
 Other KASP utilities:

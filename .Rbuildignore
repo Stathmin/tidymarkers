@@ -18,6 +18,9 @@
 ^data-raw$
 ^dev$
 ^AGENTS\.md$
+^HANDOFF\.md$
+^\.agents$
+^\.cursor$
 ^ROADMAP\.md$
 ^INVENTORY\.md$
 ^\.i18n-lib$

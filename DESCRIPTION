@@ -13,14 +13,17 @@ Description: An opinionated, reproducible toolkit for designing and quality
     TmCalculator and OligoArrayAux, Taq-aware allelic discrimination from
     DECIPHER, and genome-wide specificity from Biostrings (with an optional
     rBLAST database or an Rsubread FM-index).  Annotation uses VariantAnnotation
-    with a transcript database.  An Arabidopsis thaliana setup (TAIR10 genome and
-    1001 Genomes variation via Ensembl) is bundled as a reproducible demo.
+    with a transcript database.  A reproducible Arabidopsis thaliana demo (TAIR10
+    genome and 1001 Genomes variation via Ensembl) is fetched into a user cache on
+    first use.
 License: MIT + file LICENSE
 URL: https://github.com/Stathmin/tidymarkers
 BugReports: https://github.com/Stathmin/tidymarkers/issues
 SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional),
     Node.js (optional, for the vendored decision-graph layout engine)
 Encoding: UTF-8
+Depends:
+    R (>= 4.5)
 Imports:
     Biostrings,
     IRanges,

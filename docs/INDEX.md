@@ -6,7 +6,7 @@ link resolves; `dev/check-artifacts.R` verifies the artifact graph.
 
 ## Project
 
-- [README](../README.md) — what the package is, quick start, gallery.
+- [README](../README.md) — what the package is, install, quick start, decision trees.
 - [AGENTS](../AGENTS.md) — agent instructions and the environment to run in.
 - [CONTRIBUTING](../CONTRIBUTING.md) — conventions and the merge gate.
 - [ROADMAP](../ROADMAP.md) — the open queue (ZA8 is this docs/artifacts layer).
