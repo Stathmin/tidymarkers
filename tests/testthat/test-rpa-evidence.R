@@ -227,3 +227,24 @@ test_that("CONTRADICTION (recorded): field call rates vs the mismatch penalty", 
   # and the anchor scheme says so too
   expect_false(rpa_anchor_weights()$calibrated)
 })
+
+test_that("RULING: the terminal lookup is template-first, and a W-C pair is not a cell", {
+  # Reported as two defects while auditing this file; both are the intended
+  # behaviour under the extract's own naming, recorded so they are not "fixed"
+  # into a wrong weight later.
+  # (a) the cell is named template-first (`A-C` = primer C reading template A),
+  #     so primer C over template A IS the 0.66 cell - not the -2.32 one
+  expect_equal(rpa_anchor_weight(0L, "C", "A"), -0.66)
+  expect_equal(rpa_anchor_weight(0L, "G", "T"), -0.66)
+  # (b) a Watson-Crick pair is not a mismatch, so it has no cell and is NA
+  #     rather than a fabricated tolerant weight
+  expect_true(is.na(rpa_anchor_weight(0L, "A", "T")))
+  expect_true(is.na(rpa_anchor_weight(0L, "T", "A")))
+  # and every printed cell still scores back through the same API
+  term <- ext("rpa_mismatch_terminal.csv")
+  for (i in seq_len(nrow(term))) {
+    pr <- substr(term$terminal_mismatch[i], 3L, 3L)
+    tp <- substr(term$terminal_mismatch[i], 1L, 1L)
+    expect_equal(rpa_anchor_weight(0L, pr, tp), term$RS_logit[i], info = term$terminal_mismatch[i])
+  }
+})
