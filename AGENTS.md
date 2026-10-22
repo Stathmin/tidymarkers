@@ -100,6 +100,31 @@ discarded, answer the discard condition before the grid exists.
 - RDF export is not an R debugging standard (it is an interchange format, and R's
   call graph knows nothing about it). `Rprof` is the standard here.
 
+## Reading the literature (never from memory)
+
+The scientific sources behind `inst/extdata/scientific_sources.csv` live in the
+operator's Zotero library, collection `tidymarkers — marker design sources`
+(`4RSE6KC2`, tag `merovingen:tidymarkers`). 30 of the 72 records carry a full-text
+attachment; 4 rows are `DOI-UNRESOLVED`. Read the full text through Merovingen's
+read-only MCP lane before you rely on a claim:
+
+```sh
+cd /root/development/Merovingen
+ZOTERO_MCP_ENABLED=true ZOTERO_MCP_MODE=live .venv/bin/python \
+  data/scratch/reports/scripts/zotero_read_items.py <ITEM_KEY>   # -> /tmp/read/<KEY>.md
+ZOTERO_MCP_ENABLED=true ZOTERO_MCP_MODE=live .venv/bin/python \
+  data/scratch/reports/scripts/zotero_quote.py --grep "phrase"  # phrase across the library
+```
+
+From Python, the tools are `zotero_get_collection_items`, `zotero_get_item_metadata`,
+`zotero_get_item_fulltext`, `zotero_get_pdf_outline` and `zotero_read_pdf_pages` in
+`src.tools.readonly.zotero_bridge` (allowlist `zotero/allowlist.v1.yaml`).
+Writes to the library are an operator action (ADR-0037) — an agent cites, it does
+not add records. Check the `claim` column of `scientific_sources.csv` against the
+sentence in the fulltext, not against the title: a title can neither confirm nor
+refute a number. A source without an attachment is cited only for what is visible
+in its abstract, and the gap is noted in `access_detail`.
+
 ## Merge gate
 
 `Rscript dev/check.R` must pass (with the env above). It is the local stand-in for
