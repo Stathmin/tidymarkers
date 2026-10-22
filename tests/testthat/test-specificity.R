@@ -421,3 +421,25 @@ test_that("a degenerate primer is scored exactly, never rescuing a 3'-terminal m
   expect_true(1L %in% unlist(term$r_mismatch_positions))
   expect_equal(term$r_penalty, 12L * 1)
 })
+
+test_that("a genomic N never satisfies a primer (no N-run phantom hits)", {
+  # `matchPattern(fixed = FALSE)` lets a subject N cover every base, so a run of
+  # N used to return a hit at every offset in it: on TAIR10 that was 163,958
+  # hits for one 27-mer, and one in-silico PCR product table of ~1e10 rows
+  # (allocation failure).  An N is not a binding site.
+  p <- "CCGCAATCTCATGTCCAATTATCCACC"
+  g <- Biostrings::DNAStringSet(c(chr1 = paste0(
+    strrep("A", 10L), p, strrep("N", 50L), p, strrep("A", 10L)
+  )))
+  hits <- tidymarkers:::exact_pattern_hits(p, g[["chr1"]], 0L)
+  expect_equal(IRanges::start(hits), c(11L, 88L))
+  expect_equal(as.character(Biostrings::extractAt(g[["chr1"]], hits)), rep(p, 2L))
+  # `primer_hits()` searches the primer and its reverse complement, so the count
+  # is the forward sites plus any reverse-complement site; the point is that no
+  # hit sits on an N, which used to be one hit per offset of the whole run
+  hp <- primer_hits(c(AS = p), g)
+  expect_lt(nrow(hp), 5L)
+  expect_true(all(Biostrings::letterFrequency(
+    Biostrings::extractAt(g[["chr1"]], IRanges::IRanges(hp$pos, width = nchar(p))), "N"
+  ) == 0L))
+})

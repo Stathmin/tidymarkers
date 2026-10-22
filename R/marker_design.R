@@ -149,15 +149,38 @@ plus_3p_base <- function(primer, strand) {
 #' @noRd
 make_as_primer <- function(window, anchor, length, allele, strand = "+",
                            stab_at = NULL, stab_base = NULL) {
-  seg <- as_window(window, anchor, length, strand) # DNAString, contains the variant
-  blk <- block_in_seg(nchar(allele), length, strand) # variant block inside `seg`
-  p <- Biostrings::replaceAt(seg, blk, allele)
-  if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
+  # Plain strings throughout.  The old body built and mutated a DNAString per
+  # configuration (subseq, replaceAt x2, reverseComplement), and the AS grid is
+  # 8 lengths x 2 strands x 3 mismatch ranks x up to 3 bases: thousands of S4
+  # objects, which dominated the design pass.  The geometry is the same
+  # `primer_interval()` the S4 path uses; `block_in_seg()` only differs from a
+  # plain 1-based substring when the window runs off the template edge.
+  iv <- primer_interval(anchor, strand, length, role = "AS")
+  s <- as.character(window)
+  wlen <- nchar(s)
+  if (IRanges::start(iv) < 1L || IRanges::end(iv) > wlen) {
+    # the edge case: let `as_window()` pad and the S4 path decide the bases
+    seg <- as_window(window, anchor, length, strand)
+    blk <- block_in_seg(nchar(allele), length, strand)
+    p <- Biostrings::replaceAt(seg, blk, allele)
+    if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
+  } else if (identical(strand, "+")) {
+    # the variant block is the window's 3'-terminal `nchar(allele)` bases
+    k <- nchar(allele)
+    p <- paste0(substr(s, IRanges::start(iv), IRanges::end(iv) - k), allele)
+  } else {
+    # minus strand: the 3' end is the window's LOW coordinate, so the block is
+    # its first `nchar(allele)` bases and the primer is the reverse complement
+    k <- nchar(allele)
+    p <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(
+      paste0(allele, substr(s, IRanges::start(iv) + k, IRanges::end(iv)))
+    )))
+  }
   if (!is.null(stab_at)) {
     i <- length - stab_at + 1L # 3'-relative -> 5'-index
-    p <- Biostrings::replaceAt(p, IRanges::IRanges(i, i), stab_base)
+    p <- paste0(substr(p, 1L, i - 1L), stab_base, substr(p, i + 1L, nchar(p)))
   }
-  as.character(p)
+  p
 }
 
 #' Grid-search allele-specific primers maximising Taq-based discrimination

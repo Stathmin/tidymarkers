@@ -8,3 +8,8 @@
 # =============================================================================
 
 .marker_state <- new.env(parent = emptyenv())
+
+# Genome-derived, pattern-independent facts about a sequence: currently the runs
+# of unambiguous bases used by `exact_pattern_hits()`.  Keyed by a content
+# signature, so a changed sequence never reuses a stale entry.
+.marker_state$blocks <- new.env(parent = emptyenv())

@@ -227,14 +227,21 @@ mismatch_profile <- function(pattern, subject, scheme = "pcr", seed_len = NA_int
     ))
   }
   n_sub <- length(subject)
-  # every slice is exactly the pattern's width, so one unlisting gives a matrix
-  # of bases in row = position order; a short slice (search near a sequence end)
-  # leaves NA past its end, and NA is never a mismatch
-  sub <- strsplit(subject, "", fixed = TRUE)
-  sub <- unlist(lapply(sub, function(x) {
-    n_pad <- max(0L, n_nt - length(x))
-    c(x, rep(NA_character_, n_pad))[seq_len(n_nt)]
-  }), use.names = FALSE)
+  # every slice is exactly the pattern's width, so the bases unlist into a vector
+  # in hit-then-position order (row = position for the matrix below).  `strsplit`
+  # is the whole cost of a genome-wide table (~0.8 s for 183k hits), so it is
+  # replaced by fixed-offset slicing whenever every slice has the pattern's width;
+  # only a short slice (a search near a sequence end) needs the padded path, and
+  # then `strsplit` runs on that one slice.  A padded base is NA, never a mismatch.
+  if (all(lengths(subject) == n_nt)) {
+    sub <- substring(unlist(subject, use.names = FALSE), rep(seq_len(n_nt), n_sub))
+  } else {
+    sub <- strsplit(subject, "", fixed = TRUE)
+    sub <- unlist(lapply(sub, function(x) {
+      n_pad <- max(0L, n_nt - length(x))
+      c(x, rep(NA_character_, n_pad))[seq_len(n_nt)]
+    }), use.names = FALSE)
+  }
   # which pattern code covers which subject base, as a 15 x 15 table built once
   # per call (a set test, not a per-base `%in%`: `%in%` against a multi-base code
   # compares element-wise and would miss N), and an N in the subject always a
@@ -360,6 +367,108 @@ iupac_covers <- function(code, base) {
   base %in% pat
 }
 
+#' Runs of unambiguous bases in a genomic sequence (cached per sequence)
+#'
+#' A subject `N` must never satisfy a pattern (`Biostrings::matchPattern()` with
+#' `fixed = FALSE` treats it as covering every base, so a 27-mer returns ~1.6e5
+#' hits on TAIR10 and an in-silico PCR product table of ~1e10 rows).  So the
+#' search runs on the unambiguous blocks, and this finds them once per sequence.
+#'
+#' The ambiguous positions come from the byte codes: `as.integer()` on an XString
+#' is one C-level pass and N is 15 in Biostrings' DNA alphabet (A 1, C 2, G 4,
+#' T 8).  `letterFrequencyInSlidingView(subject, 1L, "N")` answers the same
+#' question but spends ~30 s per genome in S4 dispatch (measured), so it is not
+#' used.  The runs are the gaps in `diff()` of the ambiguous positions, which is
+#' 0.05 s on 30 Mb.
+#'
+#' `as.integer()` still allocates a 60 MB integer vector, and every hit table and
+#' every `primer_hits()` call on the same genome would pay it again, so the
+#' answer is memoised per process.  The key is the sequence's content signature
+#' (`digest::digest` on the bytes is not free either, so the key is the string
+#' hash of the length and the first/last bases plus the N count) - a *changed*
+#' sequence must not reuse a stale block list.  The cache lives in the package
+#' namespace and is bounded.
+#'
+#' @param subject the genomic sequence as an `XString`.
+#' @return a list of integer vectors `start`, `end` (1-based, inclusive).
+#' @keywords internal
+#' @noRd
+unambiguous_blocks <- function(subject) {
+  n_amb <- Biostrings::letterFrequency(subject, "N")
+  if (n_amb == 0L) {
+    return(list(start = 1L, end = length(subject)))
+  }
+  len <- length(subject)
+  key <- paste(len, n_amb, as.character(Biostrings::subseq(subject, 1L, 32L)),
+    as.character(Biostrings::subseq(subject, max(1L, len - 31L), len)),
+    sep = "|"
+  )
+  cached <- get0(key, envir = .marker_state$blocks, inherits = FALSE)
+  if (!is.null(cached)) {
+    return(cached)
+  }
+  ap <- which(as.integer(subject) == 15L)
+  gap <- diff(ap) > 1L
+  a_start <- ap[c(TRUE, gap)]
+  a_end <- ap[c(gap, TRUE)]
+  # the clean blocks are the complement of the ambiguous runs
+  b_start <- c(1L, a_end + 1L)
+  b_end <- c(a_start - 1L, len)
+  ok <- b_end >= b_start
+  out <- list(start = b_start[ok], end = b_end[ok])
+  # a simple bound: the block list of the current genome is what matters
+  if (length(.marker_state$blocks) > 16L) {
+    rm(list = ls(.marker_state$blocks, all.names = TRUE), envir = .marker_state$blocks)
+  }
+  assign(key, out, envir = .marker_state$blocks)
+  out
+}
+
+#' Primer hits that never match an ambiguous genomic base
+#'
+#' `Biostrings::matchPattern(fixed = FALSE)` treats the pattern as a set of IUPAC
+#' codes and the *subject* N as covering every base, so a run of N in the genome
+#' returns a hit at every offset in it.  On TAIR10 that is 163,958 spurious hits
+#' for a 27-mer, and a 27-mer in a N-run pair with a reverse hit in the same run:
+#' the in-silico PCR product table then holds ~1e10 rows and cannot be allocated.
+#'
+#' An `N` in the subject is not evidence of a binding site, so it must never be a
+#' match ([mismatch_profile()] already reports it as a non-mismatch *within* a
+#' hit, which is a different question: whether an aligned base counts against the
+#' primer).  This searches the unambiguous blocks of the subject separately and
+#' shifts each hit back to genomic coordinates, so a hit can never span an
+#' ambiguous base.  Blocks shorter than the pattern are skipped, so this is also
+#' cheaper than the whole-chromosome scan on a fragmented genome.
+#'
+#' @param pattern the plus-strand pattern to search (IUPAC-aware).
+#' @param subject the genomic sequence as an `XString`.
+#' @param max_mismatch search radius.
+#' @return an `IRanges` of hit starts/ends in `subject` coordinates.
+#' @keywords internal
+#' @noRd
+exact_pattern_hits <- function(pattern, subject, max_mismatch) {
+  width <- nchar(pattern)
+  if (Biostrings::letterFrequency(subject, "N") == 0L) {
+    return(Biostrings::matchPattern(pattern, subject, max.mismatch = max_mismatch, fixed = FALSE))
+  }
+  bl <- unambiguous_blocks(subject)
+  len <- bl$end - bl$start + 1L
+  keep <- len >= width
+  if (!any(keep)) {
+    return(IRanges::IRanges())
+  }
+  blocks <- lapply(which(keep), function(i) {
+    s <- bl$start[[i]]
+    sub <- Biostrings::subseq(subject, s, bl$end[[i]])
+    h <- Biostrings::matchPattern(pattern, sub, max.mismatch = max_mismatch, fixed = FALSE)
+    if (!length(h)) {
+      return(NULL)
+    }
+    IRanges::IRanges(IRanges::start(h) + s - 1L, width = width)
+  })
+  do.call(c, c(blocks, list(IRanges::IRanges())))
+}
+
 #' Per-primer hit table for one primer against every chromosome
 #'
 #' One `matchPattern()` pass per primer (`fixed = FALSE`, so IUPAC-aware) with
@@ -407,10 +516,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
   scan_one <- function(nm) {
     worker_biostrings()
     subject <- genome_seq(genome, nm)
-    hits <- Biostrings::matchPattern(pattern,
-      subject,
-      max.mismatch = max_mismatch, fixed = FALSE
-    )
+    hits <- exact_pattern_hits(pattern, subject, max_mismatch)
     if (length(hits) == 0L) {
       return(NULL)
     }
@@ -532,12 +638,32 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
     if (nrow(fh) == 0L || nrow(rh) == 0L) {
       return(NULL)
     }
-    idx <- which(outer(fh$start, rh$end, "<="), arr.ind = TRUE)
-    if (!nrow(idx)) {
+    # Pair every forward start with a downstream reverse end.  A whole-genome
+    # exact scan returns ~1.6e5 hits per primer, so the full `outer()` is
+    # 1e11 cells (99.6 GB) and cannot be built; a product also needs
+    # `width >= min_width`, i.e. a reverse end at least `min_width - 1` past the
+    # forward start.  So each forward start is matched against the slice of
+    # `rh` inside `[start + min_width - 1, last_end]` - binary search, never a
+    # cross product.  Distinct end positions are enough: two hits with the same
+    # end differ only in their penalty/positions, and the row kept below is the
+    # cheapest one anyway.
+    r_end <- rh$end
+    r_ord <- order(r_end)
+    r_end <- r_end[r_ord]
+    rh <- rh[r_ord, , drop = FALSE]
+    n_r <- nrow(rh)
+    # `findInterval(x, v)` is the count of `v <= x`, so `n_of` right per start:
+    # `[start + min_width - 1, n_r]` is the slice of rows that can close a
+    # product, and it is never the whole matrix
+    lo <- findInterval(fh$start + min_width - 2L, r_end) + 1L
+    n_of <- pmax(0L, n_r - lo + 1L)
+    f_i <- rep(seq_len(nrow(fh)), n_of)
+    r_i <- sequence(n_of) + rep(lo - 1L, n_of)
+    if (!length(f_i)) {
       return(NULL)
     }
-    f <- fh[idx[, 1L], , drop = FALSE]
-    r <- rh[idx[, 2L], , drop = FALSE]
+    f <- fh[f_i, , drop = FALSE]
+    r <- rh[r_i, , drop = FALSE]
     out <- tibble::tibble(
       chrom = nm,
       start = f$start,
@@ -560,7 +686,9 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
       penalty = f$penalty + r$penalty
     )
     # one product per (forward start, reverse end): a primer can hit the same
-    # place with several substitutions, and only the best-aligned hit is real
+    # place with several substitutions, and only the best-aligned hit is real.
+    # Order first (cheapest penalty wins), then keep the first of each pair - a
+    # `!duplicated()` before the sort would keep the wrong row.
     out <- out[out$width >= min_width, , drop = FALSE]
     out <- dplyr::arrange(out, .data$penalty, .data$start, .data$end)
     out <- dplyr::distinct(out, .data$chrom, .data$start, .data$end, .keep_all = TRUE)
