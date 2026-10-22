@@ -102,13 +102,13 @@ expect_dag_invariants <- function(scheme) {
   # a stage with a hard gate must route that failure to DOOMED straight - from the
   # stage's decision (or a hard gate itself), never only through the relax branch
   if (any(n$kind == "gate" & n$hard)) {
-    expect_true("doomed" %in% n$name, info = at("hard gate but no DOOMED"))
+    expect_true(any(grepl(":doomed$", n$name)), info = at("hard gate but no DOOMED"))
     for (st in stages) {
       hard <- st$gates[!(st$gates %in% st$relax)]
       if (!length(hard)) next
       from <- c(paste0(st$id, ":gate:", hard), paste0(st$id, ":decision"))
       expect_true(
-        any(e$kind == "doomed" & e$from %in% from),
+        any(e$kind == "doomed" & e$from %in% from & e$to == paste0(st$id, ":doomed")),
         info = at(paste0("stage ", st$id, " hard gate not routed to DOOMED"))
       )
     }
@@ -168,8 +168,8 @@ expect_dag_invariants <- function(scheme) {
 }
 
 # The shared KASP core DAG block: every SNP-like scheme (snp, indel, multi, ...)
-# declares the same AS + pair gate set, the same two hard AS gates, and exactly
-# one DOOMED terminal.  Call it after `expect_dag_invariants(scheme)`.
+# declares the same AS + pair gate set, the same two hard AS gates, and one DOOMED
+# sink per killing stage (AS and pair).  Call it after `expect_dag_invariants`.
 #' Assert a scheme uses the shared KASP core stages
 #'
 #' @param scheme a scheme id (see [marker_schemes()]).
@@ -184,6 +184,9 @@ expect_kasp_core_dag <- function(scheme) {
   )
   hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
   expect_setequal(hard, c("as:gate:gate_discrimination", "as:gate:gate_as_window"))
-  expect_equal(sum(s$nodes$kind == "doomed"), 1L)
+  expect_equal(sum(s$nodes$kind == "doomed"), 2L)
+  expect_setequal(
+    s$nodes$name[s$nodes$kind == "doomed"], c("as:doomed", "pair:doomed")
+  )
   invisible(scheme)
 }

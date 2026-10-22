@@ -278,7 +278,7 @@ Tm-разброс четырёх праймеров — только tier3, по
 это **схема политики, а не протокол прогона**: `dev/render-decision.R` строит их
 через `decision_dot(scheme = sc)` без `assay`, поэтому `marker_decision_graph()`
 оставляет все узлы `neutral`; аннотированный обход есть только у SNP-примера
-(`decision-fri.*`, git-ignored). Файлы `man/figures/decision-tree.png` и
+(`decision-fri.*`, git-ignored). Файлы `man/figures/decision-tree.svg` и
 `decision-multiplex.png` — это SNP/duplex, не это семейство. Схемы в
 `vignettes/figures/*.svg` — это `marker_figure()` (гель/карта + tumbler классов),
 а не DAG. Поэтому граф подтверждает *порядок и жёсткость* гейтов, но не их

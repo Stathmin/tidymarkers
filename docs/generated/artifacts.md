@@ -29,27 +29,27 @@ consumers.
 - docs: (none)
 - output_hash: `89fc01f8d162143dad18db81c9bfdd37`
 
-## man/figures/decision-tree.png
+## man/figures/decision-tree.svg
 
 - kind: `decision`
 - status: `verified`
-- artifact: [man/figures/decision-tree.png](../../man/figures/decision-tree.png)
+- artifact: [man/figures/decision-tree.svg](../../man/figures/decision-tree.svg)
 - generator: [dev/render-decision.R](../../dev/render-decision.R)
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `91bfbf70884a81108d8ae85159ffb692`
+- output_hash: `f7448078085171c4cd5d93c3a45270cf`
 
-## man/figures/decision-multiplex.png
+## man/figures/decision-multiplex.svg
 
 - kind: `decision`
 - status: `verified`
-- artifact: [man/figures/decision-multiplex.png](../../man/figures/decision-multiplex.png)
+- artifact: [man/figures/decision-multiplex.svg](../../man/figures/decision-multiplex.svg)
 - generator: [dev/render-decision.R](../../dev/render-decision.R)
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `129e4c2924d2f2d66bbe80827732a3e3`
+- output_hash: `bec94f6aa0f3b598df3619e263c81475`
 
 ## vignettes/figures/arms.svg
 

@@ -36,7 +36,7 @@ artifacts:
   docs: []
   code: data-raw/logo.R
   status: verified
-- path: man/figures/decision-tree.png
+- path: man/figures/decision-tree.svg
   kind: decision
   generator: dev/render-decision.R
   inputs:
@@ -45,15 +45,15 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: ce1c0dcdf8281d55efba4477be5b8472
-  output_hash: 91bfbf70884a81108d8ae85159ffb692
+  input_hash: 1a058fae5398819bee808bc161cb856a
+  output_hash: f7448078085171c4cd5d93c3a45270cf
   docs: README.md
   code:
   - R/marker_decision.R
   - R/marker_select.R
   - R/marker_criteria.R
   status: verified
-- path: man/figures/decision-multiplex.png
+- path: man/figures/decision-multiplex.svg
   kind: decision
   generator: dev/render-decision.R
   inputs:
@@ -62,8 +62,8 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: ce1c0dcdf8281d55efba4477be5b8472
-  output_hash: 129e4c2924d2f2d66bbe80827732a3e3
+  input_hash: 1a058fae5398819bee808bc161cb856a
+  output_hash: bec94f6aa0f3b598df3619e263c81475
   docs: README.md
   code:
   - R/marker_decision.R

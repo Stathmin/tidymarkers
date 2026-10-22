@@ -178,8 +178,10 @@ test_that("the dPCR DAG shows the gates in application order and the ladder leas
   expect_setequal(hard, paste0("dpcr:gate:", setdiff(dpcr_gates, dpcr_soft)))
   soft <- s$nodes$name[s$nodes$kind == "gate" & !s$nodes$hard & grepl("^dpcr:gate:", s$nodes$name)]
   expect_setequal(soft, paste0("dpcr:gate:", dpcr_soft))
-  # the refine node names the rungs in the declared relax order
-  refine <- s$nodes$detail[s$nodes$kind == "relax"]
-  expect_match(refine, "amplicon")
+  # the rungs are nodes in the declared relax order, each naming its gate
+  rungs <- s$nodes[s$nodes$kind == "relax", , drop = FALSE]
+  expect_identical(rungs$name, paste0("dpcr:relax:", dpcr_soft))
+  expect_match(rungs$detail[1L], "amplicon")
+  expect_true(all(diff(rungs$order) > 0L))
   expect_true(grepl("least grave first", paste(marker_decision_text("dpcr"), collapse = "\n"), fixed = TRUE))
 })
