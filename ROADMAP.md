@@ -34,7 +34,7 @@
 | # | пункт | правка (где) | проверка | блокер |
 |---|---|---|---|---|
 | 1 | `Q1` снять три неподтверждённые заявки | **готово 2026-10-22**: `data-raw/proposed/{taqman,lamp}_status.decision.md`, `polyploid_scope` уже решён | `test-taqman-status.R`, `test-lamp-status.R` | **закрыт** |
-| 2 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | **снят** (`Q2` принят: −3 по умолчанию, слабый класс → −2) |
+| 2 | `Z7.1` параметр намеренного мисматча | **готово** (`1f11bc2`): `stab_at`/`stab_policy` на обоих внутренних праймерах, `stab_ats` положительный; технология через `marker_technology()` | `test-arms-mismatch-position.R` (43 pass) | **закрыт** |
 | 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | **готово (проверено)**: `pfs`/`pfs_side` в `crispr_guide_candidates()`, Cas12a → `NA` | `test-crispr*` (181 pass) | **закрыт** |
 | 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | **готово (проверено)**: `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» | `test-kasp-mismatch-type.R`, `test-kasp-checks.R` (70 pass) | **закрыт** |
 | 5 | `Z9.1` LAMP: paired ALT набор / internal control | **готово**: `paired` в `design_lamp_marker()` | `test-lamp.R` (267 pass) | **закрыт** |
@@ -414,11 +414,13 @@ ESI Table S1 — 4096 измеренных Tm).
 разные измерения.
 
 Осталось:
-- [~] **`Z7.1` Параметр deliberate mismatch.** **Позиция решена** (`Q2`,
-  2026-10-21): −3 по умолчанию, −2 только для слабого терминального класса;
-  `design_as_primers()` уже ранжирует по этому правилу и пишет `stab_policy` +
-  `weak_terminal` (`test-arms-mismatch-position.R`). Остаток — протащить выбор
-  через `marker_technology()` и подтвердить неизменность golden-вердиктов.
+- [x] **`Z7.1` Параметр deliberate mismatch.** **Готово 2026-10-22** (`1f11bc2`).
+  Позиция решена (`Q2`, 2026-10-21): −3 по умолчанию, −2 только для слабого
+  терминального класса. Теперь позиция доходит до результата: `inner$ref`/`inner$alt`
+  несут `stab_at`, `weak_terminal` и `stab_policy`, `print()` её называет, а
+  `design_as_primers()` отказывается от отрицательного `stab_ats` (константа
+  политики — знаковый офсет, а параметр — расстояние от 3′; смешивать их нельзя).
+  Проверка: `test-arms-mismatch-position.R` (43 pass).
   Прежнее описание: Для KASP/ARMS/AS-LAMP/AS-RPA/
   CRISPR (SHERLOCK synthetic mismatches): позиция, тип, predicted ΔΔG.
   Слабая пара `transition` перестаёт быть только «риск».
