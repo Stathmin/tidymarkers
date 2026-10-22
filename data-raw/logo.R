@@ -58,7 +58,10 @@ tree <- trimws(tree)
 #  x 7.9..308.1, y 4.6..595.4, centred on (158, 300).  Keep the aspect.
 tree_h  <- 138
 tree_w  <- tree_h * (300.3 / 590.8)
-tree_cy <- 112
+#  The tree sits half a sephirah below the sticker centre: that is enough to take
+#  the lower crossing pair off Malkuth's name, while the disc still clears the
+#  wordmark cap by 14 units.
+tree_cy <- 119
 tree_tf <- sprintf(
   "translate(%.2f,%.2f)scale(%.6f)translate(-158,-300)",
   cx, tree_cy, tree_h / 590.8
