@@ -57,8 +57,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/arms.svg](../../vignettes/figures/arms.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_arms.R](../../R/marker_arms.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_arms.R](../../R/marker_arms.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
 - output_hash: `746f58c2b64c3fb1a8fd4a5842779b0e`
 
@@ -68,8 +68,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/asq.svg](../../vignettes/figures/asq.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_assemble.R](../../R/marker_assemble.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `1866334e979f251228f7059bbc003426`
 
@@ -79,8 +79,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/caps.svg](../../vignettes/figures/caps.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_caps.R](../../R/marker_caps.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_caps.R](../../R/marker_caps.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
 - output_hash: `478253e744e0d07a1fedddb17bd65cb0`
 
@@ -90,8 +90,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/castpcr.svg](../../vignettes/figures/castpcr.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_castpcr.R](../../R/marker_castpcr.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_castpcr.R](../../R/marker_castpcr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
 - output_hash: `99da3dea8a93122392383832b27ec3e0`
 
@@ -101,8 +101,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/crispr.svg](../../vignettes/figures/crispr.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_crispr.R](../../R/marker_crispr.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_crispr.R](../../R/marker_crispr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
 - output_hash: `d8f4626704256d8fcaa6d1ef78917206`
 
@@ -112,8 +112,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/dpcr.svg](../../vignettes/figures/dpcr.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_dpcr.R](../../R/marker_dpcr.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_dpcr.R](../../R/marker_dpcr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
 - output_hash: `e521cba4cc9787bc5bf10fab4dfe153d`
 
@@ -123,8 +123,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/duplex.svg](../../vignettes/figures/duplex.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_duplex.R](../../R/marker_duplex.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_duplex.R](../../R/marker_duplex.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `bdaa78acba20fa6203b941b952c97dc1`
 
@@ -134,8 +134,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/hrm.svg](../../vignettes/figures/hrm.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_hrm.R](../../R/marker_hrm.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_hrm.R](../../R/marker_hrm.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
 - output_hash: `65761a1a184dec7452d8c1858a016376`
 
@@ -145,8 +145,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/indel.svg](../../vignettes/figures/indel.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_assemble.R](../../R/marker_assemble.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `0c94776c57c5e1437920ea492d77ec4e`
 
@@ -156,8 +156,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/indel_size.svg](../../vignettes/figures/indel_size.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_indel_size.R](../../R/marker_indel_size.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_indel_size.R](../../R/marker_indel_size.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
 - output_hash: `9a9a70426977084c5cc84ea9c9b0fda2`
 
@@ -167,8 +167,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/lamp.svg](../../vignettes/figures/lamp.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_lamp.R](../../R/marker_lamp.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_lamp.R](../../R/marker_lamp.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
 - output_hash: `5c75a0178dc55c0bf8ca1db51d904bd8`
 
@@ -178,8 +178,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/lax.svg](../../vignettes/figures/lax.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_lax.R](../../R/marker_lax.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_lax.R](../../R/marker_lax.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `7998fb51cc5dffa1ad0e11556feca16a`
 
@@ -189,8 +189,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/multi.svg](../../vignettes/figures/multi.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_assemble.R](../../R/marker_assemble.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `6f4c8e39c8c5a1b92e56f344975186ff`
 
@@ -200,8 +200,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/primer.svg](../../vignettes/figures/primer.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_assemble.R](../../R/marker_assemble.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `911db1fb414d98d171220830de5bf4bb`
 
@@ -211,8 +211,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/rpa.svg](../../vignettes/figures/rpa.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_rpa.R](../../R/marker_rpa.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_rpa.R](../../R/marker_rpa.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
 - output_hash: `40a9449f502928b0fe307ddf663a9a58`
 
@@ -222,8 +222,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/sanger.svg](../../vignettes/figures/sanger.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_sanger.R](../../R/marker_sanger.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_sanger.R](../../R/marker_sanger.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
 - output_hash: `34e4b065aee9f797aa3352f754067998`
 
@@ -233,8 +233,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/snapshot.svg](../../vignettes/figures/snapshot.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_snapshot.R](../../R/marker_snapshot.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_snapshot.R](../../R/marker_snapshot.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
 - output_hash: `ff8cd2e54523ac6c85a3896aff54e5dd`
 
@@ -244,8 +244,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/snp.svg](../../vignettes/figures/snp.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_assemble.R](../../R/marker_assemble.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
 - output_hash: `1866334e979f251228f7059bbc003426`
 
@@ -255,8 +255,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/ssr.svg](../../vignettes/figures/ssr.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_ssr.R](../../R/marker_ssr.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_ssr.R](../../R/marker_ssr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
 - output_hash: `1107dd615d7f71a2b3f7128040883363`
 
@@ -266,8 +266,8 @@ consumers.
 - status: `verified`
 - artifact: [vignettes/figures/taqman.svg](../../vignettes/figures/taqman.svg)
 - generator: [dev/render-gallery.R](../../dev/render-gallery.R)
-- code: [R/marker_taqman.R](../../R/marker_taqman.R)
-- inputs: [R](../../R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
+- code: (none)
+- inputs: [R/marker_taqman.R](../../R/marker_taqman.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
 - output_hash: `2cb3b074a27e73221dc1c1ef05b04903`
 

@@ -107,6 +107,55 @@ marker_engine_stamp <- function() {
     marker_engine_names
   )
 }
+#' Engines that produced an evaluation
+#'
+#' The stamp is stored as an attribute of the `$evaluation` table, so an
+#' evaluation travels with the versions that made it.  `marker_evaluation_stamp()`
+#' reads it back and returns `NULL` when the table carries none (an evaluation
+#' built by hand, or by an older version); it never invents a stamp, because a
+#' guessed stamp would claim provenance the numbers do not have.
+#'
+#' A `dplyr` verb or `bind_rows()` drops attributes, so use
+#' [marker_with_stamp()] to put the stamp back after combining tables.
+#'
+#' @param x a checks tibble (see [marker_design_checks()]).
+#' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
+#' @examples
+#' g <- ath_genome()
+#' snp <- pick_target_snp(ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6), g, ensembl_gene("AT4G00650"))
+#' marker_evaluation_stamp(marker_design_checks(snp))
+#' @family KASP utilities
+#' @export
+marker_evaluation_stamp <- function(x) {
+  attr(x, "engine_stamp", exact = TRUE)
+}
+#' Attach an engine stamp to a checks table
+#'
+#' @param x a checks tibble.
+#' @param stamp a stamp from [marker_engine_stamp()]; computed at the top of the
+#'   evaluation.  When extending a table that already carries one, pass it
+#'   explicitly: a newer stamp on an older table would claim an engine ran on
+#'   numbers it did not produce.
+#' @param from a table being extended; its stamp is inherited when `stamp` is
+#'   `NULL`.  The constructor stamps first and extends afterwards, so a table
+#'   built row-by-row from `marker_evaluation_table()` can never carry none.
+#' @return `x` with the stamp attribute set.
+#' @keywords internal
+#' @noRd
+marker_with_stamp <- function(x, stamp = NULL, from = NULL) {
+  if (is.null(x)) {
+    return(x)
+  }
+  stamp <- stamp %||% marker_evaluation_stamp(from)
+  if (is.null(stamp)) {
+    # a table built from scratch (from = NULL) is stamped by whoever built it;
+    # extending a table (from = ) that carries none stays unstamped rather than
+    # acquiring a stamp for numbers it does not own
+    if (is.null(from)) stamp <- marker_engine_stamp() else return(x)
+  }
+  attr(x, "engine_stamp") <- stamp
+  x
+}
 
 #' A one-column form of the engine stamp
 #'

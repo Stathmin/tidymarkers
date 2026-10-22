@@ -245,7 +245,11 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     # HRM's own decided criterion: a bimorphism with a measured dTm is graded
     # against it, so "designable" always says whether there is a curve to read
     if (identical(scheme, "hrm")) {
-      out <- dplyr::bind_rows(out, hrm_resolvability_row(assay))
+      # bind_rows() drops attributes; re-stamp from the table we are extending
+      out <- marker_with_stamp(
+        dplyr::bind_rows(out, hrm_resolvability_row(assay)),
+        from = out
+      )
     }
     return(marker_with_population_checks(out, assay))
   }
@@ -490,7 +494,9 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     # is the absence of a number, not the absence of data
     textual = c("target site class", "AS 3' mismatch base pair")
   )
-  marker_with_population_checks(out, assay)
+  # ZW2.2: the stamp is attached here, on the assembled evaluation only.  The
+  # row constructor stays policy-only, so a table built by hand carries none.
+  marker_with_population_checks(marker_with_stamp(out), assay)
 }
 
 #' Append the population / haplotype checks to a design-check table
@@ -522,7 +528,8 @@ marker_with_population_checks <- function(out, marker) {
     pass = pop$pass,
     level = rep("site", nrow(pop))
   )
-  dplyr::bind_rows(out, extra)
+  # bind_rows() drops attributes; inherit the stamp of the table being extended
+  marker_with_stamp(dplyr::bind_rows(out, extra), from = out)
 }
 
 #' Is an evaluation usable?
@@ -935,5 +942,7 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   )
   # internal hand-off for the display adapter; not part of the public table
   attr(out, "thermo") <- thermo
-  out
+  # ZW2.2: name the engines that produced these numbers, so a drifted model is
+  # visible next to the verdict it moved
+  marker_with_stamp(out)
 }

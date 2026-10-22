@@ -64,3 +64,49 @@ test_that("the stamp flattens to CSV and JSON for a manifest column", {
   expect_true(all(REQUIRED_ENGINES %in% names(parsed)))
   expect_equal(unname(parsed[["BLAST+"]]), unname(marker_engine_stamp()[["BLAST+"]]))
 })
+
+assay_with_stamp <- local({
+  cached <- NULL
+  function() {
+    if (is.null(cached)) {
+      g <- ath_genome()
+      snp <- pick_target_snp(
+        ensembl_variants("4", 1188000L, 1192000L), g, ensembl_gene("AT4G00650")
+      )
+      cached <<- assemble_kasp_assay(g, snp, flank = 150L, run_blast = FALSE)
+    }
+    cached
+  }
+})
+
+test_that("an evaluation carries the engines that produced it", {
+  # ZW2.2: a verdict that cannot name its engines cannot be re-derived after a
+  # model bumps.  The stamp rides on the checks table, not on the session.
+  stamp <- marker_evaluation_stamp(assay_with_stamp()$evaluation)
+  expect_type(stamp, "character")
+  expect_true(all(REQUIRED_ENGINES %in% names(stamp)))
+  expect_equal(stamp, marker_engine_stamp())
+})
+
+test_that("the stamp survives the rows appended after it", {
+  assay <- assay_with_stamp()
+  ev <- assay$evaluation
+  # a real population: marker_population_gate() has three rows to append
+  pop <- tibble::tibble(
+    alt_freq = 0.2, n_haplotypes = 10L, n_alt_haplotypes = 2L, min_alt_freq = 0.01
+  )
+  with_pop <- marker_with_population_checks(ev, list(population = pop, snp = assay$snp))
+  expect_gt(nrow(with_pop), nrow(ev))
+  expect_equal(marker_evaluation_stamp(with_pop), marker_evaluation_stamp(ev))
+  # and through a verb that drops attributes
+  out <- marker_with_stamp(dplyr::bind_rows(ev), from = ev)
+  expect_equal(marker_evaluation_stamp(out), marker_engine_stamp())
+})
+
+test_that("a table built by hand has no stamp rather than an invented one", {
+  ev <- marker_evaluation_table(
+    stage = "assay", criterion = "x", observed = "1", limit = "1",
+    pass = TRUE, level = "assay"
+  )
+  expect_null(marker_evaluation_stamp(ev))
+})

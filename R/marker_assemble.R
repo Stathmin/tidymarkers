@@ -935,7 +935,15 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them
-  out$evaluation <- tryCatch(marker_design_checks(out), error = function(e) NULL)
+  out$evaluation <- tryCatch(marker_design_checks(out), error = function(e) {
+    # A failed evaluator is not "no opinion": say so, or the gap looks like a
+    # design that simply has no checks.
+    cli::cli_warn(c(
+      gettext("The acceptance checks could not be evaluated: {conditionMessage(e)}"),
+      i = gettext("assay$evaluation is NULL; the verdict is unknown, not usable.")
+    ))
+    NULL
+  })
   # structural / specificity checks that the selection gates do not cover (they
   # need the genome or a PCR pass, computed only after the pair is chosen):
   # rather than return an ugly assay in silence, name the failures.  Which checks
