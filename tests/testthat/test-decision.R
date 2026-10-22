@@ -122,9 +122,10 @@ test_that("an unknown scheme is rejected by name", {
 test_that("the graph is a tidygraph and can be drawn", {
   g <- marker_decision_graph()
   expect_s3_class(g, "tbl_graph")
-  skip_if_not_installed("ggraph")
-  expect_s3_class(plot_decision_tree(), "ggraph")
-  expect_s3_class(plot_decision_tree(scheme = "duplex"), "ggraph")
+  # the picture is drawn from the layout seam, so it is a plain ggplot: ggraph
+  # is the *collection* the tree used to be laid out by, not the drawing itself
+  expect_s3_class(plot_decision_tree(), "ggplot")
+  expect_s3_class(plot_decision_tree(scheme = "duplex"), "ggplot")
 })
 
 test_that("an assay's outcome is stamped on the gates", {
@@ -229,6 +230,83 @@ test_that("site-level checks read the assay's site and linked skips", {
 test_that("every scheme's DAG obeys the static contract (C1-C11)", {
   for (sc in marker_schemes()$scheme) {
     expect_dag_invariants(sc)
+  }
+})
+
+test_that("the layout seam places every node once, in its own stage's column", {
+  skip_if_not_installed("igraph")
+  for (sc in marker_schemes()$scheme) {
+    g <- marker_decision_graph(scheme = sc)
+    lay <- decision_layout(g)
+    n <- attr(lay, "nodes")
+    stages <- attr(lay, "stage")
+    expect_identical(attr(lay, "engine"), "sugiyama", info = sc)
+    # the node set survives the solver: nothing dropped, nothing duplicated
+    expect_setequal(n$name, tidygraph::as_tibble(g)$name)
+    expect_false(anyDuplicated(n$name) > 0L)
+    expect_true(all(is.finite(n$x) & is.finite(n$y)), info = sc)
+
+    # a stage is one column: every node of it shares one x, and the columns are
+    # strictly left to right in the scheme's declared stage order
+    col <- vapply(stages, function(st) length(unique(round(n$x[n$stage == st], 6))), integer(1))
+    expect_true(all(col == 1L), info = paste(sc, "stage is not one column"))
+    cx <- vapply(stages, function(st) unique(round(n$x[n$stage == st], 6)), numeric(1))
+    expect_true(all(diff(cx) > 0), info = paste(sc, "stage columns not left to right"))
+
+    # boxes never overlap: inside a column the boxes are a pitch apart...
+    for (st in stages) {
+      s <- n[n$stage == st, , drop = FALSE]
+      if (nrow(s) < 2L) next
+      s <- s[order(s$y), , drop = FALSE]
+      gap <- diff(s$y) - (utils::head(s$h, -1L) + utils::tail(s$h, -1L)) / 2
+      expect_true(all(gap >= 0), info = paste(sc, st, "overlapping boxes"))
+    }
+    # ...and across columns, one stage's box never reaches the next stage's
+    for (k in seq_len(length(stages) - 1L)) {
+      left <- n[n$stage == stages[k], , drop = FALSE]
+      right <- n[n$stage == stages[k + 1L], , drop = FALSE]
+      expect_true(
+        min(right$x - right$w / 2) > max(left$x + left$w / 2),
+        info = paste(sc, "columns", stages[k], stages[k + 1L], "overlap")
+      )
+    }
+
+    # every edge is routed, with at least a start and an end, between nodes
+    # that exist
+    routes <- attr(lay, "routes")
+    edges <- attr(lay, "edges")
+    expect_length(routes, nrow(edges))
+    for (r in routes) {
+      expect_true(all(c(r$from, r$to) %in% n$name))
+      expect_gte(length(r$x), 2L)
+      expect_equal(length(r$x), length(r$y))
+    }
+  }
+})
+
+test_that("the layout seam falls back to the manual grid, never fails", {
+  withr::with_envvar(c(TIDYKASP_NO_SUGIYAMA = "1"), {
+    lay <- decision_layout(marker_decision_graph())
+    expect_identical(attr(lay, "engine"), "manual")
+    # the manual grid names the same nodes, so the picture still draws
+    expect_setequal(
+      attr(lay, "nodes")$name,
+      tidygraph::as_tibble(marker_decision_graph())$name
+    )
+    # and every edge still gets a route: a straight, box-trimmed link
+    expect_length(attr(lay, "routes"), nrow(attr(lay, "edges")))
+  })
+})
+
+test_that("a decision graph is near square, not a strip", {
+  # the old failure was 1:4.5 (and 1:10 with dot): one column per stage, so a
+  # scheme with many checks grows sideways *and* downwards
+  skip_if_not_installed("igraph")
+  for (sc in c("snp", "duplex")) {
+    bb <- decision_bbox(decision_layout(marker_decision_graph(scheme = sc)))
+    ar <- (bb$xmax - bb$xmin) / (bb$ymax - bb$ymin)
+    expect_gt(ar, 0.3)
+    expect_lt(ar, 3)
   }
 })
 
