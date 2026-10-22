@@ -70,7 +70,15 @@ turns <- 2.86
 y_top <- 54; y_bot <- 190          # helix vertical span
 amp   <- 56                        # half-width of the projected cylinder
 depth <- 0.10                      # perspective: the near side reads closer
-groove <- 0.18                     # strand offset, as a fraction of the pitch
+#  Groove asymmetry.  The two backbones are not diametrically opposite around the
+#  cylinder: at a base pair they subtend ~140 degrees across the minor groove and
+#  ~220 across the major one -- that is where B-DNA's 12 A / 22 A groove widths
+#  come from at a ~9.4 A phosphate radius.  Strand two therefore sits 40 degrees
+#  off the half-turn (220 - 180).  Height is proportional to azimuth here, so
+#  that phase is an axial stagger of 40/360 of the pitch -- about one base pair
+#  (0.34 nm), which is how far the two glycosidic bonds of a pair really are
+#  apart along the axis.  A full half-turn (0.5) would draw equal grooves.
+groove <- 40 / 360                 # strand offset, as a fraction of the pitch
 strand_w <- 6                      # backbone stroke width
 n     <- 1200
 
@@ -86,9 +94,9 @@ th <- 2 * pi * turns * tt
 #  which side of the diagram each backbone passes in front of.
 x1 <- cx - amp * sin(th) * (1 + depth * cos(th))
 x2 <- cx + amp * sin(th) * (1 - depth * cos(th))
-# The backbones are not diametrically opposite along the axis: strand one sits
-# a little higher than strand two.  That stagger is what opens the alternating
-# wide (major) and narrow (minor) grooves, so it scales with the pitch.
+# The backbones leave a base pair at slightly different heights, strand one a
+# little above strand two.  That stagger is what opens the alternating wide
+# (major) and narrow (minor) grooves, so it scales with the pitch.
 y1 <- yy - dy / 2
 y2 <- yy + dy / 2
 #  The backbones sit at opposite points of the same cylinder, so their depths
@@ -135,7 +143,7 @@ strand_one <- function(front) strand(x1, y1, front, accent, z1)
 strand_two <- function(front) strand(x2, y2, front, ink, z2)
 
 svg <- c(
-  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarkers: a DNA helix swirling around the Tree of Life">', W, H, W, H),
+  sprintf('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %.0f %.0f" width="%.0f" height="%.0f" role="img" aria-label="tidymarkers: a DNA helix wound around the Tree of Life">', W, H, W, H),
   '<style>text{font-family:Inter,Helvetica,Arial,sans-serif;}</style>',
   sprintf('<polygon points="%s" fill="%s" stroke="%s" stroke-width="7" stroke-linejoin="round"/>', hex_pts, paper, ink),
   strand_one(FALSE),
@@ -143,7 +151,7 @@ svg <- c(
   sprintf('<g transform="%s">%s</g>', tree_tf, tree),
   strand_one(TRUE),
   strand_two(TRUE),
-  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="30" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">kasp</tspan></text>', cx, cy + 76, ink, accent),
+  sprintf('<text x="%.0f" y="%.0f" text-anchor="middle" font-size="22" font-weight="700"><tspan fill="%s">tidy</tspan><tspan fill="%s">markers</tspan></text>', cx, cy + 71.5, ink, accent),
   '</svg>')
 writeLines(svg, out_svg)
 message("wrote ", out_svg)
