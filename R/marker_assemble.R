@@ -191,6 +191,15 @@ marker_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm
                                  min_gc, max_gc, linked_off, ref_len, alt_len, BPPARAM,
                                  conditions = NULL) {
   if (!is_indel) {
+    # cheap pre-gate: when no length can clear the GC/Tm window the whole grid is
+    # built and thrown away, so answer the doomed case before paying for it.  The
+    # reason/stage are the ones the empty table produced below, unchanged.
+    if (!as_grid_can_pass(
+      tmpl$seq, tmpl$snp_i, snp$ref, strands, KASP_AS_LENGTHS,
+      gc_range = c(min_gc, max_gc), tm_range = tm_range, conditions = conditions
+    )) {
+      return(marker_doomed(gettext("No AS primer passed the GC/Tm filter."), "as", snp, tmpl))
+    }
     raw_as <- design_as_primers(
       tmpl$seq, tmpl$snp_i, snp$ref, alt_pass,
       strands = strands, linked = linked_off,

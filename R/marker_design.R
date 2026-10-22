@@ -252,11 +252,22 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   anchor_of <- function(strand) as_anchor(v_start, ref_len, strand)
   anchor_alt <- function(strand) as_anchor(v_alt, ref_len, strand)
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
-  # the one the (perfectly matching) primer already carries there.
+  # the one the (perfectly matching) primer already carries there.  The base is
+  # READ off the window - the same geometry `make_as_primer()` uses, index
+  # `L - k + 1` of the 5'->3' primer - rather than built into a whole primer and
+  # then `substr()`ed, which cost one S4 object per (length, position, strand).
   mismatch_bases <- function(L, k, strand) {
-    base_p <- make_as_primer(window, anchor_of(strand), L, ref, strand = strand)
-    cur <- substr(base_p, L - k + 1L, L - k + 1L)
-    setdiff(c("A", "C", "G", "T"), cur)
+    iv <- primer_interval(anchor_of(strand), strand, L, role = "AS")
+    i <- L - k + 1L # 3'-relative -> 5' index of the primer
+    plus_i <- if (identical(strand, "+")) {
+      IRanges::start(iv) + i - 1L
+    } else {
+      # reverse-complementary primer: its 5' base is the window's last base
+      IRanges::end(iv) - i + 1L
+    }
+    base <- as.character(Biostrings::subseq(window, plus_i, plus_i))
+    if (!identical(strand, "+")) base <- as.character(Biostrings::complement(Biostrings::DNAString(base)))
+    setdiff(BASES, base)
   }
 
   # enumerate configurations (strand x length x mismatch position x mismatch base)
@@ -452,6 +463,46 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     dplyr::select(dplyr::all_of(AS_PRIMER_COLS), ".policy_rank") |>
     dplyr::arrange(.data$.policy_rank, dplyr::desc(.data$discrimination)) |>
     dplyr::select(-".policy_rank")
+}
+
+#' Can any AS primer clear the caller's GC/Tm window at all?
+#'
+#' A cheap pre-gate for [design_as_primers()].  The grid is `strands x lengths x
+#' mismatch positions x mismatch bases`; a configuration whose REF primer falls
+#' outside `gc_range`/`tm_range` is dropped *before* the DECIPHER batch, so when
+#' EVERY length fails the window the whole grid is built and discarded for
+#' nothing.  This builds one ref primer per length - no stabilising mismatch,
+#' which can only shift one base - and answers whether any of them can pass.
+#'
+#' It is a *necessary* condition, not a decision: it says nothing about whether
+#' a survivor also clears the homopolymer/SSR or per-site gates.  A `TRUE` means
+#' the caller must run the full engine; a `FALSE` means the full engine cannot
+#' return a row, which is the case it exists to skip.
+#' @param window,v_start,ref,strands,lengths as in [design_as_primers()].
+#' @param gc_range,tm_range the accepted windows (`NULL` = no window).
+#' @param conditions reaction conditions for [primer_tm()].
+#' @return `TRUE` when at least one length could pass, else `FALSE`.
+#' @keywords internal
+#' @noRd
+as_grid_can_pass <- function(window, v_start, ref, strands, lengths,
+                             gc_range = NULL, tm_range = NULL, conditions = NULL) {
+  if (is.null(gc_range) && is.null(tm_range)) {
+    return(TRUE)
+  }
+  ref_len <- nchar(ref)
+  cfg <- tidyr::crossing(strand = strands, as_length = lengths) |>
+    dplyr::mutate(
+      ref_primer = purrr::pmap_chr(
+        list(.data$as_length, .data$strand),
+        function(L, st) make_as_primer(window, as_anchor(v_start, ref_len, st), L, ref, strand = st)
+      ),
+      tm = primer_tm(.data$ref_primer, conditions = conditions),
+      gc = gc_frac(.data$ref_primer)
+    )
+  ok <- rep(TRUE, nrow(cfg))
+  if (!is.null(gc_range)) ok <- ok & dplyr::between(cfg$gc, gc_range[1L], gc_range[2L])
+  if (!is.null(tm_range)) ok <- ok & dplyr::between(cfg$tm, tm_range[1L], tm_range[2L])
+  any(ok, na.rm = TRUE)
 }
 
 # The AS-candidate schema, one definition shared by the real table and its
