@@ -15,16 +15,52 @@
 #  which one ran except through the returned `engine` attribute.
 # =============================================================================
 
-# node geometry, in inches at 72 dpi: one place for the assumption the plot and
-# the DOT writer share.  `stringr::str_wrap(width = 16)` is the line width, so a
-# label is at most ~16 characters of the 9 pt face wide.
+# node geometry: wrapping, padding, the face and the line spacing.  There is
+# deliberately no characters-per-inch constant here - a proportional face has no
+# such number (18 characters of `gate_com_footprint` are 94 pt wide, 18 of
+# `inverted_repeat` are 77), so the width is *measured* by `decision_measure()`.
+# `lineheight` is the plot's own `geom_text(lineheight = )`, so the box and the
+# text it holds cannot drift apart.
 decision_geometry <- function() {
   list(
-    char_width = 0.062, # inches per character at 9 pt Helvetica
-    line_height = 0.155, # inches per wrapped line
     pad_x = 0.14, pad_y = 0.09, # box padding, inches (both sides)
-    wrap = 16L, fontsize = 9,
+    wrap = 16L, fontsize = 9, family = "sans", lineheight = 0.95,
     ranksep = 0.55, nodesep = 0.18
+  )
+}
+
+# Real ink width and line box of the wrapped label, in inches.
+#
+# This is the measurement seam: `geom_text` draws the label with ggplot's own
+# face, so the box is sized from the same font's metrics (`family = "sans"`,
+# 9 pt), not from a characters-per-inch guess.  Width is taken per wrapped
+# *line* and maximised: a paragraph is as wide as its widest line, not as wide
+# as its total.
+#
+# `systemfonts::string_width()` answers in points at the 72 dpi that ggplot's
+# size scale assumes, so the conversion is a fixed division and does not depend
+# on whichever device happens to be open (`string_metrics_dev()` returns mixed
+# units - inches per string on a real device, em without one - and was rejected
+# for that).
+decision_measure <- function(labels, geom = decision_geometry()) {
+  lines_of <- function(s) {
+    ln <- strsplit(s, "\n", fixed = TRUE)[[1L]]
+    ln <- ln[nzchar(ln)]
+    if (!length(ln)) "" else ln
+  }
+  if (!requireNamespace("systemfonts", quietly = TRUE)) {
+    # no text metrics available: keep the render working with a deliberately
+    # generous constant rather than failing a picture
+    flat <- vapply(labels, function(s) max(nchar(lines_of(s))), numeric(1))
+    return(tibble::tibble(width = flat * 0.075, line_height = rep(geom$fontsize * 1.2 / 72, length(labels))))
+  }
+  width <- vapply(labels, function(s) {
+    max(systemfonts::string_width(lines_of(s), size = geom$fontsize, family = geom$family)) / 72
+  }, numeric(1))
+  tibble::tibble(
+    width = width,
+    # one text line is `fontsize` points tall scaled by the plot's own lineheight
+    line_height = geom$fontsize / 72 * 1.2 * geom$lineheight
   )
 }
 
@@ -35,20 +71,20 @@ decision_stage_order <- function(nodes) unique(as.character(nodes$stage))
 
 #' Node boxes for an external layout solver
 #'
-#' DOT has no idea of the text a box will hold, so every node that carries a
-#' `label` is handed a fixed size derived from the *wrapped* label.  Without
-#' this, an external solver sizes the box from its own idea of a label and a
-#' 9 pt box comes out a few millimetres wide while the actual label is a
-#' centimetre.
+#' A solver has no idea of the text a box will hold, so every node's box is the
+#' measured label (`decision_measure()`) plus padding.  Without this, a 9 pt box
+#' comes out a few millimetres wide while the actual label is a centimetre, and
+#' the labels overrun their frames.
 #' @keywords internal
 #' @noRd
 decision_dot_boxes <- function(nodes, geom = decision_geometry()) {
   lines <- vapply(strsplit(nodes$label_wrapped, "\n", fixed = TRUE), length, integer(1))
-  chars <- nchar(gsub("\n", " ", nodes$label_wrapped, fixed = TRUE))
+  lines[lines < 1L] <- 1L
+  m <- decision_measure(nodes$label_wrapped, geom)
   tibble::tibble(
     name = nodes$name,
-    width = chars * geom$char_width + 2 * geom$pad_x,
-    height = lines * geom$line_height + 2 * geom$pad_y
+    width = m$width + 2 * geom$pad_x,
+    height = lines * m$line_height + 2 * geom$pad_y
   )
 }
 
