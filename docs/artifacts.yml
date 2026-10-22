@@ -24,8 +24,8 @@ artifacts:
   kind: figure
   generator: data-raw/logo.R
   inputs: data-raw/tree-of-life.svg
-  input_hash: b99399608d289c3e98907e03d9e1d457
-  output_hash: 709680b4a4e82ebaecb02b42444cc2fb
+  input_hash: 0ddf378c5d86152f9c4d84977cc99686
+  output_hash: 914b724f3a30c3a7876c65dad116f5c3
   docs: README.md
   code: data-raw/logo.R
   status: verified
@@ -33,8 +33,8 @@ artifacts:
   kind: figure
   generator: data-raw/logo.R
   inputs: data-raw/tree-of-life.svg
-  input_hash: b99399608d289c3e98907e03d9e1d457
-  output_hash: 355df7d13cf7c59db88cc73d4090b24d
+  input_hash: 0ddf378c5d86152f9c4d84977cc99686
+  output_hash: a412c2b70be522d60e56be7ed08822ef
   docs: []
   code: data-raw/logo.R
   status: verified
