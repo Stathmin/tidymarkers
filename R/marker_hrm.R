@@ -68,8 +68,13 @@ HRM_DTM_RESOLVABLE <- 0.5
 
 # Measured dTm by bimorphism: `min` = smallest dTm still called polymorphic on
 # that substitution class (so a class can fail the 0.5 C default and still be
-# resolvable), `mean` = the typical value.  Asserted against the extract by
-# `tests/testthat/test-hrm-jsbbs2018.R`.
+# resolvable), `mean` = the typical value.  All five classes come from ONE source
+# and one rig - JSBBS 2018 (10.1270/jsbbs.18048), LightCycler 96, probe-based
+# melting - over 56 markers (n = 4 / 18 / 1 / 28 / 5), so the platform in the
+# evidence string is the platform of every row here, not an inference.
+# ijms2022 is NOT pooled in: its Rotor-Gene / EvaGreen amplicon dTm is a
+# different rig and a different measured quantity.  Asserted against the extract
+# by `tests/testthat/test-hrm-jsbbs2018.R`.
 HRM_BIMORPHISM_DTM <- list(
   "A/C" = c(min = 0.5139, mean = 0.5886),
   "A/G" = c(min = 0.2447, mean = 0.6486),
