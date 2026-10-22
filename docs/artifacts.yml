@@ -186,7 +186,7 @@ artifacts:
   inputs:
   - R/marker_lamp.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: c5dd5efa28f057162e77e02f65d0487d
+  input_hash: 1e51d46d859f207c1b8e4ea2621decb6
   output_hash: 5c75a0178dc55c0bf8ca1db51d904bd8
   docs: vignettes/markers-isothermal.Rmd
   status: verified

@@ -43,9 +43,12 @@
 #
 #  Allele specificity and controls: one returned set is ALT-specific.  FIP's 3'
 #  base reads the ALT allele, so a REF-only template yields no signal; a REF
-#  sample and a failed reaction are therefore indistinguishable.  A paired ALT
-#  set / internal control is NOT generated here - it remains a roadmap item
-#  (ROADMAP Z9), and this designer must not be described as providing one.
+#  sample and a failed reaction are therefore indistinguishable.  The `paired`
+#  block (Z9.1) therefore returns the REF counterpart of the same set (identical
+#  positions, FIP 3' base flipped to REF), so the two tubes are a deliberate
+#  control pair; `paired$status` says whether it could be built.  A pair is not
+#  a discrimination model - no allele gap, Ct or call probability is predicted
+#  (data-raw/proposed/lamp_status.decision.md).
 #
 #  Threshold provenance / assumptions:
 #    * outer Tm window c(55, 62) C and inner (binding-arm) Tm window c(55, 65) C
@@ -584,6 +587,15 @@ lamp_variant_gate <- function(fip, alt, pos) {
 #' placed in the F1c/F2 and B1c/B2 loops.  The designer does **not** simulate the
 #' isothermal reaction (that needs a polymerase/kinetics model), so it returns a
 #' well-formed primer set, not a predicted amplification curve.
+#'
+#' The returned set is **ALT-specific**: FIP's 3' base reads ALT.  Because a
+#' REF-only template and a failed reaction are indistinguishable in an isothermal
+#' readout (no amplification in either case), the design carries a `paired` block
+#' (Z9.1): a REF set that is the same primer positions with FIP's 3' base flipped
+#' to REF, so the two tubes are a deliberate pair, and `paired$status` says
+#' whether it could be built.  The pair is a control construct, not a
+#' discrimination model: no allele gap, Ct or call probability is predicted (see
+#' `data-raw/proposed/lamp_status.decision.md`).
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
@@ -750,12 +762,66 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     ),
     tm = c(F3 = outer$tm_f, B3 = outer$tm_r, FIP = fip$tm, BIP = bip$tm),
     variant_primer = "FIP",
+    # Z9.1: the REF counterpart of the same set, so a REF-only sample has a
+    # positive control instead of an ambiguous no-signal
+    paired = lamp_paired_set(tmpl$seq, q, fip, snp, arm_lengths, inner_tm, gc_range, target_tm),
     gates = gates,
     relaxed = relaxed,
     geometry = geo,
     compatibility = pick$compat
   )
   structure(out, class = "marker_lamp")
+}
+
+#' The REF counterpart of an ALT-specific LAMP set (Z9.1)
+#'
+#' An isothermal readout gives no amplification for both a REF template and a
+#' failed reaction, so an ALT-only set cannot tell them apart.  This rebuilds
+#' FIP against the REF allele at the same 3' arm end, keeping every other primer
+#' and the amplicon geometry, so a sample can be run against both tubes.
+#'
+#' It deliberately returns a *construct*, not a discrimination claim: the two
+#' sets differ by the single 3' base of F2, and no allele gap is predicted.
+#' @param seq the template sequence the ALT set was built on.
+#' @param q the variant index in `seq`.
+#' @param fip the ALT FIP from `lamp_fip()`.
+#' @param snp the target row (`ref`, `alt`).
+#' @return a list: `status` (`complete`, `ref_not_placed`, `not_applicable`),
+#'   `ref_fip` (the REF primer, or `NA`), `discriminating_base` (the 3' base pair
+#'   the two sets differ at), and `note`.
+#' @keywords internal
+#' @noRd
+lamp_paired_set <- function(seq, q, fip, snp, arm_lengths, tm_range, gc_range, target_tm) {
+  ref <- as.character(snp$ref[1L])
+  alt <- as.character(snp$alt[1L])
+  base <- list(
+    ref_fip = NA_character_,
+    discriminating_base = if (nchar(ref) == 1L && nchar(alt) == 1L) paste0(ref, "/", alt) else NA_character_
+  )
+  # only a SNV has a single discriminating 3' base to flip
+  if (!nzchar(ref) || nchar(ref) != 1L || nchar(alt) != 1L) {
+    return(c(base, list(
+      status = "not_applicable",
+      note = "the target is not a single-base substitution, so no single 3' base is flipped"
+    )))
+  }
+  ref_fip <- lamp_fip(seq, q, arm_lengths, tm_range, gc_range, target_tm, LAMP_LOOP_MIN,
+    alt_base = ref
+  )
+  if (is.null(ref_fip) || is.null(ref_fip$primer) || !nzchar(ref_fip$primer[1L])) {
+    return(c(base, list(
+      status = "ref_not_placed",
+      note = "FIP could not be rebuilt on the REF allele at this 3' arm end; run a separate REF design"
+    )))
+  }
+  # explicit list, not c(base, list(...)): c() on two lists can silently drop an
+  # earlier NA element, which made a built primer read as missing
+  list(
+    status = "complete",
+    ref_fip = as.character(ref_fip$primer[1L]),
+    discriminating_base = base$discriminating_base,
+    note = "same primer positions, FIP 3' base reads REF; the two tubes are a control pair, no allele gap is predicted"
+  )
 }
 
 #' @export
@@ -767,6 +833,12 @@ print.marker_lamp <- function(x, ...) {
   )
   cat("  amplicon:", x$amplicon$end - x$amplicon$start + 1L, "bp\n")
   cat("  variant at the FIP 3' end (F2 ends at the variant)\n")
+  if (!is.null(x$paired)) {
+    cat("  paired REF set:", x$paired$status, "\n")
+    if (identical(x$paired$status, "complete")) {
+      cat("    REF FIP:", x$paired$ref_fip, "\n")
+    }
+  }
   cat("  F3:", x$primers$F3, "\n  B3:", x$primers$B3, "\n")
   cat("  FIP:", x$primers$FIP, "\n  BIP:", x$primers$BIP, "\n")
   if ("LF" %in% names(x$primers)) cat("  LF:", x$primers$LF, "\n")

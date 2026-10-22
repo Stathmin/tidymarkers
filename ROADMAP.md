@@ -37,7 +37,7 @@
 | 2 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | **снят** (`Q2` принят: −3 по умолчанию, слабый класс → −2) |
 | 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | `R/marker_crispr.R` (`crispr_guide_candidates()`) | `test-crispr.R`: PFS-тест на оба эффектора | нет |
 | 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | `R/marker_checks.R` (различитель типа мисматча) | `test-kasp-checks.R` | нет |
-| 5 | `Z9.1` LAMP: paired ALT набор / internal control | `R/marker_lamp.R` (см. комментарий L46-47) | `test-lamp.R` | нет |
+| 5 | `Z9.1` LAMP: paired ALT набор / internal control | **готово**: `paired` в `design_lamp_marker()` | `test-lamp.R` (267 pass) | **закрыт** |
 | 6 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
 | 7 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
 | 8 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | **готово** (`2ee25da`): штамп в `marker_design_checks()`, `marker_with_stamp(from=)` наследует | `test-engine-stamp.R` | **закрыт** |
@@ -528,14 +528,13 @@ ddPCR JAK2 (LoB 0.002% / LoD 0.005% / LoQ 0.01% — три разных опре
   модель проверяется **аналитически**, а не подгонкой.
 
 ### Z9. Пробелы по методам  [P1–P2]
-- [ ] **`Z9.1` LAMP: paired ALT set или internal control.** REF-only ALT =
-  «нет сигнала» неотличим от failed reaction; F2–B2 distance, loop length и
-  3′-stability — явные гейты.
-  Правка: `R/marker_lamp.R` (см. комментарий L46-47 — там прямо сказано, что
-  paired ALT и внутренний контроль **не** генерируются).
-  Проверка: `test-lamp.R` — маркер без пары ALT получает `unknown`, а не `pass`.
-  Блокер: нет.
-  Следствие: отрицательный LAMP-вызов сегодня неотличим от неработавшей реакции.
+- [x] **`Z9.1` LAMP: paired ALT set или internal control.** **Готово 2026-10-22.**
+  Дизайн несёт `paired`: тот же набор с FIP 3′-базой на REF (`status` =
+  `complete` / `ref_not_placed` / `not_applicable`), так что REF-образец
+  отличается от неработавшей реакции двумя пробирками, а не «нет сигнала».
+  Пара — конструкт, не модель дискриминации (см. `lamp_status.decision.md`).
+  Проверка: `test-lamp.R` — пара отличается ровно в 3′-базе, indel даёт
+  `not_applicable`.
 - [~] **`Z9.2` HRM: порог `dTm` как измеряемая величина.** **Решено и влито**
   (`Q2`, `hrm_resolvability.decision.md`): `hrm_resolvability()` даёт статус по
   классу биморфизма из измеренных `dTm`, порог 0.5 °C применяется к **среднему

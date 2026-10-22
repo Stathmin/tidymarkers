@@ -59,6 +59,16 @@ placed in the F1c/F2 and B1c/B2 loops.  The designer does \strong{not} simulate 
 isothermal reaction (that needs a polymerase/kinetics model), so it returns a
 well-formed primer set, not a predicted amplification curve.
 }
+\details{
+The returned set is \strong{ALT-specific}: FIP's 3' base reads ALT.  Because a
+REF-only template and a failed reaction are indistinguishable in an isothermal
+readout (no amplification in either case), the design carries a \code{paired} block
+(Z9.1): a REF set that is the same primer positions with FIP's 3' base flipped
+to REF, so the two tubes are a deliberate pair, and \code{paired$status} says
+whether it could be built.  The pair is a control construct, not a
+discrimination model: no allele gap, Ct or call probability is predicted (see
+\code{data-raw/proposed/lamp_status.decision.md}).
+}
 \examples{
 \dontrun{
 genome <- ath_genome()
