@@ -23,18 +23,18 @@ artifacts:
 - path: man/figures/logo.png
   kind: figure
   generator: data-raw/logo.R
-  inputs: []
-  input_hash: e29ac1680d4fb4bcebca2d56a1308070
-  output_hash: ea61b070675eb7f23ab7519dba4b3a57
+  inputs: data-raw/tree-of-life.svg
+  input_hash: 3d7ef399716e93beae86986bdce24dd9
+  output_hash: 2e3c0a3384599bbb94403a118137ddf9
   docs: README.md
   code: data-raw/logo.R
   status: verified
 - path: man/figures/logo.svg
   kind: figure
   generator: data-raw/logo.R
-  inputs: []
-  input_hash: e29ac1680d4fb4bcebca2d56a1308070
-  output_hash: 89fc01f8d162143dad18db81c9bfdd37
+  inputs: data-raw/tree-of-life.svg
+  input_hash: 3d7ef399716e93beae86986bdce24dd9
+  output_hash: 0bdbf6921c2f614b9bdaa2785367bdb5
   docs: []
   code: data-raw/logo.R
   status: verified

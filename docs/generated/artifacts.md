@@ -14,9 +14,9 @@ consumers.
 - artifact: [man/figures/logo.png](../../man/figures/logo.png)
 - generator: [data-raw/logo.R](../../data-raw/logo.R)
 - code: [data-raw/logo.R](../../data-raw/logo.R)
-- inputs: (none)
+- inputs: [data-raw/tree-of-life.svg](../../data-raw/tree-of-life.svg)
 - docs: [README.md](../../README.md)
-- output_hash: `ea61b070675eb7f23ab7519dba4b3a57`
+- output_hash: `2e3c0a3384599bbb94403a118137ddf9`
 
 ## man/figures/logo.svg
 
@@ -25,9 +25,9 @@ consumers.
 - artifact: [man/figures/logo.svg](../../man/figures/logo.svg)
 - generator: [data-raw/logo.R](../../data-raw/logo.R)
 - code: [data-raw/logo.R](../../data-raw/logo.R)
-- inputs: (none)
+- inputs: [data-raw/tree-of-life.svg](../../data-raw/tree-of-life.svg)
 - docs: (none)
-- output_hash: `89fc01f8d162143dad18db81c9bfdd37`
+- output_hash: `0bdbf6921c2f614b9bdaa2785367bdb5`
 
 ## man/figures/decision-tree.svg
 
