@@ -55,6 +55,29 @@ Tests never install anything: `dev/test.R` stops if the package is not installed
 `renv::restore()` also works but restores the historical 262-package snapshot and is
 much slower. Do **not** conclude the code or deps are missing.
 
+## When something is slow, profile before editing
+
+A straight pipeline with nested helpers hides its cost. Profile it, do not guess:
+
+```sh
+Rscript -e 'Rprof("x.out", interval = 0.01); <the call>; Rprof(NULL)'
+Rscript -e 'summaryRprof("x.out")'
+```
+
+- `summaryRprof()` aggregates by function name and **hides callers**. When the
+  question is "who repeats this?", parse the raw `x.out` lines and read the
+  innermost frame together with its parent; `rle()` the parent chain to find the
+  repeated run.
+- A profile dominated by `validObject` / `initialize` / `getClassDef` /
+  `standardGeneric` / `getClassesFromCache` is **S4 object construction**, not
+  the algorithm. The fix is to build fewer objects, not to rewrite the maths.
+- A grid search multiplies every axis. Count the objects a call builds (strands x
+  lengths x positions x bases) before optimising any one of them.
+- Fix the cheap doomed path first: when the whole grid is built and then
+discarded, answer the discard condition before the grid exists.
+- RDF export is not an R debugging standard (it is an interchange format, and R's
+  call graph knows nothing about it). `Rprof` is the standard here.
+
 ## Merge gate
 
 `Rscript dev/check.R` must pass (with the env above). It is the local stand-in for
