@@ -1,8 +1,9 @@
 # =============================================================================
 #  dev/check.R  --  the internal gate: check a change before it lands
 # =============================================================================
-#  The local stand-in for CI (which this repo deliberately does not ship, see
-#  CONTRIBUTING).  Runs the checks a "best package" runs, in order:
+#  The local gate: CI runs `R CMD check --as-cran` too, and this script adds the
+#  checks CI does not render (style, figures, artifact hashes).  Runs the checks
+#  a "best package" runs, in order:
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean

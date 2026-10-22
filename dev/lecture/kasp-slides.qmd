@@ -1,0 +1,398 @@
+---
+title: "Designing KASP markers in R — an end-to-end walkthrough"
+subtitle: "FRI (AT4G00650) in Arabidopsis thaliana: stages, findings, thresholds"
+author: "tidymarkers"
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    incremental: false
+    embed-resources: true
+    fig-align: center
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: true
+knitr:
+  opts_chunk:
+    fig.path: "../../_site/dev/lecture/figures/"
+    cache.path: "../../_site/dev/lecture/cache/"
+editor: source
+---
+
+## How to read this lecture
+
+This is a **live run**, not theory: every stage executes package code and shows the
+numbers for a real locus — FRI, `Chr4:269745 G>A` (stop_gained), 1001 Genomes.
+
+The order of stages follows the LGC/KBioscience KASP guide (+ EasyKASP 2025).
+
+```{r}
+#| label: setup
+suppressPackageStartupMessages({
+  library(tidymarkers); library(here); library(dplyr); library(ggplot2)
+})
+```
+
+::: {.notes}
+Source: `dev/lecture/kasp-slides.qmd`; render with `sh dev/lecture/render.sh`
+(puts OligoArrayAux on PATH). Each slide is one stage; its notes say what to say.
+:::
+
+## Stage 0. What KASP is and what the design really decides
+
+- Two **allele-specific** primers (AS1/AS2) carrying different fluorophores, plus one **common** primer (COM).
+- Specificity rests on **one** base at the 3' end of the AS primer.
+- So everything is decided by: target choice → 3' window → thermodynamics → genome specificity.
+
+::: {.notes}
+One slide, one idea. From here we walk the stages of the guide and show, at each
+one, what was checked and what was found.
+:::
+
+## Stage 1. The target: a meaningful variant with a clean 3' window
+
+```{r}
+#| label: data
+genome   <- ath_genome()                                   # TAIR10, cached in marker_cache_dir()
+gene     <- ensembl_gene("AT4G00650")                      # FRI
+variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
+snp      <- pick_target_snp(variants, genome, gene)
+snp |> dplyr::select(id, chrom, pos, ref, alt, consequence, n_3p, seed_hits)
+```
+
+**What is checked:** consequence severity (VEP `impact` or canonical SO terms),
+the absence of *other* variants in the 3' window (`n_3p`), and uniqueness of the
+3' seed (`seed_hits`). Complementary pairs (A/T, C/G) are skipped — a 3' base
+cannot tell them apart.
+
+::: {.notes}
+Here `n_3p = 0` — no other 1001 Genomes variant sits in the target's 3' window.
+`seed_hits` is the better of the two strands; the discrepancy with the
+specificity stage is covered in stage 7.
+:::
+
+## Stage 2. Design window and flanks (a hint, not a decision)
+
+```{r}
+#| label: window
+win_len <- length(genome_seq(genome, "Chr4", snp$pos - 150L, snp$pos + 150L))
+glue::glue("{win_len} nt design window (Chr4 {snp$pos - 150}..{snp$pos + 150})") |> as.character()
+strand_gc_hint(genome, snp$chrom, snp$pos)
+```
+
+EasyKASP suggests placing the AS primer where the flank GC gives a workable Tm —
+but strand and length are still decided here by physics (`DECIPHER`), not by an
+eyeball rule.
+
+::: {.notes}
+`strand_gc_hint()` is only a hint about where to look; the algorithm picks the final strand.
+:::
+
+## Stage 3. The AS primer: the search and the Tm/GC windows
+
+How the primer is "moved": enumerate **both strands × length 20–27 × position and
+base of the stabilising mismatch**, then keep those that land in the Tm/GC windows.
+
+```{r}
+#| label: design
+assay <- assemble_kasp_assay(genome, snp, variants = variants, flank = 150L,
+                             strands = c("+", "-"), tm_range = c(58, 64), clean_3p = 5L)
+
+raw <- design_as_primers(assay$template$seq, assay$template$snp_i,
+                         snp$ref, snp$alt, strands = c("+", "-"))
+tibble::tibble(
+  placements     = nrow(raw),
+  Tm_range       = glue::glue("{round(min(raw$tm),1)}-{round(max(raw$tm),1)} C"),
+  pass_Tm_window = sum(dplyr::between(raw$tm, 58, 64)),
+  pass_GC_window = sum(dplyr::between(raw$gc, 0.35, 0.70))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+112 placements; the Tm window [58,64] cuts more than half of them (47.7–66 C).
+It is the length/strand search that moves Tm into the window. Change tm_range to
+see it shift.
+:::
+
+## Stage 3 (continued). What the algorithm chose, and why not the loudest
+
+```{r}
+#| label: as-choice
+ranked <- assay$as_candidates |>
+  dplyr::arrange(n_3p, n_var, dplyr::desc(discrimination), wobble,
+                 seed_hits, abs(tm - 60), dg_3p, as_length)
+cat("CHOSEN (row 1 of the ranking):\n")
+ranked |> dplyr::slice_head(n = 1) |>
+  dplyr::select(strand, as_length, tm, gc, discrimination, n_3p, n_var, seed_hits) |>
+  knitr::kable(digits = 2)
+cat("\nHighest discrimination, but rejected:\n")
+ranked |> dplyr::slice_max(discrimination, n = 4) |>
+  dplyr::select(strand, as_length, tm, gc, discrimination, n_3p, n_var, seed_hits) |>
+  knitr::kable(digits = 2)
+```
+
+**Finding:** the placements with discrimination **0.97** (minus strand) overlap
+**2–3** other 1001 Genomes variants in their footprint; the chosen 27-mer on the
+plus strand overlaps only **1** (`n_var`). In this guide, variant load in the
+footprint outranks discrimination.
+
+::: {.notes}
+This answers "why 0.93 and not 0.97": not because 0.93 is "better", but because
+0.97 has extra variants sitting in its footprint. The ranking is lexicographic.
+:::
+
+## Stage 4. Discrimination and 3' stability of the chosen AS primer
+
+```{r}
+#| label: eff
+assay$efficiency |>
+  knitr::kable(digits = 3,
+    caption = "ref_on/ref_off — AS-ref on its own/other allele; alt_* likewise")
+```
+
+Discrimination = (ref_on − ref_off + alt_on − alt_off) / 2, computed by `DECIPHER`
+(Taq-aware: hybridisation **and** extension from the 3' end), not by an empirical
+formula.
+
+::: {.notes}
+`ref_on 1.00`, `ref_off 0.02` — the matching allele extends, the other hardly at all.
+:::
+
+## Stage 5. The common primer: Tm ≥ AS and an amplicon ≤ 100 bp
+
+```{r}
+#| label: com
+assay$assay |>
+  dplyr::count(com_tm_ge_as = com_tm >= mean(assay$thermo$tm[assay$thermo$name != "COM"]),
+               amplicon_ok = dplyr::between(amplicon, 50, 100)) |>
+  knitr::kable(caption = "5 COM placements: how many close the amplicon and hold Tm")
+assay$assay |>
+  dplyr::select(rank, strand, com, len, com_tm, n_var, amplicon) |>
+  knitr::kable(digits = 2)
+```
+
+::: {.notes}
+COM is placed on the same strand as AS so that the amplicon closes; the guide
+requires COM Tm no lower than AS and a product shorter than 100 bp (EasyKASP).
+:::
+
+## Stage 6. Structural QC: hairpins, homo- and heterodimers
+
+```{r}
+#| label: struct
+assay$thermo |>
+  dplyr::select(primer, len, tm, gc, hairpin_dg, terminal_dg) |>
+  knitr::kable(digits = 2, caption = "OligoArrayAux: hairpin and 3'-end dG37")
+pal <- find_palindromes(c(AS_ref = assay$assay$as_ref[1],
+                          AS_alt = assay$assay$as_alt[1], COM = assay$assay$com[1]))
+data.frame(primer = names(pal), inverted_repeats = vapply(pal, nrow, integer(1)))
+```
+
+```{r}
+#| label: dimers
+ggplot(assay$complementarity, aes(a, b, fill = dg)) +
+  geom_tile(colour = "white", linewidth = 1) +
+  geom_text(aes(label = round(dg, 1)), size = 4) +
+  scale_fill_gradient(low = "firebrick", high = "white", name = "dG37") +
+  coord_equal() + labs(x = NULL, y = NULL, title = "Duplexes: cross- and self-dimers")
+```
+
+::: {.notes}
+All three primers have a positive hairpin dG (none forms). There are no inverted
+repeats. The strongest pair is COM×AS-alt, dG37 ≈ −3.3, against a threshold of −9.
+:::
+
+## Stage 7. Genome specificity: off-targets
+
+```{r}
+#| label: specific
+assay$specificity |>
+  knitr::kable(caption = "3' seed (15 nt, ≤1 mismatch) across TAIR10 — how many genomic sites")
+```
+
+**Finding:** the AS primer's 3' seed occurs **dozens** of times in the genome at
+one mismatch. That is expected for a short seed and does **not** fail the test:
+the full primer decides, not the seed. It is checked directly:
+
+```{r}
+#| label: pcr
+assay$amplicons |> knitr::kable(caption = "virtual PCR: REF yields 1 product, ALT yields 0")
+```
+
+::: {.notes}
+One nuance: `seed_hits` (stage 1) is the better of the two strands, while AS
+landed on the strand where the seed is "louder". The seed scan is therefore a
+filter, not a verdict; the verdict comes from in-silico PCR (1/0) and the
+full-primer FM scan.
+:::
+
+## Stage 7 (continued). FM index: a full-primer scan
+
+```{r}
+#| label: fm
+fm <- marker_fm_index(genome, basename = fs::path(marker_cache_dir(), "tair10_fm"))
+fm_hits <- specificity_fm(c(AS_ref = assay$assay$as_ref[1], AS_alt = assay$assay$as_alt[1],
+                            COM = assay$assay$com[1]), fm, nthreads = 2L)
+fm_hits |> knitr::kable(caption = "Rsubread FM index: how many genomic loci the full primer matches")
+```
+
+The index is built once (cached), the genome is not loaded into memory, and mapping is multithreaded.
+
+::: {.notes}
+The full primers are unique (one locus) — that is what closes the off-target question.
+:::
+
+## Stage 8. How the search converges (animation)
+
+```{r}
+#| label: design-search
+render_design_search(assay, variants, snp, path = here::here("results", "design_search.gif"))
+```
+
+![](../../results/design_search.gif){width=100%}
+
+Each frame is one tested AS placement (then COM) in algorithm order, with the reason
+it lost.
+
+::: {.notes}
+Page through the GIF: placements are cut by the 3' window and by the footprint
+until only the accepted assay remains. Hold a couple of seconds on each
+"rejected: …".
+:::
+
+## Stage 9. Acceptance and ordering
+
+```{r}
+#| label: checks
+marker_design_checks(assay) |> knitr::kable()
+```
+
+```{r}
+#| label: order
+marker_primer_table(assay, gene) |>
+  dplyr::select(role, oligo_id, sequence, tm, gc, length) |>
+  knitr::kable()
+```
+
+::: {.notes}
+14 criteria: amplicon length, AS/COM Tm, COM≥AS, GC, homopolymers, SSRs,
+inverted repeats, hairpins, dimers, discrimination, in-silico PCR. The FAM/HEX
+tails and the IDT/LGC files come from `export_primers()`.
+:::
+
+## Stage 10. The guide's full checklist: structure and thermodynamics
+
+Every LGC/KBioscience + EasyKASP 2025 recommendation → the package function that
+implements it → our run.
+
+```{r}
+#| label: recs-struct
+chk <- marker_design_checks(assay)
+obs <- function(c) chk$observed[match(c, chk$criterion)]
+aa  <- assay$assay[1, ]
+wt  <- assay$as_candidates |>
+  dplyr::arrange(n_3p, n_var, dplyr::desc(discrimination), wobble, seed_hits, abs(tm - 60), dg_3p, as_length) |>
+  dplyr::slice_head(n = 1)
+
+tibble::tibble(
+  Recommendation = c("Short amplicon", "SNP at the terminal 3' base", "AS length",
+                     "AS Tm (own allele)", "AS GC", "Strand: GC≈45%, no repeats",
+                     "Stabilising mismatch −2/−3", "Last 5 nt free of other SNPs"),
+  Threshold = c("50–100 bp", "required", "20–28 nt", "55–65 °C", "40–60%",
+                "both strands", "1–3 nt from 3'", "0 variants"),
+  `In the package` = c("marker_design_checks()", "make_as_primer()", "design_as_primers()",
+                       "primer_tm() (TmCalculator)", "gc_frac()", "strand × lengths × search",
+                       "stab_ats (scan)", "n_3p: IRanges::countOverlaps"),
+  Run = c(glue::glue("{obs('amplicon length (bp)')} bp"),
+             glue::glue("{assay$snp$ref}>{assay$snp$alt}"),
+             glue::glue("{wt$as_length} nt"),
+             glue::glue("{round(obs('AS Tm (C)'),1)} °C"),
+             glue::glue("{round(100*obs('AS GC'),0)}%"),
+             glue::glue("{wt$strand} chosen"),
+             glue::glue("no mismatch needed"),
+             glue::glue("{aa$as_n_3p} variant(s)"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+On the left, what the guide recommends; in the middle, the function that does it;
+on the right, the result of our run. Every value is live, none invented.
+:::
+
+## Stage 10 (continued). Checklist: the common primer and structure
+
+```{r}
+#| label: recs-com
+obs_c <- function(label) chk$observed[match(label, chk$criterion)]
+tibble::tibble(
+  Recommendation = c("COM length", "COM GC", "COM Tm ≥ AS Tm", "Homopolymers < 4",
+                     "Hairpins (ΔG37)", "Any-pair dimers (ΔG37)", "Inverted repeats",
+                     "SSR 2–4 nt"),
+  Threshold = c("18–25 nt", "40–60%", "≥ AS Tm", "< 4 nt", "≥ −3", "≥ −9", "none", "none"),
+  `In the package` = c("design_common_primers()", "gc_frac()", "com_tm vs AS Tm",
+                     "has_run()", "primer_thermo()/OligoArrayAux", "dimer_thermo()/OligoArrayAux",
+                     "find_palindromes() (Biostrings)", "find_repeats()"),
+  Run = c(glue::glue("{aa$len} nt"),
+             glue::glue("{round(100*aa$com_gc,0)}%"),
+             glue::glue("{round(chk$observed[match('COM Tm >= AS Tm', chk$criterion)],1)} °C"),
+             glue::glue("{chk$observed[match('longest homopolymer (bp)', chk$criterion)]}"),
+             glue::glue("{round(chk$observed[match('worst hairpin dG37', chk$criterion)],1)}"),
+             glue::glue("{round(chk$observed[match('worst cross-dimer dG37', chk$criterion)],1)}"),
+             glue::glue("{chk$observed[match('inverted repeat (arms>=4, loop<=6)', chk$criterion)]}"),
+             glue::glue("{chk$observed[match('SSR (2-4 nt, >=3 copies)', chk$criterion)]}"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+Call out the AS1–AS2 pair separately: in KASP it is expected to be the strongest,
+because the primers are nearly identical and compete for one site. That is
+normal, not a defect.
+:::
+
+## Stage 10 (continued). Checklist: discrimination, specificity, validation
+
+```{r}
+#| label: recs-spec
+spec <- assay$specificity
+fm_n <- paste(fm_hits$hits, collapse = "/")
+tibble::tibble(
+  Recommendation = c("Discrimination on–off", "Avoid G:T / C:A wobble",
+                     "Specificity: exactly one product", "Pre-screen the 3' seed",
+                     "A full-primer off-target is fatal", "Variant annotation", "Validation: controls"),
+  `In the package` = c("pcr_efficiency() (DECIPHER, Taq)", "wobble_mismatch()",
+                     "in_silico_pcr() (matchProbePair)", "specificity_seed() (PDict)",
+                     "specificity_fm() (Rsubread FM index)", "annotate_variants() (TxDb/VEP)",
+                     "wet lab (not code)"),
+  Run = c(glue::glue("{round(assay$efficiency$ref_on,2)} on / {round(assay$efficiency$ref_off,2)} off"),
+             glue::glue("{assay$specificity$seed[1]} — G:T"),
+             glue::glue("REF 1 / ALT 0"),
+             glue::glue("seed hits: {spec$hits[1]}/{spec$hits[2]}/{spec$hits[3]}"),
+             glue::glue("{fm_n} locus/loci for AS-ref/alt/COM"),
+             glue::glue("stop_gained (AT4G00650)"),
+             glue::glue("REF / ALT / het / NTC"))) |>
+  knitr::kable()
+```
+
+::: {.notes}
+Two different levels of specificity: the seed (a filter) and the full primer (the
+verdict). The AS seed returns dozens of hits at one mismatch — that is normal;
+in-silico PCR + FM decide.
+:::
+
+## How to present this material
+
+- **On stage:** this deck — `sh dev/lecture/render.sh` →
+  `_site/dev/lecture/kasp-slides.html`. The `n` key toggles speaker notes on each
+  slide; `s` opens presenter mode.
+- **To read:** the `vignette("kasp-intro")` narrative.
+- **Live run:** `Rscript inst/scripts/run_kasp.R` (numbers and panels in `results/`).
+
+The deck source is `dev/lecture/kasp-slides.qmd`; the `README.md` next to it has the
+commands.
+
+::: {.notes}
+Show order: 0→1→…→10, running the chunk at each stage and discussing the number.
+Finish on the checklist, as "this is how we hand over acceptance".
+:::

@@ -33,6 +33,10 @@ revdep/
 tests/testthat/_snaps/**/*.new.md
 tests/testthat/Rplots.pdf
 
+# local run output written by inst/scripts/run_kasp.R and the lecture deck
+# (the directory itself is kept out of the package by .Rbuildignore)
+results/
+
 # locally rendered rasters next to the committed vignette SVGs (the SVGs and
 # their .txt twins are tracked; the PNG twins are for eyeballing only)
 vignettes/figures/*.png

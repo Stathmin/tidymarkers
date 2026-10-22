@@ -4,7 +4,7 @@
 > Пользовательская документация — `README.md` и виньетки.
 
 Только незакрытое. Полный ретроспективный инвентарь (что уже есть, с обоснованиями и
-ссылками) — в `INVENTORY.md`; история изменений — в `NEWS.md`.
+ссылками) — в `docs/archive/inventory-ru.md`; история изменений — в `NEWS.md`.
 
 Обозначения: `[ ]` очередь · `[~]` частично · `[x]` сделано · `[—]` проверено и
 **отложено** (с причиной) · `[!]` проверено и **опровергнуто**.
@@ -169,7 +169,7 @@ ESI Table S1 — 4096 измеренных Tm).
 Правило неизменно: пока решение не принято, артефакт говорит «данных нет», а не
 «данные против». `merge-proposals.R --apply` предложения в код не переносит.
 
-## Открытая работа — сводка (детали — в `INVENTORY.md` по номеру раздела)
+## Открытая работа — сводка (детали — в `docs/archive/inventory-ru.md` по номеру раздела)
 
 ### §U. Другие PCR-маркеры и внешние приоры
 - [~] **CAPS/dCAPS и ARMS/AS-PCR — довести до конца.** Правка: `R/marker_caps.R`
@@ -298,7 +298,7 @@ ESI Table S1 — 4096 измеренных Tm).
 `pass | fail | unknown | not_applicable` для каждой проверки; один конструктор
 `Evaluation` (`marker_evaluation_table()`); не-декоративные гейты
 (`lamp_variant_gate()`, `crispr_seed_gate()`, `rpa_variant_gate()`).
-Подробности и тесты — в `INVENTORY.md`; новых пунктов здесь нет.
+Подробности и тесты — в `docs/archive/inventory-ru.md`; новых пунктов здесь нет.
 
 ### Z2. Один источник истины для порогов  [P1]  — закрыто (`2647884`, `bb9d96c`, `f494a50`)
 - [x] Каждый критерий — data-object (`R/marker_criteria.R`): `id`, `label`,
@@ -737,7 +737,7 @@ Z0 требует сверить Tm с `TmCalculator`.
 ### Z11. Документация  [P2]
 - [ ] **`Z11.1` «Аудит решений» переписать из dev-заметок в user-facing
   ограничения и рекомендации**; каждое утверждение — с source/calibrated-флагом.
-  Правка: `vignettes/`, `INVENTORY.md`. Проверка: `dev/check-docs.R` (нет
+  Правка: `vignettes/`, `docs/archive/inventory-ru.md`. Проверка: `dev/check-docs.R` (нет
   orphan-документа, нет битой ссылки). Блокер: `ZW4.6` — без источника у каждой
   строки переписывать нечего.
 - [ ] **`Z11.2` Исправить Cas12a/Cas13/dPCR/LAMP/KASP формулировки во всех
@@ -955,7 +955,7 @@ Graphify сейчас индексирует код и doc-headings, но **не
 manifest + generated Markdown, а не через sidecar JSON.
 
 - [x] **`docs/INDEX.md` — единый вход.** Все README/AGENTS/CONTRIBUTING/ROADMAP/
-  NEWS/INVENTORY/vignettes/dev-docs; каждая ссылка проверяется на существование.
+  NEWS/VALIDATION/vignettes/dev-docs; каждая ссылка проверяется на существование.
 - [x] **`docs/artifacts.yml` — источник истины.** Для каждого артефакта:
   `path`, `kind` (figure/decision/table/benchmark), `generator`, `inputs`,
   `input_hash`, `output_hash`, `docs`, `code`, `status`.

@@ -421,7 +421,7 @@ are no frequencies; `as_variant_table()` does the same (`R/marker_chunk.R`). So
 can change the outcome of the gate depending on whether the `pop_freq` column is
 present. The frequency of the target ALT itself does not enter the graph at all:
 the MAF tie-break is described correctly above, but in Ensembl Plants MAF =
-`null` (`INVENTORY.md`, §H). The population step stays outside.
+`null` (`docs/archive/inventory-ru.md`, §H). The population step stays outside.
 
 **The specificity 3' seed is only a tie-break, not a check.** `specificity_seed()`
 (15 nt, 1 mismatch) is called in `pick_target_snp()` and `marker_pick_as()` and

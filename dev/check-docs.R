@@ -9,9 +9,9 @@
 #    4. backlinks agree -- an artifact's `docs` are exactly the docs that
 #       actually reference it, and vice versa
 #
-#  Scope: README/AGENTS/CONTRIBUTING/ROADMAP/NEWS/INVENTORY, vignettes/*.Rmd,
-#  dev/*.md and docs/**/*.md.  report/ and lecture/ are out of scope (their
-#  includes are generated at render time and are not part of the product docs).
+#  Scope: README/AGENTS/CONTRIBUTING/ROADMAP/NEWS/VALIDATION, vignettes/*.Rmd,
+#  dev/*.md and docs/**/*.md.  dev/lecture/ is out of scope (its includes are
+#  generated at render time and are not part of the product docs).
 #
 #  Run:  Rscript dev/check-docs.R          (exit 1 on failure)
 # =============================================================================
@@ -88,7 +88,7 @@ doc_targets <- function(doc) {
 docs_scope <- function() {
   top <- c(
     "README.md", "AGENTS.md", "CONTRIBUTING.md", "ROADMAP.md", "NEWS.md",
-    "INVENTORY.md"
+    "VALIDATION.md"
   )
   top <- top[file.exists(top)]
   vign <- list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE)
