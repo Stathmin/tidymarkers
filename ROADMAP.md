@@ -38,7 +38,7 @@
 | 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | **готово (проверено)**: `pfs`/`pfs_side` в `crispr_guide_candidates()`, Cas12a → `NA` | `test-crispr*` (181 pass) | **закрыт** |
 | 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | **готово (проверено)**: `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» | `test-kasp-mismatch-type.R`, `test-kasp-checks.R` (70 pass) | **закрыт** |
 | 5 | `Z9.1` LAMP: paired ALT набор / internal control | **готово**: `paired` в `design_lamp_marker()` | `test-lamp.R` (267 pass) | **закрыт** |
-| 6 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
+| 6 | `Z5.1` position-aware off-target в собственной ориентации | **готово**: `in_silico_pcr()` → `primer_hit_table()` → `mismatch_profile()`, зеркало `plus_to_primer()`; код уже был, строка устарела | `test-specificity-orientation.R` (36 pass) | **закрыт** (Arabidopsis-замер `Y3.5` снят) |
 | 7 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
 | 8 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | **готово** (`2ee25da`): штамп в `marker_design_checks()`, `marker_with_stamp(from=)` наследует | `test-engine-stamp.R` | **закрыт** |
 
@@ -365,17 +365,19 @@ ESI Table S1 — 4096 измеренных Tm).
   политика подставляется по `scheme` (`test-insilico-pcr.R`).
 - [x] **Политика и вердикт:** `specificity_policy()`, `specificity_verdict()`
   (seed/exact/BLAST/FM) с capability-флагом и статусом `unknown` (`cfb3638`).
-- [ ] **`Z5.1` Position-aware off-target в собственной ориентации.** 3′-конец,
-  число и позиция мисматчей; отдельные модели для RPA (несколько мисматчей),
-  CRISPR (seed/PAM), паралогов/гомеологов. Exact-hit + 15-nt seed недостаточно.
-  Правка: `R/marker_specificity.R` — те же три веса 3′, что уже в
-  `primer_hits()` для degenerate, применённые к геномному скану.
-  Проверка: `tests/testthat/test-specificity.R` — внутренний мисматч ≠ 3′-мисматч
-  по вердикту.
-  Блокер: индекс под 15 Gb (`Y3.5`), но **не** на Arabidopsis: сначала на
-  120 Mb, память индекса мерить до коммита.
-  Следствие: точный off-target внутри ампликона сегодня стоит столько же, сколько
-  промах на 3′ конце, — то есть вердикт не различает опасное от безобидного.
+- [x] **`Z5.1` Position-aware off-target в собственной ориентации.** Позиционный
+  штраф **уже** применялся к геномному скану, а не только к degenerate-ветке:
+  `in_silico_pcr()` идёт через `primer_hit_table()`
+  (`R/marker_specificity.R:639-640`), который профилирует каждый
+  `matchPattern()`-хит через `mismatch_profile()` (`:519-524`) и зеркалит
+  позиции обратного праймера `plus_to_primer()` (`:510`).
+  Замерено: 3′-терминальный промах штраф **12**, тот же мисматч в середине — **1**;
+  две точные копии → `fail`, одна точная + 3′-терминальный сайт → `pass`
+  (`pcr_products_tolerated()` `:783`, `specificity_verdict()` `:1290`).
+  Проверка: `tests/testthat/test-specificity-orientation.R` (36 pass).
+  Следствие: исходное «вердикт не различает опасное от безобидного» было
+  **неверным** для PCR-семейства; остаются `Z5.2` (модель на семейство:
+  RPA-несколько мисматчей, CRISPR seed/PAM) — там различие ещё не доказано.
 - [ ] **`Z5.2` Family-specific mismatch models.** Разные величины для RPA
   (несколько мисматчей), CRISPR (seed) и KASP (3′-якорь) сейчас сведены к одной
   политике. Правка: `specificity_policy()` — модель на семейство.
@@ -712,11 +714,19 @@ Z0 требует сверить Tm с `TmCalculator`.
   Проверка: `test-thermo.R`. Блокер: движок (OligoArrayAux fold) — через
   `capabilities()`, иначе `unknown`.
 - [ ] **`Z10.2` Dosage/copy-number (fitPoly/mixture model) для полиплоидных
-  KASP.** Данные: `polyploid_jaimes2024_sugarcane_dosage.csv` (42/76),
-  `polyploid_durum2019_*`, `polyploid_cotton2023_kasp_screen.csv`. Правка:
-  отдельная ось в `marker_population_checks()`, а не `pop_freq` (`Z6.1`).
-  Проверка: `test-polyploid-scope.R` — нет единого polyploid rate.
-  Блокер: `fitPoly` — Suggests, вводить только с реальной реализацией (`ZA4`).
+  KASP.** Данные: `polyploid_jaimes2024_sugarcane_dosage.csv` (42 из 76 SNP
+  размечены по дозе, 34 не кластеризованы), `polyploid_cotton2023_kasp_screen.csv`
+  (8/11 — **отрицательный** датапоинт, в средние не входит). Правка: отдельная ось
+  в `marker_population_checks()`, а не `pop_freq` (`Z6.1`).
+  **Поправка к тексту строки:** `polyploid_durum2019_*` — не данные дозы;
+  там ось гомеологов (AABB vs AABBDD) и 90K iSelect, не KASP. Число «симплекс»
+  в источнике не встречается (0 раз) — тест пинит размеченные/неразмеченные,
+  а не симплекс-сплит.
+  Проверка: `test-polyploid-dosage.R` (51 pass) — один общий polyploid rate
+  запрещён, классы смеси масштабируются с плоидностью, cotton исключён из средних.
+  Блокер: `fitPoly` — Suggests, вводить только с реальной реализацией (`ZA4`);
+  доза на маркер у Jaimes есть только в GitHub статьи (Appendix S3 — лишь `r`
+  метода-пары), записано `blocked`.
 - [ ] **`Z10.3` GRanges/VCF-backed interchange** вместо custom tibble там, где
   это уместно. Правка: `R/marker_io.R` adapter. Блокер: `ZA6` шаг 4. Следствие:
   сейчас каждый вход конвертируется руками, и depth (`Y5.3`) негде хранить.
@@ -1332,9 +1342,14 @@ Commit message via `git commit -F file` — never -m with backticks or $().
 #### Y3.5. Индекс под 15 Gb: замер памяти до коммита
 - **Правка:** выбор бэкенда фиксируется по замеру памяти индекса на пшеничном геноме
   (FM `Rsubread` / BLAST / хеш 3'-12-меров); свой код — только 3′-aware пост-фильтр.
-- **Проверка:** замер RSS и времени построения индекса, записанный в `data-raw/`
-  с командой и версией; решение в ROADMAP со ссылкой на файл замера.
-- **Блокер:** нужен пшеничный FASTA (~15 Gb) локально.
+- **Шаг 1 — Arabidopsis снят** (`data-raw/offtarget_index_memory.R`, TAIR10 md5
+  `bb2cd5da…`, 119 667 750 bp): объект генома **114.1 Mb**, `ath_genome()` 1.24 s;
+  seed-скан k=8 — 1.10 s (mm=0) / 1.76 s (mm=1); `PDict` 20-мер — 32 Mb, 0.010 s;
+  пик RSS дочернего процесса **538.9 MB**, wall 7.47 s.
+  Экстраполяция на 15 Gb порядка **14 Gb RSS** для сырого хеша — то есть
+  хеш 3'-12-меров для пшеницы **не годится** без разбиения по хромосомам.
+- **Блокер (шаг 2):** нужен пшеничный FASTA (~15 Gb) локально; `Rsubread` в этом
+  окружении **отсутствует**, поэтому FM-половина замера — `unknown`, не оценка.
 - **Следствие:** «ленивая оценка» (Y3 п.4) не повисает; до замера её не начинать.
 
 #### Y3.6. Опция дополнительных сборок
