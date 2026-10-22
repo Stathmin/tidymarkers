@@ -29,34 +29,17 @@ if (!requireNamespace("ggraph", quietly = TRUE)) {
 fs::dir_create("man/figures")
 fs::dir_create("results/plot-smoke")
 
-use_dot <- nzchar(Sys.which("dot"))
-if (!use_dot) message("graphviz 'dot' not found; falling back to ggraph")
-
-# Graphviz dot is the routing solver: one cluster per stage, edges routed
-# around nodes instead of long straight lines to DOOMED.  Dot emits the .dot
-# and a -Tsvg directly; without dot the ggplot layouter draws the same schema
-# through svglite.  The committed figures use the ggplot layouter: it is the
-# only one that can pin stage N and N+1 side by side (dot's ranking re-flows
-# the columns, see `decision_dot()`).
-render_svg <- function(file, dot_file, scheme = NULL, assay = NULL) {
-  if (use_dot) {
-    sc <- if (is.null(assay)) scheme else (assay$scheme %||% "snp")
-    writeLines(decision_dot(scheme = sc, assay = assay), dot_file)
-    status <- system2("dot", c("-Tsvg", "-o", shQuote(file), shQuote(dot_file)))
-    if (!identical(as.integer(status), 0L)) stop("dot failed for ", dot_file)
-  } else {
-    p <- if (is.null(assay)) plot_decision_tree(scheme = scheme) else plot_decision_tree(assay)
-    ggplot2::ggsave(file, p, width = 18, height = 14, bg = "white", device = svglite::svglite)
-  }
-  invisible(file)
-}
-
-# the ggplot layouter, written with an explicit svglite device: `ggsave(device =
+# the layouter, written with an explicit svglite device: `ggsave(device =
 # <a device function>)` opens one SVG page per plot in a single file, so a loop
-# over the schemes produced N plots sharing the first page's size.
-render_svg_plot <- function(file, x = NULL, scheme = NULL, width = 11, height = 8) {
+# over the schemes produced N plots sharing the first page's size.  The page is
+# sized from the solved layout, not from a constant, so a scheme with more
+# checks gets the space it needs and the committed figure keeps its aspect.
+render_svg_plot <- function(file, x = NULL, scheme = NULL) {
   p <- if (is.null(x)) plot_decision_tree(scheme = scheme) else plot_decision_tree(x)
-  svglite::svglite(file, width = width, height = height, bg = "white")
+  g <- if (is.null(x)) marker_decision_graph(scheme = scheme) else x
+  bb <- decision_bbox(decision_layout(if (inherits(g, "marker_assay")) g$decision %||% g else g))
+  # headroom for the title, subtitle and legend the plot draws outside the data
+  svglite::svglite(file, width = bb$xmax - bb$xmin + 1.2, height = bb$ymax - bb$ymin + 1.9, bg = "white")
   on.exit(grDevices::dev.off(), add = TRUE)
   plot(p)
   invisible(file)
