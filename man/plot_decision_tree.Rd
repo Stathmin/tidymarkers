@@ -4,29 +4,39 @@
 \alias{plot_decision_tree}
 \title{Draw the selection decision tree}
 \usage{
-plot_decision_tree(x = NULL, scheme = NULL)
+plot_decision_tree(
+  x = NULL,
+  scheme = NULL,
+  out = NULL,
+  style = decision_style()
+)
 }
 \arguments{
 \item{x}{an assembled assay, a \code{marker_decision_graph()} result, or \code{NULL}.}
 
 \item{scheme}{a scheme id (see \code{\link[=marker_schemes]{marker_schemes()}}) for the bare schema; \code{NULL}
 (the default) uses the assay's own \verb{$scheme} for an assay, else \code{"snp"}.}
+
+\item{out}{optional SVG path; when given the figure is written there and the
+path returned invisibly, otherwise the SVG markup is returned.}
+
+\item{style}{a \code{\link[=decision_style]{decision_style()}} (palette, font size, page).}
 }
 \value{
-a \code{ggraph}/\code{ggplot} object.
+the SVG markup as one string, or invisibly \code{out}.
 }
 \description{
-Renders the graph from \code{\link[=marker_decision_graph]{marker_decision_graph()}} as a boxed, left-to-right
-flow: every stage is its own cluster, every node a box drawn to the size of
-its wrapped label, and edges are \emph{routed} by a layout solver so they leave
-a box, pass between boxes and land on the next one.  Positions come from
-\code{\link[=decision_layout]{decision_layout()}}: a rank-pinned layered layout (one column per stage) when
-\code{igraph} is installed (set \code{TIDYKASP_NO_SUGIYAMA=1} to force the manual grid).  Node \strong{fill} is the node
-kind (start/check/gate/decision/relax/merge/tier/outcome/doomed, a light
-palette), while text and border carry the outcome (ok / violated / relaxed /
-neutral).  Hard limits keep a \strong{bold border}.  One marker chemistry is drawn
-at a time (\code{\link[=marker_schemes]{marker_schemes()}}); \code{\link[=marker_decision_text]{marker_decision_text()}} is the greppable
-double.
+Renders the graph from \code{\link[=marker_decision_graph]{marker_decision_graph()}} as a boxed flow: every stage
+is its own band, every node a box sized to its wrapped label, and every edge
+is \emph{routed} around the boxes by an external layout engine.  This function is
+a thin adapter: it picks the graph and the scheme's caption, then hands both
+to \code{\link[=decision_render]{decision_render()}}, which owns structure-to-figure.  Positions, line
+breaks and spacing are the solver's, never this function's.
+Node \strong{fill} is the node kind (start/check/gate/decision/relax/merge/tier/
+outcome/doomed, a light palette), while text and border carry the outcome
+(ok / violated / relaxed / neutral).  Hard limits keep a \strong{bold border}.
+One marker chemistry is drawn at a time (\code{\link[=marker_schemes]{marker_schemes()}});
+\code{\link[=marker_decision_text]{marker_decision_text()}} is the greppable double.
 }
 \examples{
 \dontrun{
@@ -37,6 +47,8 @@ plot_decision_tree(assay) # this assay's traversal
 }
 \seealso{
 Other KASP checks:
+\code{\link[=decision_palette]{decision_palette()}},
+\code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
 \code{\link[=marker_decision_text]{marker_decision_text()}},

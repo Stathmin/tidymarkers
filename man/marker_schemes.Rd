@@ -31,6 +31,8 @@ marker_schemes()
 }
 \seealso{
 Other KASP checks:
+\code{\link[=decision_palette]{decision_palette()}},
+\code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
 \code{\link[=marker_decision_text]{marker_decision_text()}},

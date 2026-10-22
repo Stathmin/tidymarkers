@@ -1,0 +1,2 @@
+# the engine is vendored on purpose: every package here is a render dependency,
+# so none of node_modules is excluded (see README.md for versions and licences)

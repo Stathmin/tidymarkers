@@ -122,10 +122,12 @@ test_that("an unknown scheme is rejected by name", {
 test_that("the graph is a tidygraph and can be drawn", {
   g <- marker_decision_graph()
   expect_s3_class(g, "tbl_graph")
-  # the picture is drawn from the layout seam, so it is a plain ggplot: ggraph
-  # is the *collection* the tree used to be laid out by, not the drawing itself
-  expect_s3_class(plot_decision_tree(), "ggplot")
-  expect_s3_class(plot_decision_tree(scheme = "duplex"), "ggplot")
+  # the picture is SVG markup: the solver places, the renderer writes ink, and
+  # no graphics device is involved (so this draws headless, in tests)
+  svg <- plot_decision_tree()
+  expect_type(svg, "character")
+  expect_true(any(grepl("^<svg ", svg)))
+  expect_true(any(grepl("decision graph</title>", svg)))
 })
 
 test_that("an assay's outcome is stamped on the gates", {
@@ -233,81 +235,83 @@ test_that("every scheme's DAG obeys the static contract (C1-C11)", {
   }
 })
 
-test_that("the layout seam places every node once, in its own stage's column", {
-  skip_if_not_installed("igraph")
-  for (sc in marker_schemes()$scheme) {
+test_that("the solver places every node once and routes every edge", {
+  skip_if_not(decision_solver_available(), "the layout engine is not installed")
+  for (sc in c("snp", "duplex", "primer")) {
     g <- marker_decision_graph(scheme = sc)
-    lay <- decision_layout(g)
-    n <- attr(lay, "nodes")
-    stages <- attr(lay, "stage")
-    expect_identical(attr(lay, "engine"), "sugiyama", info = sc)
+    o <- decision_solve(g, decision_style())
+    expect_false(is.null(o), info = sc)
     # the node set survives the solver: nothing dropped, nothing duplicated
-    expect_setequal(n$name, tidygraph::as_tibble(g)$name)
-    expect_false(anyDuplicated(n$name) > 0L)
-    expect_true(all(is.finite(n$x) & is.finite(n$y)), info = sc)
+    expect_setequal(o$nodes$id, tidygraph::as_tibble(g)$name)
+    expect_false(anyDuplicated(o$nodes$id) > 0L)
+    expect_true(all(is.finite(o$nodes$x) & is.finite(o$nodes$y)), info = sc)
 
-    # a stage is one column: every node of it shares one x, and the columns are
-    # strictly left to right in the scheme's declared stage order
-    col <- vapply(stages, function(st) length(unique(round(n$x[n$stage == st], 6))), integer(1))
-    expect_true(all(col == 1L), info = paste(sc, "stage is not one column"))
-    cx <- vapply(stages, function(st) unique(round(n$x[n$stage == st], 6)), numeric(1))
-    expect_true(all(diff(cx) > 0), info = paste(sc, "stage columns not left to right"))
-
-    # boxes never overlap: inside a column the boxes are a pitch apart...
-    for (st in stages) {
-      s <- n[n$stage == st, , drop = FALSE]
-      if (nrow(s) < 2L) next
-      s <- s[order(s$y), , drop = FALSE]
-      gap <- diff(s$y) - (utils::head(s$h, -1L) + utils::tail(s$h, -1L)) / 2
-      expect_true(all(gap >= 0), info = paste(sc, st, "overlapping boxes"))
-    }
-    # ...and across columns, one stage's box never reaches the next stage's
-    for (k in seq_len(length(stages) - 1L)) {
-      left <- n[n$stage == stages[k], , drop = FALSE]
-      right <- n[n$stage == stages[k + 1L], , drop = FALSE]
-      expect_true(
-        min(right$x - right$w / 2) > max(left$x + left$w / 2),
-        info = paste(sc, "columns", stages[k], stages[k + 1L], "overlap")
-      )
+    # boxes never overlap
+    for (i in seq_len(nrow(o$nodes) - 1L)) {
+      for (j in (i + 1L):nrow(o$nodes)) {
+        a <- o$nodes[i, ]
+        b <- o$nodes[j, ]
+        ix <- min(a$x + a$w, b$x + b$w) - max(a$x, b$x)
+        iy <- min(a$y + a$h, b$y + b$h) - max(a$y, b$y)
+        expect_false(ix > 0.01 && iy > 0.01, info = paste(sc, a$id, b$id))
+      }
     }
 
-    # every edge is routed, with at least a start and an end, between nodes
-    # that exist
-    routes <- attr(lay, "routes")
-    edges <- attr(lay, "edges")
-    expect_length(routes, nrow(edges))
-    for (r in routes) {
-      expect_true(all(c(r$from, r$to) %in% n$name))
-      expect_gte(length(r$x), 2L)
-      expect_equal(length(r$x), length(r$y))
+    # every edge is routed, and no segment crosses a box it does not touch
+    e <- decision_edges(g)
+    expect_equal(nrow(o$edges), nrow(e))
+    for (k in seq_len(nrow(o$edges))) {
+      pts <- o$edges$points[[k]]
+      expect_gte(nrow(pts), 2L)
+      for (m in seq_len(nrow(pts) - 1L)) {
+        for (j in seq_len(nrow(o$nodes))) {
+          nb <- o$nodes[j, ]
+          if (nb$id %in% c(o$edges$from[k], o$edges$to[k])) next
+          x0 <- min(pts[m, 1], pts[m + 1L, 1])
+          x1 <- max(pts[m, 1], pts[m + 1L, 1])
+          y0 <- min(pts[m, 2], pts[m + 1L, 2])
+          y1 <- max(pts[m, 2], pts[m + 1L, 2])
+          crosses <- x1 > nb$x + 0.5 && x0 < nb$x + nb$w - 0.5 &&
+            y1 > nb$y + 0.5 && y0 < nb$y + nb$h - 0.5
+          expect_false(
+            crosses,
+            info = paste(sc, o$edges$from[k], "->", o$edges$to[k], "through", nb$id)
+          )
+        }
+      }
     }
   }
 })
 
-test_that("the layout seam falls back to the manual grid, never fails", {
-  withr::with_envvar(c(TIDYKASP_NO_SUGIYAMA = "1"), {
-    lay <- decision_layout(marker_decision_graph())
-    expect_identical(attr(lay, "engine"), "manual")
-    # the manual grid names the same nodes, so the picture still draws
-    expect_setequal(
-      attr(lay, "nodes")$name,
-      tidygraph::as_tibble(marker_decision_graph())$name
-    )
-    # and every edge still gets a route: a straight, box-trimmed link
-    expect_length(attr(lay, "routes"), nrow(attr(lay, "edges")))
-  })
-})
-
-test_that("a decision graph is near square, not a strip", {
+test_that("the drawing is near square, not a strip", {
   # the old failure was 1:4.5 (and 1:10 with dot): one column per stage, so a
-  # scheme with many checks grows sideways *and* downwards
-  skip_if_not_installed("igraph")
+  # scheme with many checks grew sideways *and* downwards
+  skip_if_not(decision_solver_available(), "the layout engine is not installed")
   for (sc in c("snp", "duplex")) {
-    bb <- decision_bbox(decision_layout(marker_decision_graph(scheme = sc)))
-    ar <- (bb$xmax - bb$xmin) / (bb$ymax - bb$ymin)
+    o <- decision_solve(marker_decision_graph(scheme = sc), decision_style())
+    ar <- o$width / o$height
     expect_gt(ar, 0.3)
     expect_lt(ar, 3)
   }
+})
+
+test_that("a render never errors when the layout engine is missing", {
+  withr::with_envvar(c(TIDYKASP_NO_ELK = "1"), {
+    svg <- NULL
+    expect_message(svg <- plot_decision_tree(scheme = "snp"), "without the layout engine")
+    expect_true(any(grepl("^<svg ", svg)))
+    # the fallback still names every node (wrapped inside its box, so the first
+    # word is what survives intact) and draws one line per edge
+    g <- marker_decision_graph(scheme = "snp")
+    n <- tidygraph::as_tibble(g)
+    first <- sub("[[:space:]].*$", "", n$label)
+    for (k in seq_along(first)) {
+      expect_true(any(grepl(first[k], svg, fixed = TRUE)), info = n$label[k])
+    }
+    # one <path> per edge (the arrow heads are paths too, inside <defs>)
+    routed <- grep('^<path d="M', svg, value = TRUE)
+    expect_equal(length(routed), nrow(decision_edges(g)))
+  })
 })
 
 test_that("a hard gate dooms even in a mixed stage, beside the soft ladder (C4)", {

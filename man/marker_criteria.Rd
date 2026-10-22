@@ -37,6 +37,8 @@ marker_criteria(scheme = "duplex")
 }
 \seealso{
 Other KASP checks:
+\code{\link[=decision_palette]{decision_palette()}},
+\code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
 \code{\link[=marker_decision_text]{marker_decision_text()}},
 \code{\link[=marker_design_checks]{marker_design_checks()}},

@@ -41,7 +41,11 @@ packrat/lib*/
 packrat/src/
 
 # local tool builds (OligoArrayAux for UNAFOLDDAT; see dev/README.md)
-.tools/
+.tools/*
+# ...except the decision-graph layout engine, which is vendored into the repo
+# (offline, reproducible figures; see .tools/elk/README.md)
+!.tools/elk/
+!.tools/elk/node_modules
 .tmp-rt/
 .deps/
 .i18n-lib/
