@@ -106,10 +106,9 @@ decision_layout_manual <- function(nodes) {
 #'
 #' The solver answers *which box comes first in a column*; the column order is
 #' the schema's, and the metric is ours, because only this file knows how big a
-#' box will be.  Columns are green-spaced by the widest box, with alternate
-#' columns pushed down by half a slot so a label sits opposite a gap rather
-#' than opposite a label - which is what keeps the arrows between two stages
-#' visible.
+#' box will be.  Columns are spaced by the widest box, and every row sits on
+#' one shared pitch, so a route between two stages leaves a row and lands on a
+#' row.
 #' @keywords internal
 #' @noRd
 decision_layout_sugiyama <- function(nodes, edges) {
@@ -151,9 +150,10 @@ decision_layout_sugiyama <- function(nodes, edges) {
     idx <- idx[order(xy[idx, 2L], nodes$order[idx])]
     # all boxes of a column share one centre: a column reads as a column
     x[idx] <- left + max(w[idx]) / 2
-    # alternate columns drop half a slot; the bottom of every column is level
-    stagger <- if (k %% 2L == 0L) slot / 2 else 0
-    y[idx] <- rev(seq_along(idx) - 1L) * -slot - stagger
+    # every column shares one row pitch and starts at the same height, so an
+    # arrow between two stages is a straight elbow at a row, not an S-bend from
+    # a box to a gap
+    y[idx] <- rev(seq_along(idx) - 1L) * -slot
     left <- left + max(w[idx]) + 0.5
   }
   data.frame(name = nodes$name, x = x, y = y, stringsAsFactors = FALSE)
