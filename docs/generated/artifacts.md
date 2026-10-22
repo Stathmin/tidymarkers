@@ -16,7 +16,7 @@ consumers.
 - code: [data-raw/logo.R](../../data-raw/logo.R)
 - inputs: [data-raw/tree-of-life.svg](../../data-raw/tree-of-life.svg)
 - docs: [README.md](../../README.md)
-- output_hash: `6aa0da5b5d4b389fb9757843bcf9dc83`
+- output_hash: `9c31a15df952cadbacf9f083294edba8`
 
 ## man/figures/logo.svg
 
@@ -27,7 +27,7 @@ consumers.
 - code: [data-raw/logo.R](../../data-raw/logo.R)
 - inputs: [data-raw/tree-of-life.svg](../../data-raw/tree-of-life.svg)
 - docs: (none)
-- output_hash: `1fc1c9173bd640d1afb989895b938f86`
+- output_hash: `d6a2349d1f102206372b8b0d84ffbe67`
 
 ## man/figures/decision-tree.svg
 
