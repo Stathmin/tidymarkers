@@ -231,3 +231,38 @@ test_that("scheme_def_lamp declares the LAMP stage consistently", {
 })
 
 test_that("the lamp DAG obeys the contract", expect_dag_invariants("lamp"))
+
+test_that("a LAMP design carries a paired REF set, not only an ALT one (Z9.1)", {
+  # A REF-only template and a failed reaction both give no amplification, so an
+  # ALT-only set cannot tell them apart.  The pair is the control construct: the
+  # same primer positions with FIP's 3' base reading REF.
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  m <- design_lamp_marker(f$genome, f$snp, flank = 150L)
+  p <- m$paired
+  expect_type(p, "list")
+  expect_identical(p$status, "complete")
+  # the two FIPs are the same primer but for the single 3' base
+  alt <- m$primers$FIP
+  ref <- p$ref_fip
+  expect_false(is.na(ref))
+  expect_equal(nchar(ref), nchar(alt))
+  expect_identical(substr(ref, 1L, nchar(ref) - 1L), substr(alt, 1L, nchar(alt) - 1L))
+  expect_false(identical(substr(ref, nchar(ref), nchar(ref)), substr(alt, nchar(alt), nchar(alt))))
+  # the discriminating base pairs the REF and ALT alleles
+  expect_identical(p$discriminating_base, paste0(f$snp$ref, "/", f$snp$alt))
+  # a pair is a construct, not a discrimination claim: nothing predicts a gap
+  expect_false(any(grepl("gap|delta|ct", names(p), ignore.case = TRUE)))
+})
+
+test_that("the pair says why it could not be built instead of failing silently", {
+  # an indel has no single 3' base to flip, so the helper reports the reason
+  # instead of returning an empty pair
+  snp <- list(ref = "AT", alt = "A")
+  p <- lamp_paired_set(
+    "ACGTACGT", 4L, list(primer = "ACGT"), snp, 20:24, c(55, 65), c(0.4, 0.6), 58
+  )
+  expect_identical(p$status, "not_applicable")
+  expect_match(p$note, "single-base")
+  expect_true(is.na(p$ref_fip))
+})
