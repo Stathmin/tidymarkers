@@ -1,0 +1,140 @@
+SNP KASP (biallelic) - decision graph
+
+discrimination: 3'-terminal base + FRET ratio | readout: co-dominant two-colour | zygosity: co-dominant | loci: 1 | amplicon: critical
+
+== target site checks ==
+  check   target site class                  discriminable
+  check   ALT alleles (n)                    >= 1
+  check   linked variants skipped (n)        <= 0
+  check   ALT primer covers all ALTs         <= 0
+  check   design relies on linkage           = 0
+
+== stage as (AS primer) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  discrimination (gate)  discrimination >= min_disc
+  - soft  wobble mismatch        no weak G:T / A:C 3' mismatch
+  - soft  AS footprint           AS footprint dropout <= tol
+  ! HARD  AS 3' window           no unlinked variant in AS 3' window
+relaxation ladder (least grave first):
+  1. AS footprint           floor: dropout up to 2x tolerance
+  2. wobble mismatch        floor: one weak G:T / A:C 3' mismatch
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. discrimination
+  2. Tm
+  3. 3' end weakness
+  4. footprint load
+edges:
+  discrimination (gate)    -flow  -> all gates pass?
+  wobble mismatch          -flow  -> all gates pass?
+  AS footprint             -flow  -> all gates pass?
+  AS 3' window             -flow  -> all gates pass?
+  1. AS footprint          -fail  -> 2. wobble mismatch
+  all gates pass?          -fail  -> 1. AS footprint
+  1. AS footprint          -relax -> survivors (floors kept)
+  2. wobble mismatch       -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> discrimination
+  discrimination           -rank  -> Tm
+  Tm                       -rank  -> 3' end weakness
+  3' end weakness          -rank  -> footprint load
+  footprint load           -rank  -> provisional best
+  provisional best         -flow  -> structure
+  provisional best         -flow  -> COM Tm >= AS Tm (gate)
+  provisional best         -flow  -> amplicon length
+  provisional best         -flow  -> COM footprint
+  2. wobble mismatch       -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+
+== stage pair (AS x COM pair) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  - soft  structure              hairpin/homodimer dG (reaction T) >= limit
+  - soft  COM Tm >= AS Tm (gate) COM Tm >= AS Tm
+  - soft  amplicon length        amplicon within [50, 100] bp
+  - soft  COM footprint          COM dropout <= tol
+relaxation ladder (least grave first):
+  1. amplicon length        floor: widen window by 20 bp
+  2. structure              floor: 3 kcal/mol more stable
+  3. COM Tm >= AS Tm (gate) floor: allow COM 2 C below AS
+  4. COM footprint          floor: dropout up to 2x tolerance
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. structure (hairpin / homodimer)
+  2. Tm (COM vs AS / target)
+  3. amplicon length
+  4. footprint load
+  5. COM 3' end weakness
+edges:
+  structure                -flow  -> all gates pass?
+  COM Tm >= AS Tm (gate)   -flow  -> all gates pass?
+  amplicon length          -flow  -> all gates pass?
+  COM footprint            -flow  -> all gates pass?
+  1. amplicon length       -fail  -> 2. structure
+  2. structure             -fail  -> 3. COM Tm >= AS Tm (gate)
+  3. COM Tm >= AS Tm (gate) -fail  -> 4. COM footprint
+  all gates pass?          -fail  -> 1. amplicon length
+  1. amplicon length       -relax -> survivors (floors kept)
+  2. structure             -relax -> survivors (floors kept)
+  3. COM Tm >= AS Tm (gate) -relax -> survivors (floors kept)
+  4. COM footprint         -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> structure (hairpin / homodimer)
+  structure (hairpin / homodimer) -rank  -> Tm (COM vs AS / target)
+  Tm (COM vs AS / target)  -rank  -> amplicon length
+  amplicon length          -rank  -> footprint load
+  footprint load           -rank  -> COM 3' end weakness
+  COM 3' end weakness      -rank  -> provisional best
+  4. COM footprint         -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [50, 100]
+  check   AS Tm (C)                          [55, 65]
+  check   COM Tm (C)                         [58, 63]
+  check   COM Tm >= AS Tm                    >= 0
+  check   AS GC                              [0.4, 0.6]
+  check   COM GC                             [0.4, 0.6]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   AS 3' window variants (n)          <= 0
+  check   AS footprint variants (n)          <= 0
+  check   COM footprint variants (n)         <= 0
+  check   AS 3' window dropout               <= 0.1
+  check   AS footprint dropout               <= 0.1
+  check   COM footprint dropout              <= 0.1
+  check   discrimination                     >= 0.5
+  check   AS 3' mismatch base pair           strong / medium / weak
+  check   in-silico PCR (REF 1 / ALT 0)      REF=1, ALT=0
+  check   off-target exact primer hits (n)   <= 1
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> AS Tm (C)
+  AS Tm (C)                -check -> COM Tm (C)
+  COM Tm (C)               -check -> COM Tm >= AS Tm
+  COM Tm >= AS Tm          -check -> AS GC
+  AS GC                    -check -> COM GC
+  COM GC                   -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> AS 3' window variants (n)
+  AS 3' window variants (n) -check -> AS footprint variants (n)
+  AS footprint variants (n) -check -> COM footprint variants (n)
+  COM footprint variants (n) -check -> AS 3' window dropout
+  AS 3' window dropout     -check -> AS footprint dropout
+  AS footprint dropout     -check -> COM footprint dropout
+  COM footprint dropout    -check -> discrimination
+  discrimination           -check -> AS 3' mismatch base pair
+  AS 3' mismatch base pair -check -> in-silico PCR (REF 1 / ALT 0)
+  in-silico PCR (REF 1 / ALT 0) -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> all checks pass?
+  all checks pass?         -pass  -> usable KASP assay
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable KASP assay; a failing check -> doomed

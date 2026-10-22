@@ -1,0 +1,75 @@
+RPA (recombinase polymerase amplification, isothermal) - decision graph
+
+discrimination: variant at a long primer 3' end, or under the exo probe | readout: isothermal 37-42 C; real-time exo probe (or gel) | zygosity: co-dominant | loci: 1 | amplicon: short (100-200 bp)
+
+== stage rpa (RPA primers/probe) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  variant placement      variant at a primer 3' end (no probe) or under the exo probe
+  - soft  primer length          each primer within [30, 35] nt (length, not Tm)
+  ! HARD  primer structure/dimers no palindrome; dimer dG at 42 C >= -9
+  - soft  probe geometry         probe 46-52 nt; THF >= 30 nt 5' / >= 15 nt 3'; variant under probe (when used)
+  - soft  amplicon length (RPA)  amplicon within [100, 200] bp
+relaxation ladder (least grave first):
+  1. amplicon length (RPA)  floor: widen the amplicon window by 20 bp
+  2. probe geometry         floor: relax the THF / fluorophore-quencher geometry
+  3. primer length          floor: allow up to 3 nt outside the length window
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. discrimination placement
+  2. primer length
+  3. probe geometry
+  4. amplicon length
+edges:
+  variant placement        -flow  -> all gates pass?
+  primer length            -flow  -> all gates pass?
+  primer structure/dimers  -flow  -> all gates pass?
+  probe geometry           -flow  -> all gates pass?
+  amplicon length (RPA)    -flow  -> all gates pass?
+  1. amplicon length (RPA) -fail  -> 2. probe geometry
+  2. probe geometry        -fail  -> 3. primer length
+  all gates pass?          -fail  -> 1. amplicon length (RPA)
+  1. amplicon length (RPA) -relax -> survivors (floors kept)
+  2. probe geometry        -relax -> survivors (floors kept)
+  3. primer length         -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> discrimination placement
+  discrimination placement -rank  -> primer length
+  primer length            -rank  -> probe geometry
+  probe geometry           -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  3. primer length         -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [100, 200]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   primer length (nt)                 30-35 nt
+  check   THF off variant                    yes
+  check   RPA probe spans variant            yes
+  check   variant under primer/probe         yes
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> primer length (nt)
+  primer length (nt)       -check -> THF off variant
+  THF off variant          -check -> RPA probe spans variant
+  RPA probe spans variant  -check -> variant under primer/probe
+  variant under primer/probe -check -> all checks pass?
+  all checks pass?         -pass  -> usable RPA assay
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable RPA assay; a failing check -> doomed

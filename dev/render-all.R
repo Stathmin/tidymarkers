@@ -40,5 +40,4 @@ if (heavy) {
   run("dev/render-targets.R", "example-target panel", needs_genome = TRUE)
   run("dev/render-plots.R", "plot smoke", needs_genome = TRUE)
   run("dev/render-screen.R", "screen plot", needs_genome = TRUE)
-  run("dev/render-real.R", "real FRI demo", needs_genome = TRUE)
 }

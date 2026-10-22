@@ -1,0 +1,51 @@
+HRM (high-resolution melting) - decision graph
+
+discrimination: amplicon melting curve (neighbour-tolerant) | readout: melt curve | zygosity: co-dominant | loci: 1 | amplicon: short (50-100 bp)
+
+== stage hrm (HRM amplicon) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  amplicon length (HRM)  amplicon within [50, 100] bp
+  - soft  primer Tm (HRM)        both flanking primers Tm within [58, 63] C
+relaxation ladder (least grave first):
+  1. primer Tm (HRM)        floor: widen the Tm window by 2 C
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. variant centrality (melt domain)
+  2. Tm balance
+edges:
+  amplicon length (HRM)    -flow  -> all gates pass?
+  primer Tm (HRM)          -flow  -> all gates pass?
+  all gates pass?          -fail  -> 1. primer Tm (HRM)
+  1. primer Tm (HRM)       -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> variant centrality (melt domain)
+  variant centrality (melt domain) -rank  -> Tm balance
+  Tm balance               -rank  -> provisional best
+  1. primer Tm (HRM)       -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [50, 100]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> all checks pass?
+  all checks pass?         -pass  -> usable HRM amplicon
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable HRM amplicon; a failing check -> doomed

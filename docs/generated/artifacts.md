@@ -38,7 +38,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `49eb19956c42bf04c0643591a68fd800`
+- output_hash: `0f4f0d0da72f9035c475475a87ea6352`
 
 ## man/figures/decision-multiplex.svg
 
@@ -49,7 +49,227 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `dda6fb7bf98fbf386aa6dd59a027771f`
+- output_hash: `21955ac22f435fc22b774438119a975d`
+
+## vignettes/figures/decision-snp.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-snp.svg](../../vignettes/figures/decision-snp.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `0f4f0d0da72f9035c475475a87ea6352`
+
+## vignettes/figures/decision-indel.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-indel.svg](../../vignettes/figures/decision-indel.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `afac663aada1fe5fb22884ebd4f12236`
+
+## vignettes/figures/decision-multi.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-multi.svg](../../vignettes/figures/decision-multi.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `8aa439d8a721992e3d71a6bbe8aec6e4`
+
+## vignettes/figures/decision-duplex.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-duplex.svg](../../vignettes/figures/decision-duplex.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `21955ac22f435fc22b774438119a975d`
+
+## vignettes/figures/decision-lax.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-lax.svg](../../vignettes/figures/decision-lax.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_lax.R](../../R/marker_lax.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `317807d1c21ba4090743aec804a94ef7`
+
+## vignettes/figures/decision-asq.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-asq.svg](../../vignettes/figures/decision-asq.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_asq.R](../../R/marker_asq.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `0fbc41f741fb41fcd561040a39c75768`
+
+## vignettes/figures/decision-primer.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-primer.svg](../../vignettes/figures/decision-primer.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
+- output_hash: `7c7a4f18968bd2a9f70139876a3dd845`
+
+## vignettes/figures/decision-caps.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-caps.svg](../../vignettes/figures/decision-caps.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_caps.R](../../R/marker_caps.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
+- output_hash: `c8f981ab179f6360249e003211cbcdc9`
+
+## vignettes/figures/decision-arms.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-arms.svg](../../vignettes/figures/decision-arms.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_arms.R](../../R/marker_arms.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
+- output_hash: `907a4b63bd87c3add5bb209bf12cbcd9`
+
+## vignettes/figures/decision-hrm.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-hrm.svg](../../vignettes/figures/decision-hrm.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_hrm.R](../../R/marker_hrm.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
+- output_hash: `4b6b8f878ca672d775751a7bb9d6eb9a`
+
+## vignettes/figures/decision-ssr.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-ssr.svg](../../vignettes/figures/decision-ssr.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_ssr.R](../../R/marker_ssr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
+- output_hash: `6e94100e4762ad7af7fd6ee23fb4fde7`
+
+## vignettes/figures/decision-indel_size.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-indel_size.svg](../../vignettes/figures/decision-indel_size.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_indel_size.R](../../R/marker_indel_size.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
+- output_hash: `9baec29e2fb5bdadbaa4f6c87010526c`
+
+## vignettes/figures/decision-taqman.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-taqman.svg](../../vignettes/figures/decision-taqman.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_taqman.R](../../R/marker_taqman.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
+- output_hash: `8c5dbacad63078986e32afe06d34a0b8`
+
+## vignettes/figures/decision-dpcr.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-dpcr.svg](../../vignettes/figures/decision-dpcr.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_dpcr.R](../../R/marker_dpcr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
+- output_hash: `e87165fe3c705c66dcc6fdf7f69c2c5c`
+
+## vignettes/figures/decision-snapshot.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-snapshot.svg](../../vignettes/figures/decision-snapshot.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_snapshot.R](../../R/marker_snapshot.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
+- output_hash: `2539957968cd2bfbce6e0a5775e5f17f`
+
+## vignettes/figures/decision-castpcr.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-castpcr.svg](../../vignettes/figures/decision-castpcr.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_castpcr.R](../../R/marker_castpcr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
+- output_hash: `f7a740bc3f0a17f51535f4223261cbd6`
+
+## vignettes/figures/decision-lamp.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-lamp.svg](../../vignettes/figures/decision-lamp.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_lamp.R](../../R/marker_lamp.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
+- output_hash: `9159591cdf66ea91780b386e3fc8bfb2`
+
+## vignettes/figures/decision-rpa.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-rpa.svg](../../vignettes/figures/decision-rpa.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_rpa.R](../../R/marker_rpa.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
+- output_hash: `aa69cb73ec56f21496d0d506d789260b`
+
+## vignettes/figures/decision-crispr.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-crispr.svg](../../vignettes/figures/decision-crispr.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_crispr.R](../../R/marker_crispr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
+- output_hash: `77055cc31fa5157dc072c9bd9817d725`
+
+## vignettes/figures/decision-sanger.svg
+
+- kind: `decision`
+- status: `verified`
+- artifact: [vignettes/figures/decision-sanger.svg](../../vignettes/figures/decision-sanger.svg)
+- generator: [dev/render-decision.R](../../dev/render-decision.R)
+- code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_sanger.R](../../R/marker_sanger.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
+- docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
+- output_hash: `da9195d39680b4f4919d81dbd471908e`
 
 ## vignettes/figures/arms.svg
 

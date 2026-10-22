@@ -93,17 +93,17 @@ svg_text <- function(x, y, lines, size = 9, line_height = 11.7, fill = "#1C1917"
   anchor_attr <- if (anchor == "start") "start" else "middle"
   paste0(
     "<text", svg_attr(
-      x = svg_num(x), `text-anchor` = anchor_attr,
+      x = svg_num(x), y = svg_num(y0), `text-anchor` = anchor_attr,
       `font-family` = "Liberation Sans, Arial, Helvetica, sans-serif",
       `font-size` = svg_num(size), fill = fill,
       `font-weight` = if (bold) "bold" else NULL,
       `font-style` = if (italic) "italic" else NULL
     ), ">",
-    # one <tspan> per line, each with exactly one y
+    # one <tspan> per line, each with the text's own x and exactly one y
     paste0(
       "<tspan", sapply(
         svg_num(y0 + (seq_len(n) - 1) * line_height),
-        function(yy) svg_attr(y = yy)
+        function(yy) svg_attr(x = svg_num(x), y = yy)
       ), ">", svg_escape(lines), "</tspan>",
       collapse = ""
     ),
@@ -171,7 +171,9 @@ svg_legend <- function(items, x, y, width, size = 6.5, step = 4) {
     ))
     cx <- cx + w_lab + step
   }
-  structure(out, height = (row + 1) * row_h)
+  # height covers the tallest row's text plus the swatch half-height and the
+  # air below it, so a following block never lands on the legend
+  structure(out, height = (row + 1) * row_h + size)
 }
 
 #' The arrow-head markers, one per edge colour

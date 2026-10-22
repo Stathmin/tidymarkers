@@ -10,10 +10,10 @@
 #    5. docs/generated/artifacts.md is current (the projection is not stale)
 #
 #  Only tracked files under man/figures and vignettes/figures count as
-#  artifacts; vignettes/figures/*.png and results/plot-smoke are generated
-#  locally and git-ignored, so they are not orphans.  A stale hash or an orphan
-#  exits non-zero.  Entries with `status: unverified` are reported but their
-#  hashes are not enforced (no generator could be justified).
+#  artifacts; vignettes/figures/*.png and the other locally rendered rasters are
+#  git-ignored, so they are not orphans.  A stale hash or an orphan exits
+#  non-zero.  Entries with `status: unverified` are reported but their hashes
+#  are not enforced (no generator could be justified).
 #
 #  Run:  Rscript dev/check-artifacts.R    (exit 1 on stale/orphan)
 # =============================================================================
@@ -73,8 +73,11 @@ if (length(orphans)) {
 } else {
   ok(paste0(length(candidates), " committed artifacts are all in the manifest"))
 }
-if (dir.exists("results/plot-smoke")) {
-  message("  note results/plot-smoke is local-only (git-ignored); not checked")
+if (dir.exists("vignettes/figures")) {
+  local_only <- list.files("vignettes/figures", pattern = "[.]png$", full.names = TRUE)
+  if (length(local_only)) {
+    message("  note ", length(local_only), " vignettes/figures/*.png are local-only (git-ignored); not checked")
+  }
 }
 
 # 3 + 4. hashes --------------------------------------------------------------

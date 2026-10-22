@@ -9,10 +9,14 @@
 #  is declared once in marker_criteria() (marker_criteria.R), so the graph, the text
 #  export, the selector and marker_design_checks() cannot drift apart.
 #
-#  The tree is a DAG that flows top-to-bottom: hard gates are never relaxed; a
-#  soft-gate refinement branch descends and rejoins the main path at the ranking
-#  (never bypassing it), with a DOOMED terminal when a hard gate blocks or the
-#  floors cannot be met.
+#  The tree is a DAG that flows top-to-bottom.  A stage's gates are siblings that
+#  fan out of the entry and into one AND-join ("all gates pass?"): the engine
+#  tests every gate on the same candidate set, it does not short-circuit them in
+#  a declared order.  A failing join descends the soft-gate ladder; each rung
+#  that unblocks rejoins the main path at the survivors, and a rung that does not
+#  falls through to the next.  The spent ladder dooms, exactly as a blocked hard
+#  gate does.  Survivors are *ranked*, never gated, and the assay checks are
+#  assessed after selection.
 # =============================================================================
 
 #' The selection stages of a scheme, in pipeline order
@@ -22,11 +26,13 @@
 #' compatibility stage, ASQ a documentation-only geometry stage, and the
 #' marker-agnostic `"primer"` scheme has none (there is no allele to discriminate).
 #'
-#' Each stage declares *two* orders (C6), which need not agree: `gates` is the
-#' order the method applies the gates (grave / cheap first - a fatal flaw is
-#' tested before an expensive one), and `relax` is the ladder's order (least
-#' grave first - the mildest trade-off is tried before a worse one).  Both are
-#' labelled per stage in [marker_decision_text()].
+#' Each stage declares *two* orders (C6), which presentation needs and the engine
+#' does not: `gates` is the order the gates are *listed* (grave / cheap first), and
+#' `relax` is the ladder's order (least grave first - the mildest trade-off is
+#' tried before a worse one).  The selector ANDs every gate on the same candidate
+#' set ([select_with_ladder()]), so `gates` is not a short-circuit order - only
+#' `relax` drives behaviour.  Both are labelled per stage in
+#' [marker_decision_text()].
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @keywords internal
 #' @noRd
@@ -59,10 +65,12 @@ marker_decision_stages <- function(scheme = "snp") {
 #' The decision tree of a scheme as a node/edge schema (no plotting dependency)
 #'
 #' Generated from [marker_criteria()] filtered to `scheme`: the target *site*
-#' checks (when the scheme has any), then each selection stage (gates down the
-#' main path to "all gates pass?"; the fail edge descends the soft-gate ladder
-#' and rejoins the ranking; a DOOMED terminal marks a hard block or an exhausted
-#' floor), then the *assay* acceptance checks and a final verdict.  Hard gates
+#' checks (when the scheme has any), then each selection stage (its gates as
+#' siblings into one "all gates pass?" join; the fail edge descends the soft-gate
+#' ladder, where every rung that unblocks rejoins the survivors and every rung
+#' that does not falls through to the next; a DOOMED terminal marks a hard block
+#' or an exhausted ladder), then the *assay* acceptance checks and a final
+#' verdict.  Hard gates
 #' carry `hard = TRUE`.  A stage whose gates are all hard routes its fail edge
 #' straight to DOOMED (no refinement branch); in a *mixed* stage each hard gate
 #' routes to DOOMED itself, so a failure of it never looks relaxable (C4).  A
@@ -127,11 +135,12 @@ marker_decision_schema <- function(scheme = "snp") {
       push(node(ids$gate, st$id, "gate", scheme_label("short", gates), o + seq_along(gates),
         hard = hard, detail = scheme_label("limit", gates)
       ))
-      if (length(gates) > 1L) add_edge(chain(ids$gate[-length(gates)], ids$gate[-1L], "flow"))
-      add_edge(chain(entry, ids$gate[1L], "flow"))
-      # the last gate flows into the decision node: without this the gate chain floats
-      # and the "all gates pass?" node is disconnected from the gates it summarises
-      add_edge(chain(ids$gate[length(gates)], ids$decision, "flow"))
+      # every gate of a stage is evaluated on the same candidate set (`passes()`
+      # ANDs the margins; nothing short-circuits), so the gates are siblings: the
+      # entry fans out to all of them and all of them fan into the decision.  A
+      # chain would claim an order of application the engine does not have.
+      add_edge(chain(rep(entry, length(gates)), ids$gate, "flow"))
+      add_edge(chain(ids$gate, rep(ids$decision, length(gates)), "flow"))
       o <- o + length(gates)
       push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
       decision_order <- o
@@ -155,10 +164,14 @@ marker_decision_schema <- function(scheme = "snp") {
         ))
         refine_ids <- c(refine_ids, rung_ids)
         merge_order <- decision_order + length(relax) + 1L
-        if (length(rung_ids) > 1L) add_edge(chain(rung_ids[-length(rung_ids)], rung_ids[-1L], "relax"))
+        # the loop advances to the next rung only while `passes()` is still empty,
+        # so a rung that does not unblock is a failure, not another relaxation
+        if (length(rung_ids) > 1L) add_edge(chain(rung_ids[-length(rung_ids)], rung_ids[-1L], "fail"))
         # the rungs are tried in ladder order from the failing decision
         add_edge(chain(ids$decision, rung_ids[1L], "fail"))
-        add_edge(chain(rung_ids[length(rung_ids)], ids$merge, "relax"))
+        # the survivor set is re-tested after *every* rung, so each rung that does
+        # unblock rejoins the main path here - not only the last one
+        add_edge(chain(rung_ids, rep(ids$merge, length(rung_ids)), "relax"))
         # a rung whose ladder is fully spent has no rung left to try: the last rung
         # dooms (a failure at an earlier rung falls through to the next)
         doomed_sources <- c(doomed_sources, rung_ids[length(rung_ids)])
@@ -184,13 +197,7 @@ marker_decision_schema <- function(scheme = "snp") {
         # sits on its own rank and every edge still flows downhill
         stage_sink_order <- c(stage_sink_order, decision_order + 0.5)
       }
-      # a rung whose ladder is fully spent has no rung left to try: the last rung
-      # dooms (a failure at an earlier rung falls through to the next)
-      if (length(rung_ids)) {
-        doomed_sources <- c(doomed_sources, rung_ids[length(rung_ids)])
-        doomed_owners <- c(doomed_owners, stage_doomed)
-        stage_sink_order[stage_sink_stage == st$id] <- merge_order + 0.5
-      }
+      stage_sink_order[stage_sink_stage == st$id] <- merge_order + 0.5
     } else {
       # a documentation-only stage (`gates = character(0)`, e.g. ASQ): it has no
       # computable gate, so it emits no gate / decision / DOOMED node - only its
@@ -198,7 +205,9 @@ marker_decision_schema <- function(scheme = "snp") {
       add_edge(chain(entry, ids$merge, "flow"))
       merge_order <- o + 1L
     }
-    push(node(ids$merge, st$id, "merge", "survivors (bounds kept)", merge_order))
+    # the floors are never breached: the *bar* moves (to max(floor, best
+    # achievable)) and the survivors are those that clear it
+    push(node(ids$merge, st$id, "merge", "survivors (floors kept)", merge_order))
     has_tiers <- length(tiers) > 0L
     if (has_tiers) {
       push(node(ids$tier, st$id, "tier", unname(tiers), merge_order + seq_along(tiers)))
@@ -206,14 +215,19 @@ marker_decision_schema <- function(scheme = "snp") {
     } else {
       best_order <- merge_order + 1L
     }
-    push(node(ids$best, st$id, "outcome", "best", best_order))
+    # "provisional": the assay checks below can still flag it, and a relaxed gate
+    # leaves it below the nominal bar (`$violated`), so it is not the final word
+    push(node(ids$best, st$id, "outcome", "provisional best", best_order))
     o <- best_order
     if (has_tiers) {
-      add_edge(chain(ids$merge, ids$tier[1L], "pass"))
-      if (length(tiers) > 1L) add_edge(chain(ids$tier[-length(tiers)], ids$tier[-1L], "pass"))
-      add_edge(chain(ids$tier[length(tiers)], ids$best, "pass"))
+      # lexicographic *ranking*, not a gate pipeline: nothing is rejected here,
+      # and a later tier is only consulted when the earlier one ties
+      add_edge(chain(ids$merge, ids$tier[1L], "rank"))
+      if (length(tiers) > 1L) add_edge(chain(ids$tier[-length(tiers)], ids$tier[-1L], "rank"))
+      add_edge(chain(ids$tier[length(tiers)], ids$best, "rank"))
     } else {
-      add_edge(chain(ids$merge, ids$best, "pass"))
+      # no tier: the first survivor wins the declared order, no ranking happened
+      add_edge(chain(ids$merge, ids$best, "flow"))
     }
     entry <- ids$best
   }
@@ -238,8 +252,15 @@ marker_decision_schema <- function(scheme = "snp") {
     if (nrow(chk) > 1L) add_edge(chain(chk$id[-nrow(chk)], chk$id[-1L], "check"))
     entry <- chk$id[nrow(chk)]
   }
+  # the acceptance checks are folded into one verdict (`evaluation_verdict()`: a
+  # failed check dooms, an unevaluable one leaves it unknown), so the terminal is
+  # a decision with two exits - never a straight line from the last check
+  push(node("assay:decision", "assay", "decision", "all checks pass?", o <- o + 1))
+  add_edge(chain(entry, "assay:decision", "check"))
   push(node("assay:verdict", "assay", "outcome", info$verdict, o <- o + 1))
-  add_edge(chain(entry, "assay:verdict", "check"))
+  add_edge(chain("assay:decision", "assay:verdict", "pass"))
+  push(node("assay:doomed", "assay", "doomed", "DOOMED", o <- o + 1))
+  add_edge(chain("assay:decision", "assay:doomed", "fail"))
 
   list(nodes = dplyr::bind_rows(buf$rows), edges = dplyr::bind_rows(buf$edges))
 }
@@ -431,12 +452,22 @@ marker_decision_text <- function(scheme = "snp") {
     cc <- crit[crit$stage == stage, ]
     c(glue::glue("== {title} =="), check_lines(cc, 34L))
   }
+  # one `from -kind-> to` line per edge, padded so the kinds line up
+  edge_lines <- function(ee) {
+    purrr::pmap_chr(list(ee$from, ee$to, ee$kind), function(from, to, kind) {
+      f <- lab[[from]] %||% from
+      t <- lab[[to]] %||% to
+      glue::glue(
+        "  {stringr::str_pad(f, 24, side = 'right')} -{stringr::str_pad(kind, 6, side = 'right')}-> {t}"
+      )
+    })
+  }
   stage_block <- function(st) {
     cc <- crit[crit$stage == st$id, ]
     gate <- cc[cc$role == "gate", ]
     res <- c(
       glue::glue("== stage {st$id} ({st$label}) =="),
-      "gates (hard = never relaxed), in application order (grave / cheap first):",
+      "gates (hard = never relaxed), all applied to the same candidates (AND):",
       check_lines(gate, 22L, soft = "- soft")
     )
     if (length(st$relax)) {
@@ -450,20 +481,13 @@ marker_decision_text <- function(scheme = "snp") {
       ))
     }
     if (length(st$tiers)) {
-      res <- c(res, "tiers (lexicographic, per-tier bottleneck min):", purrr::map_chr(
+      res <- c(res, "tiers (lexicographic; a later tier only breaks the earlier one's ties):", purrr::map_chr(
         seq_along(st$tiers), function(i) glue::glue("  {i}. {unname(st$tiers[i])}")
       ))
     }
     ids <- n$name[n$stage == st$id]
     ee <- e[e$from %in% ids, ]
-    edges <- purrr::pmap_chr(list(ee$from, ee$to, ee$kind), function(from, to, kind) {
-      f <- lab[[from]] %||% from
-      t <- lab[[to]] %||% to
-      glue::glue(
-        "  {stringr::str_pad(f, 24, side = 'right')} -{stringr::str_pad(kind, 6, side = 'right')}-> {t}"
-      )
-    })
-    c(res, "edges:", edges, "")
+    c(res, "edges:", edge_lines(ee), "")
   }
 
   out <- c(
@@ -477,10 +501,13 @@ marker_decision_text <- function(scheme = "snp") {
     out <- c(out, section("site", "target site checks"), "")
   }
   out <- c(out, purrr::map(marker_decision_stages(scheme), stage_block) |> purrr::list_c())
+  assay_ids <- n$name[n$stage == "assay"]
   out <- c(
-    out, section("assay", "assay acceptance checks"), "",
-    "DOOMED: a hard gate blocked, or every soft floor is exhausted.",
-    glue::glue("verdict: all checks pass -> {info$verdict}; else see the failing node")
+    out, section("assay", "assay acceptance checks"),
+    "  (reported, not re-selecting: a failed check flags the chosen marker)", "",
+    if (length(assay_ids)) c("edges:", edge_lines(e[e$from %in% assay_ids, ]), ""),
+    "DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.",
+    glue::glue("verdict: all checks pass -> {info$verdict}; a failing check -> doomed")
   )
   as.character(out)
 }

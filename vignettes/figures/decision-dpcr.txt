@@ -1,0 +1,72 @@
+dPCR hydrolysis-probe (droplet digital) - decision graph
+
+discrimination: allele-specific hydrolysis probes (FAM/HEX) | readout: end-point droplet fluorescence (FAM/HEX); partitioning not simulated | zygosity: co-dominant | loci: 1 | amplicon: short (<= 150 bp)
+
+== stage dpcr (dPCR (droplet digital PCR)) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  probe composition      GC 40-60 %, no 5' G, no run >= 4
+  ! HARD  probe specificity      exactly one perfect probe site in the genome
+  - soft  probe self-structure   probe hairpin/homodimer dG (reaction T) >= -3
+  ! HARD  probe Tm ordering      probe Tm >= primer Tm + 8 C
+  ! HARD  primer Tm (dPCR)       both primers Tm within [44, 50] C
+  - soft  amplicon length (dPCR) amplicon within [60, 150] bp
+relaxation ladder (least grave first):
+  1. amplicon length (dPCR) floor: widen the amplicon window by 20 bp
+  2. probe self-structure   floor: allow 3 kcal/mol more stable
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. probe Tm margin (out-competes the primers)
+  2. probe self-structure (hairpin / homodimer)
+  3. amplicon length (near the ideal)
+edges:
+  probe composition        -flow  -> all gates pass?
+  probe specificity        -flow  -> all gates pass?
+  probe self-structure     -flow  -> all gates pass?
+  probe Tm ordering        -flow  -> all gates pass?
+  primer Tm (dPCR)         -flow  -> all gates pass?
+  amplicon length (dPCR)   -flow  -> all gates pass?
+  1. amplicon length (dPCR) -fail  -> 2. probe self-structure
+  all gates pass?          -fail  -> 1. amplicon length (dPCR)
+  1. amplicon length (dPCR) -relax -> survivors (floors kept)
+  2. probe self-structure  -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> probe Tm margin (out-competes the primers)
+  probe Tm margin (out-competes the primers) -rank  -> probe self-structure (hairpin / homodimer)
+  probe self-structure (hairpin / homodimer) -rank  -> amplicon length (near the ideal)
+  amplicon length (near the ideal) -rank  -> provisional best
+  2. probe self-structure  -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [60, 150]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   probe spans variant                yes
+  check   probe Tm - primer Tm (C)           >= 5 C
+  check   ASP 3' discrimination              > 0
+  check   extension 3' at variant            adjacent
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> probe spans variant
+  probe spans variant      -check -> probe Tm - primer Tm (C)
+  probe Tm - primer Tm (C) -check -> ASP 3' discrimination
+  ASP 3' discrimination    -check -> extension 3' at variant
+  extension 3' at variant  -check -> all checks pass?
+  all checks pass?         -pass  -> usable dPCR assay
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable dPCR assay; a failing check -> doomed

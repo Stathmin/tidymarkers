@@ -1,0 +1,73 @@
+CAPS / dCAPS (restriction marker) - decision graph
+
+discrimination: the allele creates or destroys a restriction site | readout: gel fragment lengths | zygosity: co-dominant | loci: 1 | amplicon: bounded
+
+== stage caps (CAPS digest) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  restriction site       an enzyme's cut separates the REF and ALT amplicons
+  - soft  band gap               closest product bands >= 20 bp apart
+  - soft  amplicon length (CAPS) amplicon within [120, 1200] bp
+  - soft  primer Tm (CAPS)       both primers Tm within [55, 65] C
+relaxation ladder (least grave first):
+  1. amplicon length (CAPS) floor: widen the amplicon window
+  2. primer Tm (CAPS)       floor: widen the Tm window
+  3. band gap               floor: allow a 10 bp band gap (PAGE)
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. band gap (gel resolvability)
+  2. Tm balance
+  3. amplicon length
+edges:
+  restriction site         -flow  -> all gates pass?
+  band gap                 -flow  -> all gates pass?
+  amplicon length (CAPS)   -flow  -> all gates pass?
+  primer Tm (CAPS)         -flow  -> all gates pass?
+  1. amplicon length (CAPS) -fail  -> 2. primer Tm (CAPS)
+  2. primer Tm (CAPS)      -fail  -> 3. band gap
+  all gates pass?          -fail  -> 1. amplicon length (CAPS)
+  1. amplicon length (CAPS) -relax -> survivors (floors kept)
+  2. primer Tm (CAPS)      -relax -> survivors (floors kept)
+  3. band gap              -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> band gap (gel resolvability)
+  band gap (gel resolvability) -rank  -> Tm balance
+  Tm balance               -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  3. band gap              -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [120, 1200]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   restriction site defined           present
+  check   restriction site separates alleles REF != ALT
+  check   band gap (bp)                      >= 20 bp
+  check   digest sums to amplicon            REF/ALT = product
+  check   restriction site conserved (population) yes
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> restriction site defined
+  restriction site defined -check -> restriction site separates alleles
+  restriction site separates alleles -check -> band gap (bp)
+  band gap (bp)            -check -> digest sums to amplicon
+  digest sums to amplicon  -check -> restriction site conserved (population)
+  restriction site conserved (population) -check -> all checks pass?
+  all checks pass?         -pass  -> usable CAPS marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable CAPS marker; a failing check -> doomed

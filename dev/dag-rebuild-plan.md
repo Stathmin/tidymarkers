@@ -1,7 +1,7 @@
 # DAG rebuild plan — 20 marker chemistries, 10 agents
 
 This is the orchestrator's brief. It exists so ten agents can each fix one chunk of the
-decision DAGs (the trees behind `results/plot-smoke/decision-<scheme>.png`) without
+decision DAGs (the trees behind `vignettes/figures/decision-<scheme>.svg`) without
 colliding: how they **search**, how they **report**, how they **edit**, and how they
 **test only their own chunk**.
 
@@ -192,9 +192,10 @@ stop and request a serial slot from the orchestrator, not edit it inline and col
 | 9 | `dpcr`, `taqman`, `snapshot` | `R/marker_dpcr.R`, `R/marker_taqman.R`, `R/marker_snapshot.R`, `tests/testthat/test-dpcr.R`, `test-taqman.R`, `test-snapshot.R` |
 | 10 | `sanger`, `ssr`, `indel_size` | `R/marker_sanger.R`, `R/marker_ssr.R`, `R/marker_indel_size.R`, `tests/testthat/test-sanger.R`, `test-ssr.R`, `test-indel-size.R` |
 
-Agent 3 also updates the committed README figures (`man/figures/decision-tree.png` for
-`snp`, `decision-multiplex.png` for `duplex` via `Rscript dev/render-decision.R`) since
-only those two figures are committed; the rest are git-ignored `results/plot-smoke/*.png`.
+Agent 3 also updates the committed README figures (`man/figures/decision-tree.svg` for
+`snp`, `decision-multiplex.svg` for `duplex` via `Rscript dev/render-decision.R`). The
+per-chemistry SVGs and their `.txt` twins are committed under `vignettes/figures` and
+embedded by the vignettes; only the PNG rasters there are git-ignored.
 
 ---
 

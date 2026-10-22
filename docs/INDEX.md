@@ -43,8 +43,10 @@ Other vignettes:
 
 - [docs/INDEX](INDEX.md) — this page.
 - [docs/artifacts.yml](artifacts.yml) — the artifact manifest (source of truth).
-  Committed artifacts only: the logo, the two README decision trees and the 20
-  vignette SVGs. `vignettes/figures/*.png` are generated locally and ignored.
+  Committed artifacts only: the logo, the two README decision trees, the 20
+  per-chemistry decision SVGs in `vignettes/figures` and the 20 vignette gallery
+  SVGs. The `.txt` twins of the decision SVGs are committed too; only the
+  `vignettes/figures/*.png` rasters are generated locally and ignored.
 - [docs/generated/artifacts.md](generated/artifacts.md) — the generated artifact
   graph; one heading per artifact with links to the artifact, its generator,
   its code and the docs that consume it.

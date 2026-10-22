@@ -1,0 +1,73 @@
+InDel size polymorphism (gel/capillary fragment length) - decision graph
+
+discrimination: amplicon size difference equals the indel length | readout: agarose / capillary fragment length | zygosity: co-dominant | loci: 1 | amplicon: bounded (80-300 bp)
+
+== stage indel_size (InDel size marker) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  - soft  resolvable gap         REF/ALT product difference >= min_gap bp
+  - soft  amplicon length (InDel) both products within [80, 300] bp
+  - soft  primer Tm (InDel)      both primers Tm within [58, 63] C
+  ! HARD  primer structure       hairpin/homodimer dG (reaction T) >= limit
+  ! HARD  primer uniqueness      no off-target exact primer hits; exactly one in-silico product
+relaxation ladder (least grave first):
+  1. amplicon length (InDel) floor: widen the amplicon window by 50 bp
+  2. primer Tm (InDel)      floor: widen the Tm window by 5 C
+  3. resolvable gap         floor: accept a 3 bp difference (capillary / PAGE)
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. Tm balance
+  2. amplicon length
+  3. primer 3' end
+edges:
+  resolvable gap           -flow  -> all gates pass?
+  amplicon length (InDel)  -flow  -> all gates pass?
+  primer Tm (InDel)        -flow  -> all gates pass?
+  primer structure         -flow  -> all gates pass?
+  primer uniqueness        -flow  -> all gates pass?
+  1. amplicon length (InDel) -fail  -> 2. primer Tm (InDel)
+  2. primer Tm (InDel)     -fail  -> 3. resolvable gap
+  all gates pass?          -fail  -> 1. amplicon length (InDel)
+  1. amplicon length (InDel) -relax -> survivors (floors kept)
+  2. primer Tm (InDel)     -relax -> survivors (floors kept)
+  3. resolvable gap        -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> Tm balance
+  Tm balance               -rank  -> amplicon length
+  amplicon length          -rank  -> primer 3' end
+  primer 3' end            -rank  -> provisional best
+  3. resolvable gap        -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [80, 300]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   repeat unit (nt)                   2-4 nt
+  check   repeat copies                      >= 5
+  check   REF/ALT size difference (bp)       >= 3 bp
+  check   fragment size (bp)                 scheme window
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> repeat unit (nt)
+  repeat unit (nt)         -check -> repeat copies
+  repeat copies            -check -> REF/ALT size difference (bp)
+  REF/ALT size difference (bp) -check -> fragment size (bp)
+  fragment size (bp)       -check -> all checks pass?
+  all checks pass?         -pass  -> usable InDel size marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable InDel size marker; a failing check -> doomed

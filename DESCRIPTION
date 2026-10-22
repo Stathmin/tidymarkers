@@ -19,7 +19,7 @@ License: MIT + file LICENSE
 URL: https://github.com/Stathmin/tidymarkers
 BugReports: https://github.com/Stathmin/tidymarkers/issues
 SystemRequirements: OligoArrayAux (optional), NCBI BLAST+ (optional),
-    Graphviz (optional, for routed decision graphs)
+    Node.js (optional, for the vendored decision-graph layout engine)
 Encoding: UTF-8
 Imports:
     Biostrings,

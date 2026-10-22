@@ -1,0 +1,77 @@
+LAMP (loop-mediated isothermal amplification) - decision graph
+
+discrimination: variant at the 3' terminus of FIP (F2) or a loop primer | readout: turbidity / fluorescence / colorimetric / gel (isothermal) | zygosity: dominant (present/absent), co-dominant with probes | loci: 1 | amplicon: 120-300 bp
+
+== stage lamp (LAMP primer set) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  variant at a primer 3' end variant at the 3' terminus of FIP (or a loop primer)
+  ! HARD  FIP/BIP Tm             FIP/BIP binding arm Tm within [55, 65] C
+  - soft  F3/B3 Tm               F3/B3 Tm within [55, 62] C
+  ! HARD  primer structure       no inverted repeat in any primer
+  - soft  cross-dimers           no cross-dimer run >= 8 bp in the pooled set
+  - soft  amplicon length (LAMP) amplicon within [120, 300] bp
+relaxation ladder (least grave first):
+  1. amplicon length (LAMP) floor: widen the amplicon window by 20 bp
+  2. F3/B3 Tm               floor: widen the outer Tm window by 3 C
+  3. cross-dimers           floor: allow a 2 bp longer cross-dimer run
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. variant discrimination
+  2. inner Tm set
+  3. primer structure
+  4. amplicon length
+edges:
+  variant at a primer 3' end -flow  -> all gates pass?
+  FIP/BIP Tm               -flow  -> all gates pass?
+  F3/B3 Tm                 -flow  -> all gates pass?
+  primer structure         -flow  -> all gates pass?
+  cross-dimers             -flow  -> all gates pass?
+  amplicon length (LAMP)   -flow  -> all gates pass?
+  1. amplicon length (LAMP) -fail  -> 2. F3/B3 Tm
+  2. F3/B3 Tm              -fail  -> 3. cross-dimers
+  all gates pass?          -fail  -> 1. amplicon length (LAMP)
+  1. amplicon length (LAMP) -relax -> survivors (floors kept)
+  2. F3/B3 Tm              -relax -> survivors (floors kept)
+  3. cross-dimers          -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> variant discrimination
+  variant discrimination   -rank  -> inner Tm set
+  inner Tm set             -rank  -> primer structure
+  primer structure         -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  3. cross-dimers          -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [120, 300]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   FIP 3' ALT                         ALT at FIP 3'
+  check   inner arm Tm balance (C)           <= 5 C
+  check   inner arms inside amplicon         inside
+  check   variant at FIP 3' end              yes
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> FIP 3' ALT
+  FIP 3' ALT               -check -> inner arm Tm balance (C)
+  inner arm Tm balance (C) -check -> inner arms inside amplicon
+  inner arms inside amplicon -check -> variant at FIP 3' end
+  variant at FIP 3' end    -check -> all checks pass?
+  all checks pass?         -pass  -> usable LAMP marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable LAMP marker; a failing check -> doomed

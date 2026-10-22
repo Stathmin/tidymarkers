@@ -199,10 +199,18 @@ THF ≥ 30 nt от 5' / ≥ 15 nt от 3' / FQ-gap ≤ 4, ампликон 100�
 ### Аудит решений
 
 Предыдущий раздел перечисляет правила метода; здесь — только расхождения между
-DAG (`results/plot-smoke/decision-lamp.txt`, `decision-rpa.txt`), smoke-рисунками
+DAG (`vignettes/figures/decision-lamp.txt`, `decision-rpa.txt`), smoke-рисунками
 (`vignettes/figures/lamp.svg`, `rpa.svg`) и кодом. DAG — это
 `marker_decision_schema()`: жёсткие гейты не релаксируются, мягкие идут по
 лестнице, а `check:`-узлы стоят после `best` и гейтами не являются.
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-lamp.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-rpa.svg")
+```
 
 **Реализовано и проверено.** У LAMP ориентация FIP/BIP верна:
 `FIP = revcomp(F1) + F2`, `BIP = revcomp(B1) + revcomp(B2)`; F3 — плюс-цепь,

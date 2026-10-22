@@ -1,0 +1,79 @@
+TaqMan 5'-nuclease allelic discrimination - decision graph
+
+discrimination: allele-specific hydrolysis probes (FRET ratio) | readout: co-dominant two-colour real-time | zygosity: co-dominant | loci: 1 | amplicon: short (60-150 bp)
+
+== stage taqman (TaqMan 5'-nuclease) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  probe composition      GC 40-60 %, no 5' G, no run / SSR
+  ! HARD  probe specificity      exactly one perfect probe site in the genome
+  - soft  probe self-structure   probe hairpin/homodimer dG (reaction T) >= -3
+  ! HARD  probe Tm window        probe Tm within [56, 72] C
+  ! HARD  primer Tm (TaqMan)     both primers Tm within [58, 63] C
+  ! HARD  probe mismatch dG      mismatch dG >= 1.5 kcal/mol (package rule, not measured)
+  - soft  probe centrality       variant centrality >= 0.5
+  - soft  amplicon length (TaqMan) amplicon within [60, 150] bp
+relaxation ladder (least grave first):
+  1. probe centrality       floor: allow the variant nearer a probe end
+  2. amplicon length (TaqMan) floor: widen the amplicon window by 20 bp
+  3. probe self-structure   floor: allow 3 kcal/mol more stable
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. probe discrimination (mismatch dG margin)
+  2. Tm ordering (probe above primers)
+  3. amplicon length (near the ideal)
+edges:
+  probe composition        -flow  -> all gates pass?
+  probe specificity        -flow  -> all gates pass?
+  probe self-structure     -flow  -> all gates pass?
+  probe Tm window          -flow  -> all gates pass?
+  primer Tm (TaqMan)       -flow  -> all gates pass?
+  probe mismatch dG        -flow  -> all gates pass?
+  probe centrality         -flow  -> all gates pass?
+  amplicon length (TaqMan) -flow  -> all gates pass?
+  1. probe centrality      -fail  -> 2. amplicon length (TaqMan)
+  2. amplicon length (TaqMan) -fail  -> 3. probe self-structure
+  all gates pass?          -fail  -> 1. probe centrality
+  1. probe centrality      -relax -> survivors (floors kept)
+  2. amplicon length (TaqMan) -relax -> survivors (floors kept)
+  3. probe self-structure  -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> probe discrimination (mismatch dG margin)
+  probe discrimination (mismatch dG margin) -rank  -> Tm ordering (probe above primers)
+  Tm ordering (probe above primers) -rank  -> amplicon length (near the ideal)
+  amplicon length (near the ideal) -rank  -> provisional best
+  3. probe self-structure  -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [60, 150]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   probe spans variant                yes
+  check   probe Tm - primer Tm (C)           >= 5 C
+  check   ASP 3' discrimination              > 0
+  check   extension 3' at variant            adjacent
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> probe spans variant
+  probe spans variant      -check -> probe Tm - primer Tm (C)
+  probe Tm - primer Tm (C) -check -> ASP 3' discrimination
+  ASP 3' discrimination    -check -> extension 3' at variant
+  extension 3' at variant  -check -> all checks pass?
+  all checks pass?         -pass  -> usable TaqMan assay
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable TaqMan assay; a failing check -> doomed

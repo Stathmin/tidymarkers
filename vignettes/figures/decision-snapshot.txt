@@ -1,0 +1,75 @@
+SNaPshot / single-base extension (minisequencing) - decision graph
+
+discrimination: one fluorescent ddNTP added at the variant (base identity) | readout: capillary electrophoresis (dye colour + product size) | zygosity: co-dominant | loci: 1 | amplicon: bounded (<= 300 bp)
+
+== stage snapshot (SNaPshot extension) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  extension 3' placement extension 3' end immediately 5' of the variant
+  ! HARD  extension composition  GC 30-70 %, no run >= 4, no SSR
+  ! HARD  extension primer uniqueness exactly one perfect extension-primer site in the genome
+  - soft  extension structure    hairpin/homodimer dG (reaction T) >= -3
+  - soft  extension primer Tm    extension primer Tm within [50, 55] C
+  - soft  amplicon length        amplicon within [100, 300] bp
+relaxation ladder (least grave first):
+  1. amplicon length        floor: widen the amplicon window by 50 bp
+  2. extension primer Tm    floor: widen the Tm window by 5 C each side
+  3. extension structure    floor: allow 3 kcal/mol more stable
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. extension-primer Tm centrality
+  2. extension self-structure (hairpin / homodimer)
+  3. amplicon length (near the ideal)
+edges:
+  extension 3' placement   -flow  -> all gates pass?
+  extension composition    -flow  -> all gates pass?
+  extension primer uniqueness -flow  -> all gates pass?
+  extension structure      -flow  -> all gates pass?
+  extension primer Tm      -flow  -> all gates pass?
+  amplicon length          -flow  -> all gates pass?
+  1. amplicon length       -fail  -> 2. extension primer Tm
+  2. extension primer Tm   -fail  -> 3. extension structure
+  all gates pass?          -fail  -> 1. amplicon length
+  1. amplicon length       -relax -> survivors (floors kept)
+  2. extension primer Tm   -relax -> survivors (floors kept)
+  3. extension structure   -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> extension-primer Tm centrality
+  extension-primer Tm centrality -rank  -> extension self-structure (hairpin / homodimer)
+  extension self-structure (hairpin / homodimer) -rank  -> amplicon length (near the ideal)
+  amplicon length (near the ideal) -rank  -> provisional best
+  3. extension structure   -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [100, 300]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   probe spans variant                yes
+  check   probe Tm - primer Tm (C)           >= 5 C
+  check   ASP 3' discrimination              > 0
+  check   extension 3' at variant            adjacent
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> probe spans variant
+  probe spans variant      -check -> probe Tm - primer Tm (C)
+  probe Tm - primer Tm (C) -check -> ASP 3' discrimination
+  ASP 3' discrimination    -check -> extension 3' at variant
+  extension 3' at variant  -check -> all checks pass?
+  all checks pass?         -pass  -> usable SNaPshot marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable SNaPshot marker; a failing check -> doomed

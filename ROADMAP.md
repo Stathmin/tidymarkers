@@ -959,7 +959,7 @@ manifest + generated Markdown, а не через sidecar JSON.
 - [x] **`dev/check-docs.R`.** Нет orphan-документа; нет broken relative link;
   каждый `include_graphics()` имеет manifest-entry; обратные ссылки совпадают.
 - [x] **`dev/check-artifacts.R`.** Нет orphan-файла в `vignettes/figures`,
-  `man/figures`, `results/plot-smoke`; все пути manifest существуют; входной хеш
+  `man/figures`, `vignettes/figures`; все пути manifest существуют; входной хеш
   не изменился; выходной хеш совпадает — иначе **stale** и gate fail.
 - [x] **`docs/generated/artifacts.md`.** Один heading на артефакт со ссылками
   на generator/source/docs; `graphify update . --no-cluster` после генерации.

@@ -11,10 +11,11 @@
 #    4. spelling -- only with `--spelling` (the prose is Russian, so an English
 #       dictionary flags every word; the R/roxygen code is checked by lintr)
 #    5. figures -- regenerate the figures from the engine and fail if a committed
-#       one (man/figures) changed, so the diagrams never drift from the pipeline
-#       (see dev/render-all.R).  By default only the fast, offline decision trees
-#       are refreshed; `--render` also redraws the heavy panels (target panel, FRI
-#       demo - need genome data/OligoArrayAux).  Skip the step with `--no-render`.
+#       one (man/figures, vignettes/figures/decision-*.svg) changed, so the
+#       diagrams never drift from the pipeline (see dev/render-all.R).  By
+#       default only the fast, offline decision trees are refreshed; `--render`
+#       also redraws the heavy panels (target panel - needs genome
+#       data/OligoArrayAux).  Skip the step with `--no-render`.
 #    6. install smoke -- R CMD INSTALL must succeed
 #    7. R CMD check -- only with `--full` (slow; builds and checks the tarball)
 #
@@ -157,17 +158,28 @@ step("figures (auto-render)", function() {
   if (no_render) {
     return(message("  skip (--no-render)"))
   }
-  if (!nzchar(Sys.which("dot"))) {
-    return(message("  skip (graphviz dot not installed)"))
+  # the layout engine is vendored under .tools/elk (ELK + libavoid), so graphviz
+  # `dot` is no longer involved; a missing engine is a skip, not a silent pass
+  solver <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("-e", shQuote("pkgload::load_all(quiet = TRUE); quit(status = as.integer(!decision_solver_available()))"))
+  )
+  if (!identical(as.integer(solver), 0L)) {
+    return(message("  skip (layout engine not runnable - see .tools/elk/README.md)"))
   }
   # the figures are code: regenerate every one from the engine, then fail only if a
-  # *committed* figure (man/figures) changed - so the update is deliberate and
-  # committed, never a silent drift
-  figs <- list.files("man/figures", pattern = "[.](png|svg)$", full.names = TRUE)
+  # *committed* figure changed - so the update is deliberate and committed, never
+  # a silent drift.  Both homes are covered: the README pair in man/figures and
+  # the per-chemistry decision SVGs the vignettes embed.
+  figs <- c(
+    list.files("man/figures", pattern = "[.](png|svg)$", full.names = TRUE),
+    Sys.glob("vignettes/figures/decision-*.svg")
+  )
   md5 <- function() vapply(figs, function(f) unname(tools::md5sum(f)), character(1))
   before <- md5()
   # fast, offline default: the decision trees (README-facing) + their per-scheme
-  # siblings; `--render` adds the heavy panels and the demo traversal
+  # siblings in vignettes/figures; `--render` adds the heavy panels and the demo
+  # traversal
   args <- if (render) character() else c("--skip-heavy", "--skip-example")
   system2(file.path(R.home("bin"), "Rscript"), c("dev/render-all.R", args))
   after <- md5()
