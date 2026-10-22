@@ -633,8 +633,11 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   chroms <- genome_chroms(genome)
   scan_one <- function(nm) {
     worker_biostrings()
-    fh <- primer_hit_table(f_primer, genome[nm], radius, scoring, side = "f")
-    rh <- primer_hit_table(rev, genome[nm], radius, scoring, side = "r")
+    # the whole genome goes in, not `genome[nm]`: `primer_hit_table()` already
+    # loops `genome_chroms()` through `genome_seq()`, and a `marker_genome` has
+    # no `[` method (it would hand over NULL and fail inside the scan)
+    fh <- primer_hit_table(f_primer, genome, radius, scoring, side = "f")
+    rh <- primer_hit_table(rev, genome, radius, scoring, side = "r")
     if (nrow(fh) == 0L || nrow(rh) == 0L) {
       return(NULL)
     }
