@@ -46,7 +46,7 @@ artifacts:
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
   input_hash: 12dd6c50780841710f74004cca8efd74
-  output_hash: 01a84407e4470ee44904e1c89c3bee7b
+  output_hash: 4523dde6db9a37be013b904a095cf4a6
   docs: README.md
   code:
   - R/marker_decision.R
@@ -63,7 +63,7 @@ artifacts:
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
   input_hash: 12dd6c50780841710f74004cca8efd74
-  output_hash: a0aa48f780469ea7a111645722a077db
+  output_hash: ed623f336bd27f7c10c4818f06d07f38
   docs: README.md
   code:
   - R/marker_decision.R
