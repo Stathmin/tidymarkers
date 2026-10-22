@@ -75,12 +75,13 @@ test_that("the check classes partition the registered checks", {
   expect_setequal(
     c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS, family_labels), labels
   )
-  # 8 marker-agnostic + 5 site + 13 allele-specific + 29 family-specific = 55
+  # 8 marker-agnostic + 5 site + 14 allele-specific + 29 family-specific = 56
+  # (the 14th is `as_mismatch_type`, Z0.4: the terminal mismatch's Kwok class)
   expect_length(KASP_CHECK_PRIMER, 8L)
   expect_length(KASP_CHECK_SITE, 5L)
-  expect_length(KASP_CHECK_AS, 13L)
+  expect_length(KASP_CHECK_AS, 14L)
   expect_length(family_labels, 29L)
-  expect_length(labels, 55L)
+  expect_length(labels, 56L)
   # distinct classes: a base check is never also family-specific
   expect_length(intersect(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), family_labels), 0L)
   expect_length(intersect(KASP_CHECK_PRIMER, KASP_CHECK_SITE), 0L)

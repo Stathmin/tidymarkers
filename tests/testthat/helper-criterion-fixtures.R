@@ -16,7 +16,12 @@
 # a non-empty reason: adding a key is the one place this suite admits it does
 # not test a criterion.  Empty is the healthy state.
 zw1_exemptions <- function() {
-  stats::setNames(character(0), character(0))
+  reason <- paste(
+    "Kwok 1990's classes are a RANKING of extension kinetics, so no class is a",
+    "fail; an unclassed substitution pair is reported `unknown`, not `fail`,",
+    "so the in-memory suite cannot drive this criterion to `fail`"
+  )
+  stats::setNames(reason, "as_mismatch_type")
 }
 
 # One `id -> test` fixture row.  `file` is a test file under tests/testthat and
@@ -140,6 +145,8 @@ zw1_fail_fixtures <- function() {
       "com_dropout", kasp,
       "::each broken criterion flips the verdict to fail"
     ),
+    # `as_mismatch_type` is EXEMPT, not fixture-backed: Kwok's classes rank
+    # kinetics, so no class is a fail (see `zw1_exemptions()`).
     zw1_fixture(
       "discrimination", kasp,
       "::each broken criterion flips the verdict to fail"

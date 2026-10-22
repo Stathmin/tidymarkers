@@ -46,10 +46,20 @@
 #  thresholds.
 # =============================================================================
 
-# The two thresholds the formals do not carry.  A single mismatch that costs less
-# than this much duplex stability (dG at the reaction temperature, kcal/mol) is not discriminated by the
-# exonuclease step, so it is a hard gate; a probe this much more stable than the
-# dG limit is a *soft* gate (a somewhat sticky probe still reports).
+# The thresholds the formals do not carry.
+#
+# `TAQMAN_MISMATCH_DG` is a PACKAGE RULE, NOT A MEASUREMENT.  No open paper we
+# hold prints a dG threshold for probe discrimination, nor a matched-vs-mismatched
+# dCt for a TaqMan probe (see data-raw/proposed/taqman_status.decision.md).  It is
+# the amount of duplex destabilisation (dG at the reaction temperature, kcal/mol)
+# this package chooses to require of the allele mismatch, and the report says so.
+# It is not evidence that a probe below it will fail: the exonuclease step is not
+# modelled here at all (`marker_readout()` returns `simulated = FALSE` for this
+# chemistry), so a low margin means "this package will not call it discriminated",
+# never "this assay does not work".
+#
+# `TAQMAN_PROBE_STRUCT_RELAX` and the centrality/amplicon floors are the
+# relaxation ladder's bounded rungs (C8).
 TAQMAN_MISMATCH_DG <- 1.5
 TAQMAN_PROBE_STRUCT_RELAX <- 3
 TAQMAN_CENTRALITY_RELAX <- -0.25
@@ -379,7 +389,9 @@ scheme_def_taqman <- function() {
       gate_taqman_probe_structure = glue::glue("probe hairpin/homodimer dG (reaction T) >= {KASP_LIMITS$hairpin_dg}"),
       gate_taqman_probe_tm = glue::glue("probe Tm within [{probe_tm[1L]}, {probe_tm[2L]}] C"),
       gate_taqman_primer_tm = glue::glue("both primers Tm within [{primer_tm[1L]}, {primer_tm[2L]}] C"),
-      gate_taqman_discrimination = glue::glue("mismatch dG >= {TAQMAN_MISMATCH_DG} kcal/mol"),
+      gate_taqman_discrimination = glue::glue(
+        "mismatch dG >= {TAQMAN_MISMATCH_DG} kcal/mol (package rule, not measured)"
+      ),
       gate_taqman_centrality = glue::glue("variant centrality >= {cent}"),
       gate_taqman_amplicon = glue::glue("amplicon within [{amp[1L]}, {amp[2L]}] bp")
     ),

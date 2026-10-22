@@ -294,6 +294,17 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   })
   n_uncovered <- memo(function() max(0L, n_alt() - alt_covered()))
   linked_dependent <- memo(function() isTRUE(assay$selection$linked_dependent))
+  # Z0.4: the 3'-terminal allele pair's severity, as Kwok 1990 classified it
+  # (`severe` / `moderate` / `minimal` / `context_dependent`; see
+  # marker_mismatch_severity()).  The AS engine already computes the wobble flag;
+  # the class says whether a "pass" here is a strong, medium or weak assumption.
+  mismatch_severity <- memo(function() {
+    snp <- assay$snp
+    if (is.null(snp) || !nrow(snp)) {
+      return(NA_character_)
+    }
+    marker_mismatch_severity(snp$ref[1L], unlist(snp$alt)[1L])
+  })
   as_tm <- memo(function() mean(th$tm[th$name %in% c("AS_ref", "AS_alt")]))
   com_tm <- memo(function() aa$com_tm)
   hair <- memo(function() min(th$hairpin_dg))
@@ -336,6 +347,25 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     },
     "ALT alleles (n)" = function() {
       list(observed = as.numeric(n_alt()), pass = n_alt() >= 1L)
+    },
+    "AS 3' mismatch base pair" = function() {
+      sev <- mismatch_severity()
+      list(
+        # the class IS the observation: a categorical row must report the level it
+        # graded, not a placeholder that hides which class was found.  It is
+        # declared `textual` below, so an NA numeric `observed` is not treated
+        # as missing data.
+        observed = sev,
+        pass = if (is.na(sev)) NA else sev %in% c("severe", "moderate", "minimal"),
+        # NA here means either no single-base substitution, or a substitution
+        # pair Kwok's table does not carry (e.g. A:C).  The two are different and
+        # the detail must not conflate them.
+        detail = if (is.na(sev)) {
+          "substitution pair not in Kwok 1990's table (no published class)"
+        } else {
+          glue::glue("{sev} terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary")
+        }
+      )
     },
     "linked variants skipped (n)" = function() {
       list(observed = as.numeric(linked_skipped()), pass = linked_skipped() == 0L)
@@ -456,9 +486,9 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     detail = vapply(rows, function(r) r$detail %||% NA_character_, character(1)),
     level = crit$level,
     not_applicable = crit$label %in% fam_labs & !native,
-    # the one check whose value is deliberately textual: its NA observation is
-    # the absence of a number, not the absence of data
-    textual = "target site class"
+    # checks whose value is deliberately textual: a missing numeric observation
+    # is the absence of a number, not the absence of data
+    textual = c("target site class", "AS 3' mismatch base pair")
   )
   marker_with_population_checks(out, assay)
 }

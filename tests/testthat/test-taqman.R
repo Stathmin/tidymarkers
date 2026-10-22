@@ -181,3 +181,16 @@ test_that("the TaqMan DAG shows the gates in application order, ordering only as
     marker_decision_text("taqman")
   )))
 })
+
+test_that("the mismatch dG threshold is a package rule and says so", {
+  # Q1: no open paper in this package prints a dG threshold for TaqMan probe
+  # discrimination, nor a matched-vs-mismatched dCt.  The number stays (it is
+  # what this package scores against) but it is never presented as measured.
+  expect_equal(TAQMAN_MISMATCH_DG, 1.5)
+  # the criterion registry is the one place every reader (gate, check, plot)
+  # takes the limit from, so the disclaimer lives there
+  cr <- marker_criteria(scheme = "taqman")
+  lim <- cr$limit[cr$id == "taqman:gate:gate_taqman_discrimination"]
+  expect_length(lim, 1L)
+  expect_match(lim, "package rule, not measured", fixed = TRUE)
+})
