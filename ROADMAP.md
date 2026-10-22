@@ -33,14 +33,14 @@
 
 | # | пункт | правка (где) | проверка | блокер |
 |---|---|---|---|---|
-| 1 | `Q1` снять три неподтверждённые заявки | `R/marker_taqman.R` (L20-27, L46-53), `R/marker_readout.R` (таблица `notes`), дока `polyploid` | `test-taqman.R`, `test-readout.R`, `test-polyploid-scope.R` | нет |
+| 1 | `Q1` снять три неподтверждённые заявки | **готово 2026-10-22**: `data-raw/proposed/{taqman,lamp}_status.decision.md`, `polyploid_scope` уже решён | `test-taqman-status.R`, `test-lamp-status.R` | **закрыт** |
 | 2 | `Z7.1` параметр намеренного мисматча | `R/marker_arms.R`/`marker_technology()` + `z7_priors.csv` | `test-z7-priors.R` + golden вердикты | **снят** (`Q2` принят: −3 по умолчанию, слабый класс → −2) |
 | 3 | `Z0.1` Cas13a/Cas13b PFS и спейсер | `R/marker_crispr.R` (`crispr_guide_candidates()`) | `test-crispr.R`: PFS-тест на оба эффектора | нет |
 | 4 | `Z0.4` KASP: мисматч как кинетика, а не бинарность | `R/marker_checks.R` (различитель типа мисматча) | `test-kasp-checks.R` | нет |
 | 5 | `Z9.1` LAMP: paired ALT набор / internal control | `R/marker_lamp.R` (см. комментарий L46-47) | `test-lamp.R` | нет |
 | 6 | `Z5.1` position-aware off-target в собственной ориентации | `R/marker_specificity.R` | `test-specificity.R` | индекс для 15 Gb (`Y3.5`) |
 | 7 | `Z8.1` число отрицательных примеров для оценки | `inst/extdata/conversion_rates.csv` | `test-z8-outcomes.R` | новых статей `outcome = failed` |
-| 8 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | `R/marker_checks.R` (сборка) + `R/marker_engines_versions.R` (штамп) | `test-engine-stamp.R` | нет |
+| 8 | `ZW2.2` штамп `engine_stamp` в `Evaluation` | **готово** (`2ee25da`): штамп в `marker_design_checks()`, `marker_with_stamp(from=)` наследует | `test-engine-stamp.R` | **закрыт** |
 
 Снято из очереди 2026-10-21: `Q2` (все пять решений приняты, см. таблицу ниже) и
 `Z9.2` (HRM `dTm` перестал быть «порогом без величины»: `hrm_resolvability()`
@@ -148,8 +148,12 @@ ESI Table S1 — 4096 измеренных Tm).
 - `Z8.1`/`Z8.3`: guard для конверсий написан, но отрицательных строк
   (`outcome = failed`) по-прежнему мало — это **новые статьи**, не код.
 - `Z0.4` (KASP: мисматч как кинетика) — следующий по очереди, `R/marker_checks.R`.
-- Три решения `Q1` (`taqman_status`, `lamp_status`, `polyploid_scope`) остаются
-  текстовой правкой; `polyploid_scope` ещё ждёт alias `homeolog`/`homoeolog` в доке.
+- Все три решения `Q1` приняты 2026-10-22: `taqman_status`, `lamp_status`,
+  `polyploid_scope` лежат как `*.decision.md` в `data-raw/proposed/`. TaqMan и
+  LAMP — только текстовой правкой (константы остаются, меняется статус «по
+  умолчанию», не «измерено»); `badolo2012` в `scientific_sources.csv` исправлен
+  по DOI/PMID; alias `homoeolog` добавлен в `SPECIFICITY_SCHEME_ALIASES`.
+  Проверки: `test-taqman-status.R`, `test-lamp-status.R`.
 
 Правило неизменно: пока решение не принято, артефакт говорит «данных нет», а не
 «данные против». `merge-proposals.R --apply` предложения в код не переносит.

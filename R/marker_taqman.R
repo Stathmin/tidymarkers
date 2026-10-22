@@ -6,9 +6,11 @@
 #  (one per allele, each carrying its own fluorophore - conventionally FAM/HEX)
 #  are cleaved by the 5'->3' exonuclease activity of Taq only when they match
 #  their template, so the fluorescence ratio is the call.  Unlike KASP there is
-#  no allele-specific primer; the discrimination lives in the probe, which is why
-#  a mismatch near the *middle* of the probe (maximum duplex destabilisation) is
-#  the design target.
+#  no allele-specific primer; the discrimination lives in the probe.  Placing the
+#  allele base near the *middle* of the probe (maximum duplex destabilisation) is
+#  this package's PREFERENCE, not a measured rule: no open source reports a
+#  matched-vs-mismatched probe readout, and the landed assays sit off-centre
+#  (see data-raw/proposed/taqman_status.decision.md).
 #
 #  Design rules encoded here, and where they come from:
 #   * one flanking pair + two allele-specific probes, each probe centred over the
