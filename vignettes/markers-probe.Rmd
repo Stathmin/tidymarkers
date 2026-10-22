@@ -215,12 +215,28 @@ in-silico PCR с мисматчами и отрицательные контро
 
 ### Аудит решений
 
-`results/plot-smoke/decision-*.txt` (и PNG/DOT рядом) — это **схема**
+`vignettes/figures/decision-{taqman,dpcr,snapshot,castpcr}.{svg,txt}` — это **схема**
 (`plot_decision_tree(scheme = <id>)` без `assay`), а не трассировка конкретного
 кандидата: узлы нейтральны, а блок `assay acceptance checks` только перечисляет
 критерии. SVG-рисунки — карта конструкта плюс панель проверок; ни один из них
 не показывает endpoint-кластеры, капли, электрофореграммы или ΔCt. Поэтому
 «граф прошёл» и «рисунок зелёный» — разные утверждения.
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-taqman.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-dpcr.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-snapshot.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-castpcr.svg")
+```
 
 - **Tm пробы vs праймеров.** *Видно:* у TaqMan порядок «проба выше праймеров»
   остаётся tier2 (не гейт), у dPCR/castPCR — жёсткий +8 °C. SVG: TaqMan-пробы

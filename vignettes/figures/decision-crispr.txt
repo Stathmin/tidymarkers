@@ -1,0 +1,79 @@
+CRISPR-Dx (SHERLOCK / DETECTR) - decision graph
+
+discrimination: Cas collateral cleavage of a reporter, guided to the variant (ssDNase/ssDNA reporter for Cas12a; ssRNase/ssRNA for Cas13) | readout: fluorescence / lateral flow (ssDNA reporter for Cas12a; ssRNA for Cas13) | zygosity: co-dominant (dominant for presence/absence) | loci: 1 | amplicon: pre-amplified (RPA)
+
+== stage crispr (CRISPR guide) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  PAM (Cas12a) / PFS (Cas13) 5'-TTTV (Cas12a); 3' non-G (Cas13a) / 5' D (Cas13b)
+  ! HARD  seed coverage          variant in the seed (Cas12a) / central region (Cas13)
+  - soft  spacer length          20-23 nt (Cas12a) / 26-28 nt (Cas13a) / 28-30 nt (Cas13b)
+  ! HARD  guide specificity      no off-target protospacer (spacer hit count = 1)
+  - soft  guide GC               0.35-0.65
+  - soft  amplicon length        80-250 bp (RPA)
+relaxation ladder (least grave first):
+  1. amplicon length        floor: widen the amplicon window
+  2. guide GC               floor: widen the GC window
+  3. spacer length          floor: widen the spacer length window
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. guide / PAM/PFS quality
+  2. variant position in spacer
+  3. guide off-target count
+  4. amplicon length
+edges:
+  PAM (Cas12a) / PFS (Cas13) -flow  -> all gates pass?
+  seed coverage            -flow  -> all gates pass?
+  spacer length            -flow  -> all gates pass?
+  guide specificity        -flow  -> all gates pass?
+  guide GC                 -flow  -> all gates pass?
+  amplicon length          -flow  -> all gates pass?
+  1. amplicon length       -fail  -> 2. guide GC
+  2. guide GC              -fail  -> 3. spacer length
+  all gates pass?          -fail  -> 1. amplicon length
+  1. amplicon length       -relax -> survivors (floors kept)
+  2. guide GC              -relax -> survivors (floors kept)
+  3. spacer length         -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> guide / PAM/PFS quality
+  guide / PAM/PFS quality  -rank  -> variant position in spacer
+  variant position in spacer -rank  -> guide off-target count
+  guide off-target count   -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  3. spacer length         -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [80, 250]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   PAM valid                          TTTV
+  check   variant in seed                    yes
+  check   guide spans variant                yes
+  check   guide/PAM conserved (population)   yes
+  check   off-target protospacers (n)        0
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> PAM valid
+  PAM valid                -check -> variant in seed
+  variant in seed          -check -> guide spans variant
+  guide spans variant      -check -> guide/PAM conserved (population)
+  guide/PAM conserved (population) -check -> off-target protospacers (n)
+  off-target protospacers (n) -check -> all checks pass?
+  all checks pass?         -pass  -> usable CRISPR-Dx marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable CRISPR-Dx marker; a failing check -> doomed

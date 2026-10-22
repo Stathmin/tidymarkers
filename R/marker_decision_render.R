@@ -78,11 +78,12 @@ decision_palette <- function() {
     ),
     edge = c(
       flow = "#78716C", pass = "#15803D", fail = "#B45409",
-      relax = "#B45309", doomed = "#991B1B", check = "#78716C"
+      relax = "#B45309", doomed = "#991B1B", check = "#78716C",
+      rank = "#57534E"
     ),
     edge_lty = c(
       flow = NA, pass = NA, fail = "3 2",
-      relax = "5 2.5", doomed = "2 2", check = NA
+      relax = "5 2.5", doomed = "2 2", check = NA, rank = NA
     ),
     band = "#F5F5F4",
     text = "#1C1917",
@@ -272,7 +273,7 @@ decision_svg_legend <- function(style, x, y, width) {
     items[[length(items) + 1L]] <- list(label = k, fill = "none", stroke = pal_colour(pal$status, k))
   }
   items[[length(items) + 1L]] <- list(label = "hard gate", fill = "none", stroke = "#1C1917")
-  for (k in c("pass", "fail", "relax", "doomed")) {
+  for (k in c("pass", "fail", "relax", "rank", "doomed")) {
     items[[length(items) + 1L]] <- list(
       label = paste0(k, " edge"), stroke = pal_colour(pal$edge, k),
       dash = !is.na(pal_colour(pal$edge_lty, k, NA_character_))

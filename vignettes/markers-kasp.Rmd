@@ -320,11 +320,44 @@ KASP-ядро, extension/readout не моделируются; для `primer` 
 звенья, видимые из графа решений и фигур, и несколько поправок. Ссылки — на
 файлы репозитория.
 
+Схемы отбора этой семьи — `vignettes/figures/decision-{snp,indel,multi,duplex,lax,asq,primer}.svg`
+(текстовые двойники — те же имена с `.txt`): гейты применяются параллельно к
+одному набору кандидатов, мягкие проходят лестницу релаксации, тиры только
+ранжируют.
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-snp.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-indel.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-multi.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-duplex.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-lax.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-asq.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-primer.svg")
+```
+
 **«HARD» у site-проверки — это цвет, а не гейт.** В `marker_decision_schema()`
 site-проверки создаются как `kind = "check"` (`R/marker_decision.R`), а рёбра в
 `DOOMED` добавляются только от стадийных гейтов, decision-узлов и refine-узлов. В
-`results/plot-smoke/decision-snp.dot` узел `check:target_site_class` оформлен как
-жёсткий (`penwidth=2.2`), но ребра `-> doomed` у него нет: рёбра в `DOOMED` идут
+`vignettes/figures/decision-snp.svg` узел `check:target_site_class` оформлен как
+жёсткий (жирная рамка), но ребра в `DOOMED` у него нет: рёбра в `DOOMED` идут
 только от `as:gate:*`, `pair:gate:*` и refine. Поэтому `target site class` может
 быть FAIL, а путь всё равно пойдёт дальше по дереву. Для схемы `indel` это не
 теория: `marker_site_class()` возвращает `disc = FALSE` для любой замены с
@@ -334,18 +367,17 @@ site-проверки создаются как `kind = "check"` (`R/marker_deci
 таблицы, не `pass`. Это похоже на баг, а не на замысел: комментарий в том же
 тесте называет indel тем же 3'-механизмом, что и SNP.
 
-**Приёмочные проверки не имеют fail-ребра; вердикт безусловен.**
-`marker_decision_schema()` выстраивает все check-узлы в одну цепочку и
-подключает последний к `assay:verdict`; в `.dot` последний check идёт прямо в
-`assay:verdict`, и ни одно ребро из check-узлов не помечено `fail`; в
-`decision-snp.txt` та же цепочка завершается подписью «verdict: all checks
-pass -> …». `marker_decision_graph()` лишь
-перекрашивает узлы по `evaluation`. Фраза в `marker_decision_text()` «else see
-the failing node» описывает ребро, которого нет. В одиночном дизайне
-`assemble_kasp_assay()` предупреждает только о `KASP_UNGATED_CHECKS`, поэтому
-провал, например, `AS GC`, `worst hairpin` или `worst cross-dimer` проходит
-молча; в пакетном `design_kasp_markers()` любой FAIL даёт `warn`, но не `fail`.
-«Все проверки прошли» — это отчёт, а не условие вердикта.
+**Приёмочные проверки сходятся в один вердикт.** `marker_decision_schema()`
+выстраивает все check-узлы в одну цепочку и подключает последний к
+`assay:decision` («all checks pass?»), от которого идут два ребра: `pass` в
+`assay:verdict` и `fail` в `DOOMED`. Так же считает `evaluation_verdict()`
+(`R/marker_checks.R`): любой `status == "fail"` даёт `"doomed"`.
+`marker_decision_graph()` лишь перекрашивает узлы по `evaluation`. В одиночном
+дизайне `assemble_kasp_assay()` предупреждает только о `KASP_UNGATED_CHECKS`,
+поэтому провал, например, `AS GC`, `worst hairpin` или `worst cross-dimer`
+проходит молча; в пакетном `design_kasp_markers()` любой FAIL даёт `warn`, но не
+`fail`. То есть «все проверки прошли» — условие вердикта в графе и в
+`evaluation_verdict()`, но не в самом `assemble_kasp_assay()`.
 
 **NA — это pass в отборе и зелёный кружок в приёмке.** `select_with_ladder()`
 пропускает неизвестный margin: `is.na(m) | m >= bar` (`R/marker_select.R`) —
@@ -397,8 +429,8 @@ Plants MAF = `null` (`INVENTORY.md`, §H). Population-шаг остаётся с
 vacuum-гейты; следствие для фигур новое: `vignettes/figures/duplex.svg`
 показывает per-primer checklist, но не четыре compatibility-гейта, а `lax.svg`
 подписан «KASP assay» и не содержит узла `haplotype coverage`. В самих фигурах
-этих стадий нет: они видны только в `results/plot-smoke/decision-*.txt` и
-`man/figures/decision-*.png`; граф строится в `marker_decision_schema()`.
+этих стадий нет: они видны только в `vignettes/figures/decision-*.txt` и
+`man/figures/decision-*.svg`; граф строится в `marker_decision_schema()`.
 
 **Как читать.** Если в `assay$evaluation` есть `pass == FALSE`, считайте маркер
 кандидатом, а не pass, независимо от зелёного `assay:verdict`; отдельно смотрите

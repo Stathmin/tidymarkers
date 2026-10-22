@@ -34,7 +34,7 @@ make_assay <- function(seed = 4L, n = 20000L, pos = 10000L) {
 }
 
 m <- make_assay()
-out <- fs::path(root, "results", "plot-smoke") # git-ignored, easy to eyeball
+out <- fs::path(root, "vignettes", "figures") # git-ignored rasters, easy to eyeball
 fs::dir_create(out)
 
 save <- function(name, plot) {

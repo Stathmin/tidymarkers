@@ -17,14 +17,16 @@
 
 # ---- the two declared orders (C6) -------------------------------------------
 # Every selection stage declares *two* orders, and they are not the same thing:
-#   * the GATE order - the order the method applies the gates, grave / cheap
-#     first (a fatal flaw is tested before an expensive one).  It is the order
-#     of the stage's `KASP_GATES_*` vector;
+#   * the GATE order - the order the stage lists its gates, grave / cheap first
+#     (a fatal flaw is reported before an expensive one).  It is the order of
+#     the stage's `KASP_GATES_*` vector.  The selector ANDs every gate on the
+#     same candidate set (see select_with_ladder()), so this order is how the
+#     gates are *shown*, not a short-circuit;
 #   * the RELAXATION order - the order the ladder lowers the *soft* gates when
 #     nothing clears them, LEAST grave first (the mildest trade-off is tried
 #     before a worse one).  It is the order of the stage's `KASP_RELAX_*` vector.
 # Both are declared by the constants below, and the text export labels both per
-# stage ("in application order (grave / cheap first)" / "least grave first").
+# stage ("all applied to the same candidates (AND)" / "least grave first").
 
 # Which gates may be *somewhat* relaxed, least grave first.  Gates absent here
 # are hard limits set by the assay's chemistry / KASP literature and are never
@@ -40,7 +42,7 @@ KASP_RELAX_PAIR <- c("gate_amplicon", "gate_structure", "gate_tm", "gate_com_foo
 # discrimination"), so it is the graver of the two and is relaxed LAST.
 KASP_RELAX_AS <- c("gate_as_footprint", "gate_wobble")
 
-# The gate set, in application order (grave / cheap first): the AS stage decides
+# The gate set, grave / cheap first: the AS stage decides
 # discrimination and the 3' window (they are fixed by the AS placement), so the
 # pair stage only gates what varies across COM placements - structure, Tm,
 # amplicon and the COM footprint.  Re-gating the AS's constants here would be

@@ -192,13 +192,21 @@ PAM/PFS под конкретный вариант Cas.** **В пакете:** `
 
 ### Аудит решений
 
-`decision-crispr.txt` и `decision-sanger.txt` — описание схемы, а не трасса
+`vignettes/figures/decision-crispr.txt` и `decision-sanger.txt` — описание схемы, а не трасса
 запуска: `marker_decision_text()` собирает узлы из `marker_criteria()` и
 `scheme_def_*()`. Ниже — сверка шаблона с тем, что реально исполняют
 `design_crispr_marker()` / `design_sanger_marker()`, и с панелями
 `vignettes/figures/crispr.svg` / `sanger.svg`. Пометки: **исполняется** — узел
 реально вычисляется; **декларативно** — есть в шаблоне, но не в коде;
 **на фигуре** — панель `plot()`, а не гейт.
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-crispr.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-sanger.svg")
+```
 
 **CRISPR-Dx: граф декларативнее кода.**
 - **Декларативно.** PAM, seed и specificity нарисованы жёсткими, но на

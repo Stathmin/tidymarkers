@@ -23,7 +23,7 @@ dt <- as.numeric(Sys.time() - t0, units = "secs")
 message(sprintf("%d target SNPs screened in %.2f s (%.1f ms/SNP)", nrow(screen), dt, 1000 * dt / nrow(screen)))
 print(table(screen$verdict))
 
-out <- fs::path(root, "results", "plot-smoke")
+out <- fs::path(root, "vignettes", "figures")
 fs::dir_create(out)
 f <- fs::path(out, "screen_fri.png")
 ggplot2::ggsave(f, plot_snp_screen(screen, gene), width = 10, height = 4, dpi = 110, bg = "white")

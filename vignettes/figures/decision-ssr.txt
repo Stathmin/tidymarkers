@@ -1,0 +1,73 @@
+SSR / microsatellite (simple-sequence-repeat size marker) - decision graph
+
+discrimination: amplicon size tracks the repeat copy number | readout: capillary / gel fragment size | zygosity: co-dominant | loci: 1 | amplicon: ~100-300 bp
+
+== stage ssr (SSR / microsatellite) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  unique flanks          primers flank the repeat in unique sequence (3' seed unique)
+  - soft  repeat variability     repeat >= 5 copies (length-polymorphic)
+  - soft  amplicon length (SSR)  amplicon within [100, 300] bp
+  - soft  primer Tm (SSR)        both primers Tm within [58, 63] C
+  ! HARD  off-target products    exactly one in-silico product
+relaxation ladder (least grave first):
+  1. amplicon length (SSR)  floor: widen the amplicon window by 50 bp
+  2. primer Tm (SSR)        floor: widen the Tm window by 5 C
+  3. repeat variability     floor: accept a 3-copy repeat (monomorphic risk)
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. Tm balance
+  2. amplicon length
+  3. primer 3' end
+edges:
+  unique flanks            -flow  -> all gates pass?
+  repeat variability       -flow  -> all gates pass?
+  amplicon length (SSR)    -flow  -> all gates pass?
+  primer Tm (SSR)          -flow  -> all gates pass?
+  off-target products      -flow  -> all gates pass?
+  1. amplicon length (SSR) -fail  -> 2. primer Tm (SSR)
+  2. primer Tm (SSR)       -fail  -> 3. repeat variability
+  all gates pass?          -fail  -> 1. amplicon length (SSR)
+  1. amplicon length (SSR) -relax -> survivors (floors kept)
+  2. primer Tm (SSR)       -relax -> survivors (floors kept)
+  3. repeat variability    -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> Tm balance
+  Tm balance               -rank  -> amplicon length
+  amplicon length          -rank  -> primer 3' end
+  primer 3' end            -rank  -> provisional best
+  3. repeat variability    -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [100, 300]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   repeat unit (nt)                   2-4 nt
+  check   repeat copies                      >= 5
+  check   REF/ALT size difference (bp)       >= 3 bp
+  check   fragment size (bp)                 scheme window
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> repeat unit (nt)
+  repeat unit (nt)         -check -> repeat copies
+  repeat copies            -check -> REF/ALT size difference (bp)
+  REF/ALT size difference (bp) -check -> fragment size (bp)
+  fragment size (bp)       -check -> all checks pass?
+  all checks pass?         -pass  -> usable SSR marker
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable SSR marker; a failing check -> doomed

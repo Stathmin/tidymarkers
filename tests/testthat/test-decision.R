@@ -40,12 +40,18 @@ test_that("each scheme's schema mirrors its declared stages and is a DAG", {
     soft_ids <- stage_names(stages, function(st) st$relax, "gate")
     expect_equal(sort(hard), sort(setdiff(gate, soft_ids)), info = sc)
     # one DOOMED sink per killing stage - a hard gate, or a spent ladder - so the
-    # structure names the stage that killed the candidate
+    # structure names the stage that killed the candidate, plus the assay's own
+    # failed-check exit (`evaluation_verdict()` dooms a marker whose check fails)
     can_kill <- vapply(stages, function(st) length(st$gates) > 0L, logical(1))
-    expect_setequal(
-      s$nodes$name[s$nodes$kind == "doomed"],
-      if (any(can_kill)) paste0(vapply(stages[can_kill], `[[`, character(1), "id"), ":doomed") else character(0)
-    )
+    want_doomed <- if (any(can_kill)) {
+      paste0(vapply(stages[can_kill], `[[`, character(1), "id"), ":doomed")
+    } else {
+      character(0)
+    }
+    if (any(marker_criteria(scheme = sc)$stage == "assay")) {
+      want_doomed <- c(want_doomed, "assay:doomed")
+    }
+    expect_setequal(s$nodes$name[s$nodes$kind == "doomed"], want_doomed)
     # consecutive stages are chained best -> next gate (or, for a gate-less
     # documentation-only stage such as ASQ, best -> its survivors node)
     if (length(stages) > 1L) {
@@ -339,13 +345,14 @@ test_that("both declared orders are labelled per stage (C6)", {
     ord <- stats::setNames(s$nodes$order, s$nodes$name)
     txt <- marker_decision_text(sc)
     for (st in stages_of(sc)) {
-      # the gate chain follows the declared order (grave / cheap first)
+      # the gate nodes are listed in the declared order (presentation only: the
+      # selector ANDs them, it does not apply them one after another)
       idx <- match(paste0(st$id, ":gate:", st$gates), s$nodes$name)
       expect_true(all(diff(ord[idx]) > 0L), info = sc)
       # the ladder is a declared subset, tried least grave first
       expect_true(all(st$relax %in% st$gates), info = sc)
       expect_true(
-        any(grepl("in application order (grave / cheap first)", txt, fixed = TRUE)),
+        any(grepl("all applied to the same candidates (AND)", txt, fixed = TRUE)),
         info = sc
       )
       if (length(st$relax)) {

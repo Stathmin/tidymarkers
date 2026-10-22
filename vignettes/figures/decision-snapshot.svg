@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="656.04" height="952.68" viewBox="0 0 656.04 952.68">
+<title>SNaPshot / single-base extension (minisequencing) - decision graph</title>
+<defs>
+<marker id="arrow-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#78716C"/></marker>
+<marker id="arrow-pass" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#15803D"/></marker>
+<marker id="arrow-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B45409"/></marker>
+<marker id="arrow-relax" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B45309"/></marker>
+<marker id="arrow-doomed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#991B1B"/></marker>
+<marker id="arrow-check" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#78716C"/></marker>
+<marker id="arrow-rank" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#57534E"/></marker>
+</defs>
+<rect x="0" y="0" width="656.04" height="952.68" fill="#FFFFFF"/>
+<text x="0" y="15.2" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#1C1917" font-weight="bold"><tspan x="0" y="15.2">SNaPshot / single-base extension (minisequencing) - decision graph</tspan></text>
+<text x="0" y="26.8" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="8" fill="#57534E"><tspan x="0" y="26.8">discrimination: one fluorescent ddNTP added at the variant (base identity) | readout: capillary electrophoresis (dye colour + product size) | zygosity: co-dominant</tspan></text>
+<rect x="14" y="48" width="73.032" height="40.98" rx="4" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="0.5"/>
+<text x="19" y="41.975" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="8.5" fill="#44403C" font-weight="bold"><tspan x="19" y="41.975">site</tspan></text>
+<rect x="14" y="122.98" width="628.04" height="408.7" rx="4" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="0.5"/>
+<text x="19" y="116.955" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="8.5" fill="#44403C" font-weight="bold"><tspan x="19" y="116.955">snapshot</tspan></text>
+<rect x="14" y="565.68" width="355.5" height="341.8" rx="4" fill="#F5F5F4" stroke="#E7E5E4" stroke-width="0.5"/>
+<text x="19" y="559.655" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="8.5" fill="#44403C" font-weight="bold"><tspan x="19" y="559.655">assay</tspan></text>
+<path d="M75.032 63.99 L432.506 63.99 L432.506 151.45 L438 151.45" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M75.032 66.99 L313.761 66.99 L313.761 151.45 L319 151.45" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M75.032 69.99 L220.512 69.99 L220.512 148.96 L226 148.96" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M75.032 75.99 L78.032 75.99 L78.032 111.47 L23 111.47 L23 154.45 L26 154.45" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M75.032 72.99 L119.919 72.99 L119.919 154.45 L123 154.45" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M75.032 60.99 L551.837 60.99 L551.837 151.45 L557 151.45" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M438 157.45 L432.506 157.45 L432.506 211.43 L307.038 211.43" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M319 157.45 L313.761 157.45 L313.761 205.43 L307.038 205.43" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M285.767 162.94 L285.767 202.94" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M112.039 154.45 L115.119 154.45 L115.119 211.43 L237 211.43" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M215.024 154.45 L220.512 154.45 L220.512 205.43 L237 205.43" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M557 157.45 L551.837 157.45 L551.837 217.43 L307.038 217.43" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-flow)"/>
+<path d="M260.143 256.9 L260.143 276.9" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
+<path d="M234.519 293.88 L234.519 313.88" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
+<path d="M285.761 219.92 L285.761 239.92" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
+<path d="M285.767 256.9 L285.767 266.9 L297.03 266.9 L297.03 319.37 L283.045 319.37 L283.045 350.86" fill="none" stroke="#B45309" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="5 2.5" marker-end="url(#arrow-relax)"/>
+<path d="M294.03 285.39 L303.03 285.39 L303.03 343.86 L244 343.86 L244 356.35 L247 356.35" fill="none" stroke="#B45309" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="5 2.5" marker-end="url(#arrow-relax)"/>
+<path d="M274.045 322.37 L277.045 322.37 L277.045 337.86 L238 337.86 L238 362.35 L247 362.35" fill="none" stroke="#B45309" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="5 2.5" marker-end="url(#arrow-relax)"/>
+<path d="M291.761 219.92 L291.761 229.92 L316.046 229.92 L316.046 325.37 L289.045 325.37 L289.045 350.86" fill="none" stroke="#15803D" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-pass)"/>
+<path d="M285.767 367.84 L285.767 377.84" fill="none" stroke="#57534E" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-rank)"/>
+<path d="M285.767 405.8 L285.767 415.8" fill="none" stroke="#57534E" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-rank)"/>
+<path d="M285.767 454.74 L285.767 464.74" fill="none" stroke="#57534E" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-rank)"/>
+<path d="M285.767 492.7 L285.767 502.7" fill="none" stroke="#57534E" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-rank)"/>
+<path d="M178 322.37 L175 322.37 L175 337.86 L209.5 337.86 L209.5 362.35 L200.5 362.35" fill="none" stroke="#991B1B" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="2 2" marker-end="url(#arrow-doomed)"/>
+<path d="M237 217.43 L169 217.43 L169 343.86 L203.5 343.86 L203.5 356.35 L200.5 356.35" fill="none" stroke="#991B1B" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="2 2" marker-end="url(#arrow-doomed)"/>
+<path d="M285.767 519.68 L285.767 553.68 L87.833 553.68 L87.833 587.68" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 604.66 L87.833 624.66" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 641.64 L87.833 661.64" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 678.62 L87.833 698.62" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 726.58 L87.833 746.58" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 763.56 L87.833 783.56" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 800.54 L87.833 820.54" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M87.833 837.52 L87.833 857.52" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M140.029 871.5 L163.276 871.5 L163.276 596.17 L186 596.17" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M243.971 604.66 L243.971 624.66" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M243.971 641.64 L243.971 661.64" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M243.971 678.62 L243.971 704.11" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M243.971 721.09 L243.971 746.58" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M243.971 763.56 L243.971 783.56" fill="none" stroke="#15803D" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-pass)"/>
+<path d="M292.032 755.07 L301.523 755.07 L301.523 792.05 L307 792.05" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
+<rect x="26" y="60" width="49.032" height="16.98" rx="2" fill="#F5F5F4" stroke="#57534E" stroke-width="0.8"/>
+<text x="31" y="71.64" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="31" y="71.64">candidate</tspan></text>
+<rect x="438" y="145.96" width="108.675" height="16.98" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="443" y="157.6" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="443" y="157.6">extension 3' placement</tspan></text>
+<rect x="319" y="145.96" width="108.011" height="16.98" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="324" y="157.6" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="324" y="157.6">extension composition</tspan></text>
+<rect x="226" y="134.98" width="82.523" height="27.96" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="231" y="146.62" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="231" y="146.62">extension primer</tspan><tspan x="231" y="157.6">uniqueness</tspan></text>
+<rect x="26" y="145.96" width="86.039" height="16.98" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="31" y="157.6" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="31" y="157.6">extension structure</tspan></text>
+<rect x="123" y="145.96" width="92.024" height="16.98" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="128" y="157.6" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="128" y="157.6">extension primer Tm</tspan></text>
+<rect x="557" y="145.96" width="73.04" height="16.98" rx="2" fill="#FDE68A" stroke="#57534E" stroke-width="0.8"/>
+<text x="562" y="157.6" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="562" y="157.6">amplicon length</tspan></text>
+<rect x="237" y="202.94" width="70.038" height="16.98" rx="2" fill="#DDD6FE" stroke="#57534E" stroke-width="0.8"/>
+<text x="242" y="214.58" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="242" y="214.58">all gates pass?</tspan></text>
+<rect x="230" y="239.92" width="83.046" height="16.98" rx="2" fill="#FED7AA" stroke="#57534E" stroke-width="0.8"/>
+<text x="235" y="251.56" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="235" y="251.56">1. amplicon length</tspan></text>
+<rect x="192" y="276.9" width="102.03" height="16.98" rx="2" fill="#FED7AA" stroke="#57534E" stroke-width="0.8"/>
+<text x="197" y="288.54" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="197" y="288.54">2. extension primer Tm</tspan></text>
+<rect x="178" y="313.88" width="96.045" height="16.98" rx="2" fill="#FED7AA" stroke="#57534E" stroke-width="0.8"/>
+<text x="183" y="325.52" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="183" y="325.52">3. extension structure</tspan></text>
+<rect x="247" y="350.86" width="96.019" height="16.98" rx="2" fill="#D1FAE5" stroke="#57534E" stroke-width="0.8"/>
+<text x="252" y="362.5" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="252" y="362.5">survivors (floors kept)</tspan></text>
+<rect x="256" y="377.84" width="77.025" height="27.96" rx="2" fill="#FEF3C7" stroke="#57534E" stroke-width="0.8"/>
+<text x="261" y="389.48" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="261" y="389.48">extension-primer</tspan><tspan x="261" y="400.46">Tm centrality</tspan></text>
+<rect x="248" y="415.8" width="94.529" height="38.94" rx="2" fill="#FEF3C7" stroke="#57534E" stroke-width="0.8"/>
+<text x="253" y="427.44" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="253" y="427.44">extension</tspan><tspan x="253" y="438.42">self-structure (hairpin</tspan><tspan x="253" y="449.4">/ homodimer)</tspan></text>
+<rect x="247" y="464.74" width="96.55" height="27.96" rx="2" fill="#FEF3C7" stroke="#57534E" stroke-width="0.8"/>
+<text x="252" y="476.38" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="252" y="476.38">amplicon length (near</tspan><tspan x="252" y="487.36">the ideal)</tspan></text>
+<rect x="259" y="502.7" width="72.534" height="16.98" rx="2" fill="#BBF7D0" stroke="#57534E" stroke-width="0.8"/>
+<text x="264" y="514.34" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="264" y="514.34">provisional best</tspan></text>
+<rect x="150" y="350.86" width="50.5" height="16.98" rx="2" fill="#FCA5A5" stroke="#57534E" stroke-width="0.8"/>
+<text x="155" y="362.5" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="155" y="362.5">DOOMED</tspan></text>
+<rect x="37" y="587.68" width="91.545" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="42" y="599.32" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="42" y="599.32">amplicon length (bp)</tspan></text>
+<rect x="26" y="624.66" width="114.55" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="31" y="636.3" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="31" y="636.3">longest homopolymer (bp)</tspan></text>
+<rect x="29" y="661.64" width="109.048" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="34" y="673.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="34" y="673.28">SSR (2-4 nt, &gt;=3 copies)</tspan></text>
+<rect x="27" y="698.62" width="113.553" height="27.96" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="32" y="710.26" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="32" y="710.26">inverted repeat (arms&gt;=4,</tspan><tspan x="32" y="721.24">loop&lt;=6)</tspan></text>
+<rect x="45" y="746.58" width="85.538" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="50" y="758.22" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="50" y="758.22">worst hairpin dG37</tspan></text>
+<rect x="35" y="783.56" width="105.524" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="40" y="795.2" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="40" y="795.2">worst cross-dimer dG37</tspan></text>
+<rect x="37" y="820.54" width="103.538" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="42" y="832.18" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="42" y="832.18">worst homodimer dG37</tspan></text>
+<rect x="70" y="857.52" width="70.029" height="27.96" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="75" y="869.16" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="75" y="869.16">off-target exact</tspan><tspan x="75" y="880.14">primer hits (n)</tspan></text>
+<rect x="186" y="587.68" width="89.049" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="191" y="599.32" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="191" y="599.32">probe spans variant</tspan></text>
+<rect x="186" y="624.66" width="112.502" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="191" y="636.3" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="191" y="636.3">probe Tm - primer Tm (C)</tspan></text>
+<rect x="195" y="661.64" width="94.753" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="200" y="673.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="200" y="673.28">ASP 3' discrimination</tspan></text>
+<rect x="205" y="704.11" width="97.271" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="210" y="715.75" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="210" y="715.75">extension 3' at variant</tspan></text>
+<rect x="216" y="746.58" width="76.032" height="16.98" rx="2" fill="#DDD6FE" stroke="#57534E" stroke-width="0.8"/>
+<text x="221" y="758.22" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="221" y="758.22">all checks pass?</tspan></text>
+<rect x="186" y="783.56" width="110.046" height="16.98" rx="2" fill="#BBF7D0" stroke="#57534E" stroke-width="0.8"/>
+<text x="191" y="795.2" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="191" y="795.2">usable SNaPshot marker</tspan></text>
+<rect x="307" y="783.56" width="50.5" height="16.98" rx="2" fill="#FCA5A5" stroke="#57534E" stroke-width="0.8"/>
+<text x="312" y="795.2" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="312" y="795.2">DOOMED</tspan></text>
+<rect x="14" y="927.655" width="9" height="8" rx="1.5" fill="#F5F5F4" stroke="#78716C" stroke-width="0.8"/>
+<text x="27" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="27" y="933.93">start</tspan></text>
+<rect x="50.9" y="927.655" width="9" height="8" rx="1.5" fill="#F3F4F6" stroke="#78716C" stroke-width="0.8"/>
+<text x="63.9" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="63.9" y="933.93">check</tspan></text>
+<rect x="87.8" y="927.655" width="9" height="8" rx="1.5" fill="#FDE68A" stroke="#78716C" stroke-width="0.8"/>
+<text x="100.8" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="100.8" y="933.93">gate</tspan></text>
+<rect x="121.32" y="927.655" width="9" height="8" rx="1.5" fill="#DDD6FE" stroke="#78716C" stroke-width="0.8"/>
+<text x="134.32" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="134.32" y="933.93">decision</tspan></text>
+<rect x="168.36" y="927.655" width="9" height="8" rx="1.5" fill="#FED7AA" stroke="#78716C" stroke-width="0.8"/>
+<text x="181.36" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="181.36" y="933.93">relax</tspan></text>
+<rect x="205.26" y="927.655" width="9" height="8" rx="1.5" fill="#D1FAE5" stroke="#78716C" stroke-width="0.8"/>
+<text x="218.26" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="218.26" y="933.93">merge</tspan></text>
+<rect x="242.16" y="927.655" width="9" height="8" rx="1.5" fill="#FEF3C7" stroke="#78716C" stroke-width="0.8"/>
+<text x="255.16" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="255.16" y="933.93">tier</tspan></text>
+<rect x="275.68" y="927.655" width="9" height="8" rx="1.5" fill="#BBF7D0" stroke="#78716C" stroke-width="0.8"/>
+<text x="288.68" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="288.68" y="933.93">outcome</tspan></text>
+<rect x="319.34" y="927.655" width="9" height="8" rx="1.5" fill="#FCA5A5" stroke="#78716C" stroke-width="0.8"/>
+<text x="332.34" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="332.34" y="933.93">doomed</tspan></text>
+<rect x="359.62" y="927.655" width="9" height="8" rx="1.5" fill="none" stroke="#15803D" stroke-width="0.8"/>
+<text x="372.62" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="372.62" y="933.93">ok</tspan></text>
+<rect x="386.38" y="927.655" width="9" height="8" rx="1.5" fill="none" stroke="#B91C1C" stroke-width="0.8"/>
+<text x="399.38" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="399.38" y="933.93">violated</tspan></text>
+<rect x="433.42" y="927.655" width="9" height="8" rx="1.5" fill="none" stroke="#B45309" stroke-width="0.8"/>
+<text x="446.42" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="446.42" y="933.93">relaxed</tspan></text>
+<rect x="477.08" y="927.655" width="9" height="8" rx="1.5" fill="none" stroke="#A8A29E" stroke-width="0.8"/>
+<text x="490.08" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="490.08" y="933.93">unknown</tspan></text>
+<rect x="520.74" y="927.655" width="9" height="8" rx="1.5" fill="none" stroke="#1C1917" stroke-width="0.8"/>
+<text x="533.74" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="533.74" y="933.93">hard gate</tspan></text>
+<line x1="571.16" y1="931.655" x2="581.16" y2="931.655" stroke="#15803D" stroke-width="0.9"/>
+<text x="584.16" y="933.93" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="584.16" y="933.93">pass edge</tspan></text>
+<line x1="14" y1="944.005" x2="24" y2="944.005" stroke="#B45409" stroke-width="0.9" stroke-dasharray="5 2.5"/>
+<text x="27" y="946.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="27" y="946.28">fail edge</tspan></text>
+<line x1="64.42" y1="944.005" x2="74.42" y2="944.005" stroke="#B45309" stroke-width="0.9" stroke-dasharray="5 2.5"/>
+<text x="77.42" y="946.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="77.42" y="946.28">relax edge</tspan></text>
+<line x1="118.22" y1="944.005" x2="128.22" y2="944.005" stroke="#57534E" stroke-width="0.9"/>
+<text x="131.22" y="946.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="131.22" y="946.28">rank edge</tspan></text>
+<line x1="168.64" y1="944.005" x2="178.64" y2="944.005" stroke="#991B1B" stroke-width="0.9" stroke-dasharray="5 2.5"/>
+<text x="181.64" y="946.28" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="181.64" y="946.28">doomed edge</tspan></text>
+</svg>

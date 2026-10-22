@@ -274,15 +274,35 @@ Tm-разброс четырёх праймеров — только tier3, по
 
 ### Аудит решений
 
-Графы `results/plot-smoke/decision-{caps,arms,hrm,ssr,indel_size}.{txt,dot,png}` —
+Графы `vignettes/figures/decision-{caps,arms,hrm,ssr,indel_size}.{svg,txt}` —
 это **схема политики, а не протокол прогона**: `dev/render-decision.R` строит их
-через `decision_dot(scheme = sc)` без `assay`, поэтому `marker_decision_graph()`
-оставляет все узлы `neutral`; аннотированный обход есть только у SNP-примера
-(`decision-fri.*`, git-ignored). Файлы `man/figures/decision-tree.svg` и
-`decision-multiplex.png` — это SNP/duplex, не это семейство. Схемы в
-`vignettes/figures/*.svg` — это `marker_figure()` (гель/карта + tumbler классов),
-а не DAG. Поэтому граф подтверждает *порядок и жёсткость* гейтов, но не их
-выполнение.
+через `plot_decision_tree(scheme = sc)` без `assay`, поэтому
+`marker_decision_graph()` оставляет все узлы `neutral`; аннотированного обхода
+(с `status`) здесь нет. Файлы `man/figures/decision-tree.svg` и
+`decision-multiplex.svg` — это SNP/duplex, не это семейство. Схемы в
+`vignettes/figures/{caps,arms,hrm,ssr,indel_size}.svg` — это `marker_figure()`
+(гель/карта + tumbler классов), а не DAG. Поэтому граф подтверждает *порядок и
+жёсткость* гейтов, но не их выполнение.
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-caps.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-arms.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-hrm.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-ssr.svg")
+```
+
+```{r, echo = FALSE, out.width = "100%"}
+knitr::include_graphics("figures/decision-indel_size.svg")
+```
 
 В `decision-*.txt` видно, что `DOOMED` висит только на жёстких гейтах и на
 исчерпанной лестнице, а тиры (`band gap`, `Tm balance`, `amplicon length`) —

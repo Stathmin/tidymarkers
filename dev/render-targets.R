@@ -23,7 +23,7 @@ suppressMessages(pkgload::load_all(root, quiet = TRUE))
 if (!nzchar(Sys.which("hybrid-min"))) stop("OligoArrayAux not on PATH - see data-raw/install-oligoarrayaux.R")
 
 genome <- ath_genome()
-out <- fs::path(root, "results", "plot-smoke")
+out <- fs::path(root, "vignettes", "figures")
 fs::dir_create(out)
 
 ex <- marker_example()

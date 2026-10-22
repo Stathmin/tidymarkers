@@ -44,7 +44,7 @@ rows <- lapply(seq_len(nrow(ex)), function(i) {
   )
 })
 tab <- purrr::list_rbind(rows)
-csv <- fs::path(root, "results", "plot-smoke", "dissect.csv")
+csv <- fs::path(root, "vignettes", "figures", "dissect.csv")
 fs::dir_create(fs::path_dir(csv))
 readr::write_csv(tab, csv)
 cat(sprintf(

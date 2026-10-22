@@ -1,0 +1,72 @@
+castPCR / competitive allele-specific TaqMan (mutant detection) - decision graph
+
+discrimination: 3'-terminal mismatch of the mutant-anchored AS primer, backstopped by a WT-specific MGB blocker | readout: locus-specific hydrolysis (TaqMan/MGB) probe, mutant assay Ct (Delta-Ct) | zygosity: dominant (mutant detection) | loci: 1 | amplicon: short (50-100 bp)
+
+== stage castpcr (castPCR / AS-qPCR (mutant detection)) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  ASP 3' base on variant the ASP's 3' terminus sits on the variant base
+  ! HARD  3' mismatch (ASP)      ASP 3' base = the mutant base, predicted to prefer the mutant
+  ! HARD  WT blocker             a WT-specific blocker (3' base = the WT base) is placed
+  - soft  ASP Tm                 ASP Tm within [55, 65] C
+  ! HARD  probe Tm > ASP Tm      probe Tm >= ASP Tm + 8 C
+  - soft  amplicon length (castPCR) amplicon within [50, 100] bp
+relaxation ladder (least grave first):
+  1. amplicon length (castPCR) floor: widen the amplicon window by 10 bp
+  2. ASP Tm                 floor: widen the ASP Tm window by 2 C
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. 3'-terminal specificity (ASP mutant/WT margin)
+  2. Tm balance (ASP x common mate)
+  3. amplicon length
+edges:
+  ASP 3' base on variant   -flow  -> all gates pass?
+  3' mismatch (ASP)        -flow  -> all gates pass?
+  WT blocker               -flow  -> all gates pass?
+  ASP Tm                   -flow  -> all gates pass?
+  probe Tm > ASP Tm        -flow  -> all gates pass?
+  amplicon length (castPCR) -flow  -> all gates pass?
+  1. amplicon length (castPCR) -fail  -> 2. ASP Tm
+  all gates pass?          -fail  -> 1. amplicon length (castPCR)
+  1. amplicon length (castPCR) -relax -> survivors (floors kept)
+  2. ASP Tm                -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> 3'-terminal specificity (ASP mutant/WT margin)
+  3'-terminal specificity (ASP mutant/WT margin) -rank  -> Tm balance (ASP x common mate)
+  Tm balance (ASP x common mate) -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  2. ASP Tm                -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [50, 100]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   probe spans variant                yes
+  check   probe Tm - primer Tm (C)           >= 5 C
+  check   ASP 3' discrimination              > 0
+  check   extension 3' at variant            adjacent
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> probe spans variant
+  probe spans variant      -check -> probe Tm - primer Tm (C)
+  probe Tm - primer Tm (C) -check -> ASP 3' discrimination
+  ASP 3' discrimination    -check -> extension 3' at variant
+  extension 3' at variant  -check -> all checks pass?
+  all checks pass?         -pass  -> usable castPCR assay
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable castPCR assay; a failing check -> doomed

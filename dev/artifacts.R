@@ -24,9 +24,10 @@
 #  JSON, which is valid YAML).  Neither is added to DESCRIPTION: `dev/` is
 #  outside the built package (`.Rbuildignore`).
 #
-#  Only repository inputs are hashed.  External tools (Graphviz `dot` for the
-#  decision trees, OligoArrayAux for the gallery) are versioned by
-#  DESCRIPTION/SystemRequirements, not by file content here.
+#  Only repository inputs are hashed.  OligoArrayAux (for the gallery) is
+#  external and versioned by DESCRIPTION/SystemRequirements; the layout engine
+#  of the decision trees is vendored under .tools/elk, but its own sources are
+#  not hashed, so a layout-only change does not mark the trees stale.
 #
 #  Run:
 #    Rscript dev/artifacts.R --write   # refresh hashes + docs/generated/artifacts.md
@@ -113,12 +114,14 @@ manifest_header <- c(
   "#   code        the package source the artifact is derived from",
   "#   status      verified | unverified",
   "#",
-  "# Hashes cover repository inputs only. External tools (Graphviz `dot` for the",
-  "# decision trees, OligoArrayAux for the gallery) are not hashed: they are",
-  "# versioned by DESCRIPTION/SystemRequirements, not by file content here.",
+  "# Hashes cover repository inputs only. OligoArrayAux (for the gallery) is",
+  "# external and versioned by DESCRIPTION/SystemRequirements; the decision trees'",
+  "# layout engine is vendored under .tools/elk and its sources are not hashed.",
   "#",
   "# vignettes/figures/*.png are generated locally and git-ignored, so they are",
-  "# deliberately absent from this manifest.",
+  "# deliberately absent from this manifest. The .txt twins of the decision trees",
+  "# are committed next to the SVGs for grepping, but they are not images and so",
+  "# are not artifacts here.",
   "#",
   "# Refresh: Rscript dev/artifacts.R --write",
   "# Check:   Rscript dev/check-artifacts.R"

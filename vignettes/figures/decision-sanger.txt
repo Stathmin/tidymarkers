@@ -1,0 +1,71 @@
+Sanger sequencing (dideoxy read-out) - decision graph
+
+discrimination: direct base call of the variant | readout: dideoxy chromatogram (capillary) | zygosity: co-dominant (direct read) | loci: 1 | amplicon: 400-800 bp
+
+== stage sanger (Sanger amplicon) ==
+gates (hard = never relaxed), all applied to the same candidates (AND):
+  ! HARD  variant from read start variant >= 50 bp from each read start
+  - soft  amplicon length (Sanger) amplicon within [400, 800] bp
+  - soft  primer Tm (Sanger)     both primers Tm within [55, 65] C
+  - soft  primer 3' end / structure no 3' homopolymer >= 3 / no hairpin or homodimer
+  ! HARD  unique amplicon        exactly one in-silico amplicon; no off-target exact primer hits
+relaxation ladder (least grave first):
+  1. amplicon length (Sanger) floor: widen the amplicon window by 200 bp
+  2. primer Tm (Sanger)     floor: widen the Tm window by 5 C
+  3. primer 3' end / structure floor: tolerate a 3-base 3' homopolymer
+tiers (lexicographic; a later tier only breaks the earlier one's ties):
+  1. variant centrality
+  2. Tm balance
+  3. amplicon length
+edges:
+  variant from read start  -flow  -> all gates pass?
+  amplicon length (Sanger) -flow  -> all gates pass?
+  primer Tm (Sanger)       -flow  -> all gates pass?
+  primer 3' end / structure -flow  -> all gates pass?
+  unique amplicon          -flow  -> all gates pass?
+  1. amplicon length (Sanger) -fail  -> 2. primer Tm (Sanger)
+  2. primer Tm (Sanger)    -fail  -> 3. primer 3' end / structure
+  all gates pass?          -fail  -> 1. amplicon length (Sanger)
+  1. amplicon length (Sanger) -relax -> survivors (floors kept)
+  2. primer Tm (Sanger)    -relax -> survivors (floors kept)
+  3. primer 3' end / structure -relax -> survivors (floors kept)
+  all gates pass?          -pass  -> survivors (floors kept)
+  survivors (floors kept)  -rank  -> variant centrality
+  variant centrality       -rank  -> Tm balance
+  Tm balance               -rank  -> amplicon length
+  amplicon length          -rank  -> provisional best
+  3. primer 3' end / structure -doomed-> DOOMED
+  all gates pass?          -doomed-> DOOMED
+  provisional best         -check -> amplicon length (bp)
+
+== assay acceptance checks ==
+  check   amplicon length (bp)               [400, 800]
+  check   longest homopolymer (bp)           < 4
+  check   SSR (2-4 nt, >=3 copies)           <= 0
+  check   inverted repeat (arms>=4, loop<=6) <= 0
+  check   worst hairpin dG37                 >= -3
+  check   worst cross-dimer dG37             >= -9
+  check   worst homodimer dG37               >= -9
+  check   off-target exact primer hits (n)   <= 1
+  check   variant-read distance (bp)         >= 50 bp
+  check   read primers inside amplicon       inside
+  check   read primer pair defined           pair
+  (reported, not re-selecting: a failed check flags the chosen marker)
+
+edges:
+  amplicon length (bp)     -check -> longest homopolymer (bp)
+  longest homopolymer (bp) -check -> SSR (2-4 nt, >=3 copies)
+  SSR (2-4 nt, >=3 copies) -check -> inverted repeat (arms>=4, loop<=6)
+  inverted repeat (arms>=4, loop<=6) -check -> worst hairpin dG37
+  worst hairpin dG37       -check -> worst cross-dimer dG37
+  worst cross-dimer dG37   -check -> worst homodimer dG37
+  worst homodimer dG37     -check -> off-target exact primer hits (n)
+  off-target exact primer hits (n) -check -> variant-read distance (bp)
+  variant-read distance (bp) -check -> read primers inside amplicon
+  read primers inside amplicon -check -> read primer pair defined
+  read primer pair defined -check -> all checks pass?
+  all checks pass?         -pass  -> usable Sanger amplicon
+  all checks pass?         -fail  -> DOOMED
+
+DOOMED: a hard gate blocked, every soft floor was exhausted, or an acceptance check failed.
+verdict: all checks pass -> usable Sanger amplicon; a failing check -> doomed
