@@ -34,6 +34,28 @@ Do **not** set `R_LIBS` to that path: R then puts it first and loads system-R's
 (`undefined symbol: R_getRegisteredNamespace`); the working copy is 0.4.2 from
 `/usr/lib/R/site-library`, and the package only uses `facet_zoom` and `geom_arc`.
 
+### R behaviour on this build that has bitten real work
+
+These are measured on R 4.6.1 here, not general R folklore. Each one silently
+returned a wrong answer before it was found, so treat the symptoms as a signal
+to check the idiom, not to lengthen the code.
+
+- **`x %in% code` with a multi-base code is element-wise, not a set test.**
+  `"N" %in% c("A", "C", "G", "T")` is a length-4 logical; `isTRUE()` or a
+  one-element `vapply` drops it and the answer becomes `FALSE`. Use
+  `!is.na(match(x, code))`.
+- **`which()` treats `NA` as unset**, and `x[NA]` reads as out of range. A
+  logical with an `NA` therefore gives a short (or empty) index, not a
+  skip-the-`NA`s filter. Resolve `NA` before the lookup.
+- **`substr(x, from, stop)` is not vectorised over `x` here**: it truncates to the
+  first element. Split instead of slicing.
+- **`c()` on a matrix** unlists it, so `c(a_matrix, TRUE, FALSE)` counts the
+  matrix as its number of columns, not its length. `as.vector()` first.
+- **`x[cbind(i, j)]` with repeated `i` returns the cross product**, not pairwise
+  lookups. Build a linear index.
+- `pkgload::load_all()` caches a compiled/lazyloaded copy: if a function you
+  edited still behaves like the old body, `recompile = TRUE`.
+
 Then the usual commands:
 
 ```sh
