@@ -71,7 +71,7 @@ KASP_CHECK_AS <- c(
   "COM Tm >= AS Tm",
   "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
   "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout",
-  "discrimination", "in-silico PCR (REF 1 / ALT 0)"
+  "discrimination", "AS 3' mismatch base pair", "in-silico PCR (REF 1 / ALT 0)"
 )
 
 # Family-specific checks.  These are not KASP checks, so they use the MARKER_

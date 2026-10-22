@@ -298,6 +298,7 @@ marker_check_classes <- function() {
     "as_foot_dropout", "as",
     "com_dropout", "as",
     "discrimination", "as",
+    "as_mismatch_type", "as",
     "in_silico_pcr", "primer",
     "offtarget_hits", "primer"
   )
@@ -364,6 +365,8 @@ marker_check_ways <- function() {
     "package assumption", "assay_com_dropout", NA,
     "discrimination", "discrimination", "alignment", "numeric", NULL, "fraction",
     "package assumption", "assay_discrimination", NA,
+    "as_mismatch_type", "AS 3' mismatch base pair", "feature", "categorical",
+    c("strong", "medium", "weak"), NA, "primary literature", "as_mismatch_type", NA,
     "in_silico_pcr", "in-silico PCR (REF 1 / ALT 0)", "alignment", "boolean",
     "REF=1, ALT=0", NA, "package assumption", "in_silico_pcr", NA,
     "offtarget_hits", "off-target exact primer hits (n)", "specificity", "numeric", NULL,
@@ -397,6 +400,8 @@ marker_check_bounds <- function(limits) {
     as_foot_dropout = c(NA, tol),
     com_dropout = c(NA, tol),
     discrimination = c(limits$discrimination, NA),
+    # a categorical check: the allowed levels ARE the bound (Z0.4)
+    as_mismatch_type = c("strong", "medium", "weak"),
     offtarget_hits = c(NA, 1)
   )
 }

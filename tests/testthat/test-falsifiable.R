@@ -17,6 +17,10 @@ zw1_good_assay <- function() {
       com_tm = 60, as_gc = 0.5, com_gc = 0.5, n_var = 0L, as_n_3p = 0L,
       as_n_var = 0L, as_dropout = 0, as_foot_dropout = 0, com_dropout = 0
     ),
+    # the allele pair the 3'-terminal mismatch class is graded on (Z0.4);
+    # A>G is one of Kwok 1990's `severe` classes, so the clean table is not
+    # `unknown` there
+    snp = tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G"),
     thermo = tibble::tibble(
       name = names(p), tm = c(57, 57, 60), gc = c(0.5, 0.5, 0.5),
       hairpin_dg = c(-1, -1, -1)
@@ -90,6 +94,10 @@ zw1_check_drivers <- function() {
       a$assay$as_ref <- "ATATATATATATATAT"
       a
     },
+    # Z0.4: no Kwok class is a fail (the classes are a RANKING of kinetics, so
+    # none of them refutes the assay); the only failure the check can produce is
+    # refusing a pair the paper does not class, which it reports as `unknown`.
+    # Recorded as an exemption with that reason in `zw1_exemptions()`.
     inverted_repeat = function(a) {
       a$assay$com <- "ACGTACGTACGTACGT"
       a
@@ -329,7 +337,7 @@ test_that("a new criterion id without a fixture fails the gate, not just the tes
   expect_match(zw1_ledger_problems(stale_exempt), "gate_zw1_fake", fixed = TRUE)
   # an exemption with an empty reason is not an exemption
   blank <- ledger
-  blank$exempt <- stats::setNames("", "gate_zw1_fake")
+  blank$exempt <- c(ledger$exempt, stats::setNames("", "gate_zw1_fake"))
   expect_true(any(grepl("empty reason", zw1_ledger_problems(blank))))
 })
 
@@ -352,10 +360,13 @@ test_that("coverage is derived from the ledger, so a removed row is a violation"
   target <- ledger$fixtures$id[1L]
   exempted <- ledger
   exempted$fixtures <- ledger$fixtures[-1L, ]
-  exempted$exempt <- stats::setNames("needs a genome this suite does not carry", target)
+  # the shipped ledger may already carry exemptions (e.g. a criterion whose
+  # honest outcome is `unknown`), so this is ADDED to them, not a replacement
+  kept <- if (length(ledger$exempt)) ledger$exempt else character(0)
+  exempted$exempt <- c(kept, stats::setNames("needs a genome this suite does not carry", target))
   expect_length(zw1_ledger_violations(exempted), 0L)
 
-  exempted$exempt <- stats::setNames(character(0), character(0))
+  exempted$exempt <- kept
   problems <- zw1_ledger_violations(exempted)
   expect_length(problems, 1L)
   expect_match(problems, paste0("criterion ", target, " ("), fixed = TRUE)

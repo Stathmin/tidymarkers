@@ -9,6 +9,10 @@ good_assay <- function() {
       com_tm = 60, as_gc = 0.5, com_gc = 0.5, n_var = 0L, as_n_3p = 0L,
       as_n_var = 0L, as_dropout = 0, as_foot_dropout = 0, com_dropout = 0
     ),
+    # the allele pair the 3'-terminal mismatch class is graded on (Z0.4):
+    # A>G is one of Kwok 1990's `severe` classes, so a well-formed assay grades
+    # a real class rather than coming back `unknown`
+    snp = tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G"),
     thermo = tibble::tibble(
       name = names(p), tm = c(57, 57, 60), gc = c(0.5, 0.5, 0.5),
       hairpin_dg = c(-1, -1, -1)
@@ -163,6 +167,13 @@ test_that("each broken criterion flips the verdict to fail", {
     },
     function(a) {
       a$assay$com <- "ACGTACGTACGTACGT"
+      a
+    },
+    # Z0.4: the 3'-terminal mismatch class.  Every Kwok class is a RANKING, so
+    # none of them is a fail; what fails is a substitution pair the paper does
+    # not class at all (A>C), which the check refuses to call a pass.
+    function(a) {
+      a$snp$alt <- "C"
       a
     }
   )
