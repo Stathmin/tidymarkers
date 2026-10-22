@@ -250,6 +250,19 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   if (any(nchar(alts) != ref_len)) {
     cli::cli_abort(gettext("every `alt` allele must be as long as `ref`"))
   }
+  # `stab_ats` are DISTANCES from the 3' end (positive), which is what
+  # `make_as_primer()` computes with: `i <- length - stab_at + 1`.  The decided
+  # policy's constants (ARMS_EXTRA_MISMATCH_POSITION = -3L) are the same
+  # positions written as signed 3'-relative offsets; passing one straight in
+  # silently put the mismatch past the primer's 5' end.  Refuse the signed form
+  # rather than place it wrongly.
+  if (any(stab_ats < 0L, na.rm = TRUE)) {
+    cli::cli_abort(c(
+      gettext("`stab_ats` are distances from the 3' end and must be positive (or NA)."),
+      i = gettext("Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}"),
+      i = gettext("The signed policy constant means abs(): -3L -> 3L.")
+    ))
+  }
   # linked variants (substitutions and indels co-segregating with the ALT
   # haplotype) are baked into the ALT template and the ALT primer, so it
   # mismatches REF twice; REF is left untouched.  `ref`/`alt` are the template
