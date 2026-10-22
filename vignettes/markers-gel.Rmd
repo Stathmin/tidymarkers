@@ -1,8 +1,8 @@
 ---
-title: "Гелевые и плавильные маркеры: CAPS/dCAPS, ARMS, HRM, SSR, InDel-size"
+title: "Gel and melt markers: CAPS/dCAPS, ARMS, HRM, SSR, InDel-size"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Гелевые и плавильные маркеры: CAPS/dCAPS, ARMS, HRM, SSR, InDel-size}
+  %\VignetteIndexEntry{Gel and melt markers: CAPS/dCAPS, ARMS, HRM, SSR, InDel-size}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,26 +16,27 @@ library(tidymarkers)
 library(knitr)
 ```
 
-На каждом рисунке — буквы последовательностей (праймеры и ампликон), трек
-вариантов, геномная off-site панель и справа тот же tumbler, что у KASP.
-Эти схемы читают не флуоресценцию в реальном времени, а **размер продукта**
-или **кривую плавления**. Поэтому общий для них риск — разрешимость сигнала:
-полосы/пики должны уверенно различаться, а праймеры — не создавать побочных
-продуктов. Пакет проектирует конструкт, но не симулирует гель/плавление
-(`marker_readout()` говорит это прямо).
+Every figure shows sequence letters (primers and amplicon), the variant track,
+the genomic off-site panel and, on the right, the same tumbler as for KASP.
+These schemes read **product size** or the **melting curve**, not real-time
+fluorescence. The risk they share is therefore signal resolvability: bands/peaks
+must be clearly distinguishable and the primers must not create side products.
+The package designs the construct, but does not simulate the gel/melting
+(`marker_readout()` says so explicitly).
 
-## CAPS и dCAPS
+## CAPS and dCAPS
 
-CAPS: вариант создаёт/уничтожает сайт рестрикции, ПЦР-продукт режется на
-разные по длине фрагменты. dCAPS: природного сайта нет, и праймер вносит
-одно несовпадение, создающее сайт только у одного аллеля.
+CAPS: the variant creates/destroys a restriction site, and the PCR product is cut
+into fragments of different lengths. dCAPS: there is no natural site, and the
+primer introduces one mismatch that creates the site only in one allele.
 [Konieczny & Ausubel (1993)](https://doi.org/10.1046/j.1365-313X.1993.04020403.x),
 [Neff et al. (1998)](https://doi.org/10.1046/j.1365-313X.1998.00124.x).
 
-Ключевое: вариант должен менять картину рестрикции, а разница фрагментов — быть
-выше разрешения геля; dCAPS-несовпадение не должно ломать отжиг.
+The key point: the variant must change the restriction pattern, and the fragment
+difference must be above the gel resolution; the dCAPS mismatch must not break
+annealing.
 
-```{r caps-fig, echo = FALSE, out.width = "100%", fig.cap = "CAPS/dCAPS: ампликон, сайт рестрикции и диагностические полосы."}
+```{r caps-fig, echo = FALSE, out.width = "100%", fig.cap = "CAPS/dCAPS: amplicon, restriction site and diagnostic bands."}
 knitr::include_graphics("figures/caps.svg")
 ```
 
@@ -44,15 +45,16 @@ snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
 design_caps_marker(genome, snp, flank = 250)
 ```
 
-### Гаплотипы как общий population-слой
+### Haplotypes as a shared population layer
 
-CAPS-дизайнер не выбирает праймер по гаплотипам, но любой маркер можно
-снабдить известными гаплотипами и частотами: `marker_attach_haplotypes()`
-добавляет `$population`, карта рисует гаплотипный трек, а правая колонка —
-`ALT freq`, число гаплотипов и покрытие. Это population context, а не
-гаплотип-специфичный дизайн; последний реализован для `lax` KASP.
+The CAPS designer does not choose primers by haplotype, but any marker can be
+given known haplotypes and frequencies: `marker_attach_haplotypes()` adds
+`$population`, the map draws a haplotype track, and the right column holds
+`ALT freq`, the number of haplotypes and the coverage. This is population
+context, not haplotype-specific design; the latter is implemented for `lax`
+KASP.
 
-| гаплотип | частота | 300 | 310 | 320 |
+| haplotype | frequency | 300 | 310 | 320 |
 |---|---:|---|---|---|
 | H1 | 0.55 | A>G | C>T | — |
 | H2 | 0.25 | A>G | — | — |
@@ -74,57 +76,57 @@ plot(m, genome = genome)
 
 ## Tetra-primer ARMS
 
-Два внешних праймера задают контрольную полосу, два внутренних —
-аллель-специфичные: 3'-основание внутреннего праймера совпадает только с одним
-аллелем. Генотип читается по комбинации трёх полос (AA/AB/BB).
+Two outer primers give the control band, two inner ones are allele-specific: the
+3' base of the inner primer matches only one allele. The genotype is read from
+the combination of three bands (AA/AB/BB).
 [Newton et al. (1989)](https://doi.org/10.1093/nar/17.7.2503),
 [Ye et al. (2001)](https://doi.org/10.1093/nar/29.17.e88).
 
-Два внутренних продукта должны различаться по размеру, иначе гель нечитаем;
-Tm внутренних и внешних праймеров подбирается так, чтобы все четыре работали
-в одной реакции (в пакете это tier3, а не жёсткий гейт).
+The two inner products must differ in size, otherwise the gel is unreadable; the
+Tm of the inner and outer primers is chosen so that all four work in one
+reaction (in the package this is tier3, not a hard gate).
 
-```{r arms-fig, echo = FALSE, out.width = "100%", fig.cap = "ARMS: внешняя контрольная пара и два аллель-специфичных внутренних праймера."}
+```{r arms-fig, echo = FALSE, out.width = "100%", fig.cap = "ARMS: outer control pair and two allele-specific inner primers."}
 knitr::include_graphics("figures/arms.svg")
 ```
 
 ## HRM
 
-HRM различает аллели по форме кривой плавления. Требования: **короткий
-однодоменный ампликон** (обычно 50–100 bp), вариант в плавильном домене и не
-под праймерами, сбалансированные Tm праймеров. Чем короче и «чище» продукт,
-тем легче разделить гомозиготы и гетерозиготу.
+HRM discriminates alleles by the shape of the melting curve. Requirements: a
+**short single-domain amplicon** (usually 50–100 bp), the variant in the melting
+domain and not under the primers, balanced primer Tm. The shorter and "cleaner"
+the product, the easier it is to separate the homozygotes and the heterozygote.
 [Wittwer et al. (2003)](https://doi.org/10.1373/49.6.853).
 
-```{r hrm-fig, echo = FALSE, out.width = "100%", fig.cap = "HRM: короткий ампликон, вариант внутри плавильного домена."}
+```{r hrm-fig, echo = FALSE, out.width = "100%", fig.cap = "HRM: short amplicon, variant inside the melting domain."}
 knitr::include_graphics("figures/hrm.svg")
 ```
 
-## SSR / микросателлиты
+## SSR / microsatellites
 
-SSR — тандемный повтор 1–6 nt; аллели различаются числом копий. Праймеры
-должны лежать в уникальных флангах, а продукт — быть в окне капиллярного/гель
-разрешения. Повтор в самом праймере — источник нестабильности, поэтому это
-жёсткий фильтр.
+An SSR is a tandem repeat of 1–6 nt; alleles differ in the number of copies. The
+primers must lie in unique flanks, and the product must be within the capillary/gel
+resolution window. A repeat inside the primer itself is a source of instability,
+so this is a hard filter.
 [Tautz (1989)](https://doi.org/10.1093/nar/17.16.6463).
 
-`snp$pos` здесь — только **якорь** повтора; REF/ALT основания не являются
-аллелями SSR. Панель fragment analysis показывает ожидаемые длины REF и ALT
-(+1 repeat unit, иллюстративный сдвиг): именно это читает капилляр/гель, а не
+Here `snp$pos` is only an **anchor** for the repeat; the REF/ALT bases are not SSR
+alleles. The fragment analysis panel shows the expected REF and ALT lengths (+1
+repeat unit, an illustrative shift): this is what the capillary/gel reads, not the
 SNP.
 
-```{r ssr-fig, echo = FALSE, out.width = "100%", fig.cap = "SSR: повтор между праймерами; размер продукта следует за числом копий."}
+```{r ssr-fig, echo = FALSE, out.width = "100%", fig.cap = "SSR: repeat between the primers; product size follows the number of copies."}
 knitr::include_graphics("figures/ssr.svg")
 ```
 
 ## InDel-size
 
-Инсерция/делеция сама создаёт длинновой полиморфизм: одна пара праймеров,
-два продукта, разница равна длине индела. Нужен минимальный зазор (обычно
->= 5 bp), чтобы полосы были разрешимы, и уникальная амплификация.
+The insertion/deletion itself creates length polymorphism: one primer pair, two
+products, and the difference equals the indel length. A minimum gap is required
+(usually >= 5 bp) so that the bands are resolvable, plus unique amplification.
 [Weber et al. (2002)](https://doi.org/10.1086/342727).
 
-```{r indel-size-fig, echo = FALSE, out.width = "100%", fig.cap = "InDel-size: REF/ALT продукты различаются на длину индела."}
+```{r indel-size-fig, echo = FALSE, out.width = "100%", fig.cap = "InDel-size: REF/ALT products differ by the indel length."}
 knitr::include_graphics("figures/indel_size.svg")
 ```
 
@@ -133,156 +135,158 @@ ins <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "GTTTTTTTTT")
 design_indel_size_marker(genome, ins, flank = 250, min_gap = 5)
 ```
 
-## Общее для семейства
+## Shared across the family
 
-Все пять схем проходят общие фильтры состава праймеров (Tm, GC, гомополимеры,
-повторы), но набор проверок не одинаков: in-silico PCR и уникальность
-амплификации — жёсткие гейты только у SSR и InDel-size; у CAPS/ARMS/HRM
-дизайнер их не запускает, а димеры/шпильки у ARMS считаются только как отчёт
-(`$compatibility`), не как гейт. Различается и «что считается аллелем»: сайт
-рестрикции, 3'-основание внутреннего праймера, кривая плавления, число копий
-или длина продукта. `plot(marker)` показывает именно эту схему и её гейты, а
-`marker_readout()` честно отмечает, что гель/плавление не симулируются.
+All five schemes pass the shared primer composition filters (Tm, GC,
+homopolymers, repeats), but the set of checks is not the same: in-silico PCR and
+amplification uniqueness are hard gates only for SSR and InDel-size; for
+CAPS/ARMS/HRM the designer does not run them, and for ARMS dimers/hairpins are
+only computed as a report (`$compatibility`), not as a gate. What counts as an
+"allele" also differs: a restriction site, the 3' base of the inner primer, the
+melting curve, the number of copies or the product length. `plot(marker)` shows
+exactly this scheme and its gates, and `marker_readout()` states plainly that the
+gel/melting is not simulated.
 
-## Почему эти маркеры становятся негодными
+## Why these markers become doomed
 
-`marker_readout()` для всех пяти схем возвращает `simulated = FALSE`: пакет
-проверяет конструкт (сайт, размеры полос, праймеры), а не реакцию и не
-популяцию. Поэтому маркер, прошедший дизайн, может оказаться негодным по трём
-независимым причинам: диагностический признак не полиморфен в целевой
-популяции, сигнал физически не разрешается на геле или кривой, либо
-фермент/полимераза ведут себя не так, как в in-silico модели. Ниже — что
-реализовано и где остаётся дыра.
+For all five schemes `marker_readout()` returns `simulated = FALSE`: the package
+checks the construct (site, band sizes, primers), not the reaction and not the
+population. A marker that passed design can therefore be doomed for three
+independent reasons: the diagnostic feature is not polymorphic in the target
+population, the signal is physically unresolved on the gel or in the curve, or
+the enzyme/polymerase behaves differently from the in-silico model. Below is what
+is implemented and where the gap remains.
 
 ### CAPS/dCAPS
 
-**Реализовано.** Жёсткий `gate_caps_site` требует, чтобы вариант менял число
-сайтов рестрикции, а не просто длину продукта; итоговый дигест считается по
-*сконструированному продукту*, а не по окну сканирования. `gate_caps_resolvable`
-требует ≥ 20 bp между ближайшими разными полосами (после релаксации — 10 bp),
-`gate_caps_amplicon` держит продукт в 120–1200 bp, `gate_caps_tm` — Tm
-фланкирующих праймеров. Тем самым пакет ловит и «фермент не режет продукт»,
-и «полосы слиплись».
+**Implemented.** The hard `gate_caps_site` requires the variant to change the
+number of restriction sites, not merely the product length; the final digest is
+computed on the *constructed product*, not on the scan window.
+`gate_caps_resolvable` requires ≥ 20 bp between the nearest distinct bands (10 bp
+after relaxation), `gate_caps_amplicon` keeps the product in 120–1200 bp,
+`gate_caps_tm` the Tm of the flanking primers. The package thus catches both "the
+enzyme does not cut the product" and "the bands have merged".
 
-**Не проверено / слабо.** Сайт проверяется только на одном референсе: панели,
-MAF или популяционного полиморфизма дизайнер не принимает. Сайт, редкий или
-отсутствующий в популяции (например, из-за второго SNP внутри узнавания),
-пройдёт дизайн, а неудачный дигест даст нерезаный продукт, который будет
-прочитан как REF-подобный аллель. Не моделируются неполный дигест,
-метилирование (Dam/Dcm/CpG), звёздная активность, буфер/температура,
-эффективность фермента; каталог ограничен палиндромными Type II, и режется
-только верхняя цепь. Порог
-20 bp (10 bp после релаксации) слабее правила ≥ 50 bp для средних фрагментов на
-1–2 % агарозе, которое цитирует сам код; у dCAPS разница вообще ограничена
-длиной праймера (~20–28 bp). Контроль нерезаного продукта — рекомендация:
-`plot_caps_gel()` рисует только дорожки REF и ALT, без нерезаного контроля.
-Метод: [Konieczny & Ausubel (1993)](https://doi.org/10.1046/j.1365-313X.1993.04020403.x);
+**Unchecked / weak.** The site is checked on one reference only: the designer
+accepts no panels, MAF or population polymorphism. A site that is rare or absent
+in the population (for example because of a second SNP inside the recognition
+sequence) will pass design, and a failed digest will give an uncut product that
+is read as a REF-like allele. Incomplete digest, methylation (Dam/Dcm/CpG),
+star activity, buffer/temperature and enzyme efficiency are not modelled; the
+catalogue is limited to palindromic Type II, and only the top strand is cut. The
+threshold of 20 bp (10 bp after relaxation) is weaker than the ≥ 50 bp rule for
+medium fragments on 1–2 % agarose that the code itself cites; for dCAPS the
+difference is limited to the primer length anyway (~20–28 bp). An uncut-product
+control is a recommendation: `plot_caps_gel()` draws only the REF and ALT lanes,
+without an uncut control. Method:
+[Konieczny & Ausubel (1993)](https://doi.org/10.1046/j.1365-313X.1993.04020403.x);
 dCAPS: [Neff et al. (1998)](https://doi.org/10.1046/j.1365-313X.1998.00124.x).
 
 ### Tetra-primer ARMS
 
-**Реализовано.** Жёсткий `gate_arms_disc` требует, чтобы 3'-основание
-внутреннего праймера совпадало с аллелем, и оценивает discrimination ≥ 0.5
-(DECIPHER, разница эффективностей on/off). `gate_arms_bands` требует ≥ 20 bp между REF и ALT и
-между каждой из них и контролем (до 10 bp), `gate_arms_outer` держит контроль в
-200–800 bp. Совместная проверка димеров/шпилек всех четырёх праймеров считается
-(`$compatibility`), но это отчёт, а не гейт.
+**Implemented.** The hard `gate_arms_disc` requires the 3' base of the inner
+primer to match the allele, and scores discrimination ≥ 0.5 (DECIPHER, the
+difference in on/off efficiencies). `gate_arms_bands` requires ≥ 20 bp between
+REF and ALT and between each of them and the control (down to 10 bp),
+`gate_arms_outer` keeps the control in 200–800 bp. The joint check of
+dimers/hairpins for all four primers is computed (`$compatibility`), but it is a
+report, not a gate.
 
-**Не проверено / слабо.** Discrimination — термодинамическая разница
-эффективностей, а не реальное удлинение: часть 3'-несовпадений Taq достраивает,
-а «стабилизирующее» второе несовпадение может как спасти, так и ухудшить
-дискриминацию. Конкуренция внешних и внутренних продуктов не моделируется;
-Tm-разброс четырёх праймеров — только tier3, поэтому внутренняя полоса может
-быть слабой или исчезнуть. Разрешение проверяется по размеру, но не по
-интенсивности полос. Полиморфизм под праймерами (и связанные с ним нулевые
-аллели) в популяции не виден. Практика: подобрать соотношение
-внешних/внутренних праймеров и проверить на эталонных AA/AB/BB. Метод:
+**Unchecked / weak.** Discrimination is a thermodynamic difference in
+efficiencies, not real extension: Taq extends some 3' mismatches, and a
+"stabilising" second mismatch may either rescue or worsen discrimination.
+Competition between outer and inner products is not modelled; the Tm spread of
+the four primers is only tier3, so the inner band may be weak or disappear.
+Resolution is checked by size, not by band intensity. Polymorphism under the
+primers (and the null alleles associated with it) is invisible in the
+population. In practice: tune the outer/inner primer ratio and test on reference
+AA/AB/BB. Method:
 [Newton et al. (1989)](https://doi.org/10.1093/nar/17.7.2503);
-тетрапраймер: [Ye et al. (2001)](https://doi.org/10.1093/nar/29.17.e88);
-правила дизайна:
+tetra-primer: [Ye et al. (2001)](https://doi.org/10.1093/nar/29.17.e88);
+design rules:
 [Medrano & de Oliveira (2014)](https://doi.org/10.1007/s12033-014-9734-4).
 
 ### HRM
 
-**Реализовано.** `gate_hrm_amplicon` — жёсткий: 50–100 bp; `gate_hrm_tm` —
-мягкий (58–63 °C, расширяется на 2 °C). Вариант обязан лежать внутри ампликона
-с зазором 1 bp от 3'-концов праймеров, а «центральность» варианта — tier1.
-Кривая плавления не симулируется. Слишком длинный ампликон пакет ловит жёстко,
-остальные перечисленные отказы — нет.
+**Implemented.** `gate_hrm_amplicon` is hard: 50–100 bp; `gate_hrm_tm` is soft
+(58–63 °C, widened by 2 °C). The variant must lie inside the amplicon with a 1 bp
+clearance from the 3' ends of the primers, and the "centrality" of the variant is
+tier1. The melting curve is not simulated. The package catches a too-long
+amplicon hard, the other listed failures not.
 
-**Не проверено / слабо.** Пакет не вычисляет плавильные домены:
-«однодоменный» ампликон — допущение из длины, а не расчёт. GC-богатый домен или
-вариант на границе доменов может не дать разрешимой кривой, хотя гейт по длине
-пройден. Низкая аллельная доля (соматическая мутация, мозаик) не проверяется:
-порог детекции в пакете не задан. Гетеродуплексная дискриминация не
-моделируется вообще — кривая не предсказывается, поэтому «гетерозигота
-отделится» остаётся рекомендацией. Соседние SNP в ампликоне не сканируются.
-Практика: короткий ампликон, вариант ближе к центру, проверка на разведениях и
-эталонных генотипах. Метод:
+**Unchecked / weak.** The package does not compute melting domains: a
+"single-domain" amplicon is an assumption from the length, not a calculation. A
+GC-rich domain or a variant at a domain boundary may not give a resolvable curve
+even though the length gate is passed. Low allele fraction (somatic mutation,
+mosaic) is not checked: the package sets no detection threshold. Heteroduplex
+discrimination is not modelled at all – the curve is not predicted, so "the
+heterozygote will separate" remains a recommendation. Neighbouring SNPs in the
+amplicon are not scanned. In practice: short amplicon, variant nearer the centre,
+testing on dilutions and reference genotypes. Method:
 [Wittwer et al. (2003)](https://doi.org/10.1373/49.6.853).
 
 ### SSR
 
-**Реализовано.** Жёсткие `gate_ssr_flanks` (уникальные 3' концы) и
-`gate_ssr_offtarget` (ровно один in-silico продукт); мягкие
-`gate_ssr_polymorphic` (≥ 5 копий, пол 3), `gate_ssr_amplicon` (100–300 bp) и
-`gate_ssr_tm`. Праймеры обязаны лежать вне повтора и не содержать SSR или
-гомополимера.
+**Implemented.** Hard `gate_ssr_flanks` (unique 3' ends) and
+`gate_ssr_offtarget` (exactly one in-silico product); soft
+`gate_ssr_polymorphic` (≥ 5 copies, floor 3), `gate_ssr_amplicon` (100–300 bp) and
+`gate_ssr_tm`. The primers must lie outside the repeat and must not contain an SSR
+or a homopolymer.
 
-**Не проверено / слабо.** Число копий — прокси полиморфизма: аллельного
-распределения в популяции пакет не знает, поэтому повтор из 5 копий может быть
-мономорфным, а принятый после релаксации 3-копийный — почти наверняка. Статтер
-не моделируется: длинные динуклеотиды дают лестницу, которую легко принять за
-аллели. Перекрытие размеров аллелей и мультиплексирование не проверяются — локус
-один, пулирование оставлено вызывающему. Фланговые праймеры проверяются только
-на референсе, поэтому нулевые аллели из-за SNP в сайте праймера не видны. Поиск
-повтора — только совершенные тандемы с периодом 2–4 (`units = 2:4`), поэтому
-1-nt и 5–6-nt повторы не ищутся без явного `units`, а прерванный повтор
-распадается на короткие совершенные блоки. Практика: тетра-/пентануклеотиды
-(для пента — `units = 5`), проверка аллельного спектра
-на панели, капилляр с внутренним стандартом.
-Метод: [Tautz (1989)](https://doi.org/10.1093/nar/17.16.6463); окна
-праймеров/продукта: [Primer3 manual](https://primer3.org/manual.html).
+**Unchecked / weak.** The number of copies is a proxy for polymorphism: the
+package does not know the allele distribution in the population, so a 5-copy
+repeat may be monomorphic, and one of 3 copies accepted after relaxation almost
+certainly is. Stutter is not modelled: long dinucleotides give a ladder that is
+easily mistaken for alleles. Overlap of allele sizes and multiplexing are not
+checked – there is one locus, and pooling is left to the caller. Flanking primers
+are checked on the reference only, so null alleles caused by a SNP in the primer
+site are invisible. Repeat search covers perfect tandems with period 2–4
+(`units = 2:4`) only, so 1-nt and 5–6-nt repeats are not found without an explicit
+`units`, and an interrupted repeat falls apart into short perfect blocks. In
+practice: tetra-/pentanucleotides (for penta, `units = 5`), checking the allele
+spectrum on a panel, a capillary with an internal standard.
+Method: [Tautz (1989)](https://doi.org/10.1093/nar/17.16.6463); primer/product
+windows: [Primer3 manual](https://primer3.org/manual.html).
 
 ### InDel-size
 
-**Реализовано.** `gate_indel_size_gap` (|Δ| ≥ 5 bp, мягкий, пол 3 bp для
-капилляра/PAGE), `gate_indel_size_amplicon` (80–300 bp для обоих аллелей),
-`gate_indel_size_tm`, жёсткие `gate_indel_size_structure` (OligoArrayAux) и
-`gate_indel_size_unique` (3'-seed + один in-silico продукт). Оба праймера лежат
-вне всего REF-блока, поэтому разница продуктов равна длине индела.
+**Implemented.** `gate_indel_size_gap` (|Δ| ≥ 5 bp, soft, 3 bp floor for
+capillary/PAGE), `gate_indel_size_amplicon` (80–300 bp for both alleles),
+`gate_indel_size_tm`, hard `gate_indel_size_structure` (OligoArrayAux) and
+`gate_indel_size_unique` (3'-seed + one in-silico product). Both primers lie
+outside the whole REF block, so the product difference equals the indel length.
 
-**Не проверено / слабо.** Частота индела в популяции не проверяется: редкий
-индел пройдёт дизайн, хотя как маркер бесполезен. Амплификационный дисбаланс не
-моделируется: длинная вставка (особенно > 30 bp или GC-богатая) может
-амплифицироваться хуже, и короткий аллель доминирует — гетерозигота выглядит
-гомозиготой. Пол 3 bp — это разрешение капилляра/PAGE, а не агарозы: после
-релаксации до 3–5 bp обычный агарозный гель полосы не разделит. Индел в
-низкокопийном повторе или сложной области отдельно не проверяется. Практика:
-для 3–10 bp — PAGE/капилляр, для агарозы — > 30 bp, проверка на гетерозиготах.
-Метод: [Weber et al. (2002)](https://doi.org/10.1086/342727); окна и
-разрешение: [Adedze et al. (2021)](https://doi.org/10.1038/s41598-021-83313-x),
+**Unchecked / weak.** The frequency of the indel in the population is not
+checked: a rare indel will pass design although it is useless as a marker.
+Amplification imbalance is not modelled: a long insertion (especially > 30 bp or
+GC-rich) may amplify worse, and the short allele dominates – the heterozygote
+looks like a homozygote. The 3 bp floor is capillary/PAGE resolution, not agarose:
+after relaxation to 3–5 bp an ordinary agarose gel will not separate the bands. An
+indel in a low-copy repeat or a complex region is not checked separately. In
+practice: PAGE/capillary for 3–10 bp, > 30 bp for agarose, testing on
+heterozygotes. Method: [Weber et al. (2002)](https://doi.org/10.1086/342727);
+windows and resolution: [Adedze et al. (2021)](https://doi.org/10.1038/s41598-021-83313-x),
 [Wang et al. (2026)](https://doi.org/10.3390/ijms27031406).
 
-**Итог.** Все пять схем проверяют *конструкт*: есть ли диагностический
-признак, какого он размера и не ломают ли праймеры общие правила. Ни одна не
-проверяет (1) полиморфизм в целевой популяции, (2) физику геля/плавления и
-(3) поведение фермента или полимеразы в реакции. Именно эти три шага остаются
-мокрой валидацией. Отдельно: у CAPS/ARMS/HRM в дизайнере нет in-silico PCR и
-уникальности — это ещё одна причина, по которой off-target продукт у них не
-отсеивается.
+**Summary.** All five schemes check the *construct*: whether the diagnostic
+feature exists, how large it is and whether the primers break the shared rules.
+None of them checks (1) polymorphism in the target population, (2) the physics of
+the gel/melting, or (3) the behaviour of the enzyme or polymerase in the reaction.
+Those three steps remain wet validation. Separately: CAPS/ARMS/HRM have no
+in-silico PCR and uniqueness in the designer – one more reason why an off-target
+product is not filtered out for them.
 
-### Аудит решений
+### Decision audit
 
-Графы `vignettes/figures/decision-{caps,arms,hrm,ssr,indel_size}.{svg,txt}` —
-это **схема политики, а не протокол прогона**: `dev/render-decision.R` строит их
-через `plot_decision_tree(scheme = sc)` без `assay`, поэтому
-`marker_decision_graph()` оставляет все узлы `neutral`; аннотированного обхода
-(с `status`) здесь нет. Файлы `man/figures/decision-tree.svg` и
-`decision-multiplex.svg` — это SNP/duplex, не это семейство. Схемы в
-`vignettes/figures/{caps,arms,hrm,ssr,indel_size}.svg` — это `marker_figure()`
-(гель/карта + tumbler классов), а не DAG. Поэтому граф подтверждает *порядок и
-жёсткость* гейтов, но не их выполнение.
+The graphs in `vignettes/figures/decision-{caps,arms,hrm,ssr,indel_size}.{svg,txt}`
+are the **policy scheme, not a run trace**: `dev/render-decision.R` builds them
+through `plot_decision_tree(scheme = sc)` without an `assay`, so
+`marker_decision_graph()` leaves every node `neutral`; there is no annotated walk
+(with `status`) here. The files `man/figures/decision-tree.svg` and
+`decision-multiplex.svg` are the SNP/duplex ones, not this family. The figures in
+`vignettes/figures/{caps,arms,hrm,ssr,indel_size}.svg` are `marker_figure()`
+(gel/map + class tumbler), not a DAG. The graph therefore confirms the *order and
+hardness* of the gates, but not their execution.
 
 ```{r, echo = FALSE, out.width = "100%"}
 knitr::include_graphics("figures/decision-caps.svg")
@@ -304,48 +308,49 @@ knitr::include_graphics("figures/decision-ssr.svg")
 knitr::include_graphics("figures/decision-indel_size.svg")
 ```
 
-В `decision-*.txt` видно, что `DOOMED` висит только на жёстких гейтах и на
-исчерпанной лестнице, а тиры (`band gap`, `Tm balance`, `amplicon length`) —
-ранжирование, не проверки. Это совпадает с кодом, но не добавляет ни одного
-шага, которого нет в дизайнере.
+In `decision-*.txt` it is visible that `DOOMED` hangs only on the hard gates and
+on an exhausted ladder, while the tiers (`band gap`, `Tm balance`, `amplicon
+length`) are ranking, not checks. This matches the code, but adds not a single
+step that is absent from the designer.
 
-**Уточнения к первому проходу.** У CAPS дигест считается по продукту
-(`caps_grade()`), однако жёсткий `gate_caps_site` у природного сайта — это
-`site_change`, посчитанный по окну сканирования (`find_caps_enzymes()`), а у
-dCAPS он выставлен в `TRUE` по построению; кандидат, у которого сайт не режет
-продукт, отбрасывается как `gap = Inf`, а не помечается провалом гейта. У ARMS
-`inner specificity` — `DECIPHER::CalculateEfficiencyPCR(taqEfficiency = TRUE)`,
-т.е. гибридизация × эффективность удлинения, а не кинетика;
-`disc = pmin(fwd, rev)`, а `tube Tm balance` — только tier3. У HRM
-`variant centrality (melt domain)` — геометрическая центральность ампликона
-(`|(start_f + end_r)/2 − centre|`), а не плавильный домен; `hrm.svg` — карта,
-кривой плавления нет. У SSR `repeat variability` — число копий (≥5, пол 3), а не
-аллельный спектр; `ssr.svg` даёт `(AC)5 · 166 bp` против `(AC)6 · 168 bp (+2)`,
-и отдельного гейта разрешения шага нет. У InDel дефолтный `resolvable gap` —
-5 bp (не только «после релаксации»), пол 3 bp капиллярный; `indel_size.svg`
-показывает удобные +10 bp. Фразу первого прохода про индел в повторе стоит
-сузить: многолокусный повтор ловит жёсткий `primer uniqueness` через
-`in_silico_pcr()`; не проверяется лишь случай, когда сам индел лежит внутри
-более длинного повтора или рядом с ним — длина такого повтора в популяции может
-варьировать, и разница продуктов уже не равна длине индела.
+**Refinements to the first pass.** For CAPS the digest is computed on the
+product (`caps_grade()`), yet the hard `gate_caps_site` for a natural site is
+`site_change` computed on the scan window (`find_caps_enzymes()`), and for dCAPS
+it is set to `TRUE` by construction; a candidate whose site does not cut the
+product is discarded as `gap = Inf` rather than flagged as a gate failure. For
+ARMS, `inner specificity` is
+`DECIPHER::CalculateEfficiencyPCR(taqEfficiency = TRUE)`, i.e. hybridisation ×
+extension efficiency, not kinetics; `disc = pmin(fwd, rev)`, and `tube Tm balance`
+is only tier3. For HRM, `variant centrality (melt domain)` is the geometric
+centrality of the amplicon (`|(start_f + end_r)/2 − centre|`), not the melting
+domain; `hrm.svg` is a map, there is no melting curve. For SSR, `repeat
+variability` is the number of copies (≥5, floor 3), not the allele spectrum;
+`ssr.svg` gives `(AC)5 · 166 bp` versus `(AC)6 · 168 bp (+2)`, and there is no
+separate gate for step resolution. For InDel the default `resolvable gap` is
+5 bp (not only "after relaxation"), the 3 bp floor is capillary; `indel_size.svg`
+shows a convenient +10 bp. The first pass's sentence about an indel in a repeat
+should be narrowed: a multi-locus repeat is caught by the hard `primer
+uniqueness` through `in_silico_pcr()`; the only unverified case is an indel lying
+inside a longer repeat or next to it – the length of such a repeat can vary in
+the population, and the product difference no longer equals the indel length.
 
-**Граф сильнее реализации.** В assay-блоке CAPS/ARMS/HRM перечислен
-`off-target exact primer hits (n)` — это общий `KASP_CHECK_PRIMER`, но
-`design_caps_marker()`,
-`design_arms_marker()` и `design_hrm_marker()` его не вычисляют (нет
-`in_silico_pcr()`/ideogram), и `marker_design_checks()` не рассчитан на объекты
-`marker_caps`/`marker_arms`/`marker_hrm`. Узел декларирует политику, а не факт.
+**The graph is stronger than the implementation.** In the assay block of
+CAPS/ARMS/HRM, `off-target exact primer hits (n)` is listed – this is the shared
+`KASP_CHECK_PRIMER`, but `design_caps_marker()`, `design_arms_marker()` and
+`design_hrm_marker()` do not compute it (no `in_silico_pcr()`/ideogram), and
+`marker_design_checks()` is not designed for `marker_caps`/`marker_arms`/
+`marker_hrm` objects. The node declares a policy, not a fact.
 
-| Схема | Реализовано (видно в графе/коде) | Нет узла — рекомендация |
+| Scheme | Implemented (visible in graph/code) | No node — recommendation |
 |---|---|---|
-| CAPS | смена сайта, дигест продукта, gap 20/10 bp, Tm/ампликон | панель/MAF, второй SNP в сайте, нерезаный контроль, неполный дигест |
-| ARMS | DECIPHER-эффективность, `pmin`, зазоры полос | кинетика удлинения, конкуренция outer/inner, AB-дорожка, интенсивность |
-| HRM | длина 50–100 bp, Tm, центральность | плавильный домен, гетеродуплекс, низкая аллельная доля |
-| SSR | число копий, уникальные фланги, один продукт | аллельный спектр/мономорфизм, статтер, разрешение шага |
-| InDel | gap 5/3 bp, structure, uniqueness | частота индела, дисбаланс длинного аллеля, повтор-встроенный индел |
+| CAPS | site change, product digest, gap 20/10 bp, Tm/amplicon | panel/MAF, second SNP in the site, uncut control, incomplete digest |
+| ARMS | DECIPHER efficiency, `pmin`, band gaps | extension kinetics, outer/inner competition, AB lane, intensity |
+| HRM | length 50–100 bp, Tm, centrality | melting domain, heteroduplex, low allele fraction |
+| SSR | number of copies, unique flanks, one product | allele spectrum/monomorphism, stutter, step resolution |
+| InDel | gap 5/3 bp, structure, uniqueness | indel frequency, long-allele imbalance, repeat-embedded indel |
 
-**Итог аудита.** Все узлы графа — это проверки *конструкта*; перечисленные
-справа шаги не имеют узла и остаются мокрой валидацией. Рисунки это
-подтверждают: `caps.svg` показывает только REF/ALT (53 bp gap), `arms.svg` —
-только `REF/REF` и `ALT/ALT`, `hrm.svg` — карту без кривой, `ssr.svg` — шаг
-2 bp, `indel_size.svg` — +10 bp.
+**Audit summary.** Every node of the graph is a *construct* check; the steps
+listed on the right have no node and remain wet validation. The figures confirm
+this: `caps.svg` shows only REF/ALT (53 bp gap), `arms.svg` only `REF/REF` and
+`ALT/ALT`, `hrm.svg` a map without a curve, `ssr.svg` a 2 bp step, `indel_size.svg`
++10 bp.

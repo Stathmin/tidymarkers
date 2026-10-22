@@ -3,6 +3,7 @@
 # tidymarkers
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- badges: end -->
@@ -51,7 +52,7 @@ A self-contained run: one SNP from a gene model, one assay, one verdict.
 ```r
 library(tidymarkers)
 
-genome <- ath_genome()                                  # TAIR10, cached after first use
+genome <- ath_genome()                                  # TAIR10 from Ensembl Plants, cached after first use
 gene   <- ensembl_gene("AT4G00650")                     # FRI / AT4G00650
 snp    <- pick_target_snp(ensembl_variants(gene$chrom, gene$start, gene$end),
                           genome, gene)
@@ -74,6 +75,12 @@ design_kasp_markers(genome, loci)                       # pass / warn / fail per
 Two project-level knobs are arguments rather than constants: `strands` (search
 the AS primer on `"+"`, `"-"` or both — the common primer flips with it) and
 `tm_range` (the permitted melting window, °C).
+
+`ath_genome()` is only a convenience downloader for the demo: it pulls one gzipped
+TAIR10 FASTA from the Ensembl Plants FTP into `marker_cache_dir()` and never
+touches the package repository. Any other reference is passed in directly — a
+FASTA path through `marker_genome()` / `read_genome_fasta()`, a `DNAStringSet`, or
+a Bioconductor `BSgenome` (see `vignette("custom-genome")`).
 
 ## How a candidate is chosen
 
@@ -165,9 +172,11 @@ and fail before `renv::restore()` can run. Use `renv::init()` then
 `renv::restore()` when you need the pinned snapshot; development installs use
 `Rscript dev/install-deps.R`.
 
-External data never ships with the package: the TAIR10 genome, variation,
-BLAST/FM indexes and the thermodynamic binaries are fetched or built once into
-`marker_cache_dir()`.
+External data never ships with the package: the TAIR10 genome and the 1001
+Genomes variation are downloaded from Ensembl Plants, and the BLAST/FM indexes
+and thermodynamic binaries are built once, all inside `marker_cache_dir()`. The
+download source is an FTP path on `ftp.ebi.ac.uk`, so it does not depend on this
+repository's URL.
 
 ## Limitations
 

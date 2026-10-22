@@ -1,8 +1,8 @@
 ---
-title: "Как читать результаты"
+title: "How to read the results"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Как читать результаты}
+  %\VignetteIndexEntry{How to read the results}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,50 +16,55 @@ library(tidymarkers)
 library(knitr)
 ```
 
-## Четыре вопроса к тесту
+## Four questions for an assay
 
-1. **Можно ли его спроектировать?** — вернулся `marker_assay` или `marker_doomed`.
-2. **Специфичен ли он?** — `marker_design_checks()` (таблица «критерий / факт / порог / pass»).
-3. **Насколько хорошо он различает аллели?** — `discrimination` (эффективность `DECIPHER`).
-4. **Не мешает ли структура?** — димеры/шпильки и 3'-стабильность.
+1. **Can it be designed at all?** — did a `marker_assay` or a `marker_doomed`
+   come back.
+2. **Is it specific?** — `marker_design_checks()` (the table "criterion / observed
+   / limit / pass").
+3. **How well does it discriminate the alleles?** — `discrimination` (the
+   `DECIPHER` efficiency).
+4. **Does structure get in the way?** — dimers/hairpins and 3' stability.
 
-Любой ответ на них — строка в таблице, а не устное заключение: поэтому один и
-тот же тест можно сравнить с другим и проверить это тестом.
+Every answer is a row in a table, not a spoken conclusion: so the same assay can
+be compared with another and that comparison can itself be tested.
 
-## Вердикт по критериям
+## Verdict by criterion
 
-`marker_design_checks()` возвращает tidy-таблицу; «хороший» тест проходит **все**
-применимые строки. Пороги живут в `KASP_LIMITS` — их видно и можно переопределить.
+`marker_design_checks()` returns a tidy table; a "good" assay passes **all** the
+applicable rows. The thresholds live in `KASP_LIMITS` — they are visible and can
+be overridden.
 
 ```{r, eval = FALSE}
 chk <- marker_design_checks(assay)
 chk
 chk[!chk$pass, c("stage", "criterion", "observed", "limit", "status")]
-passes_all(assay)                # TRUE / FALSE одной строкой
-marker_risk(assay)               # low / medium / high + список провалов
+passes_all(assay)                # TRUE / FALSE in one line
+marker_risk(assay)               # low / medium / high + the list of failures
 ```
 
-Колонка `status` — главная, а не `pass`:
+The `status` column is the main one, not `pass`:
 
-| `status` | что значит |
+| `status` | meaning |
 |---|---|
-| `pass` | критерий измерен и попал в порог |
-| `fail` | измерен и не попал — это и есть «почему не прошёл» |
-| `unknown` | измерить не удалось (нет данных, инструмент недоступен) |
-| `not_applicable` | критерий к этой схеме не относится |
+| `pass` | measured and within the limit |
+| `fail` | measured and outside it — this is the "why it did not pass" |
+| `unknown` | could not be measured (no data, tool unavailable) |
+| `not_applicable` | the criterion does not apply to this scheme |
 
-`pass` намеренно `FALSE` у `unknown` и `not_applicable`: «нет свидетельства» —
-не то же самое, что «свидетельство за». Поэтому фильтруйте по `status`, а
-`pass` берите как быстрый ответ на вопрос «всё ли доказано».
+`pass` is deliberately `FALSE` for `unknown` and `not_applicable`: "no evidence"
+is not the same as "evidence in favour". So filter by `status`, and take `pass`
+as a quick answer to "is everything demonstrated".
 
-Критерии: размер ампликона, Tm AS/COM (и `COM Tm >= AS Tm`), GC, гомополимеры,
-SSR, шпилька/кросс- и гомодимер, дискриминация, in-silico PCR (REF=1, ALT=0).
+Criteria: amplicon size, AS/COM Tm (and `COM Tm >= AS Tm`), GC, homopolymers,
+SSR, hairpin/cross- and homodimer, discrimination, in-silico PCR (REF=1, ALT=0).
 
-## План → прогон → экспорт
+## Plan → run → export
 
-Один локус собирают `assemble_kasp_assay()`. Панель локусов и выбор химии — это
-план: цель (`marker_targets()`), контекст (`marker_context()`) и доступные
-технологии (`marker_tech()`), затем `marker_solve()`.
+A single locus is assembled by `assemble_kasp_assay()`. A panel of loci and the
+choice of chemistry are a plan: targets (`marker_targets()`), context
+(`marker_context()`) and the available technologies (`marker_tech()`), then
+`marker_solve()`.
 
 ```{r, eval = FALSE}
 plan <- marker_plan(genome) +
@@ -71,34 +76,35 @@ solved <- marker_solve(plan, progress = FALSE)
 solved
 ```
 
-`<marker_solved>` печатает отчёт «цель × химия», а сам объект несёт три слоя:
+`<marker_solved>` prints a "target × chemistry" report, and the object itself
+carries three layers:
 
-| Слой | Что внутри |
+| Layer | What is inside |
 |---|---|
-| `solved$report` | одна строка на локус: `label`, `scheme`, `cost`, `ok`, `tried`, `marker` |
-| `solved$attempts` | одна строка на пару (локус, химия): что пробовали и чем кончилось |
-| `solved$report$marker` | сами объекты — `marker_assay` или `marker_doomed` |
+| `solved$report` | one row per locus: `label`, `scheme`, `cost`, `ok`, `tried`, `marker` |
+| `solved$attempts` | one row per (locus, chemistry) pair: what was tried and how it ended |
+| `solved$report$marker` | the objects themselves — `marker_assay` or `marker_doomed` |
 
-`ok` значит «вернулся объект-маркер», а **не** «прошёл все проверки»:
-приёмочные критерии живут в `$evaluation`, и тест с провалом остаётся в отчёте
-(см. ниже «Почему кандидат не прошёл»).
+`ok` means "a marker object came back", and **not** "passed all checks": the
+acceptance criteria live in `$evaluation`, and an assay with a failure stays in
+the report (see "Why a candidate did not pass" below).
 
 ```{r, eval = FALSE}
 solved$report[, c("label", "scheme", "cost", "ok", "tried")]
 solved$attempts
-marker_plot(solved)                     # плитки: какая химия взяла локус
+marker_plot(solved)                     # tiles: which chemistry took the locus
 solved$report$marker[[1]]
 ```
 
-Солвер идёт **от дешёвой химии к дорогой** и останавливается на первой, которая
-спроектировала локус, поэтому `attempts` — это ещё и ответ «почему взяли KASP, а
-не CAPS»: всё, что левее победившей строки, было дешевле и не сработало.
-`marker_solve(..., all = TRUE)` прогоняет матрицу целиком, а `cache =` позволяет
-переиспользовать уже посчитанные локусы между вызовами.
+The solver goes **from cheap chemistry to expensive** and stops at the first one
+that designed the locus, so `attempts` is also the answer to "why KASP and not
+CAPS": everything to the left of the winning row was cheaper and did not work.
+`marker_solve(..., all = TRUE)` runs the whole matrix, and `cache =` allows
+loci already computed to be reused between calls.
 
-### Экспорт объекта
+### Exporting the object
 
-`solved` — обычный R-объект, и он сериализуется целиком:
+`solved` is an ordinary R object, and it serialises whole:
 
 ```{r, eval = FALSE}
 dir <- marker_export(solved, dir = "results/solved")
@@ -106,85 +112,88 @@ fs::dir_ls(dir)
 # markers.csv    attempts.csv    primers.csv    solved.rds
 ```
 
-- `markers.csv` — отчёт по локусам;
-- `attempts.csv` — матрица попыток;
-- `primers.csv` — олигонуклеотиды всех решённых маркеров (`target`, `scheme`, `role`, `sequence`);
-- `solved.rds` — весь объект: план, отчёт и сами маркеры.
+- `markers.csv` — the per-locus report;
+- `attempts.csv` — the attempt matrix;
+- `primers.csv` — the oligos of every solved marker (`target`, `scheme`, `role`, `sequence`);
+- `solved.rds` — the whole object: plan, report and the markers themselves.
 
-`readRDS()` возвращает работающий объект, а не картинку: дальше можно
-`marker_plot()`, `marker_tubes()` (совместимость пар в одной пробирке) и проверки,
-не повторяя дизайн:
+`readRDS()` returns a working object, not a picture: from there you can run
+`marker_plot()`, `marker_tubes()` (compatibility of pairs in one tube) and the
+checks again without repeating the design:
 
 ```{r, eval = FALSE}
 back <- readRDS(file.path(dir, "solved.rds"))
 identical(back$report$label, solved$report$label)
-marker_tubes(back)                      # какие пары можно ставить в одну пробирку
+marker_tubes(back)                      # which pairs can go into one tube
 ```
 
-Если нужен результат **одного** теста, а не панели, его пишет
+If you need the result of **one** assay rather than a panel, it is written by
 `write_kasp_results()`:
 
 ```{r, eval = FALSE}
 write_kasp_results(assay, gene, dir = "results")
 ```
 
-## Почему кандидат не прошёл
+## Why a candidate did not pass
 
-Провал по локусу — это объект, а не `NULL`. `marker_doomed` печатает стадию, на
-которой кандидаты кончились, и причину:
+A failure at a locus is an object, not `NULL`. `marker_doomed` prints the stage
+at which the candidates ran out, and the reason:
 
 ```{r, eval = FALSE}
 m <- solved$report$marker[[1]]
-inherits(m, "marker_doomed")     # TRUE -> дизайн не удался
-m$stage                          # "as" или "pair"
+inherits(m, "marker_doomed")     # TRUE -> design failed
+m$stage                          # "as" or "pair"
 m$reason                         # "No AS primer passed the GC/Tm filter."
 ```
 
-Стадии KASP-конвейера: `as` (аллель-специфичные праймеры: GC/Tm,
-гомополимеры/SSR, вырожденный 3'-код, footprint) → `pair` (пара AS × COM после
-лестницы). Стадия в причине говорит, где именно кончились кандидаты, а не только
-что «не получилось».
+The stages of the KASP pipeline: `as` (allele-specific primers: GC/Tm,
+homopolymers/SSR, degenerate 3' code, footprint) → `pair` (the AS × COM pair
+after the ladder). The stage in the reason says exactly where the candidates ran
+out, not only that "it did not work".
 
-Приёмочные проверки дизайн не отменяют: объект возвращается, но с провалами в
-`$evaluation`. Поэтому `marker_doomed` — это «маркера нет», а проваленный
-`marker_assay` — «маркер есть, но им нельзя пользоваться без решения».
+Acceptance checks do not cancel the design: the object is returned, but with the
+failures in `$evaluation`. So `marker_doomed` means "there is no marker", while
+a failed `marker_assay` means "there is a marker, but it cannot be used without
+a decision".
 
-Если объект собрался, но с оговорками, — смотрите `$selection`. Лестница
-релаксации снимает мягкие гейты по одному и записывает, что именно снято:
+If the object was assembled but with caveats, look at `$selection`. The
+relaxation ladder lifts the soft gates one at a time and records what exactly
+was lifted:
 
 ```{r, eval = FALSE}
-assay$selection$relaxed          # какие гейты ослаблены
-assay$selection$violated         # какие всё равно нарушены
-assay$evaluation                 # таблица проверок, сохранённая при сборке
+assay$selection$relaxed          # which gates were relaxed
+assay$selection$violated         # which are still violated
+assay$evaluation                 # the checks table saved at assembly
 ```
 
-Пустой `relaxed` и `violated` — тест прошёл с первого раза; непустой — вернулся
-«наименее плохой» кандидат, и `cli` предупредил об этом при сборке.
+An empty `relaxed` and `violated` means the assay passed first time; a non-empty
+one means the "least bad" candidate came back, and `cli` warned about it at
+assembly.
 
-### Политика решения как текст
+### The decision policy as text
 
-Дерево решения — это данные: те же гейты, тиры и ступени лестницы, что видит
-движок. Текстовый экспорт греппается и работает без графики:
+The decision tree is data: the same gates, tiers and ladder rungs that the
+engine sees. The text export can be grepped and works without graphics:
 
 ```{r}
 txt <- marker_decision_text("snp")
 grep("^(==|DOOMED|verdict)", txt, value = TRUE)
 ```
 
-А внутри раздела — конкретные пороги, то есть ровно те `limit`, с которыми
-сравнивается `observed` в таблице проверок:
+And inside the section are the concrete thresholds, that is exactly the `limit`
+values that `observed` is compared against in the checks table:
 
 ```{r}
 txt[grep("^== assay acceptance", txt) + seq_len(8)]
 ```
 
-`plot_decision_tree(scheme = "snp")` рисует то же самое как граф, а
-`plot_decision_tree(assay)` — путь конкретного теста по этому графу (зелёный —
-сработал, янтарный — снят, красный — нарушен).
+`plot_decision_tree(scheme = "snp")` draws the same thing as a graph, and
+`plot_decision_tree(assay)` draws the path of a particular assay through that
+graph (green — applied, amber — relaxed, red — violated).
 
-## Сводка на экран
+## On-screen summary
 
-Объект теста печатает себя компактно:
+The assay object prints itself compactly:
 
 ```{r, eval = FALSE}
 assay
@@ -195,84 +204,87 @@ assay
 #   amplicon 93 bp | discrimination 0.966
 ```
 
-## Файлы результатов
+## Result files
 
-`write_kasp_results()` пишет консолидированные файлы:
+`write_kasp_results()` writes consolidated files:
 
-- `marker_design.csv` — кандидаты-тесты (столбец `discrimination` — по нему ранжируем);
-- `marker_primer_qc.csv` — на праймер: `tm`, `gc`, `hairpin_dg`, `terminal_dg`,
-  `hits` (3'-сид) и `n_products` (in-silico PCR);
-- `marker_dimer_dg.csv` — dG дуплексов для всех пар (диагональ — гомодимер).
+- `marker_design.csv` — candidate assays (the `discrimination` column is what we rank by);
+- `marker_primer_qc.csv` — per primer: `tm`, `gc`, `hairpin_dg`, `terminal_dg`,
+  `hits` (3' seed) and `n_products` (in-silico PCR);
+- `marker_dimer_dg.csv` — dG of duplexes for all pairs (the diagonal is the homodimer).
 
 ```{r, eval = FALSE}
 qc <- read.csv("results/marker_primer_qc.csv")
-qc[qc$name != "COM" & !is.na(qc$name), , drop = FALSE]   # AS-праймеры
+qc[qc$name != "COM" & !is.na(qc$name), , drop = FALSE]   # AS primers
 ```
 
-## Графики
+## Figures
 
-- `plot_primers()` — карта теста: праймеры, дорожка вариантов, тумблеры;
-- `plot_variant_landscape()` — модель гена + врезка региона дизайна;
-- `plot_decision_tree()` — дерево решения отбора;
-- `marker_plot()` — матрица «цель × химия» для решённого плана.
+- `plot_primers()` — the assay map: primers, variant track, toggles;
+- `plot_variant_landscape()` — the gene model + an inset of the design region;
+- `plot_decision_tree()` — the selection decision tree;
+- `marker_plot()` — the "target × chemistry" matrix for a solved plan.
 
-## Профилирование: когда прогон долгий
+## Profiling: when a run is slow
 
-Дизайн — это сетка (страницы × длины × позиции мисматча × основания), поэтому
-«медленно» почти всегда значит «строим слишком много объектов». Правило одно:
-**не гадать, а измерить**, и записать одну проверяемую гипотезу до правки.
+Design is a grid (strands × lengths × mismatch positions × bases), so "slow"
+almost always means "we are building too many objects". The rule is one:
+**measure, don't guess**, and write down one testable hypothesis before editing.
 
 ```sh
-# в репозитории пакета (dev/ не входит в установленный пакет)
+# in the package repository (dev/ is not part of the installed package)
 Rscript dev/profile.R run .tmp/probe/solve-one.R .tmp/prof/probe
-Rscript dev/profile.R stacks .tmp/prof/probe/probe.out     # разбор без повторного прогона
+Rscript dev/profile.R stacks .tmp/prof/probe/probe.out     # analysis without re-running
 ```
 
-`Rprof` пишет стек на каждый сэмпл, и `dev/profile.R` читает его напрямую —
-`summaryRprof()` агрегирует по имени функции и **скрывает вызывающего**, а вопрос
-«кто это повторяет?» без вызывающего не решается. На выходе четыре файла:
+`Rprof` writes a stack per sample, and `dev/profile.R` reads it directly —
+`summaryRprof()` aggregates by function name and **hides the caller**, and the
+question "who is repeating this?" cannot be answered without the caller. The
+output is four files:
 
-| Файл | Что внутри |
+| File | What is inside |
 |---|---|
-| `<name>.out` | сырой профиль |
-| `<name>.self.csv` | по функции: собственные и суммарные секунды |
-| `<name>.frames.csv` | каждый кадр каждого стека: глубина, функция, вызывающий |
-| `<name>.rds` | три таблицы для повторного чтения |
-| `<name>.ttl` | те же факты как N-Triples (RDF 1.1) |
+| `<name>.out` | the raw profile |
+| `<name>.self.csv` | per function: self and total seconds |
+| `<name>.frames.csv` | every frame of every stack: depth, function, caller |
+| `<name>.rds` | the three tables, for reading again |
+| `<name>.ttl` | the same facts as N-Triples (RDF 1.1) |
 
 ```{r, eval = FALSE}
-source("dev/profile.R")                  # только в репозитории, не в пакете
+source("dev/profile.R")                  # repository only, not in the package
 prof <- profile_read(".tmp/prof/probe/probe.out")
-profile_report(prof, top = 10)           # самые дорогие функции
-profile_callers(prof, "CalculateEfficiencyPCR")   # кто её зовёт и сколько раз
+profile_report(prof, top = 10)           # the most expensive functions
+profile_callers(prof, "CalculateEfficiencyPCR")   # who calls it and how many times
 ```
 
-Что читать в таблице:
+What to look for in the table:
 
-- `validObject` / `initialize` / `getClassDef` в топе — это **конструирование S4**,
-  а не алгоритм: строить надо меньше объектов, а не переписывать математику;
-- сетка умножает оси — посчитайте, сколько объектов строит вызов, до оптимизации;
-- дорогой путь, который всё равно отбрасывается, надо отсекать **до** построения
-  сетки (сначала дешёвое «doomed»-условие);
-- `all.equal()` до и после правки — иначе «стало быстрее» может значить «стало
-  неправильно».
+- `validObject` / `initialize` / `getClassDef` at the top is **S4 construction**,
+  not the algorithm: build fewer objects rather than rewriting the maths;
+- the grid multiplies the axes — count how many objects a call builds before
+  optimising;
+- an expensive path that is discarded anyway must be cut off **before** the grid
+  is built (a cheap "doomed" condition first);
+- `all.equal()` before and after the edit — otherwise "faster" may mean
+  "wrong".
 
-Для обмена с другими инструментами (не для отладки) есть tidy- и RDF-экспорт:
+For exchange with other tools (not for debugging) there are tidy and RDF
+exports:
 
 ```{r, eval = FALSE}
-tidy <- profile_read_tidy(".tmp/prof/probe/probe.rds")   # три таблицы, предпочтительно
-ttl  <- profile_ttl_read(".tmp/prof/probe/probe.ttl")    # строгий N-Triples, ошибка с номером строки
+tidy <- profile_read_tidy(".tmp/prof/probe/probe.rds")   # three tables, preferred
+ttl  <- profile_ttl_read(".tmp/prof/probe/probe.ttl")    # strict N-Triples, error with a line number
 ```
 
-RDF здесь — формат обмена: словарь `https://tidymarkers.org/profile#` (`ProfileRun`,
-`Function`, `calledBy`) позволяет прочитать профиль там, где R нет. Отлаживать
-по нему не надо — для этого есть `Rprof`.
+RDF here is an exchange format: the vocabulary `https://tidymarkers.org/profile#`
+(`ProfileRun`, `Function`, `calledBy`) lets the profile be read where there is no
+R. Do not debug with it — that is what `Rprof` is for.
 
-И последнее: `pkgload::load_all()` кэширует тело функции. Если после правки
-поведение не изменилось, перезагрузитесь с `recompile = TRUE`, прежде чем искать
-ошибку в логике.
+And last: `pkgload::load_all()` caches the function body. If behaviour has not
+changed after an edit, reload with `recompile = TRUE` before hunting for the bug
+in the logic.
 
-## См. также
+## See also
 
 `?marker_design_checks`, `?marker_risk`, `?marker_decision_text`,
 `?marker_plan`, `?marker_solve`, `?marker_export`, `?write_kasp_results`,
