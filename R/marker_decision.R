@@ -344,43 +344,26 @@ decision_edges <- function(g) {
   e
 }
 
-# One palette for the ggplot view and the Graphviz renderer.
-decision_palette <- function() {
-  list(
-    kind = c(
-      start = "#F5F5F4", check = "#F3F4F6", gate = "#FDE68A",
-      decision = "#DDD6FE", relax = "#FED7AA", merge = "#D1FAE5",
-      tier = "#FEF3C7", outcome = "#BBF7D0", doomed = "#FCA5A5"
-    ),
-    status = c(
-      ok = "#15803D", violated = "#B91C1C", relaxed = "#B45309",
-      neutral = "#57534E", unknown = "#A8A29E", start = "#57534E", relax = "#9A3412"
-    ),
-    edge = c(
-      flow = "#78716C", pass = "#15803D", fail = "#B91C1C",
-      relax = "#B45309", doomed = "#991B1B", check = "#78716C"
-    )
-  )
-}
-
 #' Draw the selection decision tree
 #'
-#' Renders the graph from [marker_decision_graph()] as a boxed, left-to-right
-#' flow: every stage is its own cluster, every node a box drawn to the size of
-#' its wrapped label, and edges are *routed* by a layout solver so they leave
-#' a box, pass between boxes and land on the next one.  Positions come from
-#' [decision_layout()]: a rank-pinned layered layout (one column per stage) when
-#' `igraph` is installed (set `TIDYKASP_NO_SUGIYAMA=1` to force the manual grid).  Node **fill** is the node
-#' kind (start/check/gate/decision/relax/merge/tier/outcome/doomed, a light
-#' palette), while text and border carry the outcome (ok / violated / relaxed /
-#' neutral).  Hard limits keep a **bold border**.  One marker chemistry is drawn
-#' at a time ([marker_schemes()]); [marker_decision_text()] is the greppable
-#' double.
+#' Renders the graph from [marker_decision_graph()] as a boxed flow: every stage
+#' is its own band, every node a box sized to its wrapped label, and every edge
+#' is *routed* around the boxes by an external layout engine.  This function is
+#' a thin adapter: it picks the graph and the scheme's caption, then hands both
+#' to [decision_render()], which owns structure-to-figure.  Positions, line
+#' breaks and spacing are the solver's, never this function's.
+#' Node **fill** is the node kind (start/check/gate/decision/relax/merge/tier/
+#' outcome/doomed, a light palette), while text and border carry the outcome
+#' (ok / violated / relaxed / neutral).  Hard limits keep a **bold border**.
+#' One marker chemistry is drawn at a time ([marker_schemes()]);
+#' [marker_decision_text()] is the greppable double.
 #' @param x an assembled assay, a `marker_decision_graph()` result, or `NULL`.
 #' @param scheme a scheme id (see [marker_schemes()]) for the bare schema; `NULL`
 #'   (the default) uses the assay's own `$scheme` for an assay, else `"snp"`.
-
-#' @return a `ggraph`/`ggplot` object.
+#' @param out optional SVG path; when given the figure is written there and the
+#'   path returned invisibly, otherwise the SVG markup is returned.
+#' @param style a [decision_style()] (palette, font size, page).
+#' @return the SVG markup as one string, or invisibly `out`.
 #' @examples
 #' \dontrun{
 #' plot_decision_tree() # the schema
@@ -389,8 +372,8 @@ decision_palette <- function() {
 #' }
 #' @family KASP checks
 #' @export
-plot_decision_tree <- function(x = NULL, scheme = NULL) {
-  rlang::check_installed("ggraph", reason = gettext("to draw the decision tree"))
+plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
+                               style = decision_style()) {
   scheme_id <- scheme %||%
     (if (inherits(x, "marker_assay")) x$scheme else NULL) %||%
     "snp"
@@ -403,166 +386,13 @@ plot_decision_tree <- function(x = NULL, scheme = NULL) {
   } else {
     x
   }
-  # positions come from the layout seam; drawing never places a node itself
-  lay <- decision_layout(g)
-  nodes <- attr(lay, "nodes")
-  edges <- attr(lay, "edges")
-  stage_levels <- attr(lay, "stage")
-  nodes$stage <- factor(as.character(nodes$stage), levels = stage_levels)
-  # fill = what the node *is* (light, modern, no blue); text/border = outcome
-  pal <- decision_palette()
-  kind_cols <- pal$kind
-  status_cols <- pal$status
-  edge_cols <- pal$edge
-  # ---- boxes: one rect per node, at the size the solver reserved for it ------
-  # This is what makes the picture readable: a solved layout knows where a box
-  # is but not how big; a drawn box that disagrees with the reserved space is
-  # how a boxed flow turns back into labels on a field.
-  nodes$xmin <- nodes$x - nodes$w / 2
-  nodes$xmax <- nodes$x + nodes$w / 2
-  nodes$ymin <- nodes$y - nodes$h / 2
-  nodes$ymax <- nodes$y + nodes$h / 2
-  bbox <- decision_bbox(lay)
-  # ---- edges: a routed polyline where the solver gave one, else a link -------
-  # An edge whose route the solver did not report (an edge that stays inside a
-  # stage, on the manual grid every edge) falls back to the straight link, but
-  # it stops at the *box*, not at the anchor point.
-  stop_at_box <- function(p, q2, which = c("head", "tail")) {
-    which <- match.arg(which)
-    dx <- q2$x - p$x
-    dy <- q2$y - p$y
-    if (!is.finite(dx) || !is.finite(dy) || (dx == 0 && dy == 0)) {
-      return(list(x = p$x, y = p$y))
-    }
-    hw <- p$w / 2
-    hh <- p$h / 2
-    t <- min(if (dx != 0) hw / abs(dx) else Inf, if (dy != 0) hh / abs(dy) else Inf)
-    list(x = p$x + dx * t, y = p$y + dy * t)
-  }
-  link <- tibble::tibble(
-    from = edges$from, to = edges$to, kind = edges$kind,
-    x = nodes$x[match(edges$from, nodes$name)],
-    y = nodes$y[match(edges$from, nodes$name)],
-    xend = nodes$x[match(edges$to, nodes$name)],
-    yend = nodes$y[match(edges$to, nodes$name)]
+  style$title <- style$title %||% glue::glue("{info$label} - decision graph")
+  style$subtitle <- style$subtitle %||% glue::glue(
+    "discrimination: {info$discrimination} | readout: {info$readout}",
+    " | zygosity: {info$zygosity}"
   )
-  box_of <- function(nm) {
-    k <- match(nm, nodes$name)
-    list(x = nodes$x[k], y = nodes$y[k], w = nodes$w[k], h = nodes$h[k])
-  }
-  for (i in seq_len(nrow(link))) {
-    tail <- stop_at_box(box_of(link$from[i]), list(x = link$xend[i], y = link$yend[i]))
-    head <- stop_at_box(box_of(link$to[i]), list(x = link$x[i], y = link$y[i]))
-    link$x[i] <- tail$x
-    link$y[i] <- tail$y
-    link$xend[i] <- head$x
-    link$yend[i] <- head$y
-  }
-  # ---- routed polylines, when the solver supplied one ------------------------
-  # The route is a path, not a segment: it leaves a box's side, turns in the gap
-  # between two stages and ends on a box edge, so the arrow head is never
-  # buried under the box it points at.
-  routes <- attr(lay, "routes")
-  routed <- list()
-  for (r in routes) {
-    kind <- link$kind[match(paste(r$from, r$to), paste(link$from, link$to))]
-    pid <- length(routed) + 1L
-    # `interaction(group = …)` keeps one polyline per edge: ggplot groups paths
-    # by the discrete aesthetics alone, which merged every same-kind edge into
-    # a single zigzag
-    pth <- tibble::tibble(
-      from = r$from, to = r$to,
-      kind = kind %||% "flow",
-      x = r$x, y = r$y, edge = pid
-    )
-    routed[[length(routed) + 1L]] <- pth
-  }
-  # no routes (the manual grid) still draws an edge: a straight link, trimmed
-  # to the boxes it joins
-  if (!length(routed)) {
-    routed <- tibble::tibble(
-      from = c(rbind(link$from, link$from)), to = c(rbind(link$to, link$to)),
-      kind = c(rbind(link$kind, link$kind)),
-      x = c(rbind(link$x, link$xend)), y = c(rbind(link$y, link$yend)),
-      edge = rep(seq_len(nrow(link)), each = 2L)
-    )
-  } else {
-    routed <- dplyr::bind_rows(routed)
-  }
-  bands <- nodes |>
-    dplyr::group_by(.data$stage, .drop = FALSE) |>
-    dplyr::summarise(
-      xmin = min(.data$xmin) - 0.12, xmax = max(.data$xmax) + 0.12,
-      ymin = min(.data$ymin) - 0.12, ymax = max(.data$ymax) + 0.12, .groups = "drop"
-    )
-  bands <- bands[is.finite(bands$xmin), , drop = FALSE]
-  bands$fill <- rep(c("#FAFAF9", "#F5F5F4"), length.out = nrow(bands))
-  p <- ggplot2::ggplot() +
-    ggplot2::geom_rect(
-      data = bands, inherit.aes = FALSE,
-      ggplot2::aes(xmin = .data$xmin, xmax = .data$xmax, ymin = .data$ymin, ymax = .data$ymax),
-      fill = bands$fill, colour = "#E7E5E4", linewidth = 0.4
-    ) +
-    ggplot2::geom_text(
-      data = bands, inherit.aes = FALSE,
-      ggplot2::aes(x = .data$xmin + 0.08, y = .data$ymax + 0.18, label = .data$stage),
-      hjust = 0, vjust = 0, size = 3.0, colour = "#44403C", fontface = "bold"
-    ) +
-    ggplot2::geom_path(
-      data = routed,
-      ggplot2::aes(
-        x = .data$x, y = .data$y,
-        colour = .data$kind, linetype = .data$kind,
-        group = .data$edge
-      ),
-      linewidth = 0.35, alpha = 0.8,
-      arrow = ggplot2::arrow(length = ggplot2::unit(1.5, "mm"), type = "closed"),
-      linejoin = "mitre", lineend = "butt"
-    ) +
-    ggplot2::geom_rect(
-      data = nodes, inherit.aes = FALSE,
-      ggplot2::aes(
-        xmin = .data$xmin, xmax = .data$xmax, ymin = .data$ymin, ymax = .data$ymax,
-        fill = .data$kind, colour = .data$status, linewidth = .data$hard
-      )
-    ) +
-    ggplot2::geom_text(
-      data = nodes, inherit.aes = FALSE,
-      ggplot2::aes(x = .data$x, y = .data$y, label = .data$label_wrapped),
-      size = 9 / ggplot2::.pt, colour = "#111827", lineheight = 0.95
-    ) +
-    ggplot2::scale_linetype_manual(
-      values = c(
-        flow = "solid", pass = "solid", fail = "dotted",
-        relax = "dashed", doomed = "dotted", check = "solid"
-      ),
-      limits = names(edge_cols), drop = FALSE, name = "edge"
-    ) +
-    ggplot2::scale_fill_manual(values = kind_cols, name = "node") +
-    ggplot2::scale_colour_manual(
-      values = c(status_cols, edge_cols), breaks = names(status_cols),
-      limits = c(names(status_cols), names(edge_cols)), drop = FALSE, name = "status / edge"
-    ) +
-    ggplot2::scale_linewidth_manual(values = c(`TRUE` = 1.2, `FALSE` = 0.25), guide = "none") +
-    ggplot2::scale_x_continuous(limits = c(bbox$xmin, bbox$xmax), expand = ggplot2::expansion(0)) +
-    ggplot2::scale_y_continuous(limits = c(bbox$ymin, bbox$ymax), expand = ggplot2::expansion(0)) +
-    ggplot2::coord_fixed(clip = "off") +
-    ggplot2::labs(
-      title = paste0(info$label, " \u2014 decision graph"),
-      subtitle = paste0(info$discrimination, " | ", info$readout),
-      caption = "stages run left to right; node fill = kind, border/text = outcome; hard limit = bold border"
-    ) +
-    ggplot2::theme_void(base_size = 11) +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(face = "bold", size = 14, hjust = 0),
-      plot.subtitle = ggplot2::element_text(size = 9, colour = "#44403C", hjust = 0),
-      plot.caption = ggplot2::element_text(size = 7.5, colour = "#78716C", hjust = 0),
-      legend.position = "bottom", legend.box = "horizontal",
-      legend.title = ggplot2::element_text(size = 8),
-      legend.text = ggplot2::element_text(size = 7.5)
-    )
+  decision_render(g, style = style, out = out)
 }
-# nolint end
 
 #' The decision tree of a scheme as text
 #'
