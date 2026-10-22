@@ -11,7 +11,13 @@ link resolves; `dev/check-artifacts.R` verifies the artifact graph.
 - [CONTRIBUTING](../CONTRIBUTING.md) — conventions and the merge gate.
 - [ROADMAP](../ROADMAP.md) — the open queue (ZA8 is this docs/artifacts layer).
 - [NEWS](../NEWS.md) — changelog.
-- [INVENTORY](../INVENTORY.md) — archived inventory of what already exists.
+- [VALIDATION](../VALIDATION.md) — what is checked against external evidence,
+  what is not, and where the gaps are.
+
+## Archive
+
+- [archived inventory](archive/inventory-ru.md) — the pre-0.4.1 working
+  inventory (Russian); kept as history, not as current documentation.
 
 ## Vignettes
 

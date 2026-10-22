@@ -4,7 +4,7 @@
 #  DECIPHER's thermodynamics shells out to OligoArrayAux (`hybrid-min` for
 #  duplexes, `hybrid-ss-min` for hairpins).  It is a small C program, so we
 #  build it from source into the git-ignored `.tools/`, laid out exactly as
-#  `lecture/render.sh` expects:
+#  `dev/lecture/render.sh` expects:
 #
 #      .tools/bin/hybrid-min            <- put on PATH
 #      .tools/share/oligoarrayaux/      <- the UNAFOLDDAT data tables

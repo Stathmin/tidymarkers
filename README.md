@@ -158,10 +158,11 @@ and its failures:
 | `vignette("reading-results")` | export a solved plan, audit a candidate, read a rejection |
 
 Repository-level documents: [`ROADMAP.md`](ROADMAP.md) (open work and design
-decisions), [`NEWS.md`](NEWS.md) (changelog), [`INVENTORY.md`](INVENTORY.md)
-(archived inventory), [`CONTRIBUTING.md`](CONTRIBUTING.md) (conventions and the
-merge gate) and [`docs/INDEX.md`](docs/INDEX.md) (the index of every document and
-every committed figure).
+decisions), [`NEWS.md`](NEWS.md) (changelog), [`VALIDATION.md`](VALIDATION.md)
+(what is checked against the literature and what is not),
+[`CONTRIBUTING.md`](CONTRIBUTING.md) (conventions and the merge gate) and
+[`docs/INDEX.md`](docs/INDEX.md) (the index of every document and every
+committed figure).
 
 ## Reproducibility
 
@@ -177,6 +178,36 @@ Genomes variation are downloaded from Ensembl Plants, and the BLAST/FM indexes
 and thermodynamic binaries are built once, all inside `marker_cache_dir()`. The
 download source is an FTP path on `ftp.ebi.ac.uk`, so it does not depend on this
 repository's URL.
+
+## Validation
+
+This is a design tool, so the honest question is what its rules rest on. The
+short answer is published measurements, not a bench run by the maintainers:
+
+- **No wet-lab data was produced here.** No `tidymarkers` design has been
+  validated at the bench by the authors of this package.
+- **No head-to-head design benchmark against Primer3 or PolyMarker.** Both are
+  *sources*, not competitors: Primer3's `oligotm` nearest-neighbour family is the
+  Tm lineage, and PolyMarker 1.3.3's selection rules were read from its source
+  and encoded as rules.
+- **A literature-anchored evidence layer instead**: 80 registered sources, 130
+  extracted tables in `inst/extdata/`, and 174 ledger links from an extract to
+  the test file that asserts it (37 distinct test files). The join is
+  machine-checked, so a test cannot claim an extract it does not read.
+- **Cross-engine where it is fair**: `thermo_crosscheck()` compares SantaLucia
+  2004, Allawi 1998, Sugimoto 1996 and Breslauer 1986; Primer3's `oligotm` and
+  `rprimer` join as external oracles when installed, and disagreement is
+  reported, never averaged.
+- **Measured versus predicted is stated, not smoothed**: against 4096 measured
+  19-mer Tm values, `primer_tm()` ranks correctly (r = 0.958) but sits about
+  16.9 °C below the measurement in that buffer; the offset is recorded and
+  asserted, not corrected away.
+- **Agreement between models is not evidence about a duplex.** That sentence is
+  what the thermodynamic tests are written to respect.
+
+[`VALIDATION.md`](VALIDATION.md) has the full accounting: per-family counts, the
+three provenance gates, the published conversion rates (kept with their
+failures and never pooled into a probability), and the known gaps.
 
 ## Limitations
 

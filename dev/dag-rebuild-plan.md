@@ -7,7 +7,7 @@ colliding: how they **search**, how they **report**, how they **edit**, and how 
 
 Source of the "scientific requirements" used throughout: `README.md` §3 (*Краткий
 мануал по подбору KASP* — LGC/KBioscience + EasyKASP 2025), the lecture deck
-`lecture/kasp-slides.qmd`, and each scheme file's own `# Design rules (researched, not
+`dev/lecture/kasp-slides.qmd`, and each scheme file's own `# Design rules (researched, not
 invented)` header comment. Agents must treat those as the truth and cite them.
 
 ---
@@ -204,7 +204,7 @@ embedded by the vignettes; only the PNG rasters there are git-ignored.
 ### 6a. Search (evidence first)
 1. Read the scheme's own header (`# Design rules (researched, not invented)` block) in
    `R/marker_<scheme>.R` — it cites the method literature; that is the authority.
-2. Read `README.md` §3 and, where relevant, `lecture/kasp-slides.qmd`.
+2. Read `README.md` §3 and, where relevant, `dev/lecture/kasp-slides.qmd`.
 3. Read the scheme's `scheme_def_<scheme>()` (gates/relax/tiers/labels) and its designer.
 4. Dump the current DAG: `cat(marker_decision_text("<scheme>"), sep = "\n")` (or
    `dev/dump-dags.R`).

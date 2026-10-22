@@ -123,4 +123,4 @@ render_design_search(assay, variants, snp, path = here::here("results", "design_
 primers <- marker_primer_table(assay, gene)
 cat("\nOrder sheet:\n"); print(primers)
 
-message("\nDone. See results/ and knit report/marker_report.Rmd for the narrative.")
+message("\nDone. Artefacts are in results/; see vignette(\"kasp-intro\") for the narrative.")

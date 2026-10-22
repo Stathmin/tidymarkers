@@ -1,53 +1,81 @@
 # Contributing
 
-Спасибо! Это учебный пакет, но правила как в обычном R-пакете.
+Thanks for looking. `tidymarkers` is an experimental package, but it is built and
+gated like a normal R package: the merge gate below is what decides whether a
+change lands.
 
-## Быстрый цикл разработки
+## Quick development loop
 
 ```r
-# окружение: Imports + dev/test-инструменты, без тяжёлых Suggests
-# (быстрее, чем renv::restore(): без исторического 262-пакетного dev-лока)
-# Rscript dev/install-deps.R                  # зависимости + сам пакет
-# Rscript dev/install-deps.R --with-suggests  # полный набор, для R CMD check
+# environment: Imports + dev/test tooling, without the heavy Suggests
+# (faster than renv::restore(): no historical 262-package dev lock)
+# Rscript dev/install-deps.R                  # dependencies + the package
+# Rscript dev/install-deps.R --with-suggests  # full set, for R CMD check
 
-# загрузить пакет из исходников, без установки
+# load the package from source, without installing
 pkgload::load_all()
 
-# быстрые тесты; --full добавляет внешние сверки (BLAST/Rsubread/аннотации/SOCK)
+# fast tests; --full adds the external cross-checks (BLAST/Rsubread/annotations/SOCK)
 # Rscript dev/test.R --full
 testthat::test_local()
 
-# документация из roxygen -> NAMESPACE + man/
+# documentation from roxygen -> NAMESPACE + man/
 roxygen2::roxygenise()
 
-# полная проверка
-#   Rscript dev/check.R            # гейт репозитория (см. merge gate ниже)
+# full check
+#   Rscript dev/check.R            # the repository gate (see merge gate below)
 #   R CMD build . && R CMD check --no-manual tidymarkers_*.tar.gz
 ```
 
 ## Merge gate
 
-`Rscript dev/check.R` должен проходить: документация и артефакты, `styler`,
-`lintr`, roxygen-синхронизация, фигуры и install smoke. `--full` добавляет
-`R CMD check --as-cran`.
+`Rscript dev/check.R` must pass: docs and artifacts, `styler`, `lintr`, roxygen
+sync, figures and the install smoke test. `--full` adds
+`R CMD check --as-cran`, which runs the complete test suite. `--quick` is the
+routine loop (roxygen, style, lint, criterion fixtures, docs/artifacts).
 
-## Стиль
+CI (`.github/workflows/R-CMD-check.yaml`) runs `R CMD check --as-cran` on push
+and pull request, with OligoArrayAux installed from conda. `dev/check.R` is the
+local equivalent and the one that also checks figures and artifact hashes, which
+CI does not render.
 
-- **tidyverse-стайл**: `|>` (base pipe), `` ` ``, `snake_case`, `snake_case()` для
-  глаголов; никаких `*_dfr()` — `purrr::list_rbind()`.
-- Внутри `dplyr`/`ggplot2` используем местоимение `.data$col` (не голые имена).
-- Комментарии — по делу: объясняют **почему**, не «что».
-- Форматирование: `styler::style_pkg()`; линт: `lintr::lint_package()` (конфиг `.lintr`).
+## Style
 
-## Документация
+- **tidyverse style**: `|>` (base pipe), backticks, `snake_case`, `snake_case()`
+  for verbs; no `*_dfr()` — use `purrr::list_rbind()`.
+- Inside `dplyr`/`ggplot2` use the `.data$col` pronoun (not bare names).
+- Comments explain **why**, not what.
+- Formatting: `styler::style_pkg()`; lint: `lintr::lint_package()` (config in
+  `.lintr`).
 
-- Каждая экспортируемая функция: `@param` на все аргументы, `@return`, `@family`
-  (группа попадает в «See also» и в pkgdown), `@examples` (тяжёлые — `\dontrun{}`).
-- Новое поведение → новый тест в `tests/testthat/`.
-- Значимое изменение → запись в `NEWS.md` и в `ROADMAP.md`.
+## Documentation
 
-## Модель для правок
+- Every exported function: `@param` for all arguments, `@return`, `@family` (the
+  group drives "See also" and pkgdown), `@examples` (heavy ones in `\dontrun{}`).
+- New behaviour → a new test in `tests/testthat/`.
+- A meaningful change → an entry in `NEWS.md` and in `ROADMAP.md`.
 
-`tidymarkers` — обычный каталог R-пакета (`DESCRIPTION`, `R/`, `man/`, `vignettes/`,
-`tests/`). CI в пакет не входит; при выделении в отдельный репозиторий настройте его
-в корне репозитория.
+All public-facing prose is English; `ROADMAP.md`, `dev/README.md` and
+`docs/archive/inventory-ru.md` are internal working documents and stay Russian.
+
+## What lives where
+
+Only the files R needs actually ship. Everything below is development material
+and is excluded from the tarball by `.Rbuildignore`:
+
+| Path | What it is |
+|---|---|
+| `R/`, `man/`, `vignettes/`, `tests/` | the package |
+| `data-raw/` | generators for `inst/extdata/` and the source reads behind the rules (e.g. `polymarker-source.R`) |
+| `dev/` | the gate (`check.R`, `test.R`), renderers, benchmarks, `dev/lecture/` slides, and the vendored ELK/libavoid layout engine in `.tools/elk` |
+| `docs/` | `INDEX.md`, `artifacts.yml` (figure manifest), generated artifact graph, `docs/archive/` |
+| `.agents/`, `.cursor/` | agent instructions and repo skills; not part of the product |
+| `VALIDATION.md` | the evidence accounting behind the design rules |
+
+## Code review
+
+No independent human code review is recorded in this repository. What actually
+runs on every change is the gate above plus the test suite, including the
+falsifiability test (`test-falsifiable.R`), which fails if a published acceptance
+criterion has no fixture that can drive it to `fail`. Treat that as a floor, not
+as a substitute for review.

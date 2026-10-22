@@ -2,7 +2,8 @@
 
 Project-specific rules for agents working in this repository. Read these before
 changing anything, then read `README.md`, `CONTRIBUTING.md`, `ROADMAP.md` (the open
-queue) and `INVENTORY.md` (the archived inventory of what already exists).
+queue), `VALIDATION.md` (what the rules rest on) and
+`docs/archive/inventory-ru.md` (the historical inventory).
 
 ## Running anything (read first — the environment is NOT the default library)
 
@@ -10,7 +11,7 @@ The lockfile targets **R 4.6.1 / Bioconductor 3.23**. On this machine that R is
 `/opt/R-4.6.1`; the default `/usr/bin/R` (4.5) does **not** match the lockfile and
 cannot load the renv library. No `.Rprofile`/`renv/` is committed on purpose
 (activation would make `R CMD build` run against an empty library; see README
-§Воспроизводимость). Run `Rscript` from the project root; activate renv manually
+§Reproducibility). Run `Rscript` from the project root; activate renv manually
 only when you need the pinned snapshot. The external tools (OligoArrayAux) live in
 `.tools/` and are found by the package at run time.
 
@@ -127,8 +128,10 @@ in its abstract, and the gap is noted in `access_detail`.
 
 ## Merge gate
 
-`Rscript dev/check.R` must pass (with the env above). It is the local stand-in for
-CI, which this repo does not ship. `--full` adds `R CMD check --as-cran`.
+`Rscript dev/check.R` must pass (with the env above). It is the local equivalent
+of CI: `.github/workflows/R-CMD-check.yaml` runs `R CMD check --as-cran` on push
+and pull request, while `dev/check.R` also gates style, roxygen sync, figures and
+artifact hashes. `--full` adds `R CMD check --as-cran` locally.
 
 ## Conventions
 

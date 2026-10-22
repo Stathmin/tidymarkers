@@ -3,7 +3,6 @@
 ^renv\.lock$
 ^\.Rprofile$
 ^results$
-^report$
 ^docs$
 ^vignettes/figures/.*[.]png$
 ^graphify-out$
@@ -11,7 +10,6 @@
 ^\.lintr$
 ^.*\.Rcheck$
 ^.*\.tar\.gz$
-^lecture$
 ^_quarto\.yml$
 ^_site$
 ^\.quarto$
@@ -21,7 +19,7 @@
 ^\.agents$
 ^\.cursor$
 ^ROADMAP\.md$
-^INVENTORY\.md$
+^VALIDATION\.md$
 ^\.i18n-lib$
 ^\.tmp-rt$
 ^.*\.Rproj$
