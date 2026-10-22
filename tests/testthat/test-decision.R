@@ -27,19 +27,25 @@ test_that("each scheme's schema mirrors its declared stages and is a DAG", {
     want_tier <- stage_names(stages, function(st) names(st$tiers), "tier")
     expect_equal(sort(gate), sort(want_gate %||% character(0)), info = sc)
     expect_equal(sort(tier), sort(want_tier %||% character(0)), info = sc)
-    # each stage shows exactly one refinement node iff it has a ladder, and a
-    # survivors node always
+    # each stage shows one rung per ladder step (in ladder order) iff it has a
+    # ladder, and a survivors node always
     for (st in stages) {
-      n_relax <- sum(s$nodes$kind == "relax" & s$nodes$stage == st$id)
-      expect_equal(n_relax, if (length(st$relax)) 1L else 0L, info = sc)
+      rungs <- s$nodes$name[s$nodes$kind == "relax" & s$nodes$stage == st$id]
+      want_rung <- stage_names(list(st), function(x) x$relax, "relax")
+      expect_identical(rungs, want_rung, info = sc)
       expect_true(paste0(st$id, ":survivors") %in% s$nodes$name, info = sc)
     }
     # hard gates are exactly the ones absent from the ladder, and are flagged
     hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
     soft_ids <- stage_names(stages, function(st) st$relax, "gate")
     expect_equal(sort(hard), sort(setdiff(gate, soft_ids)), info = sc)
-    # one shared DOOMED terminal exactly when the scheme has stages
-    expect_equal(sum(s$nodes$kind == "doomed"), if (length(stages)) 1L else 0L, info = sc)
+    # one DOOMED sink per killing stage - a hard gate, or a spent ladder - so the
+    # structure names the stage that killed the candidate
+    can_kill <- vapply(stages, function(st) length(st$gates) > 0L, logical(1))
+    expect_setequal(
+      s$nodes$name[s$nodes$kind == "doomed"],
+      if (any(can_kill)) paste0(vapply(stages[can_kill], `[[`, character(1), "id"), ":doomed") else character(0)
+    )
     # consecutive stages are chained best -> next gate (or, for a gate-less
     # documentation-only stage such as ASQ, best -> its survivors node)
     if (length(stages) > 1L) {

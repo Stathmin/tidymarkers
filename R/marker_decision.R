@@ -85,6 +85,10 @@ marker_decision_schema <- function(scheme = "snp") {
   o <- 0
   refine_ids <- character(0)
   doomed_sources <- character(0)
+  doomed_owners <- character(0)
+  stage_sink_ids <- character(0)
+  stage_sink_stage <- character(0)
+  stage_sink_order <- numeric(0)
   node <- function(name, stage, kind, label, order, x = 0, hard = FALSE, detail = NA_character_) {
     tibble::tibble(
       name = name, stage = stage, kind = kind, label = label,
@@ -132,31 +136,60 @@ marker_decision_schema <- function(scheme = "snp") {
       push(node(ids$decision, st$id, "decision", "all gates pass?", o <- o + 1))
       decision_order <- o
       soft <- length(relax) > 0L
+      # every stage that can kill a candidate gets its own DOOMED sink, so the
+      # graph says *which* stage killed it; the shared rail below the stages only
+      # groups them for display (the `doomed` kind link from each stage).
+      stage_doomed <- paste0(st$id, ":doomed")
       if (soft) {
-        # one refinement node per stage: the soft-gate ladder in order (not one node
-        # per rung - the ladder relaxes the *same* criteria, so a rung per gate would
-        # just duplicate the gate nodes)
+        # one node per rung, in the declared order (least grave first) and each
+        # labelled with the gate it protects and that gate's floor: the ladder is
+        # the *structure* the engine walks (rung 1, then 2, ...), so a single
+        # "refine" node would hide the tier a candidate actually stops at.
+        rung_ids <- paste0(st$id, ":relax:", relax)
         push(node(
-          ids$refine, st$id, "relax",
-          paste0("refine: ", paste(scheme_label("short", relax), collapse = " -> ")),
-          decision_order + 1L,
+          rung_ids, st$id, "relax",
+          paste0(seq_along(relax), ". ", scheme_label("short", relax)),
+          decision_order + seq_along(relax),
           x = 0.85,
-          detail = paste0(scheme_label("short", relax), " [", scheme_label("floor", relax), "]", collapse = "; ")
+          detail = paste0(scheme_label("short", relax), " [", scheme_label("floor", relax), "]")
         ))
-        refine_ids <- c(refine_ids, ids$refine)
-        merge_order <- decision_order + 2L
-        # a *hard* gate in a mixed stage still dooms directly: a candidate that
-        # fails it can never be relaxed away, so it must not be drawn as merely
-        # "relaxable" (C4).  The soft gates keep the refinement branch.
-        doomed_sources <- c(doomed_sources, ids$gate[hard])
+        refine_ids <- c(refine_ids, rung_ids)
+        merge_order <- decision_order + length(relax) + 1L
+        if (length(rung_ids) > 1L) add_edge(chain(rung_ids[-length(rung_ids)], rung_ids[-1L], "relax"))
+        # the rungs are tried in ladder order from the failing decision
+        add_edge(chain(ids$decision, rung_ids[1L], "fail"))
+        add_edge(chain(rung_ids[length(rung_ids)], ids$merge, "relax"))
+        # a rung whose ladder is fully spent has no rung left to try: the last rung
+        # dooms (a failure at an earlier rung falls through to the next)
+        doomed_sources <- c(doomed_sources, rung_ids[length(rung_ids)])
+        doomed_owners <- c(doomed_owners, stage_doomed)
+        # a *hard* gate in a mixed stage dooms through the decision: a candidate
+        # that fails one can never be relaxed away, so it must not be drawn as
+        # merely "relaxable" (C4).  The hard gates of a stage share that path.
+        if (any(hard)) {
+          doomed_sources <- c(doomed_sources, ids$decision)
+          doomed_owners <- c(doomed_owners, stage_doomed)
+        }
       } else {
         doomed_sources <- c(doomed_sources, ids$decision)
+        doomed_owners <- c(doomed_owners, stage_doomed)
         merge_order <- decision_order + 1L
       }
       add_edge(chain(ids$decision, ids$merge, "pass"))
-      if (soft) {
-        add_edge(chain(ids$decision, ids$refine, "fail"))
-        add_edge(chain(ids$refine, ids$merge, "relax"))
+      stage_sinks <- doomed_sources[doomed_owners == stage_doomed]
+      if (length(stage_sinks)) {
+        stage_sink_ids <- c(stage_sink_ids, stage_doomed)
+        stage_sink_stage <- c(stage_sink_stage, st$id)
+        # between the decision it answers and the survivors it feeds, so the sink
+        # sits on its own rank and every edge still flows downhill
+        stage_sink_order <- c(stage_sink_order, decision_order + 0.5)
+      }
+      # a rung whose ladder is fully spent has no rung left to try: the last rung
+      # dooms (a failure at an earlier rung falls through to the next)
+      if (length(rung_ids)) {
+        doomed_sources <- c(doomed_sources, rung_ids[length(rung_ids)])
+        doomed_owners <- c(doomed_owners, stage_doomed)
+        stage_sink_order[stage_sink_stage == st$id] <- merge_order + 0.5
       }
     } else {
       # a documentation-only stage (`gates = character(0)`, e.g. ASQ): it has no
@@ -184,10 +217,16 @@ marker_decision_schema <- function(scheme = "snp") {
     }
     entry <- ids$best
   }
-  # one shared DOOMED terminal (a hard gate blocked, or every soft floor is spent)
-  if (length(stages)) {
-    push(node("doomed", "doomed", "doomed", "DOOMED", o <- o + 1, x = 0.85))
-    add_edge(chain(c(refine_ids, doomed_sources), "doomed", "doomed"))
+  # one DOOMED sink per killing stage (a hard gate blocked, or every soft floor
+  # is spent for that stage), so the structure names the killer instead of one
+  # undifferentiated rail
+  for (k in seq_along(stage_sink_ids)) {
+    push(node(stage_sink_ids[k], stage_sink_stage[k], "doomed", "DOOMED", stage_sink_order[k]))
+  }
+  if (length(stage_sink_ids)) {
+    # the last rung of a spent ladder dooms (an earlier rung failure simply falls
+    # through to the next rung); every hard gate / unrelaxable decision too
+    add_edge(tibble::tibble(from = doomed_sources, to = doomed_owners, kind = "doomed"))
   }
 
   # --- the assay acceptance checks + verdict ---------------------------------
@@ -343,22 +382,43 @@ decision_dot <- function(scheme = "snp", assay = NULL) {
     gsub("\n", "\\\\n", gsub('"', '\\\\"', s))
   }
   stage_levels <- unique(nodes$stage)
-  stage_levels <- c(setdiff(stage_levels, "doomed"), intersect("doomed", stage_levels))
   style_of <- c(
     flow = "solid", pass = "solid", fail = "dotted",
     relax = "dashed", doomed = "solid", check = "solid"
   )
+  # Column layout.  Each decision stage is one column: its gates, its decision,
+  # its ladder, its survivors and its DOOMED sink all share one rank, and the
+  # next stage's column sits to the right (rankdir=LR).  Stacking the order
+  # instead ran duplex out at 1808 x 4117 px, unusable at README width.  The
+  # site and assay stages stay chains of their own ranks - a decision stage is
+  # what a column is for, a check list is not.
+  decision_stage <- function(st) {
+    any(nodes$kind[nodes$stage == st] %in% c("gate", "decision", "relax", "tier", "merge"))
+  }
   out <- c(
     "digraph decision {",
     paste0(
-      "  graph [rankdir=LR, splines=true, nodesep=0.25, ranksep=0.45, ",
-      "pad=0.15, compound=true, bgcolor=\"white\", fontname=\"Helvetica\"];"
+      "  graph [rankdir=LR, splines=spline, nodesep=0.18, ranksep=0.55, ",
+      "pad=0.12, compound=true, bgcolor=\"white\", fontname=\"Helvetica\"];"
     ),
     '  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=9, margin="0.07,0.035"];',
     '  edge [fontname="Helvetica", arrowsize=0.7];'
   )
+  cols <- stage_levels[vapply(stage_levels, decision_stage, logical(1))]
+  if (length(cols) > 1L) {
+    # an invisible chain along the flow pins the column order: the stage's last
+    # node is listed `first` and its first node `last`, i.e. a zero-rank edge,
+    # which dot accepts and orders strictly left to right
+    first <- vapply(cols, function(st) nodes$name[nodes$stage == st][1L], character(1))
+    last <- vapply(cols, function(st) nodes$name[nodes$stage == st][sum(nodes$stage == st)], character(1))
+    out <- c(out, sprintf(
+      "  %s -> %s [style=invis, weight=20, constraint=true];",
+      q(head(last, -1L)), q(tail(first, -1L))
+    ))
+  }
   for (st in stage_levels) {
     ns <- nodes[nodes$stage == st, , drop = FALSE]
+    if (!nrow(ns)) next
     safe <- gsub("[^A-Za-z0-9_]", "_", st)
     out <- c(
       out,
@@ -368,6 +428,16 @@ decision_dot <- function(scheme = "snp", assay = NULL) {
         q(st)
       )
     )
+    # one column per decision stage.  This rank statement must sit inside the
+    # subgraph: a `{ rank=same; ... }` block between the graph attribute and the
+    # first subgraph silently disables LR ranking for the whole graph (it feeds
+    # the mincross step), which laid every column out on one diagonal.
+    if (st %in% cols && nrow(ns) > 1L) {
+      out <- c(out, sprintf(
+        "    { rank=same; %s; }",
+        paste(vapply(ns$name, q, character(1)), collapse = " ")
+      ))
+    }
     for (i in seq_len(nrow(ns))) {
       n <- ns[i, ]
       fill <- unname(pal$kind[n$kind])
@@ -380,12 +450,6 @@ decision_dot <- function(scheme = "snp", assay = NULL) {
         q(n$name), q(lab(n$label)), fill, col, pen
       ))
     }
-    # one vertical column per stage: main direction stays left-to-right, but a
-    # stage does not spread across the canvas
-    out <- c(out, sprintf(
-      "    { rank=same; %s; }",
-      paste(vapply(ns$name, q, character(1)), collapse = " ")
-    ))
     out <- c(out, "  }")
   }
   for (i in seq_len(nrow(edges))) {
@@ -394,9 +458,15 @@ decision_dot <- function(scheme = "snp", assay = NULL) {
     if (is.na(col)) col <- "#78716C"
     sty <- unname(style_of[e$kind])
     if (is.na(sty)) sty <- "solid"
+    # rows inside a column stack (gate 1 above gate 2): a lateral `weight` keeps
+    # dot from spreading them, so the column stays a column
+    same_col <- identical(
+      nodes$stage[match(e$from, nodes$name)], nodes$stage[match(e$to, nodes$name)]
+    )
     out <- c(out, sprintf(
-      '  %s -> %s [color="%s", style="%s"];',
-      q(e$from), q(e$to), col, sty
+      '  %s -> %s [color="%s", style="%s"%s];',
+      q(e$from), q(e$to), col, sty,
+      if (same_col) ", weight=8" else ""
     ))
   }
   c(out, "}")
@@ -441,16 +511,21 @@ plot_decision_tree <- function(x = NULL, scheme = NULL) {
     dplyr::arrange(.data$order) |>
     dplyr::mutate(label_wrapped = stringr::str_wrap(.data$label, 16L))
   stage_levels <- unique(nodes$stage)
-  stage_levels <- c(setdiff(stage_levels, "doomed"), intersect("doomed", stage_levels))
   nodes$stage <- factor(nodes$stage, levels = stage_levels)
-  # one column per stage, nodes stacked inside it: the main direction is always
-  # left-to-right (stage N -> stage N+1); branches sit beside their stage.
+  # two-column grid: one column per stage and nodes stacked inside it walks a
+  # 5-stage scheme out as a 1:2.3 strip (duplex: 1808 x 4117 px), unusable at
+  # README width.  The stages wrap: `ncol` columns side by side, the next `ncol`
+  # stages on the row below, so the picture stays near 4:3 for every scheme.
+  ncol <- max(2L, ceiling(sqrt(length(stage_levels) * 1.6)))
+  col_of <- match(as.character(nodes$stage), as.character(stage_levels)) - 1L
+  row_of <- col_of %/% ncol
   nodes <- nodes |>
     dplyr::group_by(.data$stage) |>
     dplyr::mutate(lane = dplyr::row_number()) |>
     dplyr::ungroup()
-  nodes$x <- as.integer(nodes$stage) * 3.6
-  nodes$y <- -nodes$lane
+  nodes$x <- (col_of %% ncol) * 3.6 + row_of * 0.55
+  # rows are stacked downward: the second stage row sits below the first
+  nodes$y <- -row_of * (max(nodes$lane) + 2.2) - nodes$lane
   nodes$x[nodes$kind == "relax"] <- nodes$x[nodes$kind == "relax"] + 0.45
   # fill = what the node *is* (light, modern, no blue); text/border = outcome
   pal <- decision_palette()

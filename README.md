@@ -290,8 +290,8 @@ KASP, **дуплексных** химий (dKASP, mxKASP, Multi-KASP: два л�
 стадия совместимости) и **ASQ/PACE**, а также голый subset **«любая пара праймеров»**
 (маркер-агностичные проверки: состав, структура, повторы, off-target).
 
-<img src="man/figures/decision-tree.png" width="470" alt="KASP selection decision tree" />
-<img src="man/figures/decision-multiplex.png" width="470" alt="duplex KASP decision tree" />
+<img src="man/figures/decision-tree.svg" width="470" alt="KASP selection decision tree" />
+<img src="man/figures/decision-multiplex.svg" width="470" alt="duplex KASP decision tree" />
 
 ## 5. Ограничения (честно)
 
