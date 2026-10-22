@@ -285,7 +285,7 @@ artifacts:
   inputs:
   - R/marker_taqman.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: b633f183e26713f824e0dc667e98061f
+  input_hash: 68e20dba909cb82208ce62eb0efe5ea5
   output_hash: 2cb3b074a27e73221dc1c1ef05b04903
   docs: vignettes/markers-probe.Rmd
   status: verified

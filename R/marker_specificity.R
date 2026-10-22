@@ -983,6 +983,10 @@ SPECIFICITY_SCHEME_ALIASES <- c(
   cas9 = "crispr", cas12 = "crispr", cas12a = "crispr", cas13 = "crispr",
   cas13a = "crispr", cas13b = "crispr", sherlock = "crispr", detectr = "crispr",
   paralog = "paralog", homeolog = "paralog", homeologue = "paralog",
+  # a homoeolog is the same concept: a duplicated subgenome copy, not a gene
+  # family member.  Spellings follow the literature (wheat papers use
+  # "homoeolog"); the tables keep the shorter `homeolog` column name.
+  homoeolog = "paralog", homoeologue = "paralog",
   homolog = "paralog", homologe = "paralog"
 )
 
