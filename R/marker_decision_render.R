@@ -33,16 +33,16 @@
 #' @export
 decision_style <- function(palette = decision_palette(),
                            font_size = 9,
-                           line_height = 1.30,
-                           wrap = 96,
-                           pad_x = 7,
-                           pad_y = 5,
+                           line_height = 1.22,
+                           wrap = 110,
+                           pad_x = 5,
+                           pad_y = 3,
                            margin = 14,
                            segment_penalty = 24,
                            target_penalty = 30,
                            crossing_penalty = 40,
-                           shape_buffer = 7,
-                           nudge = 7,
+                           shape_buffer = 3,
+                           nudge = 6,
                            title = NULL,
                            subtitle = NULL,
                            caption = NULL,
@@ -204,9 +204,14 @@ decision_svg <- function(solved, style) {
   }
 
   # -- legend and caption, under the drawing ------------------------------
-  legend <- decision_svg_legend(style, 0, solved$height + dy, solved$width)
+  # both use the page inset the engine left around the boxes, so nothing sits
+  # on the canvas edge
+  inset <- style$margin %||% 14
+  legend <- decision_svg_legend(
+    style, inset, solved$height + dy, solved$width - 2 * inset
+  )
   legend_h <- attr(legend, "height")
-  caption <- decision_svg_caption(style, solved$height + dy + legend_h)
+  caption <- decision_svg_caption(style, solved$height + dy + legend_h, inset)
   caption_h <- attr(caption, "height")
 
   svg_document(
@@ -240,16 +245,16 @@ decision_svg_head <- function(style) {
 }
 
 # caption under the drawing; attr(,"height") is the space it takes
-decision_svg_caption <- function(style, y) {
+decision_svg_caption <- function(style, y, x = 0) {
   if (is.null(style$caption) || !nzchar(style$caption)) {
     return(structure(character(0), height = 0))
   }
   structure(
-    svg_text(0, y + 10, style$caption,
+    svg_text(x, y + 10, style$caption,
       size = 7.5, line_height = 9,
       fill = "#78716C", anchor = "start"
     ),
-    height = 16
+    height = 10 + 9 + 14
   )
 }
 
