@@ -97,9 +97,29 @@ so base R writes it: `<s> <p> <o> .` per line. Vocabulary is
 - edges: `<run> hasFunction <fn>`, `<fn> calledBy <caller>`
 
 Numbers are written as `xsd:decimal` (`-?digits.digits`: no bare integer, no
-exponent, no leading zeros). Verify by re-reading and re-parsing; a triple must
-end in `" ."` and carry three terms. `profile_ttl_read()` round-trips enough to
-prove that; it is not a general parser.
+exponent, no leading zeros).
+
+**Reading it back in R — no external parser needed.** The profiler ships both
+readers, so an audit re-runs in R alone:
+
+- `profile_read_tidy(path)` — `readr::read_rds()` on the `.rds`. This is the
+  object to prefer: typed columns, no parsing, no ambiguity.
+- `profile_ttl_read(path)` — a real N-Triples reader, not a grep. Columns
+  `subject`, `predicate`, `object`, `object_iri`, `datatype`, `value`; a
+  decimal comes back as a number, so a report recomputes from the file alone.
+  A malformed line `stop()`s with its line number instead of being dropped.
+
+No RDF package is installed (`rdf`, `ntriples`, `turtle`, `sparql`: none
+exported by any installed package; no `rapper`/`riot` binary; no Python `rdflib`).
+`redland`, `rdflib` and `jsonld` **are** on CRAN and deliberately not added —
+a dev tool does not owe the package a dependency.
+
+Two parsing facts on this build, both cost real time:
+
+- `regexec` returns the **whole match** as element 1, then groups. An offset
+  computed from `m[[1L]]` is the full match, not group 1.
+- Escaped patterns written as one literal in a file can fail to match where
+  the same pattern built with `paste0` succeeds. Build the pattern.
 
 Why not an R debugging standard: R's call graph knows nothing about RDF, and a
 profile is a graph of samples, not of resources. RDF is for **interchange** —

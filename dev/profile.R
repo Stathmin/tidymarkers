@@ -120,7 +120,8 @@ profile_read <- function(path) {
 # --- the report ---------------------------------------------------------------
 
 profile_report <- function(x, top = 15L) {
-  cat(sprintf("samples: %d  interval: %.3f s  elapsed: %.2f s\n",
+  cat(sprintf(
+    "samples: %d  interval: %.3f s  elapsed: %.2f s\n",
     x$samples, x$interval, x$samples * x$interval
   ))
   s <- utils::head(x$self, top)
@@ -231,25 +232,93 @@ profile_ttl_write <- function(x, path, meta = list()) {
   back <- readLines(path, warn = FALSE)
   stopifnot(
     identical(back, triples),
-    all(grepl(" \\.$", back)),
+    all(grepl(" [.]$", back)),
     all(lengths(strsplit(back, " ", fixed = TRUE)) >= 4L)
   )
   invisible(length(triples))
 }
 
-# Inverse of profile_ttl_write for the two properties the report needs, so a
-# reader can round-trip the export without a serialiser.  Enough to prove the
-# file is well formed; not a general parser.
+# Read the tidy profile back.  `read_rds` (readr) is the reader for the `.rds`
+# the writer leaves; it restores the same tables without re-parsing stacks.
+profile_read_tidy <- function(path) {
+  readr::read_rds(path)
+}
+
+# --- reading RDF back ---------------------------------------------------------
+
+# N-Triples, read strictly.  This is the same grammar the writer emits, parsed
+# for real: a line must be subject, predicate, object; object is an IRI or a
+# literal with an optional datatype; anything else stops with the line number.
+# Typed columns make a decimal a number again, so a report can be recomputed
+# from the file alone instead of trusted.
 profile_ttl_read <- function(path) {
   lines <- readLines(path, warn = FALSE)
-  m <- regmatches(lines, regexec('^<([^>]+)> <([^>]+)> (.*) \\.$', lines))
-  ok <- lengths(m) == 4L
-  data.frame(
-    subject = vapply(m[ok], `[[`, character(1), 2L),
-    predicate = vapply(m[ok], `[[`, character(1), 3L),
-    object = vapply(m[ok], `[[`, character(1), 4L),
+  lines <- lines[nzchar(lines)]
+  parts <- regmatches(lines, regexec("^<([^>]+)> <([^>]+)>", lines))
+  bad <- which(lengths(parts) != 3L)
+  if (length(bad)) {
+    stop(sprintf("malformed N-Triples at line %d: %s", bad[[1]], lines[[bad[[1]]]]), call. = FALSE)
+  }
+  ## The object is the rest of the line minus the " ." terminator, sliced from
+  ## the prefix length rather than matched with an escaped pattern.
+  ## regexec reports byte offsets; slicing uses the reported match length.
+  parts_len <- vapply(
+    regmatches(lines, regexec("^<([^>]+)> <([^>]+)>", lines)),
+    function(m) nchar(m[[1L]]),
+    numeric(1)
+  )
+  objects <- substring(lines, parts_len + 2L)
+  if (!all(endsWith(objects, " ."))) {
+    bad <- which(!endsWith(objects, " ."))
+    stop(sprintf("malformed N-Triples at line %d: %s", bad[[1]], lines[[bad[[1]]]]), call. = FALSE)
+  }
+  objects <- substring(objects, 1L, nchar(objects) - 2L)
+  is_iri <- grepl("^<[^>]+>$", objects)
+  object_iri <- ifelse(is_iri, substring(objects, 2L, nchar(objects) - 1L), NA_character_)
+  ## Objects: an IRI in angle brackets, a bare xsd:decimal, or a quoted literal
+  ## with an optional datatype.  The pattern is built with paste0 because the
+  ## same escapes written as one literal in this file fail to match on this R
+  ## build (see .tmp/probe/fix1.R).
+  lit_pat <- paste0('^(?:"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"', "(?:\\\\^\\\\^<([^>]+)>)?", "|(-?[0-9]+[.][0-9]+))$")
+  lit <- regmatches(objects, regexec(lit_pat, objects))
+  literal <- vapply(lit, function(m) {
+    if (length(m) == 4L && nzchar(m[[2L]])) gsub('\\\\(["\\\\])', "\\1", m[[2L]]) else NA_character_
+  }, character(1))
+  datatype <- vapply(lit, function(m) {
+    if (length(m) == 4L && nzchar(m[[3L]])) m[[3L]] else NA_character_
+  }, character(1))
+  bare_decimal <- vapply(lit, function(m) length(m) == 4L && nzchar(m[[4L]]), logical(1))
+  ok_lit <- lengths(lit) == 4L
+  ok_iri <- is_iri
+  if (any(!ok_lit & !ok_iri)) {
+    bad <- which(!ok_lit & !ok_iri)[[1]]
+    stop(sprintf("malformed N-Triples object at line %d: %s", bad, lines[[bad]]), call. = FALSE)
+  }
+  is_decimal <- bare_decimal | (!is.na(datatype) & datatype == "http://www.w3.org/2001/XMLSchema#decimal")
+  value <- rep(NA_real_, length(objects))
+  ## Only decimals get a number; a plain string literal stays NA rather than
+  ## raising "NAs introduced by coercion".
+  decimals <- is_decimal & ok_lit
+  source_text <- vapply(lit, function(m) {
+    if (length(m) < 4L) NA_character_ else if (nzchar(m[[4L]])) m[[4L]] else m[[2L]]
+  }, character(1))
+  value[decimals] <- as.numeric(source_text[decimals])
+  if (any(is_decimal & is.na(value))) {
+    bad <- which(is_decimal & is.na(value))[[1]]
+    stop(sprintf("xsd:decimal is not a number at line %d: %s", bad, lines[[bad]]), call. = FALSE)
+  }
+  out <- data.frame(
+    subject = vapply(parts, `[[`, character(1), 2L),
+    predicate = vapply(parts, `[[`, character(1), 3L),
+    object = ifelse(is_iri, NA_character_, literal),
+    object_iri = object_iri,
+    datatype = ifelse(is_decimal, "decimal", datatype),
     stringsAsFactors = FALSE
   )
+  # A decimal triple comes back as a number: whatever can be recomputed from the
+  # file is recomputed, and anything else stays text with its datatype attached.
+  out$value <- ifelse(is_decimal, value, NA_real_)
+  out
 }
 
 # --- running a script under Rprof --------------------------------------------
@@ -279,13 +348,15 @@ profile_run_file <- function(script, out_dir = NULL, interval = 0.01) {
 
   write.csv(x$self, file.path(out_dir, paste0(name, ".self.csv")), row.names = FALSE)
   write.csv(x$frames, file.path(out_dir, paste0(name, ".frames.csv")), row.names = FALSE)
-  saveRDS(list(self = x$self, frames = x$frames, samples = x$samples, interval = x$interval),
+  saveRDS(
+    list(self = x$self, frames = x$frames, samples = x$samples, interval = x$interval),
     file.path(out_dir, paste0(name, ".rds"))
   )
   n <- profile_ttl_write(x, file.path(out_dir, paste0(name, ".ttl")),
     meta = list(script = script, commit = commit)
   )
-  cat(sprintf("profiled: %s\n  wall: %.1f s  samples: %d  triples: %d\n  out: %s\n",
+  cat(sprintf(
+    "profiled: %s\n  wall: %.1f s  samples: %d  triples: %d\n  out: %s\n",
     script, elapsed, x$samples, n, out_dir
   ))
   profile_report(x)
@@ -298,7 +369,8 @@ profile_from_file <- function(path, out_dir = NULL) {
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   name <- tools::file_path_sans_ext(basename(path))
   write.csv(x$self, file.path(out_dir, paste0(name, ".self.csv")), row.names = FALSE)
-  saveRDS(list(self = x$self, frames = x$frames, samples = x$samples, interval = x$interval),
+  saveRDS(
+    list(self = x$self, frames = x$frames, samples = x$samples, interval = x$interval),
     file.path(out_dir, paste0(name, ".rds"))
   )
   n <- profile_ttl_write(x, file.path(out_dir, paste0(name, ".ttl")),
