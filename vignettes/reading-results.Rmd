@@ -39,8 +39,8 @@ be overridden.
 chk <- marker_design_checks(assay)
 chk
 chk[!chk$pass, c("stage", "criterion", "observed", "limit", "status")]
-passes_all(assay)                # TRUE / FALSE in one line
-marker_risk(assay)               # low / medium / high + the list of failures
+passes_all(assay) # TRUE / FALSE in one line
+marker_risk(assay) # low / medium / high + the list of failures
 ```
 
 The `status` column is the main one, not `pass`:
@@ -70,7 +70,7 @@ choice of chemistry are a plan: targets (`marker_targets()`), context
 plan <- marker_plan(genome) +
   marker_targets(marker_example("snp")) +
   marker_context(variants = variants) +
-  marker_tech(preset = "lab")           # kasp / gel / lab / field
+  marker_tech(preset = "lab") # kasp / gel / lab / field
 
 solved <- marker_solve(plan, progress = FALSE)
 solved
@@ -92,7 +92,7 @@ the report (see "Why a candidate did not pass" below).
 ```{r, eval = FALSE}
 solved$report[, c("label", "scheme", "cost", "ok", "tried")]
 solved$attempts
-marker_plot(solved)                     # tiles: which chemistry took the locus
+marker_plot(solved) # tiles: which chemistry took the locus
 solved$report$marker[[1]]
 ```
 
@@ -132,10 +132,23 @@ one obtained under the default, and `marker_replay()` re-runs the design from
 
 ```{r, eval = FALSE}
 art <- marker_artefact(solved, dir = "results/solved")
-art$manifest$overrides        # e.g. min_disc 0.4 against a default of 0.5
+art$manifest$overrides # e.g. min_disc 0.4 against a default of 0.5
 replay <- marker_replay(art) # fresh cache: the design runs again
-replay$table                  # recorded vs replayed scheme and verdict
-replay$inputs_match           # FALSE if the reference was replaced
+replay$table # recorded vs replayed scheme and verdict
+replay$inputs_match # FALSE if the reference was replaced
+```
+
+When a lab has run the assay, the result comes back to the same id. The call is
+ordinal and keeps every observation — a second run appends a row instead of
+replacing the first, and a failure must say what happened:
+
+```{r, eval = FALSE}
+marker_record_outcome(art, "works", target = "ENSVATH01332998")
+marker_record_outcome(art, "fails",
+  target = "ENSVATH02162468",
+  notes = "no amplification at 60 C"
+)
+marker_outcomes(art) # outcomes.csv, `calibrated` stays FALSE
 ```
 
 `readRDS()` returns a working object, not a picture: from there you can run
@@ -145,7 +158,7 @@ checks again without repeating the design:
 ```{r, eval = FALSE}
 back <- readRDS(file.path(dir, "solved.rds"))
 identical(back$report$label, solved$report$label)
-marker_tubes(back)                      # which pairs can go into one tube
+marker_tubes(back) # which pairs can go into one tube
 ```
 
 If you need the result of **one** assay rather than a panel, it is written by
@@ -162,9 +175,9 @@ at which the candidates ran out, and the reason:
 
 ```{r, eval = FALSE}
 m <- solved$report$marker[[1]]
-inherits(m, "marker_doomed")     # TRUE -> design failed
-m$stage                          # "as" or "pair"
-m$reason                         # "No AS primer passed the GC/Tm filter."
+inherits(m, "marker_doomed") # TRUE -> design failed
+m$stage # "as" or "pair"
+m$reason # "No AS primer passed the GC/Tm filter."
 ```
 
 The stages of the KASP pipeline: `as` (allele-specific primers: GC/Tm,
@@ -182,9 +195,9 @@ relaxation ladder lifts the soft gates one at a time and records what exactly
 was lifted:
 
 ```{r, eval = FALSE}
-assay$selection$relaxed          # which gates were relaxed
-assay$selection$violated         # which are still violated
-assay$evaluation                 # the checks table saved at assembly
+assay$selection$relaxed # which gates were relaxed
+assay$selection$violated # which are still violated
+assay$evaluation # the checks table saved at assembly
 ```
 
 An empty `relaxed` and `violated` means the assay passed first time; a non-empty
@@ -236,7 +249,7 @@ assay
 
 ```{r, eval = FALSE}
 qc <- read.csv("results/marker_primer_qc.csv")
-qc[qc$name != "COM" & !is.na(qc$name), , drop = FALSE]   # AS primers
+qc[qc$name != "COM" & !is.na(qc$name), , drop = FALSE] # AS primers
 ```
 
 ## Figures
@@ -272,10 +285,10 @@ output is four files:
 | `<name>.ttl` | the same facts as N-Triples (RDF 1.1) |
 
 ```{r, eval = FALSE}
-source("dev/profile.R")                  # repository only, not in the package
+source("dev/profile.R") # repository only, not in the package
 prof <- profile_read(".tmp/prof/probe/probe.out")
-profile_report(prof, top = 10)           # the most expensive functions
-profile_callers(prof, "CalculateEfficiencyPCR")   # who calls it and how many times
+profile_report(prof, top = 10) # the most expensive functions
+profile_callers(prof, "CalculateEfficiencyPCR") # who calls it and how many times
 ```
 
 What to look for in the table:
@@ -293,8 +306,8 @@ For exchange with other tools (not for debugging) there are tidy and RDF
 exports:
 
 ```{r, eval = FALSE}
-tidy <- profile_read_tidy(".tmp/prof/probe/probe.rds")   # three tables, preferred
-ttl  <- profile_ttl_read(".tmp/prof/probe/probe.ttl")    # strict N-Triples, error with a line number
+tidy <- profile_read_tidy(".tmp/prof/probe/probe.rds") # three tables, preferred
+ttl <- profile_ttl_read(".tmp/prof/probe/probe.ttl") # strict N-Triples, error with a line number
 ```
 
 RDF here is an exchange format: the vocabulary `https://tidymarkers.org/profile#`
