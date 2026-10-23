@@ -126,3 +126,43 @@ test_that("generators reproduce the shipped extracts when sources are present", 
     expect_null(attr(out, "status"), info = paste(g, paste(out, collapse = "\n")))
   }
 })
+
+## --- three readout tables that were on disk with no consumer -----------------
+
+test_that("JAK2 V617F precision: the CV reproduces above 1 % and does NOT at 0.1 %", {
+  d <- read_ext("jak2v617f_ddpcr_precision.csv")
+  expect_equal(nrow(d), 16L)
+  expect_equal(length(unique(d$target_vaf_pct)), 4L)
+  expect_equal(length(unique(d$condition)), 4L)
+  # CV = sd / mean, in percent: recomputed from the printed mean and sd
+  d$cv_calc <- 100 * d$sd_pct / d$mean_vaf_pct
+  hi <- d$target_vaf_pct >= 1
+  expect_true(all(abs(d$cv_calc[hi] - d$cv_pct[hi]) < 0.05))
+  # at 0.1 % the paper's cells are rounded hard enough that the identity fails.
+  # The extract keeps the printed values, so the test asserts the FAILURE: it is
+  # what stops anyone calibrating a LoD on a recomputed number.
+  lo <- d$target_vaf_pct == 0.1
+  expect_true(all(abs(d$cv_calc[lo] - d$cv_pct[lo]) > 0.05))
+})
+
+test_that("ijms2022 minimum input: the smallest amount is not a genotype call", {
+  d <- read_ext("hrm_ijms2022_min_input.csv")
+  expect_equal(nrow(d), 5L)
+  expect_equal(d$min_ng, c(3, 4, 1, 0.1, 0.01))
+  expect_true(all(d$evidence_tier == "measured"))
+  # the two smallest rows are the limits of the method, not genotypes
+  expect_true(all(grepl("NOT a genotype call", d$outcome[4:5])))
+  expect_true(all(grepl("correctly identified", d$outcome[1:3])))
+  expect_setequal(unique(d$method), c("HRM", "PSQ", "HRM (single-strand only)", "HRM (no product)"))
+})
+
+test_that("Sanger floor: a textbook number may not calibrate anything", {
+  d <- read_ext("sanger_detection_floor.csv")
+  expect_equal(nrow(d), 2L)
+  expect_true(all(d$metric == "detection_floor_pct"))
+  expect_true(all(d$value_pct == 20))
+  # both rows are restatements, so neither is a measurement by these authors
+  expect_true(all(d$evidence_tier == "textbook"))
+  expect_true(all(!d$usable_as_calibration))
+  expect_true(all(nzchar(d$reason)))
+})

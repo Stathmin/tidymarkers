@@ -160,3 +160,25 @@ test_that("marker_example carries one of each target type", {
   ma <- ex[!is.na(ex$alt2), ]
   expect_true(marker_site_class(ma$ref, c(ma$alt, ma$alt2))$disc)
 })
+
+# The example locus table on disk is what the exported examples are cut from, so
+# it is checked as data: the transition column must be the base chemistry, not
+# a hand-set flag.
+test_that("example_targets: transition is purine-for-purine, and indels are not", {
+  ex <- utils::read.csv(
+    testthat::test_path("..", "..", "inst", "extdata", "example_targets.csv"),
+    stringsAsFactors = FALSE, na.strings = c("NA", "")
+  )
+  expect_equal(nrow(ex), 9L)
+  expect_setequal(unique(ex$type), c("SNP", "MNP", "insertion", "deletion"))
+  purine <- c("A", "G")
+  snp <- ex[ex$type == "SNP", ]
+  expect_gt(nrow(snp), 0L)
+  implied <- (snp$ref %in% purine) == (snp$alt %in% purine)
+  expect_equal(implied, snp$transition)
+  # a transition is a single-base concept: an indel or an MNP is never one
+  expect_false(any(ex$transition[ex$type != "SNP"] %in% TRUE))
+  # exactly one row is multi-allelic, and its second ALT sits on a substitution
+  expect_equal(sum(!is.na(ex$alt2)), 1L)
+  expect_true(ex$type[!is.na(ex$alt2)] %in% c("SNP", "MNP"))
+})

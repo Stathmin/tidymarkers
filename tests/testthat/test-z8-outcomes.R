@@ -221,3 +221,42 @@ test_that("Z8.3: a KASP conversion rate names which of the four quantities it is
     expect_true(all(!is.na(xs$conversion_definition)))
   }
 })
+
+## --- the de Silva 2009 HRM extracts -----------------------------------------
+
+test_that("de Silva's 22 amplicons: primer lengths add up and 400 bp is the seam", {
+  a <- ext("desilva2009_amplicons.csv")
+  expect_equal(nrow(a), 22L)
+  # the paper prints a primer-total column, so the two sequences must reproduce it
+  expect_equal(a$primer_total_nt, nchar(a$forward) + nchar(a$reverse))
+  # the 400 bp boundary is assigned to the <400 group by the paper's own mean
+  expect_equal(nrow(a), sum(!is.na(a$group)))
+  expect_equal(unname(table(a$group)[["gt400"]]), 13L)
+  expect_equal(unname(table(a$group)[["lt400"]]), 8L)
+  seam <- a$group == "at400_assigned_lt400_by_mean"
+  expect_equal(sum(seam), 1L)
+  expect_equal(a$size_bp[seam], 400L)
+  # a group label must agree with the size it names, wherever it is not the seam
+  expect_true(all((a$size_bp > 400) == (a$group == "gt400")))
+})
+
+test_that("de Silva's 25 SNP amplicons keep their missing sizes and multi-SNP flag", {
+  s <- ext("desilva2009_snps.csv")
+  expect_equal(nrow(s), 25L)
+  expect_identical(anyDuplicated(s$snp_ids), 0L)
+  expect_true(all(s$n_snps >= 1L & s$n_snps <= 3L))
+  # the flag is derived, so it must equal the derivation
+  expect_equal(s$multi_snp_amplicon, s$n_snps > 1L)
+  # five rows have no size in the paper; they stay NA rather than being dropped
+  expect_equal(sum(is.na(s$size_bp)), 5L)
+  expect_equal(sum(s$multi_snp_amplicon), sum(s$n_snps > 1L))
+})
+
+test_that("de Silva's five strategies are five distinct situations", {
+  st <- ext("desilva2009_strategies.csv")
+  expect_equal(nrow(st), 5L)
+  expect_identical(anyDuplicated(st$genetic_situation), 0L)
+  expect_true(all(nzchar(st$genetic_situation)))
+  expect_true(all(nzchar(st$hrm_solution)))
+  expect_true(all(st$doi == "10.1186/1471-2156-10-5"))
+})

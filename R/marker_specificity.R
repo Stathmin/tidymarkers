@@ -631,13 +631,18 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   scoring <- policy$mode %||% "pcr"
   min_width <- max(nchar(f_primer), nchar(r_primer))
   chroms <- genome_chroms(genome)
+  # The whole genome goes in once.  `primer_hit_table()` already loops over
+  # `genome_chroms()`, so calling it inside the per-chromosome loop below
+  # rescanned every chromosome n_chrom times AND paired hits from different
+  # chromosomes into phantom products (each scan iteration relabelled the same
+  # pool with its own chromosome).  `dev/specificity-oracle.R` enumerates the
+  # answer and caught it: one real product came back as twelve.
+  fh_all <- primer_hit_table(f_primer, genome, radius, scoring, side = "f")
+  rh_all <- primer_hit_table(rev, genome, radius, scoring, side = "r")
   scan_one <- function(nm) {
     worker_biostrings()
-    # the whole genome goes in, not `genome[nm]`: `primer_hit_table()` already
-    # loops `genome_chroms()` through `genome_seq()`, and a `marker_genome` has
-    # no `[` method (it would hand over NULL and fail inside the scan)
-    fh <- primer_hit_table(f_primer, genome, radius, scoring, side = "f")
-    rh <- primer_hit_table(rev, genome, radius, scoring, side = "r")
+    fh <- fh_all[fh_all$chrom == nm, , drop = FALSE]
+    rh <- rh_all[rh_all$chrom == nm, , drop = FALSE]
     if (nrow(fh) == 0L || nrow(rh) == 0L) {
       return(NULL)
     }

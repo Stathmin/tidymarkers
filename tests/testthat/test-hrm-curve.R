@@ -231,3 +231,38 @@ test_that("NEGATIVE: no landed HRM row states an instrument or buffer resolution
     expect_equal(hrm_resolvability(parts[[1L]], parts[[2L]])$status, "unknown")
   }
 })
+
+## --- the two remaining HRM extract tables ------------------------------------
+
+test_that("ijms2022 dTm controls: the reference melt is 0 and one allele shifts it", {
+  d <- hrm_csv("hrm_ijms2022_dtm_single_snp_controls.csv")
+  expect_equal(nrow(d), 7L)
+  expect_identical(anyDuplicated(d$labels), 0L)
+  expect_true(all(d$evidence_tier == "measured"))
+  ref <- d$n_t_alleles == 0L
+  expect_equal(sum(ref), 1L)
+  # a single-SNP control set: the reference is the zero the others are measured from
+  expect_equal(d$dtm_c[ref], 0)
+  expect_true(all(d$dtm_c[!ref] >= 0.4))
+  # the three-allele construct separates most; this is the table's own ordering
+  expect_equal(d$dtm_c[which.max(d$n_t_alleles)], max(d$dtm_c))
+})
+
+test_that("jsbbs2018 summary keeps the prose and the recomputation apart", {
+  s <- hrm_csv("hrm_jsbbs2018_summary.csv")
+  expect_equal(nrow(s), 18L)
+  expect_identical(anyDuplicated(s$quantity), 0L)
+  get <- function(q) s$value[s$quantity == q]
+  expect_equal(get("n_markers_exp1"), 38)
+  expect_equal(get("n_markers_exp3"), 18)
+  expect_equal(get("n_pairs_table4"), 13)
+  expect_equal(get("n_pairs_table4_both_values"), 10)
+  # the correlation the selection rule cites must be the one computed here
+  expect_equal(get("r_dtmobs_dg3bp_exp1"), 0.6476040, tolerance = 1e-6)
+  # the paper's prose and its table disagree, and both numbers are kept: the
+  # extract must not have silently preferred one of them
+  expect_false(isTRUE(all.equal(get("prose_t_table4"), get("t_table4_recomputed"))))
+  expect_equal(get("prose_df_table4"), 10)
+  expect_equal(get("df_table4_recomputed"), 9)
+  expect_false(isTRUE(all.equal(get("prose_mean_dtm_nnns_c"), get("mean_dtm_nnns_table4_c"))))
+})

@@ -186,13 +186,19 @@ short answer is published measurements, not a bench run by the maintainers:
 
 - **No wet-lab data was produced here.** No `tidymarkers` design has been
   validated at the bench by the authors of this package.
-- **No head-to-head design benchmark against Primer3 or PolyMarker.** Both are
-  *sources*, not competitors: Primer3's `oligotm` nearest-neighbour family is the
-  Tm lineage, and PolyMarker 1.3.3's selection rules were read from its source
-  and encoded as rules.
+- **A head-to-head run against Primer3 2.6.1**, on the layer the two tools share:
+  the same oligos through both engines (Tm mean offset +3.92 °C, sd 0.25,
+  ρ = 0.999; heterodimer dG ρ = 1.000), and the same 20 SNP loci through both
+  designers, with Primer3 constrained to this package's amplicon window. Of the
+  8 loci where a Primer3 pair cleared every one of this package's seven gates,
+  5 also got a designed assay. Reproduce it with
+  `Rscript dev/primer3-crosscheck.R`.
+- **Specificity scored against ground truth, not against PolyMarker**: on TAIR10
+  the answer is enumerated (3′-seed screen 8/8 equal; exact in-silico PCR 3/3
+  equal), with BLAST+ as a speed/recall baseline. `dev/specificity-oracle.R`.
 - **A literature-anchored evidence layer instead**: 80 registered sources, 130
-  extracted tables in `inst/extdata/`, and 174 ledger links from an extract to
-  the test file that asserts it (37 distinct test files). The join is
+  extracted tables in `inst/extdata/`, and 196 ledger links from an extract to
+  the test file that asserts it (44 distinct test files). The join is
   machine-checked, so a test cannot claim an extract it does not read.
 - **Cross-engine where it is fair**: `thermo_crosscheck()` compares SantaLucia
   2004, Allawi 1998, Sugimoto 1996 and Breslauer 1986; Primer3's `oligotm` and

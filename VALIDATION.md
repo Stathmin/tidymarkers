@@ -8,13 +8,18 @@ check is enforced, and what has not been validated at all.
 - **The maintainers have produced no wet-lab data.** Every measured number in
   this repository was measured by the authors of the cited paper, not here.
   There is no bench validation of a `tidymarkers` design.
-- **There is no head-to-head design benchmark against Primer3 or PolyMarker.**
-  Both are used as *sources*, not as competitors: Primer3's `oligotm`
-  nearest-neighbour family is the Tm engine lineage, and PolyMarker's selection
-  rules are read from its source and encoded as rules.
+- **There is now a head-to-head run against Primer3 2.6.1**, on the layer the
+  two tools share: the same oligos through both Tm and dG engines, and the same
+  20 SNP loci through both designers with Primer3 constrained to the package's
+  own amplicon window. The numbers are in *Primer3, end to end* below, and are
+  reproducible with `Rscript dev/primer3-crosscheck.R`.
+- **Specificity is scored against ground truth, not against PolyMarker.** On
+  TAIR10 the correct answer to "how many places does this primer bind" is
+  computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
+  are checked against the enumeration, with BLAST+ as a speed/recall baseline.
 - **What does exist** is a literature-anchored evidence layer: 80 registered
-  sources, 130 extracted tables in `inst/extdata/`, and a ledger that binds 174
-  extracts to the 37 test files that consume them. Each link from a source, to
+  sources, 130 extracted tables in `inst/extdata/`, and a ledger that binds 196
+  extracts to the 44 test files that consume them. Each link from a source, to
   the exact table read from it, to the test that asserts a property of it is
   machine-checked.
 - **Agreement between models is not evidence about a real duplex.** That
@@ -27,7 +32,7 @@ Three tables carry the provenance, and three tests keep them honest.
 | File | Rows | What it holds |
 |---|---|---|
 | `inst/extdata/scientific_sources.csv` | 80 | One row per paper or software source: citation, DOI/PMIM, **how much was read** (`access`), `what_it_anchors`, and the verbatim `claim` |
-| `inst/extdata/science_ledger.csv` | 284 | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed |
+| `inst/extdata/science_ledger.csv` | 286 | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed |
 | `inst/extdata/scientific_backlog.csv` | 45 | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched` |
 
 `access` is a closed vocabulary and it is load-bearing: 54 sources were read in
@@ -36,9 +41,12 @@ full text, 11 through a supplement, 3 as an abstract only, 6 are closed access,
 rows are marked `verified`, each with the date it was checked. A source read only
 as an abstract may not calibrate anything, and the tests enforce that.
 
-Ledger rows by role: 174 `test`, 78 `report` (a claim the paper makes, kept for
-comparison), 29 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 2 `rule`, 1 `artefact`.
+Ledger rows by role: 196 `test`, 78 `report` (a claim the paper makes, kept for
+comparison), 9 `blocked` (read, extracted, consumed by nothing yet — each says
+why), 2 `rule`, 1 `artefact`. Every table in `inst/extdata/` that carries a
+literature claim now has at least one test reading it; the nine remaining
+`blocked` rows name no extract (`extract = none`) and say which paper could not
+be landed.
 
 The gates:
 
@@ -87,12 +95,102 @@ subgenome specificity sits on the common primer's 3′ base — they are separat
 columns, not one "3′ base" field. `tests/testthat/test-y32-homeolog.R` asserts
 the axes stay separate. This is rule adoption, not a benchmark.
 
-### What is missing
+### Primer3, end to end
 
-No comparison of *designs* against Primer3 or PolyMarker on a common locus
-panel: neither tool produces a KASP assay with the same acceptance criteria, so
-a like-for-like comparison needs a shared panel and a scoring definition that
-does not exist here yet. This is tracked in `ROADMAP.md`.
+`dev/primer3-crosscheck.R` runs Primer3 2.6.1 beside this package on one machine
+and prints, rather than asserts, how far apart they are. `tests/testthat/test-primer3-crosscheck.R`
+asserts only the bands that run supports.
+
+**Thermodynamics, same oligos, same salt and temperature** (34 oligos: 24 seeded
+20-mers, 8 GC/homopolymer edge probes, the 2 universal KASP tails):
+
+| Quantity | Oligotm / ntthal − this package |
+|---|---|
+| Tm, matched salt (Na 50 mM, Mg 1.5 mM, dNTPs 0.6 mM, 37 °C, 50 nM) | mean **+3.92 °C**, sd 0.25, max 4.66; r = 1.000, ρ = 0.999 |
+| Tm, package called at Mg = 0 | mean **+12.48 °C** — the package's divalent term is worth ≈8.5 °C here |
+| Hairpin dG (OligoArrayAux vs `ntthal -a HAIRPIN`) | mean **−0.84 kcal/mol**, sd 0.76, range [−2.86, 0.27], ρ = 0.67 |
+| Heterodimer dG (`ntthal -a ANY`) | n = 4 pairs, mean **−1.75 kcal/mol**, sd 1.16, ρ = 1.000 |
+
+The ~4 °C Tm residual is the nearest-neighbour table (SantaLucia 1998 on
+Primer3's side, 2004 in `primer_tm()`) plus the salt formula (Primer3 defaults
+to SantaLucia 1998, the package to Schildkraut 2010); the run cannot separate
+the two and does not try. The offset is recorded, not corrected. `ntthal`
+reports no hairpin at all on 16 of the 34 oligos; the package reports dG = 0 on
+the 2 that genuinely cannot fold, which is what the same statement means.
+
+**Design, same 20 loci.** The panel is the first 20 TAIR10-matching SNVs of the
+cached Chr4 variation window, thinned to ≥1 kb apart (the cache region carries
+one SNV per ~10 bp, and `design_kasp_markers()` passes its own `loci` table as
+the `variants` table for footprint accounting). Primer3 is run twice per locus:
+with its usual 60–150 bp product range, and constrained to the package's own
+50–100 bp window. The head-to-head uses the constrained run, so a length
+disagreement cannot pose as a quality disagreement.
+
+| Result | Count |
+|---|---|
+| Primer3 returned ≥1 pair in the 50–100 bp window | 17/20 |
+| …and that pair cleared all seven package gates (GC, Tm, amplicon, homopolymer, 3′-placement, hairpin, dimer) | 8/20 |
+| …and this package also designed an assay | **5/8** (the agreement floor) |
+| Primer3 returned no pair at all | 3/20 |
+| Primer3 pair rejected by a package gate | 9/20 |
+| Primer3 would have used a >100 bp product on its own 60–150 bp range | 12/20 |
+| Amplicon size, both solved (n = 7) | median difference **+1 bp**, range [−5, +25], ρ = 0.847 |
+| Runtime per locus, single core | Primer3 0.06 s, this package **9.5 s** |
+
+The three loci where Primer3 had a usable pair and this package returned none
+fail on their own stated rules (`No AS primer survived even the relaxed
+constraints`, `No common primer passed the filters`, `No AS primer passed the
+GC/Tm filter`), not on an unstated preference. What the package adds after that
+layer — allele-specific discrimination, 3′-mismatch class, off-target counting —
+is exactly what Primer3 does not do, so this table is the *shared* layer and not
+a ranking of the two tools.
+
+### Specificity against ground truth
+
+`dev/specificity-oracle.R` hits TAIR10 (119.7 Mb) three ways. PolyMarker is not
+an oracle: it is another implementation with its own heuristics, so the right
+answer is enumerated instead.
+
+| Check | Ground truth | Found | Time |
+|---|---|---|---|
+| 3′-seed screen (15 nt, ≤1 substitution, both strands), 8 primers | 312, 12, 43, 37, 73, 91, 9, 18 hits | **8/8 equal** | 4.7 s vs 169 s to enumerate |
+| Exact in-silico PCR (`max_mismatch = 0`), 3 genomic primer pairs | 1, 2, 1 products | **3/3 equal** | 10.6 s |
+| `blastn -task blastn-short` (word 7) as a baseline | 8 full-length exact hits | recall **1.000** | 0.47 s |
+
+BLAST is faster than the seed screen on this panel, but it answers a narrower
+question (exact full-length hits) and returns no per-primer mismatch profile.
+The seed screen's value is the 3′-seed definition itself: it is the quantity the
+specificity gates are written in, and it is now pinned to enumeration.
+
+The third table above is not a benchmark of `blast_primers()`; that path needs
+`rBLAST` and an index, and is covered by its own test.
+
+### Two bugs the cross-checks found
+
+Both were found by running an independent answer, and both are fixed with a
+test that fails without the fix:
+
+1. **UNAFold's "no structure" sentinel** was passed through as a dG: a poly-A
+   primer carried **+999.999 kcal/mol** into any mean or sum over primers.
+   `oligo_dg()` now maps the ~+1000 sentinel to 0 (no stabilisation relative to
+   the unfolded state), and `tests/testthat/test-oligo-dg.R` asserts it.
+2. **`in_silico_pcr()` paired hits from different chromosomes.** The whole
+   genome was scanned inside a per-chromosome loop and the hits were never
+   filtered by chromosome, so one real product came back as twelve phantom
+   ones — at 7× the scan cost. Found by enumerating the same answer. Fixed, with
+   `tests/testthat/test-insilico-pcr.R` pinning the cross-chromosome case.
+
+### What is still missing
+
+Wet-lab validation of a `tidymarkers` design: none exists, and nothing in the
+tables above substitutes for it. A *predictor* of published per-assay success is
+also not possible from this corpus yet: the tables that carry published primer
+triples do not carry both outcomes. The maize 2020 table, for instance, has 100
+rows with primer triples and `design_success = TRUE` on all 100, with no
+`assay_outcome`; a confusion matrix needs the failures too. The denominator-level
+outcome tables (Grewal 2020/2022, Ramirez-Gonzalez 2014/2015, the wheat and
+rice KASP conversion studies) are consumed by `tests/testthat/test-z8-outcomes.R`
+and are the right place to start once per-assay outcomes are landed.
 
 ## Measured versus predicted
 
@@ -126,23 +224,28 @@ Counts are ledger rows whose consumer is a test.
 
 | Area | Rows | Representative anchors | Tests |
 |---|---|---|---|
-| LAMP / AS-LAMP | 33 | time-to-positive windows, terminal-mismatch rules, B2 dinucleotide | `test-lamp-*` |
-| Readout physics | 18 | HRM partition counts, ddPCR LoB/LoD, Sanger VAF floor | `test-readout-physics.R` |
-| Tetra-primer ARMS | 16 | wheat 2023 funnel (39 − 7 = 32), sorghum 2021 mismatch positions verified from sequence, blocked barley record, cycle-decay negative result | `test-arms2-*.R` |
-| KASP gates, platforms and priors | 13 + 8 + 2 | wheat 2019, Sharplab 2021, maize 2020 design→work outcomes; Kwok 1990 mismatch severity; PolyMarker two axes | `test-kasp-platforms.R`, `test-z7-priors.R`, `test-y32-homeolog.R` |
-| Design → working assay (published outcomes) | 12 | Makhoul 2020 strategies, Grewal 2020/2022 and Ramirez-Gonzalez 2014/2015 conversion with denominators, De Silva 2009 HRM, CAPS/LAMP/dPCR funnels | `test-z8-outcomes.R` |
-| HRM | 12 + 4 | jsbbs2018 6 × 16 context grid, IJMS 2022 partition arithmetic, Liew 2004 bands | `test-hrmplant-hrm.R`, `test-hrm-jsbbs2018.R` |
+| LAMP / AS-LAMP | 37 | time-to-positive windows, terminal-mismatch rules, B2 dinucleotide, the ace1r contradiction/rule/metric extracts | `test-lamp-*` |
+| Readout physics | 21 | HRM partition counts, ddPCR LoB/LoD, Sanger VAF floor, JAK2 CV reproduction, HRM minimum input | `test-readout-physics.R` |
+| Tetra-primer ARMS | 17 | wheat 2023 funnel (39 − 7 = 32), sorghum 2021 mismatch positions verified from sequence, blocked barley record, cycle-decay negative result, Liu 2012's 1686 published ASP primers | `test-arms2-*.R`, `test-arms-mismatch-position.R` |
+| KASP gates, platforms and priors | 25 | wheat 2019, Sharplab 2021, maize 2020 design→work outcomes; Kwok 1990 mismatch severity; PolyMarker two axes; LefeVER's three rules and the 4-cell mismatch panel | `test-kasp-platforms.R`, `test-z7-priors.R`, `test-y32-homeolog.R`, `test-kasp-mismatch-type.R` |
+| Design → working assay (published outcomes) | 15 | Makhoul 2020 strategies, Grewal 2020/2022 and Ramirez-Gonzalez 2014/2015 conversion with denominators, De Silva 2009 HRM amplicons/SNPs/strategies, CAPS/LAMP/dPCR funnels | `test-z8-outcomes.R` |
+| HRM | 19 | jsbbs2018 6 × 16 context grid and its summary/recomputed split, IJMS 2022 dTm controls and partition arithmetic, Liew 2004 bands | `test-hrm-curve.R`, `test-hrm-jsbbs2018.R` |
 | dPCR | 8 | Poisson residuals (Dong), E. coli MPS dilution series | `test-dpcr-*.R` |
-| TaqMan / probes | 7 + 6 | wheat 2019 concordance and composition, rice 2018/2024 rates, SARS 2022, C. elegans 2018 | `test-taqman-*`, `test-probes-*` |
+| TaqMan / probes | 13 | wheat 2019 concordance and composition, rice 2018/2024 rates, SARS 2022, C. elegans 2018 | `test-taqman-*`, `test-probes-*` |
 | SNaPshot / typing | 10 | 14-locus × 5-input grid, stutter model | `test-typing-*.R` |
 | RPA / AS-RPA | 10 | mismatch-position and terminal-mismatch claims | `test-rpa-sources.R` |
 | CRISPR-Dx | 4 | Cas12a single and adjacent-double mismatch ratios | `test-crispr-communbiol.R` |
 | Sanger | 4 | measured VAF floor for a named enrichment-plus-caller pipeline | `test-sanger-bda-braf.R` |
 | Polyploid dosage | 4 | cotton negative control, durum, sugarcane | `test-polyploid-*.R` |
 | Tm oracles | 2 | 4096 measured duplex Tm; HRM amplicon Tm | `test-tm-mm2020.R`, `test-tm-hm2025.R` |
+| CAPS | 4 | 1236 palindromic enzymes with their cut offsets, 26 soybean primer pairs, SNP2CAPS predicted-vs-observed patterns, Liu 2016's within-family SNP composition | `test-caps.R` |
+| Registry and IO | 3 | the 80-row source registry, the 45-entry backlog's three statuses, the example locus table's transition chemistry | `test-scientific-data.R`, `test-lamp-status.R`, `test-io.R` |
 
-The rows above account for 173 of the 174 `test` rows; the last one is
-`test-scientific-data.R`, a data-integrity gate rather than a marker family.
+These are all 196 `test` rows: each row is assigned to the first pattern in the
+last column that matches its `test_file`, so the counts sum to the ledger total
+and no row is counted twice. `test-science-ledger.R` and `test-scientific-data.R`
+themselves are the data-integrity gates rather than marker-family tests, and are
+counted under *Registry and IO*.
 
 ## Reproducing
 
@@ -163,11 +266,30 @@ The evidence tables themselves are regenerated from the fetched papers by
 source, and the tests re-assert the arithmetic on the installed CSV so a
 hand-edited table fails without the papers on disk.
 
+The two cross-checks in this document are separate scripts, because they print
+disagreement rather than assert it:
+
+```sh
+Rscript dev/primer3-crosscheck.R   # Primer3 -> results/primer3-{thermo,design}.csv
+Rscript dev/specificity-oracle.R   # TAIR10 ground truth -> results/specificity-oracle.csv
+```
+
+Both need binaries that are not package dependencies (`oligotm`, `ntthal`,
+`primer3_core`, `blastn`, `makeblastdb`) and the OligoArrayAux build; the
+matching tests skip with a named reason when one is absent.
+
 ## Known gaps
 
 - No bench validation, and none claimed in the README.
-- No head-to-head design benchmark (see above).
-- 29 ledger rows are `blocked`: read, extracted, consumed by nothing.
+- The Primer3 comparison covers the *shared* layer only: Primer3 does not design
+  allele-specific primers, so the allelic-discrimination layer has no external
+  comparator at all.
+- No predictor of published per-assay success is fitted: the corpus has
+  denominators at study level, but the tables that carry primer triples do not
+  carry both outcomes (maize 2020 has 100/100 `design_success = TRUE` and no
+  `assay_outcome`).
+- 9 ledger rows are `blocked`: papers that could not be landed, each naming
+  what it would have anchored.
 - 6 sources are closed access; they exist so that the number they would have
   anchored is visibly absent rather than silently invented.
 - `DECIPHER`'s amplification efficiency is a model of hybridisation plus Taq
