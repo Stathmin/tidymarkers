@@ -39,6 +39,9 @@ design_taqman_marker(
 
 \item{min_centrality}{least variant centrality within each probe (\verb{[0, 1]}).}
 
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the mismatch dG and dimer screens.}
+
 \item{...}{reserved for future design options.}
 }
 \value{

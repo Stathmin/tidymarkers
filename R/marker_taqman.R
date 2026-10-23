@@ -131,6 +131,8 @@ taqman_mismatch_dg <- function(probe, variant_pos, alt, engines = NULL) {
 #' @param probe_tm accepted probe Tm window (see the Tm-scale assumption above).
 #' @param gc_range accepted GC window (primers and probes).
 #' @param min_centrality least variant centrality within each probe (`[0, 1]`).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the mismatch dG and dimer screens.
 #' @param ... reserved for future design options.
 #' @return a `marker_taqman` list (`snp`, `primers`, `probes` - one row per allele -,
 #'   `amplicon`, `compatibility` - the joint dimer/hairpin screen over the pair and

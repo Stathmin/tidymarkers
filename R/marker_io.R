@@ -52,7 +52,11 @@ normalise_allele <- function(x) {
 #'   normalised with [normalise_allele()].
 #' @examples
 #' vcf <- withr::local_tempfile(fileext = ".vcf")
-#' writeLines("##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n1\t250\t.\tA\tG\t.\t.\t.", vcf)
+#' writeLines(c(
+#'   "##fileformat=VCFv4.2",
+#'   "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+#'   "1\t250\t.\tA\tG\t.\t.\t."
+#' ), vcf)
 #' read_variants_vcf(vcf)
 #' @family KASP input
 #' @export

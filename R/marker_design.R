@@ -215,8 +215,8 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param window plus-strand template window.
 #' @param lengths AS-primer lengths to try.
 #' @param stab_ats positions (from the 3' end) for the stabilising mismatch;
-#'   `NA` = none.  The decided policy ranks [ARMS_EXTRA_MISMATCH_POSITION] first
-#'   and [ARMS_EXTRA_MISMATCH_FALLBACK] second (`stab_policy` records which row
+#'   `NA` = none.  The decided policy ranks `ARMS_EXTRA_MISMATCH_POSITION` first
+#'   and `ARMS_EXTRA_MISMATCH_FALLBACK` second (`stab_policy` records which row
 #'   carries which); a position outside `stab_ats` is never invented.
 #' @param linked optional two-column table (`offset` 1-based within `window`,
 #'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and

@@ -26,7 +26,7 @@ selectable, and nothing needs a graphics device.
 }
 \details{
 Structure only, deliberately: a caller may hand this any data frame with
-\code{name}, \code{label}, \code{stage}, \code{kind} (see \code{\link[=decision_solve]{decision_solve()}}) - it is how the
+\code{name}, \code{label}, \code{stage}, \code{kind} (see \code{decision_solve()}) - it is how the
 figures of the decision graphs are drawn outside a KASP run.
 
 The page is sized from the solved drawing, so it keeps the solver's near

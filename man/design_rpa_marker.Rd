@@ -41,6 +41,9 @@ design_rpa_marker(
 gate) and only used by the shared candidate screener.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend for the dimer filter.}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the dimer/hairpin screen.}
 }
 \value{
 a \code{marker_rpa} list (\code{snp}, \code{primers}, \code{probe}, \code{amplicon},

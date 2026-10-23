@@ -276,7 +276,7 @@ plot_fragment_readout <- function(marker, scheme, genome = NULL) {
   if (is.null(d) || !nrow(d) || anyNA(d$size)) {
     return(NULL)
   }
-  d$label <- paste0(d$formula, " · ", d$size, " bp")
+  d$label <- paste0(d$formula, " \u00b7 ", d$size, " bp")
   d$label[d$delta > 0L] <- paste0(d$label[d$delta > 0L], " (+", d$delta[d$delta > 0L], ")")
   d$allele <- factor(d$allele, levels = d$allele)
   fills <- c(REF = "#E7E5E4", "ALT (+1 unit)" = "#FECACA", ALT = "#FECACA")

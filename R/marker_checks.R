@@ -128,7 +128,7 @@ marker_alt_alleles <- function(marker, pos = marker$snp$pos[1L], ref = marker$sn
 
 #' Population and haplotype checks as acceptance rows
 #'
-#' [marker_population_checks()] reports the population facts as display rows
+#' `marker_population_checks()` reports the population facts as display rows
 #' (`ok` / `broken`, a formatted `value`).  The verdict needs the same facts in
 #' the check vocabulary, so each row becomes a `pass` / `fail` / `unknown`: a
 #' `broken` row is a `fail` (a monomorphic site, a primer sitting on a variant, a
@@ -207,7 +207,7 @@ marker_population_gate <- function(marker) {
 #' `limit` then carries the relaxed bar and a `(relaxed)` marker.
 #'
 #' The population layer is part of the verdict, not a warning beside it (Z6): when
-#' the assay carries `$population`, the rows of [marker_population_checks()] are
+#' the assay carries `$population`, the rows of `marker_population_checks()` are
 #' appended as checks, so a CAPS site that is not polymorphic, a CRISPR guide or
 #' PAM that is not conserved, or a primer sitting on a variant is a `fail`, and an
 #' ALT frequency that is not known is `unknown` - never a pass.  The warnings are
@@ -547,7 +547,7 @@ marker_with_population_checks <- function(out, marker) {
 #'
 #' A marker's *population* layer is part of this verdict (Z6).  When `x` is a
 #' marker or assay carrying `$population`, its haplotype facts are folded in from
-#' [marker_population_checks()] even if `$evaluation` was stored before those rows
+#' `marker_population_checks()` even if `$evaluation` was stored before those rows
 #' existed: a site that is not polymorphic in the supplied population, or a primer
 #' that cannot bind the haplotypes it must, dooms the marker, and a frequency that
 #' is not known makes the verdict `"unknown"` rather than `"usable"`.

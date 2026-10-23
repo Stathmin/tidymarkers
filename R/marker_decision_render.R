@@ -106,7 +106,7 @@ pal_colour <- function(pal, key, default = "#57534E") {
 #' selectable, and nothing needs a graphics device.
 #'
 #' Structure only, deliberately: a caller may hand this any data frame with
-#' `name`, `label`, `stage`, `kind` (see [decision_solve()]) - it is how the
+#' `name`, `label`, `stage`, `kind` (see `decision_solve()`) - it is how the
 #' figures of the decision graphs are drawn outside a KASP run.
 #'
 #' The page is sized from the solved drawing, so it keeps the solver's near

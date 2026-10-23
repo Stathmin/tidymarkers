@@ -56,7 +56,9 @@ Imports:
     cli,
     withr,
     rlang,
-    glue
+    glue,
+    methods,
+    systemfonts
 Suggests:
     rmarkdown,
     knitr,
@@ -78,6 +80,10 @@ Suggests:
     lobstr,
     rprimer,
     snow,
+    DBI,
+    RSQLite,
+    xml2,
+    crisprVerse,
     spelling,
     roxygen2,
     styler,
