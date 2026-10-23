@@ -194,3 +194,37 @@ test_that("evaluation_evidence takes the weakest rung among passing checks only"
   )
   expect_true(is.na(evaluation_evidence(skipped, criteria = spec)))
 })
+
+test_that("ZW4.5: the text export names the rung behind each check when asked", {
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  for (sc in marker_schemes()$scheme) {
+    classic <- marker_decision_text(sc)
+    # the default output is the recorded one, unchanged, and carries no rungs
+    expect_identical(marker_decision_text(sc, evidence = FALSE), classic, info = sc)
+    expect_false(any(grepl("\\[[a-z_]+\\]$", classic)), info = sc)
+
+    tagged <- marker_decision_text(sc, evidence = TRUE)
+    # the flag only appends a suffix: every classic line survives once the rung
+    # is stripped back off
+    stripped <- sub("  \\[[a-z_]+\\]$", "", tagged)
+    expect_true(all(classic %in% stripped), info = sc)
+    expect_gt(length(tagged), length(classic))
+    rungs <- sub(
+      "^.*\\[([a-z_]+)\\]$", "\\1",
+      grep("  \\[[a-z_]+\\]$", tagged, value = TRUE)
+    )
+    expect_gt(length(rungs), 0L)
+    # every rung is one the registry knows, never a free-text grade
+    expect_true(all(rungs %in% CRITERION_EVIDENCE), info = sc)
+    # the header names the weakest rung the scheme actually relies on
+    crit <- marker_criteria(scheme = sc)
+    ev <- tidymarkers:::criterion_evidence(spec$evidence[match(crit$id, spec$id)])
+    if (length(ev)) {
+      expect_equal(
+        sub("^.*: ", "", grep("^weakest rung", tagged, value = TRUE)),
+        levels(ev)[min(as.integer(ev))],
+        info = sc
+      )
+    }
+  }
+})

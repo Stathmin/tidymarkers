@@ -4,10 +4,13 @@
 \alias{marker_decision_text}
 \title{The decision tree of a scheme as text}
 \usage{
-marker_decision_text(scheme = "snp")
+marker_decision_text(scheme = "snp", evidence = FALSE)
 }
 \arguments{
 \item{scheme}{a scheme id (see \code{\link[=marker_schemes]{marker_schemes()}}).}
+
+\item{evidence}{append the evidence rung of every check and the weakest rung
+of the scheme (default \code{FALSE}: the classic output, unchanged).}
 }
 \value{
 a character vector, one element per line.
@@ -18,9 +21,19 @@ the scheme's facts, the target-site checks, each selection stage's gates (with
 hardness and floors), ladder, tiers and edges, the assay acceptance checks, and
 the verdict.
 }
+\details{
+By default the text says what each check \emph{is}.  With \code{evidence = TRUE} every
+check line also carries the rung its threshold rests on, weakest first:
+\code{rule_of_thumb} < \code{vendor_guideline} < \code{primary_literature} < \code{fitted_here}
+(the ordered factor \code{criterion_evidence()} reads).  A \code{pass} on a rule of
+thumb then reads as one
+instead of as a verified fact, and the last line names the weakest rung the
+scheme relies on.  The default output is unchanged, so recorded verdicts
+still compare line for line.
+}
 \examples{
 cat(marker_decision_text(), sep = "\n")
-cat(marker_decision_text("duplex"), sep = "\n")
+cat(marker_decision_text("duplex", evidence = TRUE), sep = "\n")
 }
 \seealso{
 Other KASP checks:

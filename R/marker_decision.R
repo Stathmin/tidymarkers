@@ -421,24 +421,41 @@ plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
 #' the scheme's facts, the target-site checks, each selection stage's gates (with
 #' hardness and floors), ladder, tiers and edges, the assay acceptance checks, and
 #' the verdict.
+#'
+#' By default the text says what each check *is*.  With `evidence = TRUE` every
+#' check line also carries the rung its threshold rests on, weakest first:
+#' `rule_of_thumb` < `vendor_guideline` < `primary_literature` < `fitted_here`
+#' (the ordered factor `criterion_evidence()` reads).  A `pass` on a rule of
+#' thumb then reads as one
+#' instead of as a verified fact, and the last line names the weakest rung the
+#' scheme relies on.  The default output is unchanged, so recorded verdicts
+#' still compare line for line.
 #' @param scheme a scheme id (see [marker_schemes()]).
+#' @param evidence append the evidence rung of every check and the weakest rung
+#'   of the scheme (default `FALSE`: the classic output, unchanged).
 #' @return a character vector, one element per line.
 #' @examples
 #' cat(marker_decision_text(), sep = "\n")
-#' cat(marker_decision_text("duplex"), sep = "\n")
+#' cat(marker_decision_text("duplex", evidence = TRUE), sep = "\n")
 #' @family KASP checks
 #' @export
-marker_decision_text <- function(scheme = "snp") {
+marker_decision_text <- function(scheme = "snp", evidence = FALSE) {
   info <- marker_scheme(scheme)
   crit <- marker_criteria(scheme = scheme)
   s <- marker_decision_schema(scheme)
   n <- s$nodes
   e <- s$edges
   lab <- rlang::set_names(n$label, n$name)
+  # the public view deliberately does not expose `evidence` (ZW4), so the rung is
+  # looked up in the spec by id: the same row, one column further on
+  rung <- if (isTRUE(evidence)) {
+    spec <- criterion_spec(KASP_LIMITS)
+    rlang::set_names(criterion_evidence(spec$evidence), spec$id)
+  }
 
   # one formatted line per check: a hard marker (or `soft`) then label and limit
   check_lines <- function(cc, width, soft = "check") {
-    purrr::pmap_chr(
+    out <- purrr::pmap_chr(
       list(cc$hard, cc$label, cc$limit),
       function(hard, label, limit) {
         mark <- if (hard) "! HARD" else soft
@@ -447,6 +464,13 @@ marker_decision_text <- function(scheme = "snp") {
         )
       }
     )
+    if (!is.null(rung)) {
+      r <- unname(rung[cc$id])
+      r <- as.character(r)
+      r[is.na(r)] <- "unknown"
+      out <- paste0(out, "  [", r, "]")
+    }
+    out
   }
   section <- function(stage, title) {
     cc <- crit[crit$stage == stage, ]
@@ -497,6 +521,18 @@ marker_decision_text <- function(scheme = "snp") {
       " | zygosity: {info$zygosity} | loci: {info$loci} | amplicon: {info$amplicon}"
     ), ""
   )
+  if (!is.null(rung)) {
+    own <- rung[match(crit$id, names(rung))]
+    own <- own[!is.na(own)]
+    weakest <- if (length(own)) {
+      levels(own)[min(as.integer(own))]
+    } else {
+      NA_character_
+    }
+    out <- c(out, glue::glue(
+      "evidence rungs, weakest first: {paste(CRITERION_EVIDENCE, collapse = ' < ')}"
+    ), glue::glue("weakest rung this scheme relies on: {weakest}"), "")
+  }
   if (any(crit$stage == "site")) {
     out <- c(out, section("site", "target site checks"), "")
   }
