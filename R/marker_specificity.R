@@ -1213,8 +1213,8 @@ pam_state <- function(observed, pattern = "TTTV") {
 #'   `in_silico_pcr(scheme = )` is graded exactly as a bare one.
 #' @param scheme specificity scheme ([specificity_policy()]).
 #' @param genome optional genome; when supplied, a missing engine turns the
-#'   answer into `unknown` (see [specificity_backend()]).
-#' @param pam optional PAM/PFS observation for `"crispr"` (see [pam_state()]).
+#'   answer into `unknown` (see `specificity_backend()`).
+#' @param pam optional PAM/PFS observation for `"crispr"` (see `pam_state()`).
 #' @return a `specificity_verdict` list: `verdict` (`"pass"`/`"fail"`/
 #'   `"unknown"`), `reason` (an English sentence), `scheme`, `policy`,
 #'   `n_products`, `n_tolerated`, `n_mismatch` (best product), `best` (one-row

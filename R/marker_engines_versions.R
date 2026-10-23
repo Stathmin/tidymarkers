@@ -116,7 +116,7 @@ marker_engine_stamp <- function() {
 #' guessed stamp would claim provenance the numbers do not have.
 #'
 #' A `dplyr` verb or `bind_rows()` drops attributes, so use
-#' [marker_with_stamp()] to put the stamp back after combining tables.
+#' `marker_with_stamp()` to put the stamp back after combining tables.
 #'
 #' @param x a checks tibble (see [marker_design_checks()]).
 #' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
@@ -124,7 +124,8 @@ marker_engine_stamp <- function() {
 #' \dontrun{
 #' # needs the TAIR10 genome and Ensembl Plants variation (network on first use)
 #' g <- ath_genome()
-#' snp <- pick_target_snp(ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6), g, ensembl_gene("AT4G00650"))
+#' v <- ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6)
+#' snp <- pick_target_snp(v, g, ensembl_gene("AT4G00650"))
 #' marker_evaluation_stamp(marker_design_checks(snp))
 #' }
 #' @family KASP utilities

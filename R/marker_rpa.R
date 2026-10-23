@@ -512,6 +512,8 @@ rpa_variant_gate <- function(under, pos, fwd_end = NA_real_, rev_start = NA_real
 #' @param tm_range accepted primer Tm window; open by default (Tm is not the RPA
 #'   gate) and only used by the shared candidate screener.
 #' @param BPPARAM optional `BiocParallel` backend for the dimer filter.
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the dimer/hairpin screen.
 #' @return a `marker_rpa` list (`snp`, `primers`, `probe`, `amplicon`,
 #'   `compatibility` - the joint dimer/hairpin screen over the pair and the probe -
 #'   `gates` - the evaluated gate table - and `relaxed`, the soft gates it had to

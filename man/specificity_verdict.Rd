@@ -16,9 +16,9 @@ An optional \code{scheme}/\code{tolerated} pair is recomputed here, so a table f
 \item{scheme}{specificity scheme (\code{\link[=specificity_policy]{specificity_policy()}}).}
 
 \item{genome}{optional genome; when supplied, a missing engine turns the
-answer into \code{unknown} (see \code{\link[=specificity_backend]{specificity_backend()}}).}
+answer into \code{unknown} (see \code{specificity_backend()}).}
 
-\item{pam}{optional PAM/PFS observation for \code{"crispr"} (see \code{\link[=pam_state]{pam_state()}}).}
+\item{pam}{optional PAM/PFS observation for \code{"crispr"} (see \code{pam_state()}).}
 }
 \value{
 a \code{specificity_verdict} list: \code{verdict} (\code{"pass"}/\code{"fail"}/

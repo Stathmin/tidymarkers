@@ -38,6 +38,9 @@ design_dpcr_marker(
 
 \item{probe_tm_margin}{minimal probe Tm above the primers (the ~8-10 C rule;
 8 is used as the floor).}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the dimer/hairpin screen.}
 }
 \value{
 a \code{marker_dpcr} list (\code{snp}, \code{primers}, \code{probes} - one allele-specific

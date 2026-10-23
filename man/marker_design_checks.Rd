@@ -48,7 +48,7 @@ tolerates the deviation, so "relaxed" must not also read as "failed" (C5).  Its
 \code{limit} then carries the relaxed bar and a \code{(relaxed)} marker.
 
 The population layer is part of the verdict, not a warning beside it (Z6): when
-the assay carries \verb{$population}, the rows of \code{\link[=marker_population_checks]{marker_population_checks()}} are
+the assay carries \verb{$population}, the rows of \code{marker_population_checks()} are
 appended as checks, so a CAPS site that is not polymorphic, a CRISPR guide or
 PAM that is not conserved, or a primer sitting on a variant is a \code{fail}, and an
 ALT frequency that is not known is \code{unknown} - never a pass.  The warnings are

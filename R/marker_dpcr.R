@@ -148,6 +148,8 @@ grade_one_marker <- function(graded, gates, relax_order, tiers, gate_margin, gat
 #' @param probe_gc accepted probe GC window.
 #' @param probe_tm_margin minimal probe Tm above the primers (the ~8-10 C rule;
 #'   8 is used as the floor).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the dimer/hairpin screen.
 #' @return a `marker_dpcr` list (`snp`, `primers`, `probes` - one allele-specific
 #'   probe per allele - `amplicon`, `compatibility` - the joint dimer/hairpin
 #'   screen over the pair and both probes, and `readout` - the per-allele probe
