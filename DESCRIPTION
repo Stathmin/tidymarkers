@@ -50,6 +50,7 @@ Imports:
     patchwork,
     httr2,
     jsonlite,
+    digest,
     fs,
     processx,
     tidygraph,

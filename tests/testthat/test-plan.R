@@ -149,7 +149,133 @@ test_that("marker_plot and marker_export work off a solved plan", {
   expect_s3_class(marker_plot(solved), "ggplot")
   dir <- withr::local_tempdir()
   marker_export(solved, dir = dir)
-  for (f in c("markers.csv", "attempts.csv", "primers.csv", "solved.rds")) {
+  for (f in c(
+    "markers.csv", "attempts.csv", "primers.csv", "solved.rds",
+    # the artefact sidecars: the manifest, the decision log, the gate table
+    "artefact.json", "decisions.csv", "checks.csv", "targets.csv"
+  )) {
     expect_true(fs::file_exists(fs::path(dir, f)), info = f)
   }
+  expect_true("solved.rds" %in% list.files(dir))
+})
+
+# --- the artefact (YP3): provenance, decisions, replay ----------------------
+# A synthetic poly-A reference, so the rejection path runs without OligoArrayAux,
+# the TAIR10 download or a full chemistry ladder: every candidate is doomed by
+# the GC filter, which is exactly the row a decision log must never leave blank.
+rejected_solve <- local({
+  value <- NULL
+  function() {
+    if (is.null(value)) {
+      genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("A", 600L)))
+      plan <- marker_plan(genome) +
+        marker_targets(chrom = "Chr1", pos = 300L, ref = "A", alt = "G") +
+        marker_tech(schemes = "snp")
+      value <<- suppressWarnings(
+        marker_solve(plan, min_disc = 0.4, progress = FALSE)
+      )
+    }
+    value
+  }
+})
+
+test_that("a knob that differs from the designer default is its own manifest field", {
+  ov <- artefact_overrides(list(min_disc = 0.4, flank = 150L, cores = 1L), "snp")
+  expect_equal(ov$argument, "min_disc")
+  expect_equal(ov$default[[1L]], 0.5)
+  expect_true(ov$overridden[[1L]])
+  # a knob is compared only against the scheme that declares it: `probe_gc` is
+  # a dPCR argument, so KASP is not reported as having left it alone
+  one <- artefact_overrides(list(probe_gc = 0.5), c("snp", "dpcr"))
+  expect_equal(unique(one$scheme), "dpcr")
+  # a knob no designer declares is kept, with an unknown default, so a typo
+  # shows up in the manifest instead of silently changing nothing
+  odd <- artefact_overrides(list(not_a_knob = 1), "snp")
+  expect_equal(odd$argument, "not_a_knob")
+  expect_true(is.na(odd$default[[1L]]))
+  expect_true(is.na(odd$scheme[[1L]]))
+})
+
+test_that("the artefact records its inputs, its id and every rejection's reason", {
+  solved <- rejected_solve()
+  art <- marker_artefact(solved, dir = withr::local_tempdir())
+  expect_s3_class(art, "marker_artefact")
+  expect_match(art$id, "^[0-9a-f]{64}$")
+  m <- art$manifest
+  expect_identical(m$schema, "tidymarkers/artefact@1")
+  expect_equal(m$counts$targets, 1L)
+  expect_equal(m$counts$rejected, 1L)
+  # the reference is named and hashed, and an installed engine is never dropped
+  expect_equal(m$inputs[[1L]]$role, "genome")
+  expect_true(nzchar(m$inputs[[1L]]$sha256))
+  expect_identical(names(m$engine_stamp), marker_engine_names)
+  # every rejected candidate says why, and at which stage
+  dec <- art$decisions
+  expect_true(nrow(dec) >= 1L)
+  rej <- dec[dec$outcome == "rejected", , drop = FALSE]
+  expect_true(all(nzchar(rej$reason)))
+  expect_true(all(nzchar(rej$stage)))
+  # the override travels as a field of its own, not buried in `parameters`
+  ov <- jsonlite::fromJSON(fs::path(art$dir, "artefact.json"), simplifyVector = FALSE)$overrides
+  expect_equal(purrr::map_chr(ov, "argument"), "min_disc")
+  expect_equal(purrr::map_dbl(ov, "value"), 0.4)
+})
+
+test_that("a decision row is chosen only for its own target's winner", {
+  # the attempt matrix is longer than the report (one row per target), so the
+  # `chosen` flag must be built per target: a recycled report vector would mark
+  # a different target's row
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
+  plan <- marker_plan(genome) +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G") +
+    marker_targets(chrom = "Chr1", pos = 40L, ref = "T", alt = "C") +
+    marker_tech(schemes = c("snp", "caps"))
+  tg <- plan$targets
+  cache <- new.env(parent = emptyenv())
+  winner <- structure(list(scheme = "snp"), class = "marker_assay")
+  assign(paste(target_key(tg[1L, , drop = FALSE]), "snp", "", sep = "||"), winner, envir = cache)
+  assign(
+    paste(target_key(tg[2L, , drop = FALSE]), "snp", "", sep = "||"),
+    marker_doomed("no AS primer passed", "as", tg[2L, , drop = FALSE], NULL),
+    envir = cache
+  )
+  solved <- structure(
+    list(
+      report = tibble::tibble(
+        label = tg$label, chrom = tg$chrom, pos = tg$pos, ref = tg$ref,
+        alt = tg$alt, type = tg$type, scheme = c("snp", NA_character_),
+        cost = c(1, NA), ok = c(TRUE, FALSE), tried = c("snp", "snp, caps"),
+        marker = list(winner, NULL)
+      ),
+      attempts = tibble::tibble(
+        label = c(tg$label[1L], tg$label[2L], tg$label[2L]),
+        scheme = c("snp", "snp", "caps"), cost = c(1, 1, 10),
+        ok = c(TRUE, FALSE, FALSE)
+      ),
+      plan = plan, schemes = c("snp", "caps"), cache = cache, knobs = list()
+    ),
+    class = "marker_solved"
+  )
+  dec <- artefact_decisions(solved)
+  expect_equal(nrow(dec), 3L)
+  expect_equal(sum(dec$chosen), 1L)
+  expect_identical(dec$target[dec$chosen], as.character(tg$label[1L]))
+  expect_true(all(nzchar(dec$reason[!dec$chosen])))
+  expect_identical(dec$stage[!dec$chosen][[1L]], "as")
+})
+
+test_that("marker_replay re-runs the design and compares the verdicts", {
+  solved <- rejected_solve()
+  art <- marker_artefact(solved, dir = withr::local_tempdir())
+  # a fresh cache: a replay that reads the original cache tests nothing
+  rp <- suppressWarnings(marker_replay(art))
+  expect_s3_class(rp, "marker_replay")
+  expect_true(rp$inputs_match)
+  expect_true(rp$match)
+  expect_equal(nrow(rp$table), 1L)
+  expect_identical(rp$table$recorded_verdict, rp$table$replayed_verdict)
+  expect_output(print(rp), "marker_replay")
+  # the id is a property of the design, not of when it was written
+  again <- marker_artefact(solved, dir = withr::local_tempdir())
+  expect_identical(art$id, again$id)
 })

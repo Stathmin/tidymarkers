@@ -22,8 +22,10 @@ that designs (a full attempt matrix; slower).}
 }
 \value{
 a \code{marker_solved}: \code{report} (one row per target: \code{scheme}, \code{cost}, \code{ok},
-\code{tried}, \code{marker}), \code{attempts} (one row per target x tried scheme) and the
-\code{plan}/\code{schemes}/\code{cache}.
+\code{tried}, \code{marker}), \code{attempts} (one row per target x tried scheme), the
+\code{plan}/\code{schemes}/\code{cache}, and \code{knobs} - the \code{...} the design ran with, kept
+so \code{\link[=marker_artefact]{marker_artefact()}} can record them and \code{\link[=marker_replay]{marker_replay()}} can re-run the
+same design instead of a similar one.
 }
 \description{
 Runs the plan's targets against the plan's allowed chemistries, cheapest-first
@@ -46,12 +48,14 @@ solved
 }
 \seealso{
 Other KASP plan:
+\code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_export]{marker_export()}},
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
 \code{\link[=marker_primers]{marker_primers()}},
+\code{\link[=marker_replay]{marker_replay()}},
 \code{\link[=marker_run_context]{marker_run_context()}},
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tech]{marker_tech()}},

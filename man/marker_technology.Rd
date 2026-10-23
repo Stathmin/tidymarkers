@@ -43,8 +43,10 @@ and re-run \code{marker_technology()} to restore it - a declarative share format
 the next Y1 slice).
 }
 \examples{
-marker_technology("giga_snp", base = "snp",
-                  params = list(as_lengths = 24:30), overwrite = TRUE)
+marker_technology("giga_snp",
+  base = "snp",
+  params = list(as_lengths = 24:30), overwrite = TRUE
+)
 marker_schemes()
 }
 \seealso{

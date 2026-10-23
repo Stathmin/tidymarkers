@@ -125,8 +125,10 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #'   that designs (a full attempt matrix; slower).
 #' @param progress show a progress bar (default: when interactive).
 #' @return a `marker_solved`: `report` (one row per target: `scheme`, `cost`, `ok`,
-#'   `tried`, `marker`), `attempts` (one row per target x tried scheme) and the
-#'   `plan`/`schemes`/`cache`.
+#'   `tried`, `marker`), `attempts` (one row per target x tried scheme), the
+#'   `plan`/`schemes`/`cache`, and `knobs` - the `...` the design ran with, kept
+#'   so [marker_artefact()] can record them and [marker_replay()] can re-run the
+#'   same design instead of a similar one.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -180,7 +182,10 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
     purrr::list_rbind()
 
   structure(
-    list(report = report, attempts = attempts, plan = plan, schemes = schemes, cache = cache),
+    list(
+      report = report, attempts = attempts, plan = plan, schemes = schemes,
+      cache = cache, knobs = dots
+    ),
     class = "marker_solved"
   )
 }
@@ -227,10 +232,19 @@ marker_plot <- function(solved, ...) {
 
 #' Write a solved plan to disk
 #'
-#' Writes the target report, the attempt matrix, every solved marker's primers
-#' and the whole object.
+#' Writes the target report, the attempt matrix, every solved marker's primers,
+#' the whole object, and - through [marker_artefact()] - the manifest
+#' (`artefact.json`), the per-candidate decision log (`decisions.csv`), the gate
+#' table of the chosen markers (`checks.csv`) and the target table.
+#'
+#' The artefact is the part a later reader can disagree with: it names the
+#' hashed inputs, the engine versions and the overridden knobs, and
+#' [marker_replay()] re-runs the design from `solved.rds` and compares.  Pass
+#' `artefact = FALSE` for the bare tables.
 #' @param solved a `marker_solved` (see [marker_solve()]).
 #' @param dir output directory (default: a temp dir).
+#' @param artefact also write the self-documenting manifest and decision log
+#'   (default `TRUE`).
 #' @return `dir`, invisibly.
 #' @examples
 #' \dontrun{
@@ -238,7 +252,7 @@ marker_plot <- function(solved, ...) {
 #' }
 #' @family KASP plan
 #' @export
-marker_export <- function(solved, dir = tempdir()) {
+marker_export <- function(solved, dir = tempdir(), artefact = TRUE) {
   if (!inherits(solved, "marker_solved")) {
     cli::cli_abort(gettext("`solved` must be a marker_solved (see marker_solve())."))
   }
@@ -249,7 +263,12 @@ marker_export <- function(solved, dir = tempdir()) {
   readr::write_csv(solved$attempts, fs::path(dir, "attempts.csv"))
   readr::write_csv(marker_primers_table(solved), fs::path(dir, "primers.csv"))
   saveRDS(solved, fs::path(dir, "solved.rds"))
-  cli::cli_alert_success(gettext("Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."))
+  if (isTRUE(artefact)) {
+    marker_artefact(solved, dir = dir)
+  }
+  cli::cli_alert_success(gettext(
+    "Wrote {.path {dir}} ({paste(sort(list.files(dir)), collapse = ', ')})."
+  ))
   invisible(dir)
 }
 

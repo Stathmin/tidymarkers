@@ -73,8 +73,10 @@ marker_technology_def <- function(name) {
 #' @param overwrite replace an existing technology of the same `name`.
 #' @return the technology spec, invisibly.
 #' @examples
-#' marker_technology("giga_snp", base = "snp",
-#'                   params = list(as_lengths = 24:30), overwrite = TRUE)
+#' marker_technology("giga_snp",
+#'   base = "snp",
+#'   params = list(as_lengths = 24:30), overwrite = TRUE
+#' )
 #' marker_schemes()
 #' @family KASP technologies
 #' @export
@@ -120,8 +122,10 @@ marker_technology <- function(name, base = "snp", params = list(),
 #' @return a tibble with `scheme`, `base`, `family`, `specificity`, `params`;
 #'   zero rows when none were composed.
 #' @examples
-#' marker_technology("giga_snp", base = "snp",
-#'                   params = list(as_lengths = 24:30), overwrite = TRUE)
+#' marker_technology("giga_snp",
+#'   base = "snp",
+#'   params = list(as_lengths = 24:30), overwrite = TRUE
+#' )
 #' marker_technologies()
 #' @family KASP technologies
 #' @export

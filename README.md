@@ -138,7 +138,9 @@ primer pair" (composition, structure, repeats, off-target).
 | `marker_risk()` | `low` / `medium` / `high` with the reasons behind it |
 | `marker_decision_text()` | the decision graph of a scheme as readable text |
 | `write_kasp_results()` | `marker_design.csv`, `marker_primer_qc.csv`, `marker_dimer_dg.csv` |
-| `marker_export()` | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` |
+| `marker_export()` | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact |
+| `marker_artefact()` | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv` |
+| `marker_replay()` | re-runs a saved artefact and compares the verdict per target |
 | `marker_primers()` | the oligos of any marker, as a named vector or tidy table |
 
 ## Documentation
