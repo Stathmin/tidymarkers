@@ -22,6 +22,16 @@ test_that("stamp names every engine the measurement layer depends on", {
 
 test_that("every required engine reports a non-empty version string", {
   stamp <- marker_engine_stamp()
+  # Off a full reference machine (CRAN, or a CI runner without BLAST+) an
+  # engine is legitimately absent, and the stamp says so with NA.  The claim
+  # enforced here is the one that holds everywhere: an engine that is
+  # installed is reported, and none is reported as an empty string.
+  missing <- REQUIRED_ENGINES[is.na(stamp[REQUIRED_ENGINES])]
+  if (length(missing)) {
+    testthat::skip(paste0(
+      "not installed on this machine: ", paste(missing, collapse = ", ")
+    ))
+  }
   for (engine in REQUIRED_ENGINES) {
     v <- stamp[[engine]]
     expect_false(is.na(v), info = paste(engine, "is not installed on this machine"))
@@ -62,7 +72,15 @@ test_that("the stamp flattens to CSV and JSON for a manifest column", {
   expect_length(js, 1L)
   parsed <- jsonlite::fromJSON(js)
   expect_true(all(REQUIRED_ENGINES %in% names(parsed)))
-  expect_equal(unname(parsed[["BLAST+"]]), unname(marker_engine_stamp()[["BLAST+"]]))
+  # NA has no JSON form, so a missing engine serialises as the string "NA".
+  # The field must still be there (tested above); its value must round-trip
+  # exactly when the engine is installed.
+  blast <- unname(marker_engine_stamp()[["BLAST+"]])
+  if (is.na(blast)) {
+    expect_identical(unname(parsed[["BLAST+"]]), "NA")
+  } else {
+    expect_equal(unname(parsed[["BLAST+"]]), blast)
+  }
 })
 
 assay_with_stamp <- local({

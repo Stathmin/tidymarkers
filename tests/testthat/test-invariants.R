@@ -75,6 +75,7 @@ test_that("ZW0 M2: under a swap, the AS 3' bases exchange between FAM and HEX", 
 
 test_that("ZW0 M3: shifting the coordinate frame does not change a design verdict", {
   skip_if_not_installed("Rsamtools")
+  skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
   # The SAME core sequence, in two frames.  Both frames are padded at both ends
   # so that a contig edge can never be the reason a design differs -- otherwise
   # the test measures the edge, not the frame.  The pads are unrelated sequence,
@@ -133,6 +134,7 @@ test_that("ZW0 M3: shifting the coordinate frame does not change a design verdic
 })
 
 test_that("ZW0 M4: renaming the chromosome changes nothing but the label", {
+  skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
   gen <- syn_genome(seed = 1L, n = 400L)
   g <- indexed_syn_genome(gen)
   m1 <- NULL
