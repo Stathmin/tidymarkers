@@ -29,6 +29,10 @@ test_that("a self-complementary oligo folds into a hairpin; poly-A cannot", {
   palindrome <- "GCGCGCGCGCGCGCGCGCGC" # perfect self-complementary stem
   poly_a <- "AAAAAAAAAAAAAAAAAAAA" # nothing to pair with
   expect_lt(oligo_dg(palindrome), oligo_dg(poly_a))
+  # UNAFold's "no structure" sentinel is ~+1000 kcal/mol from -q; it must be
+  # mapped to 0, not passed through (it poisons any mean or sum over primers).
+  expect_identical(oligo_dg(poly_a), 0)
+  expect_identical(oligo_dg("A", "A"), 0)
 })
 
 # Conditions / engines seam ---------------------------------------------------

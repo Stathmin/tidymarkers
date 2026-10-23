@@ -427,7 +427,10 @@ engine_has <- function(capability, engines = NULL) {
 #' @param na sodium concentration (M).
 #' @param temp temperature (C).
 #' @return a single numeric dG in kcal/mol, or `NA_real_` when OligoArrayAux is
-#'   unavailable or the run fails.
+#'   unavailable or the run fails.  "No foldable structure" is `0` (no
+#'   stabilisation relative to the unfolded state): UNAFold reports that case as
+#'   a large positive sentinel (~1000 kcal/mol) from `-q`, which is mapped here
+#'   rather than passed through.
 #' @examples
 #' \dontrun{
 #' oligo_dg("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
@@ -476,6 +479,14 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   if (length(dg) != 1L || !is.finite(dg)) {
     cli::cli_warn(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
     return(NA_real_)
+  }
+  # hybrid-ss-min / hybrid-min print a large POSITIVE value (998.701, 999.999,
+  # 1002.39 were all observed with -q) when no fold or duplex can be found.
+  # That is "no structure" (dG ~ 0 relative to the unfolded state), not a
+  # binding free energy: passing it through put +999.999 kcal/mol into any mean
+  # or sum over primers (found by the Primer3 cross-check, dev/primer3-crosscheck.R).
+  if (dg > 100) {
+    return(0)
   }
   dg
 }

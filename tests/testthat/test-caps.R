@@ -169,3 +169,99 @@ test_that("design_caps_marker evaluates the caps gates and reports the product g
   expect_equal(sum(m$fragments_alt), m$primers$product)
   expect_gte(m$gap, KASP_CAPS_GAP_MIN)
 })
+
+## --- the CAPS extracts -------------------------------------------------------
+# The enzyme catalogue and the three paper tables behind the CAPS family are read
+# from inst/extdata, so what the scanner is handed is asserted, not assumed.
+
+caps_ext <- function(name) {
+  readr::read_csv(testthat::test_path("..", "..", "inst", "extdata", name),
+    show_col_types = FALSE, na = c("", "NA")
+  )
+}
+
+test_that("restriction_enzymes: one row per palindromic site, cut inside the site", {
+  e <- caps_ext("restriction_enzymes.csv")
+  expect_equal(nrow(e), 1236L)
+  expect_false(any(duplicated(e$enzyme)))
+  # an unnamed enzyme cannot be reported back to the user
+  expect_false(any(is.na(e$enzyme) | !nzchar(e$enzyme)))
+  # the scanner reads the plus strand alone, so an asymmetrically cutting site
+  # would be modelled wrongly: every site must be its own reverse complement
+  iupac <- c(
+    A = "T", C = "G", G = "C", T = "A", R = "Y", Y = "R", S = "S", W = "W",
+    K = "M", M = "K", B = "V", V = "B", D = "H", H = "D", N = "N"
+  )
+  rc <- vapply(strsplit(e$site, ""), function(b) {
+    paste(rev(unname(iupac[match(b, names(iupac))])), collapse = "")
+  }, "")
+  expect_false(anyNA(rc)) # only IUPAC letters, no stray characters
+  expect_true(all(rc == e$site))
+  # a cut outside 0..nchar(site) cannot produce two fragments
+  expect_true(all(nchar(e$site) >= 4L & nchar(e$site) <= 12L))
+  expect_true(all(e$cut >= 0 & e$cut <= nchar(e$site)))
+  expect_lte(max(e$cut), 8)
+  # the five named in the documentation still carry their published motif/cut
+  canon <- c(EcoRI = "GAATTC", HindIII = "AAGCTT", BamHI = "GGATCC", PstI = "CTGCAG", Sau3AI = "GATC")
+  got <- e[match(names(canon), e$enzyme), ]
+  expect_equal(got$site, unname(canon))
+  expect_equal(got$cut, c(1, 1, 1, 5, 0))
+})
+
+test_that("liu2016_caps_snp_types: the pct is within family, and the families sum to 100", {
+  d <- caps_ext("liu2016_caps_snp_types.csv")
+  # the ten rows are three DENOMINATORS, not one: a percent of 244961 would make
+  # every class a fraction of a percent, so the denominator is the family
+  expect_equal(nrow(d), 10L)
+  expect_setequal(unique(d$family), c("Transversions", "Transitions", "Indels"))
+  # the table prints its shares with a % sign, so the column is text on disk
+  expect_true(is.character(d$pct))
+  d$pct_num <- as.numeric(sub("%$", "", d$pct))
+  expect_false(anyNA(d$pct_num))
+  fam <- split(d, d$family)
+  expect_equal(sum(fam$Transversions$n), 72285L)
+  expect_equal(sum(fam$Transitions$n), 153408L)
+  expect_equal(sum(fam$Indels$n), 19268L)
+  # a within-family share must add to 100 (the published rows are rounded)
+  for (f in names(fam)) {
+    expect_equal(sum(fam[[f]]$pct_num), 100, tolerance = 0.6, label = f)
+  }
+  # transversions and transversions-alt are four classes each, transitions two
+  expect_equal(nrow(fam$Transversions), 4L)
+  expect_equal(nrow(fam$Transitions), 2L)
+  expect_equal(nrow(fam$Indels), 4L)
+  # the total the shares are of
+  expect_equal(sum(d$n), 244961L)
+})
+
+test_that("snap2caps_accession_groups: the predicted pattern is the one observed", {
+  g <- caps_ext("snap2caps_accession_groups.csv")
+  expect_equal(nrow(g), 29L)
+  # fragment_sum_bp is the digest total, so it IS the PCR product
+  expect_equal(g$fragment_sum_bp, g$pcr_product_bp)
+  # every observed band list also adds up to the product (nothing was lost)
+  obs_n <- lengths(strsplit(g$observed_fragments_bp, ","))
+  obs_bp <- vapply(strsplit(g$observed_fragments_bp, ","), function(x) {
+    sum(as.integer(trimws(x)))
+  }, integer(1))
+  expect_equal(obs_bp, g$pcr_product_bp)
+  # a cut is predicted exactly when a site is predicted; the two are one fact
+  expect_equal(g$predicted_cut, !is.na(g$predicted_sites_bp))
+  # a predicted cut leaves more than one band; an uncut accession leaves one
+  expect_true(all(obs_n[g$predicted_cut] >= 2L))
+  expect_true(all(obs_n[!g$predicted_cut] == 1L))
+  expect_equal(obs_bp[!g$predicted_cut], g$pcr_product_bp[!g$predicted_cut])
+  # 29 marker x enzyme rows over 13 markers, and every one confirmed on the gel
+  expect_equal(length(unique(g$marker)), 13L)
+  expect_true(all(g$outcome == "predicted pattern confirmed on gel"))
+})
+
+test_that("soybean_est_caps_markers: one primer pair per marker, pure ACGT", {
+  s <- caps_ext("soybean_est_caps_markers.csv")
+  expect_equal(nrow(s), 26L)
+  expect_false(any(duplicated(s$primer_id)))
+  # a CAPS primer pair is a literal sequence: an ambiguity code has no Tm
+  expect_true(all(grepl("^[ACGT]+$", s$forward)))
+  expect_true(all(grepl("^[ACGT]+$", s$reverse)))
+  expect_true(all(nzchar(s$primer_id)))
+})

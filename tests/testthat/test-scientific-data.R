@@ -230,3 +230,39 @@ test_that("scientific_backlog: verified means an extract was written", {
   silent <- b$status %in% c("fulltext-read-no-assertion", "not_extractable")
   if (any(silent)) expect_true(all(grepl("no|not", b$status[silent])))
 })
+
+# The source registry is the join every other check leans on, so its own shape
+# is asserted: one row per key, a closed access vocabulary, and a citation and a
+# claim for every row - a registry entry with no claim anchors nothing.
+test_that("scientific_sources is a closed registry with one claim per key", {
+  s <- ext("scientific_sources.csv")
+  expect_equal(nrow(s), 80L)
+  expect_identical(anyDuplicated(s$key), 0L)
+  expect_false(any(is.na(s$key) | !nzchar(s$key)))
+  expect_true(all(nzchar(s$citation)))
+  expect_true(all(nzchar(s$claim)))
+  expect_true(all(nzchar(s$what_it_anchors)))
+  expect_true(all(s$access %in% c(
+    "abstract", "closed access", "fulltext", "not found",
+    "source", "stub", "supplement", "transcribed"
+  )))
+  # a DOI and a verification date on every row: this is a citation table, and
+  # "I could not find it" is recorded as an access level, not as a blank
+  expect_false(any(is.na(s$doi)))
+  expect_false(any(is.na(s$verified_on)))
+  expect_true(all(s$verified %in% c(TRUE, FALSE)))
+})
+
+test_that("every extracted backlog entry is a registered source", {
+  s <- ext("scientific_sources.csv")
+  b <- ext("scientific_backlog.csv")
+  expect_equal(nrow(b), 45L)
+  expect_identical(anyDuplicated(b$key), 0L)
+  expect_true(all(b$status %in% c("extracted", "not_extractable", "unfetched")))
+  extracted <- b$key[b$status == "extracted"]
+  expect_equal(length(extracted), 35L)
+  expect_true(all(extracted %in% s$key))
+  # an entry that produced an extract always has a DOI to go with it
+  expect_false(any(is.na(s$doi[match(extracted, s$key)])))
+  expect_true(all(nzchar(b$what_it_would_anchor)))
+})

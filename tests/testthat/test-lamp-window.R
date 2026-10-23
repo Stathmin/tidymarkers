@@ -234,3 +234,47 @@ test_that("the censored arms have an independent anchor in the landed counts", {
   expect_identical(round(rs_sens$value, 2), round(8 / 9, 2))
   expect_true(rs_sens$matches_counts %in% TRUE)
 })
+
+## --- the ace1r_aslamp2015 extracts ------------------------------------------
+# Three tables from the same paper: ace1r_aslamp2015_contradictions.csv,
+# ace1r_aslamp2015_design_rules.csv and ace1r_aslamp2015_metrics.csv.
+
+ace1r <- function(name) lw_read(paste0("ace1r_aslamp2015_", name))
+
+test_that("ace1r contradictions are recorded, not averaged away", {
+  d <- ace1r("contradictions.csv")
+  expect_equal(nrow(d), 3L)
+  # three different kinds of defect: a numeric contradiction, a probable
+  # transcription duplication, and rounding.  Keeping them apart is the point.
+  expect_equal(length(unique(d$severity)), 3L)
+  expect_true(all(grepl("contradiction|duplication|rounding", d$severity)))
+  expect_true(all(grepl("NOT resolved", d$resolution)))
+  # every row says what it does to the extract, so no row is silently ignored
+  expect_true(all(nzchar(d$impact_on_this_extract)))
+  expect_true(all(d$doi == "10.1186/s12936-015-0968-9"))
+})
+
+test_that("ace1r design rules keep the 3'-end position they state", {
+  d <- ace1r("design_rules.csv")
+  expect_equal(nrow(d), 5L)
+  expect_identical(anyDuplicated(d$statement), 0L)
+  expect_true(all(d$verbatim))
+  expect_true(all(grepl("^uncalibrated", d$calibration)))
+  pos <- d$position_relative_to_3p_end
+  expect_true(all(pos[!is.na(pos)] %in% c("penultimate (position -2)", "0")))
+  # the paper's two positional claims are each stated once
+  expect_equal(sum(grepl("penultimate", pos)), 1L)
+  expect_equal(sum(pos == "0", na.rm = TRUE), 1L)
+})
+
+test_that("ace1r metrics are a 3 x 2 x 3 grid of values in [0, 1]", {
+  d <- ace1r("metrics.csv")
+  expect_equal(nrow(d), 18L)
+  expect_equal(length(unique(d$genotype)), 3L)
+  expect_setequal(unique(d$metric), c("sens", "spec"))
+  expect_equal(length(unique(d$method)), 3L)
+  expect_true(all(d$value >= 0 & d$value <= 1))
+  # every row says whether it reproduces the paper's own counts
+  expect_true(all(d$matches_counts %in% c(TRUE, FALSE)))
+  expect_true(all(d$matches_one_vs_rest %in% c(TRUE, FALSE)))
+})

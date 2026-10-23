@@ -1497,7 +1497,9 @@ Commit message via `git commit -F file` — never -m with backticks or $().
   revcomp-локуса) и ZW2 — сделано; `ZW2.2` (штамп в `Evaluation`) — открыт.
 - **A1 (наука, влита в `main`):** извлечение данных с
   провенансом (`science_ledger.csv`), Z7-приоры как предсказания, Z8-исходы
-  с провалами, Y3.2 по исходникам PolyMarker. **Дальше по-прежнему:** сам
+  с провалами, Y3.2 по исходникам PolyMarker. **Сравнение с Primer3 и оракулы
+  специфичности — сделано:** `dev/primer3-crosscheck.R`,
+  `dev/specificity-oracle.R`, числа в `VALIDATION.md`. **Дальше по-прежнему:** сам
   параметр мисматча (Z7) → калибровка (Z8) + Y3 (off-target вне relax + выбор
   индекса под 15 Gb) + Y1 с проверкой совместимости блоков.
 - **A2 (после калибровки):** ZA6 шаги 5–6 (`tidygraph`, грамматика графиков) —

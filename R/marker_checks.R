@@ -67,7 +67,10 @@ marker_evaluation_table <- function(stage, criterion, observed, limit, pass,
                                     level,
                                     not_applicable = rep(FALSE, length(criterion)),
                                     textual = character()) {
-  observed <- as.numeric(observed)
+  # `textual` observations are words, not numbers ("severe"), so the coercion
+  # below is expected and must not surface as "NAs introduced by coercion" to a
+  # caller of design_kasp_markers(): the `textual` rule keeps their status right.
+  observed <- suppressWarnings(as.numeric(observed))
   pass <- as.logical(pass)
   not_applicable <- as.logical(not_applicable) & !is.na(not_applicable)
   status <- rep("unknown", length(criterion))
@@ -455,7 +458,9 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   rows <- lapply(crit$label, function(l) {
     if (l %in% names(checks)) checks[[l]]() else list(observed = NA_real_, pass = NA)
   })
-  observed <- vapply(rows, function(r) as.numeric(r$observed), numeric(1))
+  # textual rows ("target site class", "AS 3' mismatch base pair") carry words;
+  # the coercion is expected and stays silent (see marker_evaluation_table())
+  observed <- vapply(rows, function(r) suppressWarnings(as.numeric(r$observed)), numeric(1))
   limit <- crit$limit
   pass <- vapply(rows, function(r) {
     p <- r$pass

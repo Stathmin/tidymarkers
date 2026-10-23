@@ -146,3 +146,26 @@ test_that("a technology carries the decided position through marker_technology()
   expect_identical(m$inner$ref$stab_at, abs(ARMS_EXTRA_MISMATCH_POSITION))
   expect_identical(m$inner$ref$stab_policy, "default")
 })
+
+## --- the Liu 2012 tetra-primer extract ---------------------------------------
+
+# 1686 published ASP primers, tabulated with the position of the deliberate
+# mismatch. The table is checked against its own sequences, not against the
+# paper's prose: a wrong 3' base would invalidate every position claim.
+test_that("liu2012 primers: the 3' base and the last four are the sequence's own", {
+  d <- ext("liu2012_primers.csv")
+  expect_equal(nrow(d), 1686L)
+  n <- nchar(d$forward)
+  expect_equal(d$forward_3p_base, substr(d$forward, n, n))
+  expect_equal(d$forward_last4, substr(d$forward, n - 3L, n))
+  # the deliberate mismatch sits at a named position, never "1st" (that is the
+  # allele-specific base) and never unstated
+  expect_setequal(unique(d$mismatch_site), c("2nd", "3rd", "4th"))
+  # four canonical SNP classes, each written as a pair of pairs
+  expect_setequal(
+    unique(d$snp_class),
+    c("A/C | G/T", "A/G | C/T", "A/T | T/A", "C/G | G/C")
+  )
+  expect_true(all(nchar(d$mismatch_pair) == 2L))
+  expect_identical(anyDuplicated(d$primer), 0L)
+})

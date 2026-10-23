@@ -97,3 +97,35 @@ test_that("a KASP evaluation reports the terminal mismatch class, not a silent p
   expect_equal(sp$kind[sp$id == "as_mismatch_type"], "categorical")
   expect_equal(sp$source[sp$id == "as_mismatch_type"], "primary literature")
 })
+
+## --- the two LefeVER / mismatch extract tables -------------------------------
+
+test_that("LefeVER's three rules are three distinct, quoted design rules", {
+  r <- ext("lefever_design_rules.csv")
+  expect_equal(nrow(r), 3L)
+  expect_identical(anyDuplicated(r$rule), 0L)
+  expect_setequal(
+    r$rule,
+    c("artificial mismatch position", "base-type effect at position 3", "single 3'-terminal mismatch")
+  )
+  expect_true(all(nzchar(r$statement)))
+  # a rule without a verbatim check is hearsay: each row says how it was verified
+  expect_true(all(grepl("fulltext", r$verified_against)))
+  # the paper's own negative result: one 3' mismatch is not enough
+  one <- r$statement[r$rule == "single 3'-terminal mismatch"]
+  expect_match(one, "not sufficient", fixed = TRUE)
+})
+
+test_that("the mismatch panel is a 4-cell 3' pair table with a measured efficiency", {
+  p <- ext("mismatch_panel.csv")
+  expect_equal(nrow(p), 4L)
+  expect_true(all(nchar(p$primer_3p) == 1L & nchar(p$template_3p) == 1L))
+  expect_equal(p$pair, paste0(p$primer_3p, ":", p$template_3p))
+  # rc_pair is the same contact seen from the other strand
+  rc <- vapply(strsplit(p$pair, ":"), function(x) paste(rev(x), collapse = ":"), "")
+  expect_equal(p$rc_pair, rc)
+  expect_true(all(p$efficiency >= 0 & p$efficiency <= 1))
+  # the matched pair is the one that should not discriminate
+  lo <- which.min(p$efficiency)
+  expect_equal(p$primer_3p[lo], p$template_3p[lo])
+})

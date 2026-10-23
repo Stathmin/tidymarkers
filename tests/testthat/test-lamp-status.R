@@ -84,3 +84,21 @@ test_that("the FIP/F2 3' end is the evidenced 3' mismatch position", {
   # and the artefact says it is a tolerance measure, not discrimination
   expect_true(all(grepl("TOLERANCE|tolerance", p$outcome_definition)))
 })
+
+# The backlog is the other half of the registry: what was read, what could not be
+# read, and what was never fetched.  A status outside that vocabulary would make
+# "how much of the literature is covered" unanswerable.
+test_that("scientific_backlog: three states, and every extract has a source", {
+  b <- ls_read("scientific_backlog.csv")
+  expect_equal(nrow(b), 45L)
+  expect_identical(anyDuplicated(b$key), 0L)
+  expect_setequal(unique(b$status), c("extracted", "not_extractable", "unfetched"))
+  # a family label is what makes a gap visible per assay type
+  expect_true(all(nzchar(b$family)))
+  expect_gte(length(unique(b$family)), 10L)
+  # the anchored claim is why the row exists at all
+  expect_true(all(nzchar(b$what_it_would_anchor)))
+  s <- ls_read("scientific_sources.csv")
+  extracted <- b$key[b$status == "extracted"]
+  expect_true(all(extracted %in% s$key))
+})

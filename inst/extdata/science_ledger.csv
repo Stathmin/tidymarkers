@@ -24,7 +24,7 @@
 "jak2v617f_ddpcr","jak2v617f_ddpcr_limits.csv","test","test-z8-outcomes.R","dpcr: LoB / LoD of a partition readout",
 "gao2022","polyploid_gao2022_sugarcane_chain.csv","test","test-polyploid-gao2022.R","the nested selection chain is strictly decreasing (77 > 49 > 24) and only the workbook tier is labelled measured",
 "jaimes2024","polyploid_jaimes2024_sugarcane_dosage.csv","test","test-polyploid-jaimes2024.R","the autopolyploid outcome axis is DOSAGE not homoeologs: 42 of 76 SNPs assigned a dose",
-"jaimes2024_kasp_doses","none","blocked",,"none yet (Z10.2 pins 42-of-76 only)","Z10.2 wants the per-marker allele dose so the dosage classes can be counted; Appendix S3 (APS3-12-e11574-s002.xlsx, sheet 1 rows 7-82) carries Marker x {GBS+RADseq, Flex-Seq, KASP} correlation/t/df/P only, and Appendix S1/S2 are the panel and the 401-bp windows, so no fetched file holds a dose per marker. The paper points to GitHub (Allele_Dosage_Sugarcane_APPS), which is not a paper table, so nothing was landed"
+"jaimes2024","none","blocked",,"none yet (Z10.2 pins 42-of-76 only)","Z10.2 wants the per-marker allele dose so the dosage classes can be counted; Appendix S3 (APS3-12-e11574-s002.xlsx, sheet 1 rows 7-82) carries Marker x {GBS+RADseq, Flex-Seq, KASP} correlation/t/df/P only, and Appendix S1/S2 are the panel and the 401-bp windows, so no fetched file holds a dose per marker. The paper points to GitHub (Allele_Dosage_Sugarcane_APPS), which is not a paper table, so nothing was landed"
 "durum2019","polyploid_durum2019_hexaploid_vs_tetraploid.csv","test","test-polyploid-durum2019.R","the tetraploid vs hexaploid difference is carried by the split rows, which add up to the total",
 "cotton2023","polyploid_cotton2023_kasp_screen.csv","test","test-polyploid-cotton2023.R","a negative datapoint: 8 of 11 cotton KASP markers usable, so polyploidy is not uniformly favourable",
 "citrus2020","taqman_citrus2020_amplicons.csv,taqman_citrus2020_calls.csv,taqman_citrus2020_probes.csv","test","test-taqman-sources-citrus.R","probe/SNP composition and the call matrix move together: a call cannot be counted without its probe context",
@@ -196,9 +196,9 @@
 "yao2006","scientific_backlog.csv","report",,"REPORTED content of scientific_backlog.csv: the paper's own claim, kept apart from any measurement","a reported-claim table: what the paper ASSERTS, kept apart from any measurement, so it can support a citation but not a verdict"
 "yao2006","scientific_sources.csv","report",,"REPORTED content of scientific_sources.csv: the paper's own claim, kept apart from any measurement","a reported-claim table: what the paper ASSERTS, kept apart from any measurement, so it can support a citation but not a verdict"
 "yao2006","source_resolution.csv","report",,"REPORTED content of source_resolution.csv: the paper's own claim, kept apart from any measurement","a reported-claim table: what the paper ASSERTS, kept apart from any measurement, so it can support a citation but not a verdict"
-"corpus_shared","ace1r_aslamp2015_contradictions.csv","blocked",,"nothing moved","no test reads ace1r_aslamp2015_contradictions.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","ace1r_aslamp2015_design_rules.csv","blocked",,"nothing moved","no test reads ace1r_aslamp2015_design_rules.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","ace1r_aslamp2015_metrics.csv","blocked",,"nothing moved","no test reads ace1r_aslamp2015_metrics.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","ace1r_aslamp2015_contradictions.csv","test","test-lamp-window.R","three source defects kept apart and none averaged: a numeric contradiction, a probable transcription duplication, rounding only",
+"corpus_shared","ace1r_aslamp2015_design_rules.csv","test","test-lamp-window.R","the positional statements are verbatim and each positional claim appears once; every rule is marked uncalibrated",
+"corpus_shared","ace1r_aslamp2015_metrics.csv","test","test-lamp-window.R","18 metrics form a 3 genotype x 2 metric x 3 method grid with values in [0, 1] and a matches_counts flag",
 "corpus_shared","ace1r_aslamp2015_time_to_positive.csv","test","test-z8-outcomes.R","what ace1r_aslamp2015_time_to_positive.csv measures, asserted by test-z8-outcomes.R",
 "corpus_shared","arms_barley_arms2004_blocked.csv","test","test-arms2-negative.R","what arms_barley_arms2004_blocked.csv measures, asserted by test-arms2-negative.R",
 "corpus_shared","arms_cycle_decay_negative.csv","test","test-arms2-negative.R","what arms_cycle_decay_negative.csv measures, asserted by test-arms2-negative.R",
@@ -209,9 +209,9 @@
 "celegans2018","celegans2018_arms_primers.csv","test","test-probes-celegans2018.R","what celegans2018_arms_primers.csv measures, asserted by test-probes-celegans2018.R",
 "corpus_shared","communbiol2024_crrna_activators.csv","test","test-crispr-communbiol.R","what communbiol2024_crrna_activators.csv measures, asserted by test-crispr-communbiol.R",
 "corpus_shared","communbiol2024_crrna_ratio.csv","test","test-crispr-communbiol.R","what communbiol2024_crrna_ratio.csv measures, asserted by test-crispr-communbiol.R",
-"desilva2009","desilva2009_amplicons.csv","blocked",,"nothing moved","no test reads desilva2009_amplicons.csv, and no single paper owns it: it is on disk but moves no verdict"
-"desilva2009","desilva2009_snps.csv","blocked",,"nothing moved","no test reads desilva2009_snps.csv, and no single paper owns it: it is on disk but moves no verdict"
-"desilva2009","desilva2009_strategies.csv","blocked",,"nothing moved","no test reads desilva2009_strategies.csv, and no single paper owns it: it is on disk but moves no verdict"
+"desilva2009","desilva2009_amplicons.csv","test","test-z8-outcomes.R","primer_total_nt equals the two sequence lengths; the 400 bp seam is the paper's own mean rule; 13/8 group split",
+"desilva2009","desilva2009_snps.csv","test","test-z8-outcomes.R","the multi-SNP flag equals n_snps > 1, amplicons carry 1-3 SNPs, and five absent sizes stay NA",
+"desilva2009","desilva2009_strategies.csv","test","test-z8-outcomes.R","five distinct genetic situations, one HRM strategy each",
 "corpus_shared","dpcr_aml_idh_limits.csv","test","test-readout-physics.R","what dpcr_aml_idh_limits.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","dpcr_cpn_lob_variability.csv","test","test-readout-physics.R","what dpcr_cpn_lob_variability.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","dpcr_dong_poisson_residual.csv","test","test-dpcr-dong.R","what dpcr_dong_poisson_residual.csv measures, asserted by test-dpcr-dong.R",
@@ -219,12 +219,12 @@
 "corpus_shared","dpcr_kit_d816v_limits.csv","test","test-readout-physics.R","what dpcr_kit_d816v_limits.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","dpcr_mps_ecoli_dilution.csv","test","test-dpcr-mps-ecoli.R","what dpcr_mps_ecoli_dilution.csv measures, asserted by test-dpcr-mps-ecoli.R",
 "corpus_shared","dpcr_mps_ecoli_limits.csv","test","test-dpcr-mps-ecoli.R","what dpcr_mps_ecoli_limits.csv measures, asserted by test-dpcr-mps-ecoli.R",
-"corpus_shared","example_targets.csv","blocked",,"nothing moved","no test reads example_targets.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","example_targets.csv","test","test-io.R","the transition flag equals the purine/pyrimidine chemistry of the pair, and no indel or MNP is ever a transition",
 "corpus_shared","hrm_gundry2008_amplicon_tm.csv","test","test-hrmplant-hrm.R","what hrm_gundry2008_amplicon_tm.csv measures, asserted by test-hrmplant-hrm.R",
 "corpus_shared","hrm_gundry2008_homozygote_accuracy.csv","test","test-hrmplant-hrm.R","what hrm_gundry2008_homozygote_accuracy.csv measures, asserted by test-hrmplant-hrm.R",
 "corpus_shared","hrm_ijms2022_discrimination.csv","test","test-readout-physics.R","what hrm_ijms2022_discrimination.csv measures, asserted by test-readout-physics.R",
-"corpus_shared","hrm_ijms2022_dtm_single_snp_controls.csv","blocked",,"nothing moved","no test reads hrm_ijms2022_dtm_single_snp_controls.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","hrm_ijms2022_min_input.csv","blocked",,"nothing moved","no test reads hrm_ijms2022_min_input.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","hrm_ijms2022_dtm_single_snp_controls.csv","test","test-hrm-curve.R","the allele-free reference melts at dTm 0 and every single-allele construct shifts it by at least 0.4 C",
+"corpus_shared","hrm_ijms2022_min_input.csv","test","test-readout-physics.R","five input floors with their outcomes; the two smallest are NOT a genotype call, not detection claims",
 "corpus_shared","hrm_ijms2022_partition_2snp.csv","test","test-readout-physics.R","what hrm_ijms2022_partition_2snp.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","hrm_ijms2022_unresolvable_3snp.csv","test","test-readout-physics.R","what hrm_ijms2022_unresolvable_3snp.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","hrm_jsbbs2018_context_grid.csv","test","test-hrmplant-hrm.R","what hrm_jsbbs2018_context_grid.csv measures, asserted by test-hrmplant-hrm.R",
@@ -233,12 +233,12 @@
 "corpus_shared","hrm_jsbbs2018_dtm_exp3.csv","test","test-readout-physics.R","what hrm_jsbbs2018_dtm_exp3.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","hrm_jsbbs2018_funnel.csv","test","test-readout-physics.R","what hrm_jsbbs2018_funnel.csv measures, asserted by test-readout-physics.R",
 "corpus_shared","hrm_jsbbs2018_nnn_effect.csv","test","test-hrm-jsbbs2018.R","what hrm_jsbbs2018_nnn_effect.csv measures, asserted by test-hrm-jsbbs2018.R",
-"corpus_shared","hrm_jsbbs2018_selection_rule.csv","blocked",,"nothing moved","no test reads hrm_jsbbs2018_selection_rule.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","hrm_jsbbs2018_selection_rule.csv","test","test-hrm-jsbbs2018.R","the 1.43 kcal/mol rule is a free-energy threshold and its own text says it is NOT a dTm cut",
 "corpus_shared","hrm_jsbbs2018_snp_class_frequencies.csv","test","test-hrm-jsbbs2018.R","what hrm_jsbbs2018_snp_class_frequencies.csv measures, asserted by test-hrm-jsbbs2018.R",
-"corpus_shared","hrm_jsbbs2018_summary.csv","blocked",,"nothing moved","no test reads hrm_jsbbs2018_summary.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","hrm_jsbbs2018_summary.csv","test","test-hrm-curve.R","18 recomputed descriptives; the prose t/df and the recomputed t/df differ and both are kept",
 "corpus_shared","hrm_jsbbs2018_table1_frame.csv","test","test-hrmplant-hrm.R","what hrm_jsbbs2018_table1_frame.csv measures, asserted by test-hrmplant-hrm.R",
 "corpus_shared","hrm_liew2004_restated_bands.csv","test","test-hrmplant-hrm.R","what hrm_liew2004_restated_bands.csv measures, asserted by test-hrmplant-hrm.R",
-"corpus_shared","jak2v617f_ddpcr_precision.csv","blocked",,"nothing moved","no test reads jak2v617f_ddpcr_precision.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","jak2v617f_ddpcr_precision.csv","test","test-readout-physics.R","CV = 100 sd/mean reproduces above 1 % VAF and deliberately does NOT at 0.1 %, so no LoD is calibrated on it",
 "corpus_shared","lamp_badolo_kdr2012_contradictions.csv","test","test-lamp-badolo_kdr2012.R","what lamp_badolo_kdr2012_contradictions.csv measures, asserted by test-lamp-badolo_kdr2012.R",
 "corpus_shared","lamp_badolo_kdr2012_counts.csv","test","test-lamp-badolo_kdr2012.R","what lamp_badolo_kdr2012_counts.csv measures, asserted by test-lamp-badolo_kdr2012.R",
 "corpus_shared","lamp_badolo_kdr2012_metrics.csv","test","test-lamp-badolo_kdr2012.R","what lamp_badolo_kdr2012_metrics.csv measures, asserted by test-lamp-badolo_kdr2012.R",
@@ -254,14 +254,14 @@
 "corpus_shared","lamp_snp_lamp_lfd2025_contradictions.csv","test","test-lamp-snp_lamp_lfd2025.R","what lamp_snp_lamp_lfd2025_contradictions.csv measures, asserted by test-lamp-snp_lamp_lfd2025.R",
 "corpus_shared","lamp_snp_lamp_lfd2025_detection.csv","test","test-lamp-snp_lamp_lfd2025.R","what lamp_snp_lamp_lfd2025_detection.csv measures, asserted by test-lamp-snp_lamp_lfd2025.R",
 "corpus_shared","lamp_snp_lamp_lfd2025_primers.csv","test","test-lamp-snp_lamp_lfd2025.R","what lamp_snp_lamp_lfd2025_primers.csv measures, asserted by test-lamp-snp_lamp_lfd2025.R",
-"corpus_shared","lefever_design_rules.csv","blocked",,"nothing moved","no test reads lefever_design_rules.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","liu2012_primers.csv","blocked",,"nothing moved","no test reads liu2012_primers.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","liu2016_caps_snp_types.csv","blocked",,"nothing moved","no test reads liu2016_caps_snp_types.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","lefever_design_rules.csv","test","test-kasp-mismatch-type.R","three distinct design rules, each verified against the full text; a single 3' mismatch is recorded as insufficient",
+"corpus_shared","liu2012_primers.csv","test","test-arms-mismatch-position.R","1686 published ASP primers: the 3' base and the last four are the sequence's own, mismatch site in 2nd/3rd/4th",
+"corpus_shared","liu2016_caps_snp_types.csv","test","test-caps.R","the printed percentages are within-family (each family sums to 100) over a total of 244,961 changes",
 "corpus_shared","maize_kasp2020_assays.csv","test","test-kasp-platforms.R","what maize_kasp2020_assays.csv measures, asserted by test-kasp-platforms.R",
 "corpus_shared","maize_kasp2020_outcomes.csv","test","test-kasp-platforms.R","what maize_kasp2020_outcomes.csv measures, asserted by test-kasp-platforms.R",
 "corpus_shared","mismatch_anchor.csv","test","test-scientific-data.R","what mismatch_anchor.csv measures, asserted by test-scientific-data.R",
-"corpus_shared","mismatch_panel.csv","blocked",,"nothing moved","no test reads mismatch_panel.csv, and no single paper owns it: it is on disk but moves no verdict"
-"corpus_shared","restriction_enzymes.csv","blocked",,"nothing moved","no test reads restriction_enzymes.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","mismatch_panel.csv","test","test-kasp-mismatch-type.R","four 3' pair cells with rc_pair the same contact from the other strand; the matched pair has the lowest efficiency",
+"corpus_shared","restriction_enzymes.csv","test","test-caps.R","1236 unique enzymes, every site its own reverse complement, cut inside the site; five canonical enzymes keep their motif",
 "corpus_shared","rpa_asrpa_mdr_calls.csv","test","test-rpa-sources.R","what rpa_asrpa_mdr_calls.csv measures, asserted by test-rpa-sources.R",
 "corpus_shared","rpa_asrpa_sickle_calls.csv","test","test-rpa-sources.R","what rpa_asrpa_sickle_calls.csv measures, asserted by test-rpa-sources.R",
 "corpus_shared","rpa_mismatch_claims.csv","test","test-rpa-sources.R","what rpa_mismatch_claims.csv measures, asserted by test-rpa-sources.R",
@@ -269,12 +269,12 @@
 "corpus_shared","rpa_mismatch_terminal.csv","test","test-rpa-sources.R","what rpa_mismatch_terminal.csv measures, asserted by test-rpa-sources.R",
 "corpus_shared","sanger_bda_braf_calls.csv","test","test-sanger-bda-braf.R","what sanger_bda_braf_calls.csv measures, asserted by test-sanger-bda-braf.R",
 "corpus_shared","sanger_bda_braf_floor.csv","test","test-sanger-bda-braf.R","what sanger_bda_braf_floor.csv measures, asserted by test-sanger-bda-braf.R",
-"corpus_shared","sanger_detection_floor.csv","blocked",,"nothing moved","no test reads sanger_detection_floor.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","sanger_detection_floor.csv","test","test-readout-physics.R","both rows are textbook restatements, so usable_as_calibration is FALSE and a reason is recorded",
 "corpus_shared","snap_sanger2026_concordance.csv","test","test-typing-snap-sanger.R","what snap_sanger2026_concordance.csv measures, asserted by test-typing-snap-sanger.R",
-"snap2caps","snap2caps_accession_groups.csv","blocked",,"nothing moved","no test reads snap2caps_accession_groups.csv, and no single paper owns it: it is on disk but moves no verdict"
+"snap2caps","snap2caps_accession_groups.csv","test","test-caps.R","fragment_sum_bp equals the PCR product, the observed bands add up, and a predicted cut leaves at least 2 bands",
 "corpus_shared","snapshot2026_sensitivity.csv","test","test-typing-snapshot.R","what snapshot2026_sensitivity.csv measures, asserted by test-typing-snapshot.R",
 "corpus_shared","snapshot2026_specificity.csv","test","test-typing-snapshot.R","what snapshot2026_specificity.csv measures, asserted by test-typing-snapshot.R",
-"corpus_shared","soybean_est_caps_markers.csv","blocked",,"nothing moved","no test reads soybean_est_caps_markers.csv, and no single paper owns it: it is on disk but moves no verdict"
+"corpus_shared","soybean_est_caps_markers.csv","test","test-caps.R","26 distinct primer ids, forward and reverse pure ACGT (an ambiguity code would have no Tm)",
 "corpus_shared","stutter_woerner2017.csv","test","test-typing-stutter.R","what stutter_woerner2017.csv measures, asserted by test-typing-stutter.R",
 "corpus_shared","tm_hm2025_amplicon_psaa2.csv","test","test-tm-hm2025.R","what tm_hm2025_amplicon_psaa2.csv measures, asserted by test-tm-hm2025.R",
 "corpus_shared","tm_mm2020_s1_measured.csv","test","test-tm-mm2020.R","what tm_mm2020_s1_measured.csv measures, asserted by test-tm-mm2020.R",
@@ -283,3 +283,5 @@
 "corpus_shared","wheat_platform2019_kasp_assays.csv","test","test-kasp-platforms.R","what wheat_platform2019_kasp_assays.csv measures, asserted by test-kasp-platforms.R",
 "corpus_shared","wheat_platform2019_platform_outcomes.csv","test","test-kasp-platforms.R","what wheat_platform2019_platform_outcomes.csv measures, asserted by test-kasp-platforms.R",
 "corpus_shared","z7_engine_probe.csv","test","test-z7-priors.R","what z7_engine_probe.csv measures, asserted by test-z7-priors.R",
+"corpus_shared","scientific_sources.csv","test","test-scientific-data.R","80 unique keys, a closed access vocabulary, a DOI and a verification date on every row, and every extracted backlog entry registered",
+"corpus_shared","scientific_backlog.csv","test","test-lamp-status.R","three statuses (extracted / not_extractable / unfetched), 45 keys, every extracted key present in the source registry",

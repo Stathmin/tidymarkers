@@ -16,7 +16,10 @@ oligo_dg(seq1, seq2 = NULL, na = 0.05, temp = 37)
 }
 \value{
 a single numeric dG in kcal/mol, or \code{NA_real_} when OligoArrayAux is
-unavailable or the run fails.
+unavailable or the run fails.  "No foldable structure" is \code{0} (no
+stabilisation relative to the unfolded state): UNAFold reports that case as
+a large positive sentinel (~1000 kcal/mol) from \code{-q}, which is mapped here
+rather than passed through.
 }
 \description{
 The DNA engine DECIPHER already uses: \code{hybrid-min} (duplex of two strands) or

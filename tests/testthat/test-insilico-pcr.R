@@ -14,6 +14,31 @@ test_that("in_silico_pcr reports no product when a primer is absent", {
   expect_equal(nrow(in_silico_pcr("ACGTACGTACGTACGTACGT", "TTTTGGGGCCCCAAAATTTT", genome)), 0L)
 })
 
+# A primer pair is a product on ONE chromosome.  The scan used to pool the hits
+# of every chromosome and pair them inside a per-chromosome loop, so a forward
+# site on chr1 and a reverse site on chr2 produced a phantom product - once per
+# chromosome in the genome, each labelled with the loop's chromosome.
+test_that("in_silico_pcr never pairs hits from two different chromosomes", {
+  f <- "ACGTACGTACGTACGTACGT"
+  r <- "TTTTGGGGCCCCAAAATTTT"
+  r_site <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(r)))
+  genome <- Biostrings::DNAStringSet(c(
+    chr1 = paste0(strrep("A", 30L), f, strrep("T", 40L)),
+    chr2 = paste0(strrep("C", 30L), r_site, strrep("G", 20L))
+  ))
+  # the two sites are on different chromosomes, so there is no amplicon
+  expect_equal(nrow(in_silico_pcr(f, r, genome)), 0L)
+  # both on one chromosome: exactly one product, on that chromosome
+  together <- Biostrings::DNAStringSet(c(
+    chr1 = paste0(strrep("A", 30L), f, strrep("T", 40L), r_site, strrep("G", 20L)),
+    chr2 = paste0(strrep("C", 30L), r_site, strrep("G", 20L))
+  ))
+  pr <- in_silico_pcr(f, r, together)
+  expect_equal(nrow(pr), 1L)
+  expect_equal(pr$chrom, "chr1")
+  expect_equal(pr$width, 80L)
+})
+
 test_that("in_silico_pcr is invariant to the parallel backend", {
   skip_if_not_installed("BiocParallel")
   amp <- "GGGGGGGGGGACGTACGTACGTACGTACGTGGGGGGGGGG"
