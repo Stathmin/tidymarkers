@@ -31,10 +31,8 @@
 #    dNTPs 0.6 mM, DMSO 0 %, 37 C, plus oligotm -d 50 (nM strand).
 #    Oligo panel: the 24 pseudo-random 20-mers of tests/testthat/test-tm-oracle.R
 #    (set.seed(20040301L)), the 8 edge probes of helper-tm-tolerance.R
-#    (`tm_edge_oligos()`), the 2 universal KASP tails, and the 4 primers of the
-#    Part 2 Primer3 designs (18-25 nt, real composition): 38 in total.  The
-#    hetero-dimer set is 4 synthetic 20-mer pairs + 2 real ASP-vs-COM contacts
-#    tidymarkers chose, so 6 pairs, both engines on the same pairs.
+#    (`tm_edge_oligos()`) and the 2 universal KASP tails: 34 in total.  The
+#    hetero-dimer set is 4 synthetic pairs, both engines on the same pairs.
 #
 #  PART 2 - design on 20 real Arabidopsis SNPs
 #  Panel: the first records of the cached Ensembl variation JSON

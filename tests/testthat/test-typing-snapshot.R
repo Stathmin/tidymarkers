@@ -7,13 +7,17 @@
 #  or if the prose claims stop matching the table they were compared against.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )
 }
 proposed <- function(name) {
-  readr::read_csv(test_path("../../data-raw/proposed", name),
+  # data-raw/ is build-ignored: it exists in a checkout, never in the installed
+  # package R CMD check runs against
+  f <- test_path("../../data-raw/proposed", name)
+  skip_if_not(file.exists(f), "data-raw/proposed not present (installed check)")
+  readr::read_csv(f,
     show_col_types = FALSE,
     na = c("", "NA")
   )

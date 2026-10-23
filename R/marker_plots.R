@@ -188,6 +188,7 @@ CHECK_SHORT_MAP <- c(
   "worst cross-dimer dG37" = "dimer",
   "worst homodimer dG37" = "homodimer",
   "AS 3' window variants (n)" = "AS 3' var",
+  "AS 3' mismatch base pair" = "AS 3' pair",
   "AS footprint variants (n)" = "AS foot var",
   "COM footprint variants (n)" = "COM var",
   "AS 3' window dropout" = "AS 3' drop",

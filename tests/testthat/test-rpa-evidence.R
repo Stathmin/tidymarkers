@@ -23,7 +23,7 @@
 
 ext <- function(name) {
   utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", name),
+    tm_extdata(name),
     stringsAsFactors = FALSE, na.strings = c("NA", "")
   )
 }
@@ -39,7 +39,7 @@ rpa_extracts <- function() {
 test_that("the landed RPA corpus is exactly five extracts from three papers", {
   files <- rpa_extracts()
   for (f in files) {
-    expect_true(file.exists(test_path("..", "..", "inst", "extdata", f)), info = f)
+    expect_true(file.exists(tm_extdata(f)), info = f)
   }
   doi <- unique(c(
     ext("rpa_mismatch_terminal.csv")$doi,

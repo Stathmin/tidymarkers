@@ -2,7 +2,7 @@
 # Data-only: these assert the boundary of the claim, not a LAMP model.
 
 ls_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE, na.strings = c("NA", "")
   )
 }

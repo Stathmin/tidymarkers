@@ -7,7 +7,7 @@
 # it to succeed, which is where the "stop() on disagreement" guarantee is
 # exercised end to end.
 
-extdata <- function(...) testthat::test_path("..", "..", "inst", "extdata", ...)
+extdata <- function(...) tm_extdata(...)
 read_ext <- function(name) utils::read.csv(extdata(name), stringsAsFactors = FALSE)
 
 test_that("ijms2022: every control is accounted for in each partition", {

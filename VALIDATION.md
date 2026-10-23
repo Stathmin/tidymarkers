@@ -72,11 +72,21 @@ thermo_crosscheck(c("GAAGGTGACCAAGTTCATGCT", "TTTTGGCGCGCCGATATATAT"))
 runs the same oligos through SantaLucia 2004, Allawi 1998, Sugimoto 1996 and
 Breslauer 1986 and reports `tm_min`, `tm_max`, `spread`. `tests/testthat/test-tm-oracle.R`
 adds Primer3's `oligotm` binary as a third engine when it happens to be
-installed, with an explicit tolerance per model pair and structural anchors that
-carry no tolerance (Tm rises with GC at fixed length, with length at fixed
-pattern, and is symmetric under reverse complement). The three-way disagreement
-is reported, never averaged, and never asserted against a single constant.
-`dev/compare-thermo.R` prints the same matrix for inspection.
+installed. `oligotm` is a separate implementation rather than another parameter
+set, so it has its own tolerance table (`tm_primer3_tolerances()`): both sides
+are pinned to the same physical model — 50 mM monovalent, no Mg²⁺, no dNTPs and
+the SantaLucia (1998) salt correction (`oligotm -tp 1 -sc 1 -mv 50 -dv 0 -n 0`)
+— and only arithmetic remains. On the 32-oligo oracle set, TmCalculator's
+Allawi (1998) table and `-tp 1` agree to the printed precision (max
+|ΔTm| 4.8 × 10⁻⁷ °C), while the package default (SantaLucia 2004) differs by
+0.40 °C on the 20-mers and 0.98 °C on the degenerate poly-A probe; that probe
+sets the 1.0 °C cap. Pinning the flags matters because `oligotm`'s `-n` is the
+dNTP concentration, not the salt concentration: a run that leaves them at their
+defaults folds in a divalent term this model does not have. Structural anchors
+carry no tolerance at all (Tm rises with GC at fixed length, with length at
+fixed pattern, and is symmetric under reverse complement). The three-way
+disagreement is reported, never averaged, and never asserted against a single
+constant. `dev/compare-thermo.R` prints the same matrix for inspection.
 
 ### rprimer
 
@@ -113,10 +123,14 @@ asserts only the bands that run supports.
 
 The ~4 °C Tm residual is the nearest-neighbour table (SantaLucia 1998 on
 Primer3's side, 2004 in `primer_tm()`) plus the salt formula (Primer3 defaults
-to SantaLucia 1998, the package to Schildkraut 2010); the run cannot separate
-the two and does not try. The offset is recorded, not corrected. `ntthal`
-reports no hairpin at all on 16 of the 34 oligos; the package reports dG = 0 on
-the 2 that genuinely cannot fold, which is what the same statement means.
+to SantaLucia 1998, the package to Schildkraut 2010). The crosscheck reports the
+total and does not apportion it. The oracle test above does, because it runs
+both engines on one salt model: at 50 mM monovalent with the same correction
+the two tables differ by at most 1.0 °C (0.40 °C on the 20-mers), so at most
+that much of the residual is the table and the rest is the salt model. The
+offset is recorded, not corrected. `ntthal` reports no hairpin at all on 16 of
+the 34 oligos; the package reports dG = 0 on the 2 that genuinely cannot fold,
+which is what the same statement means.
 
 **Design, same 20 loci.** The panel is the first 20 TAIR10-matching SNVs of the
 cached Chr4 variation window, thinned to ≥1 kb apart (the cache region carries

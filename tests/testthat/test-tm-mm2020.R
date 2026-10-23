@@ -27,7 +27,7 @@
 #  file is data-raw/proposed/tm_oracle_status.md.
 
 mm2020_path <- function() {
-  test_path("../../inst/extdata/tm_mm2020_s1_measured.csv")
+  tm_extdata("tm_mm2020_s1_measured.csv")
 }
 
 test_that("ZW3/mm2020: the landed table still matches the paper's own totals", {

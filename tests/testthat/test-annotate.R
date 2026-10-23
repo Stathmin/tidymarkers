@@ -53,6 +53,9 @@ test_that("marker_txdb / marker_bsgenome load the default annotation packages", 
 })
 
 test_that("an empty or already-annotated table is returned unchanged", {
+  # the other tests here guard the same way: VariantAnnotation is a Suggest, and
+  # an empty table still goes through the loader before it can be short-circuited
+  skip_if_not_installed_noload("VariantAnnotation")
   empty <- tibble::tibble(
     id = character(), chrom = character(), pos = integer(),
     ref_genome = list(), consequence = character()

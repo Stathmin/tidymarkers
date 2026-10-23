@@ -25,6 +25,19 @@ rebind <- function(FUN, env) {
   out
 }
 
+#' Environments whose contents a socket worker must see
+#'
+#' The namespace, its `.__NAMESPACE__.` and `.__S3MethodsTable__.` must stay
+#' by-reference (a worker would otherwise reload the installed copy, the bug
+#' [source_carrier()] exists to avoid), and the option/cache state in
+#' `.marker_state` is session-local.  A *registry* is neither: `.marker_tech_store`
+#' holds the technologies composed with [marker_technology()], which are part of
+#' what the task means, so its contents travel with the task.
+#' @return a character vector of environment names to carry.
+#' @keywords internal
+#' @noRd
+carried_registries <- function() c(".marker_tech_store")
+
 #' Re-home the package's functions into one plain environment
 #'
 #' Serializing a function whose enclosing environment is this namespace ships
@@ -50,12 +63,17 @@ source_carrier <- function(FUN) {
       next
     }
     obj <- get(n, envir = ns)
-    # functions and plain data only: everything else here is an environment
-    # (this very namespace, the S3 table), which serializes by reference -- a
-    # worker would then reload the installed one and be back to stale code
+    # functions and plain data; a registry environment is added below, and the
+    # rest (this very namespace, the S3 table, the option/cache state) is left
+    # out -- it must serialize by reference or not travel at all
     if (is.function(obj)) {
       assign(n, rebind(obj, carrier), envir = carrier)
     } else if (is.atomic(obj) || is.list(obj)) {
+      assign(n, obj, envir = carrier)
+    } else if (is.environment(obj) && n %in% carried_registries()) {
+      # a runtime registry holds definitions the task needs, not session state.
+      # Its parent is emptyenv(), so serializing it by value ships exactly its
+      # own contents; the functions inside still resolve through the namespace.
       assign(n, obj, envir = carrier)
     }
   }

@@ -13,7 +13,7 @@
 #  Dia18S rows are excluded: degenerate primers (contain N).
 
 hm2025_path <- function() {
-  test_path("../../inst/extdata/tm_hm2025_amplicon_psaa2.csv")
+  tm_extdata("tm_hm2025_amplicon_psaa2.csv")
 }
 
 test_that("ZW3/hm2025: amplicon Tm table is arithmetically self-consistent", {

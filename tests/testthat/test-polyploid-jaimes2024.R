@@ -11,7 +11,7 @@
 #      as "not landed" rather than quietly turning into a number.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )

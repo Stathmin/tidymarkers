@@ -3,13 +3,13 @@
 # that the absence is still real and still documented.
 
 blocked_csv <- function() {
-  path <- test_path("../../inst/extdata/arms_barley_arms2004_blocked.csv")
+  path <- tm_extdata("arms_barley_arms2004_blocked.csv")
   skip_if_not(file.exists(path), "barley blocked record not built")
   utils::read.csv(path, stringsAsFactors = FALSE)
 }
 
 cycle_csv <- function() {
-  path <- test_path("../../inst/extdata/arms_cycle_decay_negative.csv")
+  path <- tm_extdata("arms_cycle_decay_negative.csv")
   skip_if_not(file.exists(path), "cycle-decay record not built")
   utils::read.csv(path, stringsAsFactors = FALSE)
 }

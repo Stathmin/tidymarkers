@@ -7,7 +7,7 @@
 #  tests pin the per-assay classification and the "not stated" claim.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )

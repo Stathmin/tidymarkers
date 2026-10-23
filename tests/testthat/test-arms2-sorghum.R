@@ -6,7 +6,7 @@
 # self-checking even without the PDF.
 
 sorghum_csv <- function() {
-  path <- test_path("../../inst/extdata/arms_sorghum2021_outcomes.csv")
+  path <- tm_extdata("arms_sorghum2021_outcomes.csv")
   skip_if_not(file.exists(path), "sorghum outcomes CSV not built")
   utils::read.csv(path, stringsAsFactors = FALSE)
 }

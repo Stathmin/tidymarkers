@@ -158,5 +158,7 @@ test_that("the SNaPshot DAG shows no tier restating a hard gate, and its orders 
   expect_false(grepl("placement", unname(d$tiers[1L]), fixed = TRUE))
   txt <- marker_decision_text("snapshot")
   expect_true(any(grepl("relaxation ladder \\(least grave first\\)", txt)))
-  expect_true(any(grepl("in application order \\(grave / cheap first\\)", txt)))
+  # gates are siblings applied to the same candidates (AND), so the export must
+  # say so instead of claiming an application order the engine does not have
+  expect_true(any(grepl("all applied to the same candidates \\(AND\\)", txt)))
 })

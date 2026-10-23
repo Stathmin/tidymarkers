@@ -47,8 +47,11 @@ test_that("the amplicon gate is hard and the Tm balance is the ladder's only run
   s <- marker_decision_schema("hrm")
   hard <- s$nodes$name[s$nodes$kind == "gate" & s$nodes$hard]
   expect_equal(hard, "hrm:gate:gate_hrm_amplicon")
-  # a failed hard amplicon gate dooms directly (C4)
-  expect_true(any(s$edges$kind == "doomed" & s$edges$from == "hrm:gate:gate_hrm_amplicon"))
+  # a failed hard amplicon gate dooms (C4).  The gates are siblings that all
+  # feed the `all gates pass?` decision, so the doomed edge leaves the decision:
+  # a hard gate cannot be relaxed, which is asserted by the hardness column above.
+  doomed <- s$edges[s$edges$kind == "doomed", ]
+  expect_true(any(doomed$from == "hrm:decision" & doomed$to == "hrm:doomed"))
   # the amplicon gate's window is the acceptance check's window, so a marker the
   # gate admits is never rejected by the check (C5)
   crit <- marker_criteria(scheme = "hrm")

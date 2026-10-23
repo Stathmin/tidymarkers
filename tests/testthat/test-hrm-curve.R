@@ -10,7 +10,7 @@
 
 hrm_csv <- function(f) {
   utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", f),
+    tm_extdata(f),
     stringsAsFactors = FALSE,
     na.strings = c("NA", "")
   )
@@ -172,7 +172,7 @@ test_that("ijms2022 gives partitions and dTm steps, never a resolution figure", 
 
 test_that("NEGATIVE: no landed HRM row states an instrument or buffer resolution", {
   files <- list.files(
-    testthat::test_path("..", "..", "inst", "extdata"),
+    tm_extdata(),
     pattern = "^hrm_.*[.]csv$",
     full.names = TRUE
   )

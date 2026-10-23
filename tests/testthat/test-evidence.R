@@ -40,7 +40,10 @@ ev_good_assay <- function() {
     ideogram = list(hits = tibble::tibble(
       primer = c("AS_ref", "AS_alt", "COM")
     )),
-    efficiency = tibble::tibble(discrimination = 0.9)
+    efficiency = tibble::tibble(discrimination = 0.9),
+    # the 3' mismatch check reads the SNP, and A-over-G is Kwok 1990's `severe`
+    # class, so this fixture passes every acceptance check including that one
+    snp = tibble::tibble(ref = "A", alt = "G")
   )
 }
 

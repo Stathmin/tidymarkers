@@ -175,7 +175,7 @@ test_that("design_caps_marker evaluates the caps gates and reports the product g
 # from inst/extdata, so what the scanner is handed is asserted, not assumed.
 
 caps_ext <- function(name) {
-  readr::read_csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE, na = c("", "NA")
   )
 }

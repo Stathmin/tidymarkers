@@ -36,7 +36,7 @@
 # =============================================================================
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )
@@ -215,7 +215,6 @@ test_that("dosage: the cotton screen is logged as a negative datapoint", {
 ## --- 5. the axis must be NEW, and pop_freq must not quietly stand in -------
 
 test_that("dosage: marker_population_checks() today is a two-allele frequency table", {
-  pkgload::load_all(test_path("../.."), quiet = TRUE)
   pop <- tibble::tibble(
     alt_freq = 0.5, min_alt_freq = 0.01,
     n_haplotypes = 2L, n_alt_haplotypes = 1L
@@ -243,7 +242,7 @@ test_that("dosage: the sources' own vocabulary is pooled-safe only per source", 
   # names Z10.2 as a NEW axis, and a pre-existing pooled dosage table would
   # mean an earlier pass averaged incomparable outcomes
   pooled <- list.files(
-    test_path("../../inst/extdata"),
+    tm_extdata(),
     pattern = "^polyploid.*dosage.*\\.csv$", full.names = FALSE
   )
   expect_true(all(grepl("jaimes2024", pooled)))
