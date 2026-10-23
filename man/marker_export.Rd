@@ -4,19 +4,30 @@
 \alias{marker_export}
 \title{Write a solved plan to disk}
 \usage{
-marker_export(solved, dir = tempdir())
+marker_export(solved, dir = tempdir(), artefact = TRUE)
 }
 \arguments{
 \item{solved}{a \code{marker_solved} (see \code{\link[=marker_solve]{marker_solve()}}).}
 
 \item{dir}{output directory (default: a temp dir).}
+
+\item{artefact}{also write the self-documenting manifest and decision log
+(default \code{TRUE}).}
 }
 \value{
 \code{dir}, invisibly.
 }
 \description{
-Writes the target report, the attempt matrix, every solved marker's primers
-and the whole object.
+Writes the target report, the attempt matrix, every solved marker's primers,
+the whole object, and - through \code{\link[=marker_artefact]{marker_artefact()}} - the manifest
+(\code{artefact.json}), the per-candidate decision log (\code{decisions.csv}), the gate
+table of the chosen markers (\code{checks.csv}) and the target table.
+}
+\details{
+The artefact is the part a later reader can disagree with: it names the
+hashed inputs, the engine versions and the overridden knobs, and
+\code{\link[=marker_replay]{marker_replay()}} re-runs the design from \code{solved.rds} and compares.  Pass
+\code{artefact = FALSE} for the bare tables.
 }
 \examples{
 \dontrun{
@@ -25,11 +36,13 @@ marker_export(marker_solve(plan), dir = "results")
 }
 \seealso{
 Other KASP plan:
+\code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
 \code{\link[=marker_primers]{marker_primers()}},
+\code{\link[=marker_replay]{marker_replay()}},
 \code{\link[=marker_run_context]{marker_run_context()}},
 \code{\link[=marker_solve]{marker_solve()}},
 \code{\link[=marker_targets]{marker_targets()}},

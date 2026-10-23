@@ -28,11 +28,13 @@ marker_primers(assemble_kasp_assay(genome, snp))
 }
 \seealso{
 Other KASP plan:
+\code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_export]{marker_export()}},
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
+\code{\link[=marker_replay]{marker_replay()}},
 \code{\link[=marker_run_context]{marker_run_context()}},
 \code{\link[=marker_solve]{marker_solve()}},
 \code{\link[=marker_targets]{marker_targets()}},

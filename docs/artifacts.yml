@@ -477,7 +477,7 @@ artifacts:
   inputs:
   - R/marker_dpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: a7eb945c61a322a1d2fd0b986b20ce4c
+  input_hash: 2bce1e101eee142be9098bae07cd985c
   output_hash: e521cba4cc9787bc5bf10fab4dfe153d
   docs: vignettes/markers-probe.Rmd
   status: verified
@@ -576,7 +576,7 @@ artifacts:
   inputs:
   - R/marker_rpa.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 94841dce09da76d3de3186a4130658b7
+  input_hash: 181321fc7279e4f0dbc13887bc399509
   output_hash: 40a9449f502928b0fe307ddf663a9a58
   docs: vignettes/markers-isothermal.Rmd
   status: verified
@@ -631,7 +631,7 @@ artifacts:
   inputs:
   - R/marker_taqman.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 68e20dba909cb82208ce62eb0efe5ea5
+  input_hash: 0420899bad8a39e0e4e31cbc168547db
   output_hash: 2cb3b074a27e73221dc1c1ef05b04903
   docs: vignettes/markers-probe.Rmd
   status: verified

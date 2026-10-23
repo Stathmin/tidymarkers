@@ -110,12 +110,33 @@ loci already computed to be reused between calls.
 dir <- marker_export(solved, dir = "results/solved")
 fs::dir_ls(dir)
 # markers.csv    attempts.csv    primers.csv    solved.rds
+# artefact.json  decisions.csv   checks.csv      targets.csv
 ```
 
 - `markers.csv` — the per-locus report;
 - `attempts.csv` — the attempt matrix;
 - `primers.csv` — the oligos of every solved marker (`target`, `scheme`, `role`, `sequence`);
 - `solved.rds` — the whole object: plan, report and the markers themselves.
+- `artefact.json` — the manifest: SHA-256 of the reference and the variant
+  table, package version and git SHA, every engine version, the design
+  parameters, and `overrides` — the knobs that differ from the defaults;
+- `decisions.csv` — one row per (target, chemistry) with `outcome`, `verdict`,
+  `risk`, the relaxed gates and, for a rejection, the reason the designer gave;
+- `checks.csv` — the gate table of the chosen markers;
+- `targets.csv` — the loci that were asked for.
+
+The manifest is the part you can argue with. `overrides` is a field of its own
+precisely so that a pass obtained under a loosened threshold cannot look like
+one obtained under the default, and `marker_replay()` re-runs the design from
+`solved.rds` and compares the verdicts instead of asking you to trust them:
+
+```{r, eval = FALSE}
+art <- marker_artefact(solved, dir = "results/solved")
+art$manifest$overrides        # e.g. min_disc 0.4 against a default of 0.5
+replay <- marker_replay(art) # fresh cache: the design runs again
+replay$table                  # recorded vs replayed scheme and verdict
+replay$inputs_match           # FALSE if the reference was replaced
+```
 
 `readRDS()` returns a working object, not a picture: from there you can run
 `marker_plot()`, `marker_tubes()` (compatibility of pairs in one tube) and the

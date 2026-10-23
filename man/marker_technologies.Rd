@@ -14,8 +14,10 @@ zero rows when none were composed.
 List the composed technologies of this session
 }
 \examples{
-marker_technology("giga_snp", base = "snp",
-                  params = list(as_lengths = 24:30), overwrite = TRUE)
+marker_technology("giga_snp",
+  base = "snp",
+  params = list(as_lengths = 24:30), overwrite = TRUE
+)
 marker_technologies()
 }
 \seealso{
