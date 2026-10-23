@@ -278,4 +278,8 @@ test_that("marker_replay re-runs the design and compares the verdicts", {
   # the id is a property of the design, not of when it was written
   again <- marker_artefact(solved, dir = withr::local_tempdir())
   expect_identical(art$id, again$id)
+  # YP5: an outcome is bound to that id, not to a file path
+  out <- marker_record_outcome(art, "fails", notes = "synthetic reference")
+  expect_identical(out$id, art$id)
+  expect_false(any(out$calibrated))
 })

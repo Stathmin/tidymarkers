@@ -141,6 +141,7 @@ primer pair" (composition, structure, repeats, off-target).
 | `marker_export()` | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact |
 | `marker_artefact()` | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv` |
 | `marker_replay()` | re-runs a saved artefact and compares the verdict per target |
+| `marker_record_outcome()` | appends a lab result (`works` / `fails` / `unknown`) to an artefact's `outcomes.csv`, bound to its `id` |
 | `marker_primers()` | the oligos of any marker, as a named vector or tidy table |
 
 ## Documentation

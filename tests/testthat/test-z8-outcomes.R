@@ -260,3 +260,67 @@ test_that("de Silva's five strategies are five distinct situations", {
   expect_true(all(nzchar(st$hrm_solution)))
   expect_true(all(st$doi == "10.1186/1471-2156-10-5"))
 })
+
+## --- YP5: outcomes recorded against a stable artefact id --------------------
+
+# A minimal artefact on disk: the manifest carries the id an outcome is bound
+# to, targets.csv is what a target label is checked against.  No solve, no
+# engine, no network - this file tests the bookkeeping, not a design.
+outcome_fixture <- function(dir) {
+  writeLines(
+    '{"schema": "tidymarkers/artefact@1", "id": "0123456789abcdef"}',
+    fs::path(dir, "artefact.json")
+  )
+  readr::write_csv(
+    tibble::tibble(target = c("t1", "t2")),
+    fs::path(dir, "targets.csv")
+  )
+  dir
+}
+
+test_that("Z8: a recorded outcome is ordinal, per-row, and never calibrated", {
+  dir <- withr::local_tempdir()
+  dir <- outcome_fixture(dir)
+  expect_equal(nrow(marker_outcomes(dir)), 0L)
+
+  out <- marker_record_outcome(dir, "works", target = "t1")
+  expect_equal(nrow(out), 1L)
+  expect_identical(out$id, "0123456789abcdef")
+  expect_identical(out$target, "t1")
+  expect_identical(out$result, "works")
+  expect_false(any(out$calibrated))
+  expect_true(nzchar(out$recorded[[1L]]))
+
+  # a retest appends rather than overwriting: the disagreement stays visible
+  out <- marker_record_outcome(dir, "fails",
+    target = "t1", notes = "no amplification at 60 C"
+  )
+  expect_equal(nrow(out), 2L)
+  expect_false(any(out$calibrated))
+  expect_identical(out$notes[[2L]], "no amplification at 60 C")
+
+  # a whole-artefact call has no target; "unknown" is a result, not a number
+  out <- marker_record_outcome(dir, "unknown")
+  expect_true(is.na(out$target[[3L]]))
+  expect_identical(out$result[[3L]], "unknown")
+
+  # observations only: the schema has no derived column at all, so no column
+  # can be a rate or a probability that a reader might take for one
+  expect_identical(names(out), outcome_columns())
+  # and the file a non-R reader sees is the same table
+  expect_equal(marker_outcomes(dir), out)
+})
+
+test_that("Z8: a failure without a reason is refused, so is an unknown target", {
+  dir <- withr::local_tempdir()
+  dir <- outcome_fixture(dir)
+  expect_error(marker_record_outcome(dir, "fails"), "notes")
+  expect_error(marker_record_outcome(dir, "fails", notes = "   "), "notes")
+  expect_error(
+    marker_record_outcome(dir, "works", target = "nope"),
+    "not in this artefact"
+  )
+  expect_error(marker_record_outcome(dir, "passed"))
+  # nothing a refused call touched was written
+  expect_equal(nrow(marker_outcomes(dir)), 0L)
+})
