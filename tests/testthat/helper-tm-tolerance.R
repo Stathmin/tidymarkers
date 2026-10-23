@@ -69,6 +69,34 @@ tm_tolerances <- function() {
   )
 }
 
+# Primer3's `oligotm` is a separate implementation, not a model pair, so it gets
+# its own small table.  Both engines are asked for exactly the same physical
+# model: 50 mM monovalent, no Mg2+, no dNTPs, and the SantaLucia (1998) salt
+# correction (oligotm `-sc 1`, TmCalculator `SantaLucia1998-2`).  What remains is
+# arithmetic, measured here on the 32-oligo oracle set (TmCalculator 1.1.2):
+#   * TmCalculator's Allawi (1998) table and oligotm `-tp 1` print the same Tm
+#     (max |dTm| 4.8e-7 C on the 32-oligo oracle set), so the same numbers
+#     travel under two labels -- Primer3 calls them SantaLucia 1998.  The
+#     0.1 C cap is rounding.
+#   * SantaLucia (2004) refines the same lineage: max |dTm| 0.40 C on the 30
+#     regular 20-mers, 0.98 C on the degenerate poly-A probe.  The 1.0 C cap is
+#     set by that probe and admits no more than it.
+tm_primer3_tolerances <- function() {
+  tibble::tribble(
+    ~model, ~max_delta_c, ~basis,
+    NN_ALLAWI, 0.1,
+    paste(
+      "same NN parameters as oligotm -tp 1 with the same salt correction;",
+      "max |dTm| 0.00 C measured on the 32-oligo oracle set"
+    ),
+    NN_SANTA_LUCIA, 1.0,
+    paste(
+      "later refinement of the same lineage; max |dTm| 0.40 C on the 20-mers,",
+      "0.98 C on the degenerate poly-A probe"
+    )
+  )
+}
+
 # GC content in percent, per oligo.
 gc_content <- function(seq) {
   100 * nchar(gsub("[^GC]", "", seq)) / nchar(seq)

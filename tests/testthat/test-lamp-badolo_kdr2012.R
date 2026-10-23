@@ -2,7 +2,7 @@
 # that pins the B2 terminal dinucleotide. Data-only, from inst/extdata.
 
 bd_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE
   )
 }

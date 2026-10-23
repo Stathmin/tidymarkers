@@ -4,7 +4,7 @@
 ## fetched workbook. These tests check the LANDED artefacts only, so they are
 ## fast and need no network.
 
-wd <- test_path("../../inst/extdata")
+wd <- tm_extdata()
 f_ratio <- file.path(wd, "communbiol2024_crrna_ratio.csv")
 f_design <- file.path(wd, "communbiol2024_crrna_activators.csv")
 skip_if_not(file.exists(f_ratio) && file.exists(f_design), "extracts not built")

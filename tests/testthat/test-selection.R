@@ -326,7 +326,10 @@ test_that("the marker-agnostic primer scheme is stage-less by design (C13)", {
   expect_length(marker_decision_stages("primer"), 0L)
   expect_null(marker_design_at(NULL, NULL, "primer"))
   s <- marker_decision_schema("primer")
-  expect_false(any(s$nodes$kind %in% c("gate", "relax", "doomed")))
+  expect_false(any(s$nodes$kind %in% c("gate", "relax")))
+  # the one DOOMED is the shared assay-verdict terminal: any assembled pair can
+  # fail an acceptance check, so it does not mean a selection stage came back
+  expect_equal(s$nodes$name[s$nodes$kind == "doomed"], "assay:doomed")
   expect_setequal(s$nodes$label[s$nodes$kind == "check"], KASP_CHECK_PRIMER)
   expect_dag_invariants("primer")
 })

@@ -166,7 +166,7 @@ test_that("marker_example carries one of each target type", {
 # a hand-set flag.
 test_that("example_targets: transition is purine-for-purine, and indels are not", {
   ex <- utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", "example_targets.csv"),
+    tm_extdata("example_targets.csv"),
     stringsAsFactors = FALSE, na.strings = c("NA", "")
   )
   expect_equal(nrow(ex), 9L)

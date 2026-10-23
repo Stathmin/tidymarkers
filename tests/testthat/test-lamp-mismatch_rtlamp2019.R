@@ -2,7 +2,7 @@
 # Data-only, from inst/extdata; the generator re-parses Table 1 from .tmp/lit.
 
 mm_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE
   )
 }

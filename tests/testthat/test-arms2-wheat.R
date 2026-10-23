@@ -7,7 +7,7 @@
 #   * that the 8-vs-7 polymorphic disagreement is PRESERVED, not smoothed;
 #   * that nothing can later be relabelled as ARMS.
 
-wheat_dir <- function() test_path("../../inst/extdata")
+wheat_dir <- function() tm_extdata()
 
 funnel_csv <- function() {
   path <- file.path(wheat_dir(), "arms_wheat_as2023_funnel.csv")

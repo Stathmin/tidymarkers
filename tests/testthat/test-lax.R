@@ -127,11 +127,14 @@ test_that("lax's DAG shows the hard coverage gate, a two-rung ladder and its tie
   n <- s$nodes
   lax_gate <- n$kind == "gate" & n$stage == "lax"
   expect_equal(n$name[lax_gate & n$hard], "lax:gate:gate_lax_coverage")
-  # a failed hard gate dooms directly, beside the soft ladder (C4)
+  # a failed hard gate dooms, beside the soft ladder (C4).  Gates are siblings
+  # (AND), so the decision is what fails and its edge is the one that kills.
   ed <- paste(s$edges$from, s$edges$kind, s$edges$to, sep = " ")
-  expect_true("lax:gate:gate_lax_coverage doomed doomed" %in% ed)
-  # one refinement node for the two soft gates, a survivors/best tail, one tier
-  expect_equal(sum(n$kind == "relax" & n$stage == "lax"), 1L)
+  expect_true("lax:decision doomed lax:doomed" %in% ed)
+  # a refinement node per RUNG, not per stage: the ladder is the structure the
+  # engine walks, so two soft gates are two rungs.  Then a survivors/best tail
+  # and one tier.
+  expect_equal(sum(n$kind == "relax" & n$stage == "lax"), length(KASP_RELAX_LAX))
   expect_equal(sum(n$kind == "tier" & n$stage == "lax"), 1L)
   expect_true(all(c("lax:survivors", "lax:best") %in% n$name))
   # the ladder is labelled least grave first (C6)

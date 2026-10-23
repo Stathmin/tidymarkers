@@ -8,7 +8,7 @@
 #  hand-edited CSV fails the suite without needing the papers on disk.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )
@@ -159,7 +159,7 @@ test_that("rpa generators reproduce their CSVs when the sources are present", {
     )
     expect_equal(st, 0L, label = paste("generator exit status:", key))
     fresh <- readLines(file.path(out_dir, keys[[key]]), warn = FALSE)
-    shipped <- readLines(test_path("../../inst/extdata", keys[[key]]),
+    shipped <- readLines(tm_extdata(keys[[key]]),
       warn = FALSE
     )
     expect_identical(fresh, shipped)

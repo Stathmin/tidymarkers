@@ -10,7 +10,7 @@
 # difference between two alleles on one template.
 
 lw_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE, na.strings = c("NA", "")
   )
 }

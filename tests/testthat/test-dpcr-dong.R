@@ -7,7 +7,7 @@
 
 ext <- function(name) {
   utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", name),
+    tm_extdata(name),
     stringsAsFactors = FALSE
   )
 }

@@ -5,7 +5,7 @@
 
 test_that("jsbbs2018 Table 4 keeps the unusable pairs instead of dropping them", {
   fx <- utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", "hrm_jsbbs2018_nnn_effect.csv"),
+    tm_extdata("hrm_jsbbs2018_nnn_effect.csv"),
     stringsAsFactors = FALSE
   )
   expect_equal(nrow(fx), 13L)
@@ -21,7 +21,7 @@ test_that("jsbbs2018 Table 4 keeps the unusable pairs instead of dropping them",
 
 test_that("jsbbs2018 selection rule is a free-energy rule, not a dTm cut", {
   r <- utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", "hrm_jsbbs2018_selection_rule.csv"),
+    tm_extdata("hrm_jsbbs2018_selection_rule.csv"),
     stringsAsFactors = FALSE
   )
   thr <- r[grepl("threshold", r$criterion), ]
@@ -33,10 +33,7 @@ test_that("jsbbs2018 selection rule is a free-energy rule, not a dTm cut", {
 
 test_that("jsbbs2018 SNP-class frequencies are a composition, not an outcome", {
   f <- utils::read.csv(
-    testthat::test_path(
-      "..", "..", "inst", "extdata",
-      "hrm_jsbbs2018_snp_class_frequencies.csv"
-    ),
+    tm_extdata("hrm_jsbbs2018_snp_class_frequencies.csv"),
     stringsAsFactors = FALSE
   )
   expect_equal(f$total_snps, c(8372, 6142, 4138822))
@@ -49,7 +46,7 @@ test_that("HRM resolvability rests on the paper's per-bimorphism dTm, and says w
   # the decision's source of truth: the lookup must BE the extract, not a copy
   # of it that can drift
   d <- utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", "hrm_jsbbs2018_dtm_by_bimorphism.csv"),
+    tm_extdata("hrm_jsbbs2018_dtm_by_bimorphism.csv"),
     stringsAsFactors = FALSE
   )
   expect_setequal(names(HRM_BIMORPHISM_DTM), d$bimorphism)
@@ -91,7 +88,7 @@ test_that("HRM resolvability rests on the paper's per-bimorphism dTm, and says w
 
   # a multi-locus panel is not answerable per SNP: 14 of 36 controls collided
   p <- utils::read.csv(
-    testthat::test_path("..", "..", "inst", "extdata", "hrm_ijms2022_unresolvable_3snp.csv"),
+    tm_extdata("hrm_ijms2022_unresolvable_3snp.csv"),
     stringsAsFactors = FALSE
   )
   expect_equal(unique(p$n_controls_total), 36L)
@@ -101,10 +98,7 @@ test_that("HRM resolvability rests on the paper's per-bimorphism dTm, and says w
 
 test_that("ijms2022 dTm table is the substitute for the blocked Liew 2004 figures", {
   d <- utils::read.csv(
-    testthat::test_path(
-      "..", "..", "inst", "extdata",
-      "hrm_ijms2022_dtm_single_snp_controls.csv"
-    ),
+    tm_extdata("hrm_ijms2022_dtm_single_snp_controls.csv"),
     stringsAsFactors = FALSE
   )
   expect_equal(d$dtm_c[d$n_t_alleles == 0L], 0)

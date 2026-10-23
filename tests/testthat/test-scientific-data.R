@@ -16,11 +16,22 @@
 ## --- shared readers ---------------------------------------------------------
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )
 }
+
+test_that("shipped data resolves from the installed package, not just the checkout", {
+  # R CMD check runs these tests from <pkg>.Rcheck/tests/testthat against the
+  # installed copy, where the source-tree path "../../inst/extdata" does not
+  # exist.  The first CI run failed on that path in every data-backed test, so
+  # this guard is the one that has to stay honest in both layouts.
+  installed <- system.file("extdata", "conversion_rates.csv", package = "tidymarkers")
+  expect_true(nzchar(installed))
+  expect_true(file.exists(installed))
+  expect_true(file.exists(tm_extdata("conversion_rates.csv")))
+})
 
 test_that("scientific_sources: every row names a source and how far it was read", {
   s <- ext("scientific_sources.csv")

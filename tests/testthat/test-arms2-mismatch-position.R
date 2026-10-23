@@ -6,7 +6,7 @@
 # into a single preferred position.
 
 pos_csv <- function() {
-  path <- test_path("../../inst/extdata/arms_mismatch_position.csv")
+  path <- tm_extdata("arms_mismatch_position.csv")
   skip_if_not(file.exists(path), "ledger CSV not built")
   utils::read.csv(path, stringsAsFactors = FALSE)
 }

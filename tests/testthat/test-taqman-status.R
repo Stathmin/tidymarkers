@@ -3,13 +3,17 @@
 # keep their values and their status changes to "engineering default".
 
 tq_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE, na.strings = c("NA", "")
   )
 }
 
 tq_source <- function() {
-  readLines(testthat::test_path("..", "..", "R", "marker_taqman.R"))
+  f <- testthat::test_path("..", "..", "R", "marker_taqman.R")
+  # the R source is not shipped with the installed package, so this assertion
+  # only exists in a checkout
+  skip_if_not(file.exists(f), "package source not present (installed check)")
+  readLines(f)
 }
 
 test_that("the mismatch threshold is declared an engineering default, not a finding", {

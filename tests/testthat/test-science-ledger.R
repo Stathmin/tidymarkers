@@ -8,7 +8,7 @@
 #  row which is blocked says why.
 
 ext <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA")
   )
@@ -86,7 +86,7 @@ test_that("ledger: the extracts it names exist (unless the row is blocked)", {
   live <- l[l$use != "blocked", ]
   for (e in unique(live$extract)) {
     for (one in trimws(strsplit(e, ",", fixed = TRUE)[[1L]])) {
-      expect_true(file.exists(test_path("../../inst/extdata", one)), label = one)
+      expect_true(file.exists(tm_extdata(one)), label = one)
     }
   }
 })
@@ -107,8 +107,8 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
     e <- live$extract[[i]]
     # a non-extract row names a registry or a deliberately unwritten file; the
     # DOI check only applies to a real CSV on disk
-    if (!file.exists(test_path("../../inst/extdata", e))) next
-    d <- readr::read_csv(test_path("../../inst/extdata", e),
+    if (!file.exists(tm_extdata(e))) next
+    d <- readr::read_csv(tm_extdata(e),
       show_col_types = FALSE,
       na = c("", "NA")
     )

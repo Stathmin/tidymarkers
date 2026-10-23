@@ -12,6 +12,36 @@
 #
 #  One exception: the Makhoul supplement fixture is the real workbook.
 
+## --- where the shipped data lives --------------------------------------------
+# `inst/extdata` is a source-tree directory.  It is installed as `extdata`, so
+# the relative path `../../inst/extdata` only exists when the tests run from a
+# checkout: under R CMD check the working directory is
+# `<pkg>.Rcheck/tests/testthat` and the package is the installed copy at
+# `<pkg>.Rcheck/<pkg>`.  Resolve the source tree first (that is what
+# `dev/test.R` and pkgload see) and fall back to the installed package, so the
+# same call works in both places.
+tm_extdata <- function(...) {
+  src <- testthat::test_path("..", "..", "inst", "extdata", ...)
+  if (file.exists(src)) {
+    return(src)
+  }
+  # Read the root off the namespace, not `system.file()`: pkgload shims
+  # `system.file()` for a loaded source tree, and a test that called
+  # `load_all()` would leave every later call resolving against the wrong root.
+  # An installed package keeps the files in `extdata/`, a loaded source tree in
+  # `inst/extdata/`, so both are tried.
+  root <- getNamespaceInfo(getNamespace("tidymarkers"), "path")
+  for (cand in c(
+    file.path(root, "extdata", ...),
+    file.path(root, "inst", "extdata", ...)
+  )) {
+    if (file.exists(cand)) {
+      return(cand)
+    }
+  }
+  src
+}
+
 ## --- verdict access that also understands a doomed design -------------------
 # `marker_doomed` carries `reason`/`stage`, not `$evaluation`, so passing it to
 # `evaluation_verdict()` returns "unknown" -- an artifact of the accessor, not a
@@ -90,7 +120,7 @@ indexed_syn_genome <- function(gen = syn_genome()) {
 #' The Makhoul 2020 KASP primer table (13 real assay designs)
 makhoul_primers <- function() {
   readr::read_csv(
-    test_path("../../inst/extdata/makhoul_kasp_primers.csv"),
+    tm_extdata("makhoul_kasp_primers.csv"),
     show_col_types = FALSE
   )
 }

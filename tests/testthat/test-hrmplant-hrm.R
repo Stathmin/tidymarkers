@@ -2,7 +2,7 @@
 # the numbers that data-raw/hrmplant.R derives and stop()s on. No network.
 
 csv <- function(name) {
-  p <- test_path("..", "..", "inst", "extdata", name)
+  p <- tm_extdata(name)
   if (!file.exists(p)) skip(paste("missing", name))
   utils::read.csv(p, stringsAsFactors = FALSE)
 }

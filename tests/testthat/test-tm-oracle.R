@@ -54,8 +54,14 @@ three_prime_run <- function(s) {
   r$lengths[[length(r$lengths)]]
 }
 
-tm_table <- function(seqs, nn_table) {
-  rlang::set_names(primer_tm(seqs, nn_table = nn_table), names(seqs))
+tm_table <- function(seqs, nn_table, conditions = NULL, salt_method = NULL) {
+  rlang::set_names(
+    primer_tm(seqs,
+      nn_table = nn_table,
+      conditions = conditions, salt_method = salt_method
+    ),
+    names(seqs)
+  )
 }
 
 # Is Primer3's oligotm on PATH?  Not a package dependency and not installed on
@@ -68,12 +74,23 @@ skip_if_no_oligotm <- function() {
   }
 }
 
-# `oligotm -tp 1 -sc 1 -n 0 <seq>`: Primer3's SantaLucia (2004) NN parameters,
-# salt-corrected, 0.05 M monovalent -- the same model family `primer_tm()`
-# defaults to, but a separate implementation and salt code.
+# `oligotm -tp 1 -sc 1 -mv 50 -dv 0 -n 0 <seq>`: Primer3's SantaLucia (1998)
+# nearest-neighbour parameters with Primer3's monovalent salt correction, which
+# is the model those parameters were published against.
+#
+# The flags are pinned rather than left at their defaults because oligotm's `-n`
+# is the dNTP concentration, NOT the salt concentration.  At the defaults
+# (1.5 mM Mg2+, 0.6 mM dNTPs) oligotm folds a divalent correction into the
+# result that a monovalent-only model does not have (about +4 C here), and `-n 0`
+# alone removes the dNTPs while leaving that Mg2+ term in place.  Matching
+# `primer_tm()` therefore means stating all three salt terms.
 oligotm_tm <- function(seqs) {
   vapply(seqs, function(s) {
-    out <- system2("oligotm", c("-tp", "1", "-sc", "1", "-n", "0", s), stdout = TRUE, stderr = TRUE)
+    out <- system2(
+      "oligotm",
+      c("-tp", "1", "-sc", "1", "-mv", "50", "-dv", "0", "-n", "0", s),
+      stdout = TRUE, stderr = TRUE
+    )
     if (!is.null(attr(out, "status")) && attr(out, "status") != 0L) {
       rlang::abort(paste0("oligotm failed on ", s, ": ", paste(out, collapse = " ")))
     }
@@ -220,24 +237,42 @@ test_that("Tm does not depend on the strand", {
 test_that("Primer3 oligotm agrees with both TmCalculator tables within tolerance", {
   skip_if_no_oligotm()
   seqs <- tm_oracle_set()
-  sl <- tm_table(seqs, NN_SANTA_LUCIA)
-  al <- tm_table(seqs, NN_ALLAWI)
+  # the same physical model as oligotm_tm(): monovalent salt only, plus the
+  # SantaLucia (1998) salt correction that `-sc 1` implements
+  cond <- reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+  sl <- tm_table(seqs, NN_SANTA_LUCIA,
+    conditions = cond, salt_method = "SantaLucia1998-2"
+  )
+  al <- tm_table(seqs, NN_ALLAWI,
+    conditions = cond, salt_method = "SantaLucia1998-2"
+  )
   p3 <- rlang::set_names(oligotm_tm(seqs), names(seqs))
 
-  tol_sl <- tm_tolerance(NN_SANTA_LUCIA, NN_ALLAWI)$max_delta_c
-  testthat::expect_lte(max(abs(p3 - sl)), tol_sl)
-  testthat::expect_lte(max(abs(p3 - al)), tol_sl)
+  tol <- tm_primer3_tolerances()
+  testthat::expect_lte(
+    max(abs(p3 - al)),
+    tol$max_delta_c[tol$model == NN_ALLAWI]
+  )
+  testthat::expect_lte(
+    max(abs(p3 - sl)),
+    tol$max_delta_c[tol$model == NN_SANTA_LUCIA]
+  )
 })
 
 test_that("the three oracles are reported as a matrix, not averaged", {
   skip_if_no_oligotm()
   seqs <- tm_oracle_set()
+  cond <- reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
   matrix <- tibble::tibble(
     oligo = names(seqs),
     seq = unname(seqs),
     gc = gc_content(seqs),
-    santa_lucia = unname(tm_table(seqs, NN_SANTA_LUCIA)),
-    allawi = unname(tm_table(seqs, NN_ALLAWI)),
+    santa_lucia = unname(tm_table(seqs, NN_SANTA_LUCIA,
+      conditions = cond, salt_method = "SantaLucia1998-2"
+    )),
+    allawi = unname(tm_table(seqs, NN_ALLAWI,
+      conditions = cond, salt_method = "SantaLucia1998-2"
+    )),
     primer3 = unname(oligotm_tm(seqs))
   )
   matrix$spread <- apply(matrix[c("santa_lucia", "allawi", "primer3")], 1L, max) -
@@ -259,7 +294,7 @@ test_that("the three oracles are reported as a matrix, not averaged", {
 # It ranks correctly and is biased, and both facts are pinned: a silent "fix"
 # of the bias would change every downstream Tm comparison without evidence.
 test_that("the measured oracle ranks with primer_tm() and is not silently shifted", {
-  f <- test_path("../../inst/extdata/tm_mm2020_s1_measured.csv")
+  f <- tm_extdata("tm_mm2020_s1_measured.csv")
   skip_if_not(file.exists(f), "mm2020 measured set not extracted")
   m <- readr::read_csv(f, show_col_types = FALSE, na = c("", "NA"))
   expect_equal(nrow(m), 4096L)

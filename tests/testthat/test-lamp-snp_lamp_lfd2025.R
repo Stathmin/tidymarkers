@@ -3,7 +3,7 @@
 # .tmp/lit. The generator data-raw/snp_lamp_lfd2025.R is the re-parse check.
 
 lfd_read <- function(name) {
-  utils::read.csv(testthat::test_path("..", "..", "inst", "extdata", name),
+  utils::read.csv(tm_extdata(name),
     stringsAsFactors = FALSE
   )
 }

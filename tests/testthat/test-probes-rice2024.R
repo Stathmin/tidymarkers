@@ -6,7 +6,7 @@
 #  false-negative rate printed for the population it was tested on.
 
 ext_probe <- function(name) {
-  readr::read_csv(test_path("../../inst/extdata", name),
+  readr::read_csv(tm_extdata(name),
     show_col_types = FALSE,
     na = c("", "NA"), progress = FALSE
   )
