@@ -136,7 +136,7 @@ primer pair" (composition, structure, repeats, off-target).
 | `assemble_kasp_assay()` | `<marker_assay>`: primers, amplicon, discrimination, `$decision` |
 | `marker_design_checks()` | tidy table: `stage`, `criterion`, `observed`, `limit`, `status` |
 | `marker_risk()` | `low` / `medium` / `high` with the reasons behind it |
-| `marker_decision_text()` | the decision graph of a scheme as readable text |
+| `marker_decision_text()` | the decision graph of a scheme as readable text (`evidence = TRUE` adds each check's evidence rung) |
 | `write_kasp_results()` | `marker_design.csv`, `marker_primer_qc.csv`, `marker_dimer_dg.csv` |
 | `marker_export()` | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact |
 | `marker_artefact()` | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv` |
