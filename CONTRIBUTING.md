@@ -1,8 +1,34 @@
 # Contributing
 
-Thanks for looking. `tidymarkers` is an experimental package, but it is built and
-gated like a normal R package: the merge gate below is what decides whether a
-change lands.
+Thanks for looking. `tidymarkers` designs, checks and audits plant SNP markers.
+It is experimental, but it is built and gated like a normal R package: the merge
+gate below is what decides whether a change lands.
+
+## What a contribution is worth here
+
+This repository does not value volume. It values a claim that can be checked.
+Before you write code, know which of four kinds of change you are making,
+because each has a different gate:
+
+| Kind | Example | What proves it |
+|---|---|---|
+| **Rule** — a design or acceptance rule | a new mismatch severity, a changed Tm window | a measurement read from a source you opened, and a `data-raw/<paper>.R` script that re-derives it and fails on disagreement |
+| **Fixture** — an input the suite runs against | a panel, a haplotypes table, a reference slice | the file plus the id in `dev/check-criteria.R` that names a real test driving it |
+| **Wiring** — existing code reaches a caller | an exported function that nothing calls | a call site, or the function is unexported and its `@keywords internal` says why |
+| **Prose** — README, vignette, roadmap | a corrected sentence | it matches what the code and the tests now do |
+
+A rule with no measurement is a default. Say so in the roxygen comment and in
+`NEWS.md`; a default written down honestly is welcome, a default dressed as a
+finding is not.
+
+## Scope
+
+The package answers one question: given a target variant and a genome, which
+marker assay should be designed for it, and how far can you trust the answer?
+Everything in `R/` serves that path — marker design (KASP, TaqMan, LAMP, RPA,
+HRM, CRISPR), specificity against a genome, decision ladders, and the audit
+trail behind a verdict. A change that does not serve that path belongs in a
+downstream package or in the dossier, not here.
 
 ## Quick development loop
 
@@ -33,6 +59,15 @@ roxygen2::roxygenise()
 sync, figures and the install smoke test. `--full` adds
 `R CMD check --as-cran`, which runs the complete test suite. `--quick` is the
 routine loop (roxygen, style, lint, criterion fixtures, docs/artifacts).
+
+Two gates are specific to this project and will reject a change that looks fine:
+
+- **`dev/check-criteria.R`** — every criterion must be able to fail. A new
+  `gate` or `check` id needs either a fixture naming a real test that drives it
+  to `fail`, or an exemption with a non-empty reason (a genome, a BLAST
+  database or a population the in-memory suite does not carry).
+- **`tests/testthat/test-falsifiable.R`** — a published acceptance criterion
+  with no fixture that can drive it to `fail` fails the suite.
 
 CI (`.github/workflows/R-CMD-check.yaml`) runs `R CMD check --as-cran` on push
 and pull request, with OligoArrayAux installed from conda. `dev/check.R` is the
@@ -79,3 +114,18 @@ runs on every change is the gate above plus the test suite, including the
 falsifiability test (`test-falsifiable.R`), which fails if a published acceptance
 criterion has no fixture that can drive it to `fail`. Treat that as a floor, not
 as a substitute for review.
+
+## Reviewer protocol
+
+A change under review is asked exactly two questions, in this order. A proposal
+that anyone can check against the repository is treated as a contribution
+regardless of who raised it; the credits below record who raised what.
+
+1. **Is the claim measured?** Point at the file, the script in `data-raw/` and
+   the test that drives the criterion to `fail`. "The paper says so" starts the
+   answer, it does not finish it.
+2. **Does it move the marker path?** If it does, which assay, which decision
+   rung, and what does the caller do differently?
+
+Review is recorded in the pull request or in `ROADMAP.md`, with the section id
+the change closes.

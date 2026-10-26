@@ -8,7 +8,8 @@ link resolves; `dev/check-artifacts.R` verifies the artifact graph.
 
 - [README](../README.md) — what the package is, install, quick start, decision trees.
 - [AGENTS](../AGENTS.md) — agent instructions and the environment to run in.
-- [CONTRIBUTING](../CONTRIBUTING.md) — conventions and the merge gate.
+- [CONTRIBUTING](../CONTRIBUTING.md) — conventions, scope and the merge gate.
+- [CREDITS](../CREDITS.md) — contributor record and how work is ranked here.
 - [ROADMAP](../ROADMAP.md) — the open queue (ZA8 is this docs/artifacts layer).
 - [NEWS](../NEWS.md) — changelog.
 - [VALIDATION](../VALIDATION.md) — what is checked against external evidence,
