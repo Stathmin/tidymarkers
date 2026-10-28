@@ -1347,12 +1347,19 @@ Commit message via `git commit -F file` — never -m with backticks or $().
   праймеров базовый дизайнер выполняет и без него; префильтр области (`Y2`)
   читает тот же набор.
 
-#### Y1.2. `marker_technologies()` и принудительный `rule_of_thumb`
-- **Правка:** публичный список собранных технологий; в конструкторе — жёсткая
-  установка `calibration_evidence = "rule_of_thumb"` без параметра переопределения.
-- **Проверка:** тест, что любая собранная технология возвращает `rule_of_thumb`,
-  даже если все блоки взяты из откалиброванного пресета; `ZW4`-тест
-  `evaluation_evidence()` видит это значение.
+#### Y1.2. `marker_technologies()` и принудительный `rule_of_thumb`  [сделано]
+- **Сделано:** `marker_technology()` жёстко ставит
+  `calibration_evidence = "rule_of_thumb"` на спецификацию — аргумента
+  переопределения нет, по построению. `marker_technologies()` несёт колонку
+  `calibration_evidence`. `evaluation_evidence()` получил необязательный
+  `scheme` и читает `$scheme` маркера: после обычного минимума по прошедшим
+  проверкам рунг опускается до `calibration_evidence` собранной технологии
+  (база и любая встроенная схема не затрагиваются).
+- **Проверка:** `test-technology.R` (250 pass): список возвращает
+  `rule_of_thumb`; реестр нарочно подменён на `fitted_here` — база даёт
+  `fitted_here`, `marker_technology(scheme = ...)` и маркер с `$scheme` дают
+  `rule_of_thumb`. Регрессия — `test-evidence.R`, `test-criteria.R`,
+  `test-decision.R` (29691 pass в наборе).
 - **Блокер:** снят (`Y1.1`).
 - **Следствие:** §ZW4 перестаёт быть «инвариантом на бумаге» — собранная технология
   не может выглядеть калиброванной.

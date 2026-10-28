@@ -611,12 +611,20 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
 #'   whose `$evaluation` is read, exactly as for [evaluation_verdict()].
 #' @param criteria the criterion registry the rungs are read from (see
 #'   `criterion_spec()`).
+#' @param scheme optional scheme id (see [marker_schemes()]); when `x` is a
+#'   marker with a `$scheme` it is read from there.  A composed technology
+#'   (roadmap Y1.2) caps the result at its forced `calibration_evidence`, so a
+#'   composition of a calibrated preset still cannot look calibrated.
 #' @return a single evidence rung (an ordered factor level, as character) or
 #'   `NA_character_`.
 #' @keywords internal
 #' @noRd
-evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS)) {
+evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS),
+                                scheme = NULL) {
   ev <- if (is.data.frame(x)) x else x$evaluation
+  if (!is.data.frame(x) && is.null(scheme)) {
+    scheme <- x$scheme %||% NULL
+  }
   if (is.null(ev) || !nrow(ev)) {
     return(NA_character_)
   }
@@ -634,7 +642,19 @@ evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS)) {
   if (!length(rung)) {
     return(NA_character_)
   }
-  as.character(min(rung))
+  out <- as.character(min(rung))
+  # A technology is assembled from a base preset, not fitted here; whatever
+  # rungs that preset carries, the composition was never validated on its own,
+  # so it may not certify more than a rule of thumb (roadmap Y1.2).
+  cap <- if (is.null(scheme) || length(scheme) != 1L || is.na(scheme)) {
+    NULL
+  } else {
+    marker_technology_def(scheme)$calibration_evidence
+  }
+  if (!is.null(cap)) {
+    out <- as.character(min(criterion_evidence(out), criterion_evidence(cap)))
+  }
+  out
 }
 
 # Full criterion table for a non-KASP marker.  This is the evaluator behind

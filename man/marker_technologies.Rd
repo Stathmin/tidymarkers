@@ -8,7 +8,7 @@ marker_technologies()
 }
 \value{
 a tibble with \code{scheme}, \code{base}, \code{family}, \code{specificity}, \code{params},
-\code{blocks}; zero rows when none were composed.
+\code{blocks}, \code{calibration_evidence}; zero rows when none were composed.
 }
 \description{
 List the composed technologies of this session

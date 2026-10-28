@@ -96,7 +96,12 @@ marker_technology <- function(name, base = "snp", params = list(),
     base = base,
     params = params,
     blocks = blocks,
-    specificity = specificity %||% marker_specificity(base)
+    specificity = specificity %||% marker_specificity(base),
+    # Forced, never a parameter (roadmap Y1.2): the composition was assembled
+    # here and has not been validated on its own, so it cannot inherit the
+    # base preset's rung and look calibrated.  `evaluation_evidence()` caps the
+    # technology's evidence at this value.
+    calibration_evidence = "rule_of_thumb"
   )
   if (!is.null(specificity) && !specificity %in% KASP_SPECIFICITY_MODES) {
     cli::cli_abort(gettext("Unknown specificity mode {specificity}."))
@@ -108,7 +113,7 @@ marker_technology <- function(name, base = "snp", params = list(),
 #' List the composed technologies of this session
 #'
 #' @return a tibble with `scheme`, `base`, `family`, `specificity`, `params`,
-#'   `blocks`; zero rows when none were composed.
+#'   `blocks`, `calibration_evidence`; zero rows when none were composed.
 #' @examples
 #' marker_technology("giga_snp",
 #'   base = "snp",
@@ -122,7 +127,8 @@ marker_technologies <- function() {
   if (!length(ids)) {
     return(tibble::tibble(
       scheme = character(0), base = character(0), family = character(0),
-      specificity = character(0), params = list(), blocks = list()
+      specificity = character(0), params = list(), blocks = list(),
+      calibration_evidence = character(0)
     ))
   }
   purrr::map(ids, function(id) {
@@ -130,7 +136,8 @@ marker_technologies <- function() {
     tibble::tibble(
       scheme = id, base = d$base, family = d$family,
       specificity = d$specificity, params = list(d$params),
-      blocks = list(d$blocks %||% character(0))
+      blocks = list(d$blocks %||% character(0)),
+      calibration_evidence = d$calibration_evidence %||% "rule_of_thumb"
     )
   }) |>
     purrr::list_rbind()

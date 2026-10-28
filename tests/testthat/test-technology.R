@@ -20,6 +20,42 @@ test_that("a composed technology is discovered with a valid DAG and its policy",
   expect_identical(t$specificity[t$scheme == "giga_snp"], "unique")
 })
 
+test_that("a composed technology can never look calibrated (Y1.2)", {
+  marker_technology("giga_snp", base = "snp", overwrite = TRUE)
+  on.exit(rm("giga_snp", envir = .marker_tech_store), add = TRUE)
+
+  # the rung is forced on the spec, with no parameter to override it
+  t <- marker_technologies()
+  expect_identical(
+    t$calibration_evidence[t$scheme == "giga_snp"], "rule_of_thumb"
+  )
+
+  # fabricate a fully calibrated registry, as if the base preset had been fitted
+  crit <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  crit$evidence <- tidymarkers:::criterion_evidence(
+    rep("fitted_here", nrow(crit))
+  )
+  ch <- tibble::tibble(
+    criterion = crit$id[crit$role == "check"][1L],
+    status = "pass"
+  )
+  # the same passing checks certify `fitted_here` for the base...
+  expect_equal(evaluation_evidence(ch, criteria = crit), "fitted_here")
+  # ...but a composed technology caps them at the forced rule of thumb
+  expect_equal(
+    evaluation_evidence(ch, criteria = crit, scheme = "giga_snp"),
+    "rule_of_thumb"
+  )
+  # and reads the scheme off a marker, the path a caller actually takes
+  expect_equal(
+    evaluation_evidence(
+      list(evaluation = ch, scheme = "giga_snp"),
+      criteria = crit
+    ),
+    "rule_of_thumb"
+  )
+})
+
 test_that("a composed technology carries its base's whole criterion set", {
   # A built-in stage is run by a *family*, and its gate/tier rows are tagged with
   # that family's schemes.  A technology that only re-parameterises a base is a
