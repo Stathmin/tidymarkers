@@ -37,9 +37,10 @@ reference:
     contents:
       - has_concept("KASP plan")
   - title: "Informativeness & ranking"
-    desc: "How much a marker tells an available panel apart"
+    desc: "How much a marker tells an available panel apart, and the Pareto front"
     contents:
       - has_concept("KASP informativeness")
+      - has_concept("KASP ranking")
   - title: "Plots"
     desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
     contents:
