@@ -155,10 +155,18 @@ extra_scheme_designer <- function(scheme) {
   }
 }
 
-#' Discovered scheme ids whose `family` matches (e.g. the extra KASP-family ones)
+#' The schemes that run a built-in stage
+#'
+#' `marker_builtin_stages()` names, per stage, the *families* that run it; a
+#' criterion row names *schemes*.  Resolving the second from the first keeps a
+#' composed technology (which only re-parameterises a base, so it has no gate or
+#' tier of its own) beside its base: its family runs the stage, and the stage's
+#' gate/tier rows must reach it too.
+#' @param families the stage's `schemes` member (a character vector of families).
+#' @return the scheme ids whose `family` is in `families`.
 #' @keywords internal
 #' @noRd
-extra_family_schemes <- function(family) {
-  defs <- extra_scheme_defs()
-  names(defs)[vapply(defs, function(d) identical(d$family, family), logical(1))]
+stage_schemes <- function(families) {
+  s <- marker_schemes()
+  s$scheme[s$family %in% families]
 }

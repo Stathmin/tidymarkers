@@ -639,15 +639,10 @@ criterion_spec <- function(limits = KASP_LIMITS) {
     out$order <- seq_along(t)
     out
   }
-  # The `as` / `pair` stages are shared by the whole KASP family; every other
-  # built-in stage belongs to one scheme (see marker_builtin_stages()).
-  marker_core <- c(KASP_SCHEME_CORE, extra_family_schemes("kasp"))
-  stage_scheme <- as.list(gate_scope)
-  for (nm in names(builtins)) {
-    if (length(builtins[[nm]]$schemes) > 1L) {
-      stage_scheme[[nm]] <- marker_core
-    }
-  }
+  # A stage is run by a *family* (see marker_builtin_stages()), and its gate/tier
+  # rows are tagged with every scheme of that family - which is what lets a
+  # composed technology inherit its base's stage instead of losing it.
+  stage_scheme <- lapply(builtins, function(st) stage_schemes(st$schemes))
   stages <- lapply(names(builtins), function(nm) {
     g <- gate_labels[[nm]]
     t <- tier_labels[[nm]]

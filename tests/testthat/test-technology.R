@@ -20,6 +20,40 @@ test_that("a composed technology is discovered with a valid DAG and its policy",
   expect_identical(t$specificity[t$scheme == "giga_snp"], "unique")
 })
 
+test_that("a composed technology carries its base's whole criterion set", {
+  # A built-in stage is run by a *family*, and its gate/tier rows are tagged with
+  # that family's schemes.  A technology that only re-parameterises a base is a
+  # scheme of the same family, so it must see the same rows - not just the
+  # acceptance checks.  When the membership misses it, `marker_criteria()` (and
+  # every view built on it: the evaluation table, the decision text) silently
+  # drops the whole selection stage.
+  cols <- c("id", "role", "stage", "label", "level", "limit", "hard", "order")
+  bases <- c("snp", "duplex", "arms")
+  ids <- paste0("probe_", bases)
+  for (i in seq_along(bases)) {
+    marker_technology(ids[i], base = bases[i], overwrite = TRUE)
+  }
+  on.exit(rm(list = ids, envir = .marker_tech_store), add = TRUE)
+  for (i in seq_along(bases)) {
+    id <- ids[i]
+    base <- bases[i]
+
+    expect_true(id %in% marker_schemes()$scheme)
+    # the same rows, in the same order, with the same bars as the base
+    expect_equal(
+      marker_criteria(scheme = id)[, cols],
+      marker_criteria(scheme = base)[, cols],
+      info = base
+    )
+    # and the same decision DAG, since the schema reads those rows
+    expect_equal(
+      marker_decision_schema(id)$nodes$name,
+      marker_decision_schema(base)$nodes$name,
+      info = base
+    )
+  }
+})
+
 test_that("a composed technology designs via its base designer", {
   skip_if_no_oligoarrayaux()
   marker_technology("giga_test", base = "snp", params = list())
