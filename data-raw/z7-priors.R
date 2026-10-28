@@ -21,6 +21,14 @@
 #      says the 3rd base from the 3' end.  All three stay, each labelled.
 #    * The position claims are derived from the per-class tables we already
 #      extracted, and the script fails if the table does not support the claim.
+#    * An anchor was measured on SOME readout, and none of them is KASP
+#      fluorescence.  Kwok 1990 measured Taq polymerase extension; Lefever 2019
+#      measured dCq on real-time AS-PCR; Liu 2012 measured AS-PCR specificity
+#      end-point; Ye 2001 is the tetra-primer ARMS rule (a rule of thumb, not a
+#      measurement in this table).  `anchor_chemistry` names that readout on
+#      every row and `transfer_assumption` states the consequence: carrying the
+#      number to a KASP fluorescence readout is an assumption, not a
+#      measurement (Z7.2).
 #
 #  Engine note (this is the Z7 blocker, measured):
 #    pcr_efficiency() computes DECIPHER's efficiency of a primer against a
@@ -46,6 +54,20 @@ KWOK <- "10.1093/nar/18.4.999"
 LEFEVER <- "10.1038/s41598-019-38581-z"
 LIU <- "10.1186/1746-4811-8-34"
 YE <- "10.1093/nar/29.17.e88"
+
+# Z7.2: the readout each anchor was actually measured on.  None is KASP
+# fluorescence, so the transfer is an assumption that travels with the artifact
+# rather than a property of the data.
+ANCHOR_CHEMISTRY <- c(
+  kwok1990 = "Taq polymerase kinetics (PCR yield)",
+  lefever2019 = "real-time quantitative AS-PCR (dCq)",
+  liu2012_arms = "allele-specific PCR (end-point)",
+  ye2001 = "tetra-primer ARMS-PCR (end-point)"
+)
+TRANSFER_ASSUMPTION <- paste(
+  "assumption: carrying this anchor to a KASP fluorescence readout is not",
+  "measured; no anchor here was run on KASP"
+)
 
 ## --- 1. the published rule tables we hold -----------------------------------
 kwok <- ext("mismatch_discrimination.csv")
@@ -79,16 +101,17 @@ if (best_site != "3rd") {
 
 
 ## --- 3. the prior table ------------------------------------------------------
+prior_src <- c(
+  "kwok1990", "kwok1990", "kwok1990", "lefever2019", "lefever2019",
+  "lefever2019", "liu2012_arms", "ye2001"
+)
 priors <- data.frame(
   prior_id = c(
     "kwok_severity_order", "kwok_terminal_T_weak", "kwok_context_dependence",
     "lefever_single_insufficient", "lefever_position", "lefever_base_free",
     "liu_position_3rd", "ye_second_mismatch_position"
   ),
-  source_key = c(
-    "kwok1990", "kwok1990", "kwok1990", "lefever2019", "lefever2019",
-    "lefever2019", "liu2012_arms", "ye2001"
-  ),
+  source_key = prior_src,
   family = rep("KASP / AS-PCR", 8L),
   what = c(
     "3'-terminal mismatch severity is ordered by base pair",
@@ -135,9 +158,17 @@ priors <- data.frame(
   ),
   calibrated = FALSE,
   doi = c(KWOK, KWOK, KWOK, LEFEVER, LEFEVER, LEFEVER, LIU, YE),
+  anchor_chemistry = unname(ANCHOR_CHEMISTRY[prior_src]),
+  transfer_assumption = TRANSFER_ASSUMPTION,
   stringsAsFactors = FALSE
 )
 if (nrow(priors) != 8L) stop("prior table lost a row")
+if (anyNA(priors$anchor_chemistry) || any(!nzchar(priors$anchor_chemistry))) {
+  stop("a prior row does not name the readout its anchor was measured on")
+}
+if (any(grepl("KASP", priors$anchor_chemistry, ignore.case = TRUE))) {
+  stop("an anchor claims to be measured on KASP; the transfer is an assumption")
+}
 
 ## --- 4. can our engine be tested? -------------------------------------------
 # A KASP assay scores one allele primer against a MATCH template (the allele it
@@ -240,5 +271,6 @@ message(
   paste(sprintf("%.4f", probe$margin), collapse = "/"),
   " (spread ", signif(spread, 3L), "); terminal floor ",
   paste(sprintf("%.4f", probe$terminal_floor), collapse = "/"), ";\n",
-  "  Kwok severity order reproduced by the margin: ", ordered
+  "  Kwok severity order reproduced by the margin: ", ordered, ";\n",
+  "  Z7.2 transfer assumption: ", TRANSFER_ASSUMPTION
 )

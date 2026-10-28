@@ -38,6 +38,28 @@ test_that("Z7: every prior row names its source, its evidence level and a predic
   expect_true(all(p$evidence %in% ladder))
 })
 
+test_that("Z7.2: every anchor names the chemistry it was measured on", {
+  p <- ext("z7_priors.csv")
+  expect_true(all(c("anchor_chemistry", "transfer_assumption") %in% names(p)))
+  expect_false(any(is.na(p$anchor_chemistry) | !nzchar(p$anchor_chemistry)))
+  # one readout per source: the anchor does not change between its predictions
+  per_source <- tapply(p$anchor_chemistry, p$source_key, function(x) {
+    length(unique(x))
+  })
+  expect_true(all(per_source == 1L))
+  # four anchors, four readouts, and none of them is KASP fluorescence
+  expect_equal(length(unique(p$anchor_chemistry)), 4L)
+  expect_false(any(grepl("KASP", p$anchor_chemistry, ignore.case = TRUE)))
+  chem <- function(key) unique(p$anchor_chemistry[p$source_key == key])
+  expect_match(chem("kwok1990"), "Taq")
+  expect_match(chem("lefever2019"), "real-time")
+  expect_match(chem("liu2012_arms"), "allele-specific")
+  expect_match(chem("ye2001"), "ARMS")
+  # the transfer is recorded as an assumption, identical on every row
+  expect_length(unique(p$transfer_assumption), 1L)
+  expect_match(p$transfer_assumption[[1L]], "assumption")
+})
+
 test_that("Z7: no prior is marked calibrated, and none came from our own engine", {
   p <- ext("z7_priors.csv")
   expect_false(any(p$calibrated))
