@@ -178,3 +178,124 @@ test_that("Z7: nothing in this table is presented as a probability", {
   expect_false(any(grepl("probability|conversion rate|% success", p$prediction)))
   expect_false("calibrated" %in% names(p) && any(p$calibrated))
 })
+
+## --- Z7.5: the added mismatch must not weaken another gate -------------------
+
+#  The roadmap's worry is a closed gate paying for another: a design that gains
+#  the deliberate mismatch must still be graded by the same engine, the same
+#  checks and the same terminal-base gate.  Two tests, one per layer:
+#    * the primer layer - one live pair, with and without the mismatch, at the
+#      SAME geometry, so the only difference is the one added base;
+#    * the design layer - the full ARMS pipeline on one synthetic locus, run both
+#      ways, so the gate vocabulary is compared across real designs.
+#  Statuses are NOT required to be equal: a single base can move Tm, GC or a
+#  dimer.  What must be equal is the gate SET (ids, order, stage, level, limit)
+#  and its applicability, plus the terminal-base gate the mismatch sits behind.
+
+test_that("Z7.5: an added mismatch is one 3'-distal base and drops no gate", {
+  skip_if_no_oligoarrayaux()
+  gen <- syn_genome(seed = 11L, n = 2000L)
+  w <- Biostrings::DNAString(gen$seq)
+  pos <- 1000L
+  ref <- substr(gen$seq, pos, pos)
+  # A:G is one of Kwok's classes, so the terminal gate carries a real value
+  # (`severe`) instead of `unknown` - "did not move" then means something.
+  alt <- "G"
+  d <- design_as_primers(
+    w, pos,
+    ref = ref, alt = alt, lengths = 20L, strands = "+",
+    stab_ats = c(NA, abs(ARMS_EXTRA_MISMATCH_POSITION))
+  )
+  mm_rows <- d[!is.na(d$stab_at), , drop = FALSE]
+  expect_gt(nrow(mm_rows), 0L)
+  mm <- mm_rows[1L, ]
+  # the SAME geometry without the deliberate mismatch
+  plain <- d[
+    is.na(d$stab_at) & d$as_length == mm$as_length &
+      d$tmpl_start == mm$tmpl_start & d$strand == mm$strand, ,
+    drop = FALSE
+  ]
+  expect_equal(nrow(plain), 1L)
+  plain <- plain[1L, ]
+  # the added mismatch is a single base, at the decided distance, in BOTH primers
+  # of the pair; the allele-specific 3' base itself is untouched
+  chars <- function(x) strsplit(x, "", fixed = TRUE)[[1L]]
+  at <- mm$as_length - abs(ARMS_EXTRA_MISMATCH_POSITION) + 1L
+  expect_equal(which(chars(mm$ref_primer) != chars(plain$ref_primer)), at)
+  expect_equal(which(chars(mm$alt_primer) != chars(plain$alt_primer)), at)
+  expect_equal(
+    substr(mm$ref_primer, mm$as_length, mm$as_length),
+    substr(plain$ref_primer, mm$as_length, mm$as_length)
+  )
+
+  # the same pipeline before and after: identical gate ids, order, stage, level
+  # and limit, and no applicable gate may become inapplicable
+  com <- "ACGTACGTACGTACGTACGT"
+  a0 <- make_assay(plain$ref_primer, plain$alt_primer, com, ref = ref, alt = alt)
+  a1 <- make_assay(mm$ref_primer, mm$alt_primer, com, ref = ref, alt = alt)
+  e0 <- marker_design_checks(a0)
+  e1 <- marker_design_checks(a1)
+  expect_identical(e0$criterion, e1$criterion)
+  expect_identical(e0$stage, e1$stage)
+  expect_identical(e0$level, e1$level)
+  expect_identical(e0$limit, e1$limit)
+  expect_false(any(e1$status == "not_applicable" & e0$status != "not_applicable"))
+  # the mismatch reaches the gates: AS Tm is computed from the mismatched pair,
+  # and it moved - it cannot be a stale, un-mismatched read
+  as_tm <- e1$observed[e1$criterion == "AS Tm (C)"]
+  expect_equal(as_tm, mean(primer_tm(c(mm$ref_primer, mm$alt_primer))[1:2]))
+  expect_gt(abs(as_tm - e0$observed[e0$criterion == "AS Tm (C)"]), 0.01)
+  # the terminal-base gate is the one the mismatch is layered ON, and it must not
+  # move: the 3' base is the same in both primers
+  term <- "AS 3' mismatch base pair"
+  expect_equal(as.character(e0$status[e0$criterion == term]), "pass")
+  expect_equal(as.character(e1$status[e1$criterion == term]), "pass")
+  # ZW0 M2 still holds with the mismatch present: swapping REF/ALT moves neither
+  # the verdict nor the gate set
+  sw <- a1
+  sw$snp$ref <- a1$snp$alt
+  sw$snp$alt <- a1$snp$ref
+  sw$assay$as_ref <- a1$assay$as_alt
+  sw$assay$as_alt <- a1$assay$as_ref
+  sw$thermo$tm <- c(a1$thermo$tm[2L], a1$thermo$tm[1L], a1$thermo$tm[3L])
+  e_sw <- marker_design_checks(sw)
+  expect_equal(evaluation_verdict(e1), evaluation_verdict(e_sw))
+  expect_identical(e1$criterion, e_sw$criterion)
+})
+
+test_that("Z7.5: the full ARMS pipeline gates a mismatched design the same way", {
+  skip_if_no_oligoarrayaux()
+  # The same synthetic locus, designed twice through the real pipeline: once with
+  # no deliberate mismatch and once with the decided one.  Both are live markers
+  # (outer pair, inner pair, band sizes); the gate vocabulary must not shrink.
+  gen <- syn_genome(seed = 11L, n = 2000L)
+  g <- marker_genome(gen$path)
+  pos <- 1000L
+  ref <- substr(gen$seq, pos, pos)
+  alt <- if (ref %in% c("A", "G")) "C" else "T"
+  snp <- tibble::tibble(chrom = "Chr1", pos = as.integer(pos), ref = ref, alt = alt)
+  plain <- suppressWarnings(design_arms_marker(g, snp, flank = 300L, stab_ats = NA))
+  mism <- suppressWarnings(design_arms_marker(
+    g, snp,
+    flank = 300L, stab_ats = abs(ARMS_EXTRA_MISMATCH_POSITION)
+  ))
+  testthat::skip_if(
+    is.null(plain) || is.null(mism),
+    "the synthetic locus did not design both ways"
+  )
+  # the mismatch is recorded on the winner, and it is the policy's default row
+  expect_identical(plain$inner$ref$stab_policy, "none")
+  expect_identical(mism$inner$ref$stab_policy, "default")
+  expect_equal(mism$inner$ref$stab_at, abs(ARMS_EXTRA_MISMATCH_POSITION))
+  # the mismatched inner primer is among the oligos the evaluator scores
+  expect_true(mism$inner$ref$primer %in% marker_primers(mism))
+  # same pipeline -> identical gate ids, stage, level and limit, and no gate
+  # becomes inapplicable because the mismatch is present
+  e0 <- marker_design_checks(plain)
+  e1 <- marker_design_checks(mism)
+  expect_identical(e0$criterion, e1$criterion)
+  expect_identical(e0$stage, e1$stage)
+  expect_identical(e0$level, e1$level)
+  expect_identical(e0$limit, e1$limit)
+  expect_false(any(e1$status == "not_applicable" & e0$status != "not_applicable"))
+})
