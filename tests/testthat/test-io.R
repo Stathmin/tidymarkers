@@ -182,3 +182,72 @@ test_that("example_targets: transition is purine-for-purine, and indels are not"
   expect_equal(sum(!is.na(ex$alt2)), 1L)
   expect_true(ex$type[!is.na(ex$alt2)] %in% c("SNP", "MNP"))
 })
+
+test_that("read_genbank parses features, caches an index and reuses it", {
+  gb <- withr::local_tempfile(fileext = ".gbk")
+  unlink(paste0(gb, ".gbidx"))
+  write_genbank <- function(extra = NULL) {
+    writeLines(c(
+      "LOCUS       TESTLOCUS         120 bp    DNA     linear   UNK 01-JAN-2026",
+      "DEFINITION  Test record.",
+      "ACCESSION   TESTACC",
+      "VERSION     TESTACC.1",
+      "FEATURES             Location/Qualifiers",
+      "     source          1..120",
+      '                     /organism="Arabidopsis thaliana"',
+      '                     /mol_type="genomic DNA"',
+      "     gene            complement(10..60)",
+      '                     /gene="GENE1"',
+      '                     /locus_tag="TAG1"',
+      "     CDS             join(10..30,40..60)",
+      '                     /gene="GENE1"',
+      '                     /locus_tag="TAG1"',
+      '                     /product="protein one"',
+      "     misc_feature    100..110",
+      '                     /note="a feature"',
+      extra,
+      "ORIGIN",
+      "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+      "       61 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+      "//"
+    ), gb)
+  }
+
+  write_genbank()
+  x <- read_genbank(gb)
+  expect_equal(nrow(x), 4L)
+  expect_true(attr(x, "file_reads") >= 1L)
+  expect_true(all(x$chrom == "TESTLOCUS"))
+
+  cds <- x[x$type == "CDS", ]
+  gene <- x[x$type == "gene", ]
+  source <- x[x$type == "source", ]
+  misc <- x[x$type == "misc_feature", ]
+  expect_equal(cds$start, 10L)
+  expect_equal(cds$end, 60L)
+  expect_equal(cds$strand, "+")
+  expect_equal(gene$start, 10L)
+  expect_equal(gene$end, 60L)
+  expect_equal(gene$strand, "-")
+  expect_equal(source$start, 1L)
+  expect_equal(source$end, 120L)
+  expect_equal(source$strand, "+")
+  expect_equal(misc$start, 100L)
+  expect_equal(misc$end, 110L)
+
+  expect_equal(cds$gene, "GENE1")
+  expect_equal(cds$product, "protein one")
+  expect_true(is.na(gene$product))
+  expect_equal(gene$locus_tag, "TAG1")
+
+  y <- read_genbank(gb, region = list(chrom = "TESTLOCUS", start = 1, end = 30))
+  expect_equal(attr(y, "file_reads"), 0L)
+  expect_equal(nrow(y), 3L)
+  expect_setequal(y$type, c("source", "gene", "CDS"))
+
+  write_genbank(extra = c("     misc_feature    80..90", '                     /note="added"'))
+  z <- read_genbank(gb)
+  expect_true(attr(z, "file_reads") >= 1L)
+  expect_equal(nrow(z), 5L)
+  expect_true(any(z$type == "misc_feature" & z$start == 80L))
+})

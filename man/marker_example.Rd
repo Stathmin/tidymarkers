@@ -45,6 +45,7 @@ Other KASP input:
 \code{\link[=mask_positions]{mask_positions()}},
 \code{\link[=normalise_allele]{normalise_allele()}},
 \code{\link[=print.marker_genome]{print.marker_genome()}},
+\code{\link[=read_genbank]{read_genbank()}},
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
 \code{\link[=snp_template]{snp_template()}}
