@@ -29,6 +29,7 @@ find_repeats(c("ACACACAC", "ACGTACGT"))
 Other KASP QC:
 \code{\link[=find_palindromes]{find_palindromes()}},
 \code{\link[=has_palindrome]{has_palindrome()}},
-\code{\link[=has_repeat]{has_repeat()}}
+\code{\link[=has_repeat]{has_repeat()}},
+\code{\link[=variant_confidence]{variant_confidence()}}
 }
 \concept{KASP QC}

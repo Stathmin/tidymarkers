@@ -30,6 +30,9 @@ and how expensive each is).  Then \code{\link[=marker_solve]{marker_solve()}} ru
 \details{
 The plan is a plain list: it is cheap to build, print and inspect, and it
 carries no results until you solve it.
+
+Add \code{\link[=marker_context]{marker_context()}} with \verb{depth =} to weight each genotype by its
+sequencing depth, so low-confidence calls are dropped before design (Y5.3).
 }
 \examples{
 \dontrun{

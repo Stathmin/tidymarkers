@@ -38,6 +38,7 @@ Other KASP input:
 \code{\link[=normalise_allele]{normalise_allele()}},
 \code{\link[=read_genbank]{read_genbank()}},
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
+\code{\link[=read_variant_depth]{read_variant_depth()}},
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
 \code{\link[=snp_template]{snp_template()}}
 }

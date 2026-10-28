@@ -4,7 +4,13 @@
 \alias{marker_context}
 \title{Add variant / haplotype context to a plan}
 \usage{
-marker_context(variants = NULL, haplotypes = NULL)
+marker_context(
+  variants = NULL,
+  haplotypes = NULL,
+  depth = NULL,
+  min_depth = 3L,
+  min_weight = 0.5
+)
 }
 \arguments{
 \item{variants}{a tidy variant table (\code{chrom}, \code{pos}, and either \code{alt} or
@@ -12,6 +18,13 @@ marker_context(variants = NULL, haplotypes = NULL)
 
 \item{haplotypes}{a tidy haplotype table (\code{haplotype}, \code{freq}, \code{chrom},
 \code{pos}, \code{ref}, \code{alt}).}
+
+\item{depth}{optional per-site sequencing depth: a VCF path (read with
+\code{\link[=read_variant_depth]{read_variant_depth()}}) or a table with \code{chrom}, \code{pos}, \code{depth} (and
+optional \code{alt_depth}/\code{genotype}).  Stored as the plan's \code{depth} table after
+\code{\link[=variant_confidence]{variant_confidence()}}, so the solver can gate low-confidence calls.}
+
+\item{min_depth, min_weight}{passed to \code{\link[=variant_confidence]{variant_confidence()}} (\code{3L} and \code{0.5}).}
 }
 \value{
 a plan layer (add it with \code{+}).
@@ -26,6 +39,11 @@ sites into an ALT primer and mark a design as linkage-dependent.
 \dontrun{
 marker_plan(genome) + marker_context(variants = ensembl_variants("Chr4", 268901, 271503))
 }
+marker_plan(Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGT"))) +
+  marker_context(
+    variants = tibble::tibble(chrom = "Chr1", pos = 1L, ref = "A", alt = "C"),
+    depth = tibble::tibble(chrom = "Chr1", pos = 1L, depth = 10L, alt_depth = 0L, genotype = "0/0")
+  )
 }
 \seealso{
 Other KASP plan:

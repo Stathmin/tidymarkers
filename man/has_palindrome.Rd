@@ -28,6 +28,7 @@ has_palindrome(c("ACGTACGT", "AACCGG"))
 Other KASP QC:
 \code{\link[=find_palindromes]{find_palindromes()}},
 \code{\link[=find_repeats]{find_repeats()}},
-\code{\link[=has_repeat]{has_repeat()}}
+\code{\link[=has_repeat]{has_repeat()}},
+\code{\link[=variant_confidence]{variant_confidence()}}
 }
 \concept{KASP QC}

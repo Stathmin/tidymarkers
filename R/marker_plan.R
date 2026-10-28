@@ -124,6 +124,8 @@ marker_layer <- function(apply, label) {
 #'   `chrom`, `start`, `end`).  At solve time it expands to every variant the
 #'   context places inside it, so the plan sweeps sites x chemistries without a
 #'   target list (roadmap Y2.1); a variant outside the block is never a target.
+#' @details Add [marker_context()] with `depth =` to weight each genotype by its
+#'   sequencing depth, so low-confidence calls are dropped before design (Y5.3).
 #' @return a `marker_plan`.
 #' @examples
 #' \dontrun{
@@ -144,7 +146,7 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
       genome = genome,
       targets = if (is.null(targets)) empty_targets() else normalise_targets(targets),
       region = if (is.null(region)) NULL else normalise_region(region),
-      variants = NULL, haplotypes = NULL,
+      variants = NULL, haplotypes = NULL, depth = NULL,
       schemes = NULL, costs = NULL, exclude = NULL,
       layers = character(0)
     ),
@@ -191,18 +193,40 @@ marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
 #'   `ref_genome`; optional `pop_freq`), e.g. from [ensembl_variants()].
 #' @param haplotypes a tidy haplotype table (`haplotype`, `freq`, `chrom`,
 #'   `pos`, `ref`, `alt`).
+#' @param depth optional per-site sequencing depth: a VCF path (read with
+#'   [read_variant_depth()]) or a table with `chrom`, `pos`, `depth` (and
+#'   optional `alt_depth`/`genotype`).  Stored as the plan's `depth` table after
+#'   [variant_confidence()], so the solver can gate low-confidence calls.
+#' @param min_depth,min_weight passed to [variant_confidence()] (`3L` and `0.5`).
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' \dontrun{
 #' marker_plan(genome) + marker_context(variants = ensembl_variants("Chr4", 268901, 271503))
 #' }
+#' marker_plan(Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGT"))) +
+#'   marker_context(
+#'     variants = tibble::tibble(chrom = "Chr1", pos = 1L, ref = "A", alt = "C"),
+#'     depth = tibble::tibble(chrom = "Chr1", pos = 1L, depth = 10L, alt_depth = 0L, genotype = "0/0")
+#'   )
 #' @family KASP plan
 #' @export
-marker_context <- function(variants = NULL, haplotypes = NULL) {
+marker_context <- function(variants = NULL, haplotypes = NULL,
+                           depth = NULL, min_depth = 3L, min_weight = 0.5) {
   marker_layer(
     function(plan) {
       if (!is.null(variants)) plan$variants <- variants
       if (!is.null(haplotypes)) plan$haplotypes <- haplotypes
+      if (!is.null(depth)) {
+        depth_tbl <- if (is.character(depth) && length(depth) == 1L && !is.na(depth) && nzchar(depth)) {
+          read_variant_depth(depth)
+        } else {
+          depth
+        }
+        depth_tbl <- variant_confidence(depth_tbl, min_depth = min_depth, min_weight = min_weight)
+        attr(depth_tbl, "min_depth") <- min_depth
+        attr(depth_tbl, "min_weight") <- min_weight
+        plan$depth <- depth_tbl
+      }
       plan
     },
     label = "context"

@@ -149,6 +149,7 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
   if (!is.null(plan$region)) {
     tg <- dplyr::bind_rows(tg, region_targets(plan))
   }
+  tg <- filter_targets_by_depth(tg, plan$depth)
   if (!nrow(tg)) {
     cli::cli_abort(gettext(
       "The plan has no targets; add them with marker_targets() or name a `region`."

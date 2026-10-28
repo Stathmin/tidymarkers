@@ -61,6 +61,7 @@ Other KASP input:
 \code{\link[=print.marker_genome]{print.marker_genome()}},
 \code{\link[=read_genbank]{read_genbank()}},
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
+\code{\link[=read_variant_depth]{read_variant_depth()}},
 \code{\link[=snp_template]{snp_template()}}
 }
 \concept{KASP input}
