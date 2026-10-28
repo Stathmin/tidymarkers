@@ -87,3 +87,25 @@ test_that("the solver rejects a plan whose every target is low-confidence", {
   p <- marker_plan(fx$genome, region = region) + marker_context(variants = v, depth = d)
   expect_error(marker_solve(p, cores = 1L, progress = FALSE), "depth gate")
 })
+
+test_that("variant_confidence() normalises chrom so a '1' depth table gates Chr1 targets", {
+  d1 <- variant_confidence(tibble::tibble(
+    chrom = "1", pos = 100L, depth = 1L, alt_depth = 0L, genotype = "0/0"
+  ))
+  d2 <- variant_confidence(tibble::tibble(
+    chrom = "Chr1", pos = 100L, depth = 1L, alt_depth = 0L, genotype = "0/0"
+  ))
+  expect_equal(d1$chrom, "Chr1")
+  targets <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = "A", alt = "G")
+  expect_error(filter_targets_by_depth(targets, d1), "depth gate")
+  expect_error(filter_targets_by_depth(targets, d2), "depth gate")
+})
+
+test_that("an empty plan aborts with 'no targets', not the depth gate", {
+  fx <- snp_fixture()
+  d <- tibble::tibble(
+    chrom = "Chr1", pos = 100L, depth = 1L, alt_depth = 0L, genotype = "0/0"
+  )
+  p <- marker_plan(fx$genome) + marker_context(depth = d)
+  expect_error(marker_solve(p, cores = 1L, progress = FALSE), "no targets")
+})

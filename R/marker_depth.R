@@ -223,6 +223,7 @@ variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
       gettext("`depth` is missing column(s): {paste(missing, collapse = ', ')}.")
     ))
   }
+  x$chrom <- ath_chrom(x$chrom)
 
   d <- as.numeric(x$depth)
   ad <- if ("alt_depth" %in% names(x)) as.numeric(x$alt_depth) else rep(NA_real_, nrow(x))
@@ -279,6 +280,9 @@ filter_targets_by_depth <- function(targets, depth) {
     return(targets)
   }
   tg <- tibble::as_tibble(targets)
+  if (!nrow(tg)) {
+    return(targets)
+  }
   d <- tibble::as_tibble(depth)
   missing <- setdiff(c("chrom", "pos", "confident"), names(d))
   if (length(missing)) {
