@@ -118,3 +118,35 @@ homeolog_axes <- function(assay) {
     reason = reason
   )
 }
+
+#' Stamp the two 3' axes onto an assay result and warn when the anchor is off (internal)
+#'
+#' Reads the mask already stored on `out`, fills `diagnostic_positions`,
+#' `allele_base`, `subgenome_anchor` and `homeolog_diagnostics`, and warns when
+#' the common primer's 3' base is not on a subgenome-diagnostic position.
+#'
+#' @param out an assay result under construction.
+#' @param mask a normalised diagnostic mask (`NULL` allowed).
+#' @return `out`, with the homeolog axes set.
+#' @keywords internal
+#' @noRd
+set_homeolog_axes <- function(out, mask) {
+  out$diagnostic_positions <- mask
+  dx <- homeolog_axes(out)
+  out$allele_base <- c(AS_ref = dx$allele_base_ref, AS_alt = dx$allele_base_alt)
+  out$subgenome_anchor <- if (
+    !is.na(dx$subgenome_anchor) && !is.na(match(dx$subgenome_anchor, c("A", "C", "G", "T")))
+  ) {
+    dx$subgenome_anchor
+  } else {
+    NA_character_
+  }
+  out$homeolog_diagnostics <- dx
+  if (isTRUE(dx$diagnostic == FALSE)) {
+    cli::cli_warn(gettext(paste0(
+      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
+      "the assay genotypes but does not localise."
+    )))
+  }
+  out
+}

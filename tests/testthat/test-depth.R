@@ -101,6 +101,14 @@ test_that("variant_confidence() normalises chrom so a '1' depth table gates Chr1
   expect_error(filter_targets_by_depth(targets, d2), "depth gate")
 })
 
+test_that("filter_targets_by_depth() normalises the target chrom against a normalised depth table", {
+  d <- variant_confidence(tibble::tibble(
+    chrom = "1", pos = 100L, depth = 1L, alt_depth = 0L, genotype = "0/0"
+  ))
+  targets <- tibble::tibble(chrom = "1", pos = 100L, ref = "A", alt = "G")
+  expect_error(filter_targets_by_depth(targets, d), "depth gate")
+})
+
 test_that("an empty plan aborts with 'no targets', not the depth gate", {
   fx <- snp_fixture()
   d <- tibble::tibble(

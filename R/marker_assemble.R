@@ -980,21 +980,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # Y3.1: the two 3' axes, explicit.  The allele axis is structural (always
   # filled); the subgenome axis is read against the caller-supplied mask and is
   # never guessed from the one genome.
-  out$diagnostic_positions <- mask
-  dx <- homeolog_axes(out)
-  out$allele_base <- c(AS_ref = dx$allele_base_ref, AS_alt = dx$allele_base_alt)
-  out$subgenome_anchor <- if (!is.na(dx$subgenome_anchor) && dx$subgenome_anchor %in% c("A", "C", "G", "T")) {
-    dx$subgenome_anchor
-  } else {
-    NA_character_
-  }
-  out$homeolog_diagnostics <- dx
-  if (isTRUE(dx$diagnostic == FALSE)) {
-    cli::cli_warn(gettext(paste0(
-      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
-      "the assay genotypes but does not localise."
-    )))
-  }
+  out <- set_homeolog_axes(out, mask)
   structure(out, class = "marker_assay")
 }
 
@@ -1377,20 +1363,6 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   out$decision <- tryCatch(marker_decision_graph(out, scheme = scheme), error = function(e) NULL)
   # Y3.1: the two 3' axes, explicit, read from the fixed primers' own geometry
   # (com_start/com_end) rather than from the designer's pair search.
-  out$diagnostic_positions <- mask
-  dx <- homeolog_axes(out)
-  out$allele_base <- c(AS_ref = dx$allele_base_ref, AS_alt = dx$allele_base_alt)
-  out$subgenome_anchor <- if (!is.na(dx$subgenome_anchor) && dx$subgenome_anchor %in% c("A", "C", "G", "T")) {
-    dx$subgenome_anchor
-  } else {
-    NA_character_
-  }
-  out$homeolog_diagnostics <- dx
-  if (isTRUE(dx$diagnostic == FALSE)) {
-    cli::cli_warn(gettext(paste0(
-      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
-      "the assay genotypes but does not localise."
-    )))
-  }
+  out <- set_homeolog_axes(out, mask)
   structure(out, class = "marker_assay")
 }

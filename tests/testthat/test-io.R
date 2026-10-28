@@ -298,3 +298,21 @@ test_that("read_genbank folds a wrapped qualifier value into one feature", {
   expect_equal(nrow(x), 1L)
   expect_equal(x$qualifiers[[1]]$note, "a long note that wraps across two lines")
 })
+
+test_that("read_genbank folds a wrapped join() location into full start/end", {
+  gb <- withr::local_tempfile(fileext = ".gbk")
+  unlink(paste0(gb, ".gbidx"))
+  writeLines(c(
+    "LOCUS       TESTLOCUS        300 bp    DNA     linear   UNK 01-JAN-2026",
+    "FEATURES             Location/Qualifiers",
+    "     CDS             join(1..100,",
+    "                     150..300)",
+    "ORIGIN",
+    "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+    "//"
+  ), gb)
+  x <- read_genbank(gb)
+  cds <- x[x$type == "CDS", ]
+  expect_equal(cds$start, 1L)
+  expect_equal(cds$end, 300L)
+})

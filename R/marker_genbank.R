@@ -274,10 +274,16 @@ parse_features_block <- function(block) {
         current$qual_vals <- c(current$qual_vals, q$value)
       }
     } else if (is_qualifier_continuation(ln)) {
-      # a wrapped qualifier value continues on a line whose key column is blank
-      if (!is.null(current) && length(current$qual_vals)) {
+      # a wrapped qualifier value continues on a line whose key column is blank;
+      # before the first qualifier exists, a blank key column is a wrapped
+      # *location* line instead, so it is appended to the location (not dropped)
+      if (is.null(current)) {
+        next
+      } else if (length(current$qual_vals)) {
         k <- length(current$qual_vals)
         current$qual_vals[k] <- paste(current$qual_vals[k], trimws(ln), sep = " ")
+      } else {
+        current$location <- paste(current$location, trimws(ln), sep = " ")
       }
     } else {
       # a new feature line flushes the previous feature (with its qualifiers),

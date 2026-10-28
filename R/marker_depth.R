@@ -290,8 +290,8 @@ filter_targets_by_depth <- function(targets, depth) {
       gettext("The depth table is missing column(s): {paste(missing, collapse = ', ')}.")
     ))
   }
-  low <- paste(d$chrom, d$pos, sep = "|")[!is.na(d$confident) & !d$confident]
-  key <- paste(tg$chrom, tg$pos, sep = "|")
+  low <- paste(ath_chrom(d$chrom), d$pos, sep = "|")[!is.na(d$confident) & !d$confident]
+  key <- paste(ath_chrom(tg$chrom), tg$pos, sep = "|")
   out <- tg[!key %in% low, , drop = FALSE]
   if (!nrow(out)) {
     msg <- glue::glue(
