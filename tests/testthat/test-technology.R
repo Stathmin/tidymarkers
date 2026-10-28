@@ -77,6 +77,95 @@ test_that("marker_filter_blocks names the composable space", {
   b <- marker_filter_blocks()
   expect_true(all(c("base", "specificity", "params") %in% b$block))
   expect_setequal(b$values[b$block == "specificity"], paste(KASP_SPECIFICITY_MODES, collapse = " | "))
+  # roadmap Y1.1: every block states the families it can act on
+  expect_true(all(c("block", "kind", "values", "applies_to", "note") %in% names(b)))
+  families <- unique(marker_schemes()$family)
+  for (i in seq_len(nrow(b))) {
+    a <- b$applies_to[[i]]
+    expect_type(a, "character")
+    expect_length(a, 1L)
+    if (identical(a, "all")) next
+    fam <- strsplit(a, " | ", fixed = TRUE)[[1L]]
+    expect_gt(length(fam), 0L)
+    expect_true(all(fam %in% families), info = b$block[[i]])
+  }
+  # a filter exists to say where it does *not* apply, so none is universal
+  expect_false(any(b$applies_to[b$kind == "filter"] == "all"))
+})
+
+test_that("a filter block is accepted exactly on the families it names", {
+  # the registry is the truth; the constructor must agree with it for every
+  # block/family pair (roadmap Y1.1), not just the two in the prose example
+  id <- "probe_block_pair"
+  on.exit(
+    if (exists(id, envir = .marker_tech_store, inherits = FALSE)) {
+      rm(list = id, envir = .marker_tech_store)
+    },
+    add = TRUE
+  )
+  reg <- marker_filter_blocks()
+  reg <- reg[reg$kind == "filter", , drop = FALSE]
+  schemes <- marker_schemes()
+  one_per_family <- vapply(
+    unique(schemes$family),
+    function(f) schemes$scheme[schemes$family == f][[1L]],
+    character(1)
+  )
+  for (i in seq_len(nrow(reg))) {
+    for (family in names(one_per_family)) {
+      applies <- filter_block_applies(reg$applies_to[[i]], family)
+      call <- function() {
+        marker_technology(
+          id,
+          base = one_per_family[[family]],
+          blocks = reg$block[[i]], overwrite = TRUE
+        )
+      }
+      if (applies) {
+        expect_no_error(call())
+      } else {
+        expect_error(call(), "does not apply")
+      }
+    }
+  }
+})
+
+test_that("the constructor refuses a chemically meaningless mix, not warns", {
+  # the roadmap's case: an SSR target *is* a repeat, so "avoid repeats" (or a
+  # homopolymer run) cannot be a constraint on it
+  expect_error(
+    marker_technology("ssr_repeat", base = "ssr", blocks = c("homopolymers", "repeats")),
+    "does not apply"
+  )
+  # a guide-only chemistry has no primer pair to constrain
+  expect_error(
+    marker_technology("crispr_composition", base = "crispr", blocks = "composition"),
+    "does not apply"
+  )
+  # ... and a mixture whose blocks all speak about a primer pair composes, with
+  # the same DAG as its base
+  id <- "giga_kasp"
+  on.exit(
+    if (exists(id, envir = .marker_tech_store, inherits = FALSE)) {
+      rm(list = id, envir = .marker_tech_store)
+    },
+    add = TRUE
+  )
+  marker_technology(id, base = "snp", blocks = c("composition", "hairpins"))
+  expect_true(id %in% marker_schemes()$scheme)
+  expect_dag_invariants(id)
+  expect_equal(
+    marker_decision_schema(id)$nodes$name,
+    marker_decision_schema("snp")$nodes$name
+  )
+  t <- marker_technologies()
+  expect_identical(t$blocks[t$scheme == id][[1L]], c("composition", "hairpins"))
+})
+
+test_that("only a filter block can be requested", {
+  expect_error(marker_technology("x_unknown", base = "snp", blocks = "nope"), "Unknown technology block")
+  expect_error(marker_technology("x_axis", base = "snp", blocks = "specificity"), "Unknown technology block")
+  expect_error(marker_technology("x_type", base = "snp", blocks = 1), "character vector")
 })
 
 # ---- Z6: the population / haplotype layer reaches the verdict ----------------

@@ -8,6 +8,7 @@ marker_technology(
   name,
   base = "snp",
   params = list(),
+  blocks = character(0),
   specificity = NULL,
   label = NULL,
   verdict = NULL,
@@ -22,6 +23,11 @@ marker_technology(
 \item{params}{named list passed to the base designer (e.g.
 \code{list(as_lengths = 24:30)}); validated only for being a named list.}
 
+\item{blocks}{optional filter blocks the technology adds (see
+\code{\link[=marker_filter_blocks]{marker_filter_blocks()}}).  A block is refused when it cannot act on the
+base's chemistry family (e.g. \code{"homopolymers"} on an SSR, whose target is a
+repeat); the error lists every incompatible block/family pair (roadmap Y1.1).}
+
 \item{specificity}{optional specificity policy (see \code{KASP_SPECIFICITY_MODES});
 defaults to the base scheme's policy.}
 
@@ -34,13 +40,14 @@ the technology spec, invisibly.
 }
 \description{
 Registers a new marker technology = a base scheme (its designer and DAG stage)
-plus a specificity policy and designer parameters.  It is discovered like any
-other scheme (see \code{marker_schemes()}), so \code{marker_criteria()}, the decision
-tree and the designers pick it up automatically; \code{marker_design_at()} designs
-it by calling the base designer with \code{params}.  A runtime registry, so it does
-not survive a session restart (serialise \code{name}/\code{base}/\code{params}/\code{specificity}
-and re-run \code{marker_technology()} to restore it - a declarative share format is
-the next Y1 slice).
+plus a specificity policy, designer parameters and filter blocks.  It is
+discovered like any other scheme (see \code{marker_schemes()}), so
+\code{marker_criteria()}, the decision tree and the designers pick it up
+automatically; \code{marker_design_at()} designs it by calling the base designer
+with \code{params}.  A runtime registry, so it does not survive a session restart
+(serialise \code{name}/\code{base}/\code{params}/\code{blocks}/\code{specificity} and re-run
+\code{marker_technology()} to restore it - a declarative share format is the next
+Y1 slice).
 }
 \examples{
 marker_technology("giga_snp",
