@@ -169,3 +169,108 @@ test_that("Y3.2: PolyMarker is a benchmark and rule source, never reimplemented"
   # every rule is uncalibrated: the source states a construction, not an outcome
   expect_false(any(r$calibrated))
 })
+
+# =============================================================================
+#  Y3.1  --  `allele_base` / `subgenome_anchor` as explicit candidate fields
+# =============================================================================
+
+test_that("Y3.1: a designed candidate carries the two 3' axes explicitly", {
+  f <- snp_fixture()
+  m <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
+  ax <- homeolog_axes(m)
+
+  # the allele axis is the AS 3' base (REF/ALT), named and always filled
+  expect_named(m$allele_base, c("AS_ref", "AS_alt"))
+  expect_equal(
+    unname(m$allele_base),
+    plus_3p_base(c(m$assay$as_ref[1], as_alt_sequence(m)), m$strand)
+  )
+
+  # the subgenome axis is the COM 3' base, read on the opposite strand ...
+  expect_equal(
+    m$subgenome_anchor,
+    plus_3p_base(m$assay$com[1], if (m$strand == "+") "-" else "+")
+  )
+  # ... and its position is the plus-strand template base at `anchor_pos`
+  idx <- ax$anchor_pos - m$snp$pos + m$template$snp_i
+  expect_equal(
+    m$subgenome_anchor,
+    as.character(Biostrings::subseq(m$template$seq, idx, idx))
+  )
+
+  # without a mask the verdict is explicit NA, never a silent `unique`
+  expect_equal(nrow(m$homeolog_diagnostics), 1L)
+  expect_true(is.na(m$homeolog_diagnostics$diagnostic))
+  expect_true(is.na(m$homeolog_diagnostics$specificity))
+  expect_match(m$homeolog_diagnostics$reason, "no subgenome mask")
+})
+
+test_that("Y3.1: a diagnostic mask hit reports unique", {
+  f <- snp_fixture()
+  m0 <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
+  ap <- homeolog_axes(m0)$anchor_pos
+  m <- suppressWarnings(assemble_kasp_assay(
+    f$genome, f$snp,
+    pair_screen = 0L, cores = 1L,
+    diagnostic_positions = data.frame(chrom = "Chr1", pos = ap)
+  ))
+  ax <- homeolog_axes(m)
+  expect_true(ax$diagnostic)
+  expect_equal(ax$specificity, "unique")
+  expect_equal(m$subgenome_anchor, m0$subgenome_anchor)
+})
+
+test_that("Y3.1: a diagnostic mask miss warns and reports multicopy", {
+  f <- snp_fixture()
+  m0 <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
+  ap <- homeolog_axes(m0)$anchor_pos
+  expect_warning(
+    m <- withCallingHandlers(
+      assemble_kasp_assay(
+        f$genome, f$snp,
+        pair_screen = 0L, cores = 1L,
+        diagnostic_positions = data.frame(chrom = "Chr1", pos = ap + 1000L)
+      ),
+      warning = function(w) {
+        # the synthetic template also raises an unrelated near-match PCR warning
+        if (grepl("near-match in-silico PCR", conditionMessage(w), fixed = TRUE)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    ),
+    "does not localise"
+  )
+  ax <- homeolog_axes(m)
+  expect_false(ax$diagnostic)
+  expect_equal(ax$specificity, "multicopy")
+})
+
+test_that("Y3.1: fixed primers carry the same two axes", {
+  f <- snp_fixture()
+  len <- 20L
+  pos <- f$snp$pos
+  as_ref <- substring(f$W, pos - len + 1L, pos)
+  as_alt <- paste0(substring(f$W, pos - len + 1L, pos - 1L), f$alt)
+  com <- as.character(Biostrings::reverseComplement(
+    Biostrings::DNAString(substring(f$W, pos + 30L, pos + 30L + len - 1L))
+  ))
+  m <- suppressWarnings(assemble_primer_assay(
+    f$genome, f$snp,
+    c(AS_ref = as_ref, AS_alt = as_alt, COM = com)
+  ))
+  expect_named(m$allele_base, c("AS_ref", "AS_alt"))
+  expect_equal(unname(m$allele_base), plus_3p_base(c(as_ref, as_alt), m$strand))
+  expect_false(is.na(m$subgenome_anchor))
+  expect_equal(nrow(m$homeolog_diagnostics), 1L)
+  expect_true(is.na(m$homeolog_diagnostics$diagnostic))
+})
+
+test_that("Y3.1: the data artifact fills both axes for every assay", {
+  p <- ext("makhoul_kasp_primers.csv")
+  expect_true(all(c("fam_3p", "hex_3p", "common_3p") %in% names(p)))
+  # every row carries a real nucleotide on each 3' axis: NA would only appear
+  # where the base is not a nucleotide, and no row is allowed to drop the field
+  expect_true(all(!is.na(p$fam_3p) & p$fam_3p %in% c("A", "C", "G", "T")))
+  expect_true(all(!is.na(p$hex_3p) & p$hex_3p %in% c("A", "C", "G", "T")))
+  expect_true(all(!is.na(p$common_3p) & p$common_3p %in% c("A", "C", "G", "T")))
+})

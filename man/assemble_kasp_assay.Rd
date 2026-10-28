@@ -24,7 +24,8 @@ assemble_kasp_assay(
   scheme = "snp",
   on_offtarget = NULL,
   cores = getOption("tidymarkers.cores", 1L),
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  diagnostic_positions = NULL
 )
 }
 \arguments{
@@ -94,6 +95,14 @@ near-linear speed-up of a single assay.  When \code{BPPARAM} is set it wins.}
 (seed specificity and in-silico PCR; split by chromosome) and for the
 subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
 \code{cores = 1} / a serial \code{BPPARAM}.}
+
+\item{diagnostic_positions}{the subgenome-diagnostic mask (roadmap Y3.1):
+\code{NULL}, a data frame / list with \code{chrom} and \code{pos}, a \code{GRanges}, or a named
+list \verb{chrom -> integer positions}.  It is the PolyMarker mask derived by
+comparing subgenomes, so the candidate never infers it from one genome; with
+\code{NULL} the subgenome verdict is \code{NA}, with a supplied mask the common
+primer's 3' base is checked against it and a miss warns and reports
+\code{multicopy}.}
 }
 \value{
 a \code{marker_assay} object: a list holding the \code{snp}, the template, the

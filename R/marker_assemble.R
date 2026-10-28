@@ -531,6 +531,13 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   (seed specificity and in-silico PCR; split by chromosome) and for the
 #'   subprocess work.  Use it to avoid nesting: inside a locus-level backend pass
 #'   `cores = 1` / a serial `BPPARAM`.
+#' @param diagnostic_positions the subgenome-diagnostic mask (roadmap Y3.1):
+#'   `NULL`, a data frame / list with `chrom` and `pos`, a `GRanges`, or a named
+#'   list `chrom -> integer positions`.  It is the PolyMarker mask derived by
+#'   comparing subgenomes, so the candidate never infers it from one genome; with
+#'   `NULL` the subgenome verdict is `NA`, with a supplied mask the common
+#'   primer's 3' base is checked against it and a miss warns and reports
+#'   `multicopy`.
 #' @return a `marker_assay` object: a list holding the `snp`, the template, the
 #'   chosen `strand`, ranked `assay`/`as_candidates` tibbles, `efficiency`,
 #'   `thermo`, `complementarity`, `specificity`, `amplicons`, `blast` results and
@@ -576,8 +583,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 pair_screen = 3L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 scheme = "snp", on_offtarget = NULL,
-                                cores = getOption("tidymarkers.cores", 1L), BPPARAM = NULL) {
+                                cores = getOption("tidymarkers.cores", 1L), BPPARAM = NULL,
+                                diagnostic_positions = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
+  mask <- normalise_diagnostic_positions(diagnostic_positions)
   # the scheme's own reaction conditions, so every dG this assay reports is
   # evaluated at the temperature the chemistry actually runs at (Z3)
   conditions <- scheme_conditions(scheme)
@@ -968,6 +977,24 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   out$decision <- tryCatch(marker_decision_graph(out, scheme = scheme),
     error = function(e) NULL
   )
+  # Y3.1: the two 3' axes, explicit.  The allele axis is structural (always
+  # filled); the subgenome axis is read against the caller-supplied mask and is
+  # never guessed from the one genome.
+  out$diagnostic_positions <- mask
+  dx <- homeolog_axes(out)
+  out$allele_base <- c(AS_ref = dx$allele_base_ref, AS_alt = dx$allele_base_alt)
+  out$subgenome_anchor <- if (!is.na(dx$subgenome_anchor) && dx$subgenome_anchor %in% c("A", "C", "G", "T")) {
+    dx$subgenome_anchor
+  } else {
+    NA_character_
+  }
+  out$homeolog_diagnostics <- dx
+  if (isTRUE(dx$diagnostic == FALSE)) {
+    cli::cli_warn(gettext(paste0(
+      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
+      "the assay genotypes but does not localise."
+    )))
+  }
   structure(out, class = "marker_assay")
 }
 
@@ -1094,6 +1121,9 @@ normalise_fixed_primers <- function(primers) {
 #'   printed panel Tm (see ROADMAP `ZW3.2`).
 #' @param cores worker count for the genome/thermodynamics batches.
 #' @param BPPARAM optional `BiocParallel` backend (overrides `cores`).
+#' @param diagnostic_positions the subgenome-diagnostic mask (roadmap Y3.1):
+#'   `NULL`, a data frame / list with `chrom` and `pos`, a `GRanges`, or a named
+#'   list `chrom -> integer positions`.  See [assemble_kasp_assay()].
 #' @return a `marker_assay`.
 #' @examples
 #' \dontrun{
@@ -1110,8 +1140,10 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
                                   flank = 150L, scheme = "snp",
                                   salt_method = "SantaLucia1998-2",
                                   cores = getOption("tidymarkers.cores", 1L),
-                                  BPPARAM = NULL) {
+                                  BPPARAM = NULL,
+                                  diagnostic_positions = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
+  mask <- normalise_diagnostic_positions(diagnostic_positions)
   conditions <- scheme_conditions(scheme)
   snp <- normalise_fixed_snp(snp)
   p <- normalise_fixed_primers(primers)
@@ -1343,5 +1375,22 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   # no selection ladder ran on a fixed primer set, so the graph is left neutral
   # rather than pretending every gate was cleared
   out$decision <- tryCatch(marker_decision_graph(out, scheme = scheme), error = function(e) NULL)
+  # Y3.1: the two 3' axes, explicit, read from the fixed primers' own geometry
+  # (com_start/com_end) rather than from the designer's pair search.
+  out$diagnostic_positions <- mask
+  dx <- homeolog_axes(out)
+  out$allele_base <- c(AS_ref = dx$allele_base_ref, AS_alt = dx$allele_base_alt)
+  out$subgenome_anchor <- if (!is.na(dx$subgenome_anchor) && dx$subgenome_anchor %in% c("A", "C", "G", "T")) {
+    dx$subgenome_anchor
+  } else {
+    NA_character_
+  }
+  out$homeolog_diagnostics <- dx
+  if (isTRUE(dx$diagnostic == FALSE)) {
+    cli::cli_warn(gettext(paste0(
+      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
+      "the assay genotypes but does not localise."
+    )))
+  }
   structure(out, class = "marker_assay")
 }

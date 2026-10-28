@@ -13,7 +13,8 @@ assemble_primer_assay(
   scheme = "snp",
   salt_method = "SantaLucia1998-2",
   cores = getOption("tidymarkers.cores", 1L),
-  BPPARAM = NULL
+  BPPARAM = NULL,
+  diagnostic_positions = NULL
 )
 }
 \arguments{
@@ -42,6 +43,10 @@ printed panel Tm (see ROADMAP \code{ZW3.2}).}
 \item{cores}{worker count for the genome/thermodynamics batches.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend (overrides \code{cores}).}
+
+\item{diagnostic_positions}{the subgenome-diagnostic mask (roadmap Y3.1):
+\code{NULL}, a data frame / list with \code{chrom} and \code{pos}, a \code{GRanges}, or a named
+list \verb{chrom -> integer positions}.  See \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 }
 \value{
 a \code{marker_assay}.

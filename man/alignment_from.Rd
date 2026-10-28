@@ -27,6 +27,7 @@ Other KASP specificity:
 \code{\link[=build_blast_db]{build_blast_db()}},
 \code{\link[=exact_hit_table]{exact_hit_table()}},
 \code{\link[=has_blast]{has_blast()}},
+\code{\link[=homeolog_axes]{homeolog_axes()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},
 \code{\link[=marker_fm_index]{marker_fm_index()}},
