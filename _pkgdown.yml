@@ -36,6 +36,10 @@ reference:
     desc: "Targets, chemistry costs, the solver and its tidy export"
     contents:
       - has_concept("KASP plan")
+  - title: "Informativeness & ranking"
+    desc: "How much a marker tells an available panel apart"
+    contents:
+      - has_concept("KASP informativeness")
   - title: "Plots"
     desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
     contents:
