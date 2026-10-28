@@ -276,3 +276,123 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
     dplyr::mutate(consequence = dplyr::coalesce(.data$so_codon, .data$so_location, .data$consequence)) |>
     dplyr::select(-"query", -"so_location", -"so_codon")
 }
+
+# Pull one attribute out of a GFF3 attributes column, preferring the human-readable
+# keys in that order; `ID` (often a bare accession) is the last useful fallback.
+gff_attribute <- function(attributes) {
+  pick <- function(a) {
+    parts <- strsplit(a, ";", fixed = TRUE)[[1L]]
+    for (key in c("Name", "gene", "locus_tag", "ID")) {
+      hit <- parts[startsWith(parts, paste0(key, "="))]
+      if (length(hit)) {
+        return(sub(paste0("^", key, "="), "", hit[[1L]]))
+      }
+    }
+    NA_character_
+  }
+  vapply(attributes, pick, character(1L), USE.NAMES = FALSE)
+}
+
+#' Read a genome feature annotation for the plot feature track
+#'
+#' [plot_primers()] and [plot_marker_map()] draw an annotation row under the
+#' assay.  That row wants a table with `start`/`end` (plus optional `strand`,
+#' `name`) and a `chrom` column so the plot can pick the chromosome it is
+#' drawing.  This reads either an NCBI `feature_table.txt(.gz)` or a GFF3 into
+#' exactly that shape -- the annotation comes from the assembly's own file, not
+#' from a hand-entered summary.
+#'
+#' The NCBI feature table already carries `chromosome` as `1`..`20`; a GFF3 that
+#' names sequences by accession (e.g. `NC_016088.4`) needs `chrom_map` to reach
+#' the genome's names.  Gzip is detected from the `.gz` suffix.
+#'
+#' @param path NCBI feature table or GFF3 path (optionally gzipped).
+#' @param chrom optional chromosome to keep (applied after `chrom_map`).
+#' @param feature feature type to keep; `"gene"` by default.  `NULL` keeps every
+#'   type the file carries (NCBI class or GFF3 type).
+#' @param chrom_map optional named character vector translating file sequence
+#'   names to the genome's names, as in [marker_genome()].
+#' @return a tibble with `chrom`, `start`, `end`, `strand`, `name` and `type`.
+#' @examples
+#' \dontrun{
+#' features <- marker_features("feature_table.txt.gz")
+#' marker_features("genome.gff3", chrom = "1")
+#' }
+#' @family KASP annotation
+#' @export
+marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NULL) {
+  path <- fs::path(path)
+  if (!fs::file_exists(path)) {
+    cli::cli_abort(gettext("`path` does not exist: {.path {path}}."))
+  }
+  open_con <- function() if (grepl("\\.gz$", path)) gzfile(path, "rt") else file(path, "rt")
+  read_head <- function(n) {
+    con <- open_con()
+    on.exit(close(con))
+    readLines(con, n = n)
+  }
+
+  # The NCBI table's first line is its header, `# feature<TAB>class<TAB>...`;
+  # everything else with tabs in the first lines is read as GFF3.
+  is_ncbi <- any(grepl("^#?\\s*feature\\tclass\\t", read_head(60L)))
+
+  if (is_ncbi) {
+    con <- open_con()
+    on.exit(close(con))
+    d <- utils::read.delim(
+      con,
+      header = TRUE, sep = "\t", quote = "", comment.char = "",
+      check.names = FALSE, stringsAsFactors = FALSE
+    )
+    keep <- if (is.null(feature)) rep(TRUE, nrow(d)) else d[[1L]] == feature
+    d <- d[keep, , drop = FALSE]
+    chrom_v <- d[["chromosome"]]
+    start_v <- d[["start"]]
+    end_v <- d[["end"]]
+    strand_v <- d[["strand"]]
+    type_v <- d[[1L]]
+    # a gene's symbol is the label a reader recognises; its `name` is the free
+    # text description and is the fallback when no symbol was assigned
+    name_v <- as.character(d[["name"]])
+    symbol_v <- d[["symbol"]]
+    if (!is.null(symbol_v)) {
+      has_symbol <- !is.na(symbol_v) & nzchar(symbol_v)
+      name_v[has_symbol] <- as.character(symbol_v[has_symbol])
+    }
+  } else {
+    con <- open_con()
+    on.exit(close(con))
+    d <- utils::read.delim(
+      con,
+      header = FALSE, sep = "\t", quote = "", comment.char = "#",
+      stringsAsFactors = FALSE, fill = TRUE
+    )
+    if (ncol(d) < 9L) {
+      cli::cli_abort(gettext("`path` is neither an NCBI feature table nor a 9-column GFF3."))
+    }
+    keep <- if (is.null(feature)) rep(TRUE, nrow(d)) else d[[3L]] == feature
+    d <- d[keep, , drop = FALSE]
+    chrom_v <- d[[1L]]
+    start_v <- d[[4L]]
+    end_v <- d[[5L]]
+    strand_v <- d[[7L]]
+    type_v <- d[[3L]]
+    name_v <- gff_attribute(d[[9L]])
+  }
+
+  out <- tibble::tibble(
+    chrom = as.character(chrom_v),
+    start = as.integer(start_v),
+    end = as.integer(end_v),
+    strand = as.character(strand_v),
+    name = as.character(name_v),
+    type = as.character(type_v)
+  )
+  if (!is.null(chrom_map)) {
+    out$chrom <- dplyr::coalesce(unname(chrom_map[out$chrom]), out$chrom)
+  }
+  if (!is.null(chrom)) {
+    out <- out[!is.na(out$chrom) & out$chrom == as.character(chrom), , drop = FALSE]
+  }
+  out
+}

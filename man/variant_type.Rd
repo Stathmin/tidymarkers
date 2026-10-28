@@ -24,6 +24,7 @@ variant_type("A", "ACGT") # insertion
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
+\code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},

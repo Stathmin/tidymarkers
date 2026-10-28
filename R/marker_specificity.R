@@ -457,16 +457,24 @@ exact_pattern_hits <- function(pattern, subject, max_mismatch) {
   if (!any(keep)) {
     return(IRanges::IRanges())
   }
-  blocks <- lapply(which(keep), function(i) {
+  starts <- lapply(which(keep), function(i) {
     s <- bl$start[[i]]
     sub <- Biostrings::subseq(subject, s, bl$end[[i]])
     h <- Biostrings::matchPattern(pattern, sub, max.mismatch = max_mismatch, fixed = FALSE)
     if (!length(h)) {
-      return(NULL)
+      return(integer())
     }
-    IRanges::IRanges(IRanges::start(h) + s - 1L, width = width)
+    IRanges::start(h) + s - 1L
   })
-  do.call(c, c(blocks, list(IRanges::IRanges())))
+  starts <- unlist(starts, use.names = FALSE)
+  # Build one IRanges from the starts.  `do.call(c, ...)` over the per-block
+  # ranges used to work only when the *first* block had a hit: a leading `NULL`
+  # made `c()` fall back to list semantics, and `start()` of that list returned
+  # the index of each block instead of the genomic coordinate.
+  if (!length(starts)) {
+    return(IRanges::IRanges())
+  }
+  IRanges::IRanges(starts, width = width)
 }
 
 #' Per-primer hit table for one primer against every chromosome
@@ -543,6 +551,138 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       n_mismatch = integer(), mismatch_positions = list(integer()),
       three_prime_mismatch = integer(), seed_mismatch = integer(),
       terminal_mismatch = integer(), three_prime_terminal = logical(), penalty = numeric()
+    )
+  }
+  out
+}
+
+#' Exact genome hits with coordinates
+#'
+#' The coordinate-level counterpart of [specificity_seed()]: instead of a count,
+#' it returns where every exact (or radius-bounded) occurrence sits.  Both
+#' strands are searched - the oligo itself on the plus strand and its reverse
+#' complement on the minus strand - and every hit keeps the primer's own name,
+#' so a table of oligos comes back as one tidy set of loci.
+#'
+#' Patterns are grouped by width and searched with `Biostrings::PDict` /
+#' `matchPDict()` (the precomputed-dictionary fast path, one pass per dictionary
+#' per chromosome).  A degenerate (IUPAC) oligo, or a pattern shorter than 6 nt
+#' with `max_mismatch > 0` (the mismatch tree's minimum width), is searched with
+#' [exact_pattern_hits()] instead; an ambiguous genomic base is never a hit.
+#'
+#' @param sequences named character vector of oligos (a `DNAStringSet` is also
+#'   accepted).  Unnamed input is labelled by its own sequence.
+#' @param genome a `marker_genome` (streamed one chromosome at a time) or a
+#'   `DNAStringSet`.
+#' @param max_mismatch search radius (default 0, exact).
+#' @param BPPARAM optional `BiocParallel` backend; the scan is split by genome
+#'   sequence.
+#' @return a tibble `primer`, `chrom`, `start`, `end`, `width`, `strand`
+#'   (`strand` is `"+"` for a plus-strand occurrence and `"-"` for one on the
+#'   minus strand), one row per hit.  `start`/`end` are 1-based inclusive
+#'   genomic coordinates in the genome's own forward orientation.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' exact_hit_table(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
+#' }
+#' @family KASP specificity
+#' @export
+exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL) {
+  if (inherits(sequences, "XStringSet")) {
+    sequences <- as.character(sequences)
+  }
+  if (!is.character(sequences) || !length(sequences)) {
+    cli::cli_abort(gettext("`sequences` must be a non-empty character vector of oligos."))
+  }
+  max_mismatch <- as.integer(max_mismatch)
+  if (is.na(max_mismatch) || max_mismatch < 0L) {
+    cli::cli_abort(gettext("`max_mismatch` must be a non-negative integer."))
+  }
+  nm <- names(sequences)
+  if (is.null(nm)) {
+    nm <- unname(sequences)
+  }
+  # one dictionary per width: PDict needs equal-length patterns.  A degenerate
+  # oligo cannot enter a PDict, and its mismatch tree needs width >= 6, so those
+  # patterns take the per-pattern scan instead.
+  groups <- split(seq_along(sequences), nchar(sequences))
+  dicts <- lapply(groups, function(idx) {
+    strict <- grepl("^[ACGT]+$", sequences[idx])
+    dict_ok <- strict & (max_mismatch == 0L | nchar(sequences[idx][[1L]]) >= 6L)
+    pd <- NULL
+    if (any(dict_ok)) {
+      pos <- idx[dict_ok]
+      fwd <- sequences[pos]
+      rev <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(fwd)))
+      pd <- list(
+        pdict = Biostrings::PDict(
+          Biostrings::DNAStringSet(unname(c(fwd, rev))),
+          max.mismatch = max_mismatch
+        ),
+        idx = c(pos, pos),
+        strand = rep(c("+", "-"), each = length(pos))
+      )
+    }
+    list(pdict = pd, scan = idx[!dict_ok])
+  })
+  hit_rows <- function(primer, chrom, ranges, strand) {
+    if (!length(ranges)) {
+      return(NULL)
+    }
+    tibble::tibble(
+      primer = primer,
+      chrom = chrom,
+      start = IRanges::start(ranges),
+      end = IRanges::end(ranges),
+      width = IRanges::width(ranges),
+      strand = strand
+    )
+  }
+  scan_chrom <- function(chrom) {
+    worker_biostrings()
+    subject <- genome_seq(genome, chrom)
+    rows <- list()
+    for (g in dicts) {
+      if (!is.null(g$pdict)) {
+        found <- Biostrings::matchPDict(
+          g$pdict$pdict, subject,
+          max.mismatch = max_mismatch
+        )
+        for (k in seq_along(g$pdict$idx)) {
+          rows[[length(rows) + 1L]] <- hit_rows(
+            nm[g$pdict$idx[[k]]], chrom, found[[k]], g$pdict$strand[[k]]
+          )
+        }
+      }
+      for (i in g$scan) {
+        for (strand in c("+", "-")) {
+          pattern <- sequences[[i]]
+          if (strand == "-") {
+            pattern <- as.character(
+              Biostrings::reverseComplement(Biostrings::DNAString(pattern))
+            )
+          }
+          rows[[length(rows) + 1L]] <- hit_rows(
+            nm[[i]], chrom,
+            exact_pattern_hits(pattern, subject, max_mismatch), strand
+          )
+        }
+      }
+    }
+    out <- purrr::list_rbind(rows)
+    if (is.null(out) || !nrow(out)) NULL else out
+  }
+  res <- if (is.null(BPPARAM)) {
+    lapply(genome_chroms(genome), scan_chrom)
+  } else {
+    bp_lapply(genome_chroms(genome), scan_chrom, BPPARAM)
+  }
+  out <- purrr::list_rbind(res)
+  if (is.null(out) || !ncol(out)) {
+    out <- tibble::tibble(
+      primer = character(), chrom = character(), start = integer(),
+      end = integer(), width = integer(), strand = character()
     )
   }
   out

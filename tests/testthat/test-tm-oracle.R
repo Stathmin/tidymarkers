@@ -157,6 +157,36 @@ test_that("the same tolerance holds on the GC-edge and homopolymer probes", {
   testthat::expect_lte(max(delta), tol)
 })
 
+# --- real design primers: the ordered soybean panel --------------------------
+
+# ZW3.5: the cross-model set used to contain only synthetic 20-mers.  The panel
+# adds 85 primers that were actually ordered, at their design lengths, with the
+# Tm printed by the source pipeline.  It is still an external COMPUTATION, not
+# a measured duplex: what it can prove is that the package reproduces a real
+# design table, not that the table is thermodynamically true.
+test_that("real design primers keep the same-lineage tolerance", {
+  p <- tm_real_primers()
+  expect_equal(nrow(p), 85L)
+  expect_equal(length(unique(p$body)), 85L)
+  sl <- primer_tm(p$body)
+  al <- primer_tm(p$body, nn_table = NN_ALLAWI)
+  tol <- tm_tolerance(NN_SANTA_LUCIA, NN_ALLAWI)$max_delta_c
+  testthat::expect_lte(max(abs(al - sl)), tol)
+  expect_gte(stats::cor(sl, al), 0.999)
+})
+
+test_that("the real-primer panel pins the SantaLucia (1998) salt correction", {
+  p <- tm_real_primers()
+  matched <- primer_tm(p$body, salt_method = "SantaLucia1998-2")
+  delta <- matched - p$tm_c
+  # the panel prints Tm to one decimal; 0.15 C is the rounding plus the model
+  testthat::expect_lte(max(abs(delta)), 0.15)
+  # the package default is a level shift, not a per-oligo error.  If this ever
+  # stops being true, the "matched" claim above has lost its meaning.
+  default <- primer_tm(p$body)
+  expect_lt(mean(default - p$tm_c), -2.5)
+})
+
 # --- cross lineage: structure per table, never a blanket rule ---------------
 
 test_that("Sugimoto sits above SantaLucia on the unremarkable 20-mers", {

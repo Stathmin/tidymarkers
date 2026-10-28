@@ -664,7 +664,14 @@ plot_marker_map <- function(marker, scheme, variants = NULL, genome = NULL, feat
     )
   }
   # feature track, same gggenes arrow as plot_primers()
-  feat <- if (!is.null(features)) normalise_features(features, span) else NULL
+  feat <- if (!is.null(features)) {
+    normalise_features(
+      features, span,
+      chrom = if (!is.null(snp) && nrow(snp)) snp$chrom[1L] else NULL
+    )
+  } else {
+    NULL
+  }
   if (!is.null(feat)) {
     feat_y <- spec$y[match("feature", as.character(spec$feature))]
     p <- p + gggenes::geom_gene_arrow(

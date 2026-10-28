@@ -12,7 +12,9 @@ plot_checks(assay, limits = KASP_LIMITS)
 \item{limits}{thresholds (see \code{KASP_LIMITS}).}
 }
 \value{
-a \code{ggplot} tumbler list.
+a \code{ggplot} tumbler list.  A row that was not evaluated (or does not
+apply) is drawn neutral and shows \code{NA}; the prose explanation is kept in
+\code{assay$evaluation$detail}, not in the figure.
 }
 \description{
 Runs \code{\link[=marker_design_checks]{marker_design_checks()}} and shows one named tumbler per criterion - a

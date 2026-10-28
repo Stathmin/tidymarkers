@@ -155,6 +155,40 @@ test_that("check values are monospaced, <= 4 chars, formatted per criterion", {
   expect_true(all(nchar(format_check_value(names, vals)) <= 4L))
 })
 
+test_that("the tumbler draws NA for neutral rows and codes for categorical ones", {
+  # prose in `detail` must not reach the figure: it overruns the narrow column
+  long <- "not evaluated: no population variant table was supplied"
+  ev <- tibble::tibble(
+    level = c("site", "feature"), criterion = c("ALT freq", "amplicon length (bp)"),
+    status = c("neutral", "pass"), detail = c(long, NA_character_),
+    observed = c(NA_real_, 80), value = c(long, "80")
+  )
+  p <- tumbler_plot(ev)
+  expect_equal(p$data$value, c("NA", "80"))
+  expect_equal(ev$detail[[1L]], long)
+
+  # categorical rows: the site class is one word, the Kwok class its first word
+  fake <- list(
+    population = NULL,
+    evaluation = tibble::tibble(
+      level = c("feature", "feature", "feature", "site"),
+      criterion = c(rep("AS 3' mismatch base pair", 3L), "target site class"),
+      observed = NA_real_,
+      status = c("pass", "pass", "unknown", "pass"),
+      detail = c(
+        "severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",
+        "moderate terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",
+        "substitution pair not in Kwok 1990's table (no published class)",
+        "biallelic"
+      )
+    )
+  )
+  pc <- plot_checks(fake)
+  expect_equal(pc$data$value, c("sev", "mod", "NA", "bial"))
+  expect_false(any(grepl("not a binary", pc$data$value, fixed = TRUE)))
+  expect_true(all(nchar(pc$data$value) <= 4L))
+})
+
 # A tiny real assay on a random genome (skips without OligoArrayAux).  The
 # assembly is deterministic and costs seconds, so build each fixture once and let
 # the tests share it.

@@ -1,0 +1,352 @@
+assay_id,stage,criterion,observed,limit,status,pass,detail,level
+KASP_AGP10_branch_chr6_13.303311Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGP10_branch_chr6_13.303311Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGP10_branch_chr6_13.303311Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP10_branch_chr6_13.303311Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGP10_branch_chr6_13.303311Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP10_branch_chr6_13.303311Mb,assay,amplicon length (bp),76,"[50, 100]",pass,TRUE,,alignment
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS Tm (C),60.744,"[55, 65]",pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,COM Tm (C),60.002,"[58, 63]",pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,COM Tm >= AS Tm,-0.742,>= 0,fail,FALSE,,alignment
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS GC,0.367,"[0.4, 0.6]",fail,FALSE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,COM GC,0.579,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,longest homopolymer (bp),4,< 4,fail,FALSE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,worst hairpin dG37,0.494,>= -3,pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,worst cross-dimer dG37,-1.136,>= -9,pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,worst homodimer dG37,0.3,>= -9,pass,TRUE,,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,discrimination,0.868,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGP10_branch_chr6_13.303311Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGP10_branch_chr6_13.303311Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGP10_branch_chr6_13.303311Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP10_height_chr18_58.02Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGP10_height_chr18_58.02Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGP10_height_chr18_58.02Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP10_height_chr18_58.02Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGP10_height_chr18_58.02Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP10_height_chr18_58.02Mb,assay,amplicon length (bp),108,"[50, 100]",fail,FALSE,,alignment
+KASP_AGP10_height_chr18_58.02Mb,assay,AS Tm (C),60.799,"[55, 65]",pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,COM Tm (C),59.83,"[58, 63]",pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,COM Tm >= AS Tm,-0.969,>= 0,fail,FALSE,,alignment
+KASP_AGP10_height_chr18_58.02Mb,assay,AS GC,0.458,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,COM GC,0.545,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,longest homopolymer (bp),4,< 4,fail,FALSE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,worst hairpin dG37,0.563,>= -3,pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,worst cross-dimer dG37,-1.413,>= -9,pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,worst homodimer dG37,-0.379,>= -9,pass,TRUE,,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP10_height_chr18_58.02Mb,assay,discrimination,0.966,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGP10_height_chr18_58.02Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,unknown,FALSE,substitution pair not in Kwok 1990's table (no published class),feature
+KASP_AGP10_height_chr18_58.02Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGP10_height_chr18_58.02Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP9_habit_chr19_44.43Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGP9_habit_chr19_44.43Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGP9_habit_chr19_44.43Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP9_habit_chr19_44.43Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGP9_habit_chr19_44.43Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP9_habit_chr19_44.43Mb,assay,amplicon length (bp),80,"[50, 100]",pass,TRUE,,alignment
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS Tm (C),60.149,"[55, 65]",pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,COM Tm (C),59.961,"[58, 63]",pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,COM Tm >= AS Tm,-0.189,>= 0,fail,FALSE,,alignment
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS GC,0.478,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,COM GC,0.5,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,worst hairpin dG37,0.844,>= -3,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,worst cross-dimer dG37,0.195,>= -9,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,worst homodimer dG37,-3.235,>= -9,pass,TRUE,,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,discrimination,0.929,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGP9_habit_chr19_44.43Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGP9_habit_chr19_44.43Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGP9_habit_chr19_44.43Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP9_height_chr19_46.10Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGP9_height_chr19_46.10Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGP9_height_chr19_46.10Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP9_height_chr19_46.10Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGP9_height_chr19_46.10Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGP9_height_chr19_46.10Mb,assay,amplicon length (bp),98,"[50, 100]",pass,TRUE,,alignment
+KASP_AGP9_height_chr19_46.10Mb,assay,AS Tm (C),59.436,"[55, 65]",pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,COM Tm (C),59.96,"[58, 63]",pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,COM Tm >= AS Tm,0.523,>= 0,pass,TRUE,,alignment
+KASP_AGP9_height_chr19_46.10Mb,assay,AS GC,0.667,"[0.4, 0.6]",fail,FALSE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,COM GC,0.55,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,longest homopolymer (bp),4,< 4,fail,FALSE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,worst hairpin dG37,-0.934,>= -3,pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,worst cross-dimer dG37,-2.032,>= -9,pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,worst homodimer dG37,-1.573,>= -9,pass,TRUE,,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGP9_height_chr19_46.10Mb,assay,discrimination,0.389,>= 0.5,fail,FALSE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGP9_height_chr19_46.10Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGP9_height_chr19_46.10Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGP9_height_chr19_46.10Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_height2_chr19_51.07Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGPO2_height2_chr19_51.07Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGPO2_height2_chr19_51.07Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_height2_chr19_51.07Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGPO2_height2_chr19_51.07Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_height2_chr19_51.07Mb,assay,amplicon length (bp),92,"[50, 100]",pass,TRUE,,alignment
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS Tm (C),60.272,"[55, 65]",pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,COM Tm (C),59.928,"[58, 63]",pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,COM Tm >= AS Tm,-0.344,>= 0,fail,FALSE,,alignment
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS GC,0.393,"[0.4, 0.6]",fail,FALSE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,COM GC,0.579,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,worst hairpin dG37,0.314,>= -3,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,worst cross-dimer dG37,-0.657,>= -9,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,worst homodimer dG37,-0.198,>= -9,pass,TRUE,,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,discrimination,0.976,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGPO2_height2_chr19_51.07Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,unknown,FALSE,substitution pair not in Kwok 1990's table (no published class),feature
+KASP_AGPO2_height2_chr19_51.07Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGPO2_height2_chr19_51.07Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_height_chr19_49.74Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGPO2_height_chr19_49.74Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGPO2_height_chr19_49.74Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_height_chr19_49.74Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGPO2_height_chr19_49.74Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_height_chr19_49.74Mb,assay,amplicon length (bp),63,"[50, 100]",pass,TRUE,,alignment
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS Tm (C),62.136,"[55, 65]",pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,COM Tm (C),59.961,"[58, 63]",pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,COM Tm >= AS Tm,-2.175,>= 0,fail,FALSE,,alignment
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS GC,0.524,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,COM GC,0.55,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,worst hairpin dG37,0.683,>= -3,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,worst cross-dimer dG37,-1.182,>= -9,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,worst homodimer dG37,-2.79,>= -9,pass,TRUE,,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,discrimination,0.362,>= 0.5,fail,FALSE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGPO2_height_chr19_49.74Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGPO2_height_chr19_49.74Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGPO2_height_chr19_49.74Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_nodes_chr19_49.65Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGPO2_nodes_chr19_49.65Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGPO2_nodes_chr19_49.65Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_nodes_chr19_49.65Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGPO2_nodes_chr19_49.65Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,amplicon length (bp),120,"[50, 100]",fail,FALSE,,alignment
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS Tm (C),60.575,"[55, 65]",pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,COM Tm (C),59.896,"[58, 63]",pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,COM Tm >= AS Tm,-0.679,>= 0,fail,FALSE,,alignment
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS GC,0.455,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,COM GC,0.417,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,"SSR (2-4 nt, >=3 copies)",1,<= 0,fail,FALSE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,worst hairpin dG37,0.664,>= -3,pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,worst cross-dimer dG37,-1.484,>= -9,pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,worst homodimer dG37,-1.025,>= -9,pass,TRUE,,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,discrimination,0.374,>= 0.5,fail,FALSE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_seed_chr19_48.03Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGPO2_seed_chr19_48.03Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGPO2_seed_chr19_48.03Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_seed_chr19_48.03Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGPO2_seed_chr19_48.03Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO2_seed_chr19_48.03Mb,assay,amplicon length (bp),72,"[50, 100]",pass,TRUE,,alignment
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS Tm (C),60.715,"[55, 65]",pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,COM Tm (C),60.034,"[58, 63]",pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,COM Tm >= AS Tm,-0.681,>= 0,fail,FALSE,,alignment
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS GC,0.5,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,COM GC,0.6,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,"SSR (2-4 nt, >=3 copies)",1,<= 0,fail,FALSE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,"inverted repeat (arms>=4, loop<=6)",1,<= 0,fail,FALSE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,worst hairpin dG37,-0.494,>= -3,pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,worst cross-dimer dG37,-1.405,>= -9,pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,worst homodimer dG37,-0.795,>= -9,pass,TRUE,,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,discrimination,0.464,>= 0.5,fail,FALSE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGPO2_seed_chr19_48.03Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGPO2_seed_chr19_48.03Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGPO2_seed_chr19_48.03Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO8_protein_chr15_10.93Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_AGPO8_protein_chr15_10.93Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_AGPO8_protein_chr15_10.93Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO8_protein_chr15_10.93Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_AGPO8_protein_chr15_10.93Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_AGPO8_protein_chr15_10.93Mb,assay,amplicon length (bp),144,"[50, 100]",fail,FALSE,,alignment
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS Tm (C),59.758,"[55, 65]",pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,COM Tm (C),60.036,"[58, 63]",pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,COM Tm >= AS Tm,0.279,>= 0,pass,TRUE,,alignment
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS GC,0.476,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,COM GC,0.55,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,longest homopolymer (bp),4,< 4,fail,FALSE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,"inverted repeat (arms>=4, loop<=6)",1,<= 0,fail,FALSE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,worst hairpin dG37,0.614,>= -3,pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,worst cross-dimer dG37,-0.809,>= -9,pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,worst homodimer dG37,-2.327,>= -9,pass,TRUE,,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,discrimination,0.38,>= 0.5,fail,FALSE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_AGPO8_protein_chr15_10.93Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_AGPO8_protein_chr15_10.93Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_AGPO8_protein_chr15_10.93Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_JOINT_protein_chr15_11.28Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_JOINT_protein_chr15_11.28Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_JOINT_protein_chr15_11.28Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_JOINT_protein_chr15_11.28Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_JOINT_protein_chr15_11.28Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_JOINT_protein_chr15_11.28Mb,assay,amplicon length (bp),99,"[50, 100]",pass,TRUE,,alignment
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS Tm (C),61.301,"[55, 65]",pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,COM Tm (C),59.964,"[58, 63]",pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,COM Tm >= AS Tm,-1.337,>= 0,fail,FALSE,,alignment
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS GC,0.6,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,COM GC,0.55,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,worst hairpin dG37,-0.206,>= -3,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,worst cross-dimer dG37,-2.454,>= -9,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,worst homodimer dG37,-0.024,>= -9,pass,TRUE,,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,discrimination,0.868,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_JOINT_protein_chr15_11.28Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_JOINT_protein_chr15_11.28Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_JOINT_protein_chr15_11.28Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_flank_high_chr18_56.61Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_DT2_flank_high_chr18_56.61Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_DT2_flank_high_chr18_56.61Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_flank_high_chr18_56.61Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_DT2_flank_high_chr18_56.61Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_flank_high_chr18_56.61Mb,assay,amplicon length (bp),92,"[50, 100]",pass,TRUE,,alignment
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS Tm (C),60.465,"[55, 65]",pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,COM Tm (C),59.992,"[58, 63]",pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,COM Tm >= AS Tm,-0.473,>= 0,fail,FALSE,,alignment
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS GC,0.407,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,COM GC,0.435,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,"SSR (2-4 nt, >=3 copies)",1,<= 0,fail,FALSE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,worst hairpin dG37,-0.007,>= -3,pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,worst cross-dimer dG37,-0.841,>= -9,pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,worst homodimer dG37,0.382,>= -9,pass,TRUE,,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,discrimination,0.986,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_DT2_flank_high_chr18_56.61Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_DT2_flank_high_chr18_56.61Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_DT2_flank_high_chr18_56.61Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_flank_low_chr18_55.26Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_DT2_flank_low_chr18_55.26Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_DT2_flank_low_chr18_55.26Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_flank_low_chr18_55.26Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_DT2_flank_low_chr18_55.26Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_flank_low_chr18_55.26Mb,assay,amplicon length (bp),70,"[50, 100]",pass,TRUE,,alignment
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS Tm (C),61.032,"[55, 65]",pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,COM Tm (C),59.926,"[58, 63]",pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,COM Tm >= AS Tm,-1.107,>= 0,fail,FALSE,,alignment
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS GC,0.722,"[0.4, 0.6]",fail,FALSE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,COM GC,0.579,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,"inverted repeat (arms>=4, loop<=6)",1,<= 0,fail,FALSE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,worst hairpin dG37,0.644,>= -3,pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,worst cross-dimer dG37,-0.792,>= -9,pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,worst homodimer dG37,-3.563,>= -9,pass,TRUE,,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,discrimination,0.809,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_DT2_flank_low_chr18_55.26Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_DT2_flank_low_chr18_55.26Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_DT2_flank_low_chr18_55.26Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_near_chr18_56.14Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
+KASP_DT2_near_chr18_56.14Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
+KASP_DT2_near_chr18_56.14Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_near_chr18_56.14Mb,site,ALT primer covers all ALTs,0,<= 0,pass,TRUE,,site
+KASP_DT2_near_chr18_56.14Mb,site,design relies on linkage,,= 0,unknown,,not evaluated: the panel carries no population variant table,site
+KASP_DT2_near_chr18_56.14Mb,assay,amplicon length (bp),104,"[50, 100]",fail,FALSE,,alignment
+KASP_DT2_near_chr18_56.14Mb,assay,AS Tm (C),60.338,"[55, 65]",pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,COM Tm (C),59.891,"[58, 63]",pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,COM Tm >= AS Tm,-0.447,>= 0,fail,FALSE,,alignment
+KASP_DT2_near_chr18_56.14Mb,assay,AS GC,0.4,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,COM GC,0.55,"[0.4, 0.6]",pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,longest homopolymer (bp),3,< 4,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,"SSR (2-4 nt, >=3 copies)",0,<= 0,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,"inverted repeat (arms>=4, loop<=6)",0,<= 0,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,worst hairpin dG37,-0.224,>= -3,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,worst cross-dimer dG37,-0.291,>= -9,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,worst homodimer dG37,0.367,>= -9,pass,TRUE,,feature
+KASP_DT2_near_chr18_56.14Mb,assay,AS 3' window variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,AS footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,COM footprint variants (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,AS 3' window dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,AS footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,COM footprint dropout,,<= 0.1,unknown,,not evaluated: the panel carries no population variant table,feature
+KASP_DT2_near_chr18_56.14Mb,assay,discrimination,0.866,>= 0.5,pass,TRUE,DECIPHER Taq efficiency over the AS binding window (REF vs ALT),alignment
+KASP_DT2_near_chr18_56.14Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
+KASP_DT2_near_chr18_56.14Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
+KASP_DT2_near_chr18_56.14Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity

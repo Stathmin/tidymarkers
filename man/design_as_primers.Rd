@@ -92,6 +92,7 @@ design_as_primers(W, 40L, ref = "T", alt = "A", lengths = 20:22)
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
+\code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_duplex]{design_duplex()}},

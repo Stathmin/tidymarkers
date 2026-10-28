@@ -40,6 +40,7 @@ edb <- marker_ensdb()
 Other KASP annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},
 \code{\link[=marker_bsgenome]{marker_bsgenome()}},
+\code{\link[=marker_features]{marker_features()}},
 \code{\link[=marker_txdb]{marker_txdb()}}
 }
 \concept{KASP annotation}

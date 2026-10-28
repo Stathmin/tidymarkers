@@ -443,3 +443,47 @@ test_that("a genomic N never satisfies a primer (no N-run phantom hits)", {
     Biostrings::extractAt(g[["chr1"]], IRanges::IRanges(hp$pos, width = nchar(p))), "N"
   ) == 0L))
 })
+
+test_that("exact_pattern_hits keeps coordinates when the first block has no hit", {
+  # A qualifying unambiguous block that does not contain the pattern used to
+  # make the per-block range list start with `NULL`.  A leading `NULL` makes
+  # `c()` fall back to list semantics, so `start()` returned the block index
+  # instead of the genomic coordinate and every real genome got a hit at 1-2.
+  p <- "CCGCAATCTCATGTCCAATTATCCACC"
+  g <- Biostrings::DNAStringSet(c(chr1 = paste0(
+    strrep("A", 40L), strrep("N", 20L), strrep("A", 10L), p, strrep("A", 10L)
+  )))
+  hits <- tidymarkers:::exact_pattern_hits(p, g[["chr1"]], 0L)
+  expect_s4_class(hits, "IRanges")
+  expect_equal(IRanges::start(hits), 71L)
+  expect_equal(IRanges::width(hits), nchar(p))
+  expect_equal(as.character(Biostrings::extractAt(g[["chr1"]], hits)), p)
+})
+
+test_that("exact_hit_table reports both strands and coordinates", {
+  # forward site: ACGAT at 4-8; the reverse complement (ATCGT) at 12-16 is a
+  # minus-strand binding site for the same oligo, in forward coordinates
+  g <- Biostrings::DNAStringSet(c(chr1 = paste0("GGG", "ACGAT", "CCC", "ATCGT", "TTT")))
+  h <- exact_hit_table(c(oligo = "ACGAT"), g)
+  expect_equal(names(h), c("primer", "chrom", "start", "end", "width", "strand"))
+  expect_equal(h$primer, rep("oligo", 2L))
+  expect_equal(h$chrom, rep("chr1", 2L))
+  expect_equal(h$start, c(4L, 12L))
+  expect_equal(h$end, c(8L, 16L))
+  expect_equal(h$width, rep(5L, 2L))
+  expect_equal(h$strand, c("+", "-"))
+  # a two-oligo table keeps each name with its own hits; CCCAT is at 9-13
+  h2 <- exact_hit_table(c(a = "ACGAT", b = "CCCAT"), g)
+  expect_setequal(h2$primer, c("a", "b"))
+  expect_equal(h2$start[h2$primer == "a"], c(4L, 12L))
+  expect_equal(h2$start[h2$primer == "b"], 9L)
+  # a degenerate oligo takes the per-pattern path and stays IUPAC-aware
+  g2 <- Biostrings::DNAStringSet(c(chr1 = paste0("GGG", "ACGAT", "CCC")))
+  h3 <- exact_hit_table(c(d = "ACGRT"), g2)
+  expect_equal(h3$start, 4L)
+  expect_equal(h3$strand, "+")
+  # no hit is an empty table, not an error, and keeps the column contract
+  h4 <- exact_hit_table(c(none = "CCCCCC"), g)
+  expect_equal(nrow(h4), 0L)
+  expect_equal(names(h4), names(h))
+})

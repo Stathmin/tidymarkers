@@ -38,6 +38,7 @@ Other KASP specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
+\code{\link[=exact_hit_table]{exact_hit_table()}},
 \code{\link[=has_blast]{has_blast()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},

@@ -130,3 +130,15 @@ tm_edge_oligos <- function() {
     poly_a = "AAAAAAAAAAAAAAAAAAAA" # degenerate: 0 % GC, a 20-mer homopolymer
   )
 }
+
+# Real design primers: the 85 oligos of the ordered soybean panel
+# (inst/extdata/soybean_worked_panel_primers.csv).  `body` is the primer without
+# its FAM/HEX tail, i.e. the part the Tm is printed for.  The set is deliberately
+# separate from `tm_edge_oligos()`: those probe the composition edges, these are
+# the lengths and compositions that were actually ordered, and they carry the
+# panel's printed Tm as an external target in test-tm-oracle.R.
+tm_real_primers <- function() {
+  path <- tm_extdata("soybean_worked_panel_primers.csv")
+  d <- utils::read.csv(path, stringsAsFactors = FALSE)
+  d[, c("assay_id", "role", "body", "tm_c")]
+}

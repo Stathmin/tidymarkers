@@ -65,6 +65,7 @@ design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
 Other KASP design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
+\code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_duplex]{design_duplex()}},

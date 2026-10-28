@@ -25,6 +25,7 @@ txdb <- marker_txdb()
 Other KASP annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},
 \code{\link[=marker_bsgenome]{marker_bsgenome()}},
-\code{\link[=marker_ensdb]{marker_ensdb()}}
+\code{\link[=marker_ensdb]{marker_ensdb()}},
+\code{\link[=marker_features]{marker_features()}}
 }
 \concept{KASP annotation}

@@ -605,19 +605,30 @@ assay_ideogram <- function(assay, snp, genome = NULL) {
 
 #' Normalise an annotation table to the feature row's shape
 #'
-#' Accepts a data frame with `start`/`end` (and optional `strand`, `name`/`symbol`)
-#' or a gene record, keeps only features overlapping `span`, and returns
-#' `start`/`end`/`forward`/`name` (or `NULL`).  One place so the doomed and the
-#' designed views cannot drift.
+#' Accepts a data frame with `start`/`end` (and optional `strand`, `name`/`symbol`),
+#' a path to an annotation file ([marker_features()]), or a gene record, keeps only
+#' features overlapping `span` (and, when a `chrom` column is present, `chrom`),
+#' and returns `start`/`end`/`forward`/`name` (or `NULL`).  One place so the doomed
+#' and the designed views cannot drift.
 #' @keywords internal
 #' @noRd
-normalise_features <- function(features, span) {
+normalise_features <- function(features, span, chrom = NULL) {
+  if (is.character(features) && length(features) == 1L && fs::file_exists(features)) {
+    features <- marker_features(features, chrom = chrom)
+  }
   if (is.null(features)) {
     return(NULL)
   }
   features <- tibble::as_tibble(features)
   if (!nrow(features) || !all(c("start", "end") %in% names(features))) {
     return(NULL)
+  }
+  # the feature file is genome-wide; keep the chromosome being drawn
+  if (!is.null(chrom) && "chrom" %in% names(features)) {
+    features <- features[
+      !is.na(features$chrom) & as.character(features$chrom) == as.character(chrom), ,
+      drop = FALSE
+    ]
   }
   nm <- if ("name" %in% names(features)) {
     features$name
@@ -656,7 +667,7 @@ plot_doomed_target <- function(assay, variants, snp, features = NULL) {
       ggplot2::aes(x = .data$x, xend = .data$xend, y = 1, yend = 1),
       colour = "grey72", linewidth = 0.3
     )
-  feat <- normalise_features(features, win)
+  feat <- normalise_features(features, win, chrom = snp$chrom)
   if (is.null(feat)) {
     p <- p + ggplot2::annotate("text",
       x = mean(win), y = 1, label = "no feature annotation",
@@ -772,9 +783,10 @@ haplotype_layers <- function(assay, snp, span) {
 #' @param genome optional `marker_genome` or `DNAStringSet`; when given, the
 #'   genome-wide ideogram panel is added.
 #' @param features optional annotation to draw on the feature row: a data frame
-#'   with `start`/`end` (and optional `strand`, `name`), or a gene record from
-#'   [ensembl_gene()].  A KASP marker should sit on an annotated feature, so the
-#'   row says `"no feature annotation"` when nothing (or no overlap) is given.
+#'   with `start`/`end` (and optional `strand`, `name`, `chrom`), a path to an
+#'   NCBI feature table or GFF3 (read by [marker_features()]), or a gene record
+#'   from [ensembl_gene()].  A KASP marker should sit on an annotated feature, so
+#'   the row says `"no feature annotation"` when nothing (or no overlap) is given.
 #' @return a `patchwork` object: the local map (primers over the variant track,
 #'   sharing an x axis) beside the tumbler list from [plot_checks()].  For a
 #'   `marker_doomed` target, a single context plot with the reason instead.
@@ -837,7 +849,7 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
 
   # the annotated features on the same axis: a KASP marker should sit on a gene,
   # not in intergenic space, so if no (overlapping) annotation is given we say so
-  feat <- normalise_features(features, span)
+  feat <- normalise_features(features, span, chrom = snp$chrom)
 
   p_map <- ggplot2::ggplot() +
     gggenes::geom_gene_arrow(
@@ -1079,7 +1091,17 @@ format_check_value <- function(name, value) {
 
 # One tumbler for KASP acceptance checks and for the per-class gate tables.
 # `chk` needs `level`, `name`, `status` (ok/broken/neutral) and `value`.
+#
+# A neutral row (not evaluated, or the check does not apply to this class) shows
+# `NA` rather than the prose in `detail`: a sentence such as "not evaluated: no
+# population variant table was supplied" overruns the narrow tumbler column and
+# hides the neighbouring values.  The full detail stays in the evaluation table.
 tumbler_plot <- function(chk) {
+  if (!is.null(chk$value)) {
+    chk$value <- as.character(chk$value)
+    neutral <- !is.na(chk$status) & chk$status == "neutral"
+    chk$value[neutral] <- "NA"
+  }
   chk$level <- droplevels(factor(chk$level, levels = unique(chk$level)))
   ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
@@ -1110,7 +1132,9 @@ tumbler_plot <- function(chk) {
 #' the template.  Sits as a thin strip beside [plot_primers()].
 #' @param assay assembled assay.
 #' @param limits thresholds (see `KASP_LIMITS`).
-#' @return a `ggplot` tumbler list.
+#' @return a `ggplot` tumbler list.  A row that was not evaluated (or does not
+#'   apply) is drawn neutral and shows `NA`; the prose explanation is kept in
+#'   `assay$evaluation$detail`, not in the figure.
 #' @examples
 #' \dontrun{
 #' plot_checks(assay)
@@ -1133,10 +1157,15 @@ plot_checks <- function(assay, limits = KASP_LIMITS) {
       ),
       value = dplyr::coalesce(.data$detail, format_check_value(.data$name, .data$observed))
     )
-  # the site class is shown as a 4-char code (monospace column, max 4 wide)
+  # categorical checks draw a short code, never the prose in `detail`: the
+  # site class is the whole detail, the Kwok mismatch class its first word
+  first_word <- function(x) sub("^(\\S+).*$", "\\1", x)
   cls <- c(biallelic = "bial", degenerate = "degn", complementary = "comp", indel = "indl", none = "--")
   is_site <- chk$criterion == "target site class"
-  chk$value[is_site] <- unname(cls[chk$detail[is_site]])
+  chk$value[is_site] <- unname(cls[first_word(chk$detail[is_site])])
+  sev <- c(severe = "sev", moderate = "mod", minimal = "min", context_dependent = "ctx")
+  is_sev <- chk$criterion == "AS 3' mismatch base pair"
+  chk$value[is_sev] <- unname(sev[first_word(chk$detail[is_sev])])
   # population facts are chemistry-independent: append ALT frequency and, when
   # available, haplotype coverage to the same check column
   pop <- marker_population_checks(assay)

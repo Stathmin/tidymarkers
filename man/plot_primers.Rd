@@ -18,9 +18,10 @@ context and the reason are drawn).}
 genome-wide ideogram panel is added.}
 
 \item{features}{optional annotation to draw on the feature row: a data frame
-with \code{start}/\code{end} (and optional \code{strand}, \code{name}), or a gene record from
-\code{\link[=ensembl_gene]{ensembl_gene()}}.  A KASP marker should sit on an annotated feature, so the
-row says \code{"no feature annotation"} when nothing (or no overlap) is given.}
+with \code{start}/\code{end} (and optional \code{strand}, \code{name}, \code{chrom}), a path to an
+NCBI feature table or GFF3 (read by \code{\link[=marker_features]{marker_features()}}), or a gene record
+from \code{\link[=ensembl_gene]{ensembl_gene()}}.  A KASP marker should sit on an annotated feature, so
+the row says \code{"no feature annotation"} when nothing (or no overlap) is given.}
 }
 \value{
 a \code{patchwork} object: the local map (primers over the variant track,
