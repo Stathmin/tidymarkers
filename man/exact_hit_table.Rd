@@ -36,7 +36,7 @@ Patterns are grouped by width and searched with \code{Biostrings::PDict} /
 \code{matchPDict()} (the precomputed-dictionary fast path, one pass per dictionary
 per chromosome).  A degenerate (IUPAC) oligo, or a pattern shorter than 6 nt
 with \code{max_mismatch > 0} (the mismatch tree's minimum width), is searched with
-\code{\link[=exact_pattern_hits]{exact_pattern_hits()}} instead; an ambiguous genomic base is never a hit.
+\code{exact_pattern_hits()} instead; an ambiguous genomic base is never a hit.
 }
 \examples{
 \dontrun{

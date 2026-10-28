@@ -99,6 +99,99 @@ test_that("marker_costs overrides merge over the defaults", {
   expect_error(marker_costs(1), "named")
 })
 
+test_that("a region expands only to its in-block variants and sweeps them", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
+  variants <- tibble::tibble(
+    chrom = "Chr1", pos = c(20L, 40L, 140L),
+    ref = "T", alt = c("G", "C", "A")
+  )
+  region <- GenomicRanges::GRanges("Chr1", IRanges::IRanges(10L, 60L))
+  p <- marker_plan(genome, region = region) +
+    marker_context(variants = variants) +
+    marker_tech(schemes = "snp")
+  expect_equal(p$region$start, 10L)
+  expect_output(print(p), "region: Chr1:10-60")
+  tg <- region_targets(p)
+  expect_setequal(tg$pos, c(20L, 40L))
+  expect_true(all(tg$type == "region"))
+  # seed the cache so the sweep is checked without running a designer
+  cache <- new.env(parent = emptyenv())
+  for (i in seq_len(nrow(tg))) {
+    assign(
+      paste(target_key(tg[i, , drop = FALSE]), "snp", "", sep = "||"),
+      marker_doomed("test", "as", tg[i, , drop = FALSE], NULL),
+      envir = cache
+    )
+  }
+  solved <- marker_solve(p, cache = cache, progress = FALSE)
+  expect_setequal(solved$report$pos, c(20L, 40L))
+  expect_false(140L %in% solved$report$pos)
+  # a region with no variant in it is an error, never an empty sweep
+  empty <- marker_plan(
+    genome,
+    region = GenomicRanges::GRanges("Chr1", IRanges::IRanges(100L, 120L))
+  ) + marker_context(variants = variants)
+  expect_error(region_targets(empty), "No variant")
+  # and a region without context is refused
+  bare <- marker_plan(genome, region = region)
+  expect_error(region_targets(bare), "variant context")
+})
+
+test_that("a solved region carries a haplotype -> signal table inside the block", {
+  W <- withr::with_seed(4L, paste(sample(c("A", "C", "G", "T"), 500L, TRUE), collapse = ""))
+  ref <- function(p) substring(W, p, p)
+  alt_of <- function(p) setdiff(c("A", "C", "G", "T"), ref(p))[1L]
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 250L, ref = ref(250L), alt = alt_of(250L)
+  )
+  haps <- tibble::tibble(
+    haplotype = c("H1", "H2", "H2", "H3", "H3", "H2"),
+    freq = c(0.5, 0.3, 0.3, 0.2, 0.2, 0.3),
+    chrom = "Chr1", pos = c(240L, 250L, 260L, 250L, 260L, 400L),
+    ref = c(ref(240L), ref(250L), ref(260L), ref(250L), ref(260L), ref(400L)),
+    alt = c("A", alt_of(250L), "A", alt_of(250L), "A", alt_of(400L))
+  )
+  region <- GenomicRanges::GRanges("Chr1", IRanges::IRanges(200L, 300L))
+  plan <- marker_plan(genome, region = region) +
+    marker_context(haplotypes = haps) +
+    marker_tech(schemes = "snp")
+  tg <- region_targets(plan)
+  # the out-of-block variant is never a target
+  expect_setequal(tg$pos, c(240L, 250L, 260L))
+  # seed a haplotype-aware winner for the target and a doomed marker elsewhere
+  hv <- haplotype_variants(haps, snp)
+  hits <- haplotype_hits(haps, snp, as_start = 235L, as_end = 255L, alt_hap = hv$alt)
+  winner <- structure(list(haplotype_hits = hits), class = "marker_assay")
+  cache <- new.env(parent = emptyenv())
+  for (i in seq_len(nrow(tg))) {
+    m <- if (tg$pos[[i]] == 250L) {
+      winner
+    } else {
+      marker_doomed("test", "as", tg[i, , drop = FALSE], NULL)
+    }
+    assign(paste(target_key(tg[i, , drop = FALSE]), "snp", "", sep = "||"), m, envir = cache)
+  }
+  solved <- marker_solve(plan, cache = cache, progress = FALSE)
+  sig <- solved$signals
+  expect_true(all(c(
+    "target", "haplotype", "target_allele", "primer", "signal",
+    "within_phased_block"
+  ) %in% names(sig)))
+  expect_true(nrow(sig) > 0L)
+  expect_true(all(nzchar(sig$signal)))
+  expect_true(all(sig$within_phased_block))
+  expect_setequal(sig$haplotype, c("H1", "H2", "H3"))
+  # the artefact carries the table, with a non-empty signal column
+  art <- marker_artefact(solved, dir = withr::local_tempdir())
+  path <- fs::path(art$dir, "signals.csv")
+  expect_true(fs::file_exists(path))
+  back <- readr::read_csv(path, show_col_types = FALSE)
+  expect_true("signal" %in% names(back))
+  expect_true(all(nzchar(back$signal)))
+  expect_identical(art$manifest$counts$signals, nrow(back))
+})
+
 test_that("marker_solve designs the real example targets and reports", {
   skip_if_no_oligoarrayaux()
   solved <- solved_example()

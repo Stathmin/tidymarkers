@@ -196,8 +196,8 @@ tail_terminal <- function(n_nt) {
 #' subject never mismatches (it matches anything).  Mismatch positions are
 #' reported 1-based from the 5' end of the primer, i.e. in the primer's own
 #' 5'->3' orientation - but `pattern` here is the *plus-strand* pattern, so the
-#' reverse primer's positions are mirrored back by [plus_to_primer()] in
-#' [primer_hit_table()].
+#' reverse primer's positions are mirrored back by `plus_to_primer()` in
+#' `primer_hit_table()`.
 #'
 #' Every mismatching position is counted once, at its heaviest role (the masks
 #' are nested: terminal <= last-5 window <= seed <= middle), so a degenerate
@@ -433,7 +433,7 @@ unambiguous_blocks <- function(subject) {
 #' the in-silico PCR product table then holds ~1e10 rows and cannot be allocated.
 #'
 #' An `N` in the subject is not evidence of a binding site, so it must never be a
-#' match ([mismatch_profile()] already reports it as a non-mismatch *within* a
+#' match (`mismatch_profile()` already reports it as a non-mismatch *within* a
 #' hit, which is a different question: whether an aligned base counts against the
 #' primer).  This searches the unambiguous blocks of the subject separately and
 #' shifts each hit back to genomic coordinates, so a hit can never span an
@@ -484,7 +484,7 @@ exact_pattern_hits <- function(pattern, subject, max_mismatch) {
 #' The search is exact-or-radius as asked: a mismatched replacement character in
 #' the pattern is the only way a terminal mismatch can be scanned here, because
 #' a base-space radius over the pattern cannot see the pattern's own last bases.
-#' Mismatch degree therefore comes from [mismatch_profile()] on the footprint,
+#' Mismatch degree therefore comes from `mismatch_profile()` on the footprint,
 #' never from the search window.
 #' `pattern` is the plus-strand pattern searched; `side` says which primer it
 #' is, so the reported positions and the 3'-terminal flag are in the primer's
@@ -568,7 +568,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #' `matchPDict()` (the precomputed-dictionary fast path, one pass per dictionary
 #' per chromosome).  A degenerate (IUPAC) oligo, or a pattern shorter than 6 nt
 #' with `max_mismatch > 0` (the mismatch tree's minimum width), is searched with
-#' [exact_pattern_hits()] instead; an ambiguous genomic base is never a hit.
+#' `exact_pattern_hits()` instead; an ambiguous genomic base is never a hit.
 #'
 #' @param sequences named character vector of oligos (a `DNAStringSet` is also
 #'   accepted).  Unnamed input is labelled by its own sequence.

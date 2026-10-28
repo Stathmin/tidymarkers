@@ -21,7 +21,7 @@ names to the genome's names, as in \code{\link[=marker_genome]{marker_genome()}}
 a tibble with \code{chrom}, \code{start}, \code{end}, \code{strand}, \code{name} and \code{type}.
 }
 \description{
-\code{\link[=plot_primers]{plot_primers()}} and \code{\link[=plot_marker_map]{plot_marker_map()}} draw an annotation row under the
+\code{\link[=plot_primers]{plot_primers()}} and \code{plot_marker_map()} draw an annotation row under the
 assay.  That row wants a table with \code{start}/\code{end} (plus optional \code{strand},
 \code{name}) and a \code{chrom} column so the plot can pick the chromosome it is
 drawing.  This reads either an NCBI \code{feature_table.txt(.gz)} or a GFF3 into

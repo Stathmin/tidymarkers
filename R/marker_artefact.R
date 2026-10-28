@@ -44,7 +44,7 @@ artefact_sha256_file <- function(path) {
 
 #' SHA-256 of an R object
 #'
-#' Kept apart from [artefact_sha256_file()] because the same character value is
+#' Kept apart from `artefact_sha256_file()` because the same character value is
 #' a path in one call and data in the other, and guessing wrong hashes nothing.
 #' @param x any R object to serialise and hash.
 #' @return a length-one character vector, `NA` when hashing fails.
@@ -439,9 +439,10 @@ artefact_id <- function(manifest) {
 #'
 #' Writes, into `dir`: `artefact.json` (the manifest), `decisions.csv` (one row
 #' per target x chemistry tried, with the reason for every rejection),
-#' `checks.csv` (the gate table of each chosen marker), `targets.csv` and, when
-#' it is not already there, `solved.rds` (the faithful copy [marker_replay()]
-#' re-runs).
+#' `checks.csv` (the gate table of each chosen marker), `signals.csv` (for a
+#' regional plan, each haplotype's readout and whether it holds inside the
+#' phased block), `targets.csv` and, when it is not already there, `solved.rds`
+#' (the faithful copy [marker_replay()] re-runs).
 #'
 #' The manifest records what the numbers cannot say for themselves: the hashed
 #' reference and variant table, the package version and git SHA, every engine
@@ -478,10 +479,14 @@ marker_artefact <- function(solved, dir = tempdir()) {
   knobs <- solved$knobs %||% list()
   decisions <- artefact_decisions(solved)
   checks <- artefact_checks(solved)
+  signals <- solved$signals %||% NULL
 
   readr::write_csv(decisions, fs::path(dir, "decisions.csv"))
   if (!is.null(checks)) {
     readr::write_csv(checks, fs::path(dir, "checks.csv"))
+  }
+  if (!is.null(signals) && nrow(signals)) {
+    readr::write_csv(signals, fs::path(dir, "signals.csv"))
   }
   tg <- solved$plan$targets
   readr::write_csv(
@@ -521,11 +526,13 @@ marker_artefact <- function(solved, dir = tempdir()) {
       targets = nrow(solved$report),
       solved = sum(solved$report$ok),
       attempts = nrow(decisions),
-      rejected = sum(decisions$outcome == "rejected")
+      rejected = sum(decisions$outcome == "rejected"),
+      signals = if (is.null(signals)) 0L else nrow(signals)
     ),
     files = list(
       decisions = "decisions.csv",
       checks = if (is.null(checks)) NA_character_ else "checks.csv",
+      signals = if (is.null(signals) || !nrow(signals)) NA_character_ else "signals.csv",
       targets = "targets.csv",
       solved = "solved.rds"
     )

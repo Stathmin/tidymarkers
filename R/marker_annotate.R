@@ -295,7 +295,7 @@ gff_attribute <- function(attributes) {
 
 #' Read a genome feature annotation for the plot feature track
 #'
-#' [plot_primers()] and [plot_marker_map()] draw an annotation row under the
+#' [plot_primers()] and `plot_marker_map()` draw an annotation row under the
 #' assay.  That row wants a table with `start`/`end` (plus optional `strand`,
 #' `name`) and a `chrom` column so the plot can pick the chromosome it is
 #' drawing.  This reads either an NCBI `feature_table.txt(.gz)` or a GFF3 into

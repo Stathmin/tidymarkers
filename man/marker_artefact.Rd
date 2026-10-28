@@ -19,9 +19,10 @@ a \code{marker_artefact}: \code{id}, \code{dir}, \code{manifest}, \code{decision
 \description{
 Writes, into \code{dir}: \code{artefact.json} (the manifest), \code{decisions.csv} (one row
 per target x chemistry tried, with the reason for every rejection),
-\code{checks.csv} (the gate table of each chosen marker), \code{targets.csv} and, when
-it is not already there, \code{solved.rds} (the faithful copy \code{\link[=marker_replay]{marker_replay()}}
-re-runs).
+\code{checks.csv} (the gate table of each chosen marker), \code{signals.csv} (for a
+regional plan, each haplotype's readout and whether it holds inside the
+phased block), \code{targets.csv} and, when it is not already there, \code{solved.rds}
+(the faithful copy \code{\link[=marker_replay]{marker_replay()}} re-runs).
 }
 \details{
 The manifest records what the numbers cannot say for themselves: the hashed

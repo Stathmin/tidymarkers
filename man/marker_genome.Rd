@@ -40,7 +40,7 @@ design code does not care which one it is given.
 }
 \details{
 A \code{marker_genome} can also be built from a Bioconductor \code{BSgenome} object
-(\verb{bsgenome =}), in which case regions are read with \code{\link[BSgenome:getSeq]{BSgenome::getSeq()}} and no
+(\verb{bsgenome =}), in which case regions are read with \code{BSgenome::getSeq()} and no
 FASTA needs to live on disk.
 }
 \examples{

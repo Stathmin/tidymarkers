@@ -243,9 +243,9 @@ lamp_revcomp <- function(x) {
 #' the plus strand (`"+"`, a forward primer) or its reverse complement (`"-"`, a
 #' reverse primer that extends leftward) - the outer B3 must be the latter.
 #' @param tm_range,gc_range accepted windows.
-#' @param strand `"+"` or `"-"` (see [primer_candidates()]).
+#' @param strand `"+"` or `"-"` (see `primer_candidates()`).
 #' @param conditions reaction conditions for [primer_tm()] (see
-#'   [primer_candidates()]; `NULL` keeps the historical buffer).
+#'   `primer_candidates()`; `NULL` keeps the historical buffer).
 #' @keywords internal
 #' @noRd
 lamp_candidates <- function(seq, starts, lengths, tm_range, gc_range, strand = "+",

@@ -574,7 +574,7 @@ marker_check_spec <- function(ways, classes, limits) {
 #' predicate), the `units`, where the threshold comes from (`source`;
 #' `"package assumption"` where no literature value was claimed), the
 #' `evidence` rung behind it (an ordered factor, see
-#' [criterion_evidence()]; every row on this base is `"rule_of_thumb"` because no
+#' `criterion_evidence()`; every row on this base is `"rule_of_thumb"` because no
 #' source was ever claimed for these numbers), and the `evaluator` that produces
 #' the observed value.
 #'

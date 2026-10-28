@@ -100,7 +100,7 @@ HRM_BIMORPHISM_DTM <- list(
 #' @param dg3bp `|dG3bp|` of the 3-bp window, or `NA`; recorded, not thresholded
 #'   (the free-energy filter is a filter, never a guarantee).
 #' @param product amplicon length in bp, or `NA`.
-#' @param threshold the pass threshold (default [HRM_DTM_RESOLVABLE]).
+#' @param threshold the pass threshold (default `HRM_DTM_RESOLVABLE`).
 #' @return a classed list: `bimorphism`, `status`
 #'   (`resolvable`/`marginal`/`below_threshold`/`unknown`), `dtm_min`, `dtm_mean`,
 #'   `threshold`, `product`, `dg3bp`, `evidence`.
@@ -145,11 +145,12 @@ hrm_resolvability <- function(ref, alt, dg3bp = NA_real_, product = NA_real_,
 }
 
 #' Print an HRM resolvability answer
-#' @param x a [hrm_resolvability()] result.
+#' @param x a `hrm_resolvability()` result.
 #' @param ... unused.
 #' @return `x`, invisibly.
 #' @keywords internal
 #' @noRd
+#' @exportS3Method
 print.marker_hrm_resolvability <- function(x, ...) {
   cli::cli_inform(c(
     "i" = "HRM {x$bimorphism}: {x$status}",

@@ -11,7 +11,7 @@ rprimer_assays(alignment, check = TRUE, ...)
 
 \item{check}{also run \code{checkMatch()} and attach the match proportions.}
 
-\item{...}{passed to \code{\link[rprimer:designOligos]{rprimer::designOligos()}}.}
+\item{...}{passed to \code{rprimer::designOligos()}.}
 }
 \value{
 tidy tibble, one row per designed oligo: \code{type}, \code{fwd}, \code{start}, \code{end},
@@ -21,8 +21,8 @@ tidy tibble, one row per designed oligo: \code{type}, \code{fwd}, \code{start}, 
 }
 \description{
 A thin wrapper over rprimer: builds the consensus profile, designs oligos
-(\code{\link[rprimer:designOligos]{rprimer::designOligos()}}) and reports how they match the alignment
-(\code{\link[rprimer:checkMatch]{rprimer::checkMatch()}}).  Use it as a second opinion about a locus - a small
+(\code{rprimer::designOligos()}) and reports how they match the alignment
+(\code{rprimer::checkMatch()}).  Use it as a second opinion about a locus - a small
 on-target mismatch burden and no off-target match mean the region admits a
 clean assay, from an independent algorithm.
 }

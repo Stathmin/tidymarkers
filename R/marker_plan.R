@@ -120,6 +120,10 @@ marker_layer <- function(apply, label) {
 #' @param targets optional target table (`chrom`, `pos`, `ref`, `alt`, and an
 #'   optional `label`/`type`) to seed the plan; otherwise add them with
 #'   [marker_targets()].
+#' @param region optional single region (`GRanges`, or a data frame with
+#'   `chrom`, `start`, `end`).  At solve time it expands to every variant the
+#'   context places inside it, so the plan sweeps sites x chemistries without a
+#'   target list (roadmap Y2.1); a variant outside the block is never a target.
 #' @return a `marker_plan`.
 #' @examples
 #' \dontrun{
@@ -131,7 +135,7 @@ marker_layer <- function(apply, label) {
 #' }
 #' @family KASP plan
 #' @export
-marker_plan <- function(genome, targets = NULL) {
+marker_plan <- function(genome, targets = NULL, region = NULL) {
   if (is.null(genome)) {
     cli::cli_abort(gettext("`genome` is required (see marker_genome())."))
   }
@@ -139,6 +143,7 @@ marker_plan <- function(genome, targets = NULL) {
     list(
       genome = genome,
       targets = if (is.null(targets)) empty_targets() else normalise_targets(targets),
+      region = if (is.null(region)) NULL else normalise_region(region),
       variants = NULL, haplotypes = NULL,
       schemes = NULL, costs = NULL, exclude = NULL,
       layers = character(0)
@@ -282,6 +287,11 @@ marker_costs <- function(...) {
 print.marker_plan <- function(x, ...) {
   n <- nrow(x$targets)
   cat(glue::glue("<marker_plan> {n} target(s); layers: {paste(x$layers, collapse = ' + ')}\n"))
+  if (!is.null(x$region)) {
+    cat(glue::glue(
+      "  region: {x$region$chrom}:{x$region$start}-{x$region$end}\n"
+    ))
+  }
   if (n) {
     print(utils::head(x$targets[, c("label", "chrom", "pos", "ref", "alt")], 8L))
   }

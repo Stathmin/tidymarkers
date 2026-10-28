@@ -22,7 +22,7 @@
 #' design code does not care which one it is given.
 #'
 #' A `marker_genome` can also be built from a Bioconductor `BSgenome` object
-#' (`bsgenome =`), in which case regions are read with [BSgenome::getSeq()] and no
+#' (`bsgenome =`), in which case regions are read with `BSgenome::getSeq()` and no
 #' FASTA needs to live on disk.
 #'
 #' @param path FASTA path (gzipped is decompressed once, see [fasta_index()]).

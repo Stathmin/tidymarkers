@@ -126,9 +126,10 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #' @param progress show a progress bar (default: when interactive).
 #' @return a `marker_solved`: `report` (one row per target: `scheme`, `cost`, `ok`,
 #'   `tried`, `marker`), `attempts` (one row per target x tried scheme), the
-#'   `plan`/`schemes`/`cache`, and `knobs` - the `...` the design ran with, kept
+#'   `plan`/`schemes`/`cache`, `knobs` - the `...` the design ran with, kept
 #'   so [marker_artefact()] can record them and [marker_replay()] can re-run the
-#'   same design instead of a similar one.
+#'   same design instead of a similar one - and, for a plan with a `region`, a
+#'   `signals` table naming each haplotype's readout (`within_phased_block`).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -145,8 +146,13 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
     cli::cli_abort(gettext("`plan` must be a marker_plan (see marker_plan())."))
   }
   tg <- plan$targets
+  if (!is.null(plan$region)) {
+    tg <- dplyr::bind_rows(tg, region_targets(plan))
+  }
   if (!nrow(tg)) {
-    cli::cli_abort(gettext("The plan has no targets; add them with marker_targets()."))
+    cli::cli_abort(gettext(
+      "The plan has no targets; add them with marker_targets() or name a `region`."
+    ))
   }
   schemes <- plan_schemes(plan)
   if (is.null(cache)) cache <- new.env(parent = emptyenv())
@@ -171,6 +177,9 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
     tried = purrr::map_chr(recs, "tried"),
     marker = purrr::map(recs, "marker")
   )
+  # a region's answer is only a statement about haplotypes inside its phased
+  # block; the table says so on every row (roadmap Y2.1)
+  signals <- if (is.null(plan$region)) NULL else region_signals(plan, report)
   attempts <- purrr::map2(
     tg$label, recs,
     function(lb, r) {
@@ -184,7 +193,7 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
   structure(
     list(
       report = report, attempts = attempts, plan = plan, schemes = schemes,
-      cache = cache, knobs = dots
+      cache = cache, knobs = dots, signals = signals
     ),
     class = "marker_solved"
   )

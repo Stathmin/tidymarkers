@@ -30,7 +30,7 @@
 #' does not: `gates` is the order the gates are *listed* (grave / cheap first), and
 #' `relax` is the ladder's order (least grave first - the mildest trade-off is
 #' tried before a worse one).  The selector ANDs every gate on the same candidate
-#' set ([select_with_ladder()]), so `gates` is not a short-circuit order - only
+#' set (`select_with_ladder()`), so `gates` is not a short-circuit order - only
 #' `relax` drives behaviour.  Both are labelled per stage in
 #' [marker_decision_text()].
 #' @param scheme a scheme id (see [marker_schemes()]).

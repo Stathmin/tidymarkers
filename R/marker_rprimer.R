@@ -36,13 +36,13 @@ alignment_from <- function(seqs) {
 #' Independent oligo design + match report on an alignment (rprimer)
 #'
 #' A thin wrapper over rprimer: builds the consensus profile, designs oligos
-#' ([rprimer::designOligos()]) and reports how they match the alignment
-#' ([rprimer::checkMatch()]).  Use it as a second opinion about a locus - a small
+#' (`rprimer::designOligos()`) and reports how they match the alignment
+#' (`rprimer::checkMatch()`).  Use it as a second opinion about a locus - a small
 #' on-target mismatch burden and no off-target match mean the region admits a
 #' clean assay, from an independent algorithm.
 #' @param alignment a `Biostrings::DNAMultipleAlignment` (see [alignment_from()]).
 #' @param check also run `checkMatch()` and attach the match proportions.
-#' @param ... passed to [rprimer::designOligos()].
+#' @param ... passed to `rprimer::designOligos()`.
 #' @return tidy tibble, one row per designed oligo: `type`, `fwd`, `start`, `end`,
 #'   `sequence`, `tm`, `gc` and, when `check`, `perfectMatch`, `oneMismatch`,
 #'   `twoMismatches`, `threeMismatches`, `fourOrMoreMismatches` and

@@ -100,11 +100,12 @@ crispr_seed_evidence <- function() {
 
 #' The seed MISSES what it was described as measuring
 #'
-#' @param x a [crispr_seed_evidence()] result.
+#' @param x a `crispr_seed_evidence()` result.
 #' @param ... unused.
 #' @return `x`, invisibly.
 #' @keywords internal
 #' @noRd
+#' @exportS3Method
 print.marker_crispr_seed_evidence <- function(x, ...) {
   cli::cli_inform(c(
     "i" = x$gate,
@@ -121,7 +122,7 @@ print.marker_crispr_seed_evidence <- function(x, ...) {
 #' candidate grid enforces this while it is built, so the gate re-checks the
 #' chosen guide (a constructor invariant) rather than returning an unconditional
 #' `TRUE`.  Being inside the seed does not mean a single mismatch abolishes
-#' activity - see [crispr_seed_evidence()] for what was measured.
+#' activity - see `crispr_seed_evidence()` for what was measured.
 #' @param cas the effector.
 #' @param len spacer length.
 #' @param v_off the variant's offset in the spacer (0-based, PAM-proximal end).

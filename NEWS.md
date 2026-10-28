@@ -125,6 +125,19 @@
 - `ROADMAP.md` и `docs/archive/inventory-ru.md` помечены как внутренние документы,
   не входящие в сборку; `CONTRIBUTING.md` называет настоящий merge gate
   (`dev/check.R`) и переведён на английский.
+- **`roxygen2::roxygenise()` больше не даёт предупреждений.** Раньше их было 22:
+  пятнадцать ссылок `[fn()]` вели на внутренние `@noRd`-хелперы, у которых нет
+  темы Rd (`criterion_evidence`, `evaluation_verdict`, `crispr_seed_evidence`,
+  `hrm_resolvability`, `mismatch_profile`, `select_with_ladder`,
+  `artefact_sha256_file`, `primer_candidates`, `plot_marker_map`,
+  `plus_to_primer`, `primer_hit_table` и константы `HRM_DTM_RESOLVABLE`,
+  `RPA_ANCHOR_NT`, `RPA_3P_WINDOW`), ещё три — на неустановленные Suggests
+  (`BSgenome::getSeq`, `rprimer::designOligos`, `rprimer::checkMatch`). Такие
+  ссылки заменены на код-спаны; ссылки на реально документированные темы
+  сохранены. Два `print`-метода (`marker_hrm_resolvability`,
+  `marker_crispr_seed_evidence`) были `@noRd` без регистрации — добавлен
+  `@exportS3Method`, и `print()` теперь действительно диспетчеризуется из
+  другого пакета.
 - **`VALIDATION.md` — честная бухгалтерия доказательств.** Отдельный корневой
   документ: что проверяется по внешним данным (80 источников, 130 извлечений,
   284 строки летописи, 37 читающих тестов, три гейта провенанса), какие
@@ -255,6 +268,16 @@
   сертифицирует только эвристику. Тест в `test-technology.R` подменяет весь
   реестр на `fitted_here` и проверяет, что база даёт `fitted_here`, а
   собранная технология — `rule_of_thumb`.
+- **Y2.1: план принимает область, а не только сайт.** `marker_plan(genome,
+  targets, region)` берёт одну область (`GRanges` или `chrom`/`start`/`end`),
+  хранит её неразвёрнутой и разворачивает в `marker_solve()` против контекста
+  (`plan$variants`, иначе `haplotypes`). Цели области помечаются
+  `type = "region"`, вариант вне блока целью не становится, пустая область —
+  ошибка, а не пустой план. Решённый регион несёт таблицу `signals`
+  («гаплотип → сигнал»): у технологий с `$haplotype_hits` сигнал — связанный
+  праймер, иначе — аллель цели, и каждая строка говорит
+  `within_phased_block = TRUE`, потому что сцепление верно только внутри блока.
+  `marker_artefact()` пишет `signals.csv` и считает его в манифесте.
 - **Z8: провалы собраны, вероятности — нет.** `conversion_rates.csv` несёт
   знаменатель И провалы; разложение полное только у одной строки (Makhoul S3),
   поэтому `outcome_scale = "usable"` остаётся порядковым. Добавлены исходы

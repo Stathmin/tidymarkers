@@ -29,7 +29,7 @@ rebind <- function(FUN, env) {
 #'
 #' The namespace, its `.__NAMESPACE__.` and `.__S3MethodsTable__.` must stay
 #' by-reference (a worker would otherwise reload the installed copy, the bug
-#' [source_carrier()] exists to avoid), and the option/cache state in
+#' `source_carrier()` exists to avoid), and the option/cache state in
 #' `.marker_state` is session-local.  A *registry* is neither: `.marker_tech_store`
 #' holds the technologies composed with [marker_technology()], which are part of
 #' what the task means, so its contents travel with the task.

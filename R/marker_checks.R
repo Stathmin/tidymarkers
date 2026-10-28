@@ -599,7 +599,7 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
 #' A verdict says a design cleared a set of bars; it says nothing about where
 #' those bars came from.  This returns the **weakest** rung among the checks that
 #' actually `pass` (the minimum of the ordered `evidence` ladder, see
-#' [criterion_evidence()]), ignoring `fail`, `unknown` and `not_applicable` rows -
+#' `criterion_evidence()`), ignoring `fail`, `unknown` and `not_applicable` rows -
 #' a check that did not pass cannot vouch for anything.  `NA` when nothing passes
 #' (or when the checks carry no rung).
 #'
@@ -608,7 +608,7 @@ evaluation_verdict <- function(x, limits = KASP_LIMITS) {
 #' not that the threshold is validated.  It is deliberately not a fifth verdict
 #' string.
 #' @param x a checks tibble (see [marker_design_checks()]) or a marker/assay
-#'   whose `$evaluation` is read, exactly as for [evaluation_verdict()].
+#'   whose `$evaluation` is read, exactly as for `evaluation_verdict()`.
 #' @param criteria the criterion registry the rungs are read from (see
 #'   `criterion_spec()`).
 #' @param scheme optional scheme id (see [marker_schemes()]); when `x` is a

@@ -4,7 +4,7 @@
 \alias{marker_plan}
 \title{Start a marker-design plan}
 \usage{
-marker_plan(genome, targets = NULL)
+marker_plan(genome, targets = NULL, region = NULL)
 }
 \arguments{
 \item{genome}{a \code{marker_genome} or \code{DNAStringSet} (see \code{\link[=marker_genome]{marker_genome()}}).}
@@ -12,6 +12,11 @@ marker_plan(genome, targets = NULL)
 \item{targets}{optional target table (\code{chrom}, \code{pos}, \code{ref}, \code{alt}, and an
 optional \code{label}/\code{type}) to seed the plan; otherwise add them with
 \code{\link[=marker_targets]{marker_targets()}}.}
+
+\item{region}{optional single region (\code{GRanges}, or a data frame with
+\code{chrom}, \code{start}, \code{end}).  At solve time it expands to every variant the
+context places inside it, so the plan sweeps sites x chemistries without a
+target list (roadmap Y2.1); a variant outside the block is never a target.}
 }
 \value{
 a \code{marker_plan}.

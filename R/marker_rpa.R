@@ -123,7 +123,7 @@ rpa_anchor_weights <- function() {
 
 #' Penalty of one primer's 3' anchor against a template
 #'
-#' Sums the measured weights over the mismatches inside [RPA_ANCHOR_NT].  A
+#' Sums the measured weights over the mismatches inside `RPA_ANCHOR_NT`.  A
 #' perfect anchor scores 0; a single terminal mismatch scores exactly the
 #' printed terminal weight for its base pair.  Two adjacent mismatches are
 #' scored with the measured CLASS coefficient of `rpa_mismatch_position.csv`
@@ -454,7 +454,7 @@ rpa_probe_gate <- function(probe, probe_relaxed) {
 #' Is the variant actually at a discriminating position?
 #'
 #' Without a probe RPA discriminates through a primer's 3'-terminal base, so the
-#' variant must sit within [RPA_3P_WINDOW] nt of that 3' end.  With an exo probe
+#' variant must sit within `RPA_3P_WINDOW` nt of that 3' end.  With an exo probe
 #' the probe carries the allele: it must span the variant, and its THF must not
 #' replace the variant base.  `design_rpa_marker()` enforces this while it picks
 #' the pair/probe, so the gate re-checks the returned coordinates rather than
