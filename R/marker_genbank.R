@@ -57,10 +57,10 @@
 #' @family KASP input
 #' @export
 read_genbank <- function(path, region = NULL) {
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("GenBank not found: {path}"))
   if (grepl("\\.gz$", path)) {
     cli::cli_abort(gettext("{.file {path}} is gzipped; gunzip it first"))
   }
+  if (!fs::file_exists(path)) cli::cli_abort(gettext("GenBank not found: {path}"))
 
   reg <- if (is.null(region)) NULL else normalise_region(region)
 
@@ -273,6 +273,12 @@ parse_features_block <- function(block) {
         current$qual_keys <- c(current$qual_keys, q$key)
         current$qual_vals <- c(current$qual_vals, q$value)
       }
+    } else if (is_qualifier_continuation(ln)) {
+      # a wrapped qualifier value continues on a line whose key column is blank
+      if (!is.null(current) && length(current$qual_vals)) {
+        k <- length(current$qual_vals)
+        current$qual_vals[k] <- paste(current$qual_vals[k], trimws(ln), sep = " ")
+      }
     } else {
       # a new feature line flushes the previous feature (with its qualifiers),
       # so the qualifiers are never attached to a stale copy of `current`
@@ -293,6 +299,14 @@ parse_features_block <- function(block) {
   }
   if (!is.null(current)) features <- c(features, list(current))
   features
+}
+
+#' Is a FEATURES line a continuation of the previous qualifier? (internal)
+#' @keywords internal
+#' @noRd
+is_qualifier_continuation <- function(ln) {
+  key_col <- substr(ln, 1L, 21L)
+  !nzchar(trimws(key_col))
 }
 
 #' Split a `/key=value` qualifier into key and (unquoted) value (internal)
@@ -349,29 +363,36 @@ qual_value <- function(q, key) {
 #' @noRd
 parse_location <- function(location) {
   loc <- trimws(location)
-  strand <- "+"
-
-  if (grepl("^complement\\(", loc)) {
-    strand <- "-"
+  outer_complement <- grepl("^complement\\(", loc)
+  if (outer_complement) {
     loc <- sub("^complement\\((.+)\\)$", "\\1", loc)
   }
 
-  if (grepl("^(join|order)\\(", loc)) {
-    if (startsWith(loc, "order(")) strand <- "*"
+  is_order <- startsWith(loc, "order(")
+  is_join <- startsWith(loc, "join(")
+  if (is_order || is_join) {
     loc <- sub("^(join|order)\\((.+)\\)$", "\\2", loc)
   }
 
   parts <- strsplit(loc, ",", fixed = TRUE)[[1]]
   starts <- integer(0)
   ends <- integer(0)
+  part_strands <- character(0)
 
   for (p in parts) {
+    p <- trimws(p)
+    part_strand <- "+"
+    if (grepl("^complement\\(", p)) {
+      part_strand <- "-"
+      p <- sub("^complement\\((.+)\\)$", "\\1", p)
+    }
     p <- gsub("[<>]", "", trimws(p))
     if (grepl("\\^", p)) {
       left <- suppressWarnings(as.integer(sub("\\^.*$", "", p)))
       if (!is.na(left)) {
         starts <- c(starts, left)
         ends <- c(ends, left)
+        part_strands <- c(part_strands, part_strand)
       }
     } else if (grepl("\\.\\.", p)) {
       bounds <- strsplit(p, "..", fixed = TRUE)[[1]]
@@ -380,14 +401,34 @@ parse_location <- function(location) {
       if (!is.na(s)) {
         starts <- c(starts, s)
         ends <- c(ends, e)
+        part_strands <- c(part_strands, part_strand)
       }
     } else {
       v <- suppressWarnings(as.integer(p))
       if (!is.na(v)) {
         starts <- c(starts, v)
         ends <- c(ends, v)
+        part_strands <- c(part_strands, part_strand)
       }
     }
+  }
+
+  strand <- "+"
+  if (is_order) {
+    strand <- "*"
+  } else if (is_join) {
+    if (length(part_strands)) {
+      strand <- if (length(unique(part_strands)) > 1L) "*" else unique(part_strands)[1]
+    }
+    if (outer_complement) {
+      strand <- switch(strand,
+        "+" = "-",
+        "-" = "+",
+        "*" = "*"
+      )
+    }
+  } else {
+    strand <- if (outer_complement) "-" else "+"
   }
 
   list(

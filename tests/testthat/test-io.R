@@ -250,4 +250,51 @@ test_that("read_genbank parses features, caches an index and reuses it", {
   expect_true(attr(z, "file_reads") >= 1L)
   expect_equal(nrow(z), 5L)
   expect_true(any(z$type == "misc_feature" & z$start == 80L))
+
+  # a same-byte-size edit keeps `size` unchanged, so only a newer mtime can
+  # invalidate the cache; bump mtime explicitly to make the test deterministic
+  txt <- readLines(gb)
+  txt[grepl("DEFINITION", txt)] <- sub("Test record", "Test rec0rd", txt[grepl("DEFINITION", txt)])
+  writeLines(txt, gb)
+  Sys.setFileTime(gb, Sys.time() + 5)
+  w <- read_genbank(gb)
+  expect_true(attr(w, "file_reads") >= 1L)
+  expect_equal(nrow(w), 5L)
+})
+
+test_that("read_genbank keeps a nested complement inside join as mixed strand", {
+  gb <- withr::local_tempfile(fileext = ".gbk")
+  unlink(paste0(gb, ".gbidx"))
+  writeLines(c(
+    "LOCUS       TESTLOCUS         60 bp     DNA     linear   UNK 01-JAN-2026",
+    "FEATURES             Location/Qualifiers",
+    "     source          1..60",
+    "     CDS             join(complement(10..30),40..60)",
+    "ORIGIN",
+    "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+    "//"
+  ), gb)
+  x <- read_genbank(gb)
+  cds <- x[x$type == "CDS", ]
+  expect_equal(cds$start, 10L)
+  expect_equal(cds$end, 60L)
+  expect_equal(cds$strand, "*")
+})
+
+test_that("read_genbank folds a wrapped qualifier value into one feature", {
+  gb <- withr::local_tempfile(fileext = ".gbk")
+  unlink(paste0(gb, ".gbidx"))
+  writeLines(c(
+    "LOCUS       TESTLOCUS         60 bp     DNA     linear   UNK 01-JAN-2026",
+    "FEATURES             Location/Qualifiers",
+    "     misc_feature    10..20",
+    '                     /note="a long note that wraps',
+    "                     across two lines",
+    "ORIGIN",
+    "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+    "//"
+  ), gb)
+  x <- read_genbank(gb)
+  expect_equal(nrow(x), 1L)
+  expect_equal(x$qualifiers[[1]]$note, "a long note that wraps across two lines")
 })
