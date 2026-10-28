@@ -35,6 +35,42 @@
 #         anywhere -- tests assert RANK and spread, never absolute agreement.
 #     See the report for the attempted Mg explanation and why it fails.
 #
+#  WHAT THE OFFSET IS, AND WHAT IS FORBIDDEN (ZW3.4)
+#
+#   Measured on R 4.6.1 / TmCalculator 1.1.2, the 64 canonical rows, at this
+#   buffer:
+#     bias (primer_tm - measured) = -16.864 C, sd 0.641 C
+#     Pearson r = 0.9579, Spearman rho = 0.9413
+#   A LEVEL offset with the ranking intact can be hidden by one constant.  This
+#   table does not allow that, so every row carries calibration_stance = STANCE
+#   and the numbers below are NAMED, not applied.
+#
+#   Candidate hypotheses, with the arithmetic that supports each:
+#
+#   H1  SALT TERM.  The default correction is Schildkraut & Lifson 1965,
+#       16.6*log10([Na+]); at 50 mM that is 16.6*log10(0.05) = -21.60 C against
+#       a 1 M reference.  The more complete Owczarzy 2008 form moves the level
+#       by +7.53 C with the SAME rank (same r), so at least 7.5 of the 16.9 C
+#       is the SALT CODE and not the measurement: only the computed Tm moved.
+#
+#   H2  MEASUREMENT STANDARD.  Owczarzy still leaves -9.34 C.  The residual has
+#       the size and sign a reference-state mismatch produces: taking the
+#       -21.60 C salt term out of the -16.86 C bias leaves +4.73 C, i.e. the
+#       model's 1 M value sits above the measurement.  The paper measures the
+#       first-derivative maximum of a LightCycler curve at 1.0 uM total strand,
+#       which is not the thermodynamic Tm at 1 M, and its method section states
+#       no concentration/standard-state correction.  Cannot be tested from this
+#       table, so it stays a hypothesis.
+#
+#   H3  MAGNESIUM: ruled out.  Mg = 0 in this buffer; a plausible 3 mM Mg
+#       closes ~12 C and then OVERSHOOTS the mismatch classes, trading a level
+#       error for a class error.
+#
+#   The ~-9.3 C left by H1 is the blocker: it needs either a stated
+#   standard-state correction from the source (which is closed) or an
+#   independent 1 M measurement (which does not exist).  Absorbing it here is
+#   what STANCE forbids, and it is why Z0.2 (a dPCR Tm scale) stays blocked.
+#
 #  ASSERTIONS (all against the paper's own totals)
 #   * 4096 rows; `i` is exactly 1..4096 with no duplicates (paper: 4096
 #     sequences, "all possible combinations of the bases A, C, G and T").
@@ -67,6 +103,10 @@ DOI <- "10.1039/d0sc01700k"
 doc <- xml2::read_xml(xml_path)
 if (!any(grepl(DOI, xml2::xml_text(doc), fixed = TRUE)))
   stop("fulltext.xml does not mention ", DOI)
+
+# ZW3.4: the offset is recorded, not corrected.  No constant is added to the
+# model; the header block above names the candidate hypotheses instead.
+STANCE <- "recorded, not corrected: do not calibrate into the minus"
 
 # ---------------------------------------------------------------------------
 # 1. Parse ESI Table S1.  Four columns per entry, three entries per line:
@@ -179,12 +219,16 @@ out <- data.frame(
     "duplex melting temperature (degC), first-derivative maximum of the",
     "LightCycler melting curve; 50 mM NaCl + 10 mM Na-phosphate pH 7.4,",
     "1.0 uM total strand, no Mg2+"),
+  calibration_stance = STANCE,
   stringsAsFactors = FALSE
 )
 
 dest <- fs::path(root, "inst", "extdata", "tm_mm2020_s1_measured.csv")
 utils::write.csv(out, dest, row.names = FALSE, na = "")
-if (nrow(utils::read.csv(dest)) != 4096L) stop("written CSV does not round-trip to 4096 rows")
+back <- utils::read.csv(dest, stringsAsFactors = FALSE)
+if (nrow(back) != 4096L) stop("written CSV does not round-trip to 4096 rows")
+if (!all(back$calibration_stance == STANCE))
+  stop("written CSV does not round-trip calibration_stance")
 
 cat("wrote", nrow(out), "rows to", dest, "\n")
 cat("classes:", paste(names(counts), as.integer(counts), sep = "=", collapse = " "), "\n")

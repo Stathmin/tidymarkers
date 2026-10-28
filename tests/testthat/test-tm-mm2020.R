@@ -23,8 +23,13 @@
 #      * stability: a hand-edited CSV breaks the internal invariants below.
 #
 #  What is NOT asserted: absolute agreement, or any claim that primer_tm()
-#  reproduces published Tm at the conventional 1.5 mM Mg2+.  The oracle status
+#  reproduces published Tm at the conventional 1.5 mM Mg2+. The oracle status
 #  file is data-raw/proposed/tm_oracle_status.md.
+#
+#  ZW3.4 makes the stance part of the artifact: every row carries
+#  calibration_stance = "recorded, not corrected: do not calibrate into the
+#  minus", and the candidate hypotheses (salt term vs measurement standard;
+#  Mg ruled out) are documented in data-raw/mm2020.R.
 
 mm2020_path <- function() {
   tm_extdata("tm_mm2020_s1_measured.csv")
@@ -105,6 +110,35 @@ test_that("ZW3/mm2020: primer_tm() ranks the 64 canonical duplexes with measurem
   expect_lt(bias, -10)
   expect_gt(bias, -25)
   expect_lt(stats::sd(tm - can$measured_tm_c), 2)
+})
+
+test_that("ZW3/mm2020: the artifact records the offset and forbids a calibration", {
+  skip_if_not(file.exists(mm2020_path()), "tm_mm2020 CSV not present")
+  d <- utils::read.csv(mm2020_path(), stringsAsFactors = FALSE)
+
+  # ZW3.4: the stance is part of the landed artifact, not only of the report.
+  # One constant column, identical on every row, and it says what is forbidden.
+  expect_true("calibration_stance" %in% names(d))
+  expect_false(anyNA(d$calibration_stance))
+  expect_length(unique(d$calibration_stance), 1L)
+  expect_match(d$calibration_stance[[1L]], "not corrected")
+  expect_match(d$calibration_stance[[1L]], "calibrate")
+
+  # The arithmetic the documented hypotheses rest on is recomputed from the
+  # table, so a prose number cannot drift away from the data.
+  can <- d[d$mismatch_class == "canonical", ]
+  cond <- reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+  bias <- mean(primer_tm(can$top_18, conditions = cond) - can$measured_tm_c)
+
+  # H1 (salt term): Schildkraut & Lifson 1965 at 50 mM, against a 1 M
+  # reference, is the whole of the default level shift.
+  salt_term <- 16.6 * log10(0.05)
+  expect_equal(round(salt_term, 1), -21.6)
+  # H2 (measurement standard): what the salt term leaves unexplained is the
+  # 1 M reference excess the method does not state. It is recorded, not
+  # removed -- no constant is added anywhere.
+  expect_equal(round(bias - salt_term, 1), 4.7)
+  expect_lt(bias, -10)
 })
 
 test_that("ZW3/mm2020: the documented salt_method option moves the level, not the ranking", {
