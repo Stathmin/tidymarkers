@@ -1015,12 +1015,12 @@ ro <- scheme$readout(m, context)
 
 | Модуль | Tidy/ggplot-форма | Заменяет | Зависимость | Состояние |
 |---|---|---|---|---|
-| `MarkerContext` | classed list, `rlang::list2`, `withr` | ручной `...`-плумбинг | существующие | частично (`marker_run_context()`) |
+| `MarkerContext` | classed list, `rlang::list2`, `withr` | ручной `...`-плумбинг | существующие | есть (`marker_run_context()`) |
 | `Scheme` | S3 + `tibble`-реестр | `design_<scheme>_marker` + `switch(scheme)` | нет | есть (`marker_scheme_adapter()`, `scheme_designer()`) |
 | `Criterion`/`CriterionSet` | `tibble` + list-column evaluator, `vctrs::vec_rbind` | дубли порогов в design/check/DAG | `vctrs` | есть (`criterion_spec()`, 191 строка) |
 | `Evaluation` | `tibble` + `forcats` status | три evaluator-пути | `vctrs`, `forcats` | есть |
 | `Population` | `tibble` + `GenomicRanges` adapters | мутация `marker_attach_haplotypes()` | `fitPoly` позже (Suggests) | частично |
-| `Engines` | S3-adapter + `capabilities()` | глобальный `PCR_COND`, молчаливые skip | существующие + внешние | частично (`Z4.1`) |
+| `Engines` | S3-adapter + `capabilities()` | глобальный `PCR_COND`, молчаливые skip | существующие + внешние | есть (`marker_engines()`, `engine_has()`; `Z4.1`) |
 | `DecisionSchema`/`DecisionState` | `tidygraph` + Graphviz | ручная раскладка и статусы | `ggraph` (Suggests) | нет (заперто `Z8`) |
 | `TrackSpec`/`Figure` | `ggplot2` + `ggenes`/`patchwork` | стиль внутри схем | `scales` | частично |
 | `Readout`/`Calibration` | model-result + `yardstick` | строки «not modeled» | `yardstick`, `targets` (Suggests) | нет (заперто `Z8`) |
@@ -1151,10 +1151,14 @@ plot-файле остался `marker_primer_checks()` — адаптер ра�
      хуже, чем отсутствие колонки, поэтому пункт остаётся открытым до
      сквозной правки `marker_*_marker()` (и тогда снимается `ZW0`
      revcomp-инвариант).
-2. [~] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
+2. [x] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
    есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
    `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп
    не доезжает до `Evaluation` (`ZW2.2`).
+   - **Закрыто 2026-10-29:** все три остатка сняты — `Z4.1` (`[x]`),
+     `ZA2.1` (`engine_has()` — единственный шов, потребители есть) и `ZW2.2`
+     (`2ee25da`: штамп в `marker_design_checks()`, `marker_with_stamp(from=)`).
+     Шаг остаётся контрактом данных, тяжёлых зависимостей не добавил.
 3. [~] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
    Проверка: `ZA7` contract-test `design/evaluate/tracks/decision/readout`.
    - **Сделано 2026-10-29 (часть):** `scheme_designer(scheme)` — один резолвер
