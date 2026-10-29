@@ -191,18 +191,9 @@ artefact_inputs <- function(plan) {
 #' @keywords internal
 #' @noRd
 artefact_designer <- function(scheme) {
-  switch(scheme,
-    snp = ,
-    indel = ,
-    multi = assemble_kasp_assay,
-    caps = design_caps_marker,
-    arms = design_arms_marker,
-    hrm = design_hrm_marker,
-    taqman = design_taqman_marker,
-    dpcr = design_dpcr_marker,
-    rpa = design_rpa_marker,
-    extra_scheme_designer(scheme)
-  )
+  # the one resolver in R/marker_scheme_registry.R, shared with the design seam,
+  # so a new built-in scheme cannot land in one switch and miss the other
+  scheme_designer(scheme)
 }
 
 #' The evaluated default of one designer argument
@@ -448,7 +439,10 @@ ARTEFACT_READOUT_LIMITS <- c(
 # TRUE when any chosen marker carries a non-NA `stab_at` anywhere in its tree
 # (the ARMS inner primers - the only designer that places a deliberate mismatch).
 artefact_uses_mismatch <- function(x) {
-  if (!is.list(x)) {
+  # a marker carries its decision tree under `$decision`, which is a tbl_graph:
+  # `x[["stab_at"]]` on a graph is a vertex lookup and aborts, so the walk stops
+  # at any graph rather than descending into one
+  if (!is.list(x) || inherits(x, "igraph")) {
     return(FALSE)
   }
   s <- x[["stab_at"]]

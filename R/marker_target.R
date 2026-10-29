@@ -496,39 +496,22 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = 
   # is a pair-level "in-silico PCR: exactly one product" node; registering it
   # belongs in marker_criteria.R/marker_schemes.R (a requested serial slot, not this
   # file).
-  out <- switch(scheme,
-    snp = ,
-    indel = ,
-    multi = assemble_kasp_assay(
-      genome, snp,
-      variants = variants, scheme = scheme,
-      haplotypes = haplotypes, BPPARAM = BPPARAM, ...
-    ),
-    caps = design_caps_marker(genome, snp, haplotypes = haplotypes, ...),
-    arms = design_arms_marker(genome, snp, ...),
-    hrm = design_hrm_marker(genome, snp, ...),
-    taqman = design_taqman_marker(genome, snp, engines = engines, ...),
-    dpcr = design_dpcr_marker(genome, snp, engines = engines, ...),
-    rpa = design_rpa_marker(genome, snp, BPPARAM = BPPARAM, engines = engines, ...),
-    {
-      # a discovered scheme (R/marker_<scheme>.R) supplies its own designer; a
-      # composed technology dispatches to its base designer
-      # (extra_scheme_designer).  Pass the shared context only when the designer
-      # accepts it, so an existing scheme's designer never sees an extra argument.
-      f <- extra_scheme_designer(scheme)
-      if (is.null(f)) {
-        NULL
-      } else {
-        fm <- names(formals(f))
-        ctx <- list()
-        if ("variants" %in% fm) ctx$variants <- variants
-        if ("haplotypes" %in% fm) ctx$haplotypes <- haplotypes
-        if ("BPPARAM" %in% fm) ctx$BPPARAM <- BPPARAM
-        if ("engines" %in% fm) ctx$engines <- engines
-        rlang::exec(f, genome, snp, !!!ctx, ...)
-      }
-    }
-  )
+  # one resolver for the built-in and discovered designers (see
+  # scheme_designer()); the shared context is passed only to a designer that
+  # declares it, so an existing scheme's designer never sees an extra argument
+  f <- scheme_designer(scheme)
+  if (is.null(f)) {
+    return(NULL)
+  }
+  fm <- names(formals(f))
+  args <- list()
+  if ("variants" %in% fm) args$variants <- variants
+  if ("haplotypes" %in% fm) args$haplotypes <- haplotypes
+  if ("BPPARAM" %in% fm) args$BPPARAM <- BPPARAM
+  if ("engines" %in% fm) args$engines <- engines
+  # only the KASP assembly takes the scheme id as an argument
+  if ("scheme" %in% fm) args$scheme <- scheme
+  out <- rlang::exec(f, genome, snp, !!!args, ...)
   # attach the population layer to every chemistry: haplotype-aware engines use
   # it during design; the rest use it for plotting and the check column
   if (!is.null(out) && !is.null(haplotypes)) {

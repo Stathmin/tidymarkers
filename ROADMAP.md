@@ -991,7 +991,7 @@ ro <- scheme$readout(m, context)
 | Модуль | Tidy/ggplot-форма | Заменяет | Зависимость | Состояние |
 |---|---|---|---|---|
 | `MarkerContext` | classed list, `rlang::list2`, `withr` | ручной `...`-плумбинг | существующие | частично (`marker_run_context()`) |
-| `Scheme` | S3 + `tibble`-реестр | `design_<scheme>_marker` + `switch(scheme)` | нет | нет |
+| `Scheme` | S3 + `tibble`-реестр | `design_<scheme>_marker` + `switch(scheme)` | нет | есть (`marker_scheme_adapter()`, `scheme_designer()`) |
 | `Criterion`/`CriterionSet` | `tibble` + list-column evaluator, `vctrs::vec_rbind` | дубли порогов в design/check/DAG | `vctrs` | есть (`criterion_spec()`, 191 строка) |
 | `Evaluation` | `tibble` + `forcats` status | три evaluator-пути | `vctrs`, `forcats` | есть |
 | `Population` | `tibble` + `GenomicRanges` adapters | мутация `marker_attach_haplotypes()` | `fitPoly` позже (Suggests) | частично |
@@ -1130,8 +1130,26 @@ plot-файле остался `marker_primer_checks()` — адаптер ра�
    есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
    `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп
    не доезжает до `Evaluation` (`ZW2.2`).
-3. [ ] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
+3. [~] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
    Проверка: `ZA7` contract-test `design/evaluate/tracks/decision/readout`.
+   - **Сделано 2026-10-29 (часть):** `scheme_designer(scheme)` — один резолвер
+     для встроенных и обнаруженных дизайнеров; им пользуются и
+     `marker_design_at()`, и `artefact_designer()` (раньше встроенный
+     `switch` был продублирован в двух файлах, и новая схема могла попасть в
+     один и пропасть во втором). `marker_scheme_adapter(scheme)` даёт
+     поведенческий вид схемы — `design/evaluate/tracks/decision/readout`,
+     каждый шаг делегирует тому же коду, что и пайплайн
+     (`marker_design_at()`/`marker_design_checks()`/`marker_map_spec()`/
+     `marker_decision_graph()`/`marker_readout()`); `readout()` возвращает
+     id адаптера, а не грубый класс маркера (`marker_assay`). Это S3-объект
+     (список замыканий, класс `marker_scheme_adapter`), не data frame (ZA5).
+     Контракт — `tests/testthat/test-scheme-adapter.R`: каждая схема из
+     `per_locus_schemes()` имеет все пять шагов; неизвестный id — ошибка;
+     `primer` адаптируется, но `design()` возвращает `NULL` (C13); на реальном
+     дизайне `evaluate()` не превращает не-текстовое `NA` в `pass`.
+     **Остаток:** шаги 5–6 (`TrackSpec`/`Figure`, `DecisionSchema`) и миграция
+     остальных схем на адаптер остаются; `duplex`/`asq` по-прежнему без
+     `design_<scheme>_marker()`.
 4. [x] `Population` в context; `marker_attach_haplotypes()` — compatibility
    adapter; инварианты `ZW0` изолированы на этом шве.
 

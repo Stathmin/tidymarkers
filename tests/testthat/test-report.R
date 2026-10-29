@@ -99,6 +99,14 @@ test_that("Z7.6 a deliberate mismatch records the late-cycle readout limit", {
   # a design without the mismatch claims nothing, and an empty marker is safe
   expect_length(tidymarkers:::artefact_limitations(solved_with(plain)), 0L)
   expect_length(tidymarkers:::artefact_limitations(solved_with(NULL)), 0L)
+
+  # every assembled marker carries its decision tree under `$decision`, a
+  # tbl_graph; `[[` on a graph is a vertex lookup and aborts, so the walk must
+  # stop at the graph instead of descending into it
+  skip_if_not_installed("tidygraph")
+  g <- tidygraph::tbl_graph(edges = tibble::tibble(from = 1L, to = 2L))
+  marker <- list(inner = list(ref = list(stab_at = 3L)), decision = g)
+  expect_length(tidymarkers:::artefact_limitations(solved_with(marker)), 1L)
 })
 
 test_that("Z8.5 a non-dPCR scheme declares only the quantity it reports", {

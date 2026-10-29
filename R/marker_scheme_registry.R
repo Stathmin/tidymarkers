@@ -155,6 +155,84 @@ extra_scheme_designer <- function(scheme) {
   }
 }
 
+#' The designer for a scheme, built-in or discovered
+#'
+#' One place resolves a scheme id to the function that designs it.  Both the
+#' design seam ([marker_design_at()]) and the artefact manifest need that
+#' answer, and they used to carry the built-in `switch` twice; a scheme added
+#' to one could silently miss the other.  Returning the function itself (not a
+#' call) also lets a caller read its formals, which is how both decide what an
+#' argument means to a scheme.
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return a function `(genome, snp, ...)`, or `NULL` when the scheme has no
+#'   designer (`primer`, `asq`).
+#' @keywords internal
+#' @noRd
+scheme_designer <- function(scheme) {
+  switch(scheme,
+    snp = ,
+    indel = ,
+    multi = assemble_kasp_assay,
+    caps = design_caps_marker,
+    arms = design_arms_marker,
+    hrm = design_hrm_marker,
+    taqman = design_taqman_marker,
+    dpcr = design_dpcr_marker,
+    rpa = design_rpa_marker,
+    extra_scheme_designer(scheme)
+  )
+}
+
+#' The behaviour view of one scheme: design / evaluate / tracks / decision /
+#' readout
+#'
+#' The registry ([marker_schemes()]) describes schemes as data; the pipeline
+#' runs them as behaviour.  This adapter pairs the two, so a test or an agent
+#' can drive any scheme through the same five steps without knowing which file
+#' its designer lives in:
+#'
+#'     scheme <- marker_scheme_adapter("snp")
+#'     m <- scheme$design(genome, snp)
+#'     scheme$evaluate(m); scheme$tracks(m)
+#'     scheme$decision(m); scheme$readout(m)
+#'
+#' It is a list of closures with class `marker_scheme_adapter`, an S3 behaviour
+#' object rather than a data frame (ZA5).  Each step delegates to the
+#' implementation the pipeline already uses, so the adapter cannot drift from
+#' the design path: `design` is [marker_design_at()], `evaluate` is
+#' [marker_design_checks()], `tracks` is the [marker_map_spec()] generic,
+#' `decision` is [marker_decision_graph()] and `readout` is [marker_readout()].
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return a `marker_scheme_adapter`; an unknown id is an error, and a scheme
+#'   without a designer (e.g. `primer`) gets a `design()` that returns `NULL`.
+#' @keywords internal
+#' @noRd
+marker_scheme_adapter <- function(scheme) {
+  scheme <- as.character(scheme)[1L]
+  marker_scheme(scheme) # an unknown id aborts here
+  structure(
+    list(
+      scheme = scheme,
+      design = function(genome, snp, ..., context = NULL) {
+        marker_design_at(genome, snp, scheme, ..., context = context)
+      },
+      evaluate = function(marker, limits = KASP_LIMITS) {
+        marker_design_checks(marker, limits = limits, scheme = scheme)
+      },
+      tracks = function(marker) marker_map_spec(marker, scheme = scheme),
+      decision = function(marker = NULL) marker_decision_graph(marker, scheme = scheme),
+      readout = function(marker) {
+        # the marker class names a coarse scheme (`marker_assay` for every KASP),
+        # so the adapter's own id is the truthful answer here
+        out <- marker_readout(marker)
+        out$scheme <- scheme
+        out
+      }
+    ),
+    class = "marker_scheme_adapter"
+  )
+}
+
 #' The schemes that run a built-in stage
 #'
 #' `marker_builtin_stages()` names, per stage, the *families* that run it; a
