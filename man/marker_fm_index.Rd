@@ -37,6 +37,7 @@ Other KASP specificity:
 \code{\link[=homeolog_axes]{homeolog_axes()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},
+\code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
 \code{\link[=specificity_blast]{specificity_blast()}},

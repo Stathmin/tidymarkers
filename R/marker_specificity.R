@@ -118,6 +118,14 @@ PCR_MISMATCH_COLUMNS <- c(
   "seed_mismatch", "three_prime_terminal", "penalty"
 )
 
+# The seven profile fields a single-primer hit table carries (a locus, not a
+# product): one `mismatch_positions` and a `terminal_mismatch`, unlike the
+# per-primer f/r split of PCR_MISMATCH_COLUMNS.
+SINGLE_PRIMER_PROFILE_COLUMNS <- c(
+  "n_mismatch", "mismatch_positions", "three_prime_mismatch", "seed_mismatch",
+  "terminal_mismatch", "three_prime_terminal", "penalty"
+)
+
 #' Specificity score of an in-silico PCR product (higher is better)
 #'
 #' `100 - 10 * penalty`: a perfect product scores 100, and the score is directly
@@ -194,10 +202,11 @@ tail_terminal <- function(n_nt) {
 #' matched.  IUPAC codes in the primer are expanded, so a degenerate position
 #' that still covers the subject base is a *match*, not a mismatch; an N in the
 #' subject never mismatches (it matches anything).  Mismatch positions are
-#' reported 1-based from the 5' end of the primer, i.e. in the primer's own
-#' 5'->3' orientation - but `pattern` here is the *plus-strand* pattern, so the
-#' reverse primer's positions are mirrored back by `plus_to_primer()` in
-#' `primer_hit_table()`.
+#' reported 1-based from the 5' end of `pattern`, i.e. the plus strand that was
+#' searched.  A reverse primer is searched as its reverse complement, so its
+#' caller re-orients the pattern and footprint into the primer's own 5'->3'
+#' frame before profiling (see `hit_profile()`), rather than mirroring positions
+#' afterwards.
 #'
 #' Every mismatching position is counted once, at its heaviest role (the masks
 #' are nested: terminal <= last-5 window <= seed <= middle), so a degenerate
@@ -334,21 +343,6 @@ mismatch_profile_grid <- function(mism, n_hits, w, s_len) {
   )
 }
 
-#' Convert a plus-strand mismatch position to the primer's own 5'->3' position
-#'
-#' The reverse primer is searched as its reverse complement (the plus strand),
-#' so a position counted there runs 3'->5' of the primer: 1 on the plus strand
-#' is the reverse primer's 3'-terminal base.  Mirroring maps position `p` back
-#' to `n_nt - p + 1`, otherwise the report would call the 5' end the 3' end.
-#' @param pos integer positions on the searched (plus-strand) pattern.
-#' @param n_nt primer length.
-#' @param reverse is the searched pattern the reverse complement of the primer?
-#' @return integer positions 1-based from the primer's 5' end.
-#' @keywords internal
-#' @noRd
-plus_to_primer <- function(pos, n_nt, reverse) {
-  if (reverse) n_nt - pos + 1L else pos
-}
 
 #' Does an IUPAC primer code cover a subject base?
 #'
@@ -477,6 +471,45 @@ exact_pattern_hits <- function(pattern, subject, max_mismatch) {
   IRanges::IRanges(starts, width = width)
 }
 
+#' Profile one primer's hit footprints, oriented into the primer's own frame
+#'
+#' `mismatch_profile()` scores the searched (plus-strand) pattern, so for a
+#' minus-strand search the pattern is the primer's reverse complement and the
+#' primer's 3'-terminal base sits at plus-strand position 1, not at the tail
+#' where the 3'-window masks look.  Rather than re-derive the weight ladder, the
+#' reverse case is profiled in the primer's own 5'->3' frame by reverse-
+#' complementing the pattern and the footprints before delegating, so every
+#' field - positions, the 3' windows and the penalty - lands on the primer.
+#' @param pattern searched plus-strand pattern (character; for a minus-strand
+#'   search this is already the primer's reverse complement).
+#' @param footprints character vector of plus-strand genomic slices of exactly
+#'   `nchar(pattern)`.
+#' @param scheme chemistry.
+#' @param seed_len seed length override (`NA` = the policy's).
+#' @param reverse is the searched pattern the reverse complement of the primer?
+#' @return the seven profile vectors (see `mismatch_profile()`), with positions
+#'   in the primer's own 5'->3' frame and `AsIs`-wrapped.
+#' @keywords internal
+#' @noRd
+hit_profile <- function(pattern, footprints, scheme, seed_len = NA_integer_,
+                        reverse = FALSE) {
+  if (reverse) {
+    pattern <- as.character(
+      Biostrings::reverseComplement(Biostrings::DNAString(pattern))
+    )
+    footprints <- as.character(
+      Biostrings::reverseComplement(Biostrings::DNAStringSet(footprints))
+    )
+  }
+  prof <- mismatch_profile(pattern, footprints, scheme, seed_len)
+  prof$mismatch_positions <- lapply(prof$mismatch_positions, function(pos) {
+    # an AsIs element keeps the column a vector of integer vectors (a bare list
+    # of length 1 would be treated as a column and nested)
+    structure(as.integer(pos), class = "AsIs")
+  })
+  prof
+}
+
 #' Per-primer hit table for one primer against every chromosome
 #'
 #' One `matchPattern()` pass per primer (`fixed = FALSE`, so IUPAC-aware) with
@@ -510,17 +543,6 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
     )), class = "tidymarkers_degenerate_exact")
   }
   side <- match.arg(side)
-  orient <- function(prof) {
-    prof$mismatch_positions <- lapply(prof$mismatch_positions, function(pos) {
-      # an AsIs element keeps the column a vector of integer vectors (a bare list
-      # of length 1 would be treated as a column and nested).  A forward hit is
-      # already ascending, so only a mirrored one needs sorting
-      pos <- plus_to_primer(pos, nchar(pattern), side == "r")
-      if (side == "r") pos <- sort(pos)
-      structure(as.integer(pos), class = "AsIs")
-    })
-    prof
-  }
   scan_one <- function(nm) {
     worker_biostrings()
     subject <- genome_seq(genome, nm)
@@ -529,7 +551,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       return(NULL)
     }
     footprint <- as.character(hits)
-    prof <- orient(mismatch_profile(pattern, footprint, scheme, seed_len))
+    prof <- hit_profile(pattern, footprint, scheme, seed_len, side == "r")
     tibble::tibble(
       chrom = nm,
       start = IRanges::start(hits),
@@ -577,10 +599,16 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #' @param max_mismatch search radius (default 0, exact).
 #' @param BPPARAM optional `BiocParallel` backend; the scan is split by genome
 #'   sequence.
+#' @param scheme chemistry for the mismatch profile (see [specificity_policy()]).
+#' @param seed_len seed length override (`NA` = the policy's).
 #' @return a tibble `primer`, `chrom`, `start`, `end`, `width`, `strand`
 #'   (`strand` is `"+"` for a plus-strand occurrence and `"-"` for one on the
-#'   minus strand), one row per hit.  `start`/`end` are 1-based inclusive
-#'   genomic coordinates in the genome's own forward orientation.
+#'   minus strand), then the seven mismatch-profile fields of
+#'   `mismatch_profile()` in the primer's own 5'->3' frame (`n_mismatch`,
+#'   `mismatch_positions`, `three_prime_mismatch`, `seed_mismatch`,
+#'   `terminal_mismatch`, `three_prime_terminal`, `penalty`), one row per hit.
+#'   `start`/`end` are 1-based inclusive genomic coordinates in the genome's own
+#'   forward orientation.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -588,7 +616,8 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #' }
 #' @family KASP specificity
 #' @export
-exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL) {
+exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL,
+                            scheme = "pcr", seed_len = NA_integer_) {
   if (inherits(sequences, "XStringSet")) {
     sequences <- as.character(sequences)
   }
@@ -621,22 +650,32 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
           max.mismatch = max_mismatch
         ),
         idx = c(pos, pos),
-        strand = rep(c("+", "-"), each = length(pos))
+        strand = rep(c("+", "-"), each = length(pos)),
+        pat = unname(c(fwd, rev))
       )
     }
     list(pdict = pd, scan = idx[!dict_ok])
   })
-  hit_rows <- function(primer, chrom, ranges, strand) {
+  hit_rows <- function(primer, chrom, ranges, strand, pattern, subject, scheme, seed_len) {
     if (!length(ranges)) {
       return(NULL)
     }
+    footprints <- as.character(Biostrings::extractAt(subject, ranges))
+    prof <- hit_profile(pattern, footprints, scheme, seed_len, identical(strand, "-"))
     tibble::tibble(
       primer = primer,
       chrom = chrom,
       start = IRanges::start(ranges),
       end = IRanges::end(ranges),
       width = IRanges::width(ranges),
-      strand = strand
+      strand = strand,
+      n_mismatch = prof$n_mismatch,
+      mismatch_positions = prof$mismatch_positions,
+      three_prime_mismatch = prof$three_prime_mismatch,
+      seed_mismatch = prof$seed_mismatch,
+      terminal_mismatch = prof$terminal_mismatch,
+      three_prime_terminal = prof$three_prime_terminal,
+      penalty = prof$penalty
     )
   }
   scan_chrom <- function(chrom) {
@@ -651,7 +690,8 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
         )
         for (k in seq_along(g$pdict$idx)) {
           rows[[length(rows) + 1L]] <- hit_rows(
-            nm[g$pdict$idx[[k]]], chrom, found[[k]], g$pdict$strand[[k]]
+            nm[g$pdict$idx[[k]]], chrom, found[[k]], g$pdict$strand[[k]],
+            g$pdict$pat[[k]], subject, scheme, seed_len
           )
         }
       }
@@ -665,7 +705,8 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
           }
           rows[[length(rows) + 1L]] <- hit_rows(
             nm[[i]], chrom,
-            exact_pattern_hits(pattern, subject, max_mismatch), strand
+            exact_pattern_hits(pattern, subject, max_mismatch), strand,
+            pattern, subject, scheme, seed_len
           )
         }
       }
@@ -682,10 +723,124 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
   if (is.null(out) || !ncol(out)) {
     out <- tibble::tibble(
       primer = character(), chrom = character(), start = integer(),
-      end = integer(), width = integer(), strand = character()
+      end = integer(), width = integer(), strand = character(),
+      n_mismatch = integer(), mismatch_positions = list(integer()),
+      three_prime_mismatch = integer(), seed_mismatch = integer(),
+      terminal_mismatch = integer(), three_prime_terminal = logical(),
+      penalty = numeric()
     )
   }
   out
+}
+
+#' Grade an off-target locus by its 3'-end mismatches
+#'
+#' The 3'-aware post-filter for an aligner's loci.  `exact_hit_table()` and any
+#' external aligner report *where* a hit sits but not *where* its mismatches
+#' sit; a short-read aligner cannot tell a 3'-terminal mismatch from an inner
+#' one.  This fetches each footprint and profiles it with `mismatch_profile()`,
+#' so a 3'-terminal or 3'-end mismatch is graded without re-running a search.
+#'
+#' The `tolerated` verdict is the single-primer form of
+#' `pcr_products_tolerated()`, built from the same policy fields
+#' (`max_mismatch`, `seed_max`, `three_prime_max`) and the same hard rule that a
+#' 3'-terminal mismatch always fails; the two stay numerically identical.  The
+#' thresholds are heuristics (`calibrated = FALSE`), not calibrated quantities.
+#'
+#' @param hits a data frame/tibble with at least `primer`, `chrom`, `start`,
+#'   `end`, `strand`; the shape [exact_hit_table()] returns is accepted and its
+#'   profile columns are recomputed, not trusted.
+#' @param primers named character vector, name -> oligo 5'->3'.  Every
+#'   `hits$primer` must be a name.
+#' @param genome a `DNAStringSet` or a `marker_genome`.
+#' @param scheme chemistry (see [specificity_policy()]).
+#' @param seed_len seed length override (`NA` = the policy's).
+#' @return `hits` with the seven profile columns of `mismatch_profile()` appended
+#'   (in the primer's own 5'->3' frame) and a logical `tolerated`.
+#' @examples
+#' p <- "GAAGGTGACCAAGTTCATGCT"
+#' g <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 10), p, strrep("A", 10))))
+#' h <- exact_hit_table(c(AS = p), g)
+#' offtarget_profile(h, c(AS = p), g)
+#' @family KASP specificity
+#' @export
+offtarget_profile <- function(hits, primers, genome, scheme = "pcr", seed_len = NA_integer_) {
+  required <- c("primer", "chrom", "start", "end", "strand")
+  missing_cols <- setdiff(required, names(hits))
+  if (length(missing_cols)) {
+    cli::cli_abort(gettext("`hits` is missing required columns: {.val {missing_cols}}."))
+  }
+  if (!is.character(primers) || is.null(names(primers)) || any(is.na(names(primers)) | names(primers) == "")) {
+    cli::cli_abort(gettext("`primers` must be a named character vector of oligos."))
+  }
+  primer_name <- as.character(hits$primer)
+  strand <- as.character(hits$strand)
+  bad_strand <- !is.na(strand) & !(strand %in% c("+", "-"))
+  if (any(bad_strand)) {
+    cli::cli_abort(gettext(
+      "`hits$strand` must be {.val {c('+', '-')}}; got {.val {unique(strand[bad_strand])}}."
+    ))
+  }
+  start <- hits$start
+  if (!is.numeric(start) || anyNA(start) || any(start < 1) || any(start != floor(start))) {
+    cli::cli_abort(gettext("`hits$start` must be a positive integer."))
+  }
+  missing_primers <- setdiff(unique(primer_name), names(primers))
+  if (length(missing_primers)) {
+    cli::cli_abort(gettext(
+      "Every `hits$primer` must be a name in `primers`; missing: {.val {missing_primers}}."
+    ))
+  }
+  primer_seq <- unname(primers[primer_name])
+  width <- as.integer(hits$end) - as.integer(hits$start) + 1L
+  bad_width <- width != nchar(primer_seq)
+  if (any(bad_width)) {
+    i <- which(bad_width)[[1L]]
+    cli::cli_abort(c(
+      gettext("`hits` must describe gapless equal-width alignments."),
+      x = gettext(paste0(
+        "Row ", i, " (primer {.val {primer_name[[i]]}}) has width ", width[[i]],
+        ", but primer length is ", nchar(primer_seq[[i]]), "."
+      ))
+    ))
+  }
+  profiles <- vector("list", nrow(hits))
+  for (i in seq_len(nrow(hits))) {
+    chrom <- as.character(hits$chrom[[i]])
+    end_fetch <- min(as.integer(hits$end[[i]]), genome_length(genome, chrom))
+    window <- genome_seq(genome, chrom, as.integer(hits$start[[i]]), end_fetch)
+    pattern <- primer_seq[[i]]
+    if (strand[[i]] == "-") {
+      pattern <- as.character(
+        Biostrings::reverseComplement(Biostrings::DNAString(pattern))
+      )
+    }
+    profiles[[i]] <- hit_profile(
+      pattern, as.character(window), scheme, seed_len, strand[[i]] == "-"
+    )
+  }
+  n_mismatch <- vapply(profiles, function(p) p$n_mismatch, integer(1))
+  mismatch_positions <- lapply(profiles, function(p) p$mismatch_positions[[1L]])
+  three_prime_mismatch <- vapply(profiles, function(p) p$three_prime_mismatch, integer(1))
+  seed_mismatch <- vapply(profiles, function(p) p$seed_mismatch, integer(1))
+  terminal_mismatch <- vapply(profiles, function(p) p$terminal_mismatch, integer(1))
+  three_prime_terminal <- vapply(profiles, function(p) p$three_prime_terminal, logical(1))
+  penalty <- vapply(profiles, function(p) p$penalty, numeric(1))
+  pol <- specificity_policy(scheme)
+  tolerated <- n_mismatch <= pol$max_mismatch &
+    seed_mismatch <= pol$seed_max &
+    three_prime_mismatch <= pol$three_prime_max &
+    !three_prime_terminal
+  base <- hits[setdiff(names(hits), c(SINGLE_PRIMER_PROFILE_COLUMNS, "tolerated"))]
+  base[["n_mismatch"]] <- n_mismatch
+  base[["mismatch_positions"]] <- mismatch_positions
+  base[["three_prime_mismatch"]] <- three_prime_mismatch
+  base[["seed_mismatch"]] <- seed_mismatch
+  base[["terminal_mismatch"]] <- terminal_mismatch
+  base[["three_prime_terminal"]] <- three_prime_terminal
+  base[["penalty"]] <- penalty
+  base[["tolerated"]] <- tolerated
+  base
 }
 
 #' In-silico PCR: every product a primer pair would amplify

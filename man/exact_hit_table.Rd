@@ -4,7 +4,14 @@
 \alias{exact_hit_table}
 \title{Exact genome hits with coordinates}
 \usage{
-exact_hit_table(sequences, genome, max_mismatch = 0L, BPPARAM = NULL)
+exact_hit_table(
+  sequences,
+  genome,
+  max_mismatch = 0L,
+  BPPARAM = NULL,
+  scheme = "pcr",
+  seed_len = NA_integer_
+)
 }
 \arguments{
 \item{sequences}{named character vector of oligos (a \code{DNAStringSet} is also
@@ -17,12 +24,20 @@ accepted).  Unnamed input is labelled by its own sequence.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; the scan is split by genome
 sequence.}
+
+\item{scheme}{chemistry for the mismatch profile (see \code{\link[=specificity_policy]{specificity_policy()}}).}
+
+\item{seed_len}{seed length override (\code{NA} = the policy's).}
 }
 \value{
 a tibble \code{primer}, \code{chrom}, \code{start}, \code{end}, \code{width}, \code{strand}
 (\code{strand} is \code{"+"} for a plus-strand occurrence and \code{"-"} for one on the
-minus strand), one row per hit.  \code{start}/\code{end} are 1-based inclusive
-genomic coordinates in the genome's own forward orientation.
+minus strand), then the seven mismatch-profile fields of
+\code{mismatch_profile()} in the primer's own 5'->3' frame (\code{n_mismatch},
+\code{mismatch_positions}, \code{three_prime_mismatch}, \code{seed_mismatch},
+\code{terminal_mismatch}, \code{three_prime_terminal}, \code{penalty}), one row per hit.
+\code{start}/\code{end} are 1-based inclusive genomic coordinates in the genome's own
+forward orientation.
 }
 \description{
 The coordinate-level counterpart of \code{\link[=specificity_seed]{specificity_seed()}}: instead of a count,
@@ -55,6 +70,7 @@ Other KASP specificity:
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},
 \code{\link[=marker_fm_index]{marker_fm_index()}},
+\code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
 \code{\link[=specificity_blast]{specificity_blast()}},

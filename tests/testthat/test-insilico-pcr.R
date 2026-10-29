@@ -149,12 +149,12 @@ z5_product <- function(prods) {
 test_that("mismatch positions are strand-corrected into each primer's own frame", {
   # one base of the reverse primer's plus-strand site is swapped; the reverse
   # primer is searched as its reverse complement, so site position 1 is the
-  # primer's 5' end (position 20) and site position 20 is its 3' end (position 1)
+  # primer's 3' end (position 20) and site position 20 is its 5' end (position 1)
   cases <- tibble::tribble(
     ~site_pos, ~primer_pos, ~terminal,
-    20L, 1L, TRUE,
+    20L, 1L, FALSE,
     10L, 11L, FALSE,
-    1L, 20L, FALSE
+    1L, 20L, TRUE
   )
   for (i in seq_len(nrow(cases))) {
     cs <- cases[i, ]
@@ -202,8 +202,9 @@ test_that("a 3'-terminal mismatch dominates the score, on either primer", {
     expect_equal(pr$penalty, cases$penalty[i])
     expect_equal(pr$three_prime_terminal, cases$terminal[i])
   }
-  # the reverse primer's 3' end (primer position 20) gets the same treatment
-  r_site <- z5_swap(z5_rc(z5_snp_r), 20L, "G")
+  # the reverse primer's 3' end (site position 1, primer position 20) gets the
+  # same treatment
+  r_site <- z5_swap(z5_rc(z5_snp_r), 1L, "G")
   term <- z5_product(suppressWarnings(
     in_silico_pcr(z5_snp_f, z5_snp_r, z5_snp_genome(r_site = r_site), max_mismatch = 1L)
   ))

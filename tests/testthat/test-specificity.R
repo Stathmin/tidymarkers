@@ -394,7 +394,7 @@ test_that("the policy table carries the per-scheme position ladder", {
 
 test_that("a degenerate primer is scored exactly, never rescuing a 3'-terminal mismatch", {
   # S covers C: an exact IUPAC match, and the reverse primer's site runs 3'->5'
-  # on the plus strand, so the site's LAST base is the primer's 3'-terminal one
+  # on the plus strand, so the site's FIRST base is the primer's 3'-terminal one
   genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
     "ACCAACCAAC", "ACCTACGTAC", "CCAAAGGGTCCAAAAGGGTCC", z5_rc(z5_r), "CCAACCAACC"
   )))
@@ -405,7 +405,7 @@ test_that("a degenerate primer is scored exactly, never rescuing a 3'-terminal m
   # the reverse primer's site, with its 3'-terminal base swapped
   r_site <- z5_rc(z5_r)
   bases <- strsplit(r_site, "", fixed = TRUE)[[1L]]
-  bases[length(bases)] <- "G"
+  bases[1L] <- "G"
   g <- Biostrings::DNAStringSet(c(chr1 = paste0(
     "ACCAACCAAC", "ACCTACGTAC", "CCAAAGGGTCCAAAAGGGTCC", paste(bases, collapse = ""),
     "CCAACCAACC"
@@ -418,7 +418,7 @@ test_that("a degenerate primer is scored exactly, never rescuing a 3'-terminal m
   expect_equal(nrow(term), 1L)
   expect_length(unlist(term$f_mismatch_positions), 0L)
   expect_true(term$three_prime_terminal)
-  expect_true(1L %in% unlist(term$r_mismatch_positions))
+  expect_true(20L %in% unlist(term$r_mismatch_positions))
   expect_equal(term$r_penalty, 12L * 1)
 })
 
@@ -465,7 +465,11 @@ test_that("exact_hit_table reports both strands and coordinates", {
   # minus-strand binding site for the same oligo, in forward coordinates
   g <- Biostrings::DNAStringSet(c(chr1 = paste0("GGG", "ACGAT", "CCC", "ATCGT", "TTT")))
   h <- exact_hit_table(c(oligo = "ACGAT"), g)
-  expect_equal(names(h), c("primer", "chrom", "start", "end", "width", "strand"))
+  expect_equal(names(h), c(
+    "primer", "chrom", "start", "end", "width", "strand",
+    "n_mismatch", "mismatch_positions", "three_prime_mismatch", "seed_mismatch",
+    "terminal_mismatch", "three_prime_terminal", "penalty"
+  ))
   expect_equal(h$primer, rep("oligo", 2L))
   expect_equal(h$chrom, rep("chr1", 2L))
   expect_equal(h$start, c(4L, 12L))
