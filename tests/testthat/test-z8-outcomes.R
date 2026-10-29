@@ -54,10 +54,40 @@ test_that("Z8: decomposition is claimed only where the named failures add up", {
   expect_equal(c$decomposes, c$fully_decomposed)
   expect_true(all(c$n_fail_known <= c$n_failed))
   expect_equal(c$fully_decomposed, c$decomposes)
-  # exactly one source currently decomposes: the multi-assembly + Sanger arm,
-  # the one that reports the reason per SNP
-  expect_equal(sum(c$fully_decomposed), 1L)
-  expect_equal(c$study[c$fully_decomposed], "makhoul2020_multi_assembly_sanger")
+  # exactly two sources currently decompose: the multi-assembly + Sanger arm,
+  # the one that reports the reason per SNP, and Yamagata Exp. 3, the one that
+  # names both of its wet-lab failure classes
+  expect_equal(sum(c$fully_decomposed), 2L)
+  expect_setequal(
+    c$study[c$fully_decomposed],
+    c("makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3")
+  )
+})
+
+test_that("Z8.1: the decomposed-negative count is named, not implied", {
+  c <- ext("conversion_rates.csv")
+  # The whole point of Z8.1 is that the COUNT of fully decomposed rows is a
+  # fact someone can quote.  It is two today; a third source must change this
+  # test rather than silently improve the denominator.
+  expect_equal(sum(c$fully_decomposed), 2L)
+  # Yamagata Exp. 3's two named classes reconstruct its failure total exactly
+  y <- c[c$study == "jsbbs2018_exp3", ]
+  expect_equal(nrow(y), 1L)
+  expect_equal(y$n_fail_pcr + y$n_fail_no_allele + y$n_fail_other, y$n_failed)
+  expect_equal(y$n_success + y$n_failed, y$n_designed)
+  # and the conversion row must agree with the funnel the same paper fed
+  f <- ext("hrm_jsbbs2018_funnel.csv")
+  e3 <- f[f$experiment == "Exp. 3", ]
+  expect_equal(nrow(e3), 1L)
+  expect_equal(e3$n_designed, y$n_designed)
+  expect_equal(e3$n_success, y$n_success)
+  # Ayalew's three platform rows share ONE denominator: they are the same 50
+  # loci, so they are never independent evidence for a conversion rate
+  w <- c[grepl("^wheat2019_", c$study), ]
+  expect_equal(nrow(w), 3L)
+  expect_equal(unique(w$n_designed), 50L)
+  expect_setequal(w$n_success, c(39L, 49L))
+  expect_false(any(w$fully_decomposed))
 })
 
 test_that("Z8: the design-strategy ladder is ordered, and nothing is pooled", {

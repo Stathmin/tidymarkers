@@ -486,7 +486,39 @@ conv_rows <- tibble::tribble(
   # 'Locus-specific design not possible' -- no residual
   1L, NA_integer_, 3L,
   "11 of 15; the 4 non-successes are 1x 'Wrong cluster' and 3x 'Locus-specific design not possible' (Table S4). 5 of 9 and 6 of 6 on the two haploblocks separately",
-  "10.1007/s00122-020-03608-x"
+  "10.1007/s00122-020-03608-x",
+  # Ayalew 2019 tests the SAME 50 pre-validated wheat SNPs/INDELs under three
+  # platforms, so the three rows share a denominator and must never be summed
+  # or read as independent studies.  Design success is the paper's stated
+  # count; its failure reasons are qualitative ('mainly because TaqMan probes
+  # cannot be designed if INDELs are more than six bps'), so they stay in the
+  # residual bucket and are NOT decomposed.
+  "wheat2019_taqman", "Triticum aestivum L.", "TaqMan design criterion, same 50 SNPs",
+  50L, 39L,
+  NA_integer_, NA_integer_, 11L,
+  "11 of 50 rejected at design; the paper attributes this mainly to TaqMan probes not accepting INDELs >6 bp, but gives no count of such INDELs, so the reason is not decomposed",
+  "10.1371/journal.pone.0217222",
+  "wheat2019_kasp", "Triticum aestivum L.", "KASP design criterion, same 50 SNPs",
+  50L, 49L,
+  NA_integer_, NA_integer_, 1L,
+  "1 of 50 failed design; the paper does not state why. Same 50 loci as the TaqMan and rhAmp rows",
+  "10.1371/journal.pone.0217222",
+  "wheat2019_rhamp", "Triticum aestivum L.", "rhAmp design criterion, same 50 SNPs",
+  50L, 49L,
+  NA_integer_, NA_integer_, 1L,
+  "1 of 50 failed design; the paper does not state why. Same 50 loci as the TaqMan and KASP rows",
+  "10.1371/journal.pone.0217222",
+  # Yamagata 2018 Exp. 3: 24 NNNs-HRM pairs were designed in silico and run;
+  # the two failure classes are named and add up (3 no parental polymorphism +
+  # 3 dominant segregation = 6 = 24 - 18).  n_fail_pcr is 0, not NA: all 24
+  # amplified, so a zero PCR-failure class is a reported value, not missing
+  # data.  This is the SECOND row whose failures decompose; it must agree with
+  # hrm_jsbbs2018_funnel.csv (24 -> 18), which it does.
+  "jsbbs2018_exp3", "Glycine max (L.) Merr.", "24 NNNs-HRM pairs, |dG3bp| > 1.43 kcal/mol, 54-100 bp",
+  24L, 18L,
+  0L, 3L, 3L,
+  "18 of 24 (75%) co-dominant; 3 showed no polymorphism between parents and 3 segregated dominantly; 0 PCR failures. The three experiments of this paper are not nested (see hrm_jsbbs2018_funnel.csv)",
+  "10.1270/jsbbs.18048"
 )
 conversion <- dplyr::mutate(
   conv_rows,
@@ -505,10 +537,14 @@ conversion <- dplyr::mutate(
   decomposes = !is.na(.data$n_fail_pcr) &
     .data$n_fail_pcr + dplyr::coalesce(.data$n_fail_no_allele, 0L) +
       dplyr::coalesce(.data$n_fail_other, 0L) == .data$n_failed,
-  # TRUE only when every failure reason is named in the schema above.  Only the
-  # Makhoul multi-assembly row does that today: Table S4 names each of its three
-  # failures ('Wrong cluster', 'Locus-specific design not possible').
-  fully_decomposed = .data$decomposes & .data$study == "makhoul2020_multi_assembly_sanger",
+  # TRUE only when every failure reason is named in the schema above.  Two rows
+  # do that today: Makhoul's multi-assembly arm (Table S4 names each failure as
+  # 'Wrong cluster' or 'Locus-specific design not possible') and Yamagata Exp. 3
+  # (3 no polymorphism + 3 dominant segregation).  The whitelist is deliberate:
+  # arithmetic that happens to balance is not the same as a source naming every
+  # failure, so a new row is added only after its text is read.
+  fully_decomposed = .data$decomposes &
+    .data$study %in% c("makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3"),
   # the reviewer's point made mechanical: a probability is withheld until the
   # failures decompose, so the output stays ordinal ("usable") by design
   outcome_scale = "usable",
@@ -523,16 +559,24 @@ stopifnot(
         dplyr::coalesce(conversion$n_fail_other, 0L) <= conversion$n_failed),
   # a probability is withheld from EVERY row: an ordinal 'usable' until a source
   # decomposes ITS OWN failures into the categories here and a wet-lab anchor
-  # exists.  Today that is exactly one row, so nothing may be calibrated.
+  # exists.  Today that is two rows from two studies, still too few to estimate
+  # anything, so nothing may be calibrated.
   all(!conversion$calibrated),
   # every row must report a failure count that matches its own denominator: this
   # is the anti-survivorship check -- no row may be all-successes
   all(conversion$n_failed > 0L)
 )
-# the one row whose failures are all named, and its named reasons must be exact
+# the rows whose failures are all named, and their named reasons must be exact
 mk <- conversion[conversion$study == "makhoul2020_multi_assembly_sanger", ]
 stopifnot(nrow(mk) == 1L, mk$n_failed == 4L, mk$n_fail_pcr == 1L, mk$n_fail_other == 3L,
           isTRUE(mk$fully_decomposed))
+yd <- conversion[conversion$study == "jsbbs2018_exp3", ]
+stopifnot(nrow(yd) == 1L, yd$n_designed == 24L, yd$n_success == 18L,
+          yd$n_fail_pcr == 0L, yd$n_fail_no_allele == 3L, yd$n_fail_other == 3L,
+          isTRUE(yd$fully_decomposed))
+# the one paper behind three rows: same denominator, never summed into a rate
+wh <- conversion[grepl("^wheat2019_", conversion$study), ]
+stopifnot(nrow(wh) == 3L, all(wh$n_designed == 50L), all(!wh$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(
