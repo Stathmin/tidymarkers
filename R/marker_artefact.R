@@ -431,6 +431,47 @@ artefact_checks <- function(solved) {
 
 # --- the artefact ------------------------------------------------------------
 
+# Z7.6: a limit of the readout model, not a design bug.  When a deliberate
+# mismatch is used, product starts incorporating the mismatched primer into the
+# amplicon and discrimination weakens over cycles (observed in tetra-primer
+# ARMS).  The dG model describes hybridisation at one temperature, not that
+# accumulation, so a late cycle reads as if it were an early one.
+ARTEFACT_READOUT_LIMITS <- c(
+  late_cycle_discrimination = paste(
+    "late-cycle discrimination: once product accumulates, the primer carrying a",
+    "deliberate mismatch is incorporated into the amplicon and discrimination",
+    "weakens over cycles. The dG model describes hybridisation, not this",
+    "accumulation, so a late cycle is read as if it were an early one."
+  )
+)
+
+# TRUE when any chosen marker carries a non-NA `stab_at` anywhere in its tree
+# (the ARMS inner primers - the only designer that places a deliberate mismatch).
+artefact_uses_mismatch <- function(x) {
+  if (!is.list(x)) {
+    return(FALSE)
+  }
+  s <- x[["stab_at"]]
+  if (!is.null(s) && length(s) == 1L && !is.na(s)) {
+    return(TRUE)
+  }
+  any(vapply(x, artefact_uses_mismatch, logical(1)))
+}
+
+# The readout limitations this artefact must declare.  Empty when no chosen
+# design uses a deliberate mismatch, so the manifest never claims a mechanism
+# the design does not use.
+artefact_limitations <- function(solved) {
+  used <- any(vapply(
+    solved$report$marker, artefact_uses_mismatch,
+    logical(1)
+  ))
+  if (!used) {
+    return(character(0))
+  }
+  unname(ARTEFACT_READOUT_LIMITS)
+}
+
 #' A stable id for the design, independent of when it was written
 #' @keywords internal
 #' @noRd
@@ -456,7 +497,9 @@ artefact_id <- function(manifest) {
 #' as its own field - the knobs that differ from the designer defaults.  An
 #' overridden threshold is visible without diffing `parameters` against a
 #' manual, because a "pass" obtained under a loosened limit must not look like
-#' one obtained under the default.
+#' one obtained under the default.  `limitations` names a known limit of the
+#' readout model when the chosen design uses it (today: late-cycle discrimination
+#' with a deliberate mismatch), so the limit is recorded rather than discovered.
 #'
 #' `id` is a SHA-256 of the parts that decide the design (not the timestamp), so
 #' two runs of the same plan share it and a changed input or parameter does not.
@@ -528,6 +571,10 @@ marker_artefact <- function(solved, dir = tempdir()) {
     ),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
+    # Z7.6: a limit of the readout model that is not a design bug.  Always a
+    # list in the JSON (`I()` keeps a one-element vector an array), empty when
+    # no chosen design uses a deliberate mismatch.
+    limitations = I(as.character(artefact_limitations(solved))),
     counts = list(
       targets = nrow(solved$report),
       solved = sum(solved$report$ok),

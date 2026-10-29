@@ -312,6 +312,12 @@ test_that("the artefact records its inputs, its id and every rejection's reason"
   ov <- jsonlite::fromJSON(fs::path(art$dir, "artefact.json"), simplifyVector = FALSE)$overrides
   expect_equal(purrr::map_chr(ov, "argument"), "min_disc")
   expect_equal(purrr::map_dbl(ov, "value"), 0.4)
+  # Z7.6: a snp design places no deliberate mismatch, so the limitation list is
+  # present and empty - the field never claims a mechanism the design lacks
+  expect_true("limitations" %in% names(m))
+  expect_length(m$limitations, 0L)
+  js <- jsonlite::fromJSON(fs::path(art$dir, "artefact.json"), simplifyVector = FALSE)
+  expect_identical(js$limitations, list())
 })
 
 test_that("a decision row is chosen only for its own target's winner", {

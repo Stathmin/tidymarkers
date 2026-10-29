@@ -31,7 +31,9 @@ version (an absent engine is \code{NA}, never omitted), the design knobs, and -
 as its own field - the knobs that differ from the designer defaults.  An
 overridden threshold is visible without diffing \code{parameters} against a
 manual, because a "pass" obtained under a loosened limit must not look like
-one obtained under the default.
+one obtained under the default.  \code{limitations} names a known limit of the
+readout model when the chosen design uses it (today: late-cycle discrimination
+with a deliberate mismatch), so the limit is recorded rather than discovered.
 
 \code{id} is a SHA-256 of the parts that decide the design (not the timestamp), so
 two runs of the same plan share it and a changed input or parameter does not.

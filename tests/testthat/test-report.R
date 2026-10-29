@@ -85,6 +85,22 @@ test_that("Z8.5 the artefact decision names the quantities per scheme", {
   expect_null(scheme_analytical("snp"))
 })
 
+test_that("Z7.6 a deliberate mismatch records the late-cycle readout limit", {
+  with_mm <- list(inner = list(ref = list(stab_at = 3L), alt = list(stab_at = NA)))
+  plain <- list(inner = list(ref = list(stab_at = NA_integer_), alt = list(stab_at = NA)))
+  solved_with <- function(m) list(report = tibble::tibble(marker = list(m)))
+
+  lim <- tidymarkers:::artefact_limitations(solved_with(with_mm))
+  expect_length(lim, 1L)
+  expect_match(lim, "late-cycle discrimination", fixed = TRUE)
+  # the statement names the mechanism, so it is a limitation and not a token
+  expect_match(lim, "amplicon", fixed = TRUE)
+
+  # a design without the mismatch claims nothing, and an empty marker is safe
+  expect_length(tidymarkers:::artefact_limitations(solved_with(plain)), 0L)
+  expect_length(tidymarkers:::artefact_limitations(solved_with(NULL)), 0L)
+})
+
 test_that("Z8.5 a non-dPCR scheme declares only the quantity it reports", {
   aq <- scheme_analytical("sanger")
   expect_equal(names(aq), "MAF")
