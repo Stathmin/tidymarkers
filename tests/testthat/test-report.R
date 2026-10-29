@@ -84,3 +84,18 @@ test_that("Z8.5 the artefact decision names the quantities per scheme", {
   # merged column
   expect_null(scheme_analytical("snp"))
 })
+
+test_that("Z8.5 a non-dPCR scheme declares only the quantity it reports", {
+  aq <- scheme_analytical("sanger")
+  expect_equal(names(aq), "MAF")
+
+  txt <- marker_decision_text("sanger")
+  h <- which(grepl("^analytical performance", txt))
+  expect_length(h, 1L)
+  block <- txt[(h + 1L):(h + length(aq))]
+  expect_equal(trimws(sub("^\\s*(\\S+).*$", "\\1", block)), "MAF")
+  expect_false(any(grepl("sensitivity", tolower(block))))
+  # the scheme's declared floor is the number the quantity refers to
+  expect_equal(SANGER_DETECTION$floor, 0.15)
+  expect_false(SANGER_DETECTION$calibrated)
+})

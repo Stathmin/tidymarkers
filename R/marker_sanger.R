@@ -735,6 +735,12 @@ scheme_def_sanger <- function() {
     gate_limit = KASP_GATE_LIMIT_SANGER,
     gate_floor_label = KASP_GATE_FLOOR_LABEL_SANGER,
     gate_hard_label = KASP_GATE_HARD_LABEL_SANGER,
+    # Z8.5: a dideoxy read resolves a minor allele down to a floor
+    # (`SANGER_DETECTION$floor`, ~15-20% of the trace) and `calibrated = FALSE`
+    # says that floor is a literature default, not this caller's calibration.
+    # Declaring the quantity here keeps it on its own line in the report instead
+    # of folding it into a single "sensitivity".
+    analytical = "MAF",
     stage_label = "Sanger amplicon"
   )
 }
