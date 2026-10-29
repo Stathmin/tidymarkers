@@ -54,7 +54,7 @@ a \code{marker_assay}.
 \description{
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} \emph{designs} the oligos.  This constructor starts from a
 primer set that already exists and turns it into the same \code{marker_assay}
-object, so \code{\link[=marker_design_checks]{marker_design_checks()}}, \code{\link[=plot]{plot()}} / \code{\link[=plot_primers]{plot_primers()}} and the
+object, so \code{\link[=marker_design_checks]{marker_design_checks()}}, \code{\link[graphics:plot]{graphics::plot()}} / \code{\link[=plot_primers]{plot_primers()}} and the
 decision graph read it like any designed assay.  Nothing is taken on trust:
 every oligo is located by an exact full-length genome hit, its binding strand
 and the REF/ALT orientation are read from the genome, and the 3'-terminal base

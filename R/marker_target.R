@@ -448,22 +448,6 @@ is_haplotype_table <- function(x) {
   is.data.frame(x) && all(c("haplotype", "freq") %in% names(x))
 }
 
-#' Frequency carried by a marker context (NA when the population is unknown)
-#' @keywords internal
-#' @noRd
-marker_run_context_frequency <- function(context) {
-  if (is.null(context) || !inherits(context, "marker_run_context")) {
-    return(NA_real_)
-  }
-  pop <- context$population
-  if (is.null(pop)) {
-    return(NA_real_)
-  }
-  if (is.data.frame(pop) && "alt_freq" %in% names(pop) && nrow(pop)) {
-    return(as.numeric(pop$alt_freq[[1L]]))
-  }
-  NA_real_
-}
 
 #' Resolve a context's variant/haplotype inputs for one design call
 #' @keywords internal

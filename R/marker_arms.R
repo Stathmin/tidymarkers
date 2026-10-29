@@ -64,42 +64,6 @@ KASP_ARMS_GAP_FLOOR <- 10L # bp: the band gap may be relaxed to a PAGE-resolvabl
 ARMS_EXTRA_MISMATCH_POSITION <- -3L
 ARMS_EXTRA_MISMATCH_FALLBACK <- -2L
 
-#' Where the deliberate extra mismatch goes
-#'
-#' The decided default is -3 (Liu 2012 + Lefever 2019, the two measured scans).
-#' -2 is the fallback, and it is chosen by the terminal mismatch's OWN severity,
-#' because that is the variable the rule of thumb is about (Ye 2001 arranges
-#' strong/medium/weak terminal classes; mismatches in one class are treated
-#' alike):
-#' * `severe` (A:G, G:A, C:C) - no help: an extra mismatch cannot rescue a
-#'   terminal pair the polymerase already reads well;
-#' * `minimal` (T:G, T:C, T:T) - the historical -2 (Ye 2001), which exists for
-#'   exactly this weak class;
-#' * `moderate` (A:A) and `context_dependent` (G:G) - the conservative -3: the
-#'   weak-class rule is not measured, and these classes are not that weak;
-#' * no class at all - `NA`, so a caller reports `unknown` rather than guess.
-#' See `data-raw/proposed/arms_mismatch_position.decision.md`.
-#' @param terminal_class the Kwok severity class of the 3'-terminal mismatch
-#'   (`"severe"`, `"moderate"`, `"minimal"`, `"context_dependent"`), or `NA`.
-#' @return an integer position (-3 or -2), or `NA`.
-#' @keywords internal
-#' @noRd
-arms_extra_mismatch_position <- function(terminal_class) {
-  cls <- as.character(terminal_class)[1L]
-  if (length(terminal_class) != 1L || is.na(cls) || !nzchar(cls)) {
-    return(NA_integer_)
-  }
-  pos <- c(
-    severe = ARMS_EXTRA_MISMATCH_POSITION,
-    moderate = ARMS_EXTRA_MISMATCH_POSITION,
-    minimal = ARMS_EXTRA_MISMATCH_FALLBACK,
-    context_dependent = ARMS_EXTRA_MISMATCH_POSITION
-  )
-  if (!cls %in% names(pos)) {
-    return(NA_integer_)
-  }
-  as.integer(pos[[cls]])
-}
 
 #' The policy label for a primer's stabilising mismatch (Z7.1)
 #'

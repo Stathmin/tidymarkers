@@ -1074,7 +1074,7 @@ normalise_fixed_primers <- function(primers) {
 #'
 #' [assemble_kasp_assay()] *designs* the oligos.  This constructor starts from a
 #' primer set that already exists and turns it into the same `marker_assay`
-#' object, so [marker_design_checks()], [plot()] / [plot_primers()] and the
+#' object, so [marker_design_checks()], [graphics::plot()] / [plot_primers()] and the
 #' decision graph read it like any designed assay.  Nothing is taken on trust:
 #' every oligo is located by an exact full-length genome hit, its binding strand
 #' and the REF/ALT orientation are read from the genome, and the 3'-terminal base

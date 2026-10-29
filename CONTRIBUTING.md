@@ -90,8 +90,10 @@ CI does not render.
 - New behaviour → a new test in `tests/testthat/`.
 - A meaningful change → an entry in `NEWS.md` and in `ROADMAP.md`.
 
-All public-facing prose is English; `ROADMAP.md`, `dev/README.md` and
-`docs/archive/inventory-ru.md` are internal working documents and stay Russian.
+All public-facing prose is English, except the changelog: `NEWS.md` is Russian
+by the repository convention (see `AGENTS.md`). `ROADMAP.md`, `dev/README.md`
+and `docs/archive/inventory-ru.md` are internal working documents and stay
+Russian.
 
 ## What lives where
 

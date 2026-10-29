@@ -141,29 +141,6 @@ gel_plot <- function(bands, x_labels, y_label, title, subtitle) {
     ggplot2::theme_minimal(base_size = 10)
 }
 
-#' Feature-level acceptance criteria (everything else is alignment-level)
-#' @keywords internal
-#' @noRd
-check_level <- function(criterion) {
-  site <- c(
-    "target site class", "ALT alleles (n)", "linked variants skipped (n)",
-    "ALT primer covers all ALTs", "design relies on linkage"
-  )
-  specificity <- c("off-target exact primer hits (n)")
-  feature <- c(
-    "AS Tm (C)", "COM Tm (C)", "AS GC", "COM GC",
-    "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
-    "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
-    "worst cross-dimer dG37", "worst homodimer dG37",
-    "AS 3' window variants (n)", "AS footprint variants (n)", "COM footprint variants (n)",
-    "AS 3' window dropout", "AS footprint dropout", "COM footprint dropout"
-  )
-  out <- rep("alignment", length(criterion))
-  out[criterion %in% feature] <- "feature"
-  out[criterion %in% site] <- "site"
-  out[criterion %in% specificity] <- "specificity"
-  out
-}
 
 # The one label -> short table. Keys are the registry labels from
 # marker_criteria(); values are the tumbler text. Tests guard that every

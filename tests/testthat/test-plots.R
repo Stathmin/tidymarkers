@@ -1,12 +1,3 @@
-# The two-level plot vocabulary: feature level (one oligo) vs alignment level.
-
-test_that("check_level splits criteria into feature and alignment", {
-  expect_equal(check_level("AS Tm (C)"), "feature")
-  expect_equal(check_level("worst hairpin dG37"), "feature")
-  expect_equal(check_level("amplicon length (bp)"), "alignment")
-  expect_equal(check_level("in-silico PCR (REF 1 / ALT 0)"), "alignment")
-})
-
 test_that("clamp_window follows the primer's 3' end on either strand", {
   expect_equal(clamp_window(10L, 19L, forward = TRUE, n = 5L), c(15L, 19L))
   expect_equal(clamp_window(10L, 19L, forward = FALSE, n = 5L), c(10L, 14L))

@@ -17,17 +17,6 @@ test_that("the decided default is -3 and the fallback is -2", {
   expect_equal(ARMS_EXTRA_MISMATCH_FALLBACK, -2L)
 })
 
-test_that("the fallback is spent on the weak terminal class only", {
-  expect_equal(arms_extra_mismatch_position("severe"), -3L)
-  expect_equal(arms_extra_mismatch_position("moderate"), -3L)
-  expect_equal(arms_extra_mismatch_position("minimal"), -2L)
-  expect_equal(arms_extra_mismatch_position("context_dependent"), -3L)
-  # no severity class -> no position policy: `NA`, never a guess
-  expect_true(is.na(arms_extra_mismatch_position(NA_character_)))
-  expect_true(is.na(arms_extra_mismatch_position("")))
-  expect_true(is.na(arms_extra_mismatch_position("made-up")))
-})
-
 test_that("the ledger still puts the measurements at -3 and none at -2", {
   # the decision's whole basis: two controlled scans at -3, nothing controlled
   # at -2.  If the ledger ever gains a -2 measurement, the default is revisitable.

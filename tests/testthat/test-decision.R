@@ -227,7 +227,7 @@ test_that("site-level checks read the assay's site and linked skips", {
   expect_equal(good$detail[good$criterion == "target site class"], "degenerate")
   expect_true(good$pass[good$criterion == "target site class"])
   expect_false(good$pass[good$criterion == "linked variants skipped (n)"])
-  expect_true("site" %in% check_level(good$criterion))
+  expect_true("site" %in% marker_criteria()$level)
 })
 
 # ---- the shared DAG contract, for every scheme ------------------------------

@@ -121,12 +121,10 @@ test_that("marker_run_context stores variants and haplotypes unchanged", {
   expect_identical(ctx$haplotypes, h)
 })
 
-test_that("a context with no population leaves the frequency unknown, not 1", {
+test_that("a context with no population leaves it unset", {
   g <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   ctx <- marker_run_context(g)
   expect_null(ctx$population)
-  expect_true(is.na(marker_run_context_frequency(ctx)))
-  expect_false(isTRUE(marker_run_context_frequency(ctx) == 1))
 })
 
 test_that("a context with known haplotypes attaches $population on design", {
