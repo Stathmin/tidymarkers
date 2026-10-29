@@ -550,7 +550,10 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
     if (length(hits) == 0L) {
       return(NULL)
     }
-    footprint <- as.character(hits)
+    # `exact_pattern_hits()` returns an `XStringViews` on the no-N path and a
+    # plain `IRanges` on the N path, so `as.character(hits)` was the DNA in one
+    # case and "start-end" in the other; take the bases from the subject.
+    footprint <- as.character(Biostrings::extractAt(subject, hits))
     prof <- hit_profile(pattern, footprint, scheme, seed_len, side == "r")
     tibble::tibble(
       chrom = nm,

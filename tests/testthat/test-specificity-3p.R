@@ -99,6 +99,34 @@ test_that("an inner miss is tolerated, a 3'-terminal one never is", {
   }
 })
 
+test_that("a hit in a clean block scores real bases when the genome has an N run", {
+  # `exact_pattern_hits()` returns an `XStringViews` on the no-N path and a plain
+  # `IRanges` on the N path, so the footprint has to come from the subject;
+  # reading it off the aligner object scored the "start-end" string instead.
+  fill <- strrep("G", 12L)
+  g_clean <- Biostrings::DNAStringSet(c(chr1 = paste0(fill, "ACGAT", fill, "ACGAG", fill)))
+  g_n <- Biostrings::DNAStringSet(c(
+    chr1 = paste0(fill, strrep("N", 10L), "ACGAT", fill, "ACGAG", fill)
+  ))
+  h_clean <- exact_hit_table(c(AS = "ACGAT"), g_clean)
+  h_n <- exact_hit_table(c(AS = "ACGAT"), g_n)
+  expect_equal(h_n$n_mismatch, 0L)
+  expect_false(h_n$three_prime_terminal)
+  expect_equal(h_n$penalty, 0)
+  expect_equal(h_n[profile_cols], h_clean[profile_cols])
+
+  # An exact hit scores zero on the aligner string too (its characters all read
+  # as `N`), so pin a 3'-terminal miss as well: both paths must report it, the
+  # N-path hit just shifted by the run.
+  r_clean <- primer_hit_table("ACGAT", g_clean, 1L, "pcr", side = "f")
+  r_n <- primer_hit_table("ACGAT", g_n, 1L, "pcr", side = "f")
+  expect_equal(nrow(r_n), 2L)
+  expect_equal(r_n$mismatch_positions[[2L]], 5L)
+  expect_true(r_n$three_prime_terminal[[2L]])
+  expect_gt(r_n$penalty[[2L]], 0)
+  expect_equal(r_n[profile_cols], r_clean[profile_cols])
+})
+
 test_that("exact_hit_table with no hits keeps the full column contract", {
   none <- exact_hit_table(c(none = "CCCCCC"), g)
   expect_equal(nrow(none), 0L)
