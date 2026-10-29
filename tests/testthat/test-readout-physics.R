@@ -108,8 +108,18 @@ test_that("Sanger floor: sourced, bounded, and not usable as calibration", {
 })
 
 test_that("generators reproduce the shipped extracts when sources are present", {
+  # .tmp/lit may exist for other projects, so the guard must name the exact
+  # fetched files these six generators read, not just the directory.
+  lit <- testthat::test_path("..", "..", ".tmp", "lit")
+  required <- c(
+    "ijms2022/fulltext.xml", "ijms2022/supp_tables.txt",
+    "jsbbs2018/fulltext.xml", "jsbbs2018/supplements/68_18048_2.xlsx",
+    "PMC12610676/fulltext.xml", "PMC13410330/fulltext.xml",
+    "PMC13584697/fulltext.xml", "PMC12188199/fulltext.xml",
+    "PMC13410318/fulltext.xml", "mosha2014/fulltext.xml"
+  )
   skip_if(
-    !dir.exists(testthat::test_path("..", "..", ".tmp", "lit")),
+    !all(file.exists(file.path(lit, required))),
     "source tree .tmp/lit not fetched in this checkout"
   )
   gens <- c(
