@@ -270,38 +270,32 @@ criterion_tbl <- function(id, scope, stage, role, label, level, kind, bounds,
 
 # The KASP-family acceptance checks, in registry order, with the check class each
 # reports under (the family that owns it selects it through KASP_FAMILY_CHECKS).
-# This is the one place the class vectors and the registry's ids are tied.
+#
+# The class is DERIVED from the three `KASP_CHECK_*` label vectors, which are the
+# single declaration of the partition (Z2.1/ZA6 step 1).  Before this, the same
+# class was written twice - as ids here and as labels there - and a criterion
+# added to only one of the two silently got `scope = NA` or "no scheme".  Now a
+# row in no class, and a class label with no row, are both errors.
 marker_check_classes <- function() {
-  tibble::tribble(
-    ~id, ~class,
-    "site_class", "site",
-    "site_alt_alleles", "site",
-    "site_linked_skipped", "site",
-    "site_alt_covered", "site",
-    "site_linked_dependent", "site",
-    "amplicon", "primer",
-    "as_tm", "as",
-    "com_tm", "as",
-    "com_tm_ge_as_tm", "as",
-    "as_gc", "as",
-    "com_gc", "as",
-    "max_run", "primer",
-    "ssr", "primer",
-    "inverted_repeat", "primer",
-    "hairpin_dg", "primer",
-    "cross_dimer_dg", "primer",
-    "homodimer_dg", "primer",
-    "as_n_3p", "as",
-    "as_n_var", "as",
-    "com_n_var", "as",
-    "as_dropout", "as",
-    "as_foot_dropout", "as",
-    "com_dropout", "as",
-    "discrimination", "as",
-    "as_mismatch_type", "as",
-    "in_silico_pcr", "primer",
-    "offtarget_hits", "primer"
-  )
+  ways <- marker_check_ways()
+  klass <- rep(NA_character_, nrow(ways))
+  klass[ways$label %in% KASP_CHECK_PRIMER] <- "primer"
+  klass[ways$label %in% KASP_CHECK_SITE] <- "site"
+  klass[ways$label %in% KASP_CHECK_AS] <- "as"
+  stray <- setdiff(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), ways$label)
+  if (length(stray)) {
+    stop("KASP_CHECK_* labels with no criterion row: ",
+      paste(stray, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  if (anyNA(klass)) {
+    stop("criterion row(s) in no KASP_CHECK_* class: ",
+      paste(ways$id[is.na(klass)], collapse = ", "),
+      call. = FALSE
+    )
+  }
+  tibble::tibble(id = ways$id, class = klass)
 }
 
 # The KASP-family acceptance checks: id, label, reporting level, kind, the
@@ -561,6 +555,70 @@ marker_check_spec <- function(ways, classes, limits) {
   )
 }
 
+#' Construct a criterion table
+#'
+#' `criterion_spec()` returns a tibble subclass, not a bare tibble, so the
+#' columns every consumer relies on are checked once at construction instead of
+#' failing as `NULL` at a distant call site.  The class carries no behaviour of
+#' its own: it is the typed table ZA6 step 1 asks for, and `vctrs` keeps it
+#' through subsetting and row-binding.
+#' @param x a list or data frame of criterion rows.
+#' @return a `marker_criteria` tibble.
+#' @keywords internal
+#' @noRd
+new_marker_criteria <- function(x) {
+  fields <- c(
+    "id", "scope", "stage", "role", "label", "level", "kind", "bounds",
+    "units", "source", "calibrated", "evidence", "evaluator", "hard",
+    "limit", "order", "schemes"
+  )
+  miss <- setdiff(fields, names(x))
+  if (length(miss)) {
+    stop("a criterion table is missing column(s): ",
+      paste(miss, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  vctrs::new_data_frame(
+    x[, fields, drop = FALSE],
+    class = c("marker_criteria", "tbl_df", "tbl", "data.frame")
+  )
+}
+
+#' @exportS3Method vctrs::vec_restore
+vec_restore.marker_criteria <- function(x, to, ...) new_marker_criteria(x)
+
+# The double-dispatch method names below are fixed by vctrs (`generic.class.class`)
+# and cannot be shortened without breaking dispatch, so they are exempt from the
+# 30-character name linter.
+# nolint start: object_length_linter.
+#' @exportS3Method vctrs::vec_ptype_abbr
+vec_ptype_abbr.marker_criteria <- function(x, ...) "crtr"
+
+#' @exportS3Method vctrs::vec_ptype2
+vec_ptype2.marker_criteria.marker_criteria <- function(x, y, ...) {
+  new_marker_criteria(tibble::as_tibble(x)[0, , drop = FALSE])
+}
+
+#' @exportS3Method vctrs::vec_cast
+vec_cast.marker_criteria.marker_criteria <- function(x, to, ...) new_marker_criteria(x)
+
+# A criterion table stays a criterion table when bound to a plain tibble, and a
+# plain tibble is downgraded rather than silently upgraded, so a caller that
+# mixes the two gets a `tbl_df` back instead of a half-typed result.
+#' @exportS3Method vctrs::vec_ptype2
+vec_ptype2.marker_criteria.tbl_df <- function(x, y, ...) tibble::as_tibble(x)[0, , drop = FALSE]
+
+#' @exportS3Method vctrs::vec_ptype2
+vec_ptype2.tbl_df.marker_criteria <- function(x, y, ...) tibble::as_tibble(y)[0, , drop = FALSE]
+
+#' @exportS3Method vctrs::vec_cast
+vec_cast.tbl_df.marker_criteria <- function(x, to, ...) tibble::as_tibble(x)
+
+#' @exportS3Method vctrs::vec_cast
+vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
+# nolint end
+
 #' The criterion registry: one data object per threshold
 #'
 #' Every gate, ranking tier and acceptance check the pipeline applies, as one
@@ -692,7 +750,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   # is a plain character column, so the ladder is re-imposed once, on the whole
   # spec: every constructor above names a rung, this makes it the ordered factor.
   out$evidence <- criterion_evidence(out$evidence)
-  out[, intersect(cols, names(out)), drop = FALSE]
+  new_marker_criteria(out[, intersect(cols, names(out)), drop = FALSE])
 }
 
 #' The registry of every candidate evaluation

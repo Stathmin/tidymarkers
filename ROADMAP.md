@@ -1080,6 +1080,23 @@ plot-файле остался `marker_primer_checks()` — адаптер ра�
    без `vctrs`-класса. Попутно — `ZW4` (сделано) и `ZW1` (сделано). **Остаток
    здесь же:** свести две оси класса checking к одной (`marker_check_classes()`
    против `KASP_CHECK_*`, см. `Z2.1`).
+   - **Сделано 2026-10-29 (часть):** `criterion_spec()` возвращает
+     `marker_criteria` — tibble-подкласс на `vctrs` (`vctrs` добавлен в
+     Imports), с `vec_restore`/`vec_ptype2`/`vec_cast`/`vec_ptype_abbr`;
+     конструктор `new_marker_criteria()` проверяет обязательные колонки один раз.
+     Вторая ось убрана: `marker_check_classes()` больше не отдельный tribble id
+     → class, а выводится из трёх `KASP_CHECK_*` (единственное объявление
+     разбиения); критерий без класса и метка класса без критерия теперь
+     `stop()`, а не молчаливое «ни одна схема». Тесты:
+     `test-criteria.R` (26 = 8 + 5 + 14, классы не пересекаются) и полный
+     прогон `criteria|decision|kasp-checks|plan|evidence|falsifiable|technology|selection|dag|asq`
+     (30 730 pass).
+   - **Остаток — `strand` в модели локуса (не сделан намеренно):** колонка в
+     `target_cols()` без дизайнеров, которые её читают и переворачивают
+     локус/аллели, объявляла бы ориентацию, которой дизайн не следует. Это
+     хуже, чем отсутствие колонки, поэтому пункт остаётся открытым до
+     сквозной правки `marker_*_marker()` (и тогда снимается `ZW0`
+     revcomp-инвариант).
 2. [~] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
    есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
    `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп

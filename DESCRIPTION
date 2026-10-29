@@ -40,6 +40,7 @@ Imports:
     purrr,
     readr,
     vroom,
+    vctrs,
     stringr,
     tibble,
     ggplot2,
