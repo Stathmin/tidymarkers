@@ -6,7 +6,7 @@
 \usage{
 offtarget_profile(
   hits,
-  primers,
+  primers = NULL,
   genome,
   scheme = "pcr",
   seed_len = NA_integer_
@@ -17,8 +17,10 @@ offtarget_profile(
 \code{end}, \code{strand}; the shape \code{\link[=exact_hit_table]{exact_hit_table()}} returns is accepted and its
 profile columns are recomputed, not trusted.}
 
-\item{primers}{named character vector, name -> oligo 5'->3'.  Every
-\code{hits$primer} must be a name.}
+\item{primers}{named character vector, name -> oligo 5'->3', or \code{NULL} to
+derive it from a \code{sequence} column on \code{hits} (as \code{\link[=exact_hit_table]{exact_hit_table()}}
+returns).  Supply it explicitly for an external aligner's loci, which do
+not carry the oligo.  Every \code{hits$primer} must be a name.}
 
 \item{genome}{a \code{DNAStringSet} or a \code{marker_genome}.}
 
@@ -48,7 +50,7 @@ thresholds are heuristics (\code{calibrated = FALSE}), not calibrated quantities
 p <- "GAAGGTGACCAAGTTCATGCT"
 g <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 10), p, strrep("A", 10))))
 h <- exact_hit_table(c(AS = p), g)
-offtarget_profile(h, c(AS = p), g)
+offtarget_profile(h, genome = g)
 }
 \seealso{
 Other KASP specificity:

@@ -30,7 +30,8 @@ sequence.}
 \item{seed_len}{seed length override (\code{NA} = the policy's).}
 }
 \value{
-a tibble \code{primer}, \code{chrom}, \code{start}, \code{end}, \code{width}, \code{strand}
+a tibble \code{primer}, \code{sequence} (the oligo as supplied, 5'->3'),
+\code{chrom}, \code{start}, \code{end}, \code{width}, \code{strand}
 (\code{strand} is \code{"+"} for a plus-strand occurrence and \code{"-"} for one on the
 minus strand), then the seven mismatch-profile fields of
 \code{mismatch_profile()} in the primer's own 5'->3' frame (\code{n_mismatch},

@@ -604,7 +604,8 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #'   sequence.
 #' @param scheme chemistry for the mismatch profile (see [specificity_policy()]).
 #' @param seed_len seed length override (`NA` = the policy's).
-#' @return a tibble `primer`, `chrom`, `start`, `end`, `width`, `strand`
+#' @return a tibble `primer`, `sequence` (the oligo as supplied, 5'->3'),
+#'   `chrom`, `start`, `end`, `width`, `strand`
 #'   (`strand` is `"+"` for a plus-strand occurrence and `"-"` for one on the
 #'   minus strand), then the seven mismatch-profile fields of
 #'   `mismatch_profile()` in the primer's own 5'->3' frame (`n_mismatch`,
@@ -659,7 +660,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
     }
     list(pdict = pd, scan = idx[!dict_ok])
   })
-  hit_rows <- function(primer, chrom, ranges, strand, pattern, subject, scheme, seed_len) {
+  hit_rows <- function(primer, sequence, chrom, ranges, strand, pattern, subject, scheme, seed_len) {
     if (!length(ranges)) {
       return(NULL)
     }
@@ -667,6 +668,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
     prof <- hit_profile(pattern, footprints, scheme, seed_len, identical(strand, "-"))
     tibble::tibble(
       primer = primer,
+      sequence = sequence,
       chrom = chrom,
       start = IRanges::start(ranges),
       end = IRanges::end(ranges),
@@ -692,8 +694,9 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
           max.mismatch = max_mismatch
         )
         for (k in seq_along(g$pdict$idx)) {
+          i <- g$pdict$idx[[k]]
           rows[[length(rows) + 1L]] <- hit_rows(
-            nm[g$pdict$idx[[k]]], chrom, found[[k]], g$pdict$strand[[k]],
+            nm[i], sequences[[i]], chrom, found[[k]], g$pdict$strand[[k]],
             g$pdict$pat[[k]], subject, scheme, seed_len
           )
         }
@@ -707,7 +710,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
             )
           }
           rows[[length(rows) + 1L]] <- hit_rows(
-            nm[[i]], chrom,
+            nm[[i]], sequences[[i]], chrom,
             exact_pattern_hits(pattern, subject, max_mismatch), strand,
             pattern, subject, scheme, seed_len
           )
@@ -725,7 +728,8 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
   out <- purrr::list_rbind(res)
   if (is.null(out) || !ncol(out)) {
     out <- tibble::tibble(
-      primer = character(), chrom = character(), start = integer(),
+      primer = character(), sequence = character(), chrom = character(),
+      start = integer(),
       end = integer(), width = integer(), strand = character(),
       n_mismatch = integer(), mismatch_positions = list(integer()),
       three_prime_mismatch = integer(), seed_mismatch = integer(),
@@ -753,8 +757,10 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
 #' @param hits a data frame/tibble with at least `primer`, `chrom`, `start`,
 #'   `end`, `strand`; the shape [exact_hit_table()] returns is accepted and its
 #'   profile columns are recomputed, not trusted.
-#' @param primers named character vector, name -> oligo 5'->3'.  Every
-#'   `hits$primer` must be a name.
+#' @param primers named character vector, name -> oligo 5'->3', or `NULL` to
+#'   derive it from a `sequence` column on `hits` (as [exact_hit_table()]
+#'   returns).  Supply it explicitly for an external aligner's loci, which do
+#'   not carry the oligo.  Every `hits$primer` must be a name.
 #' @param genome a `DNAStringSet` or a `marker_genome`.
 #' @param scheme chemistry (see [specificity_policy()]).
 #' @param seed_len seed length override (`NA` = the policy's).
@@ -764,14 +770,33 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
 #' p <- "GAAGGTGACCAAGTTCATGCT"
 #' g <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 10), p, strrep("A", 10))))
 #' h <- exact_hit_table(c(AS = p), g)
-#' offtarget_profile(h, c(AS = p), g)
+#' offtarget_profile(h, genome = g)
 #' @family KASP specificity
 #' @export
-offtarget_profile <- function(hits, primers, genome, scheme = "pcr", seed_len = NA_integer_) {
+offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed_len = NA_integer_) {
   required <- c("primer", "chrom", "start", "end", "strand")
   missing_cols <- setdiff(required, names(hits))
   if (length(missing_cols)) {
     cli::cli_abort(gettext("`hits` is missing required columns: {.val {missing_cols}}."))
+  }
+  if (is.null(primers)) {
+    if (!"sequence" %in% names(hits)) {
+      cli::cli_abort(gettext(
+        "`hits` carries no `sequence` column, so `primers` must be supplied."
+      ))
+    }
+    key <- as.character(hits$primer)
+    seq <- as.character(hits$sequence)
+    if (anyNA(seq)) {
+      cli::cli_abort(gettext("`hits$sequence` must not contain NA."))
+    }
+    pairs <- unique(data.frame(name = key, seq = seq, stringsAsFactors = FALSE))
+    if (anyDuplicated(pairs$name)) {
+      cli::cli_abort(gettext(
+        "`hits$sequence` gives one primer name more than one oligo; supply `primers` explicitly."
+      ))
+    }
+    primers <- stats::setNames(pairs$seq, pairs$name)
   }
   if (!is.character(primers) || is.null(names(primers)) || any(is.na(names(primers)) | names(primers) == "")) {
     cli::cli_abort(gettext("`primers` must be a named character vector of oligos."))

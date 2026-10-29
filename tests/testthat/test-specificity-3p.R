@@ -18,7 +18,7 @@ profile_cols <- c(
   "terminal_mismatch", "three_prime_terminal", "penalty"
 )
 hit_cols <- c(
-  "primer", "chrom", "start", "end", "width", "strand", profile_cols
+  "primer", "sequence", "chrom", "start", "end", "width", "strand", profile_cols
 )
 
 test_that("exact_hit_table carries the seven profile fields", {
@@ -66,6 +66,19 @@ test_that("a minus-strand 3'-terminal miss is mirrored into the primer's frame",
   expect_equal(h$strand, "-")
   expect_true(h$three_prime_terminal)
   expect_equal(h$mismatch_positions[[1L]], 21L)
+})
+
+test_that("offtarget_profile derives the primers from the hit table", {
+  hits <- exact_hit_table(c(AS = p), g, max_mismatch = 1L)
+  explicit <- offtarget_profile(hits, c(AS = p), g)
+  derived <- offtarget_profile(hits, genome = g)
+  expect_identical(derived, explicit)
+  # a table from an external aligner has no `sequence` column: the explicit
+  # argument is still required there
+  expect_error(
+    offtarget_profile(hits[, setdiff(names(hits), "sequence")], genome = g),
+    "no `sequence` column"
+  )
 })
 
 test_that("offtarget_profile keeps the column contract on zero rows", {
