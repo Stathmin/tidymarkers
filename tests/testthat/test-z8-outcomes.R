@@ -54,22 +54,32 @@ test_that("Z8: decomposition is claimed only where the named failures add up", {
   expect_equal(c$decomposes, c$fully_decomposed)
   expect_true(all(c$n_fail_known <= c$n_failed))
   expect_equal(c$fully_decomposed, c$decomposes)
-  # exactly two sources currently decompose: the multi-assembly + Sanger arm,
-  # the one that reports the reason per SNP, and Yamagata Exp. 3, the one that
-  # names both of its wet-lab failure classes
-  expect_equal(sum(c$fully_decomposed), 2L)
+  # exactly three sources currently decompose: the multi-assembly + Sanger arm,
+  # the one that reports the reason per SNP; Yamagata Exp. 3, which names both
+  # of its wet-lab failure classes; and Grewal 2022, whose five classes sum to
+  # its 363 failures
+  expect_equal(sum(c$fully_decomposed), 3L)
   expect_setequal(
     c$study[c$fully_decomposed],
-    c("makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3")
+    c("makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3", "grewal2022_amblyopyrum")
   )
 })
 
 test_that("Z8.1: the decomposed-negative count is named, not implied", {
   c <- ext("conversion_rates.csv")
   # The whole point of Z8.1 is that the COUNT of fully decomposed rows is a
-  # fact someone can quote.  It is two today; a third source must change this
+  # fact someone can quote.  It is three today; a fourth source must change this
   # test rather than silently improve the denominator.
-  expect_equal(sum(c$fully_decomposed), 2L)
+  expect_equal(sum(c$fully_decomposed), 3L)
+  # Grewal 2022's five named classes reconstruct its own failure total
+  g <- c[c$study == "grewal2022_amblyopyrum", ]
+  expect_equal(nrow(g), 1L)
+  expect_equal(
+    g$n_fail_pcr + g$n_fail_no_allele + g$n_fail_wheat_polymorphic +
+      g$n_fail_monomorphic + g$n_fail_heterozygote,
+    g$n_failed
+  )
+  expect_equal(g$n_fail_known, g$n_failed)
   # Yamagata Exp. 3's two named classes reconstruct its failure total exactly
   y <- c[c$study == "jsbbs2018_exp3", ]
   expect_equal(nrow(y), 1L)
@@ -243,7 +253,7 @@ test_that("Z8.3: a KASP conversion rate names which of the four quantities it is
   # two rows may share a value only if they share a definition
   rate <- round(c$n_success / c$n_designed, 6L)
   for (r in unique(rate)) {
-    expect_length(unique(c$conversion_definition[rate == r]), 1L, info = r)
+    expect_length(unique(c$conversion_definition[rate == r]), 1L)
   }
 
   # the assay x sample rate is a different quantity and never enters this table

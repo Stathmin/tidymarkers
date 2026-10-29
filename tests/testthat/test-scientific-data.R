@@ -148,7 +148,10 @@ test_that("conversion_rates: no row can yield a probability, and none is all-suc
   expect_true(all(c1$n_failed == c1$n_designed - c1$n_success))
   # no invented residual may exceed the failures it claims to explain
   named <- dplyr::coalesce(c1$n_fail_pcr, 0L) + dplyr::coalesce(c1$n_fail_no_allele, 0L) +
-    dplyr::coalesce(c1$n_fail_other, 0L)
+    dplyr::coalesce(c1$n_fail_other, 0L) +
+    dplyr::coalesce(c1$n_fail_wheat_polymorphic, 0L) +
+    dplyr::coalesce(c1$n_fail_monomorphic, 0L) +
+    dplyr::coalesce(c1$n_fail_heterozygote, 0L)
   expect_true(all(named <= c1$n_failed))
 })
 
@@ -157,12 +160,16 @@ test_that("conversion_rates: the Grewal 2022 named reasons sum to its own total"
   g <- c1[c1$study == "grewal2022_amblyopyrum", ]
   expect_equal(nrow(g), 1L)
   expect_equal(g$n_designed - g$n_success, 363L)
-  # 251 (PCR) + 49 (no wild-relative allele) + 22 + 10 + 31 = 363.  Only two
-  # reason columns exist here, so the row is partial BY SCHEMA -- assert the
-  # numbers we do carry, never a residual.
+  # 251 (PCR) + 49 (no wild-relative allele) + 22 + 10 + 31 = 363.  All five
+  # classes now have their own column, so the row decomposes fully; assert the
+  # numbers the paper reports, never a residual.
   expect_equal(g$n_fail_pcr, 251L)
   expect_equal(g$n_fail_no_allele, 49L)
+  expect_equal(g$n_fail_wheat_polymorphic, 22L)
+  expect_equal(g$n_fail_monomorphic, 10L)
+  expect_equal(g$n_fail_heterozygote, 31L)
   expect_true(is.na(g$n_fail_other))
+  expect_true(g$fully_decomposed)
 })
 
 test_that("gate-pass coverage is tied to criterion ids, not to assertion counts", {

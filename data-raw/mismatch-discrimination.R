@@ -484,6 +484,16 @@ readr::write_csv(anchor, fs::path(out_dir, "mismatch_anchor.csv"))
 #  read from a sentence: every *failure* state is named per SNP (so the row has
 #  no residual bucket at all) because each SNP's strategy outcome was parsed by
 #  data-raw/makhoul-supplement.R, which asserts the total against the paper.
+# Grewal 2022 names five failure classes; the base table above carries the first
+# two (PCR, no wild-relative allele).  The other three belong to the same row, so
+# they live in their own table and are joined on rather than widening every row
+# with three empty columns.  The counts are the paper's own numbers, read from
+# its results (see scientific_sources.csv, key grewal2022_amblyopyrum).
+conv_extra <- tibble::tribble(
+  ~study, ~n_fail_wheat_polymorphic, ~n_fail_monomorphic, ~n_fail_heterozygote,
+  "grewal2022_amblyopyrum", 22L, 10L, 31L
+)
+
 conv_rows <- tibble::tribble(
   ~study, ~species, ~design_strategy, ~n_designed, ~n_success,
   ~n_fail_pcr, ~n_fail_no_allele, ~n_fail_other, ~failure_note, ~doi,
@@ -501,13 +511,13 @@ conv_rows <- tibble::tribble(
   # within-wheat polymorphism, 10 monomorphic, 31 heterozygote) are recorded
   # here as they appear, WITHOUT a residual bucket: an earlier version of this
   # table carried a computed 111 that made the reasons sum to 411 against the
-  # study's 363 failures.  That number was ours, not the paper's, so it is gone;
-  # the named reasons are kept and `decomposes` is FALSE because they do not
-  # account for the total.
+  # study's 363 failures.  That number was ours, not the paper's, so it is gone.
+  # The five classes are all named (the last three in conv_extra), so this row
+  # reconstructs its total and decomposes fully.
   "grewal2022_amblyopyrum", "Triticum aestivum L. x Amblyopyrum muticum", "chromosome-specific KASP for Am. muticum introgressions",
   698L, 335L,
   251L, 49L, NA_integer_,
-  "Named reasons total 363 before the heterozygote step: 251 fail PCR + 49 no Am. muticum allele + 22 wheat-internal polymorphism + 10 monomorphic = 332, plus 31 heterozygote failures = 363, which equals 698 - 335. Recorded as the paper's categories; the split between the two buckets here is partial",
+  "All five named classes sum to the failure total: 251 fail PCR + 49 no Am. muticum allele + 22 wheat-internal polymorphism + 10 monomorphic + 31 heterozygote = 363 = 698 - 335",
   "10.1002/tpg2.20193",
   "makhoul2020_bp_flanks", "Triticum aestivum L.", "101 bp SNP flanking sequence only",
   15L, 3L,
@@ -559,6 +569,8 @@ conv_rows <- tibble::tribble(
   "18 of 24 (75%) co-dominant; 3 showed no polymorphism between parents and 3 segregated dominantly; 0 PCR failures. The three experiments of this paper are not nested (see hrm_jsbbs2018_funnel.csv)",
   "10.1270/jsbbs.18048"
 )
+# the extra named classes join the row they belong to; every other row gets NA
+conv_rows <- dplyr::left_join(conv_rows, conv_extra, by = "study")
 # Z8.3: `conversion_definition` names what the success numerator counts, judged
 # from each row's own `design_strategy` / `failure_note` and not from memory:
 #   * design  - the paper counts sets that passed design criteria (wheat 2019:
@@ -602,27 +614,35 @@ conversion <- dplyr::mutate(
   scope = "study",
   n_failed = .data$n_designed - .data$n_success,
   n_fail_known = dplyr::coalesce(.data$n_fail_pcr, 0L) +
-    dplyr::coalesce(.data$n_fail_no_allele, 0L),
+    dplyr::coalesce(.data$n_fail_no_allele, 0L) +
+    dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
+    dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
+    dplyr::coalesce(.data$n_fail_heterozygote, 0L),
   # residual consistency: the measured failure `total` must equal the counted
   # reasons plus the residual bucket.  Nothing here is verified as a *finding*
   # -- it only shows the table is internally coherent.  Rows with no counted
   # reason stay NA so that "no data" never reads as "fully explained".
-  # Note: the named reasons for Grewal 2022 sum to 363 (251 + 49 + 22 + 10 + 31),
-  # which IS that study's failure total.  This table only has two reason columns,
-  # so those rows stay `decomposes = FALSE` -- not because the source is broken
-  # but because MY schema cannot yet hold five categories.  No residual number
-  # is ever invented to close the gap.
+  # Grewal 2022 is the one row whose five named classes (251 + 49 + 22 + 10 + 31)
+  # reconstitute its 363 failures exactly; the other rows name fewer classes and
+  # stay FALSE.  No residual number is ever invented to close a gap.
   decomposes = !is.na(.data$n_fail_pcr) &
     .data$n_fail_pcr + dplyr::coalesce(.data$n_fail_no_allele, 0L) +
-      dplyr::coalesce(.data$n_fail_other, 0L) == .data$n_failed,
-  # TRUE only when every failure reason is named in the schema above.  Two rows
+      dplyr::coalesce(.data$n_fail_other, 0L) +
+      dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
+      dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
+      dplyr::coalesce(.data$n_fail_heterozygote, 0L) == .data$n_failed,
+  # TRUE only when every failure reason is named in the schema above.  Three rows
   # do that today: Makhoul's multi-assembly arm (Table S4 names each failure as
-  # 'Wrong cluster' or 'Locus-specific design not possible') and Yamagata Exp. 3
-  # (3 no polymorphism + 3 dominant segregation).  The whitelist is deliberate:
-  # arithmetic that happens to balance is not the same as a source naming every
-  # failure, so a new row is added only after its text is read.
+  # 'Wrong cluster' or 'Locus-specific design not possible'), Yamagata Exp. 3
+  # (3 no polymorphism + 3 dominant segregation) and Grewal 2022 (its five
+  # classes sum to the 363 failures).  The whitelist is deliberate: arithmetic
+  # that happens to balance is not the same as a source naming every failure, so
+  # a new row is added only after its text is read.
   fully_decomposed = .data$decomposes &
-    .data$study %in% c("makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3"),
+    .data$study %in% c(
+      "makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3",
+      "grewal2022_amblyopyrum"
+    ),
   # the reviewer's point made mechanical: a probability is withheld until the
   # failures decompose, so the output stays ordinal ("usable") by design
   outcome_scale = "usable",
@@ -634,7 +654,10 @@ stopifnot(
   # no row may report more named failures than it actually has
   all(dplyr::coalesce(conversion$n_fail_pcr, 0L) +
         dplyr::coalesce(conversion$n_fail_no_allele, 0L) +
-        dplyr::coalesce(conversion$n_fail_other, 0L) <= conversion$n_failed),
+        dplyr::coalesce(conversion$n_fail_other, 0L) +
+        dplyr::coalesce(conversion$n_fail_wheat_polymorphic, 0L) +
+        dplyr::coalesce(conversion$n_fail_monomorphic, 0L) +
+        dplyr::coalesce(conversion$n_fail_heterozygote, 0L) <= conversion$n_failed),
   # a probability is withheld from EVERY row: an ordinal 'usable' until a source
   # decomposes ITS OWN failures into the categories here and a wet-lab anchor
   # exists.  Today that is two rows from two studies, still too few to estimate
@@ -662,6 +685,15 @@ yd <- conversion[conversion$study == "jsbbs2018_exp3", ]
 stopifnot(nrow(yd) == 1L, yd$n_designed == 24L, yd$n_success == 18L,
           yd$n_fail_pcr == 0L, yd$n_fail_no_allele == 3L, yd$n_fail_other == 3L,
           isTRUE(yd$fully_decomposed))
+# Grewal 2022: the five named classes now fit the schema and sum to its total
+gr <- conversion[conversion$study == "grewal2022_amblyopyrum", ]
+stopifnot(
+  nrow(gr) == 1L, gr$n_failed == 363L,
+  gr$n_fail_pcr == 251L, gr$n_fail_no_allele == 49L,
+  gr$n_fail_wheat_polymorphic == 22L, gr$n_fail_monomorphic == 10L,
+  gr$n_fail_heterozygote == 31L,
+  isTRUE(gr$fully_decomposed)
+)
 # the one paper behind three rows: same denominator, never summed into a rate
 wh <- conversion[grepl("^wheat2019_", conversion$study), ]
 stopifnot(nrow(wh) == 3L, all(wh$n_designed == 50L), all(!wh$fully_decomposed))

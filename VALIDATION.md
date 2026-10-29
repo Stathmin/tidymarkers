@@ -220,8 +220,11 @@ and are the right place to start once per-assay outcomes are landed.
 
 `inst/extdata/conversion_rates.csv` records six studies that report both a
 denominator and its failures, for example 730/1000 (Grewal 2020) and 335/698
-(Grewal 2022). Every row keeps `n_fail_pcr`, `n_fail_no_allele` and
-`n_fail_other` separate, every row is `calibrated = FALSE`, and no two studies
+(Grewal 2022). Every row keeps `n_fail_pcr`, `n_fail_no_allele`,
+`n_fail_other` and (for Grewal 2022) the three further named classes
+`n_fail_wheat_polymorphic`, `n_fail_monomorphic`, `n_fail_heterozygote`
+separate; three rows reconstruct their failure total exactly, every row is
+`calibrated = FALSE`, and no two studies
 are pooled into one rate. "Success" means a different thing in each paper, so
 the definition travels with the count: `conversion_definition` names which of
 `design` / `manufacture` / `work` / `usable` the numerator counts, and `scope`
