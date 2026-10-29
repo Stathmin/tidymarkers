@@ -395,10 +395,37 @@ marker_population_warnings <- function(marker) {
   invisible(NULL)
 }
 
+#' The dosage / copy-number axis, separate from allele frequency
+#'
+#' A dosage is not a frequency.  Half the copies of a decaploid is 5 of 10, of a
+#' diploid 1 of 2, and a homoeolog sum reads as one allele at frequency 1: the
+#' same `0.5` in `pop_freq` means different genotypes, so the two cannot share a
+#' column (Z6.2).  This is the axis on its own.  No dosage engine is wired in
+#' yet, so the honest answer is `"unknown"` - never a frequency standing in for
+#' a copy number.  `fitPoly` (a Suggests, Z10.2) is what would move it.
+#' @param marker a marker with `$population`.
+#' @return a list: `status` (`"unknown"`), `engine` (`NA`), `note`.
+#' @keywords internal
+#' @noRd
+marker_dosage <- function(marker) {
+  list(
+    status = "unknown",
+    engine = NA_character_,
+    note = gettext(
+      "allele dosage / copy number is not modelled; a polyploid mixture needs fitPoly (Z10.2)"
+    )
+  )
+}
+
 #' Population-frequency and haplotype-coverage rows for the check column
+#'
+#' The dosage axis is not one of these rows (see `marker_dosage()`): it travels
+#' as the `dosage` attribute, so the acceptance gate never grades a copy number
+#' with a frequency rule.
 #' @param marker a marker with `$population` (see `marker_attach_haplotypes()`).
 #' @param min_alt_freq override the marker's frequency floor.
-#' @return a tibble (`level`, `name`, `status`, `value`), or an empty tibble.
+#' @return a tibble (`level`, `name`, `status`, `value`) carrying a `dosage`
+#'   attribute, or an empty tibble.
 #' @keywords internal
 #' @noRd
 marker_population_checks <- function(marker, min_alt_freq = NULL) {
@@ -430,5 +457,5 @@ marker_population_checks <- function(marker, min_alt_freq = NULL) {
       value = if (is.finite(cov)) sprintf("%.0f%%", 100 * cov) else "-"
     ))
   }
-  out
+  structure(out, dosage = marker_dosage(marker))
 }

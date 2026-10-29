@@ -101,3 +101,33 @@ test_that("polyploid scope: the wheat-only claims have no non-wheat support", {
   c <- ext(POLY_FILES[["cotton2023"]])
   expect_true(all(c$homeolog_handled == "not stated"))
 })
+
+test_that("polyploid scope: dosage is its own axis, never a pop_freq column (Z6.2)", {
+  # `pop_freq` is an allele frequency in [0, 1] carried by the variant table; a
+  # dosage is copies of a ploidy, so it may not be written into that column.
+  snp <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = "A", alt = "G")
+  haps <- tibble::tibble(
+    haplotype = c("H1", "H2", "H2"), freq = c(0.5, 0.5, 0.5),
+    chrom = "Chr1", pos = c(110L, 100L, 110L),
+    ref = c("A", "A", "A"), alt = c("C", "G", "C")
+  )
+  hv <- tidymarkers:::haplotype_variants(haps, snp)
+  expect_true("pop_freq" %in% names(hv$variants))
+  expect_false(any(grepl("dos|copy|ploid", names(hv$variants), ignore.case = TRUE)))
+
+  mk <- structure(
+    list(
+      population = tibble::tibble(
+        alt_freq = 0.5, min_alt_freq = 0.01,
+        n_haplotypes = 2L, n_alt_haplotypes = 1L
+      ),
+      snp = snp, haplotypes = NULL, haplotype_hits = NULL
+    ),
+    class = c("marker_kasp", "marker")
+  )
+  chk <- tidymarkers:::marker_population_checks(mk)
+  expect_false(any(grepl("dos|copy|ploid", tolower(c(chk$name, chk$value)))))
+  dose <- attr(chk, "dosage")
+  expect_identical(dose$status, "unknown")
+  expect_false("pop_freq" %in% names(dose))
+})

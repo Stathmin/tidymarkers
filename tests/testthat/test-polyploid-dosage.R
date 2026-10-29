@@ -228,11 +228,18 @@ test_that("dosage: marker_population_checks() today is a two-allele frequency ta
   )
   chk <- tidymarkers:::marker_population_checks(mk)
   expect_true(all(c("level", "name", "status", "value") %in% names(chk)))
-  # TODAY: no dosage row exists.  When Z10.2 lands the separate axis this
-  # expectation is the one to flip - the test is the task's acceptance gate.
+  # Z6.2: dosage is a separate axis, not one of the frequency rows - a row here
+  # would be graded by the acceptance gate with a frequency rule
   expect_false(any(grepl("dos|copy|ploid", tolower(c(chk$name, chk$value)))))
-  # and the frequency row cannot tell 0.5 of 10 copies from 0.5 of 2 copies:
-  # it prints "50%" either way, which is exactly why dosage is a separate axis
+  dose <- attr(chk, "dosage")
+  expect_type(dose, "list")
+  # no dosage engine is wired in, so the axis says `unknown` rather than letting
+  # the 50% frequency stand in for a copy number
+  expect_identical(dose$status, "unknown")
+  expect_true(is.na(dose$engine))
+  # the axis carries no `pop_freq`: the same 0.5 is 5 of 10 copies or 1 of 2
+  expect_false("pop_freq" %in% names(dose))
+  # and the frequency row cannot tell those apart either: it prints "50%"
   expect_equal(chk$value[chk$name == "ALT freq"], "50%")
   expect_false("dose" %in% names(pop))
 })
