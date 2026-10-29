@@ -616,6 +616,32 @@ artefact_inputs_match <- function(recorded, plan) {
   }, logical(1)))
 }
 
+#' Does the engine stamp still match what the artefact recorded?
+#'
+#' A replay that differs cannot say *why* it differs, and a version bump in an
+#' engine changes the numbers a design rests on just as a model change does.  The
+#' recorded stamp is therefore compared before the verdicts, so a reader is told
+#' which engines moved instead of being left to blame the model (ZW2.3).  An
+#' engine absent from either stamp counts as a change -- a stamp that dropped an
+#' engine is not the same stamp.  A manifest that recorded no stamp at all is
+#' `NA` (unknown), never a match.
+#' @keywords internal
+#' @noRd
+artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
+  rec <- unlist(recorded, use.names = TRUE)
+  rec <- stats::setNames(as.character(rec), names(rec))
+  if (!length(rec)) {
+    return(list(match = NA, changed = character()))
+  }
+  engines <- union(names(rec), names(now))
+  changed <- engines[!vapply(engines, function(e) {
+    a <- unname(rec[e])
+    b <- unname(now[e])
+    (is.na(a) && is.na(b)) || identical(a, b)
+  }, logical(1))]
+  list(match = !length(changed), changed = changed)
+}
+
 #' Re-run the design an artefact recorded and compare
 #'
 #' Reads `solved.rds`, re-solves its plan with the recorded knobs, and compares
@@ -623,8 +649,10 @@ artefact_inputs_match <- function(recorded, plan) {
 #' everything" into a claim that can be checked: a mismatch names the target and
 #' both verdicts instead of silently returning a different design.
 #'
-#' The input hashes are re-checked first, so a reference that was replaced is
-#' reported as such (`inputs_match = FALSE`) rather than read as engine drift.
+#' The input hashes and the engine stamp are re-checked first, so a reference that
+#' was replaced is reported as such (`inputs_match = FALSE`) and a library upgrade
+#' as an engine change (`engine_match = FALSE`, `engines_changed`), rather than
+#' either being read as a model change.
 #' @param artefact a `marker_artefact` or the directory it was written to.
 #' @param cache an environment to memoise the replay in; pass the original
 #'   solve's `cache` to make replay free, `NULL` (the default) to force the
@@ -632,9 +660,10 @@ artefact_inputs_match <- function(recorded, plan) {
 #' @param progress show a progress bar (default: not, the replay is a check).
 #' @param tolerance accepted; reserved for numeric comparison of the markers.
 #' @return a `marker_replay`: `id`, `match` (one logical for the whole run),
-#'   `inputs_match`, and `table` (one row per target: `target`,
-#'   `recorded_scheme`, `replayed_scheme`, `recorded_verdict`,
-#'   `replayed_verdict`, `match`).
+#'   `inputs_match`, `engine_match` (`NA` when the artefact recorded no stamp),
+#'   `engines_changed` (names whose version differs), and `table` (one row per
+#'   target: `target`, `recorded_scheme`, `replayed_scheme`,
+#'   `recorded_verdict`, `replayed_verdict`, `match`).
 #' @examples
 #' \dontrun{
 #' art <- marker_artefact(marker_solve(plan), dir = "results/artefact")
@@ -655,6 +684,13 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
     cli::cli_warn(gettext(
       "The reference or variant table no longer matches the artefact's hash; \\
        a replay difference below is explained by the input, not the engine."
+    ))
+  }
+  engines <- artefact_engine_match(manifest$engine_stamp)
+  if (isFALSE(engines$match)) {
+    cli::cli_warn(c(
+      gettext("Engine changed since the artefact was written: {.val {engines$changed}}."),
+      "i" = gettext("A replay difference below may be engine drift, not a model change.")
     ))
   }
   knobs <- solved$knobs %||% list()
@@ -678,7 +714,8 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
   structure(
     list(
       id = manifest$id, dir = dir, match = all(tbl$match),
-      inputs_match = isTRUE(inputs_match), table = tbl
+      inputs_match = isTRUE(inputs_match), engine_match = engines$match,
+      engines_changed = engines$changed, table = tbl
     ),
     class = "marker_replay"
   )
@@ -705,6 +742,14 @@ identical_na <- function(a, b) {
 print.marker_replay <- function(x, ...) {
   cat(glue::glue("<marker_replay> {substr(x$id, 1L, 16L)}: {if (x$match) 'identical' else 'DIFFERENT'}\n"))
   cat(glue::glue("  inputs: {if (x$inputs_match) 'match' else 'changed since the artefact was written'}\n"))
+  engines <- if (isTRUE(x$engine_match)) {
+    "match"
+  } else if (isFALSE(x$engine_match)) {
+    paste("changed:", paste(x$engines_changed, collapse = ", "))
+  } else {
+    "not recorded"
+  }
+  cat(glue::glue("  engines: {engines}\n"))
   print(x$table)
   invisible(x)
 }

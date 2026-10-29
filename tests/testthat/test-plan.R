@@ -376,3 +376,27 @@ test_that("marker_replay re-runs the design and compares the verdicts", {
   expect_identical(out$id, art$id)
   expect_false(any(out$calibrated))
 })
+
+test_that("a replay names the engine that moved, not the model (ZW2.3)", {
+  solved <- rejected_solve()
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  # a library upgrade bumps one engine's version; the design inputs are unchanged
+  path <- fs::path(dir, "artefact.json")
+  json <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  json$engine_stamp[["Biostrings"]] <- "9.9.9"
+  writeLines(
+    jsonlite::toJSON(json, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
+    path
+  )
+  rp <- NULL
+  expect_warning(rp <- marker_replay(art), "Engine changed")
+  expect_false(rp$engine_match)
+  expect_equal(rp$engines_changed, "Biostrings")
+  # the verdict itself did not move: the difference is the engine, and it is named
+  expect_true(rp$match)
+  expect_true(rp$inputs_match)
+  # a manifest that recorded no stamp is unknown, never a silent match
+  no_stamp <- tidymarkers:::artefact_engine_match(NULL)
+  expect_true(is.na(no_stamp$match))
+})

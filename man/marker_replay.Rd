@@ -19,9 +19,10 @@ design to run again - which is the only version that tests anything.}
 }
 \value{
 a \code{marker_replay}: \code{id}, \code{match} (one logical for the whole run),
-\code{inputs_match}, and \code{table} (one row per target: \code{target},
-\code{recorded_scheme}, \code{replayed_scheme}, \code{recorded_verdict},
-\code{replayed_verdict}, \code{match}).
+\code{inputs_match}, \code{engine_match} (\code{NA} when the artefact recorded no stamp),
+\code{engines_changed} (names whose version differs), and \code{table} (one row per
+target: \code{target}, \code{recorded_scheme}, \code{replayed_scheme},
+\code{recorded_verdict}, \code{replayed_verdict}, \code{match}).
 }
 \description{
 Reads \code{solved.rds}, re-solves its plan with the recorded knobs, and compares
@@ -30,8 +31,10 @@ everything" into a claim that can be checked: a mismatch names the target and
 both verdicts instead of silently returning a different design.
 }
 \details{
-The input hashes are re-checked first, so a reference that was replaced is
-reported as such (\code{inputs_match = FALSE}) rather than read as engine drift.
+The input hashes and the engine stamp are re-checked first, so a reference that
+was replaced is reported as such (\code{inputs_match = FALSE}) and a library upgrade
+as an engine change (\code{engine_match = FALSE}, \code{engines_changed}), rather than
+either being read as a model change.
 }
 \examples{
 \dontrun{
