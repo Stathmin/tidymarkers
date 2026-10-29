@@ -416,6 +416,17 @@ test_that("soybean panel: the generator reproduces the committed CSVs", {
   old <- getwd()
   setwd(root)
   on.exit(setwd(old), add = TRUE)
+  # The generator is written to run standalone (`Rscript data-raw/<key>.R`) and
+  # therefore calls `pkgload::load_all()` itself.  Sourcing it inside the test
+  # session would reload the namespace mid-suite: testthat's helpers keep
+  # resolving through the old one (with an empty `.marker_tech_store`), while
+  # the test bodies see the new one, so a `marker_technology()` composed by a
+  # later test is invisible to a helper such as `expect_dag_invariants()`.  The
+  # harness has already loaded the package, so the reload is neutralised here.
+  local_mocked_bindings(
+    load_all = function(...) invisible(NULL),
+    .package = "pkgload"
+  )
   # any stop() from an assertion in the generator is the failure, and
   # write_checked() refuses to rewrite a CSV that disagrees with the table
   expect_no_error(
