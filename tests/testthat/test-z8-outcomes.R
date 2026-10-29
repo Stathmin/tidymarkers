@@ -230,26 +230,28 @@ test_that("Z8.3: a KASP conversion rate names which of the four quantities it is
   # are never pooled or compared (the 6.5 % wheat_platform2019 figure is a
   # fraction of assay x sample points, not of assays).
   c <- ext("conversion_rates.csv")
-  def <- if ("conversion_definition" %in% names(c)) c$conversion_definition else rep(NA_character_, nrow(c))
-  # the column may be absent only while it is being introduced; the moment a row
-  # carries it, it must be populated and must distinguish definitions
-  if (any(!is.na(def))) {
-    expect_false(any(is.na(def) | !nzchar(def)))
-    rate <- ifelse(
-      !is.na(c$n_designed) & c$n_designed > 0L,
-      round(c$n_success / c$n_designed, 6),
-      NA_real_
-    )
-    key <- paste(rate, def)
-    # two rows may share a value only if they share a definition
-    dup <- stats::ave(key, key, FUN = length)
-    expect_true(all(dup[!is.na(rate)] <= 1L))
+  kinds <- c("design", "manufacture", "work", "usable")
+  # the column is required now, not optional: an absent definition is what let
+  # this guard pass vacuously before
+  expect_true("conversion_definition" %in% names(c))
+  expect_false(anyNA(c$conversion_definition))
+  expect_true(all(nzchar(c$conversion_definition)))
+  expect_true(all(c$conversion_definition %in% kinds))
+  expect_true("scope" %in% names(c))
+  expect_true(all(c$scope %in% c("study", "assay", "assay_x_sample")))
+
+  # two rows may share a value only if they share a definition
+  rate <- round(c$n_success / c$n_designed, 6L)
+  for (r in unique(rate)) {
+    expect_length(unique(c$conversion_definition[rate == r]), 1L, info = r)
   }
-  # the assay-x-sample scope, when recorded, is never an assay conversion
-  if ("scope" %in% names(c)) {
-    xs <- c[!is.na(c$scope) & c$scope == "assay_x_sample", ]
-    expect_true(all(!is.na(xs$conversion_definition)))
-  }
+
+  # the assay x sample rate is a different quantity and never enters this table
+  expect_false(any(c$scope == "assay_x_sample"))
+  p <- ext("wheat_platform2019_platform_outcomes.csv")
+  xs <- p[p$scope == "assay_x_sample" & !is.na(p$value_printed), ]
+  expect_gt(nrow(xs), 0L)
+  expect_true(all(grepl("ASSAY x SAMPLE", xs$outcome_definition)))
 })
 
 ## --- the de Silva 2009 HRM extracts -----------------------------------------

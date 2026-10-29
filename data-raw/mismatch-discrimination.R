@@ -559,8 +559,47 @@ conv_rows <- tibble::tribble(
   "18 of 24 (75%) co-dominant; 3 showed no polymorphism between parents and 3 segregated dominantly; 0 PCR failures. The three experiments of this paper are not nested (see hrm_jsbbs2018_funnel.csv)",
   "10.1270/jsbbs.18048"
 )
+# Z8.3: `conversion_definition` names what the success numerator counts, judged
+# from each row's own `design_strategy` / `failure_note` and not from memory:
+#   * design  - the paper counts sets that passed design criteria (wheat 2019:
+#               "39/50, 49/50, and 49/50 ... design success rates");
+#   * work    - the paper counts assays that worked on DNA (Grewal 2020's "730"
+#               of 1000, the Makhoul arms' "Correct cluster", Grewal 2022's
+#               converted introgression assays);
+#   * usable  - the paper counts two-allele informative results (Ramirez's
+#               "28 polymorphic" of 35, Yamagata's "18 co-dominant" of 24).
+# `manufacture` is in the vocabulary but no row here measures it alone.
+conversion_kind <- c(
+  grewal2020 = "work",
+  ramirezgonzalez2014 = "usable",
+  grewal2022_amblyopyrum = "work",
+  makhoul2020_bp_flanks = "work",
+  makhoul2020_single_reference = "work",
+  makhoul2020_multi_assembly_sanger = "work",
+  wheat2019_taqman = "design",
+  wheat2019_kasp = "design",
+  wheat2019_rhamp = "design",
+  jsbbs2018_exp3 = "usable"
+)
+stopifnot(
+  # every row is classified, and only with the shared vocabulary
+  setequal(names(conversion_kind), conv_rows$study),
+  all(conversion_kind %in% c("design", "manufacture", "work", "usable"))
+)
 conversion <- dplyr::mutate(
   conv_rows,
+  # Z8.3: a conversion rate is one of four measurements - design (a triple
+  # exists), manufacture (it was made), work (on real DNA it produced a call),
+  # usable (the call was two-allele and informative) - and a rate may only be
+  # read as the measurement its `conversion_definition` names.  Same vocabulary
+  # and same `scope` axis as wheat_platform2019_platform_outcomes.csv
+  # (`quantity_kind` / `scope`).  Not pooled in R/ by design: see
+  # data-raw/proposed/kasp_z8_scope.decision.md.
+  conversion_definition = unname(conversion_kind[.data$study]),
+  # every row below counts assays within one study (targets attempted or assays
+  # tested); the assay x sample rate is a different quantity and lives only in
+  # wheat_platform2019_platform_outcomes.csv with `scope = "assay_x_sample"`
+  scope = "study",
   n_failed = .data$n_designed - .data$n_success,
   n_fail_known = dplyr::coalesce(.data$n_fail_pcr, 0L) +
     dplyr::coalesce(.data$n_fail_no_allele, 0L),
@@ -603,7 +642,17 @@ stopifnot(
   all(!conversion$calibrated),
   # every row must report a failure count that matches its own denominator: this
   # is the anti-survivorship check -- no row may be all-successes
-  all(conversion$n_failed > 0L)
+  all(conversion$n_failed > 0L),
+  # Z8.3: the rate always says which of the four quantities it is, and no row
+  # may leave the definition to be inferred from a neighbour
+  all(!is.na(conversion$conversion_definition)),
+  all(conversion$scope == "study"),
+  # two rows may share a numeric value only under the same definition (the
+  # 92 % collision between sharplab2021 and maize_kasp2020 is exactly the trap)
+  all(vapply(
+    split(conversion$conversion_definition, round(conversion$n_success / conversion$n_designed, 6L)),
+    function(d) length(unique(d)) == 1L, logical(1)
+  ))
 )
 # the rows whose failures are all named, and their named reasons must be exact
 mk <- conversion[conversion$study == "makhoul2020_multi_assembly_sanger", ]

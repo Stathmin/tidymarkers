@@ -223,7 +223,10 @@ denominator and its failures, for example 730/1000 (Grewal 2020) and 335/698
 (Grewal 2022). Every row keeps `n_fail_pcr`, `n_fail_no_allele` and
 `n_fail_other` separate, every row is `calibrated = FALSE`, and no two studies
 are pooled into one rate. "Success" means a different thing in each paper, so
-the definition travels with the count.
+the definition travels with the count: `conversion_definition` names which of
+`design` / `manufacture` / `work` / `usable` the numerator counts, and `scope`
+keeps the assay-level count apart from the assay×sample rate (which lives only
+in `wheat_platform2019_platform_outcomes.csv`).
 
 `tests/testthat/test-z8-outcomes.R` enforces that rule. It exists because of a
 review point: published markers are successes, so a pass/fail dataset built from
