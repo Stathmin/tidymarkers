@@ -1,0 +1,95 @@
+name: Bug report
+description: A function returns a wrong answer, errors, or crashes.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A report is only actionable with a **minimal reproducible example
+        (reprex)**. This package needs a genome and variants, so "it doesn't
+        work" cannot be debugged — reduce it to the smallest input that still
+        shows the problem.
+
+        Do **not** paste unpublished sequences, patient data, or credentials.
+        Use a short synthetic FASTA or the shipped `inst/extdata/` fixtures.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am on the latest `main` (or the version below), not a stale fork.
+          required: true
+        - label: This is not a security issue (those go to SECURITY.md, not the tracker).
+          required: true
+        - label: This is not "the model disagrees with my wet-lab result" — that is expected, see VALIDATION.md.
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The actual output, including the full error message and warning text.
+      placeholder: |
+        Error in ...: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and why
+      description: |
+        If you expected a rule to behave differently, cite the source: a paper,
+        a `data-raw/<paper>.R` script, or the roxygen claim. "Primer3 does it
+        another way" is a good argument; "it feels wrong" is not.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reprex
+    attributes:
+      label: Minimal reproducible example
+      description: |
+        Paste runnable code. Use `reprex::reprex()` if you can — it renders the
+        code, output, and session info together. Include the input data inline
+        or as a link to a small file in the issue.
+      render: r
+      placeholder: |
+        library(tidymarkers)
+        genome <- marker_genome("...")   # smallest input that still fails
+        design_markers(...)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: tidymarkers version
+      description: Output of `packageVersion("tidymarkers")`, or the commit SHA if installed from `main`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: session
+    attributes:
+      label: Session info
+      description: Output of `sessioninfo::session_info()`. If it is long, at least paste `R.version.string` and the versions of the packages in the traceback.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: tests
+    attributes:
+      label: Test output (if a test fails)
+      description: |
+        Paste the failing block from `Rscript dev/test.R '<file-stem>'`. Run the
+        one file, not the whole suite. If you already fixed it, say which test
+        file you touched.
+      render: text
+    validations:
+      required: false

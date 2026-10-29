@@ -3,6 +3,7 @@
 # tidymarkers
 
 <!-- badges: start -->
+
 [![R-CMD-check](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -131,34 +132,34 @@ primer pair" (composition, structure, repeats, off-target).
 
 ## Shipped objects
 
-| Function | Returns |
-|---|---|
-| `assemble_kasp_assay()` | `<marker_assay>`: primers, amplicon, discrimination, `$decision` |
-| `marker_design_checks()` | tidy table: `stage`, `criterion`, `observed`, `limit`, `status` |
-| `marker_risk()` | `low` / `medium` / `high` with the reasons behind it |
-| `marker_decision_text()` | the decision graph of a scheme as readable text (`evidence = TRUE` adds each check's evidence rung) |
-| `write_kasp_results()` | `marker_design.csv`, `marker_primer_qc.csv`, `marker_dimer_dg.csv` |
-| `marker_export()` | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact |
-| `marker_artefact()` | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv` |
-| `marker_replay()` | re-runs a saved artefact and compares the verdict per target |
+| Function                  | Returns                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `assemble_kasp_assay()`   | `<marker_assay>`: primers, amplicon, discrimination, `$decision`                                        |
+| `marker_design_checks()`  | tidy table: `stage`, `criterion`, `observed`, `limit`, `status`                                         |
+| `marker_risk()`           | `low` / `medium` / `high` with the reasons behind it                                                    |
+| `marker_decision_text()`  | the decision graph of a scheme as readable text (`evidence = TRUE` adds each check's evidence rung)     |
+| `write_kasp_results()`    | `marker_design.csv`, `marker_primer_qc.csv`, `marker_dimer_dg.csv`                                      |
+| `marker_export()`         | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact                               |
+| `marker_artefact()`       | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv`                   |
+| `marker_replay()`         | re-runs a saved artefact and compares the verdict per target                                            |
 | `marker_record_outcome()` | appends a lab result (`works` / `fails` / `unknown`) to an artefact's `outcomes.csv`, bound to its `id` |
-| `marker_primers()` | the oligos of any marker, as a named vector or tidy table |
+| `marker_primers()`        | the oligos of any marker, as a named vector or tidy table                                               |
 
 ## Documentation
 
 The chemistry vignettes are the manual; each one states its biology, its gates
 and its failures:
 
-| Vignette | Schemes |
-|---|---|
-| `vignette("kasp-intro")` | the full workflow, start to finish |
-| `vignette("markers-kasp")` | `snp`, `indel`, `multi`, `duplex`, `lax`, `asq`, `primer` |
-| `vignette("markers-gel")` | `caps`, `arms`, `hrm`, `ssr`, `indel_size` |
-| `vignette("markers-probe")` | `taqman`, `dpcr`, `snapshot`, `castpcr` |
-| `vignette("markers-isothermal")` | `lamp`, `rpa` |
-| `vignette("markers-crispr-sequencing")` | `crispr`, `sanger` |
-| `vignette("custom-genome")` | your own FASTA / VCF |
-| `vignette("reading-results")` | export a solved plan, audit a candidate, read a rejection |
+| Vignette                                | Schemes                                                   |
+| --------------------------------------- | --------------------------------------------------------- |
+| `vignette("kasp-intro")`                | the full workflow, start to finish                        |
+| `vignette("markers-kasp")`              | `snp`, `indel`, `multi`, `duplex`, `lax`, `asq`, `primer` |
+| `vignette("markers-gel")`               | `caps`, `arms`, `hrm`, `ssr`, `indel_size`                |
+| `vignette("markers-probe")`             | `taqman`, `dpcr`, `snapshot`, `castpcr`                   |
+| `vignette("markers-isothermal")`        | `lamp`, `rpa`                                             |
+| `vignette("markers-crispr-sequencing")` | `crispr`, `sanger`                                        |
+| `vignette("custom-genome")`             | your own FASTA / VCF                                      |
+| `vignette("reading-results")`           | export a solved plan, audit a candidate, read a rejection |
 
 Repository-level documents: [`ROADMAP.md`](ROADMAP.md) (open work and design
 decisions), [`NEWS.md`](NEWS.md) (changelog), [`VALIDATION.md`](VALIDATION.md)
@@ -217,6 +218,36 @@ short answer is published measurements, not a bench run by the maintainers:
 [`VALIDATION.md`](VALIDATION.md) has the full accounting: per-family counts, the
 three provenance gates, the published conversion rates (kept with their
 failures and never pooled into a probability), and the known gaps.
+
+## Getting help
+
+Open an [issue](https://github.com/Stathmin/tidymarkers/issues/new/choose) and
+pick the bug or feature template. Both ask for a **reprex** — a minimal
+reproducible example — because a design bug cannot be debugged from a
+description alone:
+
+```r
+library(tidymarkers)
+# smallest input that still shows the problem
+# (a short synthetic FASTA, or a fixture from inst/extdata/)
+```
+
+A good report contains runnable code, the exact output or error, and
+`sessioninfo::session_info()`. Reduce the input as far as it will go; remove
+anything you cannot share. If a test fails, run that one file
+(`Rscript dev/test.R '<file-stem>'`), not the whole suite, and paste its block.
+
+Two reports are not bugs:
+
+- **A thermodynamic model disagreeing with your bench result.** That is
+  expected; see [`VALIDATION.md`](VALIDATION.md) for what is measured versus
+  modelled.
+- **A source that does not say what a rule claims.** That is a real bug — file
+  it with the DOI or PMC id and the sentence you read.
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the four kinds of change and the
+merge gate, [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for community standards,
+and [`SECURITY.md`](SECURITY.md) to report a vulnerability privately.
 
 ## Limitations
 

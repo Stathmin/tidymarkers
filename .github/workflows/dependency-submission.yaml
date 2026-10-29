@@ -1,0 +1,26 @@
+name: dependency-submission
+
+# GitHub cannot read `DESCRIPTION` or `renv.lock`, so the repository's
+# dependency graph stays empty ("No dependencies found") until a snapshot is
+# POSTed to the dependency-submission API. This workflow does that on every
+# push to `main` and once a week, so the graph follows the lockfile.
+on:
+  push:
+    branches: [main]
+    paths: [renv.lock, DESCRIPTION]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Submit dependency snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/dependency-snapshot.py

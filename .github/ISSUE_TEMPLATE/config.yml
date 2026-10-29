@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Stathmin/tidymarkers/security/policy
+    about: Please report suspected vulnerabilities privately — not in a public issue.
+  - name: What counts as evidence here
+    url: https://github.com/Stathmin/tidymarkers/blob/main/VALIDATION.md
+    about: How rules are grounded, what is measured versus modelled, and the known gaps.
+  - name: How to contribute
+    url: https://github.com/Stathmin/tidymarkers/blob/main/CONTRIBUTING.md
+    about: The four kinds of change, the merge gate, and the local dev loop.

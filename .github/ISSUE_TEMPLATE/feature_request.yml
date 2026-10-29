@@ -1,0 +1,67 @@
+name: Feature request
+description: Propose a new rule, fixture, wiring change, or documentation fix.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository values a claim that can be checked over volume of code.
+        Before proposing a feature, name which kind of change it is — see
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md#what-a-contribution-is-worth-here).
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - Rule — a design or acceptance rule (needs a measurement and a data-raw script)
+        - Fixture — an input the test suite runs against
+        - Wiring — existing code reaches a caller
+        - Prose — README, vignette, roadmap
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the gap in the package's one job — design and QC of genetic markers — not a general-purpose addition.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: |
+        For a **rule**: the paper or table you opened, the values it reports, and
+        the `data-raw/<paper>.R` script you would add that re-derives them and
+        fails on disagreement. A title alone cannot confirm a number.
+        For **fixture/prose/wiring**: the file and the test or call site that
+        would prove it.
+      placeholder: |
+        Source: <DOI or PMC id>, table N, page P
+        Values: ...
+        Proposed script: data-raw/<paper>.R
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What did you rule out?
+      description: |
+        Existing functions, deps, or literature that already cover this.
+        "Add a dependency" needs a reason the current stack cannot do it.
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Files you expect to touch
+      description: Helps keep one worktree and disjoint scopes; includes tests and NEWS.md.
+    validations:
+      required: false
