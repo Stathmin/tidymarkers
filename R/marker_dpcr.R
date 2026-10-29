@@ -461,6 +461,12 @@ scheme_def_dpcr <- function() {
       gate_dpcr_probe_tm = "the probe must out-compete the primers",
       gate_dpcr_primer_tm = "both primers must anneal in the extension window"
     ),
+    # Z8.5: a dPCR result reports these as separate limits, never as one
+    # "sensitivity"; the vocabulary and its definitions live in
+    # marker_performance.R so the report cannot merge them.
+    analytical = c(
+      "LoB", "LoD", "LoQ", "MAF", "false_positive_rate", "partition_count"
+    ),
     stage_label = "dPCR (droplet digital PCR)"
   )
 }

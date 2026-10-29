@@ -521,6 +521,18 @@ marker_decision_text <- function(scheme = "snp", evidence = FALSE) {
       " | zygosity: {info$zygosity} | loci: {info$loci} | amplicon: {info$amplicon}"
     ), ""
   )
+  # Z8.5: a scheme that reports analytical limits lists each one separately.
+  # One "sensitivity" line would make "detectable" a claim with no referent.
+  aq <- scheme_analytical(scheme)
+  if (length(aq)) {
+    out <- c(
+      out,
+      "analytical performance (one quantity per line; never one 'sensitivity'):",
+      purrr::imap_chr(aq, function(def, q) {
+        glue::glue("  {stringr::str_pad(q, 20, side = 'right')} {def}")
+      }), ""
+    )
+  }
   if (!is.null(rung)) {
     own <- rung[match(crit$id, names(rung))]
     own <- own[!is.na(own)]

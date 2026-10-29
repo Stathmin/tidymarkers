@@ -359,7 +359,8 @@ artefact_decisions <- function(solved) {
     return(tibble::tibble(
       target = character(0), chrom = character(0), pos = integer(0),
       ref = character(0), alt = character(0), scheme = character(0),
-      cost = numeric(0), chosen = logical(0), outcome = character(0),
+      analytical = character(0), cost = numeric(0), chosen = logical(0),
+      outcome = character(0),
       verdict = character(0), risk = character(0), n_failed = integer(0),
       failed = character(0), relaxed = character(0), violated = character(0),
       stage = character(0), reason = character(0), discrimination = numeric(0)
@@ -378,13 +379,18 @@ artefact_decisions <- function(solved) {
     is_chosen <- chosen[[k]]
     m <- artefact_lookup(solved, a$label[[k]], a$scheme[[k]])
     d <- artefact_candidate(m)
+    # Z8.5: the decision names the analytical quantities that must be reported
+    # separately for this chemistry (NA when the scheme declares none).
+    aq <- names(scheme_analytical(a$scheme[[k]]))
     tibble::tibble(
       target = as.character(a$label[[k]]),
       chrom = if (is.na(i)) NA_character_ else as.character(tg$chrom[[i]]),
       pos = if (is.na(i)) NA_integer_ else as.integer(tg$pos[[i]]),
       ref = if (is.na(i)) NA_character_ else as.character(tg$ref[[i]]),
       alt = if (is.na(i)) NA_character_ else as.character(tg$alt[[i]]),
-      scheme = a$scheme[[k]], cost = a$cost[[k]], chosen = is_chosen,
+      scheme = a$scheme[[k]],
+      analytical = if (length(aq)) paste(aq, collapse = "; ") else NA_character_,
+      cost = a$cost[[k]], chosen = is_chosen,
       outcome = if (is_chosen) "chosen" else d$outcome,
       verdict = d$verdict, risk = d$risk, n_failed = d$n_failed,
       failed = d$failed, relaxed = d$relaxed, violated = d$violated,
