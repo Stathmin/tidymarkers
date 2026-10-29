@@ -244,9 +244,11 @@ seed_margin <- function(primer_f, primer_r, genome, k = SEED_K) {
 
 #' Is a flanking pair free of a hairpin / homodimer (and palindromes)?
 #'
-#' The structural half of the primer-quality rule.  `TRUE` when OligoArrayAux is
-#' absent (the pass is then "unknown", exactly as a missing `NA` margin would be,
-#' so a bare machine is never blocked by a tool it cannot run).
+#' The structural half of the primer-quality rule.  This is a design-time
+#' *filter*, not a reported check: without OligoArrayAux it answers `TRUE` so a
+#' bare machine still returns a candidate (the design must not be blocked by a
+#' tool it cannot run), and the hairpin/dimer rows of
+#' [marker_design_checks()] remain `NA` - the verdict is `unknown`, never a pass.
 #' @param primer_f,primer_r the pair's oligos.
 #' @param limits thresholds (see `KASP_LIMITS`).
 #' @return a single logical.

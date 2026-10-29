@@ -339,7 +339,7 @@ ESI Table S1 — 4096 измеренных Tm).
 поэтому Tm численно не изменились. Новых пунктов нет.
 
 ### Z4. Движки и capabilities  [P1]
-- [ ] **`Z4.1` Нет движка — `unknown`, не тихий `pass`.** `capabilities()` есть,
+- [x] **`Z4.1` Нет движка — `unknown`, не тихий `pass`.** `capabilities()` есть,
   но не у всех путей: отсутствие OligoArrayAux/BLAST/`crisprScore` местами даёт
   «нет наблюдения» вообще без строки, а не `unknown` с причиной.
   Правка: `R/marker_thermo.R`, `R/marker_specificity.R`, `R/marker_crispr.R` —
@@ -349,6 +349,23 @@ ESI Table S1 — 4096 измеренных Tm).
   Блокер: нет.
   Следствие: отчёт без движка неотличим от отчёта, где проверка просто не
   запускалась, — и `Evaluation` молча короче.
+  - **Сделано 2026-10-29:** `lamp_geometry()` больше не сворачивает отсутствие
+    OligoArrayAux в `fip_3p_stable = TRUE`: зажим/фолд по-прежнему даёт `FALSE`,
+    а неизвестный dG — `NA`; `ok` = `NA` при неизвестности, `failed` считает
+    только `FALSE`, добавлено поле `unknown` — и `design_lamp_marker()` говорит
+    «could not be fully evaluated» (inform), а не «check failed» (warn).
+    `design_snapshot_marker()`: `extension$structure_ok` = `NA` без движка (было
+    `TRUE`) и NULL-сообщение теперь называет гейт, у которого весь margin `NA`
+    (`gate_snapshot_structure`), а не общий «hard gate».
+    `pair_structure_ok()`/`rpa_structure_ok()` — это фильтры выбора, не
+    отчётные поля: они остаются разрешающими, но в `Evaluation` их строки — `NA`
+    (`success = FALSE, status = "unknown"`), поэтому вердикт `unknown`, не `pass`.
+  - **Проверка 2026-10-29:** `test-capabilities.R` + `test-lamp.R` +
+    `test-snapshot.R` — 493 pass, 0 fail; три новые фикстуры «движка нет».
+  - **Следствие:** отсутствие движка больше не читается как «стабильный 3′-конец»
+    и не прячется за общим сообщением, но дизайн, которому структура нужна как
+    жёсткий гейт (SNaPshot), по-прежнему не выдаётся — это названо, а не
+    замаскировано.
 - [ ] **`Z4.2` Ecosystem reuse, not reimplementation.** `crisprVerse`
   (Cas9/Cas12a/Cas13d; Bowtie/BWA; `crisprScore`) для PAM/search/off-target — но
   не как trans-cleavage activity predictor и с оговоркой human-only SNP

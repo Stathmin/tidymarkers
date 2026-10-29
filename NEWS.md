@@ -333,6 +333,14 @@
   гетерозиготы — ещё балансовый множитель по `alt_fraction`) и `confident`.
   Низкопокровная гомозигота больше не считается уверенной (Y5 «гексаплоид и
   глубина»), а `marker_solve()` отбрасывает такие цели гейтом глубины.
+- **Z4.1: отсутствие движка — `unknown`, не `pass`.** `lamp_geometry()` не
+  объявляет 3′‑конец стабильным, когда OligoArrayAux нет: зажим и фолд остаются
+  проверяемыми, а dG становится `NA`; `ok` = `NA`, `failed` — только `FALSE`,
+  появилось поле `unknown`. `design_lamp_marker()` сообщает «could not be fully
+  evaluated», а не «check failed». `design_snapshot_marker()` хранит
+  `structure_ok = NA` и в отказе называет гейт с полностью `NA`-margin.
+  `pair_structure_ok()`/`rpa_structure_ok()` остаются разрешающими фильтрами,
+  но их строки в `Evaluation` — `unknown`, не `pass`.
 - **Z8: провалы собраны, вероятности — нет.** `conversion_rates.csv` несёт
   знаменатель И провалы; разложение полное у **двух** строк — Makhoul S3 и
   Yamagata 2018 Exp. 3 (24 → 18; 3 «нет полиморфизма» + 3 «доминантное

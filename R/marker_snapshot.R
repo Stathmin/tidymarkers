@@ -202,9 +202,23 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
     gate_margin = gate_margin, gate_floor = d$gate_floor
   )
   if (is.null(sel)) {
-    cli::cli_inform(gettext(
-      "The SNaPshot candidate failed a hard gate (extension placement, composition or uniqueness)."
-    ))
+    # name the gate(s) that could not be evaluated at all (all margins NA),
+    # so a missing engine is reported as unknown rather than as a plain
+    # hard-gate failure
+    unknown <- names(gate_margin)[vapply(gate_margin, function(col) {
+      m <- graded[[col]]
+      length(m) > 0L && all(is.na(m))
+    }, logical(1))]
+    if (length(unknown)) {
+      cli::cli_inform(c(
+        gettext("The SNaPshot candidate could not be graded: {paste(unknown, collapse = ', ')} has no value."),
+        i = gettext("A gate whose margin is NA is unknown, not a pass; OligoArrayAux supplies the structure dG.")
+      ))
+    } else {
+      cli::cli_inform(gettext(
+        "The SNaPshot candidate failed a hard gate (extension placement, composition or uniqueness)."
+      ))
+    }
     return(NULL)
   }
   out$selection <- sel
@@ -282,14 +296,20 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
   if (has_oligoarrayaux()) {
     cand$hairpin_dg <- oligo_dg_vec(cand$primer)
     cand$homodimer_dg <- oligo_dg_vec(cand$primer, cand$primer)
+    cand$structure_ok <- cand$hairpin_dg >= limits$hairpin_dg &
+      cand$homodimer_dg >= limits$homodimer_dg
   } else {
+    # without the engine the dG is unknown, so the stored flag is NA (unknown),
+    # never TRUE: a caller must not read a missing tool as a pass
     cand$hairpin_dg <- NA_real_
     cand$homodimer_dg <- NA_real_
+    cand$structure_ok <- NA
   }
-  cand$structure_ok <- (is.na(cand$hairpin_dg) | cand$hairpin_dg >= limits$hairpin_dg) &
-    (is.na(cand$homodimer_dg) | cand$homodimer_dg >= limits$homodimer_dg)
-  if (any(cand$structure_ok)) {
-    cand <- cand[cand$structure_ok, , drop = FALSE]
+  # keep an unknown candidate (it may still be the only pair) but never a
+  # confirmed failure when some candidate is known-good or unknown
+  keep <- is.na(cand$structure_ok) | cand$structure_ok
+  if (any(keep)) {
+    cand <- cand[keep, , drop = FALSE]
   }
   cand$placement <- 1L # the 3' end sits one base from the variant
   cand$dtm <- abs(cand$tm - mean(tm_range))

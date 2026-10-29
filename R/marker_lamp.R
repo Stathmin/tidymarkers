@@ -436,8 +436,16 @@ lamp_geometry <- function(fip, bip, max_product = 300L) {
     c(FIP = NA_real_, BIP = NA_real_)
   }
   stable_3p <- function(nm) {
-    !folds[[nm]] && clamps[[nm]] %in% LAMP_3P_CLAMP &&
-      (is.na(dg[[nm]]) || dg[[nm]] <= LAMP_3P_DG_MAX)
+    # a failed clamp or a self-fold is a real failure the engine is not needed
+    # for; without OligoArrayAux the dG is unknown, so a pair that is otherwise
+    # fine is `NA` (unknown), never a silent pass
+    if (folds[[nm]] || !clamps[[nm]] %in% LAMP_3P_CLAMP) {
+      return(FALSE)
+    }
+    if (is.na(dg[[nm]])) {
+      return(NA)
+    }
+    dg[[nm]] <= LAMP_3P_DG_MAX
   }
   short_loops <- names(loops)[loops < LAMP_LOOP_MIN]
   checks <- c(
@@ -467,6 +475,9 @@ lamp_geometry <- function(fip, bip, max_product = 300L) {
     fip_3p_stability = unstable_msg("FIP"),
     bip_3p_stability = unstable_msg("BIP")
   )
+  failed <- names(checks)[!is.na(checks) & !checks]
+  unknown <- names(checks)[is.na(checks)]
+  ok <- if (length(failed)) FALSE else if (length(unknown)) NA else TRUE
   list(
     f2_b2_distance = f2_b2,
     f2_b2_range = c(LAMP_F2B2_MIN, max_product),
@@ -484,9 +495,12 @@ lamp_geometry <- function(fip, bip, max_product = 300L) {
     fip_3p_stable = unname(checks[["fip_3p_stability"]]),
     bip_3p_stable = unname(checks[["bip_3p_stability"]]),
     checks = checks,
-    ok = all(checks),
-    failed = names(checks)[!checks],
-    messages = unname(messages[!checks])
+    # `NA` means the dG half could not be evaluated (no OligoArrayAux): unknown,
+    # never a pass, and never the same thing as `FALSE`
+    ok = ok,
+    failed = failed,
+    unknown = unknown,
+    messages = unname(messages[failed])
   )
 }
 
@@ -741,11 +755,20 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
   # is not folded into the ladder because FIP's 3'-terminal base is the ALT allele
   # and cannot always be an ideal G/C clamp.
   geo <- lamp_geometry(fip, bip, max_product = max_product)
-  if (!isTRUE(geo$ok)) {
+  if (isFALSE(geo$ok)) {
     cli::cli_warn(c(
       gettext("LAMP primer-set geometry check failed."),
       rlang::set_names(geo$messages, rep("*", length(geo$messages))),
       i = gettext("The set is returned with `geometry$ok = FALSE`; inspect the named check(s).")
+    ))
+  } else if (is.na(geo$ok)) {
+    # no OligoArrayAux: the dG half is unknown, not a pass
+    cli::cli_inform(c(
+      gettext("LAMP primer-set geometry could not be fully evaluated."),
+      i = gettext(paste(
+        "No OligoArrayAux: {paste(geo$unknown, collapse = ', ')} is NA and",
+        "`geometry$ok` is NA, not a pass."
+      ))
     ))
   }
   out <- list(
@@ -846,8 +869,12 @@ print.marker_lamp <- function(x, ...) {
   if (length(x$relaxed)) {
     cat("  (relaxed:", paste(x$relaxed, collapse = ", "), ")\n")
   }
-  if (!is.null(x$geometry) && !isTRUE(x$geometry$ok)) {
-    cat("  geometry FAILED:", paste(x$geometry$failed, collapse = ", "), "\n")
+  if (!is.null(x$geometry)) {
+    if (isFALSE(x$geometry$ok)) {
+      cat("  geometry FAILED:", paste(x$geometry$failed, collapse = ", "), "\n")
+    } else if (is.na(x$geometry$ok)) {
+      cat("  geometry UNKNOWN:", paste(x$geometry$unknown, collapse = ", "), "\n")
+    }
   }
   invisible(x)
 }

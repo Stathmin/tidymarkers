@@ -68,6 +68,8 @@ test_that("LAMP cross-dimer dG is evaluated at the LAMP temperature, not 37 C (Z
 })
 
 test_that("lamp_geometry accepts a well-formed inner-primer pair", {
+  # the stability assertions need the dG engine; without it they are NA, not TRUE
+  skip_if_no_oligoarrayaux()
   # plus-strand template coordinates for the fixture design: F2 ends at the
   # variant (300), B1/B2 sit downstream, and both 3' termini are G/C clamps.
   fip <- list(
@@ -102,7 +104,8 @@ test_that("lamp_geometry names a failed loop / 3'-end geometry", {
   expect_true(g$f2_b2_ok)
   expect_false(g$loop_ok)
   expect_false(g$fip_3p_stable)
-  expect_true(g$bip_3p_stable)
+  # BIP's dG needs the engine; without it the check is NA, never a false failure
+  expect_false(isFALSE(g$bip_3p_stable))
   expect_setequal(g$failed, c("loop_length", "fip_3p_stability"))
   expect_match(paste(g$messages, collapse = " "), "loop")
   expect_match(paste(g$messages, collapse = " "), "FIP 3' end")
