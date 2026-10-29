@@ -567,9 +567,13 @@ marker_check_spec <- function(ways, classes, limits) {
 #' @keywords internal
 #' @noRd
 new_marker_criteria <- function(x) {
+  # `family` must be here: the family check rows are the only ones that carry it,
+  # and dropping it in the constructor would hide the column the spec documents
+  # and every `scope == "family"` reader expects (the bind to the stage rows
+  # leaves it `NA` there, never absent).
   fields <- c(
-    "id", "scope", "stage", "role", "label", "level", "kind", "bounds",
-    "units", "source", "calibrated", "evidence", "evaluator", "hard",
+    "id", "scope", "family", "stage", "role", "label", "level", "kind",
+    "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
     "limit", "order", "schemes"
   )
   miss <- setdiff(fields, names(x))
@@ -603,9 +607,9 @@ vec_ptype2.marker_criteria.marker_criteria <- function(x, y, ...) {
 #' @exportS3Method vctrs::vec_cast
 vec_cast.marker_criteria.marker_criteria <- function(x, to, ...) new_marker_criteria(x)
 
-# A criterion table stays a criterion table when bound to a plain tibble, and a
-# plain tibble is downgraded rather than silently upgraded, so a caller that
-# mixes the two gets a `tbl_df` back instead of a half-typed result.
+# A criterion table stays a criterion table when row-bound through vctrs to a
+# plain tibble, and a plain tibble is downgraded rather than silently upgraded,
+# so the common type of the two is a `tbl_df`, never a half-typed result.
 #' @exportS3Method vctrs::vec_ptype2
 vec_ptype2.marker_criteria.tbl_df <- function(x, y, ...) tibble::as_tibble(x)[0, , drop = FALSE]
 

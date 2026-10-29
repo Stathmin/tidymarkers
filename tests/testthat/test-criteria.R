@@ -185,3 +185,43 @@ test_that("the scheme filter moves the amplicon bound and its limit together (Z2
     )
   }
 })
+
+test_that("the criterion spec keeps its typed class and every documented column (ZA6)", {
+  spec <- tidymarkers:::criterion_spec()
+  expect_s3_class(spec, "marker_criteria")
+  # the constructor must not drop a documented column (it did: `family`)
+  expect_true(all(c("family", "bounds", "evidence", "schemes") %in% names(spec)))
+
+  # family check rows name their family; the marker-agnostic primer/site
+  # checks are also scoped `family` (they apply to every family) and leave the
+  # column `NA` - absent only if the constructor dropped it
+  fam <- spec$scope == "family"
+  expect_gt(sum(fam), 0L)
+  named <- grepl("^family_", spec$id)
+  expect_true(all(named <= fam))
+  expect_false(anyNA(spec$family[named]))
+  expect_true(all(is.na(spec$family[!named])))
+
+  # subsetting restores the class through vctrs, for both row and column cuts
+  expect_s3_class(spec[1:3, ], "marker_criteria")
+  expect_s3_class(spec[spec$role == "gate", ], "marker_criteria")
+  expect_s3_class(spec[, c("id", "label")], "marker_criteria")
+
+  # two classed specs bind to a classed spec, in either order
+  expect_s3_class(dplyr::bind_rows(spec, spec), "marker_criteria")
+  expect_s3_class(dplyr::bind_rows(spec[0, ], spec), "marker_criteria")
+
+  # the vctrs ptype is the contract: a plain tibble on either side downgrades
+  # rather than half-upgrading (dplyr, not vctrs, keeps the class when the typed
+  # frame comes first, so the contract is asserted where it is defined)
+  plain <- tibble::as_tibble(spec)
+  expect_false(inherits(vctrs::vec_rbind(spec, plain), "marker_criteria"))
+  expect_false(inherits(vctrs::vec_rbind(plain, spec), "marker_criteria"))
+})
+
+test_that("the criterion constructor refuses a table missing a documented column", {
+  spec <- tidymarkers:::criterion_spec()
+  bad <- spec[, setdiff(names(spec), "family")]
+  expect_error(tidymarkers:::new_marker_criteria(bad), "missing column")
+  expect_error(tidymarkers:::new_marker_criteria(spec[, c("id", "label")]), "missing column")
+})
