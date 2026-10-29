@@ -248,9 +248,48 @@ backlog <- tibble::tribble(
   "CAPS conversion success (48 designed / 26 unequivocal), and what 'success' meant there",
   "Soybean EST-SNP CAPS", "unfetched"
 )
+# `sources` and `backlog` above are a BASE SUBSET of the committed registries:
+# the remaining rows arrive from data-raw/proposed/*.csv via
+# data-raw/merge-proposals.R.  A plain write_csv here truncated those registries
+# (80 -> 11 sources, 45 -> 15 backlog rows) and silently dropped the
+# `access_detail` column, so both are written through upsert_csv(): existing
+# rows win, only unknown keys are appended, and the file can never shrink.
+# Coerce new values to the registry's column type (the tribbles carry `pmid`
+# as character, read.csv guesses integer) and refuse a coercion that would
+# invent an NA -- that would be silent data loss in the other direction.
+coerce_like <- function(x, proto, nm) {
+  if (is.character(proto)) return(as.character(x))
+  out <- switch(typeof(proto),
+    integer = suppressWarnings(as.integer(x)),
+    double = suppressWarnings(as.numeric(x)),
+    logical = suppressWarnings(as.logical(x)),
+    as.character(x)
+  )
+  if (anyNA(out) && !anyNA(x)) {
+    stop("upsert: column '", nm, "' is ", typeof(proto),
+         " in the registry; new value not coercible without NA")
+  }
+  out
+}
+upsert_csv <- function(new, path, key = "key") {
+  if (fs::file_exists(path)) {
+    old <- utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+    add <- new[!(new[[key]] %in% old[[key]]), , drop = FALSE]
+    for (nm in intersect(names(add), names(old))) {
+      add[[nm]] <- coerce_like(add[[nm]], old[[nm]], nm)
+    }
+    out <- dplyr::bind_rows(old, add)
+    stopifnot(nrow(out) >= nrow(old))
+  } else {
+    out <- new
+  }
+  out <- out[order(out[[key]]), , drop = FALSE]
+  utils::write.csv(out, path, row.names = FALSE)
+  invisible(out)
+}
 backlog <- dplyr::mutate(backlog, verified = FALSE, verified_on = NA_character_)
-readr::write_csv(backlog, fs::path(out_dir, "scientific_backlog.csv"))
-readr::write_csv(sources, fs::path(out_dir, "scientific_sources.csv"))
+upsert_csv(backlog, fs::path(out_dir, "scientific_backlog.csv"))
+upsert_csv(sources, fs::path(out_dir, "scientific_sources.csv"))
 
 ## 2a. Kwok 1990: 3'-terminal mismatch severity classes ------------------------
 # A three-class statement taken from the abstract, NOT a rank of all twelve
