@@ -40,7 +40,9 @@ family_checks <- function(scheme) {
 
 test_that("marker_criteria declares gates, tiers and checks with metadata", {
   crit <- marker_criteria()
-  expect_setequal(unique(crit$role), c("gate", "tier", "check"))
+  # `rule` is the snapshot multiplex-rule class (§U): stated guidance with no
+  # continuous limit, so it is neither a gate, a tier, nor a check.
+  expect_setequal(unique(crit$role), c("gate", "tier", "check", "rule"))
   expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order", "schemes") %in% names(crit)))
   # ZW4: the spec carries the evidence rung (the public view does not expose it yet),
   # right after the deprecated `calibrated` column so no existing column moves
@@ -69,19 +71,64 @@ test_that("marker_criteria declares gates, tiers and checks with metadata", {
   )
 })
 
+test_that("ZW4.6: a criterion names a source only where one states the bar", {
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  map <- tidymarkers:::criterion_sources()
+  # every override points at a real criterion, with a non-empty citation
+  expect_true(all(names(map) %in% spec$id))
+  expect_false(anyNA(map) || any(!nzchar(map)))
+  expect_identical(anyDuplicated(names(map)), 0L)
+  # ZW4.6 moved these rows off the default; every other row keeps it
+  expect_true(all(spec$source[match(names(map), spec$id)] == map))
+  # a row off the map either keeps the default, or (snapshot rules, §U) carries
+  # its citation inline because the source is a whole sentence, not a registry key
+  unnamed <- unique(spec$source[!spec$id %in% names(map)])
+  expect_true(all(
+    unnamed == "package assumption" | grepl("doi:", unnamed, fixed = TRUE)
+  ))
+  # the citation is a KEY of the source registry, not prose a reader cannot look up
+  expect_true(all(map %in% utils::read.csv(tm_extdata("scientific_sources.csv"))$key))
+})
+
+test_that("ZW4.6: every criterion carries a machine-checkable provenance statement", {
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  prov <- utils::read.csv(tm_extdata("criterion_provenance.csv"), stringsAsFactors = FALSE)
+  expect_setequal(names(prov), c("id", "source", "reason_class", "reason"))
+  # one row per criterion, and no criterion left out
+  expect_identical(anyDuplicated(prov$id), 0L)
+  expect_length(prov$id, length(spec$id))
+  expect_setequal(prov$id, spec$id)
+  # the shipped source is the spec's source, so the two cannot drift
+  src <- spec$source[match(prov$id, spec$id)]
+  expect_identical(prov$source, src)
+  allowed <- c(
+    "named_source", "conditions_unstated", "simulator_threshold",
+    "inherited_geometry", "scheme_constant"
+  )
+  expect_false(anyNA(prov$reason_class))
+  expect_true(all(prov$reason_class %in% allowed))
+  expect_true(all(nzchar(prov$reason)))
+  # a named row says so; every default row names why no source states the bar
+  unnamed <- prov$source == "package assumption"
+  expect_true(all(prov$reason_class[!unnamed] == "named_source"))
+  expect_true(all(prov$reason_class[unnamed] %in% setdiff(allowed, "named_source")))
+  expect_true(any(unnamed))
+})
+
 test_that("the check classes partition the registered checks", {
   labels <- marker_criteria()$label[marker_criteria()$role == "check"]
   family_labels <- unique(unlist(lapply(MARKER_FAMILY_CHECKS, names), use.names = FALSE))
   expect_setequal(
     c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS, family_labels), labels
   )
-  # 8 marker-agnostic + 5 site + 14 allele-specific + 29 family-specific = 56
-  # (the 14th is `as_mismatch_type`, Z0.4: the terminal mismatch's Kwok class)
+  # 8 marker-agnostic + 5 site + 14 allele-specific + 30 family-specific = 57
+  # (the 14th is `as_mismatch_type`, Z0.4: the terminal mismatch's Kwok class;
+  # the 30th family check is `family_single_base`, §W)
   expect_length(KASP_CHECK_PRIMER, 8L)
   expect_length(KASP_CHECK_SITE, 5L)
   expect_length(KASP_CHECK_AS, 14L)
-  expect_length(family_labels, 29L)
-  expect_length(labels, 56L)
+  expect_length(family_labels, 30L)
+  expect_length(labels, 57L)
   # distinct classes: a base check is never also family-specific
   expect_length(intersect(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), family_labels), 0L)
   expect_length(intersect(KASP_CHECK_PRIMER, KASP_CHECK_SITE), 0L)
