@@ -21,7 +21,15 @@ zw1_exemptions <- function() {
     "fail; an unclassed substitution pair is reported `unknown`, not `fail`,",
     "so the in-memory suite cannot drive this criterion to `fail`"
   )
-  stats::setNames(reason, "as_mismatch_type")
+  single <- paste(
+    "a multi-base target is refused at design time (`design_*_marker()` returns",
+    "NULL), so no marker reaches grading: `marker_design_checks()` reports",
+    "`unknown`, never `fail`, and the in-memory suite cannot drive it to `fail`"
+  )
+  stats::setNames(
+    c(reason, single),
+    c("as_mismatch_type", "family_single_base")
+  )
 }
 
 # One `id -> test` fixture row.  `file` is a test file under tests/testthat and

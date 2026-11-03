@@ -1,7 +1,7 @@
 # ZW4: the evidence ladder.  A threshold's provenance is an ordered rung, not a
-# boolean, and the rung travels to the verdict.  No scientific source was ever
-# claimed for these numbers, so every row on this base is `rule_of_thumb`; the
-# tests below pin that (no invented provenance) as well as the ladder itself.
+# boolean, and the rung travels to the verdict.  A row may only rise above
+# `rule_of_thumb` when a real source backs it; the tests below pin that (no
+# invented provenance) as well as the ladder itself.
 
 # a minimal one-row registry entry, so `criterion_tbl()` is tested without the
 # whole KASP registry
@@ -119,11 +119,13 @@ test_that("no criterion row claims provenance it does not have", {
   expect_s3_class(spec$evidence, "ordered")
   expect_equal(levels(spec$evidence), tidymarkers:::CRITERION_EVIDENCE)
   expect_false(anyNA(spec$evidence))
-  expect_setequal(as.character(spec$evidence), "rule_of_thumb")
-  # and nothing is promoted to a rung no source backs
-  expect_false(any(as.character(spec$evidence) %in% c(
+  # a rung above the base must name a real source: an unsourced row stays at
+  # `rule_of_thumb`, and a promoted row never says `package assumption`
+  promoted <- spec$evidence %in% c(
     "vendor_guideline", "primary_literature", "fitted_here"
-  )))
+  )
+  expect_false(any(spec$source[promoted] == "package assumption"))
+  expect_true(all(!is.na(spec$source[promoted]) & nzchar(spec$source[promoted])))
   # the deprecated column is still there, unchanged (all FALSE here)
   expect_true("calibrated" %in% names(spec))
   expect_false(anyNA(spec$calibrated))

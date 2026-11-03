@@ -126,16 +126,23 @@ MARKER_CHECK_SIZE <- c(
   "REF/ALT size difference (bp)" = "family_size_delta",
   "fragment size (bp)" = "family_size_fragment"
 )
+# §W: the schemes whose `design_*_marker()` refuses a multi-base target.  One
+# shared id, added to each such family below, so "tree == code" holds for the
+# guard instead of a `cli_inform` that no criterion records.
+MARKER_CHECK_SINGLE_BASE <- c(
+  "target is a single-base substitution" = "family_single_base"
+)
 
 MARKER_FAMILY_CHECKS <- list(
-  caps = MARKER_CHECK_CAPS,
+  caps = c(MARKER_CHECK_CAPS, MARKER_CHECK_SINGLE_BASE),
+  arms = MARKER_CHECK_SINGLE_BASE,
   lamp = MARKER_CHECK_LAMP,
-  rpa = MARKER_CHECK_RPA,
+  rpa = c(MARKER_CHECK_RPA, MARKER_CHECK_SINGLE_BASE),
   crispr = MARKER_CHECK_CRISPR,
-  taqman = MARKER_CHECK_PROBE,
-  dpcr = MARKER_CHECK_PROBE,
-  snapshot = MARKER_CHECK_PROBE,
-  castpcr = MARKER_CHECK_PROBE,
+  taqman = c(MARKER_CHECK_PROBE, MARKER_CHECK_SINGLE_BASE),
+  dpcr = c(MARKER_CHECK_PROBE, MARKER_CHECK_SINGLE_BASE),
+  snapshot = c(MARKER_CHECK_PROBE, MARKER_CHECK_SINGLE_BASE),
+  castpcr = c(MARKER_CHECK_PROBE, MARKER_CHECK_SINGLE_BASE),
   sanger = MARKER_CHECK_SANGER,
   ssr = MARKER_CHECK_SIZE,
   indel_size = MARKER_CHECK_SIZE

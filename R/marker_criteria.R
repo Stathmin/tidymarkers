@@ -124,6 +124,16 @@ CRITERION_EVIDENCE <- c(
   "rule_of_thumb", "vendor_guideline", "primary_literature", "fitted_here"
 )
 
+# The evidence tiers a provenance table may record (the `evidence_tier` column of
+# inst/extdata/snapshot_multiplex_design_rules.csv), and the rung each maps to.
+# The mapping only ever goes DOWN the ladder (a tier never upgrades a rung):
+# `none` states a rule with no quantitative outcome, so it is a rule of thumb.
+CRITERION_TIER_EVIDENCE <- c(
+  moderate = "primary_literature",
+  weak = "vendor_guideline",
+  none = "rule_of_thumb"
+)
+
 #' The evidence rung of a criterion
 #'
 #' A threshold is only as good as where it came from, so every criterion row
@@ -368,6 +378,119 @@ marker_check_ways <- function() {
   )
 }
 
+# Where each criterion's bar comes from, for the rows whose threshold a
+# published source actually STATES.  A criterion is absent when no source states
+# its number, and keeps the `source` its constructor gave it
+# ("package assumption") - naming a vendor default that merely resembles the
+# bar would turn a rule of thumb into a false citation (ZW4.6).
+#
+# Keys are criterion ids.  This is the citable field of `criterion_spec()`:
+# it names the key of the row in inst/extdata/scientific_sources.csv a reader
+# turns to, never the threshold itself (bounds stay in `bounds`).
+criterion_sources <- function() {
+  c(
+    # The mutation-genotyping designs pick a 3' base by Kwok's mismatch rank: a
+    # weak terminal mismatch is what makes the allele-specific primer specific.
+    "as:gate:gate_wobble" = "kwok1990",
+    "as:gate:gate_discrimination" = "kwok1990",
+    "arms:gate:gate_arms_disc" = "kwok1990",
+    "castpcr:gate:gate_castpcr_as3" = "kwok1990",
+    "castpcr:gate:gate_castpcr_mismatch" = "kwok1990",
+    "castpcr:gate:gate_castpcr_blocker" = "kwok1990",
+    # `as_mismatch_type` names its source at its own row in marker_check_ways();
+    # repeating it here keeps the map a complete view of the sourced rows.
+    as_mismatch_type = "kwok1990",
+    # Pairwise dG from the unified nearest-neighbour parameters, secondary
+    # structure filtered thermodynamically.
+    hairpin_dg = "santalucia1998",
+    cross_dimer_dg = "santalucia1998",
+    homodimer_dg = "santalucia1998",
+    "pair:gate:gate_structure" = "santalucia1998",
+    "indel_size:gate:gate_indel_size_structure" = "santalucia1998",
+    "dpcr:gate:gate_dpcr_probe_structure" = "santalucia1998",
+    "taqman:gate:gate_taqman_probe_structure" = "santalucia1998",
+    "snapshot:gate:gate_snapshot_structure" = "santalucia1998",
+    "rpa:gate:gate_rpa_structure" = "santalucia1998",
+    # The Barley ASQ method paper states its own amplicon (50-100 bp) and the
+    # forward primers' Tm window (55-56 C, p. 7) for these two rows.
+    amplicon = "fret_asqpcr2021",
+    "asq:tier:tier1" = "fret_asqpcr2021",
+    # Lobato & O'Sullivan 2018 (a review) states the RPA primer-length,
+    # amplicon and nfo-probe geometry bars the RPA scheme inherited.  The
+    # primer-length sentence is the historical belief the review then softens
+    # (normal PCR primers also work), so the row stays a rule of thumb.
+    "rpa:gate:gate_rpa_primer_len" = "lobato2018",
+    family_rpa_primer_length = "lobato2018",
+    "rpa:gate:gate_rpa_amplicon" = "lobato2018",
+    "rpa:gate:gate_rpa_probe" = "lobato2018"
+  )
+}
+
+# Where a metamorphic invariant deliberately does NOT hold, and why.  A
+# criterion is absent when the rule holds for it; a row that carries a reason
+# is one whose two swapped inputs are not interchangeable, so asserting
+# symmetry over it would be asserting a falsehood (ZW0.1).
+#
+# Keys are criterion ids, values one sentence a reviewer can check against the
+# design code - the reason names the structural fact that breaks the symmetry,
+# never a bare "exception".
+criterion_asymmetry <- function() {
+  c(
+    # KASP: `AS_ref` is built on the FAM tail and `AS_alt` on the HEX tail
+    # (R/marker_assemble.R), while both sit at the same AS concentration
+    # (R/marker_mix.R).  The gates grade the chosen allele-specific primer, not
+    # the dye it lands on, so swapping REF/ALT changes which allele a fluorophore
+    # reports even though neither primer changed.
+    "as:gate:gate_discrimination" = paste0(
+      "KASP fluorophore asymmetry: AS_ref carries the FAM tail and AS_alt the HEX ",
+      "tail (marker_assemble.R), so swapping REF/ALT moves an allele to another ",
+      "fluorophore though the AS recipe is identical."
+    ),
+    "as:gate:gate_wobble" = paste0(
+      "KASP fluorophore asymmetry: the wobble gate grades the chosen AS primer ",
+      "once, while its allele is pinned to FAM or HEX by the tail, so the pair is ",
+      "not mirrorable across REF/ALT."
+    ),
+    "as:gate:gate_as_footprint" = paste0(
+      "KASP fluorophore asymmetry: the footprint gate is judged on AS_ref/AS_alt ",
+      "as placed on the FAM/HEX tails, so a REF/ALT swap re-assigns the graded ",
+      "primer to the other dye slot."
+    ),
+    "as:gate:gate_as_window" = paste0(
+      "KASP fluorophore asymmetry: the AS window gate reports the primer in its ",
+      "fixed FAM or HEX slot, so the REF/ALT image of the probe set is a different ",
+      "probe set, not the same one relabelled."
+    ),
+    # LAMP: FIP is built with the ALT allele at the 3' arm and its 3' end anchors
+    # BIP (R/marker_lamp.R); `lamp_fuse()` also requires each inner primer's 5'
+    # loop arm to be hotter than its 3' displacement arm.  FIP and BIP are
+    # therefore neither interchangeable with each other nor mirrorable.
+    "family_lamp_fip_alt" = paste0(
+      "LAMP FIP/BIP asymmetry: only FIP reads the variant, with the ALT base at ",
+      "the 3' terminus of its displacement arm, so BIP cannot host the same check."
+    ),
+    "family_lamp_inner_tm_balance" = paste0(
+      "LAMP FIP/BIP asymmetry: each inner primer must have a 5' loop arm hotter ",
+      "than its 3' displacement arm (lamp_fuse), so the FIP and BIP Tm patterns are ",
+      "constrained separately and cannot be exchanged."
+    ),
+    "family_lamp_fip_variant" = paste0(
+      "LAMP FIP/BIP asymmetry: the variant is a fixed feature of FIP's 3' arm, ",
+      "and BIP is placed downstream of FIP (lamp_bip from fip$arm3), so the two ",
+      "inner primers are positionally and functionally distinct."
+    ),
+    "lamp:gate:gate_lamp_variant" = paste0(
+      "LAMP FIP/BIP asymmetry: discrimination is scored at the FIP 3' terminus ",
+      "(or a loop primer), never at BIP, which lies downstream of the variant."
+    ),
+    "lamp:gate:gate_lamp_inner_tm" = paste0(
+      "LAMP FIP/BIP asymmetry: FIP's 3' base is the ALT allele so it cannot always ",
+      "be a G/C clamp, making the inner-primer Tm gate deliberately weaker for FIP ",
+      "than for BIP."
+    )
+  )
+}
+
 # The numeric KASP-family bars, read from the limit object in force.
 marker_check_bounds <- function(limits) {
   tol <- limits$footprint_dropout %||% 0.05
@@ -468,7 +591,15 @@ marker_family_check_ways <- function() {
     "size", "REF/ALT size difference (bp)", "alignment", "numeric", "c(3, Inf)", "bp",
     ">= 3 bp", "package assumption", "size_delta",
     "size", "fragment size (bp)", "alignment", "numeric", NA, "bp",
-    "scheme window", "package assumption", "size_fragment"
+    "scheme window", "package assumption", "size_fragment",
+    # §W: the scheme's design function refuses a multi-base target (see the
+    # `cli_inform` in each `design_*_marker()`), so the scheme's inability is
+    # recorded here as a criterion instead of only as console text.  A marker
+    # that reaches grading with a multi-base target is `unknown` (the design was
+    # never evaluated for it), never a silent pass.  One shared row: the families
+    # that declare it in MARKER_FAMILY_CHECKS do the scoping.
+    "single_base", "target is a single-base substitution", "site", "boolean", "= 1", NA,
+    "REF/ALT 1 nt each", "package assumption", "single_base"
   )
 }
 
@@ -530,6 +661,72 @@ marker_family_check_rows <- function() {
   )
 }
 
+# Every rule in the SNaPshot provenance table, as a registry row.  One row per
+# CSV rule id, `moderate` / `weak` / `none` mapped DOWN the ladder by
+# CRITERION_TIER_EVIDENCE (never upgraded), and the DOI / PMCID the CSV records
+# carried in `source` - these papers are not in inst/extdata/scientific_sources.csv,
+# so there is no `criterion_sources()` key to name instead.
+#
+# `label` is the rule id: a paper's prose is a sentence, not a criterion name, and
+# the CSV holds no short label per rule.  Role `rule`, not `check`: no designer
+# evaluates these, so they must not enter the decision graph (which draws every
+# `stage == "assay"` row) nor a verdict (which reads every `role == "check"` row).
+# `stage = "snapshot"` is the scheme's own stage id, the same shape a discovered
+# scheme's stage rows take.
+# shortcut: the table is read on every `criterion_spec()` call, install it as
+# package data if that call ever shows up in a profile.
+snapshot_rule_spec <- function() {
+  # full provenance strings are held once, so each rule row stays readable and
+  # under the line-length limit
+  src_atanasovska <- "atanasovska2012 doi:10.1371/journal.pone.0048167 PMCID:PMC3482202"
+  src_namdar <- "namdar2023 doi:10.52547/ibj.3856 PMCID:PMC9971712"
+  src_coutinho <- "coutinho2014 doi:10.1371/journal.pone.0093292 PMCID:PMC3966882"
+  src_zhao <- "zhao2026 doi:10.1186/s12864-026-13173-0 PMCID:PMC13644189"
+  src_dicristofaro <- "dicristofaro2010 doi:10.2353/jmoldx.2010.090222 PMCID:PMC2893629"
+  src_fanis <- "fanis2014 doi:10.1186/1471-2164-15-108 PMCID:PMC3922441"
+  src_mrazkova <- "mrazkova2021 doi:10.3390/diagnostics11020301 PMCID:PMC7918147"
+  rule <- function(id, level, tier, source) {
+    criterion_tbl(
+      id = paste0("family_", id), scope = "family", stage = "snapshot",
+      role = "rule", label = id, level = level, kind = "categorical",
+      bounds = lapply(id, function(.) "stated"),
+      units = NA_character_, source = source, calibrated = FALSE,
+      evidence = unname(CRITERION_TIER_EVIDENCE[[tier]]), evaluator = id
+    ) |>
+      dplyr::mutate(family = "snapshot", .after = "scope")
+  }
+  rows <- dplyr::bind_rows(
+    rule("sbe_3prime_adjacent", "feature", "moderate", src_atanasovska),
+    rule("sbe_3prime_no_flexibility", "feature", "moderate", src_atanasovska),
+    rule("sbe_core_length", "feature", "moderate", src_namdar),
+    rule("sbe_spacing_min", "alignment", "moderate", src_atanasovska),
+    rule("sbe_spacing_used_4bp", "alignment", "weak", src_coutinho),
+    rule("sbe_spacing_used_ct5bp", "alignment", "weak", src_zhao),
+    rule("sbe_tail_5prime", "feature", "moderate", src_namdar),
+    rule("sbe_tail_keeps_tm", "feature", "moderate", src_atanasovska),
+    rule("sbe_amp_primer_tm", "feature", "weak", src_namdar),
+    rule("sbe_sbe_tm_gc_window", "feature", "weak", src_zhao),
+    rule("sbe_inter_primer_tm_delta", "feature", "weak", src_zhao),
+    rule("sbe_primer_ratio_reported", "feature", "none", src_dicristofaro),
+    rule("sbe_peak_height_floor", "alignment", "weak", src_dicristofaro),
+    rule("sbe_het_balance_floor", "alignment", "weak", src_zhao),
+    rule("sbe_dye_yield_asymmetry", "alignment", "weak", src_dicristofaro),
+    rule("sbe_structure_check", "feature", "moderate", src_atanasovska),
+    rule("sbe_nonhomologous_window", "alignment", "weak", src_fanis),
+    rule("sbe_no_template_control", "alignment", "moderate", src_mrazkova),
+    rule("sbe_apply_format", "feature", "weak", src_dicristofaro)
+  )
+  # the rung is read back from the CSV, so the code's copy of the tier can never
+  # silently disagree with the recorded provenance
+  csv <- utils::read.csv(
+    system.file("extdata", "snapshot_multiplex_design_rules.csv", package = "tidymarkers"),
+    stringsAsFactors = FALSE
+  )
+  tier <- csv$evidence_tier[match(sub("^family_", "", rows$id), csv$rule_id)]
+  rows$evidence <- unname(CRITERION_TIER_EVIDENCE[tier])
+  rows
+}
+
 # One acceptance check as a registry row: its placement (the scheme stage that
 # selects it) comes from the class it reports under, its limit from the bound.
 marker_check_spec <- function(ways, classes, limits) {
@@ -574,7 +771,7 @@ new_marker_criteria <- function(x) {
   fields <- c(
     "id", "scope", "family", "stage", "role", "label", "level", "kind",
     "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
-    "limit", "order", "schemes"
+    "limit", "order", "schemes", "asymmetry_reason"
   )
   miss <- setdiff(fields, names(x))
   if (length(miss)) {
@@ -637,8 +834,10 @@ vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 #' `"package assumption"` where no literature value was claimed), the
 #' `evidence` rung behind it (an ordered factor, see
 #' `criterion_evidence()`; every row on this base is `"rule_of_thumb"` because no
-#' source was ever claimed for these numbers), and the `evaluator` that produces
-#' the observed value.
+#' source was ever claimed for these numbers), the `evaluator` that produces
+#' the observed value, and the `asymmetry_reason` that names the structural
+#' fact breaking a metamorphic symmetry for the rows where one deliberately
+#' does not hold (`NA` everywhere else, see `criterion_asymmetry()`; ZW0.1).
 #'
 #' This is internal because `bounds` is only meaningful together with the
 #' `limits` in force; [marker_criteria()] is the public view, and its `limit`
@@ -723,13 +922,23 @@ criterion_spec <- function(limits = KASP_LIMITS) {
 
   ways <- marker_check_ways()
   checks <- marker_check_spec(ways, marker_check_classes(), limits)
+  # SNaPshot literature rows (ROADMAP §U) are sourced claims, not evaluations:
+  # they keep `role = "rule"` for their whole life, so no reader that selects
+  # `role == "check"` (or an `assay`-stage row) can show one as an evaluation
   checks <- dplyr::bind_rows(checks, marker_family_check_spec())
+  # `family` must exist on every row before the subset: tibble subsetting treats
+  # a missing first column as all-`NA`, which `[` then drops
+  checks$family <- checks$family %||% rep(NA_character_, nrow(checks))
+  checks <- checks[checks$role %in% c("gate", "check"), , drop = FALSE]
   checks$order <- seq_len(nrow(checks))
   # `schemes` is decided by the check's *class* (marker-agnostic / site / allele
   # specific / family), which the class rules recognise by their registered
   # labels; family membership itself is by id (see `check_schemes()`).
   checks$schemes <- check_schemes(checks$label)
 
+  # the SNaPshot provenance rows (inst/extdata/snapshot_multiplex_design_rules.csv)
+  # keep the rung the CSV records; they are bound last so the per-scheme defaults
+  # of `extra` above cannot overwrite them
   extra <- extra_stage_rows()
   if (!is.null(extra)) {
     n <- nrow(extra)
@@ -741,14 +950,31 @@ criterion_spec <- function(limits = KASP_LIMITS) {
     extra$evidence <- "rule_of_thumb"
     extra$evaluator <- extra$role
   }
-
-  out <- dplyr::bind_rows(stages, checks, extra)
+  rules <- snapshot_rule_spec()
+  # set here, after `check_schemes()` ran on the checks: the rules all serve one
+  # scheme and are not on any class the membership map knows
+  rules$schemes <- rep(list("snapshot"), nrow(rules))
+  rules$order <- nrow(checks) + seq_len(nrow(rules))
+  out <- dplyr::bind_rows(stages, checks, extra, rules)
+  out <- out[out$role %in% c("gate", "tier", "check", "rule"), , drop = FALSE]
+  # ZW4.6: overlay the rows whose bar a published source states; every other
+  # row keeps the constructor's "package assumption".
+  src <- criterion_sources()
+  hit <- match(out$id, names(src))
+  out$source[!is.na(hit)] <- src[hit[!is.na(hit)]]
+  # ZW0.1: declare where a metamorphic invariant deliberately does not hold;
+  # every other row is symmetric and stays `NA`.
+  asym <- criterion_asymmetry()
+  hit <- match(out$id, names(asym))
+  out$asymmetry_reason <- rep(NA_character_, nrow(out))
+  out$asymmetry_reason[!is.na(hit)] <- unname(asym[hit[!is.na(hit)]])
   # `evidence` is appended right after the deprecated `calibrated` so that no
   # existing column moves (downstream code indexes the spec positionally).
+  # `asymmetry_reason` is appended last for the same reason (ZW0.1).
   cols <- c(
     "id", "scope", "family", "stage", "role", "label", "level", "kind",
     "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
-    "limit", "order", "schemes"
+    "limit", "order", "schemes", "asymmetry_reason"
   )
   # `bind_rows()` drops an ordered factor's class when the other side of the bind
   # is a plain character column, so the ladder is re-imposed once, on the whole

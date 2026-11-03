@@ -186,3 +186,29 @@ test_that("ZW0 M1: a revcomp locus is not representable in a strandless model", 
   # A:T and C:G self-pair, so mirroring REF/ALT collapses for half the bases
   expect_true(rc("A") == "T" && rc("C") == "G")
 })
+
+test_that("ZW0.1: a deliberate invariant asymmetry is declared with a reason", {
+  spec <- tidymarkers:::criterion_spec()
+  map <- tidymarkers:::criterion_asymmetry()
+  # the registry publishes the exception, so it is no longer a footnote in a test
+  expect_true("asymmetry_reason" %in% names(spec))
+  expect_type(spec$asymmetry_reason, "character")
+  # every declared asymmetry names a real criterion, once, with a real sentence
+  expect_true(all(names(map) %in% spec$id))
+  expect_identical(anyDuplicated(names(map)), 0L)
+  expect_false(anyNA(map) || any(!nzchar(map)))
+  # the two asymmetries ZW0.1 requires: KASP FAM/HEX and LAMP FIP/BIP
+  expect_true(all(c(
+    "as:gate:gate_discrimination", "as:gate:gate_wobble",
+    "as:gate:gate_as_footprint", "as:gate:gate_as_window",
+    "family_lamp_fip_alt", "family_lamp_inner_tm_balance",
+    "family_lamp_fip_variant", "lamp:gate:gate_lamp_variant",
+    "lamp:gate:gate_lamp_inner_tm"
+  ) %in% names(map)))
+  # no other row carries one, and every carried one is non-empty
+  expect_setequal(spec$id[!is.na(spec$asymmetry_reason)], names(map))
+  expect_false(any(!nzchar(spec$asymmetry_reason[!is.na(spec$asymmetry_reason)])))
+  expect_true(all(spec$asymmetry_reason[match(names(map), spec$id)] == unname(map)))
+  # and the column is append-only: no existing column moved
+  expect_identical(names(spec)[[length(names(spec))]], "asymmetry_reason")
+})
