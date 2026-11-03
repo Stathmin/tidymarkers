@@ -1,0 +1,2 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"santalucia1998","scientific_sources.csv","report","","the nearest-neighbour dG behind the hairpin/dimer criteria","R/marker_criteria.R criterion_sources() cites this source for the hairpin, homodimer and cross-dimer dG rows and the structure gates; the registry is the extract, there is no measured table."

@@ -1,0 +1,4 @@
+"source_key","extract","use","test_file","verdict_moved","reason"
+"bai2025_aegilops","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 21 SNPs converted to KASP, 6 distinct clusters; failures not decomposed",""
+"shen2026_jujube","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 40 core SNPs -> 23 functional KASP, aggregate only",""
+"thakur2026_bittergourd","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 11 KASP designed -> 5 polymorphic; failures not decomposed",""

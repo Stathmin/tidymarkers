@@ -1,0 +1,6 @@
+source_key,extract,use,test_file,verdict_moved,reason
+meng2026_soybean_kasp,meng2026_soybean_per_assay.csv,report,,"6 soybean KASP rows: 2 worked, 4 not_attempted; no failure row","Six exonic SNPs were prioritised; two were submitted to KASP and both resolved homozygous clusters on 336 accessions. The remaining four were never submitted, so the paper reports no failed assay: this is a positive-class extract with no negative class, not a calibration set."
+rosso2021_soybean_kasp,scientific_sources.csv,report,,"read; aggregate 3/5 converted only, no per-assay row","The paper prints no per-assay failure rows and never names the 2 non-converted SNPs; writing a conversion_rates.csv row is the owner of data-raw/mismatch-discrimination.R's call, and an n_failed=0 row would bias any pooled rate (Z8.3)."
+corpus_shared,soybean_worked_panel_assays.csv,test,test-soybean-worked-panel.R,"36 assays, no outcome column: status NA for 32, redesigned for 4",
+corpus_shared,soybean_worked_panel_primers.csv,test,test-soybean-worked-panel.R,85 oligos; printed Tm reproduced by primer_tm() with the SantaLucia salt correction,
+corpus_shared,soybean_worked_panel_kasp_gates.csv,test,test-soybean-worked-panel.R,13 KASP sets graded against the package's own acceptance gates,
