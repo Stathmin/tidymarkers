@@ -8,7 +8,7 @@ gates (hard = never relaxed), all applied to the same candidates (AND):
   ! HARD  extension composition  GC 30-70 %, no run >= 4, no SSR
   ! HARD  extension primer uniqueness exactly one perfect extension-primer site in the genome
   - soft  extension structure    hairpin/homodimer dG (reaction T) >= -3
-  - soft  extension primer Tm    extension primer Tm within [50, 55] C
+  - soft  extension primer Tm    extension primer Tm within [50, 60] C
   - soft  amplicon length        amplicon within [100, 300] bp
 relaxation ladder (least grave first):
   1. amplicon length        floor: widen the amplicon window by 50 bp
@@ -53,6 +53,7 @@ edges:
   check   probe Tm - primer Tm (C)           >= 5 C
   check   ASP 3' discrimination              > 0
   check   extension 3' at variant            adjacent
+  check   target is a single-base substitution REF/ALT 1 nt each
   (reported, not re-selecting: a failed check flags the chosen marker)
 
 edges:
@@ -67,7 +68,8 @@ edges:
   probe spans variant      -check -> probe Tm - primer Tm (C)
   probe Tm - primer Tm (C) -check -> ASP 3' discrimination
   ASP 3' discrimination    -check -> extension 3' at variant
-  extension 3' at variant  -check -> all checks pass?
+  extension 3' at variant  -check -> target is a single-base substitution
+  target is a single-base substitution -check -> all checks pass?
   all checks pass?         -pass  -> usable SNaPshot marker
   all checks pass?         -fail  -> DOOMED
 

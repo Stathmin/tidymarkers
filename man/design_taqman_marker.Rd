@@ -14,6 +14,7 @@ design_taqman_marker(
   probe_lengths = 18:25,
   primer_tm = KASP_LIMITS$com_tm,
   probe_tm = c(56, 72),
+  probe_modification = c("none", "mgb", "lna"),
   gc_range = KASP_LIMITS$gc,
   min_centrality = 0.5,
   engines = NULL,
@@ -34,6 +35,10 @@ design_taqman_marker(
 \item{primer_tm}{accepted flanking-primer Tm window.}
 
 \item{probe_tm}{accepted probe Tm window (see the Tm-scale assumption above).}
+
+\item{probe_modification}{probe chemistry modifier: \code{"none"} (default),
+\code{"mgb"} (shift the probe Tm window down by the sourced Kutyavin 2000 3'-MGB
+gain, a rule of thumb), or \code{"lna"} (unsupported; the source has no LNA arm).}
 
 \item{gc_range}{accepted GC window (primers and probes).}
 

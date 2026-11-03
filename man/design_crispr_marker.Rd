@@ -62,9 +62,16 @@ track; when absent, CRISPR warns that guide/PAM conservation is unchecked.}
 \value{
 a \code{marker_crispr} list (\code{snp}, \code{cas}, \code{strand}, \code{guide}, \code{pam}, \code{pfs},
 \code{pfs_side}, \code{guide_start}, \code{guide_end}, \code{seed_offset}, \code{gc}, \code{amplicon},
-\code{off_target}, \code{gates}, \code{relaxed}), or \code{NULL} (with a message) when no
-guide / amplicon passes the hard gates.  \code{pam} is \code{NA} for Cas13;
-\code{pfs}/\code{pfs_side} are \code{NA} for Cas12a.
+\code{off_target}, \code{candidates}, \code{simulated}, \code{kinetics}, \code{gates}, \code{relaxed}), or
+\code{NULL} (with a message) when no guide / amplicon passes the hard gates.
+\code{pam} is \code{NA} for Cas13; \code{pfs}/\code{pfs_side} are \code{NA} for Cas12a.  \code{candidates}
+is every guide that passed the PAM/PFS, seed and specificity gates at the
+chosen rung, best-first (\code{start}, \code{end}, \code{len}, \code{strand}, \code{spacer}, \code{pam},
+\code{pfs}, \code{pfs_side}, \code{gc}, \code{v_off}, \code{off_target}, \code{chosen}, \code{not_chosen});
+\code{chosen} marks the returned guide, \code{not_chosen} names why the others were
+not picked (\code{lower_ranked}, \code{no_preamp_pair}, \code{off_target_protospacer},
+\code{specificity_unscanned}).  \code{simulated} is
+\code{FALSE} and \code{kinetics} \code{"unknown"}: the reporter kinetics are not modelled.
 }
 \description{
 The Cas-mediated detection analogue of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}: an isothermal

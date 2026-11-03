@@ -52,7 +52,8 @@ the assay carries \verb{$population}, the rows of \code{marker_population_checks
 appended as checks, so a CAPS site that is not polymorphic, a CRISPR guide or
 PAM that is not conserved, or a primer sitting on a variant is a \code{fail}, and an
 ALT frequency that is not known is \code{unknown} - never a pass.  The warnings are
-unchanged; the status is additive.
+unchanged; the status is additive.  The dosage axis is appended as its own
+\verb{allele dosage} row, never as a frequency rule (see \code{marker_dosage_gate()}).
 }
 \examples{
 \dontrun{

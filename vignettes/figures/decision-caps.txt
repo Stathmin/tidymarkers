@@ -50,6 +50,7 @@ edges:
   check   band gap (bp)                      >= 20 bp
   check   digest sums to amplicon            REF/ALT = product
   check   restriction site conserved (population) yes
+  check   target is a single-base substitution REF/ALT 1 nt each
   (reported, not re-selecting: a failed check flags the chosen marker)
 
 edges:
@@ -65,7 +66,8 @@ edges:
   restriction site separates alleles -check -> band gap (bp)
   band gap (bp)            -check -> digest sums to amplicon
   digest sums to amplicon  -check -> restriction site conserved (population)
-  restriction site conserved (population) -check -> all checks pass?
+  restriction site conserved (population) -check -> target is a single-base substitution
+  target is a single-base substitution -check -> all checks pass?
   all checks pass?         -pass  -> usable CAPS marker
   all checks pass?         -fail  -> DOOMED
 

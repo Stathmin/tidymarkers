@@ -7,7 +7,9 @@
 restriction_enzymes()
 }
 \value{
-tibble with \code{enzyme}, \code{site}, \code{cut}.
+tibble with \code{enzyme}, \code{site}, \code{cut}, and \code{isoforms} - the other
+catalogue enzymes that read the same sequence and cut it at the same place
+(the nuclease switch; empty for a singleton).
 }
 \description{
 The recognition site (IUPAC) and the top-strand cut position (bases from the

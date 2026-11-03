@@ -2,6 +2,9 @@ Sanger sequencing (dideoxy read-out) - decision graph
 
 discrimination: direct base call of the variant | readout: dideoxy chromatogram (capillary) | zygosity: co-dominant (direct read) | loci: 1 | amplicon: 400-800 bp
 
+analytical performance (one quantity per line; never one 'sensitivity'):
+  MAF                  minor-allele fraction: the lowest variant fraction the assay resolves
+
 == stage sanger (Sanger amplicon) ==
 gates (hard = never relaxed), all applied to the same candidates (AND):
   ! HARD  variant from read start variant >= 50 bp from each read start

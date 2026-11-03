@@ -31,6 +31,7 @@ Other KASP input:
 \code{\link[=genome_chroms]{genome_chroms()}},
 \code{\link[=genome_length]{genome_length()}},
 \code{\link[=genome_seq]{genome_seq()}},
+\code{\link[=marker_as_granges]{marker_as_granges()}},
 \code{\link[=marker_cache_dir]{marker_cache_dir()}},
 \code{\link[=marker_example]{marker_example()}},
 \code{\link[=marker_genome]{marker_genome()}},
@@ -40,6 +41,7 @@ Other KASP input:
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
 \code{\link[=read_variant_depth]{read_variant_depth()}},
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
-\code{\link[=snp_template]{snp_template()}}
+\code{\link[=snp_template]{snp_template()}},
+\code{\link[=write_variants_vcf]{write_variants_vcf()}}
 }
 \concept{KASP input}

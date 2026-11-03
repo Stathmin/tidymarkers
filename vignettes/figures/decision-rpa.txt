@@ -53,6 +53,7 @@ edges:
   check   THF off variant                    yes
   check   RPA probe spans variant            yes
   check   variant under primer/probe         yes
+  check   target is a single-base substitution REF/ALT 1 nt each
   (reported, not re-selecting: a failed check flags the chosen marker)
 
 edges:
@@ -67,7 +68,8 @@ edges:
   primer length (nt)       -check -> THF off variant
   THF off variant          -check -> RPA probe spans variant
   RPA probe spans variant  -check -> variant under primer/probe
-  variant under primer/probe -check -> all checks pass?
+  variant under primer/probe -check -> target is a single-base substitution
+  target is a single-base substitution -check -> all checks pass?
   all checks pass?         -pass  -> usable RPA assay
   all checks pass?         -fail  -> DOOMED
 

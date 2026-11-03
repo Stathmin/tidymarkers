@@ -26,7 +26,9 @@ find_caps_enzymes(
 \value{
 tidy tibble, one row per enzyme with \code{n_sites_ref}, \code{n_sites_alt},
 \code{fragments_ref}, \code{fragments_alt}, \code{site_change} (a recognition site is
-gained/lost, not just a length shift), \code{gap} and \code{resolvable}, sorted by
+gained/lost, not just a length shift), \code{isoforms} (other catalogue enzymes that
+read and cut the same sequence - the nuclease switch), \code{gap} and
+\code{resolvable}, sorted by
 decreasing \code{resolvable} then \code{gap}.
 }
 \description{

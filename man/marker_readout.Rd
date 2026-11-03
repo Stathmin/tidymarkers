@@ -10,13 +10,16 @@ marker_readout(marker)
 \item{marker}{a designed marker (a \verb{marker_*} object).}
 }
 \value{
-a list: \code{scheme}, \code{simulated} (logical), \code{model}, \code{note}, \code{table}.
+a list: \code{scheme}, \code{simulated} (logical), \code{model}, \code{note}, \code{table}, and
+for a simulated \code{dpcr} marker also \code{partition}.
 }
 \description{
 A design carries constructs, not a signal: this returns the readout model's
 output when the scheme simulated one (a \code{table}, currently the hydrolysis-probe
 discrimination) and otherwise an explicit assumption of what is \emph{not} modelled,
-so a design never reads as a promise of kinetics.
+so a design never reads as a promise of kinetics.  A \code{dpcr} marker that carries
+the probe readout also carries \code{partition}, the Poisson projection of the
+counting law (\code{\link[=dpcr_partition_table]{dpcr_partition_table()}}).
 }
 \examples{
 \dontrun{
