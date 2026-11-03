@@ -32,7 +32,8 @@ enzyme is Bst polymerase with strand displacement.
 [Notomi et al. (2000)](https://doi.org/10.1093/nar/28.12.e63).
 
 For a marker the variant is placed at the **3' end of FIP (the F2 arm)**: that
-is where extension starts, and a mismatch suppresses the reaction. B3 is built
+is where extension starts, and a 3'-terminal mismatch suppresses the reaction
+(less reliably for the well-extended wobble pairs). B3 is built
 on the minus strand, and FIP as F1c + F2; a swapped orientation breaks the
 loop. Optional loop primers speed up the reaction but are not required.
 
@@ -216,6 +217,13 @@ discrepancies between the DAG (`vignettes/figures/decision-lamp.txt`,
 not relaxed, soft ones follow the ladder, and `check:` nodes sit after `best`
 and are not gates.
 
+The [decision audit](../docs/decision-audit.md) states, for every gate below,
+where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
+All 10 `lamp` rows are `package assumption`; in `rpa` only the structure gate
+names a source (`santalucia1998` ΔG), so every Tm window and probe geometry below
+is unsourced. A `santalucia1998` ΔG or a `TmCalculator` Tm is **model** output,
+a prediction and not a measurement.
+
 ```{r, echo = FALSE, out.width = "100%"}
 knitr::include_graphics("figures/decision-lamp.svg")
 ```
@@ -234,15 +242,15 @@ implemented. None of this needs reworking.
 | Node / check | What executes | What the figure shows | Weak spot |
 |---|---|---|---|
 | LAMP `gate_lamp_variant` | constant `TRUE`; FIP 3' = REF base | FIP 3' ends on the variant | ALT is not read; REF/ALT are not compared |
-| LAMP inner Tm | `pmax` of the two arm Tms in [55, 65] | Tm of FIP 73.6, BIP 74.9 (red) | this is the Tm of the whole 40–48 nt fusion, not of an arm; the arm ΔTm is not gated, and with an equal loop `pmax` ranking may prefer 55/60 over the pair 59/61 |
-| LAMP outer Tm | soft [55, 62], relaxation +3 °C | Tm of F3 57.2, B3 57.3 (red) | `marker_tm_window()` colours them by [58, 65] |
-| LAMP structure / dimers | `has_palindrome()` (hard) + pooled `primer_set_compatibility()`: cross < 8 bp, self <= 6 | inv. repeat 0; dimer -5.6, homodimer -5.4 (green) | dG37 at 37 °C, not at 60–65 °C; the 3' end is not checked separately; the amplicon is not checked |
+| LAMP inner Tm | `pmax` of the two arm Tms in [55, 65] (**threshold**) | Tm of FIP 73.6, BIP 74.9 (red, **model**) | this is the Tm of the whole 40–48 nt fusion, not of an arm; the arm ΔTm is not gated, and with an equal loop `pmax` ranking may prefer 55/60 over the pair 59/61 |
+| LAMP outer Tm | soft [55, 62] (**threshold**), relaxation +3 °C | Tm of F3 57.2, B3 57.3 (red, **model**) | `marker_tm_window()` colours them by [58, 65] |
+| LAMP structure / dimers | `has_palindrome()` (hard) + pooled `primer_set_compatibility()`: cross < 8 bp (**threshold**), self <= 6 (**threshold**) | inv. repeat 0; dimer -5.6, homodimer -5.4 (green, **model** dG) | dG37 at 37 °C, not at 60–65 °C; the 3' end is not checked separately; the amplicon is not checked |
 | LAMP loop | loop between arms >= 16 nt; LF/LB 15–24 nt; optional | no LF/LB in the figure | six-primer geometry is not gated; the loop may abut an arm |
 | RPA primer length | gated on the caller's `primer_len` | the DAG states [30, 35] | `primer_len = 20:25` passes; relaxation is ±3 around the input (17–28), not 27–38 (for the default 30–35) |
 | RPA `gate_rpa_variant` | constant `TRUE`; in probe mode the primers flank the variant | variant under the probe | a hard node cannot fire; ALT is not read |
-| RPA Tm | `RPA_NO_TM`; Tm only ranks the pair ΔTm | Tm of F/R 69.5 (blue, neutral) | no absolute window and no ΔTm threshold; the probe Tm is neither gated nor shown |
-| RPA probe | 46–52 nt; THF >= 30/>= 15; FQ <= 4; THF = clamp(variant, [31, len-15]) | X about 11 nt from the variant | if the THF lands on the variant, the base is replaced by X — there is no allele contrast; the mismatch–THF distance is not gated; the probe may abut a primer |
-| RPA structure | `rpa_structure_ok(pair)`: dG37 of the pair only | dimer -4.8, hairpin 0.0, homodimer -4.8 (pair) | the probe with `X` is excluded from `marker_primer_checks()`; without OligoArrayAux the gate is `NA` and the DAG has no "unknown" status |
+| RPA Tm | `RPA_NO_TM`; Tm only ranks the pair ΔTm (**model**, ranking only) | Tm of F/R 69.5 (blue, neutral) | no absolute window and no ΔTm threshold; the probe Tm is neither gated nor shown |
+| RPA probe | 46–52 nt; THF >= 30/>= 15; FQ <= 4 (all **thresholds**); THF = clamp(variant, [31, len-15]) | X about 11 nt from the variant | if the THF lands on the variant, the base is replaced by X — there is no allele contrast; the mismatch–THF distance is not gated; the probe may abut a primer |
+| RPA structure | `rpa_structure_ok(pair)`: dG37 of the pair only (**model**) | dimer -4.8, hairpin 0.0, homodimer -4.8 (pair, **model**) | the probe with `X` is excluded from `marker_primer_checks()`; without OligoArrayAux the gate is `NA` and the DAG has no "unknown" status |
 | Off-target | exact hits of each primer, `max(table(primer))` | off-target 1 | no paired/in-silico product; for RPA the probe is not searched |
 
 Both smoke examples pass the composition checks (run 3 < 4, SSR 0, inverted
@@ -285,7 +293,8 @@ reaction. The ladder order in the DAG matches the code: LAMP —
   [Mori et al. 2001](https://doi.org/10.1006/bbrc.2001.5921)).
 - **RPA.** Make 30–35 nt a hard limit regardless of `primer_len`; add an
   absolute Tm window and a ΔTm threshold (or explicitly leave Tm as
-  informational); do not place the THF on the variant, gate the mismatch–THF
+  informational); a window added here would be a **threshold**, not a
+  calibration — no source in the tree prints an RPA Tm window; do not place the THF on the variant, gate the mismatch–THF
   distance, return the 3' block in the sequence, include the probe in the
   structural/dimer gate and in off-target; search for a paired product/in-silico
   PCR rather than only exact primer hits; when OligoArrayAux is absent, show
@@ -294,4 +303,5 @@ reaction. The ladder order in the DAG matches the code: LAMP —
   [Li et al. 2019](https://doi.org/10.1039/c8an01621f)).
 - **Both.** The terminal node "usable …" is a verdict on the construct, not on
   amplification: without NTC, threshold and a contamination check it should
-  not be read as validation.
+  not be read as validation. No number in this section is a measured effect:
+  the Tm is **model** output and each window is a **threshold**.

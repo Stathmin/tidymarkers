@@ -19,8 +19,10 @@ library(knitr)
 KASP (Kompetitive Allele-Specific PCR) — a homogeneous endpoint assay: two
 allele-specific primers (AS-ref / AS-alt) with different fluorophores and one
 common primer (COM). Discrimination rests on **a single 3' base** of the AS
-primer: Taq does not extend a primer with a 3' mismatch, so a weak 3' end
-matters more than a strong one. Method overview and design rules:
+primer: a 3'-terminal mismatch usually suppresses extension by Taq, much less
+so for the well-extended pairs (T:G, T:C, T:T in Kwok's ranking) or for MGB
+probes, so a weak 3' end matters more than a strong one. Method overview and
+design rules:
 [He et al. (2014)](https://doi.org/10.1007/978-1-4939-0446-4_7),
 [Semagn et al. (2014)](https://doi.org/10.1007/s11032-013-9917-x).
 General primer rules (Tm, GC, 3' complementarity, specificity):

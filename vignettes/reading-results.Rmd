@@ -151,6 +151,49 @@ marker_record_outcome(art, "fails",
 marker_outcomes(art) # outcomes.csv, `calibrated` stays FALSE
 ```
 
+## Which numbers are calibrated
+
+Every threshold in the checks table came from somewhere. That origin is not
+a decoration: a bar this package chose for itself is a different claim from a
+bar printed in a peer-reviewed paper, and neither is a bar fitted to your own
+lab's measurements. Each criterion row records two facts about that origin.
+
+`source` names where the number came from, if anywhere; `evidence` grades how
+strongly the number is fixed, from weakest to strongest:
+
+| rung | what it means for your assay |
+|---|---|
+| `rule_of_thumb` | the package chose the bar and cites no printed source for it |
+| `vendor_guideline` | the number is printed in a vendor's protocol or product documentation |
+| `primary_literature` | the number is printed in a peer-reviewed paper |
+| `calibrated` | the bar was fitted to this package's own wet-lab measurements |
+
+The last rung does not exist yet in the package's criteria. `marker_decision_text(evidence = TRUE)`
+prints the rung beside every check and one closing line — the weakest rung the
+scheme relies on — so a run whose weakest rung is `rule_of_thumb` says "this
+design passed the package's own heuristics", not "these thresholds are validated".
+
+Two things are worth reading plainly:
+
+- **No criterion is fitted to wet-lab data yet.** Of the 212 criterion rows,
+  `rule_of_thumb` covers 194, `vendor_guideline` 10 and `primary_literature` 8;
+  none is calibrated.
+- **A named source does not, by itself, raise the rung.** The 3′-terminal
+  mismatch ranking cites Kwok et al. 1990 and the ΔG numbers use SantaLucia
+  1998's nearest-neighbour parameters; those rows stay `rule_of_thumb`, because
+  the papers rank or predict, they do not measure this package's threshold. The
+  exception is the single-base-extension (SNaPshot) scheme, whose thresholds
+  carry a printed, checkable number in the source: 18 of its 19 rows rise to
+  `primary_literature` or `vendor_guideline`. Everything else — 177 rows — is a
+  package default with no printed source.
+
+You can see the rung per run with
+`marker_decision_text(scheme, evidence = TRUE)`; the plain form (default) omits
+it, so recorded verdicts still compare line for line. Your own results are
+separate: `marker_outcomes(art)` returns the observations you recorded, and each
+row keeps `calibrated = FALSE` — an observation is not a correction, and the
+package never turns those rows into a success rate.
+
 `readRDS()` returns a working object, not a picture: from there you can run
 `marker_plot()`, `marker_tubes()` (compatibility of pairs in one tube) and the
 checks again without repeating the design:

@@ -97,6 +97,8 @@ test_that("design_castpcr_marker declines non-substitution alleles", {
     suppressWarnings(design_castpcr_marker(genome, snp, flank = 15L)),
     "single-base"
   )
+  # §W: the refusal is also a DAG criterion, not only a message
+  expect_true("family_single_base" %in% marker_criteria(scheme = "castpcr")$id)
 })
 
 test_that("the castpcr DAG gates the mutant anchor, the WT blocker and the probe ordering", {

@@ -222,13 +222,18 @@ mismatches and negative controls. General rules of qPCR specificity —
 
 ### Decision audit
 
+The [decision audit](../docs/decision-audit.md) states, for every gate below,
+where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits:
+34 of the 38 `taqman`/`dpcr`/`snapshot`/`castpcr` rows are `package assumption`,
+and the only named source in this family is `santalucia1998` on the four
+structure rows.
+
 `vignettes/figures/decision-{taqman,dpcr,snapshot,castpcr}.{svg,txt}` are the
 **scheme** (`plot_decision_tree(scheme = <id>)` without `assay`), not a trace of
-a specific candidate: the nodes are neutral, and the block
-`assay acceptance checks` only lists the criteria. The SVG figures are a map of
-the construct plus a panel of checks; none of them shows endpoint clusters,
-droplets, electropherograms or ΔCt. "The graph passed" and "the figure is
-green" are therefore different statements.
+a specific candidate: the nodes are neutral. The SVG figures map the construct
+and list the checks; none shows endpoint clusters, droplets, electropherograms or
+ΔCt. "The graph passed" and "the figure is green" are different statements.
+
 
 ```{r, echo = FALSE, out.width = "100%"}
 knitr::include_graphics("figures/decision-taqman.svg")
@@ -247,7 +252,8 @@ knitr::include_graphics("figures/decision-castpcr.svg")
 ```
 
 - **Probe Tm vs primers.** *Visible:* in TaqMan the ordering "probe above the
-  primers" stays tier2 (not a gate), in dPCR/castPCR it is a hard +8 °C. SVG:
+  primers" stays tier2 (not a gate), in dPCR/castPCR it is a hard +8 °C
+  (**threshold**, not a measured offset). SVG:
   TaqMan probes 59.4/61.3 °C with primers at 58.7 (+0.7/+2.6), dPCR —
   57.2/58.1 with 48.8 (+8.4/+9.3), castPCR — 67.7 with ASP 59.0 (+8.7).
   *Weak spot:* `probes$tm[1L]` holds a single Tm for both allelic probes; the
@@ -261,8 +267,9 @@ knitr::include_graphics("figures/decision-castpcr.svg")
   failure the designer returns `NULL`. Add a gap node and the reason for
   rejection.
 
-- **Mismatch discrimination.** *Visible:* TaqMan — hard ΔG ≥ 1.5 kcal/mol, but
-  for the REF probe only; dPCR — no gate, `probe_discrimination()` stays
+- **Mismatch discrimination.** *Visible:* TaqMan — hard ΔG ≥ 1.5 kcal/mol
+  (**threshold** on **model** output — `DECIPHER` hybridisation × Taq, not
+  cleavage), but for the REF probe only; dPCR — no gate, `probe_discrimination()` stays
   informational (DECIPHER: hybridisation × Taq, not cleavage); SNaPshot —
   discrimination by base, not by ΔG; castPCR — `alt_on − alt_off > 0` (the
   predicted DECIPHER margin), i.e. only the sign. *Weak spot:* the ALT TaqMan
@@ -296,9 +303,10 @@ knitr::include_graphics("figures/decision-castpcr.svg")
   and composition, `selection` does not store gate margins, and the figure's
   check panel has no blocker at all
   (`marker_primers.marker_castpcr()` returns the ASP, the primers and the
-  probe, but not the blocker). *Weak spot:* no Tm/ΔG, MGB, non-extendable,
-  ASP:blocker ratio or suppression efficiency; the blocker should be a separate
-  graph node and panel row, not only an entry in `compatibility`.
+  probe, but not the blocker). *Weak spot:* no Tm/ΔG, no MGB or
+  non-extendability model, ASP:blocker ratio or suppression efficiency; the
+  blocker should be a separate graph node and panel row, not only an entry in
+  `compatibility`.
 
 - **Off-target / cross-reactivity.** *Visible:* exact perfect-site gates exist
   only for the TaqMan/dPCR probes and the SNaPshot extension primer; castPCR has
@@ -311,7 +319,8 @@ knitr::include_graphics("figures/decision-castpcr.svg")
 
 A separate point about the evidence of the figure: the Tm panel is scored by
 `marker_tm_window()` (58–62 °C for dPCR primers, 65–72 °C for probes), not by
-the gates (dPCR primers 44–50 °C; TaqMan probe 56–72 °C). Hence the red rows
+the gates (dPCR primers 44–50 °C; TaqMan probe 56–72 °C). Both sets are
+**thresholds**; the Tm they colour is **model** output. Hence the red rows
 in the SVG: dPCR primers at 48.8 °C and probes at 57.2/58.1 °C get `broken`
 even though the gates let them through; in TaqMan the probes at 59.4/61.3 °C
 are also `broken` although the gate is [56, 72]. Fix the mapping table or label
@@ -320,6 +329,8 @@ the colour as a heuristic.
 A correction to the first pass: the soft windows are TaqMan
 centrality/amplicon/structure, dPCR amplicon/structure, SNaPshot
 amplicon/Tm/structure, castPCR amplicon/ASP Tm; the ladder shifts them, so these
-are ideal thresholds, not hard boundaries. References for the mechanisms are
+are ideal thresholds, not hard boundaries — and all of them are package
+**thresholds**, not values a source prints. References for the mechanisms are
 the same as above (Holland 1991; Pastinen 1997; Hindson 2011; Huggett 2013;
-Barbano 2015; Roma 2013; MacLeod 2021).
+Barbano 2015; Roma 2013; MacLeod 2021); they explain the mechanism, not the
+number.

@@ -28,8 +28,9 @@ directly. Both require a unique target and a careful oligo geometry.
 Cas12a is guided by a spacer of ~20 nt and requires a PAM (for Cas12a usually
 TTTV) next to the protospacer. On a match, collateral ssDNase activity is
 activated, which cuts the ssDNA reporter – the signal is amplified. Cas13 works
-on an RNA target; no PAM is needed, but there is a PFS (Cas13a – avoid G at the
-3′ flank, Cas13b – 5′ D-PFS); the spacer sets specificity.
+on an RNA target: no DNA PAM is needed, but it is not PAM-free, because a PFS
+still constrains the target (Cas13a – avoid G at the 3′ flank, Cas13b – 5′
+D-PFS); the spacer sets specificity.
 [Chen et al. (2018)](https://doi.org/10.1126/science.aar6245),
 [Gootenberg et al. (2017)](https://doi.org/10.1126/science.aam9321).
 
@@ -199,6 +200,14 @@ with what `design_crispr_marker()` / `design_sanger_marker()` actually execute,
 and with the panels in `vignettes/figures/crispr.svg` / `sanger.svg`. Labels:
 **executed** – the node is really computed; **declarative** – it is in the
 template but not in the code; **in the figure** – a `plot()` panel, not a gate.
+The [decision audit](../docs/decision-audit.md) states, for every gate below,
+where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
+All 18 `crispr`/`sanger` rows are `package assumption` — including the TTTV PAM
+and the seed and read-distance windows — so no bullet here carries a citation.
+`marker_decision_text()` names no number; `marker_decision_text(evidence = TRUE)`
+adds the rung and the weakest rung the scheme relies on. Thermodynamic output
+(`TmCalculator`, `DECIPHER`, OligoArrayAux) is a **model**, a prediction and not
+a measurement.
 
 ```{r, echo = FALSE, out.width = "100%"}
 knitr::include_graphics("figures/decision-crispr.svg")
@@ -233,9 +242,11 @@ knitr::include_graphics("figures/decision-sanger.svg")
   [Piepenburg et al. (2006)](https://doi.org/10.1371/journal.pbio.0040204).
 - **In the figure.** The tumbler in `crispr.svg` is oligo QC, not gates: it
   computes `run`/`SSR`/`inv. repeat`/`hairpin`/`dimer`/`homodimer` for the guide
-  and RPA primers, but `design_crispr_marker()` does not reject on these fields.
-  `Tm guide` is deliberately `neutral` (no window), `off-target` is the exact
-  hits of each oligo (max <= 1), not protospacers with a PAM.
+  and RPA primers — the ΔG rows are **model** output of the OligoArrayAux engine,
+  and the `run` bar is a **threshold**; `design_crispr_marker()` does not reject on
+  these fields. `Tm guide` is deliberately `neutral` (no window), `off-target` is
+  the exact hits of each oligo (max <= 1, a **threshold**), not protospacers with
+  a PAM.
 - **Not modelled.** A single mismatch in the spacer is not scored: the guide is
   chosen for the reference, and the mismatch position (seed/distal) and type are
   not counted. A mismatch in the seed may preserve activity
@@ -247,12 +258,14 @@ knitr::include_graphics("figures/decision-sanger.svg")
 - **Executed, but conservatively.** `crispr_spacer_hits()` subtracts 1 from the
   sum of exact hits in both orientations: a palindromic spacer may give a false
   `off_target`, hits without a PAM are counted, and mismatches are not searched
-  at all. This is a conservative count, not an off-target prediction.
+  at all. This is a conservative count, not an off-target prediction; the `max <= 1`
+  bar itself is a **threshold**, not a measured background rate.
 
 **Sanger: the graph is closer to the code.**
 - **Executed.** `select_flanking_pair()` really applies the gate/relax/tier
   order, and `confirm()` adds `in_silico_pcr()` and `pair_structure_ok()`, so
-  `decision-sanger.txt` is not just a declaration.
+  `decision-sanger.txt` is not just a declaration. The gate distances are
+  **thresholds**; the structure ΔG is **model** output.
 - **Executed, but the node is incomplete.** `gate_sanger_dist` (hard) is computed
   on the inner ends of the flanking pair (`end_f`/`start_r`); the nested read
   primers get their own `min_dist` later and have no separate node.
