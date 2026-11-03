@@ -188,7 +188,53 @@ sources <- tibble::tribble(
         "WHICH primer carries the subgenome: it is implied by the force.",
         "Transcribed with line locators into polymarker_design_rules.csv by",
         "data-raw/polymarker-source.R"),
-  "read in the source; the three Y3.2 claims are quoted with method+line; no conversion rate is taken from it"
+  "read in the source; the three Y3.2 claims are quoted with method+line; no conversion rate is taken from it",
+
+  "shen2026_jujube",
+  paste("Shen B, Chen Y, Li K, et al. Development and application of core",
+        "collection, KASP markers and SNP-based DNA fingerprinting in Ziziphus jujuba"),
+  "Front Plant Sci", 2026L, "10.3389/fpls.2026.1773602", "42111720", "PMC13150858",
+  "fulltext", TRUE, "2026-10-29",
+  "KASP conversion of Sanger-verified SNPs (40 tested -> 23 functional)",
+  paste("23 of 40 randomly selected core SNPs (57.5%) were converted into",
+        "functional KASP markers; the paper reports only the aggregate conversion",
+        "rate and does not name per-assay failure reasons"),
+  "full-text counts; aggregate conversion only",
+
+  "thakur2026_bittergourd",
+  paste("Thakur S, Pathak M, Sarao N, et al. Identification of Meloidogyne",
+        "incognita resistance QTLs using high density GBS linkage map in bittergourd"),
+  "Front Plant Sci", 2026L, "10.3389/fpls.2026.1920925", NA_character_, "PMC13642707",
+  "fulltext", TRUE, "2026-10-29",
+  "KASP assays designed across the qRKN_pau6.1 interval (11 designed -> 5 polymorphic)",
+  paste("Among the eleven KASP markers designed, five displayed clear",
+        "polymorphism between the parental lines; the paper does not state why the",
+        "other six failed (no amplification vs monomorphic)"),
+  "full-text counts; failures not decomposed",
+
+  "bai2025_aegilops",
+  paste("Bai BK, Kaur B, Kaur S, et al. Unveiling leaf rust resistance introgressed",
+        "from non-progenitor wild species Aegilops kotschyi into hexaploid wheat"),
+  "Sci Rep", 2025L, "10.1038/s41598-025-99077-7", "41413223", "PMC12714724",
+  "fulltext", TRUE, "2026-10-29",
+  "KASP conversion with a printed denominator (21 -> 6 distinct clusters)",
+  paste("Twenty-one SNPs from chromosome 3DL were converted into KASP assays;",
+        "six showed distinct cluster patterns. A separate 2-3-SNP-per-chromosome",
+        "trial gave none polymorphic, but its denominator is not printed. The",
+        "paper does not say why the other fifteen 3DL assays did not cluster"),
+  "full-text counts; failures not decomposed",
+
+  "kutyavin2000",
+  paste("Kutyavin IV, Afonina IA, Mills A, et al. 3'-minor groove binder-DNA",
+        "probes increase sequence specificity at PCR extension temperatures"),
+  "Nucleic Acids Res", 2000L, "10.1093/nar/28.2.655", "10606668", "PMC102528",
+  "fulltext", TRUE, "2026-10-29",
+  "measured MGB Tm gain, short-probe Tm, and match-vs-mismatch dTm",
+  paste("A 15mer MGB duplex melted at 60 C versus 42 C unmodified (+18 C);",
+        "a 12mer MGB probe matched a 27mer no-MGB probe at 65-66 C; the 12mer",
+        "MGB probe's match-minus-mismatch dTm was 20 C versus 4-6 C for no-MGB",
+        "probes; a T/G mismatch in the MGB site raised dTm from 6.5 to 11 C"),
+  "full-text measured Tm/dTm values (UV melting and 5'-nuclease PCR)"
 )
 # Rows that once carried numbers nobody could source are provenance-only now:
 # Ye's Table 2 primer Tms and the Grewal 2022 residual were both traced back to
@@ -567,7 +613,25 @@ conv_rows <- tibble::tribble(
   24L, 18L,
   0L, 3L, 3L,
   "18 of 24 (75%) co-dominant; 3 showed no polymorphism between parents and 3 segregated dominantly; 0 PCR failures. The three experiments of this paper are not nested (see hrm_jsbbs2018_funnel.csv)",
-  "10.1270/jsbbs.18048"
+  "10.1270/jsbbs.18048",
+  # Three 2025-2026 sources with a printed denominator but no per-assay reason.
+  # They widen the Z8.1 denominator (and the number of independent studies) but
+  # do NOT decompose, so they must not move the fully-decomposed count.
+  "shen2026_jujube", "Ziziphus jujuba Mill.", "40 randomly selected core SNPs Sanger-verified then converted to KASP",
+  40L, 23L,
+  NA_integer_, NA_integer_, 17L,
+  "23 of 40 (57.5%) converted into functional KASP markers; the paper reports only the aggregate conversion rate and does not name per-assay failure reasons",
+  "10.3389/fpls.2026.1773602",
+  "thakur2026_bittergourd", "Momordica charantia L.", "11 KASP assays designed across the qRKN_pau6.1 interval",
+  11L, 5L,
+  NA_integer_, NA_integer_, 6L,
+  "5 of 11 displayed clear parental polymorphism; the paper does not state why the other six failed (no amplification vs monomorphic)",
+  "10.3389/fpls.2026.1920925",
+  "bai2025_aegilops", "Triticum aestivum L.", "21 chromosome-3DL SNPs converted to KASP and run on IL_kots / WL711NN / RB / SB bulks",
+  21L, 6L,
+  NA_integer_, NA_integer_, 15L,
+  "6 of 21 showed distinct cluster patterns; the paper does not state why the other fifteen did not (a separate 2-3 SNP-per-chromosome trial also gave none polymorphic, but its denominator is not printed)",
+  "10.1038/s41598-025-99077-7"
 )
 # the extra named classes join the row they belong to; every other row gets NA
 conv_rows <- dplyr::left_join(conv_rows, conv_extra, by = "study")
@@ -591,7 +655,10 @@ conversion_kind <- c(
   wheat2019_taqman = "design",
   wheat2019_kasp = "design",
   wheat2019_rhamp = "design",
-  jsbbs2018_exp3 = "usable"
+  jsbbs2018_exp3 = "usable",
+  shen2026_jujube = "work",
+  thakur2026_bittergourd = "usable",
+  bai2025_aegilops = "work"
 )
 stopifnot(
   # every row is classified, and only with the shared vocabulary
@@ -697,6 +764,17 @@ stopifnot(
 # the one paper behind three rows: same denominator, never summed into a rate
 wh <- conversion[grepl("^wheat2019_", conversion$study), ]
 stopifnot(nrow(wh) == 3L, all(wh$n_designed == 50L), all(!wh$fully_decomposed))
+# three new rows widen the denominator but name no failure reason; they must
+# balance and must not be counted as decomposed
+jm <- conversion[conversion$study == "shen2026_jujube", ]
+stopifnot(nrow(jm) == 1L, jm$n_designed == 40L, jm$n_success == 23L,
+          jm$n_failed == 17L, !isTRUE(jm$fully_decomposed))
+bg <- conversion[conversion$study == "thakur2026_bittergourd", ]
+stopifnot(nrow(bg) == 1L, bg$n_designed == 11L, bg$n_success == 5L,
+          bg$n_failed == 6L, !isTRUE(bg$fully_decomposed))
+ae <- conversion[conversion$study == "bai2025_aegilops", ]
+stopifnot(nrow(ae) == 1L, ae$n_designed == 21L, ae$n_success == 6L,
+          ae$n_failed == 15L, !isTRUE(ae$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(
