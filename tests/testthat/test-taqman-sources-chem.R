@@ -43,3 +43,38 @@ test_that("apol1_2019 records a real assay failure with its own arithmetic", {
   # a failure mode, explicitly not a mismatch discrimination
   expect_match(unique(f$outcome_definition), "failure MODE")
 })
+
+test_that("kutyavin2000 measures an MGB Tm gain and a match-mismatch dTm", {
+  t <- tq_read("taqman_kutyavin2000_mgb_tm.csv")
+  v <- stats::setNames(t$value, t$item)
+  # same 15mer with and without 3'-MGB: 42 -> 60 C, the gain is the paper's 18
+  expect_identical(v[["ODN1 15mer, unmodified, Tm (match)"]], 42)
+  expect_identical(v[["ODN1 15mer, 3'-MGB, Tm (match)"]], 60)
+  expect_identical(
+    v[["ODN1 15mer, Tm gain from MGB"]],
+    v[["ODN1 15mer, 3'-MGB, Tm (match)"]] -
+      v[["ODN1 15mer, unmodified, Tm (match)"]]
+  )
+  # a 12mer + MGB matches a 27mer without one, so MGB buys ~15 nt
+  expect_lte(abs(
+    v[["12mer MGB probe, Tm (match)"]] -
+      v[["no-MGB 27mer probe, Tm (match)"]]
+  ), 1)
+  # the measured discriminations: 20 C with MGB, 4-6 C without
+  expect_identical(v[["12mer MGB probe, match-minus-mismatch dTm"]], 20)
+  expect_lt(
+    v[["no-MGB probes, match-minus-mismatch dTm, high end"]],
+    v[["12mer MGB probe, match-minus-mismatch dTm"]]
+  )
+  # position dependence: the same T/G mismatch gains only when under the MGB
+  expect_gt(
+    v[["probe #7 T/G mismatch at 7th base from 3' end, MGB dTm"]],
+    v[["probe #7 T/G mismatch at 7th base from 3' end, no-MGB dTm"]]
+  )
+  # the short probes are below the package's no-MGB 18-25 nt default
+  expect_lt(v[["MGB probe length, lower bound"]], 18)
+  # recorded as a measurement, and it names what it does not measure
+  expect_true(all(t$evidence_tier == "moderate"))
+  expect_false(any(c("dct", "delta_ct", "endpoint_ratio") %in% names(t)))
+  expect_match(unique(t$outcome_definition), "no dCt")
+})

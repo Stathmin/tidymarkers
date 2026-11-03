@@ -67,6 +67,19 @@ TAQMAN_PROBE_STRUCT_RELAX <- 3
 TAQMAN_CENTRALITY_RELAX <- -0.25
 TAQMAN_AMPLICON_RELAX <- 20L
 
+# The same-sequence 3'-MGB Tm gain (degC) Kutyavin 2000 measured on ODN1: a
+# 15mer with MGB melts 18 C above the same 15mer without.  It is a rule of
+# thumb, not a model: the source reports no dCt / endpoint ratio and no LNA arm,
+# so only the window shift below is justified by it.
+taqman_mgb_tm_offset <- function() {
+  f <- system.file("extdata", "taqman_kutyavin2000_mgb_tm.csv", package = "tidymarkers")
+  if (!nzchar(f)) {
+    cli::cli_abort(gettext("Bundled Kutyavin 2000 MGB Tm ledger not found."))
+  }
+  d <- utils::read.csv(f, stringsAsFactors = FALSE)
+  d$value[match("ODN1 15mer, Tm gain from MGB", d$item)]
+}
+
 #' Probe candidates centred over a variant
 #'
 #' Reuses `primer_candidates()` for the composition screen (GC, Tm, runs, SSR),
@@ -129,6 +142,9 @@ taqman_mismatch_dg <- function(probe, variant_pos, alt, engines = NULL) {
 #' @param primer_lengths,probe_lengths primer / probe lengths to try.
 #' @param primer_tm accepted flanking-primer Tm window.
 #' @param probe_tm accepted probe Tm window (see the Tm-scale assumption above).
+#' @param probe_modification probe chemistry modifier: `"none"` (default),
+#'   `"mgb"` (shift the probe Tm window down by the sourced Kutyavin 2000 3'-MGB
+#'   gain, a rule of thumb), or `"lna"` (unsupported; the source has no LNA arm).
 #' @param gc_range accepted GC window (primers and probes).
 #' @param min_centrality least variant centrality within each probe (`[0, 1]`).
 #' @param engines optional `marker_engines` adapter list (see `engine_has()`);
@@ -151,6 +167,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
                                  primer_lengths = 18:25, probe_lengths = 18:25,
                                  primer_tm = KASP_LIMITS$com_tm,
                                  probe_tm = c(56, 72),
+                                 probe_modification = c("none", "mgb", "lna"),
                                  gc_range = KASP_LIMITS$gc, min_centrality = 0.5,
                                  engines = NULL, ...) {
   ref <- as.character(snp$ref)[1L]
@@ -162,6 +179,17 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   d <- scheme_def_taqman()
+  probe_modification <- match.arg(probe_modification)
+  if (identical(probe_modification, "lna")) {
+    cli::cli_abort(gettext(paste0(
+      "probe_modification = \"lna\" is not supported: the Kutyavin 2000 source ",
+      "has no LNA arm, so no LNA Tm shift is sourced."
+    )))
+  }
+  # a 3'-MGB probe anneals like a longer unmodified probe, so the effective
+  # window is the declared one shifted down by the sourced same-sequence gain
+  probe_tm_offset <- if (identical(probe_modification, "mgb")) taqman_mgb_tm_offset() else 0
+  probe_tm_eff <- probe_tm - probe_tm_offset
   amp <- d$amplicon_window
   # the amplicon rung of the ladder: the declared window first, widened by the
   # floor only when nothing clears it (so the soft gate is genuinely reachable)
@@ -185,7 +213,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     cli::cli_inform(gettext("No composition- and position-clean hydrolysis probe passed the filters."))
     return(NULL)
   }
-  cand <- taqman_probe_candidates(tmpl$seq, si, probe_lengths, probe_tm, gc_range) |>
+  cand <- taqman_probe_candidates(tmpl$seq, si, probe_lengths, probe_tm_eff, gc_range) |>
     dplyr::filter(
       .data$start >= inner_lo, .data$end <= inner_hi,
       .data$centrality >= min_centrality + TAQMAN_CENTRALITY_RELAX
@@ -227,6 +255,11 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     snp = snp, primers = primers, probes = probes,
     amplicon = tibble::tibble(start = primers$start, end = primers$end, product = primers$product)
   )
+  if (identical(probe_modification, "mgb")) {
+    out$probe_modification <- probe_modification
+    out$probe_tm_offset <- probe_tm_offset
+    out$probe_tm_evidence <- "rule_of_thumb"
+  }
   # pair plus both allele-specific probes share the tube: joint screen
   out$compatibility <- tube_compatibility(c(
     primer_forward = out$primers$forward, primer_reverse = out$primers$reverse,
@@ -260,7 +293,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
     m_probe_comp = if (comp_ok) 1 else -1,
     m_probe_specific = if (probes_unique) 1 else -1,
     m_probe_structure = pmin(hairpin - KASP_LIMITS$hairpin_dg, homodimer - KASP_LIMITS$homodimer_dg),
-    m_probe_tm = min(out$probes$tm[1L] - d$probe_tm_window[1L], d$probe_tm_window[2L] - out$probes$tm[1L]),
+    m_probe_tm = min(out$probes$tm[1L] - probe_tm_eff[1L], probe_tm_eff[2L] - out$probes$tm[1L]),
     m_primer_tm = min(primer_tm_all - d$primer_tm_window[1L], d$primer_tm_window[2L] - primer_tm_all),
     m_discrimination = best$mismatch_dg - TAQMAN_MISMATCH_DG,
     m_centrality = best$centrality - min_centrality,

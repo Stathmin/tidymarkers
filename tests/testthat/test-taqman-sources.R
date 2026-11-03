@@ -14,6 +14,7 @@ test_that("the TaqMan extracts all share the common schema", {
     "taqman_wheat2019_anova.csv", "taqman_wheat2019_concordance.csv",
     "taqman_citrus2020_calls.csv", "taqman_citrus2020_probes.csv",
     "taqman_citrus2020_amplicons.csv", "taqman_znavsmgb2014_tm.csv",
+    "taqman_kutyavin2000_mgb_tm.csv",
     "taqman_znavsmgb2014_rules.csv", "taqman_apol1_2019_failure.csv"
   )) {
     d <- tq_read(f)
