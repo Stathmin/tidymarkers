@@ -307,7 +307,9 @@ marker_engines <- function() {
           salt = TRUE,
           temperature = TRUE,
           duplex_dg = has_oligoarrayaux(),
-          hairpin_dg = has_oligoarrayaux()
+          hairpin_dg = has_oligoarrayaux(),
+          fold = has_oligoarrayaux() && !is.null(oligoarrayaux_paths()) &&
+            fs::file_exists(fs::path(oligoarrayaux_paths()$bin, "hybrid-ss-min"))
         ),
         tm = primer_tm,
         dimer = dimer_thermo,

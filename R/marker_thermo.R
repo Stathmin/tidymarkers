@@ -458,6 +458,245 @@ duplex_dg_thermo <- function(seq1, seq2, conditions = NULL, BPPARAM = NULL) {
   )
 }
 
+#' Fold a whole amplicon/target, not just a primer
+#'
+#' Nothing is scored here: it returns the engine's raw answer plus the caveats a
+#' scheme has to live with.  (1) The whole `seq` folds.  UNAFold's
+#' `hybrid-ss-min` folds the pairwise part only, so a long two-helix hairpin
+#' comes out higher than with the full base-pair-probability model, and the run
+#' is reported negative: that is not a structural artefact.  (2) `kind` says
+#' whether the fold was DNA or RNA.  The engine can fold both (`-n RNA`), but
+#' this OligoArrayAux build has no RNA energy tables, so an RNA target is tried
+#' as RNA, reported as `kind = "RNA"` when it works, and otherwise `unknown`;
+#' it is never folded with the DNA tables - RNA:RNA G-U pairs would be dropped
+#' and the structure would be wrong, not merely imprecise.  (3) `salt_modelled`
+#' is `FALSE` for every RNA fold: UNAFold ignores `[Na+]`/`[Mg2+]` for RNA.
+#'
+#' an absent engine returns `status = "unknown"` (via [capabilities()]), never a
+#' number.  Oligonucleotide concentration is not modelled, so this is the
+#' intrinsic (temperature-independent) fold - use the DNA hairpin of
+#' [hairpin_dg_thermo()] when the question is "does the primer itself fold at the
+#' reaction temperature".  An amplicon that folds closed does not anneal a probe:
+#' an MFE that keeps most of the target single-stranded is the signal for HRM.
+#'
+#' @param seq one amplicon/target, 5'->3'.
+#' @param kind `"DNA"` or `"RNA"` sequence alphabet; default `"DNA"`.
+#' @param conditions reaction conditions from [reaction_conditions()] or
+#'   [scheme_conditions()]; `Na` (M = mM / 1000) and the temperature are what the
+#'   engine is given.  `NULL` uses [reaction_conditions()].
+#' @return a list: `status` (`"ok"`/`"unknown"`), `kind` (`"DNA"`/`"RNA"`),
+#'   `length`, `mfe` (kcal/mol, `NA` unless `"ok"`), `structure` (dot-bracket,
+#'   `NA` unless `"ok"`), `paired`, `single_stranded` (fractions), `salt_modelled`,
+#'   `engine` and `note`.
+#' @examples
+#' \dontrun{
+#' fold_amplicon(paste0("GCGCGCGCGCGGGGCCCCCAATT", "GCGCGCGCGCGGGGCCCCCAATT"))
+#' fold_amplicon("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA")
+#' }
+#' @seealso [hairpin_dg_thermo()], [oligo_dg()], [capabilities()]
+#' @family KASP thermodynamics
+#' @export
+fold_amplicon <- function(seq, kind = c("DNA", "RNA"), conditions = NULL) {
+  kind <- match.arg(kind)
+  conditions <- as_reaction_conditions(conditions)
+  seq <- gsub("[[:space:]]", "", paste(as.character(seq), collapse = ""))
+  if (!nzchar(seq)) cli::cli_abort(gettext("`seq` must hold a sequence."))
+  # `fold` is hybrid-ss-min here: hybrid-min folds pairs of strands, not one
+  avail <- capabilities(marker_engines()$thermo, "fold")
+  if (!isTRUE(avail)) {
+    return(amplicon_fold_result(seq, kind,
+      status = "unknown", engine = "OligoArrayAux",
+      note = gettext("no folding engine (OligoArrayAux `hybrid-ss-min`): fold unknown")
+    ))
+  }
+  dir <- withr::local_tempdir()
+  # hybrid-ss-min writes <prefix>.ct (structure + dG) into the working directory,
+  # and -q would skip the file and print 999.999 ("no structure") instead
+  writeLines(c(">amplicon", seq), fs::path(dir, "fold.fa"))
+  args <- c("-n", kind, "-t", conditions$temperature, "-T", conditions$temperature)
+  # shortcut: UNAFold prints "salt concentrations ignored for RNA" and its `-q`
+  # dG stays the only machine-readable output, so RNA goes without -N / -M.
+  if (kind == "DNA") args <- c(args, "-N", conditions$Na / 1000, "-M", conditions$Mg / 1000)
+  res <- withr::with_dir(dir, with_oligoarrayaux(system2(
+    as.character(fs::path(oligoarrayaux_paths()$bin, "hybrid-ss-min")),
+    c(args, "-o", "fold", "fold.fa"),
+    stdout = TRUE, stderr = TRUE
+  )))
+  status <- attr(res, "status")
+  ct <- fs::path(dir, "fold.ct")
+  lines <- if (is.null(status) && fs::file_exists(ct)) readLines(ct, warn = FALSE) else character(0)
+  mfe <- if (length(lines)) amplicon_mfe(lines) else NA_real_
+  if (!is.finite(mfe)) {
+    note <- if (kind == "RNA") {
+      gettext("this OligoArrayAux build cannot fold RNA with its tables: RNA fold unknown (not folded as DNA)")
+    } else {
+      gettext("the folding engine returned no structure: fold unknown")
+    }
+    return(amplicon_fold_result(seq, kind, status = "unknown", engine = "OligoArrayAux", note = note))
+  }
+  amplicon_fold_result(seq, kind, mfe = mfe, structure = amplicon_structure(lines))
+}
+
+#' Assemble [fold_amplicon()]'s answer (single place for the shape)
+#' @keywords internal
+#' @noRd
+amplicon_fold_result <- function(seq, kind, status = "ok", mfe = NA_real_,
+                                 structure = NA_character_, engine = "OligoArrayAux",
+                                 note = NA_character_) {
+  ok <- identical(status, "ok")
+  if (!ok) note <- paste0(note, "; the intrinsic dG is not known")
+  list(
+    status = status, kind = kind, length = nchar(seq),
+    mfe = mfe, structure = structure,
+    paired = if (ok) sum(strsplit(structure, "")[[1L]] != ".") / nchar(seq) else NA_real_,
+    single_stranded = if (ok) sum(strsplit(structure, "")[[1L]] == ".") / nchar(seq) else NA_real_,
+    salt_modelled = ok && kind == "DNA",
+    engine = engine, note = note
+  )
+}
+
+#' MFE dG (kcal/mol) from a UNAFold `.ct` file
+#'
+#' Line 1 is `N dG = <value> <name>`; `NA` when the value is the engine's
+#' "no structure" sentinel or missing.
+#' @keywords internal
+#' @noRd
+amplicon_mfe <- function(lines) {
+  line <- lines[[1L]]
+  value <- suppressWarnings(as.numeric(sub(".*dG[[:space:]]*=[[:space:]]*([-0-9.]+).*", "\\1", line)))
+  if (!is.finite(value) || value > 100) {
+    return(NA_real_)
+  }
+  value
+}
+
+#' Dot-bracket from a UNAFold `.ct` file
+#'
+#' The partner of base `i` is column 5 of its row, and bases are numbered from 1.
+#' @keywords internal
+#' @noRd
+amplicon_structure <- function(lines) {
+  # line 1 is "N dG = x name"; a base row starts with its index, not a length
+  rows <- strsplit(trimws(lines[-1L]), "[[:space:]]+")
+  n <- length(rows)
+  pair <- if (n) vapply(rows, function(r) as.integer(r[[5L]]), integer(1)) else integer(0)
+  if (n && (length(pair) != n || anyNA(pair) || any(pair > n))) {
+    return(NA_character_)
+  }
+  s <- rep(".", n)
+  for (i in seq_along(pair)) {
+    if (pair[[i]] > i) {
+      s[[i]] <- "("
+      s[[pair[[i]]]] <- ")"
+    }
+  }
+  paste(s, collapse = "")
+}
+
+# Z10.1: `pass` above this share of the amplicon left single-stranded.  It is a
+# readout heuristic (structure, not energy), not a measured threshold: an MFE
+# that keeps most of the target open is the HRM/reverse-transcription signal.
+AMPLICON_FOLD_MIN_SS <- 0.5
+
+#' Amplicon/target folding check (whole amplicon, not the primer)
+#'
+#' An opt-in structure check that folds the WHOLE amplicon with [fold_amplicon()]
+#' and grades the intrinsic fold as `pass`/`warn`/`unknown`.  It is additive: no
+#' existing gate reads it, and no gate result moves.
+#'
+#' **A primer's folding dG is not an amplicon's.**  [hairpin_dg_thermo()] (and
+#' [oligo_dg()]) fold a short oligo at the reaction temperature: the question is
+#' whether that oligo closes on itself before it anneals.  This check folds the
+#' product, which is longer, has extra pairing partners, and is scored at the
+#' engine's default temperature as an intrinsic (concentration-free) MFE.  The
+#' two numbers are not interchangeable, and the oligo dG is not a safe proxy for
+#' the amplicon.
+#'
+#' **What stays `unknown`.**  (1) An RNA target (`kind = "RNA"`, or a chemistry
+#' whose target is RNA - Cas13, or a LAMP/RPA assay run on an RNA template): the
+#' package's DNA hairpin engine is not an RNA folding model, and a DNA number
+#' would drop G-U pairs, so the answer is `unknown` unless [fold_amplicon()]
+#' itself reports an RNA fold.  (2) No engine: `capabilities("fold")` is `FALSE`
+#' or the engine call fails.  (3) A long amplicon (sanger, 400-800 bp): UNAFold's
+#' folding is quadratic-ish in length, so it is not run past `max_length` and is
+#' reported `unknown` rather than scored - LAMP (120-300 bp) is the longest
+#' chemistry that is scored here.
+#'
+#' @param seq one amplicon/target, 5'->3' (a vector is folded element-wise).
+#' @param kind `"DNA"` or `"RNA"` alphabet of the target.  A chemistry whose
+#'   target is RNA is the caller's to declare; it is never inferred.
+#' @param conditions reaction conditions from [reaction_conditions()] or
+#'   [scheme_conditions()]; `NULL` uses [reaction_conditions()].
+#' @param min_single_stranded the `single_stranded` fraction at which the fold
+#'   passes; below it the status is `"warn"`.
+#' @param max_length longest amplicon folded; longer is `unknown`.
+#' @return a tibble, one row per `seq`: `length`, `kind`, `status`
+#'   (`"pass"`/`"warn"`/`"unknown"`), `mfe` (kcal/mol, `NA` unless scored),
+#'   `single_stranded`, `engine` and `note` (why it is `unknown`/`warn`).
+#' @examples
+#' \dontrun{
+#' amplicon_fold_check(paste0("GCGCGCGCGCGGGGCCCCCAATT", "GCGCGCGCGCGGGGCCCCCAATT"))
+#' amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA") # unknown
+#' }
+#' @seealso [fold_amplicon()], [hairpin_dg_thermo()], [capabilities()]
+#' @family KASP thermodynamics
+#' @export
+amplicon_fold_check <- function(seq, kind = c("DNA", "RNA"), conditions = NULL,
+                                min_single_stranded = AMPLICON_FOLD_MIN_SS,
+                                max_length = 300L) {
+  kind <- match.arg(kind)
+  seq <- gsub("[[:space:]]", "", as.character(seq))
+  if (!length(seq) || !all(nzchar(seq))) cli::cli_abort(gettext("`seq` must hold a sequence."))
+  purrr::map(seq, \(s) amplicon_fold_row(s, kind, conditions, min_single_stranded, max_length)) |>
+    purrr::list_rbind()
+}
+
+#' One [amplicon_fold_check()] row, or the reason it is `unknown`
+#' @keywords internal
+#' @noRd
+amplicon_fold_row <- function(seq, kind, conditions, min_single_stranded, max_length) {
+  unknown <- function(note, engine = "OligoArrayAux") {
+    tibble::tibble(
+      length = nchar(seq), kind = kind, status = "unknown", mfe = NA_real_,
+      single_stranded = NA_real_, engine = engine, note = note
+    )
+  }
+  if (!isTRUE(capabilities(marker_engines()$thermo, "fold"))) {
+    return(unknown(gettext("no folding engine (OligoArrayAux `hybrid-ss-min`): fold unknown")))
+  }
+  if (nchar(seq) > max_length) {
+    return(unknown(gettextf(
+      "amplicon longer than %d bp is not folded here: fold unknown", max_length
+    )))
+  }
+  # the engine call itself may fail (a build without the RNA tables reports that
+  # through `status = "unknown"`; an I/O failure is caught the same way)
+  res <- tryCatch(
+    fold_amplicon(seq, kind = kind, conditions = conditions),
+    error = function(e) list(status = "unknown", note = conditionMessage(e))
+  )
+  if (!identical(res$status, "ok")) {
+    note <- res$note
+    if (!is.character(note) || length(note) != 1L || is.na(note)) {
+      note <- gettext("the folding engine returned no structure: fold unknown")
+    }
+    return(unknown(note))
+  }
+  # an RNA fold is only reported as RNA; `salt_modelled` is FALSE for RNA by
+  # construction, so a DNA fold is the only one that carries a salted number
+  ss <- res$single_stranded
+  pass <- is.finite(ss) && ss >= min_single_stranded
+  tibble::tibble(
+    length = res$length, kind = kind, status = if (pass) "pass" else "warn",
+    mfe = res$mfe, single_stranded = ss, engine = res$engine,
+    note = if (pass) {
+      NA_character_
+    } else {
+      gettextf("most of the amplicon is paired (%.0f%% single-stranded)", 100 * ss)
+    }
+  )
+}
+
 #' PCR amplification efficiency of primer/target pairs (DECIPHER)
 #'
 #' Models hybridisation (incl. side reactions) times Taq elongation efficiency,
