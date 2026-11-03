@@ -403,25 +403,53 @@ marker_population_warnings <- function(marker) {
 #' column (Z6.2).  This is the axis on its own.  No dosage engine is wired in
 #' yet, so the honest answer is `"unknown"` - never a frequency standing in for
 #' a copy number.  `fitPoly` (a Suggests, Z10.2) is what would move it.
-#' @param marker a marker with `$population`.
-#' @return a list: `status` (`"unknown"`), `engine` (`NA`), `note`.
+#'
+#' The panel's ploidy, when the caller declares one, is reported as `ploidy` so a
+#' later engine scales its mixture classes by it (`ploidy + 1` classes for one
+#' biallelic SNP).  Ploidy alone yields no dose: the number of copies still needs
+#' the clustered signal, so a formula built from `alt_freq * ploidy` would be the
+#' frequency laundering this axis exists to stop.
+#'
+#' A dosage is only first class when the caller supplies one per marker: a single
+#' finite `$dosage` (copies of ALT) is reported as `"reported"`, and everything
+#' else stays `"unknown"`.  Nothing here estimates a dose, and `fitPoly` (a
+#' Suggests) is never called - no fitting implementation is wired in.
+#' @param marker a marker with `$population`; `$ploidy` (a declared ploidy
+#'   string, e.g. `"decaploid"`) is optional and never a dosage by itself;
+#'   `$dosage` is an optional per-marker copy number from a real genotyping call.
+#' @return a list: `status` (`"reported"` / `"unknown"`), `engine` (`NA` until
+#'   an engine is wired), `ploidy`, `dosage` (the supplied copy number or `NA`),
+#'   `note`.
 #' @keywords internal
 #' @noRd
 marker_dosage <- function(marker) {
+  dose <- suppressWarnings(as.numeric(marker$dosage %||% NA_real_))
+  reported <- length(dose) == 1L && is.finite(dose)
   list(
-    status = "unknown",
+    status = if (reported) "reported" else "unknown",
     engine = NA_character_,
-    note = gettext(
-      "allele dosage / copy number is not modelled; a polyploid mixture needs fitPoly (Z10.2)"
-    )
+    ploidy = if (length(marker$ploidy) && !is.na(marker$ploidy[1L])) {
+      as.character(marker$ploidy[1L])
+    } else {
+      NA_character_
+    },
+    dosage = if (reported) dose else NA_real_,
+    note = if (reported) {
+      gettext("dosage supplied by the caller (copies of ALT); not estimated here")
+    } else {
+      gettext(
+        "allele dosage / copy number is not modelled; a polyploid mixture needs fitPoly (Z10.2)"
+      )
+    }
   )
 }
 
 #' Population-frequency and haplotype-coverage rows for the check column
 #'
-#' The dosage axis is not one of these rows (see `marker_dosage()`): it travels
-#' as the `dosage` attribute, so the acceptance gate never grades a copy number
-#' with a frequency rule.
+#' The dosage axis is not one of these rows (see `marker_dosage()`): it is a field
+#' of the marker and its own gate row (`marker_dosage_gate()`), so the acceptance
+#' gate never grades a copy number with a frequency rule.  The `dosage`
+#' attribute is kept for older callers.
 #' @param marker a marker with `$population` (see `marker_attach_haplotypes()`).
 #' @param min_alt_freq override the marker's frequency floor.
 #' @return a tibble (`level`, `name`, `status`, `value`) carrying a `dosage`

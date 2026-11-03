@@ -1006,7 +1006,21 @@ write_checked <- function(tbl, path) {
 }
 
 out_dir <- fs::path(root, "inst", "extdata")
-write_checked(assays_out, fs::path(out_dir, "soybean_worked_panel_assays.csv"))
+
+# The `outcome`/`basis` label is operator-supplied (Z8.2), not transcribed from
+# the document. The design table owns its 25 columns; the two outcome columns are
+# carried over from the committed CSV so a recompute never invents or drops one.
+assays_path <- fs::path(out_dir, "soybean_worked_panel_assays.csv")
+if (file.exists(assays_path)) {
+  on_disk <- readr::read_csv(assays_path, show_col_types = FALSE, na = "")
+  outcome_cols <- intersect(c("outcome", "basis"), names(on_disk))
+  if (length(outcome_cols)) {
+    stopifnot(setequal(on_disk$assay_id, assays_out$assay_id))
+    idx <- match(assays_out$assay_id, on_disk$assay_id)
+    for (col in outcome_cols) assays_out[[col]] <- on_disk[[col]][idx]
+  }
+}
+write_checked(assays_out, assays_path)
 write_checked(primers_out, fs::path(out_dir, "soybean_worked_panel_primers.csv"))
 write_checked(kasp_gates, fs::path(out_dir, "soybean_worked_panel_kasp_gates.csv"))
 

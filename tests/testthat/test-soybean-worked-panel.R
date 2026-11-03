@@ -62,8 +62,10 @@ test_that("soybean panel: the order list is 36 assays and 85 oligos", {
   expect_false(any(is.na(a$population) | !nzchar(a$population)))
   expect_false(any(is.na(a$target) | !nzchar(a$target)))
   expect_true(all(a$genome_build == "GCF_000004515.6 (Wm82.a4.v1)"))
-  # the document is a design list: no outcome vocabulary may creep in
-  expect_false(any(grepl("outcome|success|prob|calibrat|worked|failed", names(a))))
+  # the document is a design list: no outcome vocabulary may creep in, except
+  # the operator-supplied Z8.2 label (`outcome` + its quoted `basis`)
+  design_cols <- setdiff(names(a), c("outcome", "basis"))
+  expect_false(any(grepl("outcome|success|prob|calibrat|worked|failed", design_cols)))
   expect_false(any(grepl("outcome|success|prob|calibrat|worked|failed", names(p))))
 })
 

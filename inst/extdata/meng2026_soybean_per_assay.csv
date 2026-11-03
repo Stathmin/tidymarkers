@@ -1,0 +1,7 @@
+"source","assay_id","target","outcome","basis","n_genotyped","screening_eff_n","screening_eff_worked","screening_efficiency_pct","doi","pmcid"
+"meng2026","KASP-S09_39290818","S09_39290818 (Glyma.09g168300, T/C)","not_attempted","Table 1 only; Section 3.5 selected two of six SNPs for KASP, this one was not submitted",NA,NA,NA,NA,"10.3390/plants15162479","PMC13516154"
+"meng2026","KASP-S12_37955440","S12_37955440 (Glyma.12g220200, A/G)","not_attempted","Table 1 only; Section 3.5 selected two of six SNPs for KASP, this one was not submitted",NA,NA,NA,NA,"10.3390/plants15162479","PMC13516154"
+"meng2026","KASP-S17_32166476","S17_32166476 (Glyma.17g202000, T/A)","not_attempted","Table 1 only; Section 3.5 selected two of six SNPs for KASP, this one was not submitted",NA,NA,NA,NA,"10.3390/plants15162479","PMC13516154"
+"meng2026","KASP-S17_32244510","S17_32244510 (Glyma.17g202500, C/T)","worked","Table 1 lists the SNP; Section 3.5 reports the assay designed and resolved homozygous genotype clusters on the 336-accession panel",336,26,19,73.08,"10.3390/plants15162479","PMC13516154"
+"meng2026","KASP-S18_2618132","S18_2618132 (Glyma.18g033900, A/G)","not_attempted","Table 1 only; Section 3.5 selected two of six SNPs for KASP, this one was not submitted",NA,NA,NA,NA,"10.3390/plants15162479","PMC13516154"
+"meng2026","KASP-S18_55105706","S18_55105706 (Glyma.18g266700, A/G)","worked","Table 1 lists the SNP; Section 3.5 reports the assay designed and resolved homozygous genotype clusters on the 336-accession panel",336,35,26,74.29,"10.3390/plants15162479","PMC13516154"

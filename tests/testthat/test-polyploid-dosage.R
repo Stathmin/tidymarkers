@@ -244,6 +244,42 @@ test_that("dosage: marker_population_checks() today is a two-allele frequency ta
   expect_false("dose" %in% names(pop))
 })
 
+test_that("dosage: the axis stays separate and `unknown` even with a declared ploidy", {
+  pop <- tibble::tibble(
+    alt_freq = 0.5, min_alt_freq = 0.01,
+    n_haplotypes = 2L, n_alt_haplotypes = 1L
+  )
+  mkd <- function(ploidy = NULL) {
+    structure(
+      list(
+        population = pop, snp = tibble::tibble(pos = 100L), ploidy = ploidy,
+        haplotypes = NULL, haplotype_hits = NULL
+      ),
+      class = c("marker_kasp", "marker")
+    )
+  }
+  # a decaploid panel: 11 mixture classes for one biallelic SNP, not one rate
+  sugarcane <- mkd("decaploid")
+  dose <- attr(tidymarkers:::marker_population_checks(sugarcane), "dosage")
+  expect_identical(dose$ploidy, "decaploid")
+  # the ploidy is reported, the dose is NOT: no engine, no per-marker dose, and
+  # `alt_freq * ploidy` would be a frequency laundered into a copy number
+  expect_identical(dose$status, "unknown")
+  expect_true(is.na(dose$engine))
+  expect_false(any(grepl("dose|copies", names(dose))))
+  # the ploidy scales the class count (ploidy + 1 for one biallelic SNP), so two
+  # ploidies cannot share one rate
+  classes <- function(ploidy) seq(0, 1, length.out = ploidy + 1L)
+  expect_length(classes(2L), 3L)
+  expect_length(classes(4L), 5L)
+  expect_length(classes(10L), 11L)
+  expect_length(classes(10L), length(seq(0, 1, by = 0.1)))
+  # without a declared ploidy the axis says so instead of guessing
+  expect_true(is.na(attr(
+    tidymarkers:::marker_population_checks(mkd()), "dosage"
+  )$ploidy))
+})
+
 test_that("dosage: the sources' own vocabulary is pooled-safe only per source", {
   # a table that would pool the four sources must not exist yet: the roadmap
   # names Z10.2 as a NEW axis, and a pre-existing pooled dosage table would
@@ -255,4 +291,93 @@ test_that("dosage: the sources' own vocabulary is pooled-safe only per source", 
   expect_true(all(grepl("jaimes2024", pooled)))
   # every other dosage-worded file would be a candidate average; there is none
   expect_length(setdiff(pooled, "polyploid_jaimes2024_sugarcane_dosage.csv"), 0L)
+})
+
+## --- 6. the acceptance axis: own id, first-class field, `unknown` by default --
+
+mk_dose <- function(ploidy = NULL, dosage = NULL) {
+  structure(
+    list(
+      population = tibble::tibble(
+        alt_freq = 0.5, min_alt_freq = 0.01,
+        n_haplotypes = 2L, n_alt_haplotypes = 1L
+      ),
+      snp = tibble::tibble(pos = 100L), ploidy = ploidy, dosage = dosage,
+      haplotypes = NULL, haplotype_hits = NULL
+    ),
+    class = c("marker_kasp", "marker")
+  )
+}
+
+test_that("dosage: the acceptance row has its own id, unknown without a dose", {
+  gate <- tidymarkers:::marker_population_gate(mk_dose("decaploid"))
+  dose <- gate[gate$name == "allele dosage", ]
+  # own id, not one of the frequency rows: no `pop_freq` rule can read it
+  expect_equal(nrow(dose), 1L)
+  expect_false("allele dosage" %in% gate$name[gate$name != "allele dosage"])
+  expect_false("allele dosage" %in% c("ALT freq", "haplotypes", "ALT haplotypes"))
+  # the shipped data has no per-marker dose: unknown, with the reason as value
+  expect_true(is.na(dose$pass))
+  expect_true(is.na(dose$observed))
+  expect_true(grepl("fitPoly", dose$value, fixed = TRUE))
+  # the 50% frequency never becomes a dose: 5 of 10 vs 1 of 2 copies
+  expect_false(grepl("5|0.5", dose$value))
+  # no population and no declared ploidy -> not even a dose question
+  bare <- structure(list(snp = tibble::tibble(pos = 100L)), class = "marker")
+  expect_equal(nrow(tidymarkers:::marker_population_gate(bare)), 0L)
+})
+
+test_that("dosage: dosage is a first-class field, the attribute still works", {
+  mk <- mk_dose("tetraploid", dosage = 1)
+  # `marker_dosage()` reads the field; `attr(x, "dosage")` is not needed
+  expect_identical(mk$dosage, 1)
+  expect_identical(tidymarkers:::marker_dosage(mk)$status, "reported")
+  expect_equal(tidymarkers:::marker_dosage(mk)$dosage, 1)
+  # back-compat: the display table's attribute is still there
+  expect_identical(
+    attr(tidymarkers:::marker_population_checks(mk), "dosage")$dosage, 1
+  )
+  # a supplied dose is graded, and its row reaches the check table
+  gate <- tidymarkers:::marker_population_gate(mk)
+  expect_true(gate$pass[gate$name == "allele dosage"])
+  # a non-finite / non-numeric dose is not a dose
+  for (bad in list(NA_real_, NA, "unknown", c(1, 2))) {
+    expect_identical(
+      tidymarkers:::marker_dosage(mk_dose(NULL, bad))$status, "unknown"
+    )
+  }
+  # `fitPoly` is a Suggests and is never the engine here
+  expect_true(is.na(tidymarkers:::marker_dosage(mk_dose(NULL, 1))$engine))
+})
+
+test_that("dosage: the unknown axis never certifies nor dooms a verdict", {
+  # an unknown axis is not appended: the table's row set is unchanged
+  mk <- mk_dose("decaploid")
+  out <- tibble::tibble(
+    stage = "assay", criterion = "amplicon length (bp)", observed = 80,
+    limit = "50-100", pass = TRUE, status = "pass",
+    detail = NA_character_, level = "target site"
+  )
+  with_pop <- tidymarkers:::marker_with_population_checks(out, mk)
+  expect_false("allele dosage" %in% with_pop$criterion)
+  expect_equal(nrow(with_pop), nrow(out) + 3L)
+  # a reported dose IS appended, so the verdict can see it
+  with_dose <- tidymarkers:::marker_with_population_checks(
+    out, mk_dose("tetraploid", dosage = 2)
+  )
+  expect_true("allele dosage" %in% with_dose$criterion)
+  expect_true(all(with_dose$status[with_dose$criterion == "allele dosage"] == "pass"))
+})
+
+test_that("dosage: cotton stays out of every average, doses stay per ploidy", {
+  c <- ext("polyploid_cotton2023_kasp_screen.csv")
+  # the cotton 8/11 is a cluster-separation screen; folding it in would let a
+  # negative datapoint set a dosage rate
+  expect_false(any(grepl(DOSAGE_WORDS, names(c), ignore.case = TRUE)))
+  # a dose is copies of a ploidy, so the class count scales with the ploidy and
+  # one shared rate cannot exist across diploid/tetraploid/decaploid
+  classes <- function(ploidy) ploidy + 1L
+  expect_equal(classes(c(2L, 4L, 10L)), c(3L, 5L, 11L))
+  gate <- tidymarkers:::marker_population_gate(mk_dose("allo-tetraploid"))
+  expect_false(any(grepl("8|11", gate$value[gate$name == "allele dosage"], fixed = TRUE)))
 })
