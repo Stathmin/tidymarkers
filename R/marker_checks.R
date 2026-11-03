@@ -143,15 +143,14 @@ marker_alt_alleles <- function(marker, pos = marker$snp$pos[1L], ref = marker$sn
 #' so an absent frequency is `unknown` rather than a fail.
 #' @param marker a marker with `$population` (see `marker_attach_haplotypes()`).
 #' @return a tibble with `name`, `observed`, `pass`, `value`; empty when the
-#'   marker carries no population.
+#'   marker carries no population.  The dosage axis (Z10.2) is a separate row
+#'   with its own id, never a `pop_freq` rule (see `marker_dosage_gate()`).
 #' @keywords internal
 #' @noRd
 marker_population_gate <- function(marker) {
   rows <- marker_population_checks(marker)
   if (is.null(rows) || !nrow(rows)) {
-    return(tibble::tibble(
-      name = character(), observed = numeric(), pass = logical(), value = character()
-    ))
+    return(marker_dosage_gate(marker))
   }
   observed <- ifelse(rows$status == "ok", 1, 0)
   pass <- rows$status == "ok"
@@ -179,6 +178,41 @@ marker_population_gate <- function(marker) {
   tibble::tibble(
     name = rows$name, observed = observed, pass = pass,
     value = as.character(rows$value)
+  ) |>
+    dplyr::bind_rows(marker_dosage_gate(marker))
+}
+
+#' The dosage / copy-number acceptance row (Z10.2)
+#'
+#' One row, `allele dosage`, whose id is not a population-frequency row: a copy
+#' number is graded against the ploidy's own class count, so it must never be
+#' read by the `ALT freq` rule (Z6.1/Z6.2).
+#'
+#' The row is `unknown` unless the marker carries a real per-marker dosage
+#' (`$dosage`, a finite copy number of ALT - see `marker_dosage()`).  The shipped
+#' data cannot supply one: Jaimes per-marker dosage lives only in the paper's
+#' GitHub appendix, so a magnitude is never invented here.  `fitPoly` (a
+#' Suggests) is not called - no fitting implementation is wired in.
+#' @param marker the marker or assay being graded.
+#' @return a tibble with `name`, `observed`, `pass`, `value` (one `allele dosage`
+#'   row), or an empty tibble when the marker carries neither a population nor a
+#'   declared ploidy - a ploidy nobody declared is not a dose question.
+#' @keywords internal
+#' @noRd
+marker_dosage_gate <- function(marker) {
+  if (is.null(marker$population) && is.null(marker$ploidy)) {
+    return(tibble::tibble(
+      name = character(), observed = numeric(), pass = logical(), value = character()
+    ))
+  }
+  dose <- marker_dosage(marker)
+  reported <- identical(dose$status, "reported")
+  tibble::tibble(
+    name = "allele dosage",
+    observed = if (reported) 1 else NA_real_,
+    pass = if (reported) TRUE else NA,
+    # reported: the copies; unknown: the reason the axis cannot grade anything
+    value = if (reported) as.character(dose$dosage) else dose$note
   )
 }
 
@@ -211,7 +245,8 @@ marker_population_gate <- function(marker) {
 #' appended as checks, so a CAPS site that is not polymorphic, a CRISPR guide or
 #' PAM that is not conserved, or a primer sitting on a variant is a `fail`, and an
 #' ALT frequency that is not known is `unknown` - never a pass.  The warnings are
-#' unchanged; the status is additive.
+#' unchanged; the status is additive.  The dosage axis is appended as its own
+#' `allele dosage` row, never as a frequency rule (see `marker_dosage_gate()`).
 #'
 #' @param assay result of [assemble_kasp_assay()].
 #' @param limits list of thresholds; defaults to `KASP_LIMITS`.
@@ -513,15 +548,26 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
 #' `hap covered` (the designed primers bind the haplotypes they must).  Their
 #' level is the target site, and no limit is published for them.
 #'
+#' The dosage axis travels with them as its own row, `allele dosage` (see
+#' `marker_dosage_gate()`).
+#'
+#' An `unknown` row is not appended: it can neither certify nor doom a marker,
+#' and the overall verdict already reads a stored marker's population layer, so
+#' appending it would only change the table's row set.  A real dosage verdict
+#' *is* appended, since it is evidence the verdict does not otherwise see.
+#'
 #' The `detail` column already holds the site class for the one textual check, so
 #' the rows are appended rather than rebuilt.
 #' @param out a checks tibble (see `marker_evaluation_table()`).
 #' @param marker the marker or assay the table was built from.
-#' @return `out`, with the population rows appended when the marker has any.
+#' @return `out`, with the graded population and dosage rows appended.
 #' @keywords internal
 #' @noRd
 marker_with_population_checks <- function(out, marker) {
   pop <- marker_population_gate(marker)
+  # an `unknown` population row must stay (a missing ALT frequency is `unknown`,
+  # never dropped); only an ungreaded dosage row is omitted
+  pop <- pop[!(pop$name == "allele dosage" & is.na(pop$pass)), , drop = FALSE]
   if (!nrow(pop)) {
     return(out)
   }
@@ -753,6 +799,17 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     } else if (!is.null(hits) && identical(lab, "off-target exact primer hits (n)")) {
       observed[i] <- if (nrow(hits)) max(table(hits$primer)) else 0
       pass[i] <- observed[i] <= 1
+    } else if (identical(lab, "target is a single-base substitution")) {
+      # §W: the design function refuses a multi-base target and returns NULL, so
+      # such a target was never evaluated against the scheme's bar.  Report it
+      # `unknown` (not a pass, and not a `fail` the design never reached).
+      ref <- field(marker$snp, "ref")
+      alt <- field(marker$snp, "alt")
+      if (length(ref) && length(alt) && nzchar(ref[1L]) && nzchar(alt[1L])) {
+        single <- nchar(ref[1L]) == 1L && nchar(alt[1L]) == 1L
+        observed[i] <- as.numeric(single)
+        pass[i] <- if (single) TRUE else NA
+      }
     } else if (identical(lab, "restriction site defined")) {
       observed[i] <- as.numeric(!is.null(marker$site))
       pass[i] <- !is.null(marker$site)
