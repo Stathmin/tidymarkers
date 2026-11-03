@@ -426,11 +426,15 @@ rank_candidates <- function(data, tiers, ties) order_by_margins(data, tiers, tie
 #' @param ties column names for ascending tie-breaks.
 #' @param gate_margin named map `gate -> margin column`.
 #' @param gate_floor named map `gate -> floor` (margin units; 0 = hard).
+#' @param skip_on_failure when nothing clears the gates, return `best = NULL`
+#'   (`FALSE`, the default: the pairing is doomed) or the least-bad candidate
+#'   (`TRUE`: it goes to the second pass, which dooms it if it is not clean).
 #' @return list with `best` (one row, or `NULL`), `relaxed` and `violated`.
 #' @keywords internal
 #' @noRd
 select_with_ladder <- function(data, gates, relax_order, tiers, ties,
-                               gate_margin = NULL, gate_floor = NULL) {
+                               gate_margin = NULL, gate_floor = NULL,
+                               skip_on_failure = FALSE) {
   if (!nrow(data)) {
     return(list(best = NULL, relaxed = character(0), violated = character(0)))
   }
@@ -457,8 +461,15 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties,
   }
   ok <- passes()
   lowered <- names(bars)[bars < 0]
-  if (!any(ok)) {
+  if (!any(ok) && !skip_on_failure) {
     return(list(best = NULL, relaxed = lowered, violated = lowered))
+  }
+  if (!any(ok)) {
+    # nothing clears the gates: the least-bad candidate by the same ranking, so
+    # the caller's second pass (not this ranking) decides
+    best <- order_by_margins(data, tiers, intersect(ties, names(data)))[1L, , drop = FALSE]
+    attr(best, "no_winner") <- TRUE
+    return(list(best = best, relaxed = lowered, violated = gates))
   }
   surv <- data[ok, , drop = FALSE]
   best <- order_by_margins(surv, tiers, intersect(ties, names(surv)))[1L, , drop = FALSE]

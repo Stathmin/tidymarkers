@@ -406,3 +406,89 @@ test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   no_stamp <- tidymarkers:::artefact_engine_match(NULL)
   expect_true(is.na(no_stamp$match))
 })
+
+# roadmap X: the two-pass design wiring.  The second pass screens the pairing the
+# first one ranked; it may only change *how many candidates are considered*, never
+# the verdict (ZW0).
+
+# The verdict as a plan reports it: a classed marker, `"none"`, or `"doomed"`.
+design_verdict <- function(m) {
+  if (is.null(m)) {
+    return("none")
+  }
+  if (inherits(m, "marker_doomed")) {
+    return("doomed")
+  }
+  class(m)[1L]
+}
+
+# Design once, and count the pairs the second pass was offered.  The count is
+# taken at its one source of truth, the ladder: every call past the first is the
+# ladder re-run without the candidate the second pass rejected, so
+# `screened - 1` is the number of alternatives walked.  (`confirm()` calls
+# `in_silico_pcr()`/`pair_screen_ok()` from the designer's own closure, so those
+# helpers cannot be counted with `with_mocked_bindings()`.)
+screened_design <- function(design) {
+  pick <- tidymarkers:::select_with_ladder
+  n <- 0L
+  m <- testthat::with_mocked_bindings(
+    withCallingHandlers(
+      suppressMessages(suppressWarnings(design())),
+      message = function(m) invokeRestart("muffleMessage")
+    ),
+    select_with_ladder = function(...) {
+      n <<- n + 1L
+      pick(...)
+    },
+    .package = "tidymarkers"
+  )
+  list(verdict = design_verdict(m), screened = n)
+}
+
+test_that("two_pass() names the schemes whose design has a genome-level second pass", {
+  tp <- tidymarkers:::two_pass_schemes()
+  expect_true(all(tp %in% marker_schemes()$scheme))
+  # the schemes that read the genome first have no genome-free ranking to walk
+  expect_setequal(setdiff(marker_schemes()$scheme, tp), c(
+    "primer", "asq", "castpcr", "crispr", "dpcr", "lamp", "rpa", "snapshot", "taqman"
+  ))
+  expect_true(tidymarkers:::two_pass("caps"))
+  expect_false(tidymarkers:::two_pass("crispr"))
+  expect_false(tidymarkers:::two_pass(NA_character_))
+  expect_length(tidymarkers:::two_pass(c("caps", "ssr")), 1L)
+})
+
+test_that("every non-KASP second pass continues the same ladder pass it screened", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  # each scheme with its own fixture: the SNP for all but the InDel scheme
+  fixture <- list(
+    caps = f$snp, arms = f$snp, sanger = f$snp,
+    ssr = f$snp, hrm = f$snp,
+    indel_size = tibble::tibble(chrom = "Chr1", pos = f$snp$pos, ref = "A", alt = "AAAA")
+  )
+  for (sc in names(fixture)) {
+    design <- function() {
+      rlang::exec(
+        get(paste0("design_", sc, "_marker"), envir = asNamespace("tidymarkers")),
+        f$genome, fixture[[sc]],
+        flank = 250L
+      )
+    }
+    runs <- screened_design(design)
+    # `hrm` walks its own widened shortlist instead of `select_flanking_pair()`,
+    # so it is covered by the scheme list and the end-to-end test below, not here
+    if (sc == "hrm") next
+    # the design answered, and its answer came out of a ladder pass - so the
+    # second pass screened that same pass
+    if (runs$verdict != "none") {
+      expect_gte(runs$screened, 1L, label = paste(sc, "second-pass continuation"))
+    }
+    # a scheme whose cheap gates doom it before a pairing exists has nothing to
+    # screen (`ssr` on this SNP fixture is that case): the second pass cannot
+    # create the candidate the first pass never ranked
+    if (runs$verdict == "none") {
+      expect_equal(runs$screened, 0L, label = paste(sc, "doomed before the screen"))
+    }
+  }
+})

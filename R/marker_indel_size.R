@@ -195,6 +195,9 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
     }
     pair_structure_ok(b$primer_f, b$primer_r)
   }
+  # the second pass (roadmap X): a ladder with no winner has no clean leading
+  # pairing, and its reason is the screening one - never the rejected candidate's
+  screen <- function(b) if (isTRUE(attr(b, "no_winner"))) FALSE else confirm(b)
   sel <- select_flanking_pair(
     grid, KASP_GATES_INDEL_SIZE, KASP_RELAX_INDEL_SIZE, names(KASP_TIERS_INDEL_SIZE),
     margins = c(
@@ -206,9 +209,20 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
       gate_indel_size_amplicon = -amp_pad, gate_indel_size_tm = -tm_pad,
       gate_indel_size_gap = gap_floor
     ),
-    ties = c("dtm", "product"), confirm = confirm
+    ties = c("dtm", "product"), confirm = screen,
+    max_alternatives = Inf, skip_on_failure = TRUE
   )
-  if (is.null(sel$best)) {
+  # the ladder's reason stands unless the second pass rejected a pairing it ranked
+  ladder_failed <- isTRUE(attr(sel$best, "no_winner"))
+  if (is.null(sel$best) || ladder_failed) {
+    if (ladder_failed) {
+      reason <- gettext("No flanking pair's in-silico PCR gives one product (or its pair passes the structure screen).")
+      if (pair_failure_dooms("indel_size")) {
+        cli::cli_inform(reason)
+        return(NULL)
+      }
+      cli::cli_warn(reason)
+    }
     # name the gate that actually doomed the design, not a blanket reason
     if (any(!is.na(grid$m_unique)) && !any(grid$m_unique >= 0, na.rm = TRUE)) {
       cli::cli_inform(gettext("No flanking pair has unique 3' ends (every candidate's 3' seed repeats in the genome)."))

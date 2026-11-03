@@ -283,30 +283,49 @@ pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
 #' @param ties ascending tie-break columns.
 #' @param confirm `function(row)` -> `TRUE` (accept), `FALSE` (drop) or `NA`
 #'   (unknown, accept); `NULL` skips the phase.
-#' @param max_alternatives how many rejected candidates to walk past.
+#' @param max_alternatives how many rejected candidates to walk past: `Inf`
+#'   screens every candidate (the first pass always hands the second one a
+#'   pairing, see [pair_failure_dooms()]).
+#' @param skip_on_failure passed to `select_with_ladder()` (walk a shortlist with
+#'   `FALSE`); `TRUE` routes an unusable ladder to `confirm()` instead of dooming.
 #' @return the `select_with_ladder()` result (`best`, `relaxed`, `violated`),
 #'   with `best = NULL` when nothing passes (doomed).
 #' @keywords internal
 #' @noRd
 select_flanking_pair <- function(grid, gates, relax, tiers, margins, floors,
-                                 ties = character(0), confirm = NULL, max_alternatives = 8L) {
+                                 ties = character(0), confirm = NULL, max_alternatives = 8L,
+                                 skip_on_failure = FALSE) {
   grid <- dplyr::mutate(grid, .row = dplyr::row_number())
   pick <- function(d) {
-    select_with_ladder(d, gates, relax, tiers, ties, gate_margin = margins, gate_floor = floors)
+    select_with_ladder(d, gates, relax, tiers, ties,
+      gate_margin = margins, gate_floor = floors, skip_on_failure = skip_on_failure
+    )
   }
   res <- pick(grid)
+  # nothing cleared the gates: `skip_on_failure` handed over the least-bad
+  # candidate, which the ladder did not rank - the second pass decides it
+  no_winner <- function(r) isTRUE(attr(r$best, "no_winner"))
   if (is.null(confirm)) {
     return(res)
   }
   # walk the tier-ordered winners: the first the confirmation accepts wins; a
   # rejected one is dropped and the ladder re-run (which may relax a soft gate
   # further for the survivors), so the expensive test runs on few pairs
-  for (i in seq_len(max_alternatives + 1L)) {
+  # `max_alternatives = Inf` (every candidate) means walk the whole grid, which
+  # shrinks each pass; `seq_len(Inf)` is an error, so bound by its current size
+  n_walk <- if (is.finite(max_alternatives)) max_alternatives + 1L else nrow(grid)
+  for (i in seq_len(n_walk)) {
     if (is.null(res$best)) {
       return(res)
     }
-    if (!isFALSE(confirm(res$best))) {
-      return(res) # TRUE or NA (unknown) both accept
+    clean <- !isFALSE(confirm(res$best))
+    if (clean) {
+      # accepted (TRUE or NA - unknown - both accept); a no-winner candidate
+      # keeps its marker so the caller can name the screening reason
+      if (no_winner(res)) {
+        res$best <- structure(res$best, no_winner = TRUE)
+      }
+      return(res)
     }
     if (i > max_alternatives) {
       res$best <- NULL
@@ -516,6 +535,14 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     }
     pair_structure_ok(b$primer_f, b$primer_r)
   }
+  # the second pass (roadmap X): a ladder with no winner has no clean leading
+  # pairing, and its reason is the screening one - never the rejected candidate's
+  screen <- function(b) {
+    if (isTRUE(attr(b, "no_winner"))) {
+      return(FALSE)
+    }
+    confirm(b)
+  }
   sel <- select_flanking_pair(
     grid, KASP_GATES_SANGER, KASP_RELAX_SANGER, names(KASP_TIERS_SANGER),
     margins = c(
@@ -527,9 +554,20 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
       gate_sanger_amplicon = -amp_pad, gate_sanger_tm = -tm_pad,
       gate_sanger_primer = -as.numeric(KASP_SANGER_FLOOR$primer)
     ),
-    ties = c("dtm", "product"), confirm = confirm
+    ties = c("dtm", "product"), confirm = screen,
+    max_alternatives = Inf, skip_on_failure = TRUE
   )
-  if (is.null(sel$best)) {
+  # the ladder's reason stands unless the second pass rejected a pairing it ranked
+  ladder_failed <- isTRUE(attr(sel$best, "no_winner"))
+  if (is.null(sel$best) || ladder_failed) {
+    if (ladder_failed) {
+      reason <- gettext("No flanking pair's in-silico PCR gives one product (or its pair passes the structure screen).")
+      if (pair_failure_dooms("sanger")) {
+        cli::cli_inform(reason)
+        return(NULL)
+      }
+      cli::cli_warn(reason)
+    }
     # name the gate that actually doomed the design, not a blanket reason
     if (any(!is.na(grid$m_unique)) && !any(grid$m_unique >= 0, na.rm = TRUE)) {
       cli::cli_inform(gettext("No flanking pair has unique 3' ends (every candidate's 3' seed repeats in the genome)."))

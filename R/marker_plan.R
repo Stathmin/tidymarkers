@@ -33,6 +33,78 @@ KASP_TECH_PRESETS <- list(
 # schemes whose designer understands a haplotype table (the KASP assembly family)
 haplotype_schemes <- function() c("snp", "indel", "multi", "lax")
 
+#' Is a pairing of a scheme's primers skipped on a genome-level failure of the
+#' leading one?  (The opt-out of the two-pass design, roadmap X.)
+#'
+#' The two-pass design ranks a scheme's candidate pairings on genome-free margins
+#' first (the ladder), then genome-screens the leading ones (an off-target exact
+#' primer hit, a second in-silico PCR product, an inverted repeat) and keeps the
+#' first clean pairing - see [assemble_kasp_assay()] (`pair_screen`); the fragment
+# schemes confirm through `select_flanking_pair()` instead.  A pairing-level
+#' failure is fatal only where the scheme is strict (`KASP_SPECIFICITY_STRICT`):
+#' strict, the pass can doom the target; tolerant, it only moves the winner.
+#' HRM melts its whole amplicon, so a locus that amplifies twice still resolves.
+#' Every scheme in [two_pass_schemes()] is decided here; a scheme outside it has
+#' no second pass and the question does not arise.
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+pair_failure_dooms <- function(scheme) {
+  !scheme %in% c("hrm", "sanger") && marker_specificity(scheme) %in% KASP_SPECIFICITY_STRICT
+}
+
+#' The genome-level screen of a scheme's leading pairing (the second pass)
+#'
+#' The gate the second pass applies: the pair must give exactly one in-silico PCR
+#' product.  An error (no genome, no scanner) is *unknown* and does not block, as
+#' in [assemble_kasp_assay()].  A `genome` of `NULL` returns `NULL`: no second
+#' pass to run.
+#' @param genome a `marker_genome` or `DNAStringSet`, or `NULL`.
+#' @param primer_f,primer_r the pairing's oligos.
+#' @return `TRUE`/`FALSE`, or `NULL` when there is no genome to screen.
+#' @keywords internal
+#' @noRd
+pair_screen_ok <- function(genome, primer_f, primer_r) {
+  if (is.null(genome)) {
+    return(NULL)
+  }
+  n <- tryCatch(nrow(in_silico_pcr(primer_f, primer_r, genome)), error = function(e) NA_integer_)
+  is.na(n) || n == 1L
+}
+
+#' The schemes whose designer runs the two-pass design (roadmap X)
+#'
+#' The assembly family screens its leading assay through `pair_screen` in
+#' [assemble_kasp_assay()]; the remaining designers screen the pairing they
+#' picked (`confirm` in [select_flanking_pair()], or HRM's widened shortlist).
+#' Every scheme here therefore decides on genome-free margins in the first pass
+#' and only *moves the winner* in the second, except where
+#' [pair_failure_dooms()] makes the failure fatal.  The schemes left out have no
+#' genome-free ranking to walk - they read the genome directly (probes, guides,
+#' isothermal, multiplex).
+#' @return a character vector of scheme ids.
+#' @seealso [pair_failure_dooms()], [pair_screen_ok()]
+#' @keywords internal
+#' @noRd
+two_pass_schemes <- function() {
+  c("snp", "indel", "multi", "lax", "duplex", "caps", "arms", "hrm", "indel_size", "ssr", "sanger")
+}
+
+#' Does a scheme's design run a second, genome-level pass? (roadmap X)
+#'
+#' `TRUE` when the designer screens its leading pairing against the genome after
+#' ranking it on genome-free margins.  The second pass decides *how many
+#' candidates are considered*; it moves the verdict only through
+#' [pair_failure_dooms()].
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @return a single logical (`FALSE` for a scheme without a second pass).
+#' @keywords internal
+#' @noRd
+two_pass <- function(scheme) {
+  length(scheme) == 1L && !is.na(scheme) && scheme %in% two_pass_schemes()
+}
+
 # The columns every target table carries (an `alt2` keeps a multi-allelic site's
 # second ALT, `type` its class; `label` falls back to the panel's `id`)
 target_cols <- function() c("label", "chrom", "pos", "ref", "alt", "alt2", "type")

@@ -456,14 +456,11 @@ test_that("a relaxed winner is graded at the relaxed bar, not the ideal (C5)", {
 # ---- Z2: family membership is held as criterion ids ---------------------------
 # `MARKER_CHECK_*` / `MARKER_FAMILY_CHECKS` name registry ids; the label printed
 # anywhere is resolved through the registry, so the two cannot drift.
-# each constant against one scheme family that carries it (`taqman`/`ssr` stand
-# in for the probe / size checks, which those families share)
+# each family against the authoritative `MARKER_FAMILY_CHECKS` entry it is built
+# from (so a shared id like `family_single_base` is included where it applies;
+# `taqman`/`ssr` stand in for the probe / size checks, which those families share)
 family_constants <- function() {
-  list(
-    caps = MARKER_CHECK_CAPS, lamp = MARKER_CHECK_LAMP, rpa = MARKER_CHECK_RPA,
-    crispr = MARKER_CHECK_CRISPR, taqman = MARKER_CHECK_PROBE,
-    sanger = MARKER_CHECK_SANGER, ssr = MARKER_CHECK_SIZE
-  )
+  MARKER_FAMILY_CHECKS[c("caps", "lamp", "rpa", "crispr", "taqman", "sanger", "ssr")]
 }
 
 test_that("family checks are registry ids, resolved to labels through it", {
@@ -500,6 +497,7 @@ test_that("the printed label of every family id is unchanged (no figure drift)",
     "restriction site defined", "restriction site separates alleles",
     "band gap (bp)", "digest sums to amplicon",
     "restriction site conserved (population)",
+    "target is a single-base substitution",
     "FIP 3' ALT", "inner arm Tm balance (C)", "inner arms inside amplicon",
     "variant at FIP 3' end",
     "primer length (nt)", "THF off variant", "RPA probe spans variant",

@@ -237,7 +237,14 @@ design_ssr_marker <- function(genome, snp, flank = 250L,
       tier2 = .data$m_amplicon,
       tier3 = -pmax(.data$run_f, .data$run_r)
     )
-  confirm <- function(b) nrow(in_silico_pcr(b$primer_f, b$primer_r, genome, ...)) == 1L
+  # the second pass (roadmap X): a ladder with no winner has no clean leading
+  # pairing, and its reason is the screening one - never the rejected candidate's
+  confirm <- function(b) {
+    if (isTRUE(attr(b, "no_winner"))) {
+      return(FALSE)
+    }
+    nrow(in_silico_pcr(b$primer_f, b$primer_r, genome, ...)) == 1L
+  }
   sel <- select_flanking_pair(
     grid, KASP_GATES_SSR, KASP_RELAX_SSR, names(KASP_TIERS_SSR),
     margins = c(
@@ -249,9 +256,12 @@ design_ssr_marker <- function(genome, snp, flank = 250L,
       gate_ssr_amplicon = -amp_pad, gate_ssr_tm = -tm_pad,
       gate_ssr_polymorphic = -as.numeric(KASP_SSR_FLOOR$polymorphic)
     ),
-    ties = c("dtm", "product"), confirm = confirm
+    ties = c("dtm", "product"), confirm = confirm,
+    max_alternatives = Inf, skip_on_failure = TRUE
   )
-  if (is.null(sel$best)) {
+  # the ladder's reason stands unless the second pass rejected a pairing it ranked
+  ladder_failed <- isTRUE(attr(sel$best, "no_winner"))
+  if (is.null(sel$best) || ladder_failed) {
     # name the gate that actually doomed the design, not a blanket reason
     if (any(!is.na(grid$m_flanks)) && !any(grid$m_flanks >= 0, na.rm = TRUE)) {
       cli::cli_inform(gettext("No flanking pair sits in unique enough sequence (every candidate's 3' seed repeats)."))
