@@ -279,3 +279,134 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
   }
   normalise(Biostrings::readDNAStringSet(path))
 }
+
+# =============================================================================
+#  Interchange: variant tibble <-> GRanges / VCF (roadmap Z10.3)
+# =============================================================================
+#  One row of a variants tibble is the VCF `1-based POS + REF + one ALT` form,
+#  so the GRanges anchor is that base POS (not POS + 1, the UCSC/VEP convention)
+#  and an InDel REF keeps its anchor base.  `depth` (Y5.3) travels as an mcol.
+#  Writing a VCF keeps one ALT per record, so a multi-allelic site becomes one
+#  record per allele - which is exactly how [read_variants_vcf()] reads it back.
+# =============================================================================
+
+#' Variants tibble <-> `GRanges`
+#'
+#' Adapter between the package's variant tibble (`chrom`, `pos`, `ref`, `alt`, one
+#' row per ALT allele, alleles as strings so SNP/MNP/InDel all survive) and a
+#' Bioconductor `GRanges`.  Every other column becomes an mcol, so `depth` (and
+#' `alt_depth`, `genotype`, `pop_freq`, ...) round-trips.  The range anchor is
+#' the 1-based VCF `POS` (an InDel REF keeps its anchor base), so an InDel range
+#' is as wide as its REF - filter with `nearest()` before comparing.
+#' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`).
+#' @param extra optional extra mcols to carry (e.g. `read_variant_depth()` rows);
+#'   a column already in `x` is overwritten by `extra`.
+#' @return [marker_as_granges()]: a `GRanges` with mcols `ref`, `alt` and every
+#'   other column of `x`; `NULL` (with a `cli` message) when `GenomicRanges` is
+#'   not installed.  [marker_from_granges()]: the variant tibble again, with
+#'   `chrom`/`pos`/`ref`/`alt` first and the remaining mcols after.
+#' @examples
+#' v <- tibble::tibble(chrom = "Chr1", pos = c(10L, 20L), ref = c("A", "AT"), alt = c("G", "A"))
+#' gr <- marker_as_granges(v, depth = c(30, 12))
+#' if (!is.null(gr)) marker_from_granges(gr)
+#' @family KASP input
+#' @export
+marker_as_granges <- function(x, extra = NULL) {
+  if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
+    cli::cli_inform(gettext("GenomicRanges is not installed; returning `NULL`."))
+    return(NULL)
+  }
+  need <- c("chrom", "pos", "ref", "alt")
+  missing <- setdiff(need, names(x))
+  if (length(missing)) {
+    cli::cli_abort(gettext("`x` is missing column(s): {paste(missing, collapse = ', ')}"))
+  }
+  df <- tibble::as_tibble(x)
+  if (!is.null(extra)) {
+    extra <- tibble::as_tibble(extra)
+    df[names(extra)] <- extra
+  }
+  ref <- as.character(df$ref)
+  if (any(is.na(ref) | !nzchar(ref))) {
+    cli::cli_abort(gettext("`ref` must be a non-empty allele string on every row."))
+  }
+  gr <- GenomicRanges::GRanges(
+    seqnames = as.character(df$chrom),
+    ranges = IRanges::IRanges(as.integer(df$pos), width = nchar(ref))
+  )
+  S4Vectors::mcols(gr) <- df[c("ref", "alt", setdiff(names(df), need))]
+  gr
+}
+
+#' @rdname marker_as_granges
+#' @export
+marker_from_granges <- function(x) {
+  if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
+    cli::cli_inform(gettext("GenomicRanges is not installed; returning `NULL`."))
+    return(NULL)
+  }
+  if (!methods::is(x, "GRanges")) cli::cli_abort(gettext("`x` must be a GRanges."))
+  m <- S4Vectors::mcols(x)
+  missing <- setdiff(c("ref", "alt"), names(m))
+  if (length(missing)) {
+    cli::cli_abort(gettext("`x` is missing mcol(s): {paste(missing, collapse = ', ')}"))
+  }
+  tibble::as_tibble(m) |>
+    dplyr::mutate(
+      chrom = ath_chrom(as.character(GenomicRanges::seqnames(x))),
+      pos = as.integer(GenomicRanges::start(x)),
+      .before = 1L
+    ) |>
+    dplyr::relocate("ref", "alt", .after = "pos") |>
+    dplyr::mutate(dplyr::across(c("ref", "alt"), as.character))
+}
+
+#' Write a variants tibble as a VCF
+#'
+#' Writes exactly the four columns [read_variants_vcf()] consumes, one record per
+#' ALT allele (a multi-allelic site is written once per allele, as it reads back)
+#' and `depth` as `INFO/DP` when the column is present.  The round trip is
+#' lossless for `chrom` (via `ath_chrom()` on read), `pos`, `ref`, `alt` and
+#' `depth`; other columns (e.g. `pop_freq`) are not written.
+#' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`, optional `depth`).
+#' @param path output VCF path; `NULL` writes a temporary file you own.
+#' @return the path written (invisibly when `path` is given).
+#' @examples
+#' v <- tibble::tibble(chrom = "4", pos = 10L, ref = "A", alt = "G", depth = 30L)
+#' f <- write_variants_vcf(v)
+#' read_variants_vcf(f)
+#' @family KASP input
+#' @export
+write_variants_vcf <- function(x, path = NULL) {
+  need <- c("chrom", "pos", "ref", "alt")
+  missing <- setdiff(need, names(x))
+  if (length(missing)) {
+    cli::cli_abort(gettext("`x` is missing column(s): {paste(missing, collapse = ', ')}"))
+  }
+  x <- tibble::as_tibble(x)
+  if (!"depth" %in% names(x)) x$depth <- NA_real_
+  if (any(is.na(x$chrom) | is.na(x$pos) | is.na(x$ref) | is.na(x$alt))) {
+    cli::cli_abort(gettext("`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`."))
+  }
+  records <- paste(
+    as.character(x$chrom), as.integer(x$pos), ".", as.character(x$ref),
+    as.character(x$alt), ".", ".",
+    vapply(x$depth, function(d) {
+      if (is.na(d)) "." else paste0("DP=", as.integer(d))
+    }, character(1)),
+    sep = "\t"
+  )
+  body <- c(
+    "##fileformat=VCFv4.2",
+    "##INFO=<ID=DP,Number=1,Type=Integer,Description=\"Total read depth\">",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    records
+  )
+  if (is.null(path)) {
+    path <- tempfile(fileext = ".vcf")
+    readr::write_lines(body, path)
+    return(path)
+  }
+  readr::write_lines(body, path)
+  invisible(path)
+}

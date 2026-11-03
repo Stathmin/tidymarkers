@@ -1,3 +1,57 @@
+# Variant interchange (roadmap Z10.3): variants tibble <-> GRanges / VCF.
+
+.interchange_variants <- function() {
+  tibble::tibble(
+    chrom = c("Chr4", "Chr4", "Chr4", "Chr1"),
+    pos = c(100L, 200L, 300L, 10L),
+    ref = c("A", "AT", "A", "G"), # SNP, deletion, multi-allelic, insertion
+    alt = c("G", "A", "T", "GAT"),
+    depth = c(30L, 12L, NA, 8L)
+  )
+}
+
+test_that("marker_as_granges round-trips the variants tibble and keeps depth", {
+  skip_if_not_installed("GenomicRanges")
+  v <- .interchange_variants()
+  gr <- marker_as_granges(v)
+  expect_s4_class(gr, "GRanges")
+  expect_equal(as.character(gr), c("Chr4:100", "Chr4:200-201", "Chr4:300", "Chr1:10"))
+  expect_equal(gr$ref, v$ref) # REF stays a string, InDel keeps its anchor base
+  expect_equal(gr$alt, v$alt)
+  expect_equal(gr$depth, v$depth)
+  expect_equal(marker_from_granges(gr), v)
+})
+
+test_that("marker_as_granges carries depth from read_variant_depth as an mcol", {
+  skip_if_not_installed("GenomicRanges")
+  v <- .interchange_variants()[1:2, c("chrom", "pos", "ref", "alt")]
+  dep <- tibble::tibble(depth = c(30L, 12L), genotype = c("0/1", "1/1"))
+  back <- marker_from_granges(marker_as_granges(v, extra = dep))
+  expect_equal(back$depth, c(30L, 12L))
+  expect_equal(back$genotype, c("0/1", "1/1"))
+  expect_named(back, c("chrom", "pos", "ref", "alt", "depth", "genotype"))
+})
+
+test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through VCF", {
+  skip_if_not_installed("vroom")
+  v <- .interchange_variants()
+  f <- withr::local_tempfile(fileext = ".vcf")
+  expect_invisible(write_variants_vcf(v, f))
+  # one ALT per record, so compare on the allele key; depth comes from INFO/DP
+  got <- merge(
+    read_variants_vcf(f),
+    read_variant_depth(f)[, c("chrom", "pos", "ref", "alt", "depth")],
+    by = c("chrom", "pos", "ref", "alt")
+  )
+  key <- function(x) paste(x$chrom, x$pos, x$ref, x$alt)
+  expect_setequal(key(got), key(v))
+  got <- got[match(key(v), key(got)), ]
+  expect_equal(got$depth, v$depth) # DP survives; NA stays NA
+  # the caller's own temp file, not a file that disappears with a frame
+  expect_true(file.exists(f))
+  expect_match(readLines(f)[1L], "^##fileformat=VCFv4.2$")
+})
+
 # Input readers: VCF (SNP/MNP/InDel/multiallelic) and arbitrary FASTA.
 
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
