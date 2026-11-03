@@ -163,9 +163,8 @@ test_that("the dPCR scheme definition carries its gates, relax and tiers", {
   expect_setequal(names(d$gate_floor), d$relax)
   expect_true(all(d$gate_floor < 0))
   expect_identical(d$stage_label, "dPCR (droplet digital PCR)")
-  # the readout does not claim a partitioning/Poisson model this package never
-  # computes (see marker_readout())
-  expect_false(grepl("Poisson", d$readout, fixed = TRUE))
+  # the readout names the Poisson partition model marker_readout() computes
+  expect_true(grepl("Poisson", d$readout, fixed = TRUE))
 })
 
 test_that("the dPCR DAG shows the gates in application order and the ladder least grave first", {
@@ -184,4 +183,15 @@ test_that("the dPCR DAG shows the gates in application order and the ladder leas
   expect_match(rungs$detail[1L], "amplicon")
   expect_true(all(diff(rungs$order) > 0L))
   expect_true(grepl("least grave first", paste(marker_decision_text("dpcr"), collapse = "\n"), fixed = TRUE))
+})
+
+test_that("Z0.2: the dPCR primer Tm window is pinned as a calibration debt", {
+  # The window tracks primer_tm()'s level bias (ZW3.4), not the textbook 58-62 C;
+  # moving it by eye would hide the -16.86 C offset behind a filter.
+  expect_identical(eval(formals(design_dpcr_marker)$tm_range), c(44, 50))
+  # and the debt is named where a reader of the source will meet it
+  src <- readLines(test_path("..", "..", "R", "marker_dpcr.R"), warn = FALSE)
+  expect_true(any(grepl("calibration debt", src, fixed = TRUE)))
+  expect_true(any(grepl("ZW3.4", src, fixed = TRUE)))
+  expect_true(any(grepl("16.86", src, fixed = TRUE)))
 })

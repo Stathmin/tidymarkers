@@ -6,8 +6,10 @@
 #  NOT simulated, and the honest thing is to say so rather than let a design read
 #  as a promise of kinetics.  `marker_readout()` is the one entry point: a scheme
 #  that *does* model its readout attaches a `$readout` table to the marker
-#  (currently the hydrolysis-probe discrimination, see `probe_discrimination()`);
-#  every other scheme gets an explicit "not simulated" note.
+#  (currently the hydrolysis-probe discrimination, see `probe_discrimination()`)
+#  and, for dPCR, also projects the droplet counting law
+#  (`dpcr_partition_table()`); every other scheme gets an explicit "not simulated"
+#  note.
 #
 #  The assumption notes and the model name are structured metadata (English, like
 #  the scheme gate labels), not translated messages.
@@ -49,13 +51,64 @@ probe_discrimination <- function(seq, snp_i, probes, alt) {
     purrr::list_rbind()
 }
 
+#' Copies per partition from the negative-partition count (Poisson inversion)
+#'
+#' The dPCR counting law, nothing more: a partition carrying k molecules is
+#' Poisson with mean `lambda`, so the empty fraction is `exp(-lambda)` and
+#' `lambda = -ln(N_neg / N_total)`.  The inverse of [poisson_positive_fraction()].
+#' Non-physical input (empty, missing, or more negatives than partitions) returns
+#' `NA_real_`; it is not silently carried as `Inf`/`NaN`.
+#' @param negative the number of negative partitions.
+#' @param total the number of partitions, `total >= negative > 0`.
+#' @return a numeric vector of copies per partition.
+#' @keywords internal
+#' @noRd
+poisson_lambda <- function(negative, total) {
+  bad <- is.na(negative) | is.na(total) | negative <= 0 | total <= 0 | negative > total
+  out <- -log(as.numeric(negative) / as.numeric(total))
+  out[bad] <- NA_real_
+  out
+}
+
+#' Positive-partition fraction under the Poisson partitioning law
+#'
+#' The forward law: `1 - exp(-lambda)` for `lambda = copies per partition`.  A
+#' partition is positive iff it received >= 1 molecule, independent of how the
+#' dye reports it (amplification kinetics are not part of this model).
+#' @param lambda copies per partition.
+#' @return the expected positive fraction in `[0, 1)`.
+#' @keywords internal
+#' @noRd
+poisson_positive_fraction <- function(lambda) {
+  -expm1(-lambda)
+}
+
+#' The chemistry-level dPCR partition table
+#'
+#' The Poisson projection of a loading: what fraction of partitions a given
+#' copies-per-partition value is expected to light.  This is the counting model
+#' only - it says nothing about amplification kinetics, which this package does
+#' not simulate.
+#' @param loadings copies per partition (the DPCR loading axis).
+#' @return a tibble (`copies_per_partition`, `expected_positive_fraction`,
+#'   `expected_negative_fraction`).
+#' @keywords internal
+#' @noRd
+dpcr_partition_table <- function(loadings = c(0.1, 0.5, 1, 2, 5)) {
+  tibble::tibble(
+    copies_per_partition = as.numeric(loadings),
+    expected_positive_fraction = poisson_positive_fraction(loadings),
+    expected_negative_fraction = exp(-loadings)
+  )
+}
+
 #' The readout assumption for a scheme that does not simulate its signal
 #' @keywords internal
 #' @noRd
 readout_assumption <- function(scheme) {
   notes <- c(
     hrm = "melting curve not modelled (needs a uMELT/PolyMelt-class model)",
-    dpcr = "droplet partitioning / Poisson counting not modelled",
+    dpcr = "partitioning / Poisson counting modelled with the probe readout (OligoArrayAux); else not modelled",
     crispr = "Cas collateral-cleavage kinetics not modelled",
     lamp = "isothermal amplification kinetics not modelled",
     rpa = "isothermal amplification kinetics not modelled",
@@ -82,9 +135,12 @@ readout_assumption <- function(scheme) {
 #' A design carries constructs, not a signal: this returns the readout model's
 #' output when the scheme simulated one (a `table`, currently the hydrolysis-probe
 #' discrimination) and otherwise an explicit assumption of what is *not* modelled,
-#' so a design never reads as a promise of kinetics.
+#' so a design never reads as a promise of kinetics.  A `dpcr` marker that carries
+#' the probe readout also carries `partition`, the Poisson projection of the
+#' counting law ([dpcr_partition_table()]).
 #' @param marker a designed marker (a `marker_*` object).
-#' @return a list: `scheme`, `simulated` (logical), `model`, `note`, `table`.
+#' @return a list: `scheme`, `simulated` (logical), `model`, `note`, `table`, and
+#'   for a simulated `dpcr` marker also `partition`.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -95,11 +151,19 @@ readout_assumption <- function(scheme) {
 marker_readout <- function(marker) {
   scheme <- sub("^marker_", "", class(marker)[1L])
   if (!is.null(marker$readout)) {
-    return(list(
+    out <- list(
       scheme = scheme, simulated = TRUE,
       model = "hydrolysis-probe discrimination (DECIPHER)",
       note = NA_character_, table = marker$readout
-    ))
+    )
+    if (identical(scheme, "dpcr")) {
+      out$model <- paste(
+        "hydrolysis-probe discrimination (DECIPHER) +",
+        "Poisson droplet partitioning (lambda = -ln(N_neg/N_total))"
+      )
+      out$partition <- dpcr_partition_table()
+    }
+    return(out)
   }
   list(
     scheme = scheme, simulated = FALSE, model = NA_character_,

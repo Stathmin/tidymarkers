@@ -144,6 +144,10 @@ grade_one_marker <- function(graded, gates, relax_order, tiers, gate_margin, gat
 #' @param min_product,max_product the accepted amplicon window (dPCR wants short).
 #' @param lengths primer lengths to try.
 #' @param tm_range,gc_range accepted primer windows (the dPCR annealing window).
+#'   The `tm_range` default `c(44, 50)` is a calibration debt, not a design norm:
+#'   `primer_tm()` reads 16.86 C below a measured set (ZW3.4, bias -16.86 C, of
+#'   which -9.34 C is unexplained), so the window stays centred on the model's
+#'   own scale until ZW3.4 closes.  Do not widen or raise it.
 #' @param probe_lengths probe lengths to try.
 #' @param probe_gc accepted probe GC window.
 #' @param probe_tm_margin minimal probe Tm above the primers (the ~8-10 C rule;
@@ -164,6 +168,10 @@ grade_one_marker <- function(graded, gates, relax_order, tiers, gate_margin, gat
 #' @export
 design_dpcr_marker <- function(genome, snp, flank = 150L,
                                min_product = 60L, max_product = 150L, lengths = 18:25,
+                               # calibration debt (Z0.2/ZW3.4): 44-50 C tracks primer_tm()'s
+                               # -16.86 C bias (-7.53 C closed by Owczarzy, -9.34 C
+                               # unexplained).  Not the textbook 58-62 C; do not move it
+                               # until ZW3.4 explains the residual.
                                tm_range = c(44, 50), gc_range = c(0.40, 0.60),
                                probe_lengths = 18:25, probe_gc = c(0.40, 0.60),
                                probe_tm_margin = 8, engines = NULL) {
@@ -408,9 +416,9 @@ scheme_def_dpcr <- function() {
     family = "dpcr",
     label = "dPCR hydrolysis-probe (droplet digital)",
     discrimination = "allele-specific hydrolysis probes (FAM/HEX)",
-    # the construct is designed here; the droplet partition/Poisson count is NOT
-    # simulated (see marker_readout()), so do not claim it in the readout
-    readout = "end-point droplet fluorescence (FAM/HEX); partitioning not simulated",
+    # the construct is designed here; the droplet Poisson count is modelled in
+    # marker_readout() (partition table), so the readout names it
+    readout = "end-point droplet fluorescence (FAM/HEX); Poisson partition table via marker_readout()",
     zygosity = "co-dominant",
     amplicon = "short (<= 150 bp)",
     loci = 1L,
