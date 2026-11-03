@@ -165,7 +165,8 @@ extra_scheme_designer <- function(scheme) {
 #' argument means to a scheme.
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return a function `(genome, snp, ...)`, or `NULL` when the scheme has no
-#'   designer (`primer`, `asq`).
+#'   designer (`primer`, `asq`).  `duplex` has one, but it takes two loci, so
+#'   [per_locus_schemes()] keeps it out of the single-locus ladder.
 #' @keywords internal
 #' @noRd
 scheme_designer <- function(scheme) {
@@ -176,6 +177,7 @@ scheme_designer <- function(scheme) {
     caps = design_caps_marker,
     arms = design_arms_marker,
     hrm = design_hrm_marker,
+    duplex = design_duplex_marker,
     taqman = design_taqman_marker,
     dpcr = design_dpcr_marker,
     rpa = design_rpa_marker,
@@ -195,13 +197,21 @@ scheme_designer <- function(scheme) {
 #'     m <- scheme$design(genome, snp)
 #'     scheme$evaluate(m); scheme$tracks(m)
 #'     scheme$decision(m); scheme$readout(m)
+#'     scheme$schema()
+#'
+#'     m <- scheme$design(genome, loci, readout = "co-dominant") # duplex
+#'
 #'
 #' It is a list of closures with class `marker_scheme_adapter`, an S3 behaviour
 #' object rather than a data frame (ZA5).  Each step delegates to the
 #' implementation the pipeline already uses, so the adapter cannot drift from
 #' the design path: `design` is [marker_design_at()], `evaluate` is
-#' [marker_design_checks()], `tracks` is the [marker_map_spec()] generic,
-#' `decision` is [marker_decision_graph()] and `readout` is [marker_readout()].
+#' [marker_evaluate()] (`marker_design_checks()`, plus the duplex compatibility
+#' stage), `tracks` is the [marker_map_spec()] generic (the
+#' track spec, ZA6 step 6), `decision` is [marker_decision_graph()], `schema` is
+#' [marker_decision_schema()] (the graph's node/edge data, ZA6 step 5) and
+#' `readout` is [marker_readout()].  The adapter adds no data model of its own:
+#' `schema()` and `tracks()` return exactly what the pipeline returns.
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return a `marker_scheme_adapter`; an unknown id is an error, and a scheme
 #'   without a designer (e.g. `primer`) gets a `design()` that returns `NULL`.
@@ -217,10 +227,11 @@ marker_scheme_adapter <- function(scheme) {
         marker_design_at(genome, snp, scheme, ..., context = context)
       },
       evaluate = function(marker, limits = KASP_LIMITS) {
-        marker_design_checks(marker, limits = limits, scheme = scheme)
+        marker_evaluate(marker, limits = limits, scheme = scheme)
       },
       tracks = function(marker) marker_map_spec(marker, scheme = scheme),
       decision = function(marker = NULL) marker_decision_graph(marker, scheme = scheme),
+      schema = function() marker_decision_schema(scheme),
       readout = function(marker) {
         # the marker class names a coarse scheme (`marker_assay` for every KASP),
         # so the adapter's own id is the truthful answer here

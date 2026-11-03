@@ -316,7 +316,9 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
   readout <- match.arg(readout)
   m <- duplex_metrics(
     assays, readout, homologous, tm_window, max_amplicon, max_selfcomp, min_cross_run,
-    conditions = conditions
+    # the gate bars are what makes a pairing acceptable, so the selector judges
+    # it at the *same* conditions as the compatibility table, not the buffer
+    conditions = conditions %||% scheme_conditions("duplex")
   )
   # one row per candidate pairing: the two best per-locus designs are fixed, so
   # the duplex stage has exactly one candidate and the ladder bounds how far its
@@ -429,6 +431,97 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
     compatibility = compat, selection = sel, verdict = verdict
   )
   structure(out, class = "marker_duplex")
+}
+
+#' Design a duplex marker from one locus row
+#'
+#' The single-locus entry point the scheme adapter calls, so `duplex` is
+#' reachable through the same `design()` step as every other scheme (ZA6 step 3).
+#' A duplex needs *two* loci, so this always declines: it returns `NULL` rather
+#' than inventing a second locus, and [design_duplex()] remains the only way to
+#' design one.  `per_locus_schemes()` therefore keeps `duplex` out of the
+#' single-locus ladder (C13).
+#' @param genome,marker,snp,... ignored; see [design_duplex()].
+#' @return `NULL`, always.
+#' @keywords internal
+#' @noRd
+design_duplex_marker <- function(genome, marker = NULL, snp = NULL, ...) {
+  NULL
+}
+
+#' The compatibility table as an acceptance evaluation
+#'
+#' The duplex stage's gates (`duplex_compatibility()`) read as `criterion` rows,
+#' so [marker_scheme_adapter()]'s `evaluate()` grades a pairing the same way it
+#' grades any other marker: `NA` stays `unknown`, never `pass` (ZA7).  The
+#' per-locus checks of the two assembled assays are not repeated here.
+#' @param marker a `marker_duplex`.
+#' @param limits ignored; the gate bars come from the duplex constants.
+#' @return a `marker_evaluation_table`; empty when the pairing was never
+#'   evaluated (a doomed locus has no compatibility stage).
+#' @keywords internal
+#' @noRd
+duplex_evaluation <- function(marker) {
+  compat <- marker$compatibility
+  if (is.null(compat) || !nrow(compat)) {
+    return(marker_evaluation_table(
+      stage = character(), criterion = character(), observed = numeric(),
+      limit = character(), pass = logical(), level = character()
+    ))
+  }
+  # an undeclared topology has no numeric observation; keep its own status
+  # rather than coercing it to a 0 that would read as a failed gate
+  st <- as.character(compat$status)
+  reject <- !is.na(st) & st == "fail"
+  na <- !is.na(st) & st == "not_applicable"
+  out <- marker_evaluation_table(
+    stage = rep("duplex", nrow(compat)),
+    criterion = compat$gate,
+    observed = ifelse(is.na(compat$observed) & reject, 0, compat$observed),
+    limit = compat$limit,
+    pass = ifelse(reject, FALSE, compat$pass),
+    detail = compat$detail,
+    level = rep("assay", nrow(compat)),
+    not_applicable = na
+  )
+  marker_with_population_checks(out, marker)
+}
+
+#' Grade a duplex pairing through the generic dispatch
+#'
+#' [marker_design_checks()] is a plain function that branches on the marker
+#' class, so this method is the S3 face of that branch: the compatibility stage
+#' for a `marker_duplex`, the generic evaluator for anything else.
+#' @param assay a designed marker.
+#' @param limits,scheme see [marker_design_checks()].
+#' @return see [marker_design_checks()].
+#' @keywords internal
+#' @noRd
+marker_evaluate <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
+  if (inherits(assay, "marker_duplex")) {
+    return(duplex_evaluation(assay))
+  }
+  marker_design_checks(assay, limits = limits, scheme = scheme)
+}
+
+#' @method marker_map_spec marker_duplex
+#' @export
+#' @noRd
+marker_map_spec.marker_duplex <- function(marker, scheme = NULL, ...) {
+  # the compatibility table, not the two per-locus maps: the loci share a tube,
+  # not a coordinate; the rows are the pairing's gate segments
+  compat <- marker$compatibility
+  if (is.null(compat) || !nrow(compat)) {
+    return(spec_bind(list()))
+  }
+  out <- purrr::map(seq_len(nrow(compat)), function(i) {
+    spec_row(compat$gate[i], i, i + 1L, "+", "primer")
+  })
+  out <- out[!vapply(out, is.null, logical(1))]
+  if (!length(out)) {
+    return(spec_bind(list()))
+  }
+  spec_bind(out)
 }
 
 #' @export

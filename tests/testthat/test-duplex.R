@@ -258,3 +258,61 @@ test_that("design_duplex maps compatibility to pass / fail, never a hard failure
 test_that("design_duplex rejects anything other than two loci", {
   expect_error(design_duplex(NULL, tibble::tibble(chrom = "1", pos = 1L, ref = "A", alt = "G")))
 })
+
+# the same controlled per-locus stub as above: the duplex stage, no genome.
+# The bindings are local to the *calling test*, not to this helper.
+with_stubbed_assays <- function(.env = parent.frame()) {
+  local_mocked_bindings(
+    assemble_kasp_assay = function(genome, snp, ...) {
+      list(assay = tibble::tibble(
+        as_ref = "CCGCGTAGGTGGGCGGATTTA", as_alt = "CCGCGTAGGTGGGCGGATTTA",
+        com = "AGTGTGTCGGGTGGGTGTTGT", amplicon = 90L
+      ))
+    },
+    .package = "tidymarkers",
+    .env = .env
+  )
+}
+
+test_that("the adapter grades a pairing by its compatibility gates, NA never pass", {
+  with_stubbed_assays()
+  loci <- tibble::tibble(chrom = "Chr1", pos = c(1L, 2L), ref = "A", alt = "G")
+  d <- design_duplex(NULL, loci, readout = "presence-absence", homologous = FALSE)
+  ev <- marker_scheme_adapter("duplex")$evaluate(d)
+  expect_s3_class(ev, "tbl_df")
+  expect_true(all(c("gate_duplex_targets", "gate_duplex_tm") %in% ev$criterion))
+  # an unevaluated gate is unknown or a failure, never a pass (ZA7)
+  expect_false(any(ev$status == "pass" & is.na(ev$observed)))
+  # an undeclared topology is not_applicable, which is not a pass either
+  expect_warning(
+    und <- design_duplex(NULL, loci, readout = "presence-absence", homologous = NA),
+    "undeclared"
+  )
+  ev2 <- marker_scheme_adapter("duplex")$evaluate(und)
+  expect_identical(
+    as.character(ev2$status[ev2$criterion == "gate_duplex_targets"]), "not_applicable"
+  )
+  expect_false(ev2$pass[ev2$criterion == "gate_duplex_targets"])
+  # a doomed pairing has no compatibility stage: an empty table, not a pass
+  doomed <- structure(list(compatibility = NULL), class = "marker_duplex")
+  expect_equal(nrow(marker_scheme_adapter("duplex")$evaluate(doomed)), 0L)
+})
+
+test_that("the duplex track spec is the two loci' own specs", {
+  with_stubbed_assays()
+  loci <- tibble::tibble(chrom = "Chr1", pos = c(1L, 2L), ref = "A", alt = "G")
+  d <- design_duplex(NULL, loci, readout = "presence-absence", homologous = FALSE)
+  tr <- marker_scheme_adapter("duplex")$tracks(d)
+  expect_gt(nrow(tr), 0L)
+  expect_true(all(c("feature", "start", "end", "kind") %in% names(tr)))
+})
+
+test_that("duplex is reachable through the scheme adapter, and never takes one locus", {
+  a <- marker_scheme_adapter("duplex")
+  # design() exists for every scheme, but a duplex needs two loci: it declines
+  # rather than inventing a second one, so the single-locus ladder keeps it out
+  expect_true(is.function(scheme_designer("duplex")))
+  expect_null(a$design(NULL, NULL))
+  expect_false("duplex" %in% per_locus_schemes())
+  expect_setequal(names(a$schema()), c("nodes", "edges"))
+})

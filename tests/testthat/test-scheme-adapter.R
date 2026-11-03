@@ -13,9 +13,9 @@ test_that("every scheme with a designer resolves through the adapter", {
     expect_identical(a$scheme, s)
     expect_setequal(
       names(a),
-      c("scheme", "design", "evaluate", "tracks", "decision", "readout")
+      c("scheme", "design", "evaluate", "tracks", "decision", "schema", "readout")
     )
-    for (step in c("design", "evaluate", "tracks", "decision", "readout")) {
+    for (step in c("design", "evaluate", "tracks", "decision", "schema", "readout")) {
       expect_true(is.function(a[[step]]), info = paste(s, step))
     }
   }
@@ -65,6 +65,12 @@ test_that("the five steps compose on a real design and NA never reads as pass", 
 
   dg <- a$decision(m)
   expect_s3_class(dg, "tbl_graph")
+  # ZA6 step 5: the graph is the schema plus a stamped status column - the
+  # adapter exposes the raw node/edge data as data, adding no model of its own
+  s <- a$schema()
+  expect_setequal(names(s), c("nodes", "edges"))
+  expect_equal(nrow(tidygraph::as_tibble(dg, "nodes")), nrow(s$nodes))
+  expect_equal(nrow(decision_edges(dg)), nrow(s$edges))
 
   ro <- a$readout(m)
   expect_type(ro, "list")
