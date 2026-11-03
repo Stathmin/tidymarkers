@@ -39,7 +39,7 @@ test_that("the extension primer's 3' end sits one base 5' of the variant", {
   expect_true(all(c("a", "b", "kind", "run", "pass") %in% names(m$compatibility)))
   expect_equal(m$extension$placement, 1L)
   expect_match(m$extension$primer, "^[ACGT]+$")
-  expect_gte(nchar(m$extension$primer), 18L)
+  expect_gte(nchar(m$extension$primer), 17L)
   expect_lte(nchar(m$extension$primer), 25L)
   # whichever strand the extension primer is on, its 3' base abuts the variant
   if (m$extension$strand == "+") {
@@ -55,7 +55,7 @@ test_that("the extension primer's 3' end sits one base 5' of the variant", {
     )
   }
   # the extension Tm lands in the declared window (or its bounded floor)
-  expect_true(m$extension$tm >= 45 && m$extension$tm <= 60)
+  expect_true(m$extension$tm >= 45 && m$extension$tm <= 65)
   expect_output(print(m), "marker_snapshot")
 })
 
@@ -72,12 +72,15 @@ test_that("every declared SNaPshot gate is evaluated by the designer (C7)", {
 test_that("the extension-Tm soft gate relaxes to its floor, never past it (C8)", {
   # ask for a Tm window below the declared one: the winner's Tm is inside the
   # requested window but outside the gate's, so the ladder records the rung
-  m <- snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(45, 47))
+  m <- snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(46, 48))
   expect_s3_class(m, "marker_snapshot")
   expect_true("gate_snapshot_tm" %in% m$selection$relaxed)
-  # past the floor the design is refused, so the rung is bounded
+  # past the floor (declared lower bound minus the declared margin) the design is
+  # refused, so the rung is bounded
+  d <- scheme_def_snapshot()
+  floor <- d$ext_tm_window[[1L]] + d$gate_floor[["gate_snapshot_tm"]]
   expect_null(suppressMessages(
-    snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(30, 32))
+    snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = floor + c(-5, -3))
   ))
 })
 
@@ -125,6 +128,38 @@ test_that("the SNaPshot DAG obeys the contract", {
   expect_dag_invariants("snapshot")
 })
 
+test_that("every rule in the SNaPshot provenance table is a registry row at its recorded tier", {
+  csv <- utils::read.csv(
+    system.file("extdata", "snapshot_multiplex_design_rules.csv", package = "tidymarkers"),
+    stringsAsFactors = FALSE
+  )
+  spec <- criterion_spec()
+  ids <- paste0("family_", csv$rule_id)
+  expect_true(all(ids %in% spec$id))
+  rows <- spec[match(ids, spec$id), ]
+  expect_equal(rows$role, rep("rule", nrow(csv)))
+  expect_equal(rows$family, rep("snapshot", nrow(csv)))
+  # the tier is mapped DOWN the ladder, never upgraded (ROADMAP §U)
+  expect_equal(levels(spec$evidence)[as.integer(rows$evidence)],
+    unname(CRITERION_TIER_EVIDENCE[csv$evidence_tier]),
+    ignore_attr = TRUE
+  )
+  # each row cites its own DOI / PMCID in `source`, and reaches the snapshot scheme
+  expect_true(all(grepl("doi:", rows$source) & grepl("PMCID:PMC", rows$source)))
+  expect_true(all(vapply(rows$schemes, function(s) identical(s, "snapshot"), logical(1))))
+  # the rows are evidence only: the designer applies none of them, so the DAG
+  # draws none of them (a check node would claim an evaluation that does not run)
+  nodes <- marker_decision_schema("snapshot")$nodes
+  expect_length(intersect(ids, nodes$name), 0L)
+})
+
+test_that("the SNaPshot provenance rows reach the registry's evidence", {
+  spec <- criterion_spec()
+  rules <- spec[spec$role == "rule", ]
+  expect_equal(nrow(rules), 19L)
+  expect_true(all("snapshot" %in% unlist(rules$schemes)))
+})
+
 test_that("scheme_def_snapshot describes the SNaPshot scheme and its gates", {
   d <- scheme_def_snapshot()
   expect_equal(d$scheme, "snapshot")
@@ -142,9 +177,9 @@ test_that("scheme_def_snapshot describes the SNaPshot scheme and its gates", {
   expect_setequal(names(d$gate_hard_label), setdiff(d$gates, d$relax))
   expect_true("gate_snapshot_placement" %in% names(d$gate_hard_label))
   expect_true("gate_snapshot_unique" %in% names(d$gate_hard_label))
-  # the declared Tm window is the narrow one; the widening lives in the floor, so
-  # the limit and the designer can no longer disagree
-  expect_match(d$gate_limit[["gate_snapshot_tm"]], "50, 55")
+  # the declared Tm window is the union of the stated 53-60 C and the kit's 50 C
+  # step; the widening lives in the floor, so the limit and the designer agree
+  expect_match(d$gate_limit[["gate_snapshot_tm"]], "50, 60")
 })
 
 test_that("the SNaPshot DAG shows no tier restating a hard gate, and its orders are declared", {

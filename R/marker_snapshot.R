@@ -22,14 +22,20 @@
 #      - Fanis P, et al. BMC Genomics 2014;15:108, doi:10.1186/1471-2164-15-108
 #        (PMC3922441): "Minisequencing primers were designed with their 3' base
 #        corresponding to the base immediately before the SNP to be investigated."
-#    * Extension-primer length/Tm: 15-25 nt at Tm 49-53 C (Namdar Aligoodarzi);
-#      "there is little flexibility in the positioning of the primer, although
-#      parameters like the length of the primer and its orientation are more
-#      amenable to manipulation" (Fanis).  ASSUMPTION: we take the task's window
-#      (Tm 50-55 C, ~18-25 nt) as the gate and widen it by 5 C on each side (the
-#      ladder's tm floor: [45, 60] C) when nothing clears, because the package
-#      primer_tm is salt-corrected (Mg/dNTPs) and runs hotter than the Promega
-#      formula those papers quote.
+#    * Extension-primer length/Tm: 17-25 nt, the range the papers' own panel
+#      tables print (Namdar Aligoodarzi Table 3, Atanasovska Table 2, Fanis
+#      Table 3: `sbe_core_length` in
+#      inst/extdata/snapshot_multiplex_design_rules.csv); "there is little
+#      flexibility in the positioning of the primer, although parameters like the
+#      length of the primer and its orientation are more amenable to
+#      manipulation" (Fanis).  Tm 53-60 C is what Zhao states for the SBE primers
+#      of one panel (`sbe_sbe_tm_gc_window`).  The gate is the UNION of that
+#      stated window and the kit's 50 C extension step, [50, 60] C: a primer at
+#      the kit temperature is usable and dropping it would cost candidates the
+#      literature does not reject.  ASSUMPTION: the ladder widens the window by
+#      5 C on each side when nothing clears (floor [45, 65] C), because the
+#      package primer_tm is salt-corrected (Mg/dNTPs) and runs hotter than the
+#      Promega formula those papers quote.
 #    * The extension primer must be free of stable hairpins/self-dimers: "stable
 #      oligonucleotide secondary structures can affect signals" (Fanis); hairpins
 #      and dimers "were checked" (Namdar Aligoodarzi).
@@ -58,8 +64,8 @@
 # Default design targets for a SNaPshot marker (sources in the file header).
 SNAPSHOT_AMPLICON <- c(100L, 300L)
 SNAPSHOT_AMP_LENGTHS <- 18:25
-SNAPSHOT_EXT_LENGTHS <- 18:25
-SNAPSHOT_EXT_TM <- c(50, 55)
+SNAPSHOT_EXT_LENGTHS <- 17:25
+SNAPSHOT_EXT_TM <- c(50, 60)
 SNAPSHOT_EXT_GC <- c(0.30, 0.70)
 
 # How far the ladder may lower the three soft SNaPshot gates (margin units): the
