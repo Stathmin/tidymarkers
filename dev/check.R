@@ -127,6 +127,12 @@ step("criterion fixtures", function() {
 })
 
 step("docs/artifacts", function() {
+  # the code graph's limits are part of the docs contract; this self-skips when
+  # graphify-out/ is absent (CI has no graph, and it is a developer tool)
+  status <- system2(file.path(R.home("bin"), "Rscript"), c("dev/graphify-health.R", "--check"))
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/graphify-health.R failed (status ", status, ")")
+  }
   if (no_artifacts) {
     return(message("  skip (--no-artifacts; regenerate after the merge)"))
   }
@@ -179,11 +185,19 @@ step("figures (auto-render)", function() {
   )
   md5 <- function() vapply(figs, function(f) unname(tools::md5sum(f)), character(1))
   before <- md5()
-  # fast, offline default: the decision trees (README-facing) + their per-scheme
-  # siblings in vignettes/figures; `--render` adds the heavy panels and the demo
-  # traversal
-  args <- if (render) character() else c("--skip-heavy", "--skip-example")
-  system2(file.path(R.home("bin"), "Rscript"), c("dev/render-all.R", args))
+  # `targets` is the freshness holder when it is installed: it reruns only the
+  # targets the change invalidated (see dev/targets/_targets.R).  Without it,
+  # render everything exactly as before.  The md5 compare below is the check in
+  # both paths, so a new engine that skips a figure still fails the gate.
+  rscript <- file.path(R.home("bin"), "Rscript")
+  # the heavy panels are deliberately outside the pipeline, so `--render` keeps
+  # the direct runner; the fast default uses targets when it is installed
+  if (!render && requireNamespace("targets", quietly = TRUE)) {
+    system2(rscript, c("dev/targets.R", "--make"))
+  } else {
+    args <- if (render) character() else c("--skip-heavy", "--skip-example")
+    system2(rscript, c("dev/render-all.R", args))
+  }
   after <- md5()
   changed <- figs[is.na(before) | before != after]
   if (length(changed)) {

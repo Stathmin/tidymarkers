@@ -172,6 +172,22 @@ if (!length(failures)) {
   ok("include_graphics and manifest backlinks agree")
 }
 
+# 5. the graph's limit is named (ZA8.2) ---------------------------------------
+#  "the graph is empty" and "the code is clean" look the same, so the generated
+#  graph report must say so; dev/graphify-health.R --write emits the sentence.
+health <- "docs/generated/graphify-health.md"
+limit <- paste(
+  "The code graph is a **limitation of orientation, not proof of correctness**:",
+  "an empty graph and clean code look the same."
+)
+if (!file.exists(health)) {
+  note(health, ": missing (the graph limit must be documented)")
+} else if (!any(grepl(limit, readLines(health, warn = FALSE), fixed = TRUE))) {
+  note(health, ": does not name the limitation (rerun dev/graphify-health.R --write)")
+} else {
+  ok("the code graph's limitation is named")
+}
+
 if (length(failures)) {
   message("docs check FAILED:")
   for (f in failures) message("  - ", f)
