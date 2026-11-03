@@ -18,9 +18,11 @@
 #  external cross-checks (BLAST+, Rsubread, rprimer, annotation DBs, real SOCK
 #  workers); R CMD check also sets that flag, so the full path is never weakened.
 #
-#  Lean and scheme modes run files in parallel (2 workers).  Full mode is serial:
-#  the SOCK tests already spawn worker processes, and nesting them under
-#  testthat's workers crashes the pool.
+#  Lean and scheme modes run files in parallel.  Full mode runs two phases:
+#  every file except the SOCK-spawning ones runs in parallel, then the SOCK
+#  files run serially, because nesting a cluster inside a testthat worker
+#  crashes the pool.  Set TESTTHAT_CPUS to pick the worker count; the default
+#  here is 8.
 #
 #  Every run is teed to dev/logs/test-<mode>-<stamp>.log (dev/logs/latest.log
 #  points at the newest one) and leaves machine-readable timings beside it:
@@ -41,9 +43,9 @@
 #  never enter docs/artifacts.yml (whose hashes gate the committed figures).
 #  `--profile` additionally writes a summaryRprof() profile (costs ~20%).
 #
-#  Timings are real in `--full` (serial).  In parallel modes testthat replays a
-#  file's events when the file finishes, so per-test/per-file wall times are
-#  written as NA instead of a silent zero.
+#  Timings are real for files that run serially (the SOCK phase of `--full`).
+#  In parallel phases testthat replays a file's events when the file finishes,
+#  so per-test/per-file wall times are written as NA instead of a silent zero.
 #
 #  Tests never install.  Install once with `Rscript dev/install-deps.R`
 #  (`--with-suggests` for the full external checks).
@@ -61,6 +63,13 @@ if (!nzchar(system.file(package = "tidymarkers"))) {
 # test content: a renamed contract file is a deliberate edit here, not a silent
 # drop from the routine gate.
 shared <- c("criteria", "decision", "falsifiable", "kasp-checks", "plot-methods", "technology")
+
+# Files that spawn their own SOCK cluster.  Running these under testthat's
+# workers nests a cluster inside a worker and crashes the pool, so --full runs
+# them in a serial second phase.  The grep guard below fails if a test file
+# starts using a cluster without being listed here.
+sock_files <- c("test-batch.R", "test-dimer.R", "test-insilico-pcr.R", "test-specificity.R")
+sock_pattern <- "makeCluster|makeForkCluster|SOCK|parallel::|parLapply|mclapply"
 
 args <- commandArgs(trailingOnly = TRUE)
 full <- "--full" %in% args
@@ -87,6 +96,16 @@ if (full && (!is.null(scheme) || !is.null(filter))) {
 }
 
 files <- list.files("tests/testthat", pattern = "^test-.*[.]R$")
+uses_sock <- vapply(files, function(f) {
+  any(grepl(sock_pattern, readLines(file.path("tests/testthat", f), warn = FALSE)))
+}, logical(1))
+unlisted <- setdiff(files[uses_sock], sock_files)
+if (length(unlisted)) {
+  stop("these test files use a cluster but are not in sock_files: ",
+    paste(unlisted, collapse = ", "),
+    call. = FALSE
+  )
+}
 # testthat's filter is matched against the context name (file stem without the
 # leading "test-"), so validation must use exactly the same string
 contexts <- sub("[.]R$", "", sub("^test[-_]", "", files))
@@ -104,7 +123,11 @@ mode <- if (full) {
 
 if (full) {
   filter <- NULL
-  Sys.setenv(TIDYMARKERS_FULL_TESTS = "1", TESTTHAT_PARALLEL = "FALSE")
+  Sys.setenv(TIDYMARKERS_FULL_TESTS = "1")
+  # phase A runs in parallel; only phase B (the SOCK files) is serial
+  if (!nzchar(Sys.getenv("TESTTHAT_PARALLEL"))) {
+    Sys.setenv(TESTTHAT_PARALLEL = "TRUE")
+  }
 } else {
   # an inherited TIDYMARKERS_FULL_TESTS must not silently turn the routine loop
   # into the release suite; --full is the switch
@@ -134,7 +157,18 @@ selected <- if (is.null(filter)) files else files[grepl(filter, contexts)]
 # testthat only goes parallel for more than one file; a single-file filter runs
 # serial, so its timings are real even though TESTTHAT_PARALLEL is set
 parallel <- identical(Sys.getenv("TESTTHAT_PARALLEL"), "TRUE") &&
-  length(selected) > 1L
+  length(selected) > 1L && requireNamespace("callr", quietly = TRUE)
+
+# --full splits the selection: SOCK files run serially after the parallel phase.
+sock_selected <- intersect(selected, sock_files)
+other_selected <- setdiff(selected, sock_files)
+
+# escape a context name so the anchored filter matches it literally
+re_escape <- function(x) gsub("([][{}()+*^$|\\\\?.])", "\\\\\\1", x)
+phase_filter <- function(phase_files) {
+  ctx <- contexts[match(phase_files, files)]
+  paste0("^(", paste(vapply(ctx, re_escape, ""), collapse = "|"), ")$")
+}
 
 # ---------------------------------------------------------------------------
 #  Logs and timings
@@ -190,6 +224,7 @@ state$mem_prev <- if (have_lobstr && !parallel) mem_used_mb() else NA_real_
 state$started_at <- wall_stamp()
 state$done <- FALSE
 state$completed <- FALSE
+state$any_parallel <- FALSE
 
 # Same console look as before (ProgressReporter), plus timing bookkeeping.
 TimingReporter <- R6::R6Class("TimingReporter",
@@ -347,7 +382,11 @@ summary_lines <- function(status) {
     ),
     sprintf(
       "- per-test timings: %s",
-      if (parallel) "NA (parallel replay; use --full or a single-file filter)" else "measured"
+      if (isTRUE(state$any_parallel)) {
+        "NA for the parallel phase; measured for the serial phase"
+      } else {
+        "measured"
+      }
     ),
     ""
   )
@@ -433,18 +472,48 @@ if (isTRUE(profile)) {
 
 # The cleanup lives in a function: on.exit() at the top level of a script is
 # accepted but never runs, so errors and Ctrl-C would lose the log and timings.
+run_phase <- function(label, phase_files, go_parallel) {
+  if (!length(phase_files)) {
+    return(invisible(NULL))
+  }
+  # the reporter reads these from the enclosing environment
+  parallel <<- isTRUE(go_parallel) && length(phase_files) > 1L
+  state$any_parallel <- state$any_parallel || parallel
+  state$mem_prev <- if (have_lobstr && !parallel) mem_used_mb() else NA_real_
+  if (parallel && !nzchar(Sys.getenv("TESTTHAT_CPUS"))) {
+    jobs <- max(2L, min(8L, parallel::detectCores() - 1L, length(phase_files)))
+    Sys.setenv(TESTTHAT_CPUS = as.character(jobs))
+  }
+  say(sprintf(
+    "test.R: phase %s -- %d file(s), parallel %s",
+    label, length(phase_files), parallel
+  ))
+  testthat::test_local(
+    filter = phase_filter(phase_files),
+    reporter = TimingReporter$new(),
+    stop_on_failure = FALSE
+  )
+}
+
 run_tests <- function() {
   on.exit({
     try(finish(), silent = TRUE)
     try(sink(), silent = TRUE)
     try(close(log_con), silent = TRUE)
   })
-  testthat::test_local(
-    filter = filter,
-    reporter = TimingReporter$new(),
-    stop_on_failure = TRUE
-  )
+  if (full && length(sock_selected) && length(other_selected)) {
+    # parallel first, then the SOCK files: a cluster nested in a testthat
+    # worker crashes the pool
+    run_phase("A", other_selected, go_parallel = parallel)
+    run_phase("B (SOCK)", sock_selected, go_parallel = FALSE)
+  } else {
+    run_phase("all", selected, go_parallel = parallel)
+  }
   state$completed <- TRUE
+  failed <- any(vapply(state$files, function(r) r$fail + r$error > 0, logical(1)))
+  if (failed) {
+    stop("test failures", call. = FALSE)
+  }
 }
 
 started <- now()
