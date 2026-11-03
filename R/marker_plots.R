@@ -201,7 +201,9 @@ CHECK_SHORT_MAP <- c(
   "repeat unit (nt)" = "repeat unit",
   "repeat copies" = "copies",
   "REF/ALT size difference (bp)" = "size diff",
-  "fragment size (bp)" = "fragment"
+  "fragment size (bp)" = "fragment",
+  # §W family check: the scheme applies only to a single-base substitution
+  "target is a single-base substitution" = "single base"
 )
 
 #' Short labels for the acceptance criteria (for the tumbler column)
