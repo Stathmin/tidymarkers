@@ -90,6 +90,7 @@ Suggests:
     roxygen2,
     styler,
     lintr,
+    targets,
     pkgdown
 VignetteBuilder: knitr
 Config/testthat/edition: 3

@@ -33,6 +33,11 @@ revdep/
 tests/testthat/_snaps/**/*.new.md
 tests/testthat/Rplots.pdf
 
+# literature and engine scratch belong in the Zotero lane / /tmp/read, never the
+# package root: PMC full-text dumps and UNAFold's amp.fa.* run files
+PMC*.xml
+amp.fa*
+
 # local run output written by inst/scripts/run_kasp.R and the lecture deck
 # (the directory itself is kept out of the package by .Rbuildignore)
 results/
@@ -87,10 +92,14 @@ node_modules/
 # graphify output
 graphify-out/
 
+# targets store for dev/targets/_targets.R (local cache, never committed)
+dev/targets/_targets/
+
 # local test logs and timings (machine-specific; see dev/README.md)
 dev/logs/
 
 # fetched literature and probe scratch (never committed); the science pass
 # and the roadmap snapshot each added this block, and .tmp/ is shared by both
 .tmp/
+.tmp-*/
 .tmp-probe*
