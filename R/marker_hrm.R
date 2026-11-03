@@ -248,11 +248,13 @@ KASP_GATE_HARD_LABEL_HRM <- c(
 #' @param lengths primer lengths to try.
 #' @param min_product,max_product accepted amplicon window.
 #' @param tm_range,gc_range accepted primer windows.
+#' @param n how many leading pairs to return, best first (the shortlist the
+#'   genome-level screen walks).
 #' @return a pair list (see `pair_to_list()`), or `NULL`.
 #' @keywords internal
 #' @noRd
 hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
-                              tm_range, gc_range) {
+                              tm_range, gc_range, n = 1L) {
   n <- nchar(as.character(seq))
   if (lo <= 1L || hi >= n) {
     return(NULL)
@@ -275,7 +277,7 @@ hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
     return(NULL)
   }
   # the declared tiers, in order: variant centrality, then Tm balance
-  pair_to_list(pairs[order(pairs$centre_dist, pairs$dtm), ][1L, ])
+  pair_to_list(pairs[order(pairs$centre_dist, pairs$dtm), ][seq_len(n), ])
 }
 
 #' Design an HRM marker at a variant
@@ -333,20 +335,52 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
   # point, and `hrm_flanking_pair()` applies that window as a filter - never a
   # rung.  gate_hrm_tm is the soft ladder: the strict window first, then the
   # widened one (least grave first).
-  primers <- hrm_flanking_pair(
-    tmpl$seq, lo, hi, lengths, min_product, max_product, tm_range, gc_range
-  )
-  relaxed <- character(0)
-  if (is.null(primers)) {
-    widened <- tm_range + c(-HRM_TM_FLOOR, HRM_TM_FLOOR)
-    primers <- hrm_flanking_pair(
-      tmpl$seq, lo, hi, lengths, min_product, max_product, widened, gc_range
+  # the sorted shortlist: the declared tiers, in order (variant centrality, then
+  # Tm balance); the widened Tm window is the ladder's only rung
+  shortlist <- function(n) {
+    p <- hrm_flanking_pair(tmpl$seq, lo, hi, lengths, min_product, max_product, tm_range, gc_range, n = n)
+    if (!is.null(p)) {
+      return(list(primers = p, relaxed = character(0)))
+    }
+    list(
+      primers = hrm_flanking_pair(
+        tmpl$seq, lo, hi, lengths, min_product, max_product, tm_range + c(-HRM_TM_FLOOR, HRM_TM_FLOOR),
+        gc_range,
+        n = n
+      ),
+      relaxed = "gate_hrm_tm"
     )
-    if (!is.null(primers)) relaxed <- "gate_hrm_tm"
   }
-  if (is.null(primers)) {
+  # the second pass (roadmap X): the ranking is genome-free, so the leading pairs
+  # are screened for a single in-silico PCR product; the shortlist is widened
+  # top-up so the pass always has candidates to walk
+  screen <- function(p) {
+    vapply(
+      seq_along(p$forward),
+      function(i) isTRUE(pair_screen_ok(genome, p$forward[[i]], p$reverse[[i]])), logical(1)
+    )
+  }
+  n <- 1L
+  sl <- shortlist(n)
+  while (!is.null(sl$primers) && !isTRUE(screen(sl$primers)[1L]) && n <= 16L) {
+    n <- n * 2L
+    sl <- shortlist(n)
+  }
+  if (is.null(sl$primers)) {
     cli::cli_inform(gettext("No short flanking primer pair in the HRM amplicon window passed the Tm/GC filters."))
     return(NULL)
+  }
+  primers <- sl$primers
+  relaxed <- sl$relaxed
+  if (!is.null(genome) && !screen(primers)[1L]) {
+    reason <- gettext("No HRM flanking pair's in-silico PCR gives one product.")
+    if (pair_failure_dooms("hrm")) {
+      cli::cli_inform(reason)
+      return(NULL)
+    }
+    cli::cli_warn(reason)
+  } else {
+    primers <- lapply(primers, `[[`, 1L)
   }
   out <- list(
     scheme = "hrm",
