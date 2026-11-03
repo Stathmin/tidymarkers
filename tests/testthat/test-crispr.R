@@ -205,3 +205,76 @@ test_that("design_crispr_marker supports only the RPA pre-amplification", {
 })
 
 test_that("the crispr DAG obeys the contract", expect_dag_invariants("crispr"))
+
+test_that("design_crispr_marker ranks its gated guides and returns the first as the pick", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  m <- suppressWarnings(design_crispr_marker(f$genome, f$snp, flank = 200L, cas = "cas13"))
+  cd <- m$candidates
+  expect_s3_class(cd, "tbl_df")
+  expect_gt(nrow(cd), 1L)
+  expect_true(all(c("spacer", "off_target", "chosen", "not_chosen") %in% names(cd)))
+  # one chosen, and it is the first row: the pick is the best-first candidate
+  expect_equal(sum(cd$chosen), 1L)
+  expect_true(cd$chosen[1L])
+  expect_equal(cd$spacer[1L], m$guide)
+  expect_equal(m$off_target, cd$off_target[1L])
+  # ordering is the enumerator's (central then GC-closest), not re-sorted here
+  tmpl <- tidymarkers:::snp_template(f$genome, f$snp$chrom, f$snp$pos, 200L)
+  fresh <- crispr_guide_candidates(
+    tmpl$seq, tmpl$snp_i, "cas13", crispr_default_spacer("cas13"), c(0.35, 0.65)
+  )
+  hits <- vapply(fresh$spacer, crispr_spacer_hits, integer(1L), genome = f$genome)
+  usable <- fresh[hits - 1L <= 0L, ]
+  expect_equal(cd$start, usable$start)
+  expect_equal(cd$strand, usable$strand)
+  # the specificity gate is hard: no returned candidate carries an off-target
+  expect_true(all(cd$off_target[cd$chosen] <= 0L))
+})
+
+test_that("an off-target protospacer is excluded, or explains why a guide was not chosen", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  W <- f$W
+  # a second exact copy of a guide spacer elsewhere in the template makes that
+  # guide non-specific; it must never come back as the chosen guide
+  tmpl <- tidymarkers:::snp_template(f$genome, f$snp$chrom, f$snp$pos, 200L)
+  probes <- crispr_guide_candidates(
+    tmpl$seq, tmpl$snp_i, "cas13", crispr_default_spacer("cas13"), c(0.35, 0.65)
+  )
+  sp <- probes$spacer[nrow(probes)]
+  copy_at <- max(probes$end) + 20L
+  if (copy_at + nchar(sp) <= nchar(W)) {
+    substr(W, copy_at, copy_at + nchar(sp) - 1L) <- sp
+  }
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  m <- suppressWarnings(design_crispr_marker(genome, f$snp, flank = 200L, cas = "cas13"))
+  skip_if(is.null(m), "no guide survived the duplicated spacer")
+  expect_false(identical(m$guide, sp))
+  expect_lte(m$off_target, 0L)
+  expect_true(all(m$candidates$off_target[m$candidates$chosen] <= 0L))
+  # any candidate that was not chosen carries a named reason
+  rejected <- m$candidates[!m$candidates$chosen, ]
+  expect_true(all(!is.na(rejected$not_chosen)))
+  expect_true(all(
+    rejected$not_chosen %in%
+      c("lower_ranked", "no_preamp_pair", "off_target_protospacer", "specificity_unscanned")
+  ))
+  ot_flagged <- which(m$candidates$not_chosen == "off_target_protospacer")
+  expect_true(all(m$candidates$off_target[ot_flagged] > 0L))
+})
+
+test_that("the CRISPR readout stays unsimulated: no reporter kinetics model", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  m <- suppressWarnings(design_crispr_marker(f$genome, f$snp, flank = 200L, cas = "cas13"))
+  # no guide -> activity dataset exists, so a predicted signal would be invented
+  expect_false(m$simulated)
+  expect_equal(m$kinetics, "unknown")
+  expect_null(m$readout)
+  r <- marker_readout(m)
+  expect_false(r$simulated)
+  expect_match(r$note, "kinetics not modelled")
+  expect_false(crispr_seed_evidence()$calibrated)
+  expect_equal(crispr_seed_evidence()$magnitude, "unknown - no model predicts the ratio for a target")
+})

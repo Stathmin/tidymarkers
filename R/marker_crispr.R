@@ -349,9 +349,16 @@ crispr_default_spacer <- function(cas) {
 #' @param BPPARAM optional `BiocParallel` backend for the guide-specificity scan.
 #' @return a `marker_crispr` list (`snp`, `cas`, `strand`, `guide`, `pam`, `pfs`,
 #'   `pfs_side`, `guide_start`, `guide_end`, `seed_offset`, `gc`, `amplicon`,
-#'   `off_target`, `gates`, `relaxed`), or `NULL` (with a message) when no
-#'   guide / amplicon passes the hard gates.  `pam` is `NA` for Cas13;
-#'   `pfs`/`pfs_side` are `NA` for Cas12a.
+#'   `off_target`, `candidates`, `simulated`, `kinetics`, `gates`, `relaxed`), or
+#'   `NULL` (with a message) when no guide / amplicon passes the hard gates.
+#'   `pam` is `NA` for Cas13; `pfs`/`pfs_side` are `NA` for Cas12a.  `candidates`
+#'   is every guide that passed the PAM/PFS, seed and specificity gates at the
+#'   chosen rung, best-first (`start`, `end`, `len`, `strand`, `spacer`, `pam`,
+#'   `pfs`, `pfs_side`, `gc`, `v_off`, `off_target`, `chosen`, `not_chosen`);
+#'   `chosen` marks the returned guide, `not_chosen` names why the others were
+#'   not picked (`lower_ranked`, `no_preamp_pair`, `off_target_protospacer`,
+#'   `specificity_unscanned`).  `simulated` is
+#'   `FALSE` and `kinetics` `"unknown"`: the reporter kinetics are not modelled.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -414,18 +421,37 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
     if (!nrow(cand)) {
       return(NULL)
     }
+    hits <- vapply(cand$spacer, crispr_spacer_hits, integer(1L),
+      genome = genome, BPPARAM = BPPARAM
+    )
+    amp <- vector("list", nrow(cand))
+    chosen <- NA_integer_
     for (i in seq_len(nrow(cand))) {
-      hits <- crispr_spacer_hits(cand$spacer[i], genome, BPPARAM)
-      if (!is.na(hits) && (hits - 1L) > spec_max) next # an off-target protospacer
-      amp <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
+      if (!is.na(hits[i]) && (hits[i] - 1L) > spec_max) next # an off-target protospacer
+      amp[[i]] <- design_flanking_pair(tmpl$seq, cand$start[i], cand$end[i],
         lengths = pre$lengths, min_product = amp_lo, max_product = amp_hi,
         tm_range = pre$tm, gc_range = pre$gc
       )
-      if (!is.null(amp)) {
-        return(list(row = cand[i, ], amp = amp, hits = hits))
+      if (is.na(chosen) && !is.null(amp[[i]])) {
+        chosen <- i
       }
     }
-    NULL
+    if (is.na(chosen)) {
+      return(NULL)
+    }
+    # every gated candidate at this rung, with why it was not the pick (Z9.6).
+    # `off_target` is NA when the genome scan could not run; the gate is then
+    # unproven, not passed, so the row says so rather than claiming specificity.
+    ot <- hits - 1L
+    reason <- rep("lower_ranked", nrow(cand))
+    reason[is.na(ot)] <- "specificity_unscanned"
+    bad <- !is.na(ot) & ot > spec_max
+    reason[bad] <- "off_target_protospacer"
+    reason[!bad & vapply(amp, is.null, logical(1L))] <- "no_preamp_pair"
+    reason[chosen] <- NA_character_
+    table <- tibble::as_tibble(cand) |>
+      dplyr::mutate(off_target = ot, chosen = seq_len(nrow(cand)) == chosen, not_chosen = reason)
+    list(row = cand[chosen, ], amp = amp[[chosen]], hits = hits[chosen], candidates = table)
   }
   pick <- NULL
   for (r in rungs) {
@@ -480,6 +506,12 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
     gc = row$gc,
     preamp = preamp,
     off_target = off_target,
+    # the ranked alternatives, not a prediction (Z9.6): the collateral-cleavage
+    # kinetics are not modelled (no guide->activity dataset, see
+    # `crispr_seed_evidence()`), so this orders designs, it does not score signal.
+    candidates = pick$candidates,
+    simulated = FALSE,
+    kinetics = "unknown",
     gates = gates,
     relaxed = relaxed,
     amplicon = list(
@@ -515,6 +547,12 @@ print.marker_crispr <- function(x, ...) {
   cat("  guide:", x$guide, "(", x$strand, ",", lic, ", seed offset", x$seed_offset, ")\n")
   ot <- if (is.na(x$off_target)) "unscanned" else paste0(x$off_target, " off-target protospacer(s)")
   cat("  specificity:", ot, "\n")
+  if (!is.null(x$candidates)) {
+    cat(
+      "  candidates:", nrow(x$candidates), "gated guide(s);",
+      sum(x$candidates$chosen), "chosen (kinetics not simulated)\n"
+    )
+  }
   cat("  pre-amplification (", x$preamp, ") amplicon:", x$amplicon$product, "bp\n", sep = "")
   cat("  F:", x$amplicon$forward, "\n  R:", x$amplicon$reverse, "\n")
   if (length(x$relaxed)) {
