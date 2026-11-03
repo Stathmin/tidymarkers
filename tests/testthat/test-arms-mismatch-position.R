@@ -130,6 +130,9 @@ test_that("a technology carries the decided position through marker_technology()
     base = "arms",
     params = list(stab_ats = abs(ARMS_EXTRA_MISMATCH_POSITION)), overwrite = TRUE
   )
+  # a registered technology persists in the session store; remove it so it
+  # cannot leak into another file's scheme list (test-plan's two_pass())
+  on.exit(rm("arms_z71_dist", envir = .marker_tech_store), add = TRUE)
   m <- suppressWarnings(marker_design_at(g, snp, scheme = "arms_z71_dist", flank = 200L))
   testthat::skip_if(is.null(m), "no ARMS design at this locus")
   expect_identical(m$inner$ref$stab_at, abs(ARMS_EXTRA_MISMATCH_POSITION))

@@ -95,7 +95,7 @@ test_that("a KASP evaluation reports the terminal mismatch class, not a silent p
   # and `source` it was registered with live on the data object, `criterion_spec()`
   sp <- criterion_spec(KASP_LIMITS)
   expect_equal(sp$kind[sp$id == "as_mismatch_type"], "categorical")
-  expect_equal(sp$source[sp$id == "as_mismatch_type"], "primary literature")
+  expect_equal(sp$source[sp$id == "as_mismatch_type"], "kwok1990")
 })
 
 ## --- the two LefeVER / mismatch extract tables -------------------------------
