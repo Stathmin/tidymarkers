@@ -134,7 +134,9 @@ KASP_GATE_HARD_LABEL_CAPS <- c(
 #' plus strand alone, so one match per site is enough.  Non-palindromic and
 #' Type IIS enzymes (which cut outside/asymmetrically) are deliberately excluded -
 #' the fragment model here takes a single top-strand offset.
-#' @return tibble with `enzyme`, `site`, `cut`.
+#' @return tibble with `enzyme`, `site`, `cut`, and `isoforms` - the other
+#'   catalogue enzymes that read the same sequence and cut it at the same place
+#'   (the nuclease switch; empty for a singleton).
 #' @examples
 #' head(restriction_enzymes())
 #' @family KASP CAPS
@@ -142,7 +144,43 @@ KASP_GATE_HARD_LABEL_CAPS <- c(
 restriction_enzymes <- function() {
   f <- system.file("extdata", "restriction_enzymes.csv", package = "tidymarkers")
   if (!nzchar(f)) cli::cli_abort(gettext("Bundled restriction-enzyme catalogue not found."))
-  readr::read_csv(f, show_col_types = FALSE)
+  caps_operative_enzymes(readr::read_csv(f, show_col_types = FALSE))
+}
+
+# ---- the nuclease switch (isoschizomers: one site, several names) -------------
+# A catalogue row is (enzyme, site, cut); `matchPattern()` matches a *site*, so a
+# recognition sequence shared by several catalogue entries is one and the same
+# search - yet it used to become several candidates (`GATC` has scores of
+# isoschizomers in the REBASE dump) and the designer could then mail the user an
+# isoschizomer of the enzyme it actually modelled.  The fold lives in
+# `restriction_enzymes()` itself, so a caller-supplied table reaches the scans
+# folded the same way.
+
+#' One operative row per distinct recognition sequence (and cut)
+#'
+#' The kept row is the one the digest is computed from; `isoforms` names the other
+#' catalogue enzymes with the same site and cut.  One recognition sequence is one
+#' search in `matchPattern()`, so several catalogue rows would otherwise become
+#' several identical candidates and the designer could mail a user an isoschizomer
+#' of the enzyme whose cut it modelled.  Keeping one row and naming the rest beside
+#' it makes the switch explicit: a bench picks the isoschizomer (availability,
+#' methylation), never the design.
+#' @keywords internal
+#' @noRd
+caps_operative_enzymes <- function(enzymes) {
+  key <- paste(enzymes$site, as.integer(enzymes$cut))
+  # the keeper is the group's first row (REBASE order).  It is not chosen by
+  # inspecting the names: grepl("Eco", "EcoRI", fixed = TRUE) is FALSE on this R,
+  # so a name-based "own nuclease" test would pick an arbitrary row anyway.
+  ord <- order(key, seq_len(nrow(enzymes)))
+  enzymes <- tibble::as_tibble(enzymes[ord, , drop = FALSE], .name_repair = "minimal")
+  first <- !duplicated(key[ord])
+  isoforms <- vapply(split(enzymes$enzyme, key[ord])[unique(key[ord])], function(e) {
+    paste(utils::tail(e, -1L), collapse = ", ")
+  }, character(1))
+  out <- enzymes[first, , drop = FALSE]
+  out$isoforms <- unname(isoforms[key[ord][first]])
+  out
 }
 
 #' Digest fragment lengths of one sequence, per enzyme
@@ -161,7 +199,7 @@ restriction_enzymes <- function() {
 caps_fragments <- function(seq, enzymes = restriction_enzymes()) {
   s <- Biostrings::DNAString(as.character(seq))
   n <- length(s)
-  purrr::pmap(enzymes, function(enzyme, site, cut) {
+  purrr::pmap(enzymes[c("enzyme", "site", "cut")], function(enzyme, site, cut) {
     hits <- Biostrings::matchPattern(site, s, fixed = FALSE)
     starts <- IRanges::start(hits) - 1L
     cut_at <- sort(unique(starts + as.integer(cut)))
@@ -205,7 +243,9 @@ digest_gap <- function(a, b) {
 #' @param min_gap minimal band separation to call the digest gel-resolvable.
 #' @return tidy tibble, one row per enzyme with `n_sites_ref`, `n_sites_alt`,
 #'   `fragments_ref`, `fragments_alt`, `site_change` (a recognition site is
-#'   gained/lost, not just a length shift), `gap` and `resolvable`, sorted by
+#'   gained/lost, not just a length shift), `isoforms` (other catalogue enzymes that
+#'   read and cut the same sequence - the nuclease switch), `gap` and
+#'   `resolvable`, sorted by
 #'   decreasing `resolvable` then `gap`.
 #' @examples
 #' \dontrun{
@@ -236,6 +276,7 @@ find_caps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_e
   out$gap <- purrr::map2_dbl(out$fragments_ref, out$fragments_alt, digest_gap)
   out$resolvable <- out$site_change & is.finite(out$gap) & out$gap >= min_gap
   out <- dplyr::filter(out, is.finite(.data$gap))
+  out$isoforms <- enzymes$isoforms[match(out$enzyme, enzymes$enzyme)]
   dplyr::arrange(out, dplyr::desc(.data$resolvable), dplyr::desc(.data$gap))
 }
 
@@ -298,7 +339,7 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
   alt_chr <- as.character(Biostrings::replaceAt(
     tmpl$seq, IRanges::IRanges(snp_i, width = 1L), alt
   ))
-  found <- purrr::pmap(enzymes, function(enzyme, site, cut) {
+  found <- purrr::pmap(enzymes[c("enzyme", "site", "cut")], function(enzyme, site, cut) {
     L <- nchar(site)
     starts <- seq.int(max(1L, snp_i - L + 1L), min(n - L + 1L, snp_i))
     if (!length(starts)) {
@@ -346,7 +387,10 @@ find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_
     return(tibble::tibble())
   }
   found |>
-    dplyr::mutate(resolvable = .data$gap >= min_gap) |>
+    dplyr::mutate(
+      resolvable = .data$gap >= min_gap,
+      isoforms = enzymes$isoforms[match(.data$enzyme, enzymes$enzyme)]
+    ) |>
     dplyr::arrange(dplyr::desc(.data$gap))
 }
 
@@ -529,6 +573,9 @@ caps_grade <- function(cands, snp, tmpl, enzymes, limits, floors) {
       dcaps = cand$dcaps, enzyme = cand$enzyme, allele = cand$allele, gap = gap,
       site_start = site_span[1L], site_end = site_span[2L],
       enzyme_motif = one$site, enzyme_cut = one$cut,
+      # the other nucleases that read (and cut) the same sequence: the switch is a
+      # bench choice, not a re-design
+      enzyme_isoforms = one$isoforms[1L] %||% "",
       fragments_ref = list(fr), fragments_alt = list(fa), primers = list(pair),
       m_site = if (isTRUE(cand$site_change)) 1 else -1,
       m_resolvable = gap - limits$band_gap,
@@ -545,22 +592,45 @@ caps_grade <- function(cands, snp, tmpl, enzymes, limits, floors) {
 #' (hard `gate_caps_site`, soft bounded amplicon / Tm / band-gap), and package the
 #' winner as a `marker_caps` object carrying the restriction recipe, the pair and
 #' the gate outcome (`$selection`) so the DAG is evaluated, not decorative (C7).
+#' @param genome the `marker_genome`/`DNAStringSet` the second pass screens
+#'   against (`NULL` keeps the ladder's own winner).
 #' @keywords internal
 #' @noRd
-caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors) {
-  pick <- select_with_ladder(
+caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors, genome = NULL) {
+  # the second pass (roadmap X): when nothing clears the gates the design is not
+  # doomed on the cheap margins - the least-bad pairing goes to the genome-level
+  # screen (an in-silico PCR that must give one product) and only that dooms it
+  confirm <- function(b) {
+    pair <- b$primers[[1L]]
+    # a dCAPS primer introduces its site, so the reference amplicon carries one
+    # deliberate mismatch: allow it, or the screen rejects every dCAPS candidate
+    max_mismatch <- if (isTRUE(b$dcaps)) 1L else NULL
+    nrow(in_silico_pcr(pair$forward, pair$reverse, genome, max_mismatch = max_mismatch)) == 1L
+  }
+  pick <- select_flanking_pair(
     caps_grade(cands, snp, tmpl, enzymes, limits, floors),
-    gates = KASP_GATES_CAPS, relax_order = KASP_RELAX_CAPS,
+    gates = KASP_GATES_CAPS, relax = KASP_RELAX_CAPS,
     tiers = names(KASP_TIERS_CAPS), ties = character(0),
-    gate_margin = c(
+    margins = c(
       gate_caps_site = "m_site", gate_caps_resolvable = "m_resolvable",
       gate_caps_amplicon = "m_amplicon", gate_caps_tm = "m_tm"
     ),
-    gate_floor = floors
+    floors = floors,
+    confirm = if (is.null(genome)) NULL else confirm,
+    max_alternatives = Inf, skip_on_failure = TRUE
   )
   best <- pick$best
   if (is.null(best)) {
     return(NULL)
+  }
+  if (isTRUE(attr(best, "no_winner"))) {
+    reason <- gettext("No restriction marker's in-silico PCR gives one product.")
+    if (pair_failure_dooms("caps")) {
+      cli::cli_inform(reason)
+      return(NULL)
+    }
+    cli::cli_warn(reason)
+    pick$violated <- unique(c(pick$violated, pick$relaxed))
   }
   primers <- best$primers[[1L]]
   warn_relaxed(pick$violated)
@@ -569,7 +639,7 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors) {
       start = snp$pos + best$site_start - tmpl$snp_i,
       end = snp$pos + best$site_end - tmpl$snp_i,
       enzyme = best$enzyme, motif = best$enzyme_motif, cut = best$enzyme_cut,
-      dcaps = isTRUE(best$dcaps)
+      isoforms = best$enzyme_isoforms, dcaps = isTRUE(best$dcaps)
     )
   } else {
     NULL
@@ -627,7 +697,7 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   marker <- caps_marker(
     caps_natural_candidates(genome, snp, flank, enzymes, min_gap),
-    snp, tmpl, enzymes, limits, KASP_GATE_FLOOR_CAPS
+    snp, tmpl, enzymes, limits, KASP_GATE_FLOOR_CAPS, genome
   )
   out <- if (!is.null(marker)) marker else design_dcaps_marker(genome, snp, flank, enzymes, min_gap)
   if (is.null(out)) {
@@ -654,7 +724,7 @@ design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap = 50L) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   marker <- caps_marker(
     caps_dcaps_candidates(genome, snp, flank, enzymes, min_gap),
-    snp, tmpl, enzymes, limits, KASP_GATE_FLOOR_CAPS
+    snp, tmpl, enzymes, limits, KASP_GATE_FLOOR_CAPS, genome
   )
   if (is.null(marker)) {
     cli::cli_inform(gettext("No natural or primer-introduced (dCAPS) restriction marker here."))

@@ -1,8 +1,23 @@
 # CAPS / dCAPS: the enzyme scan and the flanking-pair design.
 
+# the operative nuclease for a site (the catalogue now carries one row per
+# recognition sequence; its isoschizomers are named in `isoforms`)
+caps_nuclease <- function(site, cut = 1) {
+  e <- restriction_enzymes()
+  hit <- e[e$site == site & e$cut == cut, ]
+  if (!nrow(hit)) hit <- e[e$site == site, ]
+  hit$enzyme[1L]
+}
+
+# a catalogue row by motif, as the digest and the scan take it
+eco_ri <- function() {
+  n <- caps_nuclease("GAATTC")
+  restriction_enzymes()[restriction_enzymes()$enzyme == n, ]
+}
+
 test_that("caps_fragments cuts at the enzyme site, or leaves one uncut band", {
-  f <- caps_fragments("AAAAAGAATTCTTTTT") # one EcoRI site at 6 (cut after it)
-  e <- f[f$enzyme == "EcoRI", ]
+  f <- caps_fragments("AAAAAGAATTCTTTTT", eco_ri()) # one EcoRI-class site at 6
+  e <- f
   expect_equal(e$n_sites, 1L)
   expect_equal(e$fragments[[1L]], c(6L, 10L))
   # an enzyme with no site in a short sequence leaves the molecule uncut
@@ -15,7 +30,7 @@ test_that("find_caps_enzymes flags the enzyme the variant turns on or off", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = "G", alt = "A") # G>A destroys it
   hits <- find_caps_enzymes(genome, snp, flank = 150L)
-  eco <- hits[hits$enzyme == "EcoRI", ]
+  eco <- hits[hits$enzyme == caps_nuclease("GAATTC"), ]
   expect_equal(nrow(eco), 1L)
   expect_true(eco$resolvable)
   expect_false(identical(eco$fragments_ref[[1L]], eco$fragments_alt[[1L]]))
@@ -37,6 +52,10 @@ test_that("design_caps_marker returns a classed marker whose pair spans the site
   expect_equal(m$site$enzyme, m$enzyme)
   expect_equal(m$site$motif, sel$site)
   expect_equal(m$site$cut, sel$cut)
+  # the nuclease switch travels with the recipe: the other enzymes that read the
+  # same site are named, and the modelled one is not one of them
+  expect_equal(m$site$isoforms, sel$isoforms)
+  expect_false(grepl(m$enzyme, m$site$isoforms, fixed = TRUE))
   expect_gte(m$site$start, m$amplicon$start)
   expect_lte(m$site$end, m$amplicon$end)
   expect_equal(m$site$end - m$site$start + 1L, nchar(m$site$motif))
@@ -57,7 +76,7 @@ test_that("find_dcaps_enzymes finds a site a primer can complete", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 305L, ref = "C", alt = "A") # variant inside the site
   d <- find_dcaps_enzymes(genome, snp, flank = 200L)
-  eco <- d[d$enzyme == "EcoRI", ]
+  eco <- d[d$enzyme == caps_nuclease("GAATTC"), ]
   expect_true(nrow(eco) >= 1L)
   expect_equal(eco$allele[1L], "ref")
   expect_equal(eco$mm_offset[1L], 2L)
@@ -73,6 +92,8 @@ test_that("dCAPS scanning declines non-substitution alleles", {
     suppressWarnings(find_dcaps_enzymes(genome, snp, flank = 15L)),
     "single-base"
   )
+  # §W: the refusal is also a DAG criterion, not only a message
+  expect_true("family_single_base" %in% marker_criteria(scheme = "caps")$id)
 })
 
 test_that("design_caps_marker falls back to dCAPS when no natural site exists", {
@@ -85,6 +106,8 @@ test_that("design_caps_marker falls back to dCAPS when no natural site exists", 
   expect_s3_class(m, "marker_caps")
   expect_true(isTRUE(m$dcaps))
   expect_true(m$enzyme %in% restriction_enzymes()$enzyme)
+  # a dCAPS site carries the same nuclease switch the natural one does
+  expect_equal(m$site$isoforms, restriction_enzymes()$isoforms[restriction_enzymes()$enzyme == m$enzyme])
 })
 
 test_that("a resolvable CAPS call needs a site change, not just a length shift", {
@@ -181,10 +204,12 @@ caps_ext <- function(name) {
 }
 
 test_that("restriction_enzymes: one row per palindromic site, cut inside the site", {
-  e <- caps_ext("restriction_enzymes.csv")
-  expect_equal(nrow(e), 1236L)
-  expect_false(any(duplicated(e$enzyme)))
-  # an unnamed enzyme cannot be reported back to the user
+  s <- caps_ext("restriction_enzymes.csv")
+  # the file is one row per catalogue enzyme; the reader folds isoschizomers
+  expect_equal(nrow(s), 1236L)
+  e <- restriction_enzymes()
+  expect_equal(nrow(e), length(unique(paste(s$site, s$cut))))
+  expect_false(any(duplicated(paste(e$site, e$cut))))
   expect_false(any(is.na(e$enzyme) | !nzchar(e$enzyme)))
   # the scanner reads the plus strand alone, so an asymmetrically cutting site
   # would be modelled wrongly: every site must be its own reverse complement
@@ -201,11 +226,19 @@ test_that("restriction_enzymes: one row per palindromic site, cut inside the sit
   expect_true(all(nchar(e$site) >= 4L & nchar(e$site) <= 12L))
   expect_true(all(e$cut >= 0 & e$cut <= nchar(e$site)))
   expect_lte(max(e$cut), 8)
-  # the five named in the documentation still carry their published motif/cut
-  canon <- c(EcoRI = "GAATTC", HindIII = "AAGCTT", BamHI = "GGATCC", PstI = "CTGCAG", Sau3AI = "GATC")
-  got <- e[match(names(canon), e$enzyme), ]
-  expect_equal(got$site, unname(canon))
+  # the five documented enzymes still carry their published motif/cut; the
+  # sequence's scan row is the first catalogue row, and its isoschizomers are
+  # named beside it rather than becoming duplicate candidates
+  canon <- c(EcoRI = "GAATTC", BamHI = "GGATCC", HindIII = "AAGCTT", PstI = "CTGCAG", Sau3AI = "GATC")
+  got <- e[match(unname(canon), e$site), ]
   expect_equal(got$cut, c(1, 1, 1, 5, 0))
+  # the isoschizomers are still reachable: the switch is a bench choice
+  at <- which(e$site %in% unname(canon))
+  expect_true(all(vapply(seq_along(at), function(k) {
+    n <- e$enzyme[at[k]]
+    !grepl(n, e$isoforms[at[k]], fixed = TRUE)
+  }, logical(1))))
+  expect_match(e$isoforms[e$site == "GAATTC"], "EcoRI", fixed = TRUE)
 })
 
 test_that("liu2016_caps_snp_types: the pct is within family, and the families sum to 100", {

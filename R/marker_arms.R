@@ -211,6 +211,15 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   limits$band_gap <- as.numeric(min_band_gap)
   floors <- KASP_GATE_FLOOR_ARMS
   floors[["gate_arms_bands"]] <- KASP_ARMS_GAP_FLOOR - limits$band_gap
+  # Z7.1: the position is decided as a positive distance from the 3' end.  A
+  # signed constant (-3) is the offset form; passing it in clears the request in
+  # silence (design_as_primers() refuses a negative `stab_ats`), so refuse it here
+  # where the caller still has the argument in hand.
+  if ("stab_ats" %in% names(list(...)) && any(list(...)$stab_ats < 0L, na.rm = TRUE)) {
+    cli::cli_abort(gettext(
+      "`stab_ats` is a distance from the 3' end (3L); the signed policy offset is `-ARMS_EXTRA_MISMATCH_POSITION`."
+    ))
+  }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   outer <- arms_outer_pairs(tmpl$seq, tmpl$snp_i, limits)
   if (!nrow(outer)) {
@@ -270,20 +279,34 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
       tier1 = .data$disc - limits$min_disc, tier2 = .data$m_bands,
       tier3 = -.data$tube_spread
     )
-  pick <- select_with_ladder(
+  # the second pass (roadmap X): a tube that clears no gate on the cheap margins
+  # goes to the genome-level screen (the outer pair's in-silico PCR) instead of
+  # being doomed on a genome-free ranking
+  confirm <- function(b) pair_screen_ok(genome, b$outer_forward, b$outer_reverse)
+  pick <- select_flanking_pair(
     cand,
-    gates = KASP_GATES_ARMS, relax_order = KASP_RELAX_ARMS,
+    gates = KASP_GATES_ARMS, relax = KASP_RELAX_ARMS,
     tiers = names(KASP_TIERS_ARMS), ties = character(0),
-    gate_margin = c(
+    margins = c(
       gate_arms_disc = "m_disc", gate_arms_bands = "m_bands",
       gate_arms_outer = "m_outer"
     ),
-    gate_floor = floors
+    floors = floors, confirm = confirm,
+    max_alternatives = Inf, skip_on_failure = TRUE
   )
   best <- pick$best
   if (is.null(best)) {
     cli::cli_inform(gettext("No tetra-primer set cleared even the relaxed constraints."))
     return(NULL)
+  }
+  if (isTRUE(attr(best, "no_winner"))) {
+    reason <- gettext("No tetra-primer set's outer pair gives a single in-silico PCR product.")
+    if (pair_failure_dooms("arms")) {
+      cli::cli_inform(reason)
+      return(NULL)
+    }
+    cli::cli_warn(reason)
+    pick$violated <- unique(c(pick$violated, pick$relaxed))
   }
   off <- snp$pos - tmpl$snp_i
   out <- list(

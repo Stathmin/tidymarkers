@@ -31,6 +31,8 @@ test_that("design_arms_marker declines non-substitution alleles", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "A", alt = "AA")
   expect_message(suppressWarnings(design_arms_marker(genome, snp, flank = 40L)), "single-base")
+  # §W: the refusal is also a DAG criterion, not only a message
+  expect_true("family_single_base" %in% marker_criteria(scheme = "arms")$id)
 })
 
 test_that("plot_arms_gel draws the AA / AB / BB readout", {
@@ -57,6 +59,23 @@ test_that("the arms scheme is registered and yields a DAG with its own stage", {
   s <- marker_decision_schema("arms")
   ord <- stats::setNames(s$nodes$order, s$nodes$name)
   expect_true(all(ord[s$edges$to] > ord[s$edges$from]))
+})
+
+test_that("design_arms_marker refuses a signed mismatch position (Z7.1)", {
+  withr::local_envvar(LANGUAGE = "en")
+  # the position is a distance from the 3' end (3L); the policy constant is the
+  # signed offset (-3).  A signed value used to clear the request in silence
+  # deep inside design_as_primers(), after the designer had already run.
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 200L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 400L, ref = "A", alt = "T")
+  expect_error(
+    design_arms_marker(genome, snp, flank = 100L, stab_ats = ARMS_EXTRA_MISMATCH_POSITION),
+    "distance from the 3' end"
+  )
+  expect_error(
+    design_arms_marker(genome, snp, flank = 100L, stab_ats = c(-3L, 3L)),
+    "distance from the 3' end"
+  )
 })
 
 test_that("the arms DAG obeys the contract", {
