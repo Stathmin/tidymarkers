@@ -366,3 +366,100 @@ test_that("Z8: a failure without a reason is refused, so is an unknown target", 
   # nothing a refused call touched was written
   expect_equal(nrow(marker_outcomes(dir)), 0L)
 })
+
+# =============================================================================
+#  Z8.2  --  the operator panel's per-assay label, joined to the gate verdicts
+# =============================================================================
+#  The operator states the panel was ordered, tested, and produced a distinct
+#  signal, so every assay is `worked` (0 `failed`); the statement is quoted in
+#  `basis`, and a `failed` row must never be invented.  The labelled table is
+#  what the harness (dev/targets/_targets.R) joins to the gates, and it is the
+#  second SOURCE Z8.4 splits on.
+
+z8_outcome_scale <- c(
+  "worked", "failed", "ambiguous", "no_amplification", "no_polymorphism",
+  "not_attempted"
+)
+
+test_that("Z8.2: the panel label uses the closed vocabulary and quotes its basis", {
+  a <- ext("soybean_worked_panel_assays.csv")
+  expect_true(all(c("outcome", "basis") %in% names(a)))
+  expect_true(all(!is.na(a$outcome)))
+  expect_true(all(a$outcome %in% z8_outcome_scale))
+  # a label without the observation behind it is not citable
+  expect_true(all(!is.na(a$basis) & nzchar(a$basis)))
+  expect_false(anyDuplicated(a$assay_id) > 0)
+})
+
+test_that("Z8.2: a panel outcome is never a design verdict", {
+  a <- ext("soybean_worked_panel_assays.csv")
+  g <- ext("soybean_worked_panel_kasp_gates.csv")
+  # only the wet lab may say `failed`; the panel reports workings, not failures
+  expect_equal(sum(a$outcome == "failed"), 0L)
+  # a revised design may legitimately go on to work; the label still quotes a basis
+  revised <- !is.na(a$status) & a$status == "redesigned after external check"
+  expect_equal(sum(revised), 4L)
+  expect_true(all(nzchar(a$basis[revised])))
+  # the gate rows are a design benchmark: they grade 13 assays, not 36
+  expect_equal(length(unique(g$assay_id)), 13L)
+  expect_true(all(g$assay_id %in% a$assay_id))
+})
+
+# =============================================================================
+#  Z8.4  --  the split is by SOURCE, never by row
+# =============================================================================
+#  Two labelled sources exist: the operator panel (per-assay design verdicts
+#  plus wet-lab labels) and the public conversion studies.  A row-level split
+#  would put two SNPs of one paper on either side and leak its own success
+#  count into the test.  The primary key is (source, row), and a split must
+#  assign each SOURCE wholly to one side.  The splitter and the gate-rate check
+#  are the harness's own (dev/z8-harness.R), not re-declared here.  testthat
+#  runs this file with tests/testthat as the working directory.
+
+source(test_path("..", "..", "dev", "z8-harness.R"))
+
+test_that("Z8.4: the two outcome sources are keyed by (source, row)", {
+  panel <- ext("soybean_worked_panel_assays.csv")
+  conv <- ext("conversion_rates.csv")
+  tbl <- rbind(
+    data.frame(source = "operator_panel_soybean", row = panel$assay_id),
+    data.frame(source = paste0("literature:", conv$study), row = conv$study)
+  )
+  expect_false(anyDuplicated(tbl[c("source", "row")]) > 0)
+  expect_false(anyDuplicated(tbl$row) > 0)
+  expect_equal(sum(tbl$source == "operator_panel_soybean"), 36L)
+})
+
+test_that("Z8.4: no source appears on both sides of a split", {
+  conv <- ext("conversion_rates.csv")
+  sources <- c("operator_panel_soybean", paste0("literature:", conv$study))
+  spy <- z8_split_by_source(data.frame(source = sources))
+  expect_length(intersect(spy$unique, spy$held), 0L)
+  expect_setequal(c(spy$unique, spy$held), unique(sources))
+  # the leaky case: two rows of one source straddling row 2 of a naive split
+  leak <- data.frame(source = c("a", "b", "a", "b"), row = 1:4)
+  naive_left <- unique(leak$source[leak$row <= 2L])
+  naive_right <- unique(leak$source[leak$row > 2L])
+  expect_gt(length(intersect(naive_left, naive_right)), 0L)
+  # the source-level split keeps each source whole
+  sp <- z8_split_by_source(leak)
+  expect_length(intersect(sp$unique, sp$held), 0L)
+  expect_setequal(c(sp$unique, sp$held), unique(leak$source))
+  expect_equal(length(c(sp$unique, sp$held)), length(unique(leak$source)))
+})
+
+test_that("Z8.4: the gate-pass rate is uncomputable without a failure class", {
+  panel <- ext("soybean_worked_panel_assays.csv")
+  expect_length(panel$outcome, 36L)
+  r <- z8_gate_rate(data.frame(outcome = panel$outcome))
+  expect_false(r$computable)
+  expect_true(is.na(r$rate))
+  expect_equal(r$n_worked, 36L)
+  expect_equal(r$n_failed, 0L)
+  expect_true(is.character(r$reason) && nzchar(r$reason))
+  # with both classes the rate exists, and is strictly inside (0, 1)
+  syn <- data.frame(outcome = c("worked", "worked", "failed"))
+  s <- z8_gate_rate(syn)
+  expect_true(s$computable)
+  expect_true(is.finite(s$rate) && s$rate > 0 && s$rate < 1)
+})
