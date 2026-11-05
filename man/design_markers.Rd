@@ -25,7 +25,7 @@ a one-row-per-locus tibble: \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \c
 winner, or \code{NA}) and \code{ok}.
 }
 \description{
-The batch twin of \code{\link[=design_marker]{design_marker()}}: one row per locus, saying which chemistry
+The batch twin of \code{\link[=design_auto_marker]{design_auto_marker()}}: one row per locus, saying which chemistry
 took it and whether it designed.  With \code{scheme} given it is one chemistry for
 every locus; with \code{scheme = NULL} it walks \code{\link[=rescue_strategy]{rescue_strategy()}}, so a locus KASP
 dooms falls through to CAPS / ARMS / HRM / the discovered chemistries.
@@ -44,11 +44,11 @@ Other design:
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
+\code{\link[=design_auto_marker]{design_auto_marker()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_duplex]{design_duplex()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=design_lax_marker]{design_lax_marker()}},
-\code{\link[=design_marker]{design_marker()}},
 \code{\link[=marker_readout]{marker_readout()}},
 \code{\link[=marker_site_class]{marker_site_class()}},
 \code{\link[=pick_target_snp]{pick_target_snp()}},

@@ -32,17 +32,17 @@ test_that("pick_target_snp with a scheme warns and returns the best when none de
   expect_equal(pick_target_snp(variants, genome, gene)$id, "v")
 })
 
-test_that("design_marker walks the chemistries and returns the first that works", {
+test_that("design_auto_marker walks the chemistries and returns the first that works", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   genome <- f$genome
   snp <- f$snp
-  d <- suppressWarnings(design_marker(genome, snp, flank = 150L))
+  d <- suppressWarnings(design_auto_marker(genome, snp, flank = 150L))
   expect_setequal(d$tried$scheme, c("snp", "caps", "arms", "hrm"))
   expect_true(d$scheme %in% c("snp", "caps", "arms", "hrm"))
   expect_true(is_target_designable(d$marker))
   # restricted to HRM, it reports HRM (or nothing) and says so
-  h <- suppressWarnings(design_marker(genome, snp, schemes = "hrm", flank = 150L))
+  h <- suppressWarnings(design_auto_marker(genome, snp, schemes = "hrm", flank = 150L))
   expect_equal(h$tried$scheme, "hrm")
 })
 
@@ -53,10 +53,17 @@ test_that("a context does not change dispatch or the no-context result", {
   # "asq" has no designer in this build: both calls report the same null verdict
   expect_null(marker_design_at(NULL, NULL, "asq"))
   expect_null(marker_design_at(NULL, NULL, "asq", context = ctx))
-  a <- suppressWarnings(design_marker(genome, snp, schemes = "asq"))
-  b <- suppressWarnings(design_marker(genome, snp, schemes = "asq", context = ctx))
+  a <- suppressWarnings(design_auto_marker(genome, snp, schemes = "asq"))
+  b <- suppressWarnings(design_auto_marker(genome, snp, schemes = "asq", context = ctx))
   expect_identical(a, b)
   expect_false(a$tried$ok)
+})
+
+test_that("design_marker is a deprecated alias of design_auto_marker", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
+  expect_warning(d <- design_marker(genome, snp, schemes = "asq"), "deprecated")
+  expect_identical(d, design_auto_marker(genome, snp, schemes = "asq"))
 })
 
 test_that("design_markers accepts a context and keeps its result", {

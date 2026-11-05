@@ -18,7 +18,7 @@ columns (\code{scheme}, \code{family}, \code{label}, \code{discrimination}, \cod
 \description{
 A marker is not one chemistry.  When KASP fails a locus another may take it
 (see \code{\link[=marker_schemes]{marker_schemes()}}), so the "try in turn" order is an object here rather
-than a vector buried in \code{\link[=design_marker]{design_marker()}}.  The default ladder holds only the
+than a vector buried in \code{\link[=design_auto_marker]{design_auto_marker()}}.  The default ladder holds only the
 schemes that can be tried \emph{one locus at a time} (see \code{\link[=marker_schemes]{marker_schemes()}}'s \code{loci};
 a duplex needs two).  Steps can be dropped or reordered:
 \code{rescue_strategy(c("hrm", "caps"))}, or filtered by family.
@@ -34,11 +34,11 @@ Other design:
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
+\code{\link[=design_auto_marker]{design_auto_marker()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_duplex]{design_duplex()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=design_lax_marker]{design_lax_marker()}},
-\code{\link[=design_marker]{design_marker()}},
 \code{\link[=design_markers]{design_markers()}},
 \code{\link[=marker_readout]{marker_readout()}},
 \code{\link[=marker_site_class]{marker_site_class()}},

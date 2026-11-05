@@ -1,54 +1,74 @@
 url: ~
 template:
-  bootstrap: 5
+    bootstrap: 5
 
 reference:
-  - title: "Input: genomes & variants"
-    desc: "Read FASTA/VCF, pull Ensembl records, normalise alleles"
-    contents:
-      - has_concept("KASP input")
-  - title: "Geometry"
-    desc: "The single source of truth for primer coordinates"
-    contents:
-      - has_concept("KASP geometry")
-  - title: "Design"
-    desc: "Allele-specific and common primers, assay assembly, batch design"
-    contents:
-      - has_concept("KASP design")
-  - title: "Thermodynamics & structure"
-    desc: "Tm, duplex/hairpin dG, wobble typing, 3'-stability"
-    contents:
-      - has_concept("KASP thermodynamics")
-  - title: "Specificity"
-    desc: "Seed scan, in-silico PCR, BLAST"
-    contents:
-      - has_concept("KASP specificity")
-  - title: "Annotation"
-    desc: "Structured consequences from a TxDb / BSgenome"
-    contents:
-      - has_concept("KASP annotation")
-  - title: "QC & acceptance"
-    desc: "Grade an assay against the KASP criteria"
-    contents:
-      - has_concept("KASP checks")
-      - has_concept("KASP QC")
-  - title: "Plan and export"
-    desc: "Targets, chemistry costs, the solver and its tidy export"
-    contents:
-      - has_concept("KASP plan")
-  - title: "Informativeness & ranking"
-    desc: "How much a marker tells an available panel apart, and the Pareto front"
-    contents:
-      - has_concept("KASP informativeness")
-      - has_concept("KASP ranking")
-  - title: "Plots"
-    desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
-    contents:
-      - has_concept("KASP plots")
-  - title: "Output & ordering"
-    desc: "Consolidated results and IDT/LGC order sheets"
-    contents:
-      - has_concept("KASP output")
-  - title: "Utilities"
-    contents:
-      - has_concept("KASP utilities")
+    - title: "Input: genomes & variants"
+      desc: "Read FASTA/VCF, pull Ensembl records, normalise alleles"
+      contents:
+          - has_concept("input")
+    - title: "Geometry"
+      desc: "The single source of truth for primer coordinates"
+      contents:
+          - has_concept("geometry")
+    - title: "Design"
+      desc: "Allele-specific and common primers, assay assembly, batch design"
+      contents:
+          - has_concept("design")
+    - title: "Thermodynamics & structure"
+      desc: "Tm, duplex/hairpin dG, wobble typing, 3'-stability"
+      contents:
+          - has_concept("thermodynamics")
+    - title: "Specificity"
+      desc: "Seed scan, in-silico PCR, BLAST"
+      contents:
+          - has_concept("specificity")
+    - title: "Annotation"
+      desc: "Structured consequences from a TxDb / BSgenome"
+      contents:
+          - has_concept("annotation")
+    - title: "QC & acceptance"
+      desc: "Grade an assay against the marker criteria"
+      contents:
+          - has_concept("checks")
+          - has_concept("QC")
+    - title: "Plan & export"
+      desc: "Targets, chemistry costs, the solver and its tidy export"
+      contents:
+          - has_concept("plan")
+          - has_concept("output")
+    - title: "Informativeness & ranking"
+      desc: "How much a marker tells an available panel apart, and the Pareto front"
+      contents:
+          - has_concept("informativeness")
+          - has_concept("ranking")
+    - title: "Plots"
+      desc: "Library-driven visualisations (ggmsa, gggenes, ggrepel, patchwork)"
+      contents:
+          - has_concept("plots")
+    - title: "Utilities & engines"
+      desc: "Shared helpers and the external engine seams"
+      contents:
+          - has_concept("utilities")
+          - has_concept("engines")
+    - title: "Technologies & haplotypes"
+      desc: "The chemistry registry and haplotype-aware design"
+      contents:
+          - has_concept("technologies")
+          - has_concept("haplotypes")
+    - title: "Chemistries"
+      desc: "One section per marker chemistry, from gel to digital PCR"
+      contents:
+          - has_concept("TaqMan")
+          - has_concept("CAPS")
+          - has_concept("ARMS")
+          - has_concept("HRM")
+          - has_concept("Sanger")
+          - has_concept("SSR")
+          - has_concept("SNaPshot")
+          - has_concept("dPCR")
+          - has_concept("LAMP")
+          - has_concept("RPA")
+          - has_concept("CRISPR")
+          - has_concept("castPCR")
+          - has_concept("indel size")

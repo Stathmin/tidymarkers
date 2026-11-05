@@ -541,6 +541,7 @@ is_target_designable <- function(marker) {
 #' HRM marker (see [marker_schemes()]).  This walks the schemes in order, designing
 #' each in turn, and returns the first usable one together with a tidy verdict for
 #' every scheme it tried - "which chemistry takes this target", in one call.
+#' `design_marker()` is a deprecated alias that forwards here.
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`; an `alt2` list-column
 #'   is honoured by the KASP scheme).
@@ -556,12 +557,12 @@ is_target_designable <- function(marker) {
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
-#' design_marker(genome, marker_example("SNP")[1, ])
+#' design_auto_marker(genome, marker_example("SNP")[1, ])
 #' }
 #' @family design
 #' @export
-design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
-                          context = NULL) {
+design_auto_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
+                               context = NULL) {
   # the order to try is the rescue policy (see rescue_strategy()); a plain vector
   # keeps the historical KASP -> CAPS -> ARMS -> HRM ladder
   if (is.null(schemes)) {
@@ -582,4 +583,11 @@ design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
     marker = if (is.na(scheme)) NULL else win$marker[[1L]],
     tried = tried
   )
+}
+
+#' @rdname design_auto_marker
+#' @export
+design_marker <- function(...) {
+  .Deprecated("design_auto_marker")
+  design_auto_marker(...)
 }

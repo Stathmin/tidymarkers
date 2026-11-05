@@ -44,7 +44,7 @@ render_one <- function(i) {
       variants <- ensembl_variants(r$chrom, max(1L, win[1L]), win[2L])
       # KASP first; when it dooms, the ladder falls through to CAPS/ARMS/HRM, so a
       # locus no KASP takes still gets a marker of some chemistry
-      d <- design_marker(genome, snp, variants = variants, flank = 150L)
+      d <- design_auto_marker(genome, snp, variants = variants, flank = 150L)
       # the whole ladder (every scheme's attempt + verdict) next to the image, so
       # the fallback is dissectable without re-running the design
       saveRDS(d, fs::path(out, paste0("target_", tag, ".rds")))

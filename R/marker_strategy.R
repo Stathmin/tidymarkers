@@ -3,7 +3,7 @@
 # =============================================================================
 #  Which chemistry to try for a locus is a *policy*, not a hard-coded vector:
 #  `rescue_strategy()` is that policy as a tidy object (one row per step, in the
-#  order to try them), `design_marker()` walks it, and `design_markers()` applies
+#  order to try them), `design_auto_marker()` walks it, and `design_markers()` applies
 #  one chemistry (or the whole ladder) over a table of loci.  The policy can be
 #  inspected, filtered, reordered or restricted like any other tibble.
 # =============================================================================
@@ -28,7 +28,7 @@ per_locus_schemes <- function() {
 #'
 #' A marker is not one chemistry.  When KASP fails a locus another may take it
 #' (see [marker_schemes()]), so the "try in turn" order is an object here rather
-#' than a vector buried in [design_marker()].  The default ladder holds only the
+#' than a vector buried in [design_auto_marker()].  The default ladder holds only the
 #' schemes that can be tried *one locus at a time* (see [marker_schemes()]'s `loci`;
 #' a duplex needs two).  Steps can be dropped or reordered:
 #' `rescue_strategy(c("hrm", "caps"))`, or filtered by family.
@@ -63,7 +63,7 @@ rescue_strategy <- function(schemes = NULL) {
 
 #' Design markers for a table of loci with one chemistry (or the rescue ladder)
 #'
-#' The batch twin of [design_marker()]: one row per locus, saying which chemistry
+#' The batch twin of [design_auto_marker()]: one row per locus, saying which chemistry
 #' took it and whether it designed.  With `scheme` given it is one chemistry for
 #' every locus; with `scheme = NULL` it walks [rescue_strategy()], so a locus KASP
 #' dooms falls through to CAPS / ARMS / HRM / the discovered chemistries.
@@ -101,7 +101,7 @@ design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
       alt2 = if ("alt2" %in% names(r)) as.character(r$alt2) else NA_character_
     )
     if (is.null(scheme)) {
-      d <- design_marker(genome, snp, ..., context = context)
+      d <- design_auto_marker(genome, snp, ..., context = context)
       chosen <- d$scheme
       ok <- is_target_designable(d$marker)
     } else {
