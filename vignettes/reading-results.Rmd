@@ -29,6 +29,16 @@ library(knitr)
 Every answer is a row in a table, not a spoken conclusion: so the same assay can
 be compared with another and that comparison can itself be tested.
 
+The examples below read a small FASTA that ships with the package, so they run
+without a genome or the network:
+
+```{r}
+fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+genome <- read_genome_fasta(fa)
+snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
+assay <- assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L)
+```
+
 ## Verdict by criterion
 
 `marker_design_checks()` returns a tidy table; a "good" assay passes **all** the
@@ -109,8 +119,6 @@ loci already computed to be reused between calls.
 ```{r, eval = FALSE}
 dir <- marker_export(solved, dir = "results/solved")
 fs::dir_ls(dir)
-# markers.csv    attempts.csv    primers.csv    solved.rds
-# artefact.json  decisions.csv   checks.csv      targets.csv
 ```
 
 - `markers.csv` — the per-locus report;
@@ -237,7 +245,7 @@ If the object was assembled but with caveats, look at `$selection`. The
 relaxation ladder lifts the soft gates one at a time and records what exactly
 was lifted:
 
-```{r, eval = FALSE}
+```{r}
 assay$selection$relaxed # which gates were relaxed
 assay$selection$violated # which are still violated
 assay$evaluation # the checks table saved at assembly
@@ -245,7 +253,10 @@ assay$evaluation # the checks table saved at assembly
 
 An empty `relaxed` and `violated` means the assay passed first time; a non-empty
 one means the "least bad" candidate came back, and `cli` warned about it at
-assembly.
+assembly. An empty selection is not a pass, though: it only says nothing had to
+be relaxed. The assay assembled above is the first kind, and it still fails
+checks: `passes_all(assay)` is `FALSE`, `marker_risk(assay)$risk` is `high`, and
+5 of its 27 check rows do not pass.
 
 ### The decision policy as text
 
@@ -272,13 +283,8 @@ graph (green — applied, amber — relaxed, red — violated).
 
 The assay object prints itself compactly:
 
-```{r, eval = FALSE}
+```{r}
 assay
-# <marker_assay> Chr4:269090 G>A (strand -)
-#   AS-ref  ...
-#   AS-alt  ...
-#   COM     ...
-#   amplicon 93 bp | discrimination 0.966
 ```
 
 ## Result files

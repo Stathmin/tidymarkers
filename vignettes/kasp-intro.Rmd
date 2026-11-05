@@ -48,9 +48,9 @@ kasp_mix_recipe(n_reactions = 96)
 ## Variant classification and masking
 
 ```{r}
-variant_type("G", "A")          # SNP
-variant_type("A", "AGG")        # insertion
-variant_type("AGG", "A")        # deletion
+variant_type("G", "A") # SNP
+variant_type("A", "AGG") # insertion
+variant_type("AGG", "A") # deletion
 
 # replace other variants under the primer with N (so they are not carried into the primer)
 mask_positions("ACGTACGT", c(2, 5))
@@ -60,26 +60,34 @@ mask_positions("ACGTACGT", c(2, 5))
 
 The full cycle reads a genome (TAIR10 or any FASTA) and variants (VCF or Ensembl),
 so it is shown here as code (the heavy steps are not run when the document is
-built):
+built). This chunk downloads TAIR10 on first use.
 
 ```{r, eval = FALSE}
-genome <- ath_genome()                                  # TAIR10, cached
-gene   <- ensembl_gene("AT4G00650")                     # FRI
+genome <- ath_genome() # TAIR10, cached
+gene <- ensembl_gene("AT4G00650") # FRI
 variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 
 snp <- pick_target_snp(variants, genome, gene)
-assay <- assemble_kasp_assay(genome, snp, variants = variants,
-                             strands = c("+", "-"), tm_range = c(58, 64))
-assay                                                   # prints a summary
-passes_all(assay)                                       # TRUE / FALSE
-marker_design_checks(assay)                               # row by row, what and why
+assay <- assemble_kasp_assay(genome, snp,
+  variants = variants,
+  strands = c("+", "-"), tm_range = c(58, 64)
+)
+assay # prints a summary
+passes_all(assay) # TRUE / FALSE
+marker_design_checks(assay) # row by row, what and why
 ```
 
-Your own FASTA/VCF - same way, but through the input readers:
+Your own FASTA/VCF - same way, but through the input readers. The chunk reads a
+small FASTA that ships with the package, so it runs here without a genome; for a
+VCF of your own, `read_variants_vcf("my.vcf.gz", chrom = "chr1")` streams the
+variants with `vroom`:
 
-```{r, eval = FALSE}
-genome <- read_genome_fasta("my.fa", seqids = c("chr1", "chr2"))  # Rsamtools index
-variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1")        # vroom, streaming
+```{r}
+fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+genome <- read_genome_fasta(fa) # Rsamtools index
+snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
+assay <- assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L)
+assay # prints a summary
 ```
 
 ## Batch design
@@ -89,14 +97,14 @@ sink the run):
 
 ```{r, eval = FALSE}
 loci <- marker_example()[c("chrom", "pos", "ref", "alt")]
-design_kasp_markers(genome, loci)   # pass / warn / fail + reason
+design_kasp_markers(genome, loci) # pass / warn / fail + reason
 ```
 
 ## Results and ordering
 
 ```{r, eval = FALSE}
-write_kasp_results(assay, gene)     # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
-                                    # + IDT/LGC/tidy as column subsets
+write_kasp_results(assay, gene) # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
+# plus IDT/LGC/tidy as column subsets
 ```
 
 See also `?marker_design_checks`, `?assemble_kasp_assay`, `?kasp_mix_recipe`.

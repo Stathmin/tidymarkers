@@ -90,8 +90,10 @@ knitr::include_graphics("figures/duplex.svg")
 ```
 
 ```{r, eval = FALSE}
-loci <- tibble::tibble(chrom = c("Chr1", "Chr1"), pos = c(250L, 550L),
-                       ref = c("A", "G"), alt = c("G", "A"))
+loci <- tibble::tibble(
+  chrom = c("Chr1", "Chr1"), pos = c(250L, 550L),
+  ref = c("A", "G"), alt = c("G", "A")
+)
 design_duplex(genome, loci, flank = 150)
 ```
 

@@ -27,7 +27,8 @@ genome <- read_genome_fasta("my_assembly.fa", seqids = c("chr1", "chr2"))
 
 # or map "raw" names to convenient ones
 read_genome_fasta("my_assembly.fa",
-                  chrom_map = c("1" = "chr1", "2" = "chr2"))
+  chrom_map = c("1" = "chr1", "2" = "chr2")
+)
 ```
 
 ## Your own VCF
@@ -37,9 +38,11 @@ expands multiallelic ALT into rows; IUPAC codes are collapsed to `N`, symbolic
 alleles (`<DEL>`, `*`, `.`) are dropped.
 
 ```{r, eval = FALSE}
-variants <- read_variants_vcf("my.vcf.gz", chrom = "chr1",
-                              start = 100000, end = 200000)
-head(variants)                       # chrom, pos, ref, alt (rows)
+variants <- read_variants_vcf("my.vcf.gz",
+  chrom = "chr1",
+  start = 100000, end = 200000
+)
+head(variants) # chrom, pos, ref, alt (rows)
 ```
 
 ## Target site, masking and design
@@ -52,8 +55,10 @@ snp <- tibble::tibble(chrom = "chr1", pos = 150001L, ref = "G", alt = "A")
 # mask other variants under the primer so they are not carried into the oligo
 genome[["chr1"]] <- mask_positions(genome[["chr1"]], variants$pos - 1L)
 
-assay <- assemble_kasp_assay(genome, snp, variants = variants,
-                             max_footprint_variants = 0)   # N-masking as a limit
+assay <- assemble_kasp_assay(genome, snp,
+  variants = variants,
+  max_footprint_variants = 0
+) # N-masking as a limit
 assay
 ```
 
