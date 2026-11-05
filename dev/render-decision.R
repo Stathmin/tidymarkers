@@ -26,7 +26,7 @@ suppressMessages(pkgload::load_all(root, quiet = TRUE))
 
 if (!decision_solver_available()) {
   stop(
-    "the vendored layout engine is not runnable: rebuild .tools/elk/node_modules ",
+    "the layout engine is not runnable: install it with npm ci in .tools/elk ",
     "or set TIDYKASP_ELK_DIR (see .tools/elk/README.md)"
   )
 }

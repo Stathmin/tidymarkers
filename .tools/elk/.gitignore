@@ -1,2 +1,4 @@
-# the engine is vendored on purpose: every package here is a render dependency,
-# so none of node_modules is excluded (see README.md for versions and licences)
+# node_modules is installed from the tracked package-lock.json, not committed.
+# Run: cd .tools/elk && npm ci --no-audit --no-fund
+# Third-party JS (55 files) stays out of the tree.
+node_modules/

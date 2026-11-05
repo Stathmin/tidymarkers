@@ -14,10 +14,11 @@
 #  points with y pointing DOWN (SVG's convention, not ggplot's).
 # =============================================================================
 
-#' Directory holding the vendored layout engine
+#' Directory holding the layout engine
 #'
-#' The engine (`elkjs` + `libavoid` + `opentype.js`) ships inside the package
-#' sources under `.tools/elk/node_modules`, so a render never downloads anything.
+#' The engine (`elkjs` + `libavoid` + `opentype.js`) is pinned by the lockfile
+#' in `.tools/elk` and installed there with `npm ci`; `node_modules/` is
+#' git-ignored, so a render never downloads anything.
 #' When the sources are not the working copy (an installed package), or
 #' `TIDYKASP_ELK_DIR` points elsewhere, that path wins.
 #' @return a path, or `NA_character_` when no vendored engine is visible.

@@ -1,9 +1,10 @@
 # `.tools/elk` - the vendored decision-graph layout engine
 
 Placement and edge routing for `plot_decision_tree()` / `decision_render()`
-(`R/marker_decision_solver.R`). The engine is **vendored** in this repository:
-a render must work offline and reproduce the committed figures exactly, so the
-packages and their licences live in this tree.
+(`R/marker_decision_solver.R`). The engine is pinned by `package.json` and
+`package-lock.json` and installed with `npm ci`; `node_modules/` is git-ignored.
+A render never downloads anything, and the committed figures reproduce exactly
+from the lockfile.
 
 | package | version | licence | role |
 |---|---|---|---|
@@ -14,7 +15,8 @@ packages and their licences live in this tree.
 
 Files: `render-layout.js` (the seam: one JSON document in - on stdin, or as a
 path argument - and one out on stdout), `package.json`, `package-lock.json`,
-`node_modules/` (licences ship inside each package).
+and `node_modules/` (installed with `npm ci`, git-ignored; licences ship inside
+each package).
 
 ## Why these
 
@@ -38,6 +40,13 @@ path argument - and one out on stdout), `package.json`, `package-lock.json`,
 - **Text from a real face.** `opentype.js` parses a TTF and measures each label
   at the figure's own point size, so a box is exactly as wide as the text it
   holds. Wrapping happens in the same process, against the same measurement.
+
+## Installing (first checkout)
+
+```bash
+cd .tools/elk
+npm ci --no-audit --no-fund
+```
 
 ## Rebuilding (only when bumping a version)
 
