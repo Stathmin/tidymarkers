@@ -16,6 +16,11 @@
 ^data-raw$
 ^dev$
 ^AGENTS\.md$
+^\.github$
+^CODE_OF_CONDUCT\.md$
+^CONTRIBUTING\.md$
+^CREDITS\.md$
+^SECURITY\.md$
 ^\.agents$
 ^\.cursor$
 ^ROADMAP\.md$
