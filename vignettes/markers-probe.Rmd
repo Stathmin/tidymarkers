@@ -222,7 +222,7 @@ mismatches and negative controls. General rules of qPCR specificity —
 
 ### Decision audit
 
-The [decision audit](../docs/decision-audit.md) states, for every gate below,
+The [decision audit](https://github.com/Stathmin/tidymarkers/blob/main/docs/decision-audit.md) states, for every gate below,
 where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits:
 34 of the 38 `taqman`/`dpcr`/`snapshot`/`castpcr` rows are `package assumption`,
 and the only named source in this family is `santalucia1998` on the four

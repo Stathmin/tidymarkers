@@ -891,6 +891,11 @@ targets, region)` берёт одну область (`GRanges` или `chrom`/`
   `assay$evaluation$detail`; правило рисунка — моноширинное значение ≤ 4
   символов.
 
+- **Исторические документы удалены (2026-11-05).** `docs/archive/inventory-ru.md`
+  (1047 строк) убран из репозитория как исторический инвентарь; ссылки в
+  `AGENTS.md`, `CONTRIBUTING.md`, `docs/INDEX.md`, `ROADMAP.md`,
+  `vignettes/markers-kasp.Rmd` и `data-raw/proposed/*.md` переписаны.
+
 ## 0.4.0
 
 ### Переименование: `tidykasp` → `tidymarkers`, API `kasp_*` → `marker_*`

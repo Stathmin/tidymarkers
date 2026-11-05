@@ -200,7 +200,7 @@ with what `design_crispr_marker()` / `design_sanger_marker()` actually execute,
 and with the panels in `vignettes/figures/crispr.svg` / `sanger.svg`. Labels:
 **executed** – the node is really computed; **declarative** – it is in the
 template but not in the code; **in the figure** – a `plot()` panel, not a gate.
-The [decision audit](../docs/decision-audit.md) states, for every gate below,
+The [decision audit](https://github.com/Stathmin/tidymarkers/blob/main/docs/decision-audit.md) states, for every gate below,
 where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
 All 18 `crispr`/`sanger` rows are `package assumption` — including the TTTV PAM
 and the seed and read-distance windows — so no bullet here carries a citation.

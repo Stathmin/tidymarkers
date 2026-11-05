@@ -2,7 +2,7 @@
 
 Proposal, 2026-11-03. Lands in `docs/decision-audit.md` (ZW0.1 §"Where the
 invariant deliberately does not hold", Z11.1 §"Decision audit") plus one line in
-`docs/archive/inventory-ru.md` §W. Nothing here changes `R/`; the registry half
+the superseded inventory §W. Nothing here changes `R/`; the registry half
 of ZW0.1 (`criterion_spec()$asymmetry_reason`) already exists.
 
 ## Where every number came from

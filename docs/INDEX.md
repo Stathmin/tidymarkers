@@ -15,11 +15,6 @@ link resolves; `dev/check-artifacts.R` verifies the artifact graph.
 - [VALIDATION](../VALIDATION.md) — what is checked against external evidence,
   what is not, and where the gaps are.
 
-## Archive
-
-- [archived inventory](archive/inventory-ru.md) — the pre-0.4.1 working
-  inventory (Russian); kept as history, not as current documentation.
-
 ## Vignettes
 
 Marker chemistries:

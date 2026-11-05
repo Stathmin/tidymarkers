@@ -217,7 +217,7 @@ discrepancies between the DAG (`vignettes/figures/decision-lamp.txt`,
 not relaxed, soft ones follow the ladder, and `check:` nodes sit after `best`
 and are not gates.
 
-The [decision audit](../docs/decision-audit.md) states, for every gate below,
+The [decision audit](https://github.com/Stathmin/tidymarkers/blob/main/docs/decision-audit.md) states, for every gate below,
 where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
 All 10 `lamp` rows are `package assumption`; in `rpa` only the structure gate
 names a source (`santalucia1998` ΔG), so every Tm window and probe geometry below

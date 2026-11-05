@@ -91,9 +91,8 @@ CI does not render.
 - A meaningful change → an entry in `NEWS.md` and in `ROADMAP.md`.
 
 All public-facing prose is English, except the changelog: `NEWS.md` is Russian
-by the repository convention (see `AGENTS.md`). `ROADMAP.md`, `dev/README.md`
-and `docs/archive/inventory-ru.md` are internal working documents and stay
-Russian.
+by the repository convention (see `AGENTS.md`). `ROADMAP.md` and `dev/README.md`
+are internal working documents and stay Russian.
 
 ## What lives where
 
@@ -105,7 +104,7 @@ and is excluded from the tarball by `.Rbuildignore`:
 | `R/`, `man/`, `vignettes/`, `tests/` | the package |
 | `data-raw/` | generators for `inst/extdata/` and the source reads behind the rules (e.g. `polymarker-source.R`) |
 | `dev/` | the gate (`check.R`, `test.R`), renderers, benchmarks, `dev/lecture/` slides, and the vendored ELK/libavoid layout engine in `.tools/elk` |
-| `docs/` | `INDEX.md`, `artifacts.yml` (figure manifest), generated artifact graph, `docs/archive/` |
+| `docs/` | `INDEX.md`, `artifacts.yml` (figure manifest), generated artifact graph, `decision-audit.md` |
 | `.agents/`, `.cursor/` | agent instructions and repo skills; not part of the product |
 | `VALIDATION.md` | the evidence accounting behind the design rules |
 

@@ -84,7 +84,7 @@ when its index memory is _measured_ on the 15 Gb genome first.
 
 ## 5. `DECIPHER` `DesignPrimers` / `DesignProbes` / `DesignSignatures`
 
-**Covers: no.** Already evaluated in `docs/archive/inventory-ru.md` §N2 and
+**Covers: no.** Already evaluated in the superseded inventory §N2 and
 rejected there: `DesignPrimers` and `DesignSignatures` work on `tiles` (a
 `TileSeqs` database of sequence groups) and aim at primer pairs covering groups,
 not at a reverse primer sitting opposite a single SNP in one reference window.

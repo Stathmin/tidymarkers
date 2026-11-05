@@ -289,7 +289,7 @@ through `plot_decision_tree(scheme = sc)` without an `assay`, so
 (gel/map + class tumbler), not a DAG. The graph therefore confirms the *order and
 hardness* of the gates, but not their execution.
 
-The [decision audit](../docs/decision-audit.md) states, for every gate below,
+The [decision audit](https://github.com/Stathmin/tidymarkers/blob/main/docs/decision-audit.md) states, for every gate below,
 where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
 Every band gap, Tm window and amplicon window here is a `rule_of_thumb` bar: 31
 of the 33 `caps`/`arms`/`hrm`/`ssr`/`indel_size` rows are `package assumption`,

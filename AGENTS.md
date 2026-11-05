@@ -2,8 +2,7 @@
 
 Project-specific rules for agents working in this repository. Read these before
 changing anything, then read `README.md`, `CONTRIBUTING.md`, `ROADMAP.md` (the open
-queue), `VALIDATION.md` (what the rules rest on) and
-`docs/archive/inventory-ru.md` (the historical inventory).
+queue) and `VALIDATION.md` (what the rules rest on).
 
 ## Running anything (read first — the environment is NOT the default library)
 
