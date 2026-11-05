@@ -190,7 +190,9 @@ test_that("Z0.2: the dPCR primer Tm window is pinned as a calibration debt", {
   # moving it by eye would hide the -16.86 C offset behind a filter.
   expect_identical(eval(formals(design_dpcr_marker)$tm_range), c(44, 50))
   # and the debt is named where a reader of the source will meet it
-  src <- readLines(test_path("..", "..", "R", "marker_dpcr.R"), warn = FALSE)
+  src_path <- test_path("..", "..", "R", "marker_dpcr.R")
+  skip_if_not(file.exists(src_path), "the R source is not present (installed check)")
+  src <- readLines(src_path, warn = FALSE)
   expect_true(any(grepl("calibration debt", src, fixed = TRUE)))
   expect_true(any(grepl("ZW3.4", src, fixed = TRUE)))
   expect_true(any(grepl("16.86", src, fixed = TRUE)))

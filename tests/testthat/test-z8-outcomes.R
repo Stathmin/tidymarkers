@@ -416,7 +416,9 @@ test_that("Z8.2: a panel outcome is never a design verdict", {
 #  are the harness's own (dev/z8-harness.R), not re-declared here.  testthat
 #  runs this file with tests/testthat as the working directory.
 
-source(test_path("..", "..", "dev", "z8-harness.R"))
+z8_harness <- test_path("..", "..", "dev", "z8-harness.R")
+skip_if_not(file.exists(z8_harness), "the Z8 harness is not present (installed check)")
+source(z8_harness)
 
 test_that("Z8.4: the two outcome sources are keyed by (source, row)", {
   panel <- ext("soybean_worked_panel_assays.csv")
