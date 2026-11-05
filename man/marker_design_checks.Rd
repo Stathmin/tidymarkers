@@ -54,6 +54,12 @@ PAM that is not conserved, or a primer sitting on a variant is a \code{fail}, an
 ALT frequency that is not known is \code{unknown} - never a pass.  The warnings are
 unchanged; the status is additive.  The dosage axis is appended as its own
 \verb{allele dosage} row, never as a frequency rule (see \code{marker_dosage_gate()}).
+
+\code{assay$evaluation} is this table, computed once at assembly time with the same
+\code{scheme}.  It is a cache, not a second opinion: read \code{assay$evaluation} to reuse
+the stored rows, or call this function to recompute them.  The two are
+identical when nothing changed, and callers such as \code{evaluation_verdict()} and
+\code{\link[=marker_risk]{marker_risk()}} accept either.
 }
 \examples{
 \dontrun{

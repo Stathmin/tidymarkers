@@ -213,10 +213,10 @@ marker_tubes(back) # which pairs can go into one tube
 ```
 
 If you need the result of **one** assay rather than a panel, it is written by
-`write_kasp_results()`:
+`write_marker_results()`:
 
 ```{r, eval = FALSE}
-write_kasp_results(assay, gene, dir = "results")
+write_marker_results(assay, gene, dir = "results")
 ```
 
 ## Why a candidate did not pass
@@ -289,7 +289,7 @@ assay
 
 ## Result files
 
-`write_kasp_results()` writes consolidated files:
+`write_marker_results()` writes consolidated files:
 
 - `marker_design.csv` — candidate assays (the `discrimination` column is what we rank by);
 - `marker_primer_qc.csv` — per primer: `tm`, `gc`, `hairpin_dg`, `terminal_dg`,
@@ -370,5 +370,5 @@ in the logic.
 ## See also
 
 `?marker_design_checks`, `?marker_risk`, `?marker_decision_text`,
-`?marker_plan`, `?marker_solve`, `?marker_export`, `?write_kasp_results`,
+`?marker_plan`, `?marker_solve`, `?marker_export`, `?write_marker_results`,
 `?print.marker_doomed`, `?plot_decision_tree`.

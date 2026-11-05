@@ -60,6 +60,6 @@ kasp_mix_recipe(n_reactions = 96)
 Other output:
 \code{\link[=export_primers]{export_primers()}},
 \code{\link[=marker_primer_table]{marker_primer_table()}},
-\code{\link[=write_kasp_results]{write_kasp_results()}}
+\code{\link[=write_marker_results]{write_marker_results()}}
 }
 \concept{output}

@@ -103,7 +103,7 @@ design_kasp_markers(genome, loci) # pass / warn / fail + reason
 ## Results and ordering
 
 ```{r, eval = FALSE}
-write_kasp_results(assay, gene) # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
+write_marker_results(assay, gene) # marker_design.csv, marker_primer_qc.csv, marker_dimer_dg.csv,
 # plus IDT/LGC/tidy as column subsets
 ```
 

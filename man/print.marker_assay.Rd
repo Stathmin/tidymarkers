@@ -15,8 +15,9 @@
 \code{x}, invisibly.
 }
 \description{
-Compact one-screen summary: target, the three oligos, amplicon size and
-discrimination.
+Compact one-screen summary: target, the three oligos, amplicon size,
+discrimination and the verdict (see \code{evaluation_verdict()}), so the first thing
+a user reads already answers "did this design work?".
 }
 \examples{
 \dontrun{

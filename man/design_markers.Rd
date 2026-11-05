@@ -30,6 +30,12 @@ took it and whether it designed.  With \code{scheme} given it is one chemistry f
 every locus; with \code{scheme = NULL} it walks \code{\link[=rescue_strategy]{rescue_strategy()}}, so a locus KASP
 dooms falls through to CAPS / ARMS / HRM / the discovered chemistries.
 }
+\details{
+This is a \emph{summary}, not a design: the returned tibble is the thin
+\code{chrom}/\code{pos}/\code{ref}/\code{alt}/\code{scheme}/\code{ok} shape.  The marker objects themselves
+come from \code{\link[=design_auto_marker]{design_auto_marker()}} (one locus) or \code{\link[=design_kasp_markers]{design_kasp_markers()}} (the
+KASP batch with per-locus verdicts).
+}
 \examples{
 \dontrun{
 genome <- ath_genome()

@@ -13,7 +13,7 @@ whose partial \code{evaluation} is used when present).}
 \item{limits}{thresholds (see \code{\link[=marker_design_checks]{marker_design_checks()}}).}
 }
 \value{
-a one-row tibble: \code{risk} (ordered factor \code{low} < \code{medium} < \code{high}),
+a one-row tibble: \code{risk} (character, \code{low} / \code{medium} / \code{high}),
 \code{discrimination} (the observed margin), \code{disc_risk} (the graded band of that
 margin), \code{n_failed} and \code{failed} (list-column of the failed criteria).
 }

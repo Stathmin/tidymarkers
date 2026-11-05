@@ -435,7 +435,8 @@ plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
 #' instead of as a verified fact, and the last line names the weakest rung the
 #' scheme relies on.  The default output is unchanged, so recorded verdicts
 #' still compare line for line.
-#' @param scheme a scheme id (see [marker_schemes()]).
+#' @param scheme a scheme id (see [marker_schemes()]), or a [assemble_kasp_assay()]
+#'   result, whose `$scheme` is used.
 #' @param evidence append the evidence rung of every check and the weakest rung
 #'   of the scheme (default `FALSE`: the classic output, unchanged).
 #' @return a character vector, one element per line.
@@ -445,6 +446,11 @@ plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
 #' @family checks
 #' @export
 marker_decision_text <- function(scheme = "snp", evidence = FALSE) {
+  scheme <- if (inherits(scheme, c("marker_assay", "marker_doomed"))) {
+    scheme$scheme %||% "snp"
+  } else {
+    scheme
+  }
   info <- marker_scheme(scheme)
   crit <- marker_criteria(scheme = scheme)
   s <- marker_decision_schema(scheme)

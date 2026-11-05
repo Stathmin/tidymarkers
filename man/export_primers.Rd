@@ -37,6 +37,6 @@ export_primers(assay, gene, dir = tempdir())
 Other output:
 \code{\link[=kasp_mix_recipe]{kasp_mix_recipe()}},
 \code{\link[=marker_primer_table]{marker_primer_table()}},
-\code{\link[=write_kasp_results]{write_kasp_results()}}
+\code{\link[=write_marker_results]{write_marker_results()}}
 }
 \concept{output}

@@ -32,6 +32,6 @@ marker_primer_table(assay, gene)
 Other output:
 \code{\link[=export_primers]{export_primers()}},
 \code{\link[=kasp_mix_recipe]{kasp_mix_recipe()}},
-\code{\link[=write_kasp_results]{write_kasp_results()}}
+\code{\link[=write_marker_results]{write_marker_results()}}
 }
 \concept{output}

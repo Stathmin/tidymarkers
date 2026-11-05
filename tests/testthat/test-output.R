@@ -1,6 +1,6 @@
 # Consolidated results writer: a few grouped files, order formats as subsets.
 
-test_that("write_kasp_results writes grouped files and order subsets", {
+test_that("write_marker_results writes grouped files and order subsets", {
   p <- c(
     AS_ref = "TGACTGCAAGTCCGATCAGTA",
     AS_alt = "TGACTGCAAGTCCGATCAGTT",
@@ -31,7 +31,7 @@ test_that("write_kasp_results writes grouped files and order subsets", {
     blast = NULL
   )
   dir <- withr::local_tempdir(pattern = "res")
-  paths <- write_kasp_results(assay, list(symbol = "FRI"), dir = dir)
+  paths <- write_marker_results(assay, list(symbol = "FRI"), dir = dir)
   for (f in c(
     "marker_design.csv", "marker_primer_qc.csv", "marker_dimer_dg.csv",
     "marker_FRI_Chr4_269090_tidy.csv", "marker_FRI_Chr4_269090_idt.csv",
@@ -43,4 +43,9 @@ test_that("write_kasp_results writes grouped files and order subsets", {
   qc <- readr::read_csv(file.path(dir, "marker_primer_qc.csv"), show_col_types = FALSE)
   expect_equal(nrow(qc), 3L)
   expect_true(all(c("tm", "terminal_dg", "hits", "n_products") %in% names(qc)))
+  # the old name is a deprecation shim over the new one
+  expect_warning(
+    write_kasp_results(assay, list(symbol = "FRI"), dir = dir),
+    "deprecated"
+  )
 })

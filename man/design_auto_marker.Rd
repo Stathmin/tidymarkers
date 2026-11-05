@@ -35,7 +35,9 @@ named; supplied through \code{...} before this argument it would bind there.}
 }
 \value{
 a list: \code{snp}, \code{scheme} (the winner, or \code{NA}), \code{marker} (the winning
-object, or \code{NULL}), and \code{tried} (a tibble \code{scheme}, \code{ok}, \code{marker}).
+object, or \code{NULL}), and \code{tried} (a tibble \code{scheme}, \code{ok}, \code{marker}).  For a
+table of loci and a one-row-per-locus summary, use \code{\link[=design_markers]{design_markers()}}; for the
+KASP batch with full per-locus verdicts, use \code{\link[=design_kasp_markers]{design_kasp_markers()}}.
 }
 \description{
 A locus KASP dooms is not a dead end: it may still make a CAPS/dCAPS, ARMS or

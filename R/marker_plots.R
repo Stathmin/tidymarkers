@@ -1373,6 +1373,11 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 
 #' Write the assay results as a few consolidated files
 #'
+#' Works for any assembled assay, not only KASP: every `marker_assay` carries the
+#' same `assay`/`thermo`/`specificity`/`complementarity` fields (see
+#' [assemble_primer_assay()]).  `write_kasp_results()` is the deprecated former
+#' name of this function.
+#'
 #' Instead of many tiny CSVs, the outputs are grouped by what they describe and
 #' the per-consumer formats are column subsets of the same data:
 #'
@@ -1393,11 +1398,11 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' gene <- ensembl_gene("AT4G00650")
-#' write_kasp_results(assay, gene, dir = tempdir())
+#' write_marker_results(assay, gene, dir = tempdir())
 #' }
 #' @family output
 #' @export
-write_kasp_results <- function(assay, gene, dir = tempdir()) {
+write_marker_results <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
   base <- glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}")
 
@@ -1439,6 +1444,13 @@ write_kasp_results <- function(assay, gene, dir = tempdir()) {
     fs::path(dir, glue::glue("{base}_idt.csv")),
     fs::path(dir, glue::glue("{base}_lgc.csv"))
   ))
+}
+
+#' @rdname write_marker_results
+#' @export
+write_kasp_results <- function(...) {
+  .Deprecated("write_marker_results")
+  write_marker_results(...)
 }
 
 #' Tidy table of the assay oligos (with KASP tails)

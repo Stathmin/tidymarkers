@@ -43,8 +43,9 @@ as_alt_sequence <- function(assay) {
 
 #' Print a KASP assay
 #'
-#' Compact one-screen summary: target, the three oligos, amplicon size and
-#' discrimination.
+#' Compact one-screen summary: target, the three oligos, amplicon size,
+#' discrimination and the verdict (see `evaluation_verdict()`), so the first thing
+#' a user reads already answers "did this design work?".
 #'
 #' @param x a [assemble_kasp_assay()] result.
 #' @param ... unused.
@@ -69,6 +70,7 @@ print.marker_assay <- function(x, ...) {
   cat("  AS-alt ", as_alt_sequence(x), "\n")
   cat("  COM    ", a$com, "\n")
   cat(" ", glue::glue("amplicon {a$amplicon} bp | discrimination {round(x$efficiency$discrimination[1L], 3)}"), "\n")
+  cat(" ", glue::glue("verdict {evaluation_verdict(x)}"), "\n")
   invisible(x)
 }
 
@@ -133,6 +135,12 @@ variant_type <- function(ref, alt) {
 #' warnings or failing acceptance checks give `verdict = "warn"`, and a fully
 #' passing assay gives `verdict = "pass"`.  `loci` needs columns
 #' `chrom`, `pos`, `ref`, `alt` (as in [read_variants_vcf()]).
+#'
+#' This is the KASP batch: it runs the full KASP assembly and acceptance checks,
+#' so it returns the per-locus verdict columns (`type`, `strand`, `amplicon`,
+#' `discrimination`, `n_fail`, `verdict`, `note`).  For "which chemistry fits this
+#' locus", use [design_auto_marker()]; for a thin one-row-per-locus summary across
+#' any chemistry, use [design_markers()].
 #'
 #' @param genome DNAStringSet.
 #' @param loci tibble of loci (`chrom`, `pos`, `ref`, `alt`).

@@ -30,6 +30,13 @@ warnings or failing acceptance checks give \code{verdict = "warn"}, and a fully
 passing assay gives \code{verdict = "pass"}.  \code{loci} needs columns
 \code{chrom}, \code{pos}, \code{ref}, \code{alt} (as in \code{\link[=read_variants_vcf]{read_variants_vcf()}}).
 }
+\details{
+This is the KASP batch: it runs the full KASP assembly and acceptance checks,
+so it returns the per-locus verdict columns (\code{type}, \code{strand}, \code{amplicon},
+\code{discrimination}, \code{n_fail}, \code{verdict}, \code{note}).  For "which chemistry fits this
+locus", use \code{\link[=design_auto_marker]{design_auto_marker()}}; for a thin one-row-per-locus summary across
+any chemistry, use \code{\link[=design_markers]{design_markers()}}.
+}
 \examples{
 \dontrun{
 genome <- ath_genome()

@@ -50,7 +50,7 @@ discrimination_band <- function(disc, limits = KASP_LIMITS) {
 #' @param assay result of [assemble_kasp_assay()] (or a `marker_doomed` object,
 #'   whose partial `evaluation` is used when present).
 #' @param limits thresholds (see [marker_design_checks()]).
-#' @return a one-row tibble: `risk` (ordered factor `low` < `medium` < `high`),
+#' @return a one-row tibble: `risk` (character, `low` / `medium` / `high`),
 #'   `discrimination` (the observed margin), `disc_risk` (the graded band of that
 #'   margin), `n_failed` and `failed` (list-column of the failed criteria).
 #' @examples
@@ -69,9 +69,9 @@ marker_risk <- function(assay, limits = KASP_LIMITS) {
   }
   if (is.null(ev) || !nrow(ev)) {
     return(tibble::tibble(
-      risk = factor(NA_character_, levels = c("low", "medium", "high")),
+      risk = NA_character_,
       discrimination = NA_real_,
-      disc_risk = factor(NA_character_, levels = c("low", "medium", "high")),
+      disc_risk = NA_character_,
       n_failed = NA_integer_, failed = list(character(0))
     ))
   }
@@ -90,9 +90,9 @@ marker_risk <- function(assay, limits = KASP_LIMITS) {
     "low"
   }
   tibble::tibble(
-    risk = factor(risk, levels = c("low", "medium", "high")),
+    risk = risk,
     discrimination = disc,
-    disc_risk = factor(disc_risk, levels = c("low", "medium", "high")),
+    disc_risk = disc_risk,
     n_failed = length(failed), failed = list(failed)
   )
 }

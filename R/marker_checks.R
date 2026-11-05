@@ -248,6 +248,12 @@ marker_dosage_gate <- function(marker) {
 #' unchanged; the status is additive.  The dosage axis is appended as its own
 #' `allele dosage` row, never as a frequency rule (see `marker_dosage_gate()`).
 #'
+#' `assay$evaluation` is this table, computed once at assembly time with the same
+#' `scheme`.  It is a cache, not a second opinion: read `assay$evaluation` to reuse
+#' the stored rows, or call this function to recompute them.  The two are
+#' identical when nothing changed, and callers such as `evaluation_verdict()` and
+#' [marker_risk()] accept either.
+#'
 #' @param assay result of [assemble_kasp_assay()].
 #' @param limits list of thresholds; defaults to `KASP_LIMITS`.
 #' @param scheme the marker chemistry the assay is graded as (see

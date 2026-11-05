@@ -67,6 +67,11 @@ rescue_strategy <- function(schemes = NULL) {
 #' took it and whether it designed.  With `scheme` given it is one chemistry for
 #' every locus; with `scheme = NULL` it walks [rescue_strategy()], so a locus KASP
 #' dooms falls through to CAPS / ARMS / HRM / the discovered chemistries.
+#'
+#' This is a *summary*, not a design: the returned tibble is the thin
+#' `chrom`/`pos`/`ref`/`alt`/`scheme`/`ok` shape.  The marker objects themselves
+#' come from [design_auto_marker()] (one locus) or [design_kasp_markers()] (the
+#' KASP batch with per-locus verdicts).
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param loci tibble with `chrom`, `pos`, `ref`, `alt` (an optional `alt2` is
 #'   honoured by the KASP scheme).

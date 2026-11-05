@@ -109,7 +109,7 @@ if (!all(checks$pass)) {
 # --- 5-6. persist (consolidated: design / primer QC / dimers + order subsets) -
 fs::dir_create(here::here("results"))
 saveRDS(assay, here::here("results", "marker_assay.rds"))
-write_kasp_results(assay, gene, dir = here::here("results")) # marker_design.csv, marker_primer_qc.csv, ...
+write_marker_results(assay, gene, dir = here::here("results")) # marker_design.csv, marker_primer_qc.csv, ...
 
 # --- 7. library-driven views (see R/marker_plots.R) ---------------------------
 ggsave(here::here("results", "plot_primers.png"),    plot_primers(assay, variants, snp, genome = genome, features = gene), width = 10, height = 7.5)

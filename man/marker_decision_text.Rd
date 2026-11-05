@@ -7,7 +7,8 @@
 marker_decision_text(scheme = "snp", evidence = FALSE)
 }
 \arguments{
-\item{scheme}{a scheme id (see \code{\link[=marker_schemes]{marker_schemes()}}).}
+\item{scheme}{a scheme id (see \code{\link[=marker_schemes]{marker_schemes()}}), or a \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}
+result, whose \verb{$scheme} is used.}
 
 \item{evidence}{append the evidence rung of every check and the weakest rung
 of the scheme (default \code{FALSE}: the classic output, unchanged).}

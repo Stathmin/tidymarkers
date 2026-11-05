@@ -542,7 +542,8 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   chosen `strand`, ranked `assay`/`as_candidates` tibbles, `efficiency`,
 #'   `thermo`, `complementarity`, `specificity`, `amplicons`, `blast` results and
 #'   the tailed `tails` primers (plus `haplotypes`/`haplotype_hits` when a
-#'   haplotype table was given).  When no candidate clears the gates it returns a
+#'   haplotype table was given), and `evaluation` (the [marker_design_checks()]
+#'   table for this assay, stored once at assembly time).  When no candidate clears the gates it returns a
 #'   `marker_doomed` object instead (the target, template, `reason`, `stage` and the
 #'   candidate table), so a batch or a plot can report the target rather than
 #'   abort.

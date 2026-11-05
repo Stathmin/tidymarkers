@@ -553,7 +553,9 @@ is_target_designable <- function(marker) {
 #'   (and, for later seams, `population`, `conditions`, `engines`).  Must be
 #'   named; supplied through `...` before this argument it would bind there.
 #' @return a list: `snp`, `scheme` (the winner, or `NA`), `marker` (the winning
-#'   object, or `NULL`), and `tried` (a tibble `scheme`, `ok`, `marker`).
+#'   object, or `NULL`), and `tried` (a tibble `scheme`, `ok`, `marker`).  For a
+#'   table of loci and a one-row-per-locus summary, use [design_markers()]; for the
+#'   KASP batch with full per-locus verdicts, use [design_kasp_markers()].
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()

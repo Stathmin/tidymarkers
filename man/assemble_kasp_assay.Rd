@@ -109,7 +109,8 @@ a \code{marker_assay} object: a list holding the \code{snp}, the template, the
 chosen \code{strand}, ranked \code{assay}/\code{as_candidates} tibbles, \code{efficiency},
 \code{thermo}, \code{complementarity}, \code{specificity}, \code{amplicons}, \code{blast} results and
 the tailed \code{tails} primers (plus \code{haplotypes}/\code{haplotype_hits} when a
-haplotype table was given).  When no candidate clears the gates it returns a
+haplotype table was given), and \code{evaluation} (the \code{\link[=marker_design_checks]{marker_design_checks()}}
+table for this assay, stored once at assembly time).  When no candidate clears the gates it returns a
 \code{marker_doomed} object instead (the target, template, \code{reason}, \code{stage} and the
 candidate table), so a batch or a plot can report the target rather than
 abort.
