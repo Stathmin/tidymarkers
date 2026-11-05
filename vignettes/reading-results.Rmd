@@ -255,8 +255,8 @@ An empty `relaxed` and `violated` means the assay passed first time; a non-empty
 one means the "least bad" candidate came back, and `cli` warned about it at
 assembly. An empty selection is not a pass, though: it only says nothing had to
 be relaxed. The assay assembled above is the first kind, and it still fails
-checks: `passes_all(assay)` is `FALSE`, `marker_risk(assay)$risk` is `high`, and
-5 of its 27 check rows do not pass.
+checks: `passes_all(assay)` is `FALSE`, `marker_risk(assay)` grades the risk
+`"high"`, and 5 of its 27 check rows do not pass.
 
 ### The decision policy as text
 
