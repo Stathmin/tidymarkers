@@ -307,7 +307,7 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
 #'   `chrom`/`pos`/`ref`/`alt` first and the remaining mcols after.
 #' @examples
 #' v <- tibble::tibble(chrom = "Chr1", pos = c(10L, 20L), ref = c("A", "AT"), alt = c("G", "A"))
-#' gr <- marker_as_granges(v, depth = c(30, 12))
+#' gr <- marker_as_granges(v, extra = tibble::tibble(depth = c(30, 12)))
 #' if (!is.null(gr)) marker_from_granges(gr)
 #' @family KASP input
 #' @export

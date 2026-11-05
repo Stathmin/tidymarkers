@@ -31,7 +31,7 @@ is as wide as its REF - filter with \code{nearest()} before comparing.
 }
 \examples{
 v <- tibble::tibble(chrom = "Chr1", pos = c(10L, 20L), ref = c("A", "AT"), alt = c("G", "A"))
-gr <- marker_as_granges(v, depth = c(30, 12))
+gr <- marker_as_granges(v, extra = tibble::tibble(depth = c(30, 12)))
 if (!is.null(gr)) marker_from_granges(gr)
 }
 \seealso{

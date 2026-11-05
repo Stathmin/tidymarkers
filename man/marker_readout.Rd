@@ -19,7 +19,7 @@ output when the scheme simulated one (a \code{table}, currently the hydrolysis-p
 discrimination) and otherwise an explicit assumption of what is \emph{not} modelled,
 so a design never reads as a promise of kinetics.  A \code{dpcr} marker that carries
 the probe readout also carries \code{partition}, the Poisson projection of the
-counting law (\code{\link[=dpcr_partition_table]{dpcr_partition_table()}}).
+counting law (\code{dpcr_partition_table()}).
 }
 \examples{
 \dontrun{

@@ -21,8 +21,8 @@ to it without a special case.
 \details{
 The rows are deliberately left unaggregated: a success rate computed here
 would pool runs that a lab has not agreed are comparable, which is the
-mistake \href{../../tests/testthat/test-z8-outcomes.R}{the Z8 tests} exist to
-prevent.
+mistake \href{https://github.com/Stathmin/tidymarkers/blob/main/tests/testthat/test-z8-outcomes.R}{the Z8 tests}
+exist to prevent.
 }
 \examples{
 \dontrun{

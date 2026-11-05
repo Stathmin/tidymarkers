@@ -137,7 +137,7 @@ readout_assumption <- function(scheme) {
 #' discrimination) and otherwise an explicit assumption of what is *not* modelled,
 #' so a design never reads as a promise of kinetics.  A `dpcr` marker that carries
 #' the probe readout also carries `partition`, the Poisson projection of the
-#' counting law ([dpcr_partition_table()]).
+#' counting law (`dpcr_partition_table()`).
 #' @param marker a designed marker (a `marker_*` object).
 #' @return a list: `scheme`, `simulated` (logical), `model`, `note`, `table`, and
 #'   for a simulated `dpcr` marker also `partition`.

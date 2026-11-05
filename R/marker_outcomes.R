@@ -167,8 +167,8 @@ marker_record_outcome <- function(artefact,
 #'
 #' The rows are deliberately left unaggregated: a success rate computed here
 #' would pool runs that a lab has not agreed are comparable, which is the
-#' mistake [the Z8 tests](../../tests/testthat/test-z8-outcomes.R) exist to
-#' prevent.
+#' mistake [the Z8 tests](https://github.com/Stathmin/tidymarkers/blob/main/tests/testthat/test-z8-outcomes.R)
+#' exist to prevent.
 #' @param artefact a `marker_artefact` or its directory.
 #' @return a tibble with `id`, `recorded`, `target`, `result`, `notes`, and
 #'   `calibrated`.
