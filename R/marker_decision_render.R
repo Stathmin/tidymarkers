@@ -29,6 +29,9 @@
 #' @param title,subtitle,caption the figure's text (empty drops the part).
 #' @param legend draw the kind/status/line legend.
 #' @return a list of class `decision_style`.
+#' @examples
+#' decision_style() # the default look
+#' decision_style(font_size = 11, title = "Selection") # a larger title page
 #' @family KASP checks
 #' @export
 decision_style <- function(palette = decision_palette(),
@@ -63,6 +66,9 @@ decision_style <- function(palette = decision_palette(),
 
 #' Palette of a decision figure: fill by kind, border by status, line by edge
 #' @return a list with `kind`, `status`, `edge`, `edge_lty`, `band`.
+#' @examples
+#' decision_palette()$kind # fill colour per node kind
+#' decision_palette()$status["violated"] # border colour of a failing check
 #' @family KASP checks
 #' @export
 decision_palette <- function() {
@@ -118,6 +124,8 @@ pal_colour <- function(pal, key, default = "#57534E") {
 #' @param out optional path; when given the SVG is written there and the path
 #'   returned invisibly.
 #' @return an SVG string, or invisibly `out`.
+#' @examples
+#' decision_render(marker_decision_graph(scheme = "snp"))
 #' @export
 decision_render <- function(graph, style = decision_style(), out = NULL) {
   solved <- decision_solve(graph, style)

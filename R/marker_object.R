@@ -14,10 +14,12 @@ is_marker_assay <- function(x) inherits(x, "marker_assay")
 #' Do all acceptance checks pass?
 #'
 #' @param assay assembled assay.
-#' @param limits thresholds; see [marker_design_checks()].
+#' @param limits thresholds (see [marker_design_checks()]).
 #' @return a single logical, `TRUE` when every check passes.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' passes_all(assay)
 #' }
@@ -49,6 +51,9 @@ as_alt_sequence <- function(assay) {
 #' @return `x`, invisibly.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
 #' print(assay)
 #' }
 #' @method print marker_assay
@@ -71,6 +76,22 @@ print.marker_assay <- function(x, ...) {
 #' @param x a `marker_doomed` object (see [assemble_kasp_assay()]).
 #' @param ... unused.
 #' @return `x`, invisibly.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' # a variant inside every AS footprint dooms the target; the design is
+#' # returned, not thrown away
+#' variants <- tibble::tibble(
+#'   chrom = c("Chr1", "Chr1"), pos = c(18519402L, 18519414L),
+#'   ref = c("A", "A"), alt = c("C", "T")
+#' )
+#' doomed <- assemble_kasp_assay(
+#'   genome, snp,
+#'   variants = variants, max_footprint_variants = 0L
+#' )
+#' print(doomed)
+#' }
 #' @method print marker_doomed
 #' @family KASP utilities
 #' @export

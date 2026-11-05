@@ -771,6 +771,11 @@ haplotype_layers <- function(assay, snp, span) {
 #'   `marker_doomed` target, a single context plot with the reason instead.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_primers(assay, variants, snp)
 #' }
 #' @family KASP plots
@@ -1116,6 +1121,9 @@ tumbler_plot <- function(chk) {
 #'   `assay$evaluation$detail`, not in the figure.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
 #' plot_checks(assay)
 #' }
 #' @family KASP plots
@@ -1178,6 +1186,9 @@ bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
 #' @return a `ggplot` faceted by oligo.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
 #' plot_oligo_structure(assay)
 #' }
 #' @family KASP plots
@@ -1303,6 +1314,11 @@ plot_self_complementarity <- function(seq) {
 #'   `ggforce::facet_zoom()` into the full view and a zoom on the design window.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_variant_landscape(gene, variants, snp, assay)
 #' }
 #' @family KASP plots
@@ -1373,6 +1389,10 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' @param dir output directory.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
 #' write_kasp_results(assay, gene, dir = tempdir())
 #' }
 #' @family KASP output
@@ -1429,6 +1449,10 @@ write_kasp_results <- function(assay, gene, dir = tempdir()) {
 #'   tails.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
 #' marker_primer_table(assay, gene)
 #' }
 #' @family KASP output
@@ -1472,6 +1496,10 @@ marker_primer_table <- function(assay, gene) {
 #'   for its side effect of writing the IDT/LGC/tidy order sheets.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
 #' export_primers(assay, gene, dir = tempdir())
 #' }
 #' @family KASP output

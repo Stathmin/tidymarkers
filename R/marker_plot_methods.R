@@ -21,6 +21,13 @@
 #' @param features optional feature table (gene model).
 #' @param ... reserved for class-specific options.
 #' @return a `ggplot` or `patchwork` object.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' plot(assay)
+#' }
 #' @name plot-marker
 NULL
 

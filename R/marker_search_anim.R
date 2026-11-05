@@ -29,6 +29,11 @@
 #'   (the design window).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' design_search_frames(assay, variants, snp)
 #' }
 #' @family KASP plots
@@ -183,6 +188,11 @@ design_search_frames <- function(assay, variants, snp) {
 #' @return a `ggplot` object for one frame of the animation.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' frames <- design_search_frames(assay, variants, snp)
 #' plot_design_search_step(frames, 1)
 #' }
@@ -248,6 +258,11 @@ plot_design_search_step <- function(frames, step) {
 #' @return the GIF path (invisibly).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' render_design_search(assay, variants, snp, path = tempfile(fileext = ".gif"))
 #' }
 #' @family KASP plots

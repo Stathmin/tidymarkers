@@ -1155,6 +1155,8 @@ as_pcr_pairs <- function(assay) {
 #' @return a tibble `primer`, `n_products`, `width`, one row per AS primer.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' assay_amplicons(assay, genome)
 #' }
@@ -1171,6 +1173,13 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, pr
 #' One virtual-PCR pass per AS primer (`as_pcr_pairs()`); computed once at design
 #' time and reused for both the amplicon counts and the genome ideogram, so the
 #' genome is scanned once instead of twice.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' assay_pcr_products(assay, genome)
+#' }
 #' @keywords internal
 assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
   purrr::imap(as_pcr_pairs(assay), function(fr, nm) {

@@ -309,7 +309,8 @@ hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
-#' design_hrm_marker(genome, marker_example("SNP")[1, ])
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' design_hrm_marker(genome, snp)
 #' }
 #' @family KASP HRM
 #' @export
@@ -420,6 +421,8 @@ print.marker_hrm <- function(x, ...) {
 #' @return a `ggplot`.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' plot_hrm_amplicon(design_hrm_marker(genome, snp))
 #' }
 #' @family KASP HRM

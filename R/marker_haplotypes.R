@@ -108,9 +108,22 @@ haplotype_variants <- function(haplotypes, snp) {
 #'   uses the longest KASP AS primer (`KASP_AS_LENGTHS`).
 #' @return a tibble `haplotype`, `group` (the group's allele signature).
 #' @examples
-#' \dontrun{
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' # one flanking variant per haplotype, 5 bp from the target; H1 carries the
+#' # target ALT, H2 does not, so the two primer templates differ
+#' haplotypes <- dplyr::bind_rows(
+#'   tibble::tibble(
+#'     haplotype = c("H1", "H1"), freq = 0.6, chrom = snp$chrom,
+#'     pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+#'     alt = c("G", snp$alt)
+#'   ),
+#'   tibble::tibble(
+#'     haplotype = c("H2", "H2"), freq = 0.4, chrom = snp$chrom,
+#'     pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+#'     alt = c("C", "A")
+#'   )
+#' )
 #' haplotype_groups(haplotypes, snp)
-#' }
 #' @family KASP haplotypes
 #' @export
 haplotype_groups <- function(haplotypes, snp, window = NULL) {
@@ -206,7 +219,25 @@ marker_as_footprint.marker_assay <- function(marker, ...) {
 #'   designs) and `uncovered` (haplotypes no design covers).
 #' @examples
 #' \dontrun{
-#' haplotype_cover(haplotypes, snp, function(hp) design_lax_one(genome, snp, hp))
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' # the target ALT plus one flanking variant per haplotype: two primer templates
+#' haplotypes <- dplyr::bind_rows(
+#'   tibble::tibble(
+#'     haplotype = c("H1", "H1"), freq = 0.6, chrom = snp$chrom,
+#'     pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+#'     alt = c("G", snp$alt)
+#'   ),
+#'   tibble::tibble(
+#'     haplotype = c("H2", "H2"), freq = 0.4, chrom = snp$chrom,
+#'     pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+#'     alt = c("C", "A")
+#'   )
+#' )
+#' haplotype_cover(haplotypes, snp, function(hp) {
+#'   lax <- design_lax_marker(genome, snp, dplyr::filter(haplotypes, haplotype == hp))
+#'   lax$base # the engine keys on the design's AS footprint
+#' })
 #' }
 #' @family KASP haplotypes
 #' @export
@@ -323,6 +354,24 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
 #' @param snp the target row; defaults to the marker's own `$snp`.
 #' @param min_alt_freq population-frequency floor for the check column.
 #' @return the marker with `$haplotypes` and `$population` attached.
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
+#' # one row per variant per haplotype; `freq` is the haplotype's frequency
+#' haplotypes <- dplyr::bind_rows(
+#'   tibble::tibble(
+#'     haplotype = "H1", freq = 0.6, chrom = "Chr1",
+#'     pos = 18519400L, ref = "A", alt = "G"
+#'   ),
+#'   tibble::tibble(
+#'     haplotype = "H2", freq = 0.4, chrom = "Chr1",
+#'     pos = 18519420L, ref = "C", alt = "T"
+#'   )
+#' )
+#' marker_attach_haplotypes(assay, haplotypes, snp)$population
+#' }
 #' @family KASP haplotypes
 #' @export
 marker_attach_haplotypes <- function(marker, haplotypes, snp = marker$snp,

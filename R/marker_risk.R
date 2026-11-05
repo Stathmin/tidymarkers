@@ -55,6 +55,8 @@ discrimination_band <- function(disc, limits = KASP_LIMITS) {
 #'   margin), `n_failed` and `failed` (list-column of the failed criteria).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_risk(assay)
 #' }

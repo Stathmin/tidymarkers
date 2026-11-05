@@ -20,6 +20,8 @@
 #' @return a named character vector of oligos (may be empty).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' marker_primers(assemble_kasp_assay(genome, snp))
 #' }
 #' @family KASP plan

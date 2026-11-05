@@ -37,7 +37,7 @@
 #'   absent) and `qualifiers` (a list-column of all `/key=value` pairs, so
 #'   nothing is lost).  The tibble carries a `file_reads` integer attribute as a
 #'   diagnostic: how many times the GenBank file itself was opened/read by this
-#'   call — `0` on a cache hit, `>= 1` when the index was (re)built.  Reads of
+#'   call: `0` on a cache hit, `>= 1` when the index was (re)built.  Reads of
 #'   the `.gbidx` file do not count.
 #' @examples
 #' gb <- withr::local_tempfile(fileext = ".gbk")

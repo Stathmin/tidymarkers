@@ -261,6 +261,8 @@ marker_dosage_gate <- function(marker) {
 #'   specificity - as far as the scheme has them.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_design_checks(assay)
 #' }

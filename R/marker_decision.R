@@ -279,6 +279,8 @@ marker_decision_schema <- function(scheme = "snp") {
 #'   `label`, `x`, `y`, `hard`, `status`.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_decision_graph(assay)
 #' }
@@ -387,6 +389,9 @@ decision_edges <- function(g) {
 #' @return the SVG markup as one string, or invisibly `out`.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+#' assay <- assemble_kasp_assay(genome, snp)
 #' plot_decision_tree() # the schema
 #' plot_decision_tree(scheme = "duplex") # the multiplex policy
 #' plot_decision_tree(assay) # this assay's traversal

@@ -325,6 +325,8 @@ has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 #' @return the value of `code`, evaluated with `UNAFOLDDAT` set to `path`.
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
+#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
 #' }
 #' @family KASP utilities

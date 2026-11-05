@@ -420,6 +420,9 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' @param engines optional [marker_engines()].
 #' @param options free-form run options.
 #' @return a classed `marker_run_context` list.
+#' @examples
+#' ctx <- marker_run_context(options = list(cores = 2L))
+#' ctx$options$cores
 #' @family KASP plan
 #' @export
 marker_run_context <- function(genome = NULL, variants = NULL, population = NULL,

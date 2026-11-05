@@ -374,8 +374,9 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
 #'   `compatibility`, `selection`, `verdict`).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
 #' loci <- marker_example()[1:2, c("chrom", "pos", "ref", "alt")]
-#' design_duplex(ath_genome(), loci, readout = "presence-absence", homologous = FALSE)
+#' design_duplex(genome, loci, readout = "presence-absence", homologous = FALSE)
 #' }
 #' @family KASP design
 #' @export

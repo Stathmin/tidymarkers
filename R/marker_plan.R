@@ -239,6 +239,7 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
 #' marker_plan(genome) + marker_targets(marker_example())
 #' marker_plan(genome) + marker_targets(chrom = "Chr4", pos = 269116, ref = "G", alt = "A")
 #' }
@@ -273,6 +274,7 @@ marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
 #' marker_plan(genome) + marker_context(variants = ensembl_variants("Chr4", 268901, 271503))
 #' }
 #' marker_plan(Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGT"))) +
@@ -324,6 +326,7 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' \dontrun{
+#' genome <- ath_genome()
 #' marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
 #' }
 #' @family KASP plan

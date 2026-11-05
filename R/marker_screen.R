@@ -196,6 +196,8 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
 #' @return a `ggplot`.
 #' @examples
 #' \dontrun{
+#' gene <- ensembl_gene("AT4G00650")
+#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_snp_screen(screen_snp_targets(variants, ath_genome()), ensembl_gene("AT4G00650"))
 #' }
 #' @family KASP plots
