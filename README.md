@@ -121,7 +121,7 @@ primer pair" (composition, structure, repeats, off-target).
    strand x length x mismatch position x base, scored with `TmCalculator`,
    `Biostrings` and `DECIPHER`.
 4. `primer_thermo()` / `dimer_thermo()` — Tm, GC, hairpins, 3'-terminal
-   stability, self- and cross-complementarity; `has_run()` / `find_repeats()` for
+   stability, self- and cross-complementarity; `has_repeat()` / `find_repeats()` for
    homopolymers and SSRs; `wobble_mismatch()` flags weak G:T / A:C pairs.
 5. `specificity_seed()` / `in_silico_pcr()` / `blast_primers()` — 3' seed hits,
    virtual amplification (uniqueness and product size), BLAST.

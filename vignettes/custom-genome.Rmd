@@ -69,4 +69,4 @@ loci <- variants[order(variants$pos), ][1:200, c("chrom", "pos", "ref", "alt")]
 design_kasp_markers(genome, loci, BPPARAM = BiocParallel::MulticoreParam(4))
 ```
 
-See also `vignettes/kasp-intro.Rmd` and `?read_variants_vcf`, `?assemble_kasp_assay`.
+See also `vignette("kasp-intro")` and `?read_variants_vcf`, `?assemble_kasp_assay`.

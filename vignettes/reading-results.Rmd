@@ -32,7 +32,7 @@ be compared with another and that comparison can itself be tested.
 The examples below read a small FASTA that ships with the package, so they run
 without a genome or the network:
 
-```{r}
+```{r, warning = FALSE}
 fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 genome <- read_genome_fasta(fa)
 snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
