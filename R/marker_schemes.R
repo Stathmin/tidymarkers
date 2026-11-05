@@ -249,7 +249,7 @@ marker_specificity <- function(scheme = "snp") {
 #'   `discrimination`, `readout`, `zygosity`, `amplicon`, `loci`, `verdict`.
 #' @examples
 #' marker_schemes()
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_schemes <- function() {
   out <- tibble::tribble(

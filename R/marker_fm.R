@@ -29,7 +29,7 @@ FM_MISMATCH <- 2L
 #' \dontrun{
 #' idx <- marker_fm_index(marker_genome("genome.fa"))
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_fm")) {
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
@@ -71,7 +71,7 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
 #' idx <- marker_fm_index(marker_genome("genome.fa"))
 #' specificity_fm(c(AS = "ACGTACGTACGTACGT"), idx)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L) {
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))

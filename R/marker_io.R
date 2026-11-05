@@ -26,7 +26,7 @@
 #'   non-`ACGTN` character (including IUPAC ambiguity codes) replaced by `N`.
 #' @examples
 #' normalise_allele(c("a", "R", "g"))
-#' @family KASP input
+#' @family input
 #' @export
 normalise_allele <- function(x) {
   x <- toupper(x)
@@ -58,7 +58,7 @@ normalise_allele <- function(x) {
 #'   "1\t250\t.\tA\tG\t.\t.\t."
 #' ), vcf)
 #' read_variants_vcf(vcf)
-#' @family KASP input
+#' @family input
 #' @export
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
@@ -157,7 +157,7 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">Chr1", "ACGTACGTACGT"), fa)
 #' fasta_index(fa)
-#' @family KASP input
+#' @family input
 #' @export
 fasta_index <- function(path) {
   rlang::check_installed("Rsamtools", reason = gettext("for indexed FASTA random access"))
@@ -182,7 +182,7 @@ fasta_index <- function(path) {
 #' @return a `DNAString` with the selected positions replaced by `N`.
 #' @examples
 #' mask_positions("ACGTACGT", c(2, 5))
-#' @family KASP input
+#' @family input
 #' @export
 mask_positions <- function(seq, positions) {
   s <- Biostrings::DNAString(as.character(seq))
@@ -215,7 +215,7 @@ mask_positions <- function(seq, positions) {
 #' @examples
 #' marker_example()
 #' marker_example("deletion")
-#' @family KASP input
+#' @family input
 #' @export
 marker_example <- function(type = NULL) {
   f <- system.file("extdata", "example_targets.csv", package = "tidymarkers")
@@ -242,7 +242,7 @@ marker_example <- function(type = NULL) {
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">1", "ACGTACGTACGT"), fa)
 #' read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
-#' @family KASP input
+#' @family input
 #' @export
 read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
   if (!fs::file_exists(path)) cli::cli_abort(gettext("FASTA not found: {path}"))
@@ -309,7 +309,7 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
 #' v <- tibble::tibble(chrom = "Chr1", pos = c(10L, 20L), ref = c("A", "AT"), alt = c("G", "A"))
 #' gr <- marker_as_granges(v, extra = tibble::tibble(depth = c(30, 12)))
 #' if (!is.null(gr)) marker_from_granges(gr)
-#' @family KASP input
+#' @family input
 #' @export
 marker_as_granges <- function(x, extra = NULL) {
   if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
@@ -375,7 +375,7 @@ marker_from_granges <- function(x) {
 #' v <- tibble::tibble(chrom = "4", pos = 10L, ref = "A", alt = "G", depth = 30L)
 #' f <- write_variants_vcf(v)
 #' read_variants_vcf(f)
-#' @family KASP input
+#' @family input
 #' @export
 write_variants_vcf <- function(x, path = NULL) {
   need <- c("chrom", "pos", "ref", "alt")

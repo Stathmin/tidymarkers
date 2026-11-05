@@ -39,7 +39,7 @@ duplex_dg_thermo(
 \seealso{
 \code{\link[=dimer_thermo]{dimer_thermo()}}, \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}}, \code{\link[=scheme_conditions]{scheme_conditions()}}
 
-Other KASP thermodynamics:
+Other thermodynamics:
 \code{\link[=amplicon_fold_check]{amplicon_fold_check()}},
 \code{\link[=dimer_thermo]{dimer_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
@@ -52,4 +52,4 @@ Other KASP thermodynamics:
 \code{\link[=thermo_crosscheck]{thermo_crosscheck()}},
 \code{\link[=wobble_mismatch]{wobble_mismatch()}}
 }
-\concept{KASP thermodynamics}
+\concept{thermodynamics}

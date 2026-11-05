@@ -57,9 +57,9 @@ published LGC recipe; change \code{as_uM}/\code{com_uM} for other chemistries.
 kasp_mix_recipe(n_reactions = 96)
 }
 \seealso{
-Other KASP output:
+Other output:
 \code{\link[=export_primers]{export_primers()}},
 \code{\link[=marker_primer_table]{marker_primer_table()}},
 \code{\link[=write_kasp_results]{write_kasp_results()}}
 }
-\concept{KASP output}
+\concept{output}

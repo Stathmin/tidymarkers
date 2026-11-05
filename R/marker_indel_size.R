@@ -131,7 +131,7 @@ KASP_GATE_HARD_INDEL_SIZE <- c(
 #' snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "ATTTTTT")
 #' design_indel_size_marker(genome, snp)
 #' }
-#' @family KASP indel size
+#' @family indel size
 #' @export
 design_indel_size_marker <- function(genome, snp, flank = 250L,
                                      min_gap = KASP_INDEL_SIZE_LIMITS$min_gap,

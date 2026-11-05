@@ -36,7 +36,7 @@
 #' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' design_search_frames(assay, variants, snp)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 design_search_frames <- function(assay, variants, snp) {
   aa <- assay$assay[1L, ]
@@ -196,7 +196,7 @@ design_search_frames <- function(assay, variants, snp) {
 #' frames <- design_search_frames(assay, variants, snp)
 #' plot_design_search_step(frames, 1)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_design_search_step <- function(frames, step) {
   pr <- dplyr::filter(frames$primers, .data$step == !!step)
@@ -265,7 +265,7 @@ plot_design_search_step <- function(frames, step) {
 #' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' render_design_search(assay, variants, snp, path = tempfile(fileext = ".gif"))
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 render_design_search <- function(assay, variants, snp,
                                  path = fs::path(tempdir(), "design_search.gif"),

@@ -19,7 +19,7 @@ Is \code{x} a KASP assay object?
 is_marker_assay(list())
 }
 \seealso{
-Other KASP utilities:
+Other utilities:
 \code{\link[=has_oligoarrayaux]{has_oligoarrayaux()}},
 \code{\link[=marker_engine_stamp]{marker_engine_stamp()}},
 \code{\link[=marker_engine_stamp_field]{marker_engine_stamp_field()}},
@@ -30,4 +30,4 @@ Other KASP utilities:
 \code{\link[=print.marker_doomed]{print.marker_doomed()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }
-\concept{KASP utilities}
+\concept{utilities}

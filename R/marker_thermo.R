@@ -170,7 +170,7 @@ serial_backend <- function(BPPARAM) {
 #'   possibly empty).
 #' @examples
 #' find_repeats(c("ACACACAC", "ACGTACGT"))
-#' @family KASP QC
+#' @family QC
 #' @export
 find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
   pats <- repeat_regex(units, min_copies)
@@ -188,7 +188,7 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 #' @return a logical vector, one per input sequence.
 #' @examples
 #' has_repeat(c("ACACACAC", "ACGT"))
-#' @family KASP QC
+#' @family QC
 #' @export
 has_repeat <- function(seq, units = 2:4, min_copies = 3L) {
   if (!length(units)) {
@@ -217,7 +217,7 @@ has_repeat <- function(seq, units = 2:4, min_copies = 3L) {
 #'   palindromic view (empty tibble when none).
 #' @examples
 #' find_palindromes(c(hit = "ACGTACGT", none = "AACCGG"))
-#' @family KASP QC
+#' @family QC
 #' @export
 find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
   nm <- names(seq)
@@ -244,7 +244,7 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 #' @return a logical vector, one per input sequence.
 #' @examples
 #' has_palindrome(c("ACGTACGT", "AACCGG"))
-#' @family KASP QC
+#' @family QC
 #' @export
 has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
   purrr::map_int(find_palindromes(seq, min_armlength, max_looplength, max_mismatch), nrow) > 0L
@@ -285,7 +285,7 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #' primer_tm("GAAGGTGACCAAGTTCATGCT")
 #' primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
 #' primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
                       conditions = NULL, salt_method = NULL) {
@@ -310,7 +310,7 @@ primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
 #' @return a single logical.
 #' @examples
 #' has_oligoarrayaux()
-#' @family KASP utilities
+#' @family utilities
 #' @export
 has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 
@@ -329,7 +329,7 @@ has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
 #' }
-#' @family KASP utilities
+#' @family utilities
 #' @export
 with_unafloddat <- function(path, code) {
   if (!fs::dir_exists(path)) cli::cli_abort(gettext("Directory not found: {path}"))
@@ -413,7 +413,7 @@ oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL,
 #' hairpin_dg_thermo("GAAGGTGACCAAGTTCATGCT", conditions = scheme_conditions("lamp"))
 #' }
 #' @seealso [primer_tm()], [duplex_dg_thermo()], [scheme_conditions()]
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 hairpin_dg_thermo <- function(seq, conditions = NULL, BPPARAM = NULL) {
   conditions <- as_reaction_conditions(conditions)
@@ -449,7 +449,7 @@ hairpin_dg_thermo <- function(seq, conditions = NULL, BPPARAM = NULL) {
 #' )
 #' }
 #' @seealso [dimer_thermo()], [hairpin_dg_thermo()], [scheme_conditions()]
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 duplex_dg_thermo <- function(seq1, seq2, conditions = NULL, BPPARAM = NULL) {
   conditions <- as_reaction_conditions(conditions)
@@ -496,7 +496,7 @@ duplex_dg_thermo <- function(seq1, seq2, conditions = NULL, BPPARAM = NULL) {
 #' fold_amplicon("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA")
 #' }
 #' @seealso [hairpin_dg_thermo()], [oligo_dg()], [capabilities()]
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 fold_amplicon <- function(seq, kind = c("DNA", "RNA"), conditions = NULL) {
   kind <- match.arg(kind)
@@ -641,7 +641,7 @@ AMPLICON_FOLD_MIN_SS <- 0.5
 #' amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA") # unknown
 #' }
 #' @seealso [fold_amplicon()], [hairpin_dg_thermo()], [capabilities()]
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 amplicon_fold_check <- function(seq, kind = c("DNA", "RNA"), conditions = NULL,
                                 min_single_stranded = AMPLICON_FOLD_MIN_SS,
@@ -718,7 +718,7 @@ amplicon_fold_row <- function(seq, kind, conditions, min_single_stranded, max_le
 #' \dontrun{
 #' pcr_efficiency("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
 #' }
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
                            P = PCR_EFF$P, ions = PCR_EFF$ions,

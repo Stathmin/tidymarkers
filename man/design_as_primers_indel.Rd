@@ -62,7 +62,7 @@ design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
 }
 }
 \seealso{
-Other KASP design:
+Other design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
@@ -81,4 +81,4 @@ Other KASP design:
 \code{\link[=strand_gc_hint]{strand_gc_hint()}},
 \code{\link[=variant_type]{variant_type()}}
 }
-\concept{KASP design}
+\concept{design}

@@ -28,7 +28,7 @@
 #'   `role` (what the engine decides in an evaluation).
 #' @examples
 #' marker_engine_versions()
-#' @family KASP utilities
+#' @family utilities
 #' @export
 marker_engine_versions <- function() {
   pkg_version <- function(pkg) {
@@ -96,7 +96,7 @@ marker_engine_names <- c(
 #' @return a named character vector, one entry per engine (never empty).
 #' @examples
 #' marker_engine_stamp()
-#' @family KASP utilities
+#' @family utilities
 #' @export
 marker_engine_stamp <- function() {
   v <- marker_engine_versions()
@@ -128,7 +128,7 @@ marker_engine_stamp <- function() {
 #' snp <- pick_target_snp(v, g, ensembl_gene("AT4G00650"))
 #' marker_evaluation_stamp(marker_design_checks(snp))
 #' }
-#' @family KASP utilities
+#' @family utilities
 #' @export
 marker_evaluation_stamp <- function(x) {
   attr(x, "engine_stamp", exact = TRUE)
@@ -174,7 +174,7 @@ marker_with_stamp <- function(x, stamp = NULL, from = NULL) {
 #' @examples
 #' marker_engine_stamp_field()
 #' marker_engine_stamp_field("json")
-#' @family KASP utilities
+#' @family utilities
 #' @export
 marker_engine_stamp_field <- function(fmt = c("csv", "json"), stamp = NULL) {
   fmt <- match.arg(fmt)

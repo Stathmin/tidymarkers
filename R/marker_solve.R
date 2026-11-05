@@ -139,7 +139,7 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #'   marker_solve()
 #' solved
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = interactive()) {
   if (!inherits(plan, "marker_plan")) {
@@ -220,7 +220,7 @@ print.marker_solved <- function(x, ...) {
 #' \dontrun{
 #' marker_plot(marker_solve(plan))
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_plot <- function(solved, ...) {
   if (!inherits(solved, "marker_solved")) {
@@ -260,7 +260,7 @@ marker_plot <- function(solved, ...) {
 #' \dontrun{
 #' marker_export(marker_solve(plan), dir = "results")
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_export <- function(solved, dir = tempdir(), artefact = TRUE) {
   if (!inherits(solved, "marker_solved")) {

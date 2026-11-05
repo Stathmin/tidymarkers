@@ -18,7 +18,7 @@ audit trail for \code{\link[=marker_design_checks]{marker_design_checks()}}: a n
 marker_priors()
 }
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
@@ -30,4 +30,4 @@ Other KASP checks:
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
-\concept{KASP checks}
+\concept{checks}

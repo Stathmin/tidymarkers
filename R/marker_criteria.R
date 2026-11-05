@@ -1005,7 +1005,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
 #' @examples
 #' marker_criteria()
 #' marker_criteria(scheme = "duplex")
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   # a product read by size is graded against the scheme's own window, never the

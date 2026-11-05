@@ -161,7 +161,7 @@ assemble_kasp_assay(genome, snp)
 }
 }
 \seealso{
-Other KASP design:
+Other design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
@@ -180,4 +180,4 @@ Other KASP design:
 \code{\link[=strand_gc_hint]{strand_gc_hint()}},
 \code{\link[=variant_type]{variant_type()}}
 }
-\concept{KASP design}
+\concept{design}

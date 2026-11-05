@@ -29,7 +29,7 @@ ensembl_perform <- function(req) {
 #' \dontrun{
 #' ensembl_gene("AT4G00650")
 #' }
-#' @family KASP input
+#' @family input
 #' @export
 ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
                          cache = marker_cache_dir()) {
@@ -77,7 +77,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
 #' \dontrun{
 #' ensembl_variants("Chr4", 268901, 271503)
 #' }
-#' @family KASP input
+#' @family input
 #' @export
 ensembl_variants <- function(chrom, start, end,
                              species = "arabidopsis_thaliana",
@@ -126,7 +126,7 @@ ensembl_variants <- function(chrom, start, end,
 #' @examples
 #' g <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
 #' snp_template(g, "Chr1", 10L, flank = 5L)
-#' @family KASP input
+#' @family input
 #' @export
 snp_template <- function(genome, chrom, pos, flank = 150L) {
   seq <- get_region(genome, chrom, pos - flank, pos + flank)
@@ -147,7 +147,7 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
 #' @examples
 #' g <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
 #' strand_gc_hint(g, "Chr1", 15L, flank = 5L)
-#' @family KASP design
+#' @family design
 #' @export
 strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
   up <- as.character(get_region(genome, chrom, max(1L, pos - flank), pos - 1L))
@@ -253,7 +253,7 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #' # a target that designs specifically as a CAPS marker:
 #' pick_target_snp(v, genome, ensembl_gene("AT4G00650"), scheme = "caps")
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
                             specificity_candidates = 10L, BPPARAM = NULL,
@@ -423,7 +423,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
 #' @examples
 #' ctx <- marker_run_context(options = list(cores = 2L))
 #' ctx$options$cores
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_run_context <- function(genome = NULL, variants = NULL, population = NULL,
                                haplotypes = NULL, conditions = NULL, engines = NULL,
@@ -558,7 +558,7 @@ is_target_designable <- function(marker) {
 #' genome <- ath_genome()
 #' design_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
                           context = NULL) {

@@ -32,7 +32,7 @@ dimer_thermo(c(AS = "GAAGGTGACCAAGTTCATGCT", COM = "AGCATGAACTTGGTCACCTTC"))
 }
 }
 \seealso{
-Other KASP thermodynamics:
+Other thermodynamics:
 \code{\link[=amplicon_fold_check]{amplicon_fold_check()}},
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
@@ -45,4 +45,4 @@ Other KASP thermodynamics:
 \code{\link[=thermo_crosscheck]{thermo_crosscheck()}},
 \code{\link[=wobble_mismatch]{wobble_mismatch()}}
 }
-\concept{KASP thermodynamics}
+\concept{thermodynamics}

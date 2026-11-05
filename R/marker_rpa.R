@@ -524,7 +524,7 @@ rpa_variant_gate <- function(under, pos, fwd_end = NA_real_, rev_start = NA_real
 #' design_rpa_marker(genome, marker_example("SNP")[1, ])
 #' design_rpa_marker(genome, marker_example("SNP")[1, ], design_probe = TRUE)
 #' }
-#' @family KASP RPA
+#' @family RPA
 #' @export
 design_rpa_marker <- function(genome, snp, flank = 200L,
                               primer_len = RPA_PRIMER_LEN,

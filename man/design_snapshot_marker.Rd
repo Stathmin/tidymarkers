@@ -63,4 +63,4 @@ genome <- ath_genome()
 design_snapshot_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP SNaPshot}
+\concept{SNaPshot}

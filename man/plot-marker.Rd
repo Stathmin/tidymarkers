@@ -75,3 +75,11 @@ map + acceptance-check panel, the gel chemistries keep their gel, and the
 remaining classes draw a schematic of their own architecture with the gate
 table valid for that class on the right.
 }
+\examples{
+\dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+plot(assay)
+}
+}

@@ -32,8 +32,27 @@ track in \code{plot_marker_map()} and the population rows in the check column;
 haplotype-aware engines such as \code{\link[=design_lax_marker]{design_lax_marker()}} additionally use it for
 primer selection.
 }
+\examples{
+\dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+# one row per variant per haplotype; `freq` is the haplotype's frequency
+haplotypes <- dplyr::bind_rows(
+  tibble::tibble(
+    haplotype = "H1", freq = 0.6, chrom = "Chr1",
+    pos = 18519400L, ref = "A", alt = "G"
+  ),
+  tibble::tibble(
+    haplotype = "H2", freq = 0.4, chrom = "Chr1",
+    pos = 18519420L, ref = "C", alt = "T"
+  )
+)
+marker_attach_haplotypes(assay, haplotypes, snp)$population
+}
+}
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
@@ -43,4 +62,4 @@ Other KASP haplotypes:
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

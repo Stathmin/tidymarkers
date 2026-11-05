@@ -24,7 +24,7 @@
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' marker_primers(assemble_kasp_assay(genome, snp))
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_primers <- function(marker, ...) UseMethod("marker_primers")
 
@@ -176,7 +176,7 @@ marker_primers.marker_sanger <- function(marker, ...) {
 #' \dontrun{
 #' marker_tubes(marker_solve(plan))
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_tubes <- function(solved, min_cross_run = 6L, max_selfcomp = 5L) {
   if (!inherits(solved, "marker_solved")) {

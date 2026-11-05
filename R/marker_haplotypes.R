@@ -124,7 +124,7 @@ haplotype_variants <- function(haplotypes, snp) {
 #'   )
 #' )
 #' haplotype_groups(haplotypes, snp)
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 haplotype_groups <- function(haplotypes, snp, window = NULL) {
   h <- normalise_haplotypes(haplotypes)
@@ -239,7 +239,7 @@ marker_as_footprint.marker_assay <- function(marker, ...) {
 #'   lax$base # the engine keys on the design's AS footprint
 #' })
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 haplotype_cover <- function(haplotypes, snp, design, window = NULL) {
   h <- normalise_haplotypes(haplotypes)
@@ -372,7 +372,7 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
 #' )
 #' marker_attach_haplotypes(assay, haplotypes, snp)$population
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 marker_attach_haplotypes <- function(marker, haplotypes, snp = marker$snp,
                                      min_alt_freq = 0.01) {

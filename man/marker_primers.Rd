@@ -23,11 +23,13 @@ marker exposes no oligos).
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 marker_primers(assemble_kasp_assay(genome, snp))
 }
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
@@ -43,4 +45,4 @@ Other KASP plan:
 \code{\link[=marker_tech]{marker_tech()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
-\concept{KASP plan}
+\concept{plan}

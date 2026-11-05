@@ -86,4 +86,4 @@ genome <- ath_genome()
 design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
 }
 }
-\concept{KASP Sanger}
+\concept{Sanger}

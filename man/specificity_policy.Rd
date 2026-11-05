@@ -82,7 +82,7 @@ specificity_policy("cas12a")$requires_pam
 specificity_policy("homeolog")$mode
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=alignment_from]{alignment_from()}},
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
@@ -102,4 +102,4 @@ Other KASP specificity:
 \code{\link[=specificity_seed]{specificity_seed()}},
 \code{\link[=specificity_verdict]{specificity_verdict()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

@@ -29,7 +29,7 @@ db <- marker_blast_index(marker_genome("genome.fa"))
 }
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=alignment_from]{alignment_from()}},
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
@@ -49,4 +49,4 @@ Other KASP specificity:
 \code{\link[=specificity_seed]{specificity_seed()}},
 \code{\link[=specificity_verdict]{specificity_verdict()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

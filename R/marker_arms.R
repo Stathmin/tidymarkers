@@ -198,7 +198,7 @@ arms_outer_pairs <- function(seq, snp_i, limits, n_outer = 6L, spread = 50L) {
 #' genome <- ath_genome()
 #' design_arms_marker(genome, marker_example("SNP")[1, ], flank = 300)
 #' }
-#' @family KASP ARMS
+#' @family ARMS
 #' @export
 design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ...) {
   ref <- as.character(snp$ref)[1L]
@@ -378,7 +378,7 @@ print.marker_arms <- function(x, ...) {
 #' genome <- ath_genome()
 #' plot_arms_gel(design_arms_marker(genome, marker_example("SNP")[1, ], flank = 300))
 #' }
-#' @family KASP ARMS
+#' @family ARMS
 #' @export
 #' @method marker_map_spec marker_arms
 #' @export

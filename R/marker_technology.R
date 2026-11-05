@@ -62,7 +62,7 @@ marker_technology_def <- function(name) {
 #'   params = list(as_lengths = 24:30), overwrite = TRUE
 #' )
 #' marker_schemes()
-#' @family KASP technologies
+#' @family technologies
 #' @export
 marker_technology <- function(name, base = "snp", params = list(),
                               blocks = character(0), specificity = NULL,
@@ -120,7 +120,7 @@ marker_technology <- function(name, base = "snp", params = list(),
 #'   params = list(as_lengths = 24:30), overwrite = TRUE
 #' )
 #' marker_technologies()
-#' @family KASP technologies
+#' @family technologies
 #' @export
 marker_technologies <- function() {
   ids <- sort(ls(.marker_tech_store, all.names = FALSE))

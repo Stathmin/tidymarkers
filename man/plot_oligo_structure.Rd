@@ -26,11 +26,14 @@ the stem length.
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
 plot_oligo_structure(assay)
 }
 }
 \seealso{
-Other KASP plots:
+Other plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_checks]{plot_checks()}},
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
@@ -40,4 +43,4 @@ Other KASP plots:
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}},
 \code{\link[=render_design_search]{render_design_search()}}
 }
-\concept{KASP plots}
+\concept{plots}

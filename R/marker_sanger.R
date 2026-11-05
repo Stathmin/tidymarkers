@@ -488,7 +488,7 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #' genome <- ath_genome()
 #' design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
 #' }
-#' @family KASP Sanger
+#' @family Sanger
 #' @export
 design_sanger_marker <- function(genome, snp, flank = 500L,
                                  min_dist = KASP_SANGER_LIMITS$min_dist,

@@ -164,7 +164,7 @@ grade_one_marker <- function(graded, gates, relax_order, tiers, gate_margin, gat
 #' genome <- ath_genome()
 #' design_dpcr_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP dPCR
+#' @family dPCR
 #' @export
 design_dpcr_marker <- function(genome, snp, flank = 150L,
                                min_product = 60L, max_product = 150L, lengths = 18:25,

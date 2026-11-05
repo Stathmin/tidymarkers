@@ -28,7 +28,7 @@ g <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
 strand_gc_hint(g, "Chr1", 15L, flank = 5L)
 }
 \seealso{
-Other KASP design:
+Other design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
@@ -47,4 +47,4 @@ Other KASP design:
 \code{\link[=screen_snp_targets]{screen_snp_targets()}},
 \code{\link[=variant_type]{variant_type()}}
 }
-\concept{KASP design}
+\concept{design}

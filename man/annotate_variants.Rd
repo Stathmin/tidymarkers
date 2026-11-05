@@ -50,10 +50,10 @@ annotate_variants(
 }
 }
 \seealso{
-Other KASP annotation:
+Other annotation:
 \code{\link[=marker_bsgenome]{marker_bsgenome()}},
 \code{\link[=marker_ensdb]{marker_ensdb()}},
 \code{\link[=marker_features]{marker_features()}},
 \code{\link[=marker_txdb]{marker_txdb()}}
 }
-\concept{KASP annotation}
+\concept{annotation}

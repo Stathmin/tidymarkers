@@ -25,7 +25,7 @@ marker_engine_stamp_field()
 marker_engine_stamp_field("json")
 }
 \seealso{
-Other KASP utilities:
+Other utilities:
 \code{\link[=has_oligoarrayaux]{has_oligoarrayaux()}},
 \code{\link[=is_marker_assay]{is_marker_assay()}},
 \code{\link[=marker_engine_stamp]{marker_engine_stamp()}},
@@ -36,4 +36,4 @@ Other KASP utilities:
 \code{\link[=print.marker_doomed]{print.marker_doomed()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }
-\concept{KASP utilities}
+\concept{utilities}

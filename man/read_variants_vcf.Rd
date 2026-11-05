@@ -45,7 +45,7 @@ writeLines(c(
 read_variants_vcf(vcf)
 }
 \seealso{
-Other KASP input:
+Other input:
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -66,4 +66,4 @@ Other KASP input:
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}
 }
-\concept{KASP input}
+\concept{input}

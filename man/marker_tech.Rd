@@ -33,11 +33,12 @@ is discovered automatically and can be named here like any other.
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
 marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
 }
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
@@ -53,4 +54,4 @@ Other KASP plan:
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
-\concept{KASP plan}
+\concept{plan}

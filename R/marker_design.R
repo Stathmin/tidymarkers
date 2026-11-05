@@ -37,7 +37,7 @@
 #' set.seed(1)
 #' w <- Biostrings::DNAString(paste(sample(c("A", "C", "G", "T"), 160L, TRUE), collapse = ""))
 #' design_common_primers(w, 80L, n = 3L)
-#' @family KASP design
+#' @family design
 #' @export
 design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
                                   gaps = 18:80, target_tm = COM_TM_TARGET,
@@ -234,7 +234,7 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
 #'   `ref_on`/`ref_off`/`alt_on`/`alt_off`, `discrimination`, `tm`, `gc`,
 #'   `dg_3p`, `tmpl_start`, `tmpl_end`.
-#' @family KASP design
+#' @family design
 #' @export
 design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = KASP_AS_LENGTHS, stab_ats = c(NA, 2L, 3L),
@@ -582,7 +582,7 @@ empty_as_primers <- function() {
 #'   length difference) and the `block_ref`/`block_alt` alleles.
 #' @examples
 #' allele_templates(Biostrings::DNAString("ACGTACGTACGT"), 5L, "G", "TT")
-#' @family KASP design
+#' @family design
 #' @export
 allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
   ref_len <- nchar(ref)
@@ -630,7 +630,7 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #' tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
 #' design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
                                     strands = c("+", "-"), lengths = 18:32,

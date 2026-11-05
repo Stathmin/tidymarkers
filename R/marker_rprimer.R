@@ -24,7 +24,7 @@
 #' @return a `Biostrings::DNAMultipleAlignment`.
 #' @examples
 #' alignment_from(c(REF = "ACGTACGT", ALT = "ACGAACGT"))
-#' @family KASP specificity
+#' @family specificity
 #' @export
 alignment_from <- function(seqs) {
   if (length(unique(nchar(seqs))) != 1L) {
@@ -52,7 +52,7 @@ alignment_from <- function(seqs) {
 #' alignment <- alignment_from(c(REF = "...", ALT = "..."))
 #' rprimer_assays(alignment)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 rprimer_assays <- function(alignment, check = TRUE, ...) {
   rlang::check_installed("rprimer", reason = gettext("for an independent oligo-design cross-check"))

@@ -198,7 +198,7 @@ run_step <- function(command, args = character(), dir = NULL) {
 #' marker_install_tools()
 #' has_oligoarrayaux()
 #' }
-#' @family KASP utilities
+#' @family utilities
 #' @export
 marker_install_tools <- function(dest = fs::path(marker_cache_dir(), "tools"),
                                  version = "3.8.1", ask = interactive(), force = FALSE) {

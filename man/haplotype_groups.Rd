@@ -27,12 +27,25 @@ haplotype.  Chemistry-agnostic - it is the primer-template equivalence any
 scheme (KASP, lax, indel, ...) can key on.
 }
 \examples{
-\dontrun{
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+# one flanking variant per haplotype, 5 bp from the target; H1 carries the
+# target ALT, H2 does not, so the two primer templates differ
+haplotypes <- dplyr::bind_rows(
+  tibble::tibble(
+    haplotype = c("H1", "H1"), freq = 0.6, chrom = snp$chrom,
+    pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+    alt = c("G", snp$alt)
+  ),
+  tibble::tibble(
+    haplotype = c("H2", "H2"), freq = 0.4, chrom = snp$chrom,
+    pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+    alt = c("C", "A")
+  )
+)
 haplotype_groups(haplotypes, snp)
 }
-}
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
@@ -42,4 +55,4 @@ Other KASP haplotypes:
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

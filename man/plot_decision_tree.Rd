@@ -40,13 +40,16 @@ One marker chemistry is drawn at a time (\code{\link[=marker_schemes]{marker_sch
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
 plot_decision_tree() # the schema
 plot_decision_tree(scheme = "duplex") # the multiplex policy
 plot_decision_tree(assay) # this assay's traversal
 }
 }
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
@@ -58,4 +61,4 @@ Other KASP checks:
 \code{\link[=marker_schemes]{marker_schemes()}},
 \code{\link[=passes_all]{passes_all()}}
 }
-\concept{KASP checks}
+\concept{checks}

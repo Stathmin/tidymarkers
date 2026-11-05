@@ -572,7 +572,7 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   [marker_schemes()]): stored on the object, and used to build the matching
 #'   decision graph and to grade the acceptance checks, so a scheme never shows
 #'   (or is graded by) another chemistry's tree (C12).
-#' @family KASP design
+#' @family design
 #' @export
 assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 strands = c("+", "-"),
@@ -1120,7 +1120,7 @@ normalise_fixed_primers <- function(primers) {
 #' )
 #' assemble_primer_assay(genome, tibble::tibble(chrom = "1", pos = 100L, ref = "A", alt = "G"), p)
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
                                   flank = 150L, scheme = "snp",

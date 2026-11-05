@@ -35,7 +35,7 @@
 #' primer_set_compatibility(c(
 #'   AS1 = "GAAGGTGACCAAGTTCATGCT", AS2 = "GAAGGTCGGAGTCAACGGATT"
 #' ))
-#' @family KASP specificity
+#' @family specificity
 #' @export
 primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp = 5L,
                                      conditions = NULL) {

@@ -44,7 +44,7 @@
 #' \dontrun{
 #' screen_snp_targets(ensembl_variants("Chr4", 268901, 271503), ath_genome())
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+", "-"),
                                clean_3p = 5L, hotzone = 8L, linked = NULL,
@@ -200,7 +200,7 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
 #' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_snp_screen(screen_snp_targets(variants, ath_genome()), ensembl_gene("AT4G00650"))
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_snp_screen <- function(screen, gene = NULL, threshold = 1L) {
   if (nrow(screen) == 0L) cli::cli_abort(gettext("`screen` is empty."))

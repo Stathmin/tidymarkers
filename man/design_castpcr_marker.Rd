@@ -81,4 +81,4 @@ genome <- ath_genome()
 design_castpcr_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP castPCR}
+\concept{castPCR}

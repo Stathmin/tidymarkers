@@ -105,7 +105,7 @@ SNAPSHOT_STRUCT_RELAX <- 3
 #' genome <- ath_genome()
 #' design_snapshot_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP SNaPshot
+#' @family SNaPshot
 #' @export
 design_snapshot_marker <- function(genome, snp, flank = 250L,
                                    amp_lengths = SNAPSHOT_AMP_LENGTHS,

@@ -39,9 +39,9 @@ reaction_conditions()
 reaction_conditions(Na = 100, temperature = 60)
 }
 \seealso{
-Other KASP engines:
+Other engines:
 \code{\link[=capabilities]{capabilities()}},
 \code{\link[=marker_engines]{marker_engines()}},
 \code{\link[=scheme_conditions]{scheme_conditions()}}
 }
-\concept{KASP engines}
+\concept{engines}

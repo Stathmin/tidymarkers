@@ -36,4 +36,4 @@ genome <- ath_genome()
 design_arms_marker(genome, marker_example("SNP")[1, ], flank = 300)
 }
 }
-\concept{KASP ARMS}
+\concept{ARMS}

@@ -12,8 +12,12 @@ a list with \code{kind}, \code{status}, \code{edge}, \code{edge_lty}, \code{band
 \description{
 Palette of a decision figure: fill by kind, border by status, line by edge
 }
+\examples{
+decision_palette()$kind # fill colour per node kind
+decision_palette()$status["violated"] # border colour of a failing check
+}
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
@@ -25,4 +29,4 @@ Other KASP checks:
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
-\concept{KASP checks}
+\concept{checks}

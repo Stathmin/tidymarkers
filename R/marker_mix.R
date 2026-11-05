@@ -31,7 +31,7 @@
 #'   `total_uL`.
 #' @examples
 #' kasp_mix_recipe(n_reactions = 96)
-#' @family KASP output
+#' @family output
 #' @export
 kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
                             stock_uM = 100, as_uM = 12, com_uM = 30,

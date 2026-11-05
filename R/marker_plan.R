@@ -207,7 +207,7 @@ marker_layer <- function(apply, label) {
 #'   marker_tech(preset = "lab")
 #' plan
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_plan <- function(genome, targets = NULL, region = NULL) {
   if (is.null(genome)) {
@@ -243,7 +243,7 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' marker_plan(genome) + marker_targets(marker_example())
 #' marker_plan(genome) + marker_targets(chrom = "Chr4", pos = 269116, ref = "G", alt = "A")
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
                            alt = NULL, type = NULL, label = NULL) {
@@ -282,7 +282,7 @@ marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
 #'     variants = tibble::tibble(chrom = "Chr1", pos = 1L, ref = "A", alt = "C"),
 #'     depth = tibble::tibble(chrom = "Chr1", pos = 1L, depth = 10L, alt_depth = 0L, genotype = "0/0")
 #'   )
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_context <- function(variants = NULL, haplotypes = NULL,
                            depth = NULL, min_depth = 3L, min_weight = 0.5) {
@@ -329,7 +329,7 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' genome <- ath_genome()
 #' marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL) {
   if (!is.null(preset)) {
@@ -358,7 +358,7 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
 #' @examples
 #' marker_costs()
 #' marker_costs(hrm = 1.2)
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_costs <- function(...) {
   ov <- c(...)

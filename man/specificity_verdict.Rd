@@ -46,7 +46,7 @@ hits <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome)
 specificity_verdict(hits, "kasp", genome = NULL)$verdict
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=alignment_from]{alignment_from()}},
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
@@ -66,4 +66,4 @@ Other KASP specificity:
 \code{\link[=specificity_policy]{specificity_policy()}},
 \code{\link[=specificity_seed]{specificity_seed()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

@@ -42,11 +42,16 @@ default of one core respects CRAN's cap on default core use).
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+gene <- ensembl_gene("AT4G00650")
+variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 render_design_search(assay, variants, snp, path = tempfile(fileext = ".gif"))
 }
 }
 \seealso{
-Other KASP plots:
+Other plots:
 \code{\link[=design_search_frames]{design_search_frames()}},
 \code{\link[=plot_checks]{plot_checks()}},
 \code{\link[=plot_design_search_step]{plot_design_search_step()}},
@@ -56,4 +61,4 @@ Other KASP plots:
 \code{\link[=plot_snp_screen]{plot_snp_screen()}},
 \code{\link[=plot_variant_landscape]{plot_variant_landscape()}}
 }
-\concept{KASP plots}
+\concept{plots}

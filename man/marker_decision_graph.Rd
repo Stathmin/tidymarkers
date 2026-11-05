@@ -26,12 +26,14 @@ The decision tree as a \code{tidygraph}, annotated with an assay's outcome
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 assay <- assemble_kasp_assay(genome, snp)
 marker_decision_graph(assay)
 }
 }
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
@@ -43,4 +45,4 @@ Other KASP checks:
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
-\concept{KASP checks}
+\concept{checks}

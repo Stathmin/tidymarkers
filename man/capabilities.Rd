@@ -37,9 +37,9 @@ capabilities(engines$thermo, "tm")
 capabilities(engines$thermo, "not_a_capability") # "unknown"
 }
 \seealso{
-Other KASP engines:
+Other engines:
 \code{\link[=marker_engines]{marker_engines()}},
 \code{\link[=reaction_conditions]{reaction_conditions()}},
 \code{\link[=scheme_conditions]{scheme_conditions()}}
 }
-\concept{KASP engines}
+\concept{engines}

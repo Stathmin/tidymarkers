@@ -378,7 +378,7 @@ duplex_selection <- function(assays, readout = c("co-dominant", "presence-absenc
 #' loci <- marker_example()[1:2, c("chrom", "pos", "ref", "alt")]
 #' design_duplex(genome, loci, readout = "presence-absence", homologous = FALSE)
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-absence"),
                           homologous = NA, ...) {

@@ -139,7 +139,7 @@ KASP_GATE_HARD_LABEL_CAPS <- c(
 #'   (the nuclease switch; empty for a singleton).
 #' @examples
 #' head(restriction_enzymes())
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 restriction_enzymes <- function() {
   f <- system.file("extdata", "restriction_enzymes.csv", package = "tidymarkers")
@@ -194,7 +194,7 @@ caps_operative_enzymes <- function(enzymes) {
 #'   and `fragments` (list of integer band lengths).
 #' @examples
 #' caps_fragments("GAATTCTTAAGGAATTC")
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 caps_fragments <- function(seq, enzymes = restriction_enzymes()) {
   s <- Biostrings::DNAString(as.character(seq))
@@ -253,7 +253,7 @@ digest_gap <- function(a, b) {
 #' snp <- marker_example("SNP")[1, ]
 #' find_caps_enzymes(genome, snp, flank = 250)
 #' }
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 find_caps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
                               min_gap = 50L) {
@@ -322,7 +322,7 @@ site_mismatches <- function(window, site) {
 #' genome <- ath_genome()
 #' find_dcaps_enzymes(genome, marker_example("SNP")[1, ], flank = 250)
 #' }
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
                                min_gap = 50L) {
@@ -687,7 +687,7 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors, genome = NULL
 #' genome <- ath_genome()
 #' design_caps_marker(genome, marker_example("SNP")[1, ], flank = 250)
 #' }
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
                                min_gap = 50L, haplotypes = NULL) {
@@ -761,7 +761,7 @@ print.marker_caps <- function(x, ...) {
 #' m <- design_caps_marker(genome, marker_example("SNP")[1, ], flank = 250)
 #' plot_caps_gel(m)
 #' }
-#' @family KASP CAPS
+#' @family CAPS
 #' @export
 #' @method marker_map_spec marker_caps
 #' @export

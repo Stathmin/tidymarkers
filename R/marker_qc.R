@@ -15,7 +15,7 @@
 #' \dontrun{
 #' primer_thermo("GAAGGTGACCAAGTTCATGCT")
 #' }
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 primer_thermo <- function(primer, BPPARAM = NULL) {
   s <- as.character(primer)
@@ -44,7 +44,7 @@ primer_thermo <- function(primer, BPPARAM = NULL) {
 #' \dontrun{
 #' terminal_dg("GAAGGTGACCAAGTTCATGCT")
 #' }
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 terminal_dg <- function(primer, n = 5L, BPPARAM = NULL) {
   s <- as.character(primer)
@@ -71,7 +71,7 @@ terminal_dg <- function(primer, n = 5L, BPPARAM = NULL) {
 #' @examples
 #' wobble_mismatch("A", "G") # TRUE (A:C mismatch)
 #' wobble_mismatch("A", "C") # FALSE
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 wobble_mismatch <- function(on_allele, off_allele) {
   faced <- as.character(Biostrings::complement(Biostrings::DNAStringSet(toupper(off_allele))))
@@ -175,7 +175,7 @@ marker_mismatch_severity <- function(ref, alt) {
 #' \dontrun{
 #' dimer_thermo(c(AS = "GAAGGTGACCAAGTTCATGCT", COM = "AGCATGAACTTGGTCACCTTC"))
 #' }
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 dimer_thermo <- function(primers, BPPARAM = NULL,
                          conditions = reaction_conditions()) {

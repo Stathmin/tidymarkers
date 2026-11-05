@@ -238,7 +238,7 @@ pick_castpcr_pair <- function(fwd, rev, min_product, max_product, min_gap) {
 #' genome <- ath_genome()
 #' design_castpcr_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP castPCR
+#' @family castPCR
 #' @export
 design_castpcr_marker <- function(genome, snp, flank = 150L,
                                   as_lengths = 18:27, mate_lengths = 18:25,

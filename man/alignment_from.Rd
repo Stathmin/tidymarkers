@@ -21,7 +21,7 @@ needs.
 alignment_from(c(REF = "ACGTACGT", ALT = "ACGAACGT"))
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
@@ -41,4 +41,4 @@ Other KASP specificity:
 \code{\link[=specificity_seed]{specificity_seed()}},
 \code{\link[=specificity_verdict]{specificity_verdict()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

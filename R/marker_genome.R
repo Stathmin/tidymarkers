@@ -40,7 +40,7 @@
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 #' marker_genome(fa, chrom_map = c("1" = "Chr1"))
-#' @family KASP input
+#' @family input
 #' @export
 marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
                           bsgenome = NULL, fm_index = NULL) {
@@ -105,7 +105,7 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
 #' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 #' print(marker_genome(fa, chrom_map = c("1" = "Chr1")))
 #' @method print marker_genome
-#' @family KASP input
+#' @family input
 #' @export
 print.marker_genome <- function(x, ...) {
   source <- if (!is.null(x$bsgenome)) paste0("<BSgenome> ", class(x$bsgenome)[1L]) else fs::path_file(x$path)
@@ -126,7 +126,7 @@ print.marker_genome <- function(x, ...) {
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 #' genome_chroms(marker_genome(fa, chrom_map = c("1" = "Chr1")))
-#' @family KASP input
+#' @family input
 #' @export
 genome_chroms <- function(genome) {
   if (inherits(genome, "marker_genome")) names(genome$seqnames) else names(genome)
@@ -140,7 +140,7 @@ genome_chroms <- function(genome) {
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 #' genome_length(marker_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1")
-#' @family KASP input
+#' @family input
 #' @export
 genome_length <- function(genome, chrom) {
   if (!inherits(genome, "marker_genome")) {
@@ -163,7 +163,7 @@ genome_length <- function(genome, chrom) {
 #' fa <- withr::local_tempfile(fileext = ".fa")
 #' writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 #' genome_seq(marker_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1", 2, 6)
-#' @family KASP input
+#' @family input
 #' @export
 genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, chrom)) {
   start <- as.integer(start)

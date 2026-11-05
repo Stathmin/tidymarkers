@@ -24,7 +24,7 @@ wobble_mismatch("A", "G") # TRUE (A:C mismatch)
 wobble_mismatch("A", "C") # FALSE
 }
 \seealso{
-Other KASP thermodynamics:
+Other thermodynamics:
 \code{\link[=amplicon_fold_check]{amplicon_fold_check()}},
 \code{\link[=dimer_thermo]{dimer_thermo()}},
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
@@ -37,4 +37,4 @@ Other KASP thermodynamics:
 \code{\link[=terminal_dg]{terminal_dg()}},
 \code{\link[=thermo_crosscheck]{thermo_crosscheck()}}
 }
-\concept{KASP thermodynamics}
+\concept{thermodynamics}

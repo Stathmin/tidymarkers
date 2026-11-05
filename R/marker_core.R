@@ -163,7 +163,7 @@ KASP_AS_LENGTHS <- 20:27L
 #' @examples
 #' reaction_conditions()
 #' reaction_conditions(Na = 100, temperature = 60)
-#' @family KASP engines
+#' @family engines
 #' @export
 reaction_conditions <- function(Na = PCR_COND$Na, Mg = PCR_COND$Mg, # nolint: object_name_linter.
                                 dNTPs = PCR_COND$dNTPs, DMSO = PCR_COND$DMSO, # nolint: object_name_linter.
@@ -252,7 +252,7 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
 #' scheme_conditions("lamp")
 #' attr(scheme_conditions("rpa"), "temperature_range")
 #' @seealso [reaction_conditions()], [primer_tm()], [dimer_thermo()]
-#' @family KASP engines
+#' @family engines
 #' @export
 scheme_conditions <- function(scheme = "pcr") {
   if (!is.character(scheme) || length(scheme) != 1L || is.na(scheme) || !nzchar(scheme)) {
@@ -295,7 +295,7 @@ marker_engine <- function(name, capabilities, ...) {
 #' engines <- marker_engines()
 #' names(engines)
 #' capabilities(engines$specificity)
-#' @family KASP engines
+#' @family engines
 #' @export
 marker_engines <- function() {
   structure(
@@ -350,7 +350,7 @@ marker_engines <- function() {
 #' engines <- marker_engines()
 #' capabilities(engines$thermo, "tm")
 #' capabilities(engines$thermo, "not_a_capability") # "unknown"
-#' @family KASP engines
+#' @family engines
 #' @export
 capabilities <- function(engine, capability = NULL, ...) {
   if (!is.null(capability) && (!is.character(capability) || length(capability) != 1L)) {
@@ -438,7 +438,7 @@ engine_has <- function(capability, engines = NULL) {
 #' oligo_dg("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
 #' oligo_dg("GCGCGCGC") # hairpin (folding) dG
 #' }
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   bin <- if (is.null(seq2)) "hybrid-ss-min" else "hybrid-min"
@@ -530,7 +530,7 @@ get_region <- function(genome, chrom, start, end) genome_seq(genome, chrom, star
 #' @examples
 #' primer_interval(100L, "+", 20L)
 #' primer_interval(100L, "-", 20L, gap = 30L, role = "COM")
-#' @family KASP geometry
+#' @family geometry
 #' @export
 primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "COM")) {
   role <- match.arg(role)
@@ -560,7 +560,7 @@ primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "C
 #' @examples
 #' as_3p_interval(100L, "+")
 #' as_3p_interval(100L, "-")
-#' @family KASP geometry
+#' @family geometry
 #' @export
 as_3p_interval <- function(snp_pos, strand, window = 5L) {
   if (identical(strand, "+")) {
@@ -584,7 +584,7 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
 #' @examples
 #' as_anchor(100L, 1L, "+")
 #' as_anchor(100L, 3L, "-")
-#' @family KASP geometry
+#' @family geometry
 #' @export
 as_anchor <- function(v_start, ref_len, strand) {
   if (identical(strand, "+")) v_start + ref_len - 1L else v_start
@@ -616,7 +616,7 @@ block_in_seg <- function(ref_len, primer_len, strand) {
 #' @return a single integer count (`NA_integer_` when `vpos` is `NULL`).
 #' @examples
 #' count_variants_in(IRanges::IRanges(10, 20), c(5L, 12L, 18L))
-#' @family KASP geometry
+#' @family geometry
 #' @export
 count_variants_in <- function(interval, vpos, exclude = NA_integer_) {
   if (is.null(vpos)) {
@@ -820,7 +820,7 @@ zone_dropouts <- function(primers, starts, ends, forwards, n_vars, tmpl, off, vp
 #' @return the cache directory path (created if needed).
 #' @examples
 #' marker_cache_dir()
-#' @family KASP input
+#' @family input
 #' @export
 marker_cache_dir <- function() {
   d <- tools::R_user_dir("tidymarkers", which = "cache")
@@ -846,7 +846,7 @@ marker_cache_dir <- function() {
 #' genome <- ath_genome()
 #' length(genome)
 #' }
-#' @family KASP input
+#' @family input
 #' @export
 ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
   fs::dir_create(cache)

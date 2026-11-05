@@ -367,7 +367,7 @@ lax_selection <- function(lax, designs = list()) {
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' design_lax_marker(genome, snp)
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   if (is.null(haplotypes)) {

@@ -9,7 +9,7 @@ passes_all(assay, limits = KASP_LIMITS)
 \arguments{
 \item{assay}{assembled assay.}
 
-\item{limits}{thresholds; see \code{\link[=marker_design_checks]{marker_design_checks()}}.}
+\item{limits}{thresholds (see \code{\link[=marker_design_checks]{marker_design_checks()}}).}
 }
 \value{
 a single logical, \code{TRUE} when every check passes.
@@ -19,12 +19,14 @@ Do all acceptance checks pass?
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 assay <- assemble_kasp_assay(genome, snp)
 passes_all(assay)
 }
 }
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
@@ -36,4 +38,4 @@ Other KASP checks:
 \code{\link[=marker_schemes]{marker_schemes()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
-\concept{KASP checks}
+\concept{checks}

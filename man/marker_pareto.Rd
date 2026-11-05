@@ -76,4 +76,4 @@ candidates <- tibble::tibble(
 )
 marker_pareto(candidates)
 }
-\concept{KASP ranking}
+\concept{ranking}

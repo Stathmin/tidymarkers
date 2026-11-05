@@ -72,4 +72,4 @@ marker_informativeness(
   genotypes = panel
 )
 }
-\concept{KASP informativeness}
+\concept{informativeness}

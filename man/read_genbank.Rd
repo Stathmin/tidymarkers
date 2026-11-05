@@ -25,7 +25,7 @@ unknown orientation), \code{type} (the FEATURES key, e.g. \code{gene}, \code{CDS
 absent) and \code{qualifiers} (a list-column of all \verb{/key=value} pairs, so
 nothing is lost).  The tibble carries a \code{file_reads} integer attribute as a
 diagnostic: how many times the GenBank file itself was opened/read by this
-call — \code{0} on a cache hit, \verb{>= 1} when the index was (re)built.  Reads of
+call: \code{0} on a cache hit, \verb{>= 1} when the index was (re)built.  Reads of
 the \code{.gbidx} file do not count.
 }
 \description{
@@ -53,7 +53,7 @@ writeLines(c(
 read_genbank(gb)
 }
 \seealso{
-Other KASP input:
+Other input:
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -74,4 +74,4 @@ Other KASP input:
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}
 }
-\concept{KASP input}
+\concept{input}

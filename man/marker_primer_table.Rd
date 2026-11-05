@@ -21,13 +21,17 @@ Tidy table of the assay oligos (with KASP tails)
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+gene <- ensembl_gene("AT4G00650")
 marker_primer_table(assay, gene)
 }
 }
 \seealso{
-Other KASP output:
+Other output:
 \code{\link[=export_primers]{export_primers()}},
 \code{\link[=kasp_mix_recipe]{kasp_mix_recipe()}},
 \code{\link[=write_kasp_results]{write_kasp_results()}}
 }
-\concept{KASP output}
+\concept{output}

@@ -7,7 +7,7 @@
 #' @return a single logical.
 #' @examples
 #' is_marker_assay(list())
-#' @family KASP utilities
+#' @family utilities
 #' @export
 is_marker_assay <- function(x) inherits(x, "marker_assay")
 
@@ -23,7 +23,7 @@ is_marker_assay <- function(x) inherits(x, "marker_assay")
 #' assay <- assemble_kasp_assay(genome, snp)
 #' passes_all(assay)
 #' }
-#' @family KASP checks
+#' @family checks
 #' @export
 passes_all <- function(assay, limits = KASP_LIMITS) {
   all(marker_design_checks(assay, limits)$pass)
@@ -57,7 +57,7 @@ as_alt_sequence <- function(assay) {
 #' print(assay)
 #' }
 #' @method print marker_assay
-#' @family KASP utilities
+#' @family utilities
 #' @export
 print.marker_assay <- function(x, ...) {
   a <- x$assay[1L, ]
@@ -93,7 +93,7 @@ print.marker_assay <- function(x, ...) {
 #' print(doomed)
 #' }
 #' @method print marker_doomed
-#' @family KASP utilities
+#' @family utilities
 #' @export
 print.marker_doomed <- function(x, ...) {
   cat(
@@ -116,7 +116,7 @@ print.marker_doomed <- function(x, ...) {
 #' variant_type("A", "G") # SNP
 #' variant_type("ACGT", "TCGA") # MNP
 #' variant_type("A", "ACGT") # insertion
-#' @family KASP design
+#' @family design
 #' @export
 variant_type <- function(ref, alt) {
   dplyr::if_else(
@@ -149,7 +149,7 @@ variant_type <- function(ref, alt) {
 #' loci <- tibble::tibble(chrom = "Chr4", pos = 269090L, ref = "G", alt = "A")
 #' design_kasp_markers(genome, loci)
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, ...) {
   need <- c("chrom", "pos", "ref", "alt")

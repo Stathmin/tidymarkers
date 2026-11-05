@@ -511,7 +511,7 @@ artefact_id <- function(manifest) {
 #' # re-run the design from the artefact and check the verdicts agree
 #' marker_replay(art)
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_artefact <- function(solved, dir = tempdir()) {
   if (!inherits(solved, "marker_solved")) {
@@ -716,7 +716,7 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #' art <- marker_artefact(marker_solve(plan), dir = "results/artefact")
 #' marker_replay(art) # $match
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = NULL) {
   dir <- artefact_dir(artefact)

@@ -32,8 +32,8 @@ inherits its base's answer (and a discovered chemistry inherits its family's).
 marker_filter_blocks()
 }
 \seealso{
-Other KASP technologies:
+Other technologies:
 \code{\link[=marker_technologies]{marker_technologies()}},
 \code{\link[=marker_technology]{marker_technology()}}
 }
-\concept{KASP technologies}
+\concept{technologies}

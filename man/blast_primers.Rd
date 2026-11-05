@@ -24,7 +24,7 @@ blast_primers(c(AS = "GAAGGTGACCAAGTTCATGCT"), "tair10")
 }
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=alignment_from]{alignment_from()}},
 \code{\link[=assay_amplicons]{assay_amplicons()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
@@ -44,4 +44,4 @@ Other KASP specificity:
 \code{\link[=specificity_seed]{specificity_seed()}},
 \code{\link[=specificity_verdict]{specificity_verdict()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

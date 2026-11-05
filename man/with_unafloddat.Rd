@@ -21,11 +21,13 @@ with the environment by hand.
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
 }
 }
 \seealso{
-Other KASP utilities:
+Other utilities:
 \code{\link[=has_oligoarrayaux]{has_oligoarrayaux()}},
 \code{\link[=is_marker_assay]{is_marker_assay()}},
 \code{\link[=marker_engine_stamp]{marker_engine_stamp()}},
@@ -36,4 +38,4 @@ Other KASP utilities:
 \code{\link[=print.marker_assay]{print.marker_assay()}},
 \code{\link[=print.marker_doomed]{print.marker_doomed()}}
 }
-\concept{KASP utilities}
+\concept{utilities}

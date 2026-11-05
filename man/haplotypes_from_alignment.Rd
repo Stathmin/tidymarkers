@@ -55,7 +55,7 @@ hp <- haplotypes_from_alignment(seqs, chrom = "GENE")
 hp$haplotypes
 }
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
@@ -65,4 +65,4 @@ Other KASP haplotypes:
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

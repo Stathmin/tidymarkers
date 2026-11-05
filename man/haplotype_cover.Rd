@@ -34,11 +34,29 @@ designs that cover every ALT haplotype.  So haplotypes that differ only
 }
 \examples{
 \dontrun{
-haplotype_cover(haplotypes, snp, function(hp) design_lax_one(genome, snp, hp))
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+# the target ALT plus one flanking variant per haplotype: two primer templates
+haplotypes <- dplyr::bind_rows(
+  tibble::tibble(
+    haplotype = c("H1", "H1"), freq = 0.6, chrom = snp$chrom,
+    pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+    alt = c("G", snp$alt)
+  ),
+  tibble::tibble(
+    haplotype = c("H2", "H2"), freq = 0.4, chrom = snp$chrom,
+    pos = c(snp$pos - 13L, snp$pos), ref = c("A", snp$ref),
+    alt = c("C", "A")
+  )
+)
+haplotype_cover(haplotypes, snp, function(hp) {
+  lax <- design_lax_marker(genome, snp, dplyr::filter(haplotypes, haplotype == hp))
+  lax$base # the engine keys on the design's AS footprint
+})
 }
 }
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
@@ -48,4 +66,4 @@ Other KASP haplotypes:
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

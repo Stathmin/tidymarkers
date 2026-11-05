@@ -64,7 +64,7 @@ amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA") # unknown
 \seealso{
 \code{\link[=fold_amplicon]{fold_amplicon()}}, \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}}, \code{\link[=capabilities]{capabilities()}}
 
-Other KASP thermodynamics:
+Other thermodynamics:
 \code{\link[=dimer_thermo]{dimer_thermo()}},
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
@@ -77,4 +77,4 @@ Other KASP thermodynamics:
 \code{\link[=thermo_crosscheck]{thermo_crosscheck()}},
 \code{\link[=wobble_mismatch]{wobble_mismatch()}}
 }
-\concept{KASP thermodynamics}
+\concept{thermodynamics}

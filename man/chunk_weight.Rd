@@ -25,7 +25,7 @@ chunk_weight(ch, tibble::tibble(pos = 81, ref = "C", alt = "T", maf = 0.02))
 }
 }
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
 \code{\link[=haplotype_groups]{haplotype_groups()}},
@@ -35,4 +35,4 @@ Other KASP haplotypes:
 \code{\link[=plot_alignment]{plot_alignment()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

@@ -4,24 +4,29 @@
 \name{tidymarkers-package}
 \alias{tidymarkers}
 \alias{tidymarkers-package}
-\title{tidymarkers: tidy design and quality control of KASP genotyping assays}
+\title{tidymarkers: tidy design and quality control of genetic markers}
 \description{
 An opinionated, reproducible toolkit for designing and quality-controlling
-Kompetitive Allele-Specific PCR (KASP) assays.  It is genome-agnostic: give it
-a reference (a FASTA path, an indexed \code{\link[=marker_genome]{marker_genome()}}, a \code{DNAStringSet} or a
-Bioconductor \code{BSgenome}) and variants (a VCF via \code{\link[=read_variants_vcf]{read_variants_vcf()}}, or the
-tidy variant table the package uses), and it designs allele-specific and common
-primers on either strand and scores them.  Everything is done in R:
-thermodynamics come from \code{TmCalculator}, \code{DECIPHER} and OligoArrayAux, sequence
-work from \code{Biostrings}/\code{Rsamtools}, annotation from \code{VariantAnnotation}/\code{TxDb},
-and the visuals from dedicated plotting libraries (\code{gggenes},
-\code{ggrepel}, \code{patchwork}, \code{ggraph}).
+genetic markers across many chemistries: KASP, CAPS/dCAPS, tetra-primer ARMS,
+HRM, Sanger, SSR, InDel-size, TaqMan/dPCR, SNaPshot, LAMP/RPA and CRISPR-Dx.
+It is genome-agnostic: give it a reference (a FASTA path, an indexed
+\code{\link[=marker_genome]{marker_genome()}}, a \code{DNAStringSet} or a Bioconductor \code{BSgenome}) and variants
+(a VCF via \code{\link[=read_variants_vcf]{read_variants_vcf()}}, or the tidy variant table the package uses),
+and it designs and scores markers for the chosen chemistry.  Everything is
+done in R: thermodynamics come from \code{TmCalculator}, \code{DECIPHER} and
+OligoArrayAux, sequence work from \code{Biostrings}/\code{Rsamtools}, annotation from
+\code{VariantAnnotation}/\code{TxDb}, and the visuals from dedicated plotting libraries
+(\code{gggenes}, \code{ggrepel}, \code{patchwork}, \code{ggraph}).
 }
 \details{
 An \emph{Arabidopsis thaliana} setup (TAIR10 genome + 1001 Genomes variation via
 Ensembl) is bundled as a reproducible demo (\code{\link[=ath_genome]{ath_genome()}}, \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}}); see \code{vignette("kasp-intro")} and
-\code{vignette("custom-genome")} for using your own genome and variants.
+\code{vignette("custom-genome")} for using your own genome and variants.  Other
+vignettes cover the remaining chemistries and the workflow:
+\code{vignette("markers-probe")}, \code{vignette("markers-isothermal")},
+\code{vignette("markers-crispr-sequencing")}, \code{vignette("markers-gel")} and
+\code{vignette("reading-results")}.
 }
 \seealso{
 Useful links:

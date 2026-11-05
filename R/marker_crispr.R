@@ -365,7 +365,7 @@ crispr_default_spacer <- function(cas) {
 #' design_crispr_marker(genome, marker_example("SNP")[1, ], cas = "cas12a")
 #' design_crispr_marker(genome, marker_example("SNP")[1, ], cas = "cas13")
 #' }
-#' @family KASP CRISPR
+#' @family CRISPR
 #' @export
 design_crispr_marker <- function(genome, snp, flank = 200L,
                                  cas = c("cas12a", "cas13", "cas13a", "cas13b"),

@@ -24,10 +24,10 @@ lengths.  An enzyme with no site returns a single band (no cut).
 caps_fragments("GAATTCTTAAGGAATTC")
 }
 \seealso{
-Other KASP CAPS:
+Other CAPS:
 \code{\link[=design_caps_marker]{design_caps_marker()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
-\concept{KASP CAPS}
+\concept{CAPS}

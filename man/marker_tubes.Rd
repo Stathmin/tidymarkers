@@ -29,7 +29,7 @@ marker_tubes(marker_solve(plan))
 }
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
@@ -45,4 +45,4 @@ Other KASP plan:
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tech]{marker_tech()}}
 }
-\concept{KASP plan}
+\concept{plan}

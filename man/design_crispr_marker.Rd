@@ -102,4 +102,4 @@ design_crispr_marker(genome, marker_example("SNP")[1, ], cas = "cas12a")
 design_crispr_marker(genome, marker_example("SNP")[1, ], cas = "cas13")
 }
 }
-\concept{KASP CRISPR}
+\concept{CRISPR}

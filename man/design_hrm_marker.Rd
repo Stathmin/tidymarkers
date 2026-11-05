@@ -54,7 +54,8 @@ models), so it returns a well-formed amplicon, not a predicted melt profile.
 \examples{
 \dontrun{
 genome <- ath_genome()
-design_hrm_marker(genome, marker_example("SNP")[1, ])
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+design_hrm_marker(genome, snp)
 }
 }
-\concept{KASP HRM}
+\concept{HRM}

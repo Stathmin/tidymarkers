@@ -30,7 +30,7 @@ marker_outcomes("results/panel")
 }
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
@@ -46,4 +46,4 @@ Other KASP plan:
 \code{\link[=marker_tech]{marker_tech()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
-\concept{KASP plan}
+\concept{plan}

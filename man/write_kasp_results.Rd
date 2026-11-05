@@ -32,13 +32,17 @@ IDT / LGC column subsets (see \code{\link[=export_primers]{export_primers()}}).
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+gene <- ensembl_gene("AT4G00650")
 write_kasp_results(assay, gene, dir = tempdir())
 }
 }
 \seealso{
-Other KASP output:
+Other output:
 \code{\link[=export_primers]{export_primers()}},
 \code{\link[=kasp_mix_recipe]{kasp_mix_recipe()}},
 \code{\link[=marker_primer_table]{marker_primer_table()}}
 }
-\concept{KASP output}
+\concept{output}

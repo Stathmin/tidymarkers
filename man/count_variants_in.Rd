@@ -26,9 +26,9 @@ de-duplicated before counting - a site with two ALTs is not two variants.
 count_variants_in(IRanges::IRanges(10, 20), c(5L, 12L, 18L))
 }
 \seealso{
-Other KASP geometry:
+Other geometry:
 \code{\link[=as_3p_interval]{as_3p_interval()}},
 \code{\link[=as_anchor]{as_anchor()}},
 \code{\link[=primer_interval]{primer_interval()}}
 }
-\concept{KASP geometry}
+\concept{geometry}

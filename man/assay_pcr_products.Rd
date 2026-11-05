@@ -11,4 +11,12 @@ One virtual-PCR pass per AS primer (\code{as_pcr_pairs()}); computed once at des
 time and reused for both the amplicon counts and the genome ideogram, so the
 genome is scanned once instead of twice.
 }
+\examples{
+\dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+assay_pcr_products(assay, genome)
+}
+}
 \keyword{internal}

@@ -28,7 +28,7 @@ f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 read_transcripts(f)
 }
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
@@ -38,4 +38,4 @@ Other KASP haplotypes:
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=plot_alignment]{plot_alignment()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

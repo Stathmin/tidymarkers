@@ -778,7 +778,7 @@ haplotype_layers <- function(assay, snp, span) {
 #' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_primers(assay, variants, snp)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   if (is_kasp_doomed(assay)) {
@@ -1126,7 +1126,7 @@ tumbler_plot <- function(chk) {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' plot_checks(assay)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_checks <- function(assay, limits = KASP_LIMITS) {
   chk <- assay$evaluation %||% marker_design_checks(assay, limits)
@@ -1191,7 +1191,7 @@ bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' plot_oligo_structure(assay)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_oligo_structure <- function(assay, min_armlength = 4L, max_looplength = 6L) {
   p <- assay_primers(assay)
@@ -1282,7 +1282,7 @@ plot_oligo_structure <- function(assay, min_armlength = 4L, max_looplength = 6L)
 #' @return a `ggplot` dot-plot.
 #' @examples
 #' plot_self_complementarity("GAAGGTGACCAAGTTCATGCT")
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_self_complementarity <- function(seq) {
   seq <- as.character(seq)[1L]
@@ -1321,7 +1321,7 @@ plot_self_complementarity <- function(seq) {
 #' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
 #' plot_variant_landscape(gene, variants, snp, assay)
 #' }
-#' @family KASP plots
+#' @family plots
 #' @export
 plot_variant_landscape <- function(gene, variants, snp, assay) {
   gene_df <- tibble::tibble(
@@ -1395,7 +1395,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' gene <- ensembl_gene("AT4G00650")
 #' write_kasp_results(assay, gene, dir = tempdir())
 #' }
-#' @family KASP output
+#' @family output
 #' @export
 write_kasp_results <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
@@ -1455,7 +1455,7 @@ write_kasp_results <- function(assay, gene, dir = tempdir()) {
 #' gene <- ensembl_gene("AT4G00650")
 #' marker_primer_table(assay, gene)
 #' }
-#' @family KASP output
+#' @family output
 #' @export
 marker_primer_table <- function(assay, gene) {
   nm <- glue::glue("{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}_{assay$snp$ref}to{assay$snp$alt}")
@@ -1502,7 +1502,7 @@ marker_primer_table <- function(assay, gene) {
 #' gene <- ensembl_gene("AT4G00650")
 #' export_primers(assay, gene, dir = tempdir())
 #' }
-#' @family KASP output
+#' @family output
 #' @export
 export_primers <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)

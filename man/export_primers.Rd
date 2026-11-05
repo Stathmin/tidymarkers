@@ -26,13 +26,17 @@ for its side effect of writing the IDT/LGC/tidy order sheets.
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
+assay <- assemble_kasp_assay(genome, snp)
+gene <- ensembl_gene("AT4G00650")
 export_primers(assay, gene, dir = tempdir())
 }
 }
 \seealso{
-Other KASP output:
+Other output:
 \code{\link[=kasp_mix_recipe]{kasp_mix_recipe()}},
 \code{\link[=marker_primer_table]{marker_primer_table()}},
 \code{\link[=write_kasp_results]{write_kasp_results()}}
 }
-\concept{KASP output}
+\concept{output}

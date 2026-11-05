@@ -60,9 +60,9 @@ attr(scheme_conditions("rpa"), "temperature_range")
 \seealso{
 \code{\link[=reaction_conditions]{reaction_conditions()}}, \code{\link[=primer_tm]{primer_tm()}}, \code{\link[=dimer_thermo]{dimer_thermo()}}
 
-Other KASP engines:
+Other engines:
 \code{\link[=capabilities]{capabilities()}},
 \code{\link[=marker_engines]{marker_engines()}},
 \code{\link[=reaction_conditions]{reaction_conditions()}}
 }
-\concept{KASP engines}
+\concept{engines}

@@ -20,7 +20,7 @@
 #' @return `TRUE` when both `blastn` and `makeblastdb` are found.
 #' @examples
 #' has_blast()
-#' @family KASP specificity
+#' @family specificity
 #' @export
 has_blast <- function() {
   !is.null(blast_bin()) || (nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb")))
@@ -39,7 +39,7 @@ has_blast <- function() {
 #' \dontrun{
 #' db <- marker_blast_index(marker_genome("genome.fa"))
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 marker_blast_index <- function(genome, path = fs::path(fs::path_temp(), "marker_genome.fa")) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
@@ -79,7 +79,7 @@ marker_blast_index <- function(genome, path = fs::path(fs::path_temp(), "marker_
 #' db <- marker_blast_index(marker_genome("genome.fa"))
 #' specificity_blast(c(AS = "ACGTACGTACGTACGT"), db)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
@@ -149,7 +149,7 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                            BPPARAM = NULL) {

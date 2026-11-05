@@ -24,10 +24,10 @@ the fragment model here takes a single top-strand offset.
 head(restriction_enzymes())
 }
 \seealso{
-Other KASP CAPS:
+Other CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=design_caps_marker]{design_caps_marker()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}}
 }
-\concept{KASP CAPS}
+\concept{CAPS}

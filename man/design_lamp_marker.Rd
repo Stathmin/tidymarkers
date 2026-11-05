@@ -75,4 +75,4 @@ genome <- ath_genome()
 design_lamp_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP LAMP}
+\concept{LAMP}

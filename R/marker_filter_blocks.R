@@ -54,7 +54,7 @@ MARKER_ANCHOR_FAMILIES <- c(
 #'   joined family list, or `"all"`) and `note`.
 #' @examples
 #' marker_filter_blocks()
-#' @family KASP technologies
+#' @family technologies
 #' @export
 marker_filter_blocks <- function() {
   primer <- MARKER_PRIMER_FAMILIES

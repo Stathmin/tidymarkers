@@ -21,7 +21,7 @@ variant_type("ACGT", "TCGA") # MNP
 variant_type("A", "ACGT") # insertion
 }
 \seealso{
-Other KASP design:
+Other design:
 \code{\link[=allele_templates]{allele_templates()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
@@ -40,4 +40,4 @@ Other KASP design:
 \code{\link[=screen_snp_targets]{screen_snp_targets()}},
 \code{\link[=strand_gc_hint]{strand_gc_hint()}}
 }
-\concept{KASP design}
+\concept{design}

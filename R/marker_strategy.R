@@ -40,7 +40,7 @@ per_locus_schemes <- function() {
 #' @examples
 #' rescue_strategy()
 #' rescue_strategy(c("hrm", "caps", "snp"))
-#' @family KASP design
+#' @family design
 #' @export
 rescue_strategy <- function(schemes = NULL) {
   ladder <- per_locus_schemes()
@@ -83,7 +83,7 @@ rescue_strategy <- function(schemes = NULL) {
 #' design_markers(genome, marker_example()[1:3, ], scheme = "hrm")
 #' design_markers(genome, marker_example()[1:3, ], scheme = NULL) # the ladder
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
   need <- c("chrom", "pos", "ref", "alt")

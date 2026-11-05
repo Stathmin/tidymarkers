@@ -62,4 +62,4 @@ snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "ATTTTTT")
 design_indel_size_marker(genome, snp)
 }
 }
-\concept{KASP indel size}
+\concept{indel size}

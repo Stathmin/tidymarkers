@@ -37,7 +37,7 @@
 #' ch <- marker_chunk(hp, from = 350, to = 550) # a 200 bp local chunk
 #' chunk_variants(ch)
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 marker_chunk <- function(x, ...) UseMethod("marker_chunk")
 
@@ -177,7 +177,7 @@ print.marker_chunk <- function(x, ...) {
 #' \dontrun{
 #' chunk_variants(marker_chunk(hp, from = 350, to = 550))
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 chunk_reference <- function(chunk) {
   check_chunk(chunk)
@@ -232,7 +232,7 @@ check_chunk <- function(chunk) {
 #' \dontrun{
 #' chunk_weight(ch, tibble::tibble(pos = 81, ref = "C", alt = "T", maf = 0.02))
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 chunk_weight <- function(chunk, maf) {
   check_chunk(chunk)

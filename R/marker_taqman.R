@@ -160,7 +160,7 @@ taqman_mismatch_dg <- function(probe, variant_pos, alt, engines = NULL) {
 #' genome <- ath_genome()
 #' design_taqman_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP TaqMan
+#' @family TaqMan
 #' @export
 design_taqman_marker <- function(genome, snp, flank = 150L,
                                  min_product = 60L, max_product = 150L,

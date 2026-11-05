@@ -58,8 +58,12 @@ Style is ink and page, nothing else: colours, the text face and size, how a
 label wraps, how much air a box gets, and the page shape.  Placement is not
 here - the solver owns it - except for the spacing \emph{inputs} it is tuned with.
 }
+\examples{
+decision_style() # the default look
+decision_style(font_size = 11, title = "Selection") # a larger title page
+}
 \seealso{
-Other KASP checks:
+Other checks:
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=marker_criteria]{marker_criteria()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
@@ -71,4 +75,4 @@ Other KASP checks:
 \code{\link[=passes_all]{passes_all()}},
 \code{\link[=plot_decision_tree]{plot_decision_tree()}}
 }
-\concept{KASP checks}
+\concept{checks}

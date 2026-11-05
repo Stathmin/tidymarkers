@@ -32,7 +32,7 @@
 #' @examples
 #' decision_style() # the default look
 #' decision_style(font_size = 11, title = "Selection") # a larger title page
-#' @family KASP checks
+#' @family checks
 #' @export
 decision_style <- function(palette = decision_palette(),
                            font_size = 9,
@@ -69,7 +69,7 @@ decision_style <- function(palette = decision_palette(),
 #' @examples
 #' decision_palette()$kind # fill colour per node kind
 #' decision_palette()$status["violated"] # border colour of a failing check
-#' @family KASP checks
+#' @family checks
 #' @export
 decision_palette <- function() {
   list(

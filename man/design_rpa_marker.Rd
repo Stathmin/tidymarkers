@@ -73,4 +73,4 @@ design_rpa_marker(genome, marker_example("SNP")[1, ])
 design_rpa_marker(genome, marker_example("SNP")[1, ], design_probe = TRUE)
 }
 }
-\concept{KASP RPA}
+\concept{RPA}

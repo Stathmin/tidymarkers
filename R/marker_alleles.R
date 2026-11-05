@@ -75,7 +75,7 @@ merge_iupac <- function(seqs) {
 #' marker_site_class("A", "G") # biallelic (transition: a wobble on one side)
 #' marker_site_class("A", "T") # biallelic (A/T is a strong same-base mismatch)
 #' marker_site_class("T", c("G", "C")) # degenerate over S = C/G, T left out
-#' @family KASP design
+#' @family design
 #' @export
 marker_site_class <- function(ref, alts) {
   ref <- as.character(ref)[1L]

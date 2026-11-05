@@ -284,7 +284,7 @@ marker_decision_schema <- function(scheme = "snp") {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_decision_graph(assay)
 #' }
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_decision_graph <- function(assay = NULL, scheme = NULL) {
   rlang::check_installed("tidygraph", reason = gettext("for the decision graph"))
@@ -396,7 +396,7 @@ decision_edges <- function(g) {
 #' plot_decision_tree(scheme = "duplex") # the multiplex policy
 #' plot_decision_tree(assay) # this assay's traversal
 #' }
-#' @family KASP checks
+#' @family checks
 #' @export
 plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
                                style = decision_style()) {
@@ -442,7 +442,7 @@ plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
 #' @examples
 #' cat(marker_decision_text(), sep = "\n")
 #' cat(marker_decision_text("duplex", evidence = TRUE), sep = "\n")
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_decision_text <- function(scheme = "snp", evidence = FALSE) {
   info <- marker_scheme(scheme)

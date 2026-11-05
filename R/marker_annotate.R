@@ -26,7 +26,7 @@
 #' \dontrun{
 #' txdb <- marker_txdb()
 #' }
-#' @family KASP annotation
+#' @family annotation
 #' @export
 marker_txdb <- function(package = "TxDb.Athaliana.BioMart.plantsmart28") {
   load_namespace_quietly(package, reason = gettext("for structured variant annotation"))
@@ -65,7 +65,7 @@ load_namespace_quietly <- function(pkg, reason = NULL) {
 #' \dontrun{
 #' bsgenome <- marker_bsgenome()
 #' }
-#' @family KASP annotation
+#' @family annotation
 #' @export
 marker_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
   load_namespace_quietly(package, reason = gettext("for codon-level annotation"))
@@ -95,7 +95,7 @@ marker_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
 #' \dontrun{
 #' edb <- marker_ensdb()
 #' }
-#' @family KASP annotation
+#' @family annotation
 #' @export
 marker_ensdb <- function(gtf = NULL, cache = marker_cache_dir(), release = 63L) {
   rlang::check_installed("ensembldb", reason = gettext("for an EnsDb gene model"))
@@ -199,7 +199,7 @@ txdb_seqname_map <- function(chrom, txdb) {
 #'   txdb = marker_txdb(), seqsource = marker_bsgenome()
 #' )
 #' }
-#' @family KASP annotation
+#' @family annotation
 #' @export
 annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NULL) {
   load_namespace_quietly("VariantAnnotation", reason = "for structured annotation")
@@ -318,7 +318,7 @@ gff_attribute <- function(attributes) {
 #' features <- marker_features("feature_table.txt.gz")
 #' marker_features("genome.gff3", chrom = "1")
 #' }
-#' @family KASP annotation
+#' @family annotation
 #' @export
 marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NULL) {
   path <- fs::path(path)

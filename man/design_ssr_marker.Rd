@@ -69,4 +69,4 @@ genome <- ath_genome()
 design_ssr_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP SSR}
+\concept{SSR}

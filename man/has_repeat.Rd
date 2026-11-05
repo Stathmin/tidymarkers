@@ -23,10 +23,10 @@ Does a sequence contain an SSR? (see \code{\link[=find_repeats]{find_repeats()}}
 has_repeat(c("ACACACAC", "ACGT"))
 }
 \seealso{
-Other KASP QC:
+Other QC:
 \code{\link[=find_palindromes]{find_palindromes()}},
 \code{\link[=find_repeats]{find_repeats()}},
 \code{\link[=has_palindrome]{has_palindrome()}},
 \code{\link[=variant_confidence]{variant_confidence()}}
 }
-\concept{KASP QC}
+\concept{QC}

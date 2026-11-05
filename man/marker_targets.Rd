@@ -34,12 +34,13 @@ or explicit columns.  Added twice, the rows accumulate (so several
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
 marker_plan(genome) + marker_targets(marker_example())
 marker_plan(genome) + marker_targets(chrom = "Chr4", pos = 269116, ref = "G", alt = "A")
 }
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
@@ -55,4 +56,4 @@ Other KASP plan:
 \code{\link[=marker_tech]{marker_tech()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
-\concept{KASP plan}
+\concept{plan}

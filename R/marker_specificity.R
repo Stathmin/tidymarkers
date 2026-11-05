@@ -34,7 +34,7 @@
 #' genome <- ath_genome()
 #' specificity_seed(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
@@ -618,7 +618,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
 #' genome <- ath_genome()
 #' exact_hit_table(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL,
                             scheme = "pcr", seed_len = NA_integer_) {
@@ -771,7 +771,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
 #' g <- Biostrings::DNAStringSet(c(chr1 = paste0(strrep("A", 10), p, strrep("A", 10))))
 #' h <- exact_hit_table(c(AS = p), g)
 #' offtarget_profile(h, genome = g)
-#' @family KASP specificity
+#' @family specificity
 #' @export
 offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed_len = NA_integer_) {
   required <- c("primer", "chrom", "start", "end", "strand")
@@ -936,7 +936,7 @@ offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed
 #'   scheme = "rpa"
 #' )
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPARAM = NULL,
                           scheme = NULL, pam = NULL) {
@@ -1160,7 +1160,7 @@ as_pcr_pairs <- function(assay) {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' assay_amplicons(assay, genome)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, products = NULL) {
   products <- products %||%
@@ -1211,7 +1211,7 @@ assay_amplicon_counts <- function(products) {
 #' \dontrun{
 #' blast_primers(c(AS = "GAAGGTGACCAAGTTCATGCT"), "tair10")
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 blast_primers <- function(primers, db_path) {
   if (is.null(db_path) || !fs::file_exists(db_path)) {
@@ -1247,7 +1247,7 @@ blast_primers <- function(primers, db_path) {
 #' genome <- ath_genome()
 #' build_blast_db(genome)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 build_blast_db <- function(genome, path = fs::path(marker_cache_dir(), "tair10.fa")) {
   fs::dir_create(fs::path_dir(path))
@@ -1390,7 +1390,7 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #' specificity_policy("rpa")$max_mismatch
 #' specificity_policy("cas12a")$requires_pam
 #' specificity_policy("homeolog")$mode
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_policy <- function(scheme = "pcr", length = NULL) {
   if (is.null(scheme)) {
@@ -1560,7 +1560,7 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' hits <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome)
 #' # `unknown` when the genome is missing: a missing engine is never a pass
 #' specificity_verdict(hits, "kasp", genome = NULL)$verdict
-#' @family KASP specificity
+#' @family specificity
 #' @export
 specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL) {
   pol <- specificity_policy(scheme)

@@ -30,9 +30,9 @@ primer_interval(100L, "+", 20L)
 primer_interval(100L, "-", 20L, gap = 30L, role = "COM")
 }
 \seealso{
-Other KASP geometry:
+Other geometry:
 \code{\link[=as_3p_interval]{as_3p_interval()}},
 \code{\link[=as_anchor]{as_anchor()}},
 \code{\link[=count_variants_in]{count_variants_in()}}
 }
-\concept{KASP geometry}
+\concept{geometry}

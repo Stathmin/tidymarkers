@@ -36,10 +36,10 @@ repetitive or self-symmetric one returns several.
 find_palindromes(c(hit = "ACGTACGT", none = "AACCGG"))
 }
 \seealso{
-Other KASP QC:
+Other QC:
 \code{\link[=find_repeats]{find_repeats()}},
 \code{\link[=has_palindrome]{has_palindrome()}},
 \code{\link[=has_repeat]{has_repeat()}},
 \code{\link[=variant_confidence]{variant_confidence()}}
 }
-\concept{KASP QC}
+\concept{QC}

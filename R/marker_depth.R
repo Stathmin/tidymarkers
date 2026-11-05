@@ -33,7 +33,7 @@
 #'   "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
 #' ), vcf)
 #' read_variant_depth(vcf)
-#' @family KASP input
+#' @family input
 #' @export
 read_variant_depth <- function(path, sample = 1L) {
   rlang::check_installed("vroom", reason = gettext("to read VCF files"))
@@ -210,7 +210,7 @@ clean_vcf_value <- function(x) {
 #' variant_confidence(tibble::tibble(
 #'   chrom = "Chr1", pos = 1L, depth = 10L, alt_depth = 0L, genotype = "0/0"
 #' ))
-#' @family KASP QC
+#' @family QC
 #' @export
 variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
   if (!is.numeric(min_depth) || length(min_depth) != 1L || is.na(min_depth) || min_depth <= 0) {

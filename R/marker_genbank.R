@@ -54,7 +54,7 @@
 #'   "//"
 #' ), gb)
 #' read_genbank(gb)
-#' @family KASP input
+#' @family input
 #' @export
 read_genbank <- function(path, region = NULL) {
   if (grepl("\\.gz$", path)) {

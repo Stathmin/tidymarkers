@@ -70,4 +70,4 @@ genome <- ath_genome()
 design_taqman_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP TaqMan}
+\concept{TaqMan}

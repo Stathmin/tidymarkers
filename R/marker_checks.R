@@ -266,7 +266,7 @@ marker_dosage_gate <- function(marker) {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_design_checks(assay)
 #' }
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   scheme <- scheme %||% assay$scheme %||% if (inherits(assay, "marker_assay")) {

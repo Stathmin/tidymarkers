@@ -34,7 +34,7 @@ length(genome)
 }
 }
 \seealso{
-Other KASP input:
+Other input:
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
 \code{\link[=fasta_index]{fasta_index()}},
@@ -55,4 +55,4 @@ Other KASP input:
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}
 }
-\concept{KASP input}
+\concept{input}

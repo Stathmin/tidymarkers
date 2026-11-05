@@ -40,10 +40,10 @@ marker_features("genome.gff3", chrom = "1")
 }
 }
 \seealso{
-Other KASP annotation:
+Other annotation:
 \code{\link[=annotate_variants]{annotate_variants()}},
 \code{\link[=marker_bsgenome]{marker_bsgenome()}},
 \code{\link[=marker_ensdb]{marker_ensdb()}},
 \code{\link[=marker_txdb]{marker_txdb()}}
 }
-\concept{KASP annotation}
+\concept{annotation}

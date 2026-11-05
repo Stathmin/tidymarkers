@@ -33,7 +33,7 @@ plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
 }
 }
 \seealso{
-Other KASP haplotypes:
+Other haplotypes:
 \code{\link[=chunk_reference]{chunk_reference()}},
 \code{\link[=chunk_weight]{chunk_weight()}},
 \code{\link[=haplotype_cover]{haplotype_cover()}},
@@ -43,4 +43,4 @@ Other KASP haplotypes:
 \code{\link[=marker_chunk]{marker_chunk()}},
 \code{\link[=read_transcripts]{read_transcripts()}}
 }
-\concept{KASP haplotypes}
+\concept{haplotypes}

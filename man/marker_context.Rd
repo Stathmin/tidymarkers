@@ -37,6 +37,7 @@ sites into an ALT primer and mark a design as linkage-dependent.
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
 marker_plan(genome) + marker_context(variants = ensembl_variants("Chr4", 268901, 271503))
 }
 marker_plan(Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGT"))) +
@@ -46,7 +47,7 @@ marker_plan(Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGT"))) +
   )
 }
 \seealso{
-Other KASP plan:
+Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_export]{marker_export()}},
@@ -62,4 +63,4 @@ Other KASP plan:
 \code{\link[=marker_tech]{marker_tech()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
-\concept{KASP plan}
+\concept{plan}

@@ -26,7 +26,7 @@ writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
 genome_seq(marker_genome(fa, chrom_map = c("1" = "Chr1")), "Chr1", 2, 6)
 }
 \seealso{
-Other KASP input:
+Other input:
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -47,4 +47,4 @@ Other KASP input:
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}
 }
-\concept{KASP input}
+\concept{input}

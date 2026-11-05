@@ -35,12 +35,14 @@ template-matched primers (no deliberate stabiliser), like \code{\link[=specifici
 }
 \examples{
 \dontrun{
+genome <- ath_genome()
+snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 assay <- assemble_kasp_assay(genome, snp)
 assay_amplicons(assay, genome)
 }
 }
 \seealso{
-Other KASP specificity:
+Other specificity:
 \code{\link[=alignment_from]{alignment_from()}},
 \code{\link[=blast_primers]{blast_primers()}},
 \code{\link[=build_blast_db]{build_blast_db()}},
@@ -60,4 +62,4 @@ Other KASP specificity:
 \code{\link[=specificity_seed]{specificity_seed()}},
 \code{\link[=specificity_verdict]{specificity_verdict()}}
 }
-\concept{KASP specificity}
+\concept{specificity}

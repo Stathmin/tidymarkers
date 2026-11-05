@@ -71,7 +71,7 @@
 #'   tibble::tibble(chrom = "Chr1", pos = 250L, ref = "A", alt = "G"),
 #'   genotypes = panel
 #' )
-#' @family KASP informativeness
+#' @family informativeness
 #' @export
 marker_informativeness <- function(targets, genotypes = NULL, haplotypes = NULL,
                                    min_lines = 4L) {

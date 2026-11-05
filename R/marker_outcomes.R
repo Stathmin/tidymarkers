@@ -96,7 +96,7 @@ artefact_targets <- function(dir) {
 #' )
 #' marker_outcomes(art)
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_record_outcome <- function(artefact,
                                   result = c("works", "fails", "unknown"),
@@ -176,7 +176,7 @@ marker_record_outcome <- function(artefact,
 #' \dontrun{
 #' marker_outcomes("results/panel")
 #' }
-#' @family KASP plan
+#' @family plan
 #' @export
 marker_outcomes <- function(artefact) {
   dir <- artefact_dir(artefact)

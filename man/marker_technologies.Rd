@@ -21,8 +21,8 @@ marker_technology("giga_snp",
 marker_technologies()
 }
 \seealso{
-Other KASP technologies:
+Other technologies:
 \code{\link[=marker_filter_blocks]{marker_filter_blocks()}},
 \code{\link[=marker_technology]{marker_technology()}}
 }
-\concept{KASP technologies}
+\concept{technologies}

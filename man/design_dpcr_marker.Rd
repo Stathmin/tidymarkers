@@ -77,4 +77,4 @@ genome <- ath_genome()
 design_dpcr_marker(genome, marker_example("SNP")[1, ])
 }
 }
-\concept{KASP dPCR}
+\concept{dPCR}

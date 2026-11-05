@@ -146,7 +146,7 @@ readout_assumption <- function(scheme) {
 #' genome <- ath_genome()
 #' marker_readout(design_taqman_marker(genome, marker_example("SNP")[1, ]))
 #' }
-#' @family KASP design
+#' @family design
 #' @export
 marker_readout <- function(marker) {
   scheme <- sub("^marker_", "", class(marker)[1L])

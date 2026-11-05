@@ -632,7 +632,7 @@ lamp_variant_gate <- function(fip, alt, pos) {
 #' genome <- ath_genome()
 #' design_lamp_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP LAMP
+#' @family LAMP
 #' @export
 design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
                                outer_lengths = 21:24,

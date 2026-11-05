@@ -27,7 +27,7 @@ f <- write_variants_vcf(v)
 read_variants_vcf(f)
 }
 \seealso{
-Other KASP input:
+Other input:
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -48,4 +48,4 @@ Other KASP input:
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
 \code{\link[=snp_template]{snp_template()}}
 }
-\concept{KASP input}
+\concept{input}

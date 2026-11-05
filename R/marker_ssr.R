@@ -191,7 +191,7 @@ ssr_span_at <- function(seq, anchor, units = 2:4, min_copies = KASP_SSR_LIMITS$m
 #' genome <- ath_genome()
 #' design_ssr_marker(genome, marker_example("SNP")[1, ])
 #' }
-#' @family KASP SSR
+#' @family SSR
 #' @export
 design_ssr_marker <- function(genome, snp, flank = 250L,
                               min_product = KASP_SSR_LIMITS$amplicon[1L],

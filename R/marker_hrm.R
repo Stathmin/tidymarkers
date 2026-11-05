@@ -312,7 +312,7 @@ hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' design_hrm_marker(genome, snp)
 #' }
-#' @family KASP HRM
+#' @family HRM
 #' @export
 design_hrm_marker <- function(genome, snp, flank = 150L,
                               min_product = KASP_LIMITS$amplicon[1L],
@@ -425,7 +425,7 @@ print.marker_hrm <- function(x, ...) {
 #' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
 #' plot_hrm_amplicon(design_hrm_marker(genome, snp))
 #' }
-#' @family KASP HRM
+#' @family HRM
 #' @export
 #' @method marker_map_spec marker_hrm
 #' @export

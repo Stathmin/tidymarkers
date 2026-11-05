@@ -18,7 +18,7 @@ DECIPHER's thermodynamics runs through OligoArrayAux.  It is looked up as
 has_oligoarrayaux()
 }
 \seealso{
-Other KASP utilities:
+Other utilities:
 \code{\link[=is_marker_assay]{is_marker_assay()}},
 \code{\link[=marker_engine_stamp]{marker_engine_stamp()}},
 \code{\link[=marker_engine_stamp_field]{marker_engine_stamp_field()}},
@@ -29,4 +29,4 @@ Other KASP utilities:
 \code{\link[=print.marker_doomed]{print.marker_doomed()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }
-\concept{KASP utilities}
+\concept{utilities}

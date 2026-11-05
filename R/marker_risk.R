@@ -60,7 +60,7 @@ discrimination_band <- function(disc, limits = KASP_LIMITS) {
 #' assay <- assemble_kasp_assay(genome, snp)
 #' marker_risk(assay)
 #' }
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_risk <- function(assay, limits = KASP_LIMITS) {
   ev <- assay$evaluation

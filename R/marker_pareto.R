@@ -67,7 +67,7 @@
 #'   linkage_risk = c(0.05, 0.01)
 #' )
 #' marker_pareto(candidates)
-#' @family KASP ranking
+#' @family ranking
 #' @export
 marker_pareto <- function(x, quality = NULL, linkage_risk = NULL, anchor = NULL,
                           recombination = 1e-8, genotypes = NULL,

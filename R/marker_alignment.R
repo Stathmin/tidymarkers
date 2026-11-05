@@ -29,7 +29,7 @@
 #' @examples
 #' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 #' read_transcripts(f)
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 read_transcripts <- function(path, merge_accessions = TRUE) {
   if (!fs::file_exists(path)) {
@@ -136,7 +136,7 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
 #' )
 #' hp <- haplotypes_from_alignment(seqs, chrom = "GENE")
 #' hp$haplotypes
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 haplotypes_from_alignment <- function(seqs, reference = 1L, chrom = "SAT2",
                                       freq = NULL, maf = NULL, ...) {
@@ -272,7 +272,7 @@ apply_maf <- function(v, maf = NULL) {
 #' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 #' plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
 #' }
-#' @family KASP haplotypes
+#' @family haplotypes
 #' @export
 plot_alignment <- function(hp, type = c("variants", "all"), features = NULL, ...) {
   rlang::check_installed("ggplot2", reason = gettext("to plot an alignment"))

@@ -81,7 +81,7 @@ normalise_diagnostic_positions <- function(x) {
 #' assay <- assemble_kasp_assay(genome, snp, pair_screen = 0L, cores = 1L)
 #' homeolog_axes(assay)
 #' }
-#' @family KASP specificity
+#' @family specificity
 #' @export
 homeolog_axes <- function(assay) {
   a <- assay$assay[1L, ]

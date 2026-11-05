@@ -51,10 +51,10 @@ design_caps_marker(genome, marker_example("SNP")[1, ], flank = 250)
 }
 }
 \seealso{
-Other KASP CAPS:
+Other CAPS:
 \code{\link[=caps_fragments]{caps_fragments()}},
 \code{\link[=find_caps_enzymes]{find_caps_enzymes()}},
 \code{\link[=find_dcaps_enzymes]{find_dcaps_enzymes()}},
 \code{\link[=restriction_enzymes]{restriction_enzymes()}}
 }
-\concept{KASP CAPS}
+\concept{CAPS}

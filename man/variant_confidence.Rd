@@ -46,10 +46,10 @@ variant_confidence(tibble::tibble(
 ))
 }
 \seealso{
-Other KASP QC:
+Other QC:
 \code{\link[=find_palindromes]{find_palindromes()}},
 \code{\link[=find_repeats]{find_repeats()}},
 \code{\link[=has_palindrome]{has_palindrome()}},
 \code{\link[=has_repeat]{has_repeat()}}
 }
-\concept{KASP QC}
+\concept{QC}

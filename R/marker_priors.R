@@ -19,7 +19,7 @@
 #' @return tibble with `parameter`, `value` and `source`.
 #' @examples
 #' marker_priors()
-#' @family KASP checks
+#' @family checks
 #' @export
 marker_priors <- function() {
   tibble::tribble(
@@ -58,7 +58,7 @@ marker_priors <- function() {
 #'   `spread` (max - min) in degrees C.
 #' @examples
 #' thermo_crosscheck(c("GAAGGTGACCAAGTTCATGCT", "TTTTGGCGCGCCGATATATAT"))
-#' @family KASP thermodynamics
+#' @family thermodynamics
 #' @export
 thermo_crosscheck <- function(seq,
                               nn_tables = c(

@@ -34,3 +34,6 @@ square aspect rather than a fixed canvas.  When the layout engine is missing
 or fails, a warning names why and a simple top-down placement is used (boxes
 still measured, edges drawn as rails between rows): a render never errors.
 }
+\examples{
+decision_render(marker_decision_graph(scheme = "snp"))
+}

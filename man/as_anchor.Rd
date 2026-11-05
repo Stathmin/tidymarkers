@@ -28,9 +28,9 @@ as_anchor(100L, 1L, "+")
 as_anchor(100L, 3L, "-")
 }
 \seealso{
-Other KASP geometry:
+Other geometry:
 \code{\link[=as_3p_interval]{as_3p_interval()}},
 \code{\link[=count_variants_in]{count_variants_in()}},
 \code{\link[=primer_interval]{primer_interval()}}
 }
-\concept{KASP geometry}
+\concept{geometry}
