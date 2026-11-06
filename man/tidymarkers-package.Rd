@@ -37,11 +37,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Daniil Ulyanov \email{uldas1508@gmail.com}
+\strong{Maintainer}: Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID})
 
 Authors:
 \itemize{
-  \item Daniil Ulyanov \email{uldas1508@gmail.com}
+  \item Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID})
 }
 
 }

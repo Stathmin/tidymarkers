@@ -2,7 +2,8 @@ Package: tidymarkers
 Title: Tidy Design and Quality Control of Genetic Markers
 Version: 0.4.0
 Authors@R: person("Daniil", "Ulyanov", email = "uldas1508@gmail.com",
-    role = c("aut", "cre"))
+    role = c("aut", "cre"),
+    comment = c(ORCID = "0000-0002-5880-5931"))
 Description: An opinionated, reproducible toolkit for designing and quality
     controlling genetic markers across many chemistries (KASP, CAPS/dCAPS,
     tetra-primer ARMS, HRM, Sanger, SSR, InDel-size, TaqMan/dPCR, SNaPshot,
@@ -30,11 +31,9 @@ Imports:
     S4Vectors,
     GenomicRanges,
     GenomeInfoDb,
-    Rsamtools,
     BiocParallel,
     DECIPHER,
     TmCalculator,
-    rBLAST,
     dplyr,
     tidyr,
     purrr,
@@ -59,39 +58,28 @@ Imports:
     withr,
     rlang,
     glue,
-    methods,
-    systemfonts
+    methods
 Suggests:
     rmarkdown,
     knitr,
-    svglite,
-    ggraph,
     VariantAnnotation,
     SummarizedExperiment,
     GenomicFeatures,
     BSgenome,
     TxDb.Athaliana.BioMart.plantsmart28,
     Rsubread,
+    Rsamtools,
     ensembldb,
+    rBLAST,
+    systemfonts,
     testthat (>= 3.0.0),
-    pkgload,
-    here,
     ragg,
-    bench,
-    profmem,
-    lobstr,
     rprimer,
-    snow,
     DBI,
     RSQLite,
     xml2,
     crisprVerse,
-    spelling,
-    roxygen2,
-    styler,
-    lintr,
-    targets,
-    pkgdown
+    spelling
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: false

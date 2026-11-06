@@ -33,7 +33,7 @@ install.packages("pak")
 pak::pak("Stathmin/tidymarkers", sysreqs = TRUE)
 ```
 
-`DECIPHER` needs [OligoArrayAux](https://ib.berkeley.edu/labs/zucker/software/oligoarrayaux.html);
+`DECIPHER` needs [OligoArrayAux](https://www.unafold.org/Dinamelt/software/oligoarrayaux.php);
 one call builds it into your user cache, so nothing has to be on `PATH`:
 
 ```r
@@ -41,8 +41,10 @@ tidymarkers::marker_install_tools()   # once; hybrid-min / hybrid-ss-min
 ```
 
 **R >= 4.5** is required. The hard `Imports` are Bioconductor plus the tidyverse;
-the heavy optional pieces (a `TxDb`/`BSgenome`, `Rsubread`, `ensembldb`) live in
-`Suggests` and are never installed implicitly. `marker_cache_dir()` reports where
+the heavy optional pieces (a `TxDb`/`BSgenome`, `Rsubread`, `ensembldb`, `rBLAST`,
+`Rsamtools`, `systemfonts`) live in `Suggests` and are never installed implicitly —
+each is reached only through a guarded call, so a missing one degrades a single
+feature instead of breaking the load. `marker_cache_dir()` reports where
 downloaded genomes, variation, indexes and the external tools are kept
 (`tools::R_user_dir()`), so nothing is written inside the package or the project.
 

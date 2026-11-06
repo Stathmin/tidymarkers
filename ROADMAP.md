@@ -202,6 +202,27 @@
 
 ### Прочее
 
+- [x] **CRAN-готовность: объявленные зависимости и документация сборки.**
+      Правка: `DESCRIPTION` (`Authors@R` с ORCID, `Imports`/`Suggests` только под
+      реальные вызовы), `R/*.R` (`@param` для всех аргументов в `\usage`),
+      `README.md` (живая ссылка OligoArrayAux), `.Rbuildignore`,
+      `tests/testthat/helper-criterion-fixtures.R` (источник в раскладке
+      `R CMD check`). Проверка: `Rscript dev/check.R --quick`; `R CMD check
+    --as-cran` — 0 ERROR, 0 WARNING, 1 NOTE (New submission).
+      Следствие: локальный гейт и CI проверяют то же дерево, что уедет в CRAN.
+      Остаток — матрица CI (oldrel/r-devel/Windows) и `cran-comments.md`, см.
+      `ZV` ниже.
+- [ ] **`ZV`. CRAN-остаток после первого прохода** (открыто 2026-11-06).
+      Правка: `.github/workflows/R-CMD-check.yaml` — матрица
+      `ubuntu/macos/windows` × `release/oldrel/devel`; `cran-comments.md` в корне;
+      `revdep/` перед первым релизом; проверить `inst/CITATION`, `inst/WORDLIST`,
+      `po/` (`potools` уже настроен через `Config/potools/style: base`), год и
+      держателя в `LICENSE`; `\value` и `@examples` у каждого экспорта.
+      Проверка: `R CMD check --as-cran` на всех трёх платформах зелёный.
+      Блокер: нет локального Windows (тот же, что в пункте выше).
+      Следствие: пакет проходит CRAN, но не пойман на платформенных отличиях.
+      Замечание по объёму: установленный размер 10.3 MB, `inst/extdata` — 4.8 MB;
+      CRAN может спросить про вес демо-данных.
 - [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).**
       Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +
       `.github/workflows/R-CMD-check.yaml`. Проверка: сборка на чистой машине;

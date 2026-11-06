@@ -3,9 +3,9 @@
 #  dev/install-deps.R  --  fast, tiered dependency install
 # =============================================================================
 #  The package itself needs only `Imports`.  The heavy `Suggests`
-#  (VariantAnnotation, BSgenome, TxDb, Rsubread, ensembldb, rprimer, pkgdown,
-#  ...) are opt-in: installing them by default is what made setup take many
-#  minutes.
+#  (VariantAnnotation, BSgenome, TxDb, Rsubread, ensembldb, rBLAST, Rsamtools,
+#  rprimer, ...) are opt-in: installing them by default is what made setup take
+#  many minutes.
 #
 #    Rscript dev/install-deps.R                 # Imports + dev/test tools + package
 #    Rscript dev/install-deps.R --with-suggests # + every Suggests (full gate)
@@ -31,7 +31,10 @@ pak::local_install_dev_deps(".", dependencies = deps)
 
 # The test loop and the local gate are always needed; they are small and do not
 # pull the Bioconductor annotation stack.
-tools <- c("testthat", "pkgload", "roxygen2", "styler", "lintr", "snow", "svglite")
+tools <- c(
+  "testthat", "pkgload", "roxygen2", "styler", "lintr", "svglite",
+  "targets", "bench", "lobstr", "spelling"
+)
 missing <- tools[!vapply(tools, function(p) nzchar(system.file(package = p)), logical(1))]
 if (length(missing)) {
   pak::pkg_install(missing, ask = FALSE)

@@ -6,6 +6,7 @@
 ^docs$
 ^vignettes/figures/.*[.]png$
 ^graphify-out$
+^\.graphifyignore$
 ^_pkgdown\.yml$
 ^\.lintr$
 ^.*\.Rcheck$

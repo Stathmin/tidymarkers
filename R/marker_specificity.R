@@ -1275,6 +1275,7 @@ blast_primers <- function(primers, db_path) {
 #' @family specificity
 #' @export
 build_blast_db <- function(genome, path = fs::path(marker_cache_dir(), "tair10.fa")) {
+  rlang::check_installed("rBLAST", reason = gettext("to build a BLAST database"))
   fs::dir_create(fs::path_dir(path))
   if (!fs::file_exists(path)) Biostrings::writeXStringSet(genome, path)
   rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE)
