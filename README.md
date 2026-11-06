@@ -94,6 +94,14 @@ lifted one at a time, least grave first, and the least-bad candidate is returned
 with a warning naming every violated gate. A marker therefore always arrives with
 a reason, never a silent `NA`.
 
+Each tier criterion carries two separate things. Its **`target`** is a printed
+reference point the tier steers toward — an amplicon window, a ΔG floor, a
+vendor's Tm range — and the target is what a source can be cited for. Its
+**`limit`** is the package's aggregation policy: the bottleneck `min`, which
+checks belong to the tier, and the order between tiers. No paper prints that
+policy; it is declared once in code (`CRITERION_TIER_POLICY_EVIDENCE`) and stays
+`rule_of_thumb` however well sourced the target is.
+
 That policy is **data, not prose**: `marker_decision_schema()` reads the same
 constants as the engine (`KASP_GATES_*`, `KASP_RELAX_*`, `KASP_TIERS_*`), so the
 graph cannot drift from the code. `plot_decision_tree()` draws it, and an
@@ -200,10 +208,15 @@ short answer is published measurements, not a bench run by the maintainers:
 - **Specificity scored against ground truth, not against PolyMarker**: on TAIR10
   the answer is enumerated (3′-seed screen 8/8 equal; exact in-silico PCR 3/3
   equal), with BLAST+ as a speed/recall baseline. `dev/specificity-oracle.R`.
-- **A literature-anchored evidence layer instead**: 80 registered sources, 130
-  extracted tables in `inst/extdata/`, and 196 ledger links from an extract to
-  the test file that asserts it (44 distinct test files). The join is
-  machine-checked, so a test cannot claim an extract it does not read.
+- **A literature-anchored evidence layer instead**: 132 registered sources, 143
+  extract tables in `inst/extdata/`, and 212 ledger links from an extract to the
+  test file that asserts it (46 distinct test files). The join is machine-checked,
+  so a test cannot claim an extract it does not read. Across the 212 criterion
+  rows the rungs are 126 `primary_literature`, 13 `vendor_guideline` and 73
+  `rule_of_thumb`; `fitted_here` is **0**, so nothing is calibrated to this
+  package's own measurements. Of the 54 tier rows, 36 cite a printed target; the
+  other 18 rank a computed quantity (a mismatch ranking, a simulator output, a
+  population metric) and stay `rule_of_thumb`.
 - **Cross-engine where it is fair**: `thermo_crosscheck()` compares SantaLucia
   2004, Allawi 1998, Sugimoto 1996 and Breslauer 1986; Primer3's `oligotm` and
   `rprimer` join as external oracles when installed, and disagreement is

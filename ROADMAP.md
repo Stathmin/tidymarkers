@@ -46,180 +46,186 @@
 правится. Пока решение не принято, артефакт говорит «данных нет», а не «данные
 против».
 
-| решение | итог |
-|---|---|
+| решение                  | итог                                                            |
+| ------------------------ | --------------------------------------------------------------- |
 | `arms_mismatch_position` | −3 по умолчанию; −2 — fallback для слабого терминального класса |
-| `rpa_anchor_rule` | якорь 4 nt; веса ранжируют, не предсказывают частоту |
-| `crispr_seed_rule` | правило позиции; величина сигнала `unknown` |
-| `hrm_resolvability` | `dTm >= 0.5 °C` для LightCycler 96 и среднего по классу |
-| `kasp_z8_scope` | конверсии не объединяются; `assay_x_sample` — не ассей |
+| `rpa_anchor_rule`        | якорь 4 nt; веса ранжируют, не предсказывают частоту            |
+| `crispr_seed_rule`       | правило позиции; величина сигнала `unknown`                     |
+| `hrm_resolvability`      | `dTm >= 0.5 °C` для LightCycler 96 и среднего по классу         |
+| `kasp_z8_scope`          | конверсии не объединяются; `assay_x_sample` — не ассей          |
 
 ## Открытая работа — сводка
 
 ### §U. Другие PCR-маркеры и внешние приоры
+
 - [x] **CAPS/dCAPS и ARMS/AS-PCR — довести до конца.** Правка: `R/marker_caps.R`
-  (порог `dCAPS`-сканирования уже заявлен как single-base, L291) и
-  `R/marker_arms.R` (L165 — то же для tetra-primer). Остаток — не новый метод, а
-  позиция намеренного мисматча (`Z7.1`) и смена нуклеазы в CAPS. Проверка:
-  `test-caps.R`, `test-arms.R`. Блокер: снят (`Q2`, 2026-10-21).
-  - **Сделано 2026-10-29:** «смена нуклеазы» прочитана как изошизомеры.
-    `restriction_enzymes()` отдаёт одну рабочую строку на пару (сайт, `cut`),
-    остальные имена — в колонке `isoforms` (и в `marker$site$isoforms`).
-    `design_arms()` теперь падает на отрицательном `stab_ats`. `Z7.1` (позиция
-    мисматча) уже закрыт в `main` (`1f11bc2`,
-    `test-arms-mismatch-position.R`) — здесь остаётся только ссылка. Не сделано
-    намеренно: откат на запасную нуклеазу при неудачном расщеплении — другой
-    смысл «смены нуклеазы», отдельная правка.
-  - **2026-11-03:** пункт закрыт; откат на запасную нуклеазу остаётся
-    отдельной правкой и в этот пункт не входит.
+      (порог `dCAPS`-сканирования уже заявлен как single-base, L291) и
+      `R/marker_arms.R` (L165 — то же для tetra-primer). Остаток — не новый метод, а
+      позиция намеренного мисматча (`Z7.1`) и смена нуклеазы в CAPS. Проверка:
+      `test-caps.R`, `test-arms.R`. Блокер: снят (`Q2`, 2026-10-21).
+    - **Сделано 2026-10-29:** «смена нуклеазы» прочитана как изошизомеры.
+      `restriction_enzymes()` отдаёт одну рабочую строку на пару (сайт, `cut`),
+      остальные имена — в колонке `isoforms` (и в `marker$site$isoforms`).
+      `design_arms()` теперь падает на отрицательном `stab_ats`. `Z7.1` (позиция
+      мисматча) уже закрыт в `main` (`1f11bc2`,
+      `test-arms-mismatch-position.R`) — здесь остаётся только ссылка. Не сделано
+      намеренно: откат на запасную нуклеазу при неудачном расщеплении — другой
+      смысл «смены нуклеазы», отдельная правка.
+    - **2026-11-03:** пункт закрыт; откат на запасную нуклеазу остаётся
+      отдельной правкой и в этот пункт не входит.
 - [x] **«Дальние» методы под задачи (SNaPshot / single-base extension); внешние
-  FOSS-приоры.** Правка: новая схема + `scheme_def_*()` и `design_*_marker()`,
-  регистрация в `R/marker_scheme_registry.R`. Проверка: обязательные
-  `expect_dag_invariants()` и фикстура на каждый новый criterion-id
-  (`dev/check-criteria.R`). Блокер: нет приора с провенансом — без него критерии
-  будут `rule_of_thumb`. Следствие: SNaPshot-ассей сейчас проверяется только
-  generic-проверками праймера.
-  - **Сделано 2026-10-29:** провенанс собран, но **в код не заведён**:
-    `inst/extdata/snapshot_multiplex_design_rules.csv` — 19 правил с полем
-    `doi`/`pmcid` из 7 open-access статей (8 moderate, 10 weak, 1 none), плюс
-    `data-raw/proposed/u-snapshot-priors.md` с ещё 7 прочитанными источниками,
-    из которых правило не взято (closed access или нет числа). Поимённо
-    количественные: Tm 53–60 °C, GC 40–55 %, разброс между праймерами ≤ 3 °C
-    (`zhao2026`/`csnp14p2026`), корень 17–25 nt (`namdar2023`), шаг same-dye
-    3/4/5 nt, 700–4000 rfu и ~1:3.5 выход красителя (`dicristofaro2010`),
-    minor/major < 0.1 (`zhao2026`). **Не сделано:** строки реестра и
-    `R/marker_scheme_registry.R` не тронуты (смена формы DAG — отдельная работа).
-    **Конфликт при подключении:** `SNAPSHOT_EXT_TM = c(50, 55)` уже́же
-    заявленных 53–60 °C, а `SNAPSHOT_EXT_LENGTHS = 18:25` против измеренных
-    17–25 nt (`R/marker_snapshot.R` L61–62).
-  - **Сделано 2026-11-03:** записано в код. 19 критериев `family_sbe_*` в
-    `criterion_spec()` (8 `primary_literature`, 10 `vendor_guideline`,
-    1 `rule_of_thumb`), фикстура на каждый id; реестр и
-    `R/marker_scheme_registry.R` обновлены. `SNAPSHOT_EXT_TM` → `c(50, 60)`,
-    `SNAPSHOT_EXT_LENGTHS` → `17:25`. `test-snapshot*` 76+35 pass,
-    `dev/check-criteria.R` 139 registered / 137 fixture-backed + 2 exempt.
-    Провенанс — это rung, а не калибровка: `fitted_here` по-прежнему 0.
+      FOSS-приоры.** Правка: новая схема + `scheme_def_*()` и `design_*_marker()`,
+      регистрация в `R/marker_scheme_registry.R`. Проверка: обязательные
+      `expect_dag_invariants()` и фикстура на каждый новый criterion-id
+      (`dev/check-criteria.R`). Блокер: нет приора с провенансом — без него критерии
+      будут `rule_of_thumb`. Следствие: SNaPshot-ассей сейчас проверяется только
+      generic-проверками праймера.
+    - **Сделано 2026-10-29:** провенанс собран, но **в код не заведён**:
+      `inst/extdata/snapshot_multiplex_design_rules.csv` — 19 правил с полем
+      `doi`/`pmcid` из 7 open-access статей (8 moderate, 10 weak, 1 none), плюс
+      `data-raw/proposed/u-snapshot-priors.md` с ещё 7 прочитанными источниками,
+      из которых правило не взято (closed access или нет числа). Поимённо
+      количественные: Tm 53–60 °C, GC 40–55 %, разброс между праймерами ≤ 3 °C
+      (`zhao2026`/`csnp14p2026`), корень 17–25 nt (`namdar2023`), шаг same-dye
+      3/4/5 nt, 700–4000 rfu и ~1:3.5 выход красителя (`dicristofaro2010`),
+      minor/major < 0.1 (`zhao2026`). **Не сделано:** строки реестра и
+      `R/marker_scheme_registry.R` не тронуты (смена формы DAG — отдельная работа).
+      **Конфликт при подключении:** `SNAPSHOT_EXT_TM = c(50, 55)` уже́же
+      заявленных 53–60 °C, а `SNAPSHOT_EXT_LENGTHS = 18:25` против измеренных
+      17–25 nt (`R/marker_snapshot.R` L61–62).
+    - **Сделано 2026-11-03:** записано в код. 19 критериев `family_sbe_*` в
+      `criterion_spec()` (8 `primary_literature`, 10 `vendor_guideline`,
+      1 `rule_of_thumb`), фикстура на каждый id; реестр и
+      `R/marker_scheme_registry.R` обновлены. `SNAPSHOT_EXT_TM` → `c(50, 60)`,
+      `SNAPSHOT_EXT_LENGTHS` → `17:25`. `test-snapshot*` 76+35 pass,
+      `dev/check-criteria.R` 139 registered / 137 fixture-backed + 2 exempt.
+      Провенанс — это rung, а не калибровка: `fitted_here` по-прежнему 0.
 - [x] **Провенанс порогов + термодинамическая сверка.** Сделано: лестница
-  `CRITERION_EVIDENCE` (`ZW4.1`) и межмодельный Tm-оракул (`ZW3.2`). Остаток —
-  поимённый источник у каждой строки реестра (`ZW4.6`) и внешний Tm-якорь
-  (`ZW3.4`).
-  - **2026-11-03 (раунд 3):** `lobato2018` (Trends Analyt Chem, `PMC7112910`)
-    влит в `criterion_sources()` — 4 строки RPA (длина праймера 30–35 nt,
-    ампликон 100–200 bp, геометрия nfo-пробы 46–52 nt). Остальные 171 строка
-    остаются `package assumption`; внешнего Tm-якоря по-прежнему нет
-    (`data-raw/proposed/zw3.4-anchor-pass4.md`).
-  - **Сделано 2026-11-03:** поимённый провенанс доведён до каждой строки —
-    новый `inst/extdata/criterion_provenance.csv` (212 строк) даёт `id` →
-    `source` + `reason_class` (`named_source` / `conditions_unstated` /
-    `simulator_threshold` / `inherited_geometry` / `scheme_constant`) + причину;
-    `test-criteria.R` сверяет таблицу с `criterion_spec()` построчно. 41 строка
-    названа, 171 — `package assumption` с явным классом причины. Внешний
-    Tm-якорь (`ZW3.4`) по-прежнему не найден — это литературный пробел, не
-    пробел провенанса.
+      `CRITERION_EVIDENCE` (`ZW4.1`) и межмодельный Tm-оракул (`ZW3.2`). Остаток —
+      поимённый источник у каждой строки реестра (`ZW4.6`) и внешний Tm-якорь
+      (`ZW3.4`).
+    - **2026-11-03 (раунд 3):** `lobato2018` (Trends Analyt Chem, `PMC7112910`)
+      влит в `criterion_sources()` — 4 строки RPA (длина праймера 30–35 nt,
+      ампликон 100–200 bp, геометрия nfo-пробы 46–52 nt). Остальные 171 строка
+      остаются `package assumption`; внешнего Tm-якоря по-прежнему нет
+      (`data-raw/proposed/zw3.4-anchor-pass4.md`).
+    - **Сделано 2026-11-03:** поимённый провенанс доведён до каждой строки —
+      новый `inst/extdata/criterion_provenance.csv` (212 строк) даёт `id` →
+      `source` + `reason_class` (`named_source` / `conditions_unstated` /
+      `simulator_threshold` / `inherited_geometry` / `scheme_constant`) + причину;
+      `test-criteria.R` сверяет таблицу с `criterion_spec()` построчно. 41 строка
+      названа, 171 — `package assumption` с явным классом причины. Внешний
+      Tm-якорь (`ZW3.4`) по-прежнему не найден — это литературный пробел, не
+      пробел провенанса.
 
 ### §V. Модели считывания (readout simulation)
+
 - [~] **HRM — модель плавления; dPCR — пуассоновское разбиение; CRISPR-Dx —
   коллатеральное расщепление; ARMS/CAPS/indel_size/SSR — виртуальный гель;
   LAMP/RPA — изотермическая кинетика.** Состояние в коде: `marker_readout()`
   честно возвращает `simulated = FALSE` с причиной для каждой химии
   (`R/marker_readout.R`, таблица `notes`), единственное исключение —
   гидролизная проба.
-  - **dPCR** — единственный пункт с данными: `mismatch`-часть готова, но
-    пуассоновская модель проверяется **аналитически**, не подгонкой
-    (`Z8.6`).
-  - **HRM** — ближайший кандидат: есть `dTm` по трём наборам (см. `Z9.2`).
-  - **LAMP/RPA** — кинетику из имеющихся источников строить нельзя (`Q1`).
-  - **Литература 2026-11-03 (предложения, `data-raw/proposed/`):** HRM — 28
-    строк (частично: нет Mg/соли); dPCR — достаточно; CRISPR-Dx — 0; виртуальный
-    гель — 0; LAMP/RPA — 24 строки из Zhang 2026 NAR
-    (`doi:10.1093/nar/gkaf1378`, `PMC12774662`), частично (`time_to_positive`
-    не задан). Критерии и DAG не менялись.
-  - Правка начинается только тогда, когда есть набор «условия → исход», который
-    модель обязана воспроизвести; иначе `simulated = TRUE` станет ложью.
-    Проверка — тот же набор, что читает `test-readout-physics.R`.
-  - **Поиск 2026-10-29 (наборы «условия → исход»):** HRM —
-    `readout_hrm_diatom2025.csv` (28 ампликонов, измеренный Tm + dH/dS, но нет
-    Mg и нет соли → **partial**, `simulated` остаётся FALSE); LAMP —
-    `readout_lamp_erysiphe2026.csv` (Tp × температура и × десятикратное
-    разведение, но `copies_per_reaction` = NA → **partial**, `Q1` **не
-    закрыт**); dPCR — Пуассон **достаточен** (`dong2015` + `mps2024`, третьего
-    набора нет); CRISPR-Dx — **нет** (кинетика в платном supplement);
-    виртуальный гель — **нет** (никто не печатает bp→мм с % геля, вольтажом и
-    временем). Три «нет» — это отсутствие в открытом доступе по выполненному
-    поиску, не доказательство несуществования (см. `v-readout-conditions.md`).
-  - **Поиск 2026-11-03 (раунд 2):** CRISPR-Dx — частично: Nalefski 2024
-    (`PMC11077072`) печатает kcat/KM и константы активации в Tables 1–2
-    (`readout_crispr_nalefski2024_pass2.conditions.csv`, 109 строк), но это
-    не ряд «концентрация цели → доля расщеплённого во времени». HRM (Mg/соль),
-    виртуальный гель, LAMP/RPA (`copies_per_reaction`) — не найдено в открытом
-    доступе. `simulated` теперь TRUE только у dPCR (Пуассон); у остальных
-    четырёх химий — FALSE.
-  - **Сделано 2026-11-03:** dPCR-Пуассон заведён в `R/marker_readout.R`
-    (`poisson_lambda()`, `poisson_positive_fraction()`, `dpcr_partition_table()`);
-    `marker_readout()` для схемы `dpcr` возвращает `simulated = TRUE`, модель
-    «hydrolysis-probe discrimination + Poisson droplet partitioning» и
-    `$partition`, а `scheme_def_dpcr()$readout` это называет. Проверка —
-    `test-readout-dpcr.R`: инверсия воспроизводит λ Dong (60 строк, ≤ 1e-9) и
-    монотонное разведение MPS (102 строки). HRM/гель/CRISPR/LAMP/RPA остаются
-    `simulated = FALSE` — набора «условия → исход» нет в открытом доступе (`Q1`).
+    - **dPCR** — единственный пункт с данными: `mismatch`-часть готова, но
+      пуассоновская модель проверяется **аналитически**, не подгонкой
+      (`Z8.6`).
+    - **HRM** — ближайший кандидат: есть `dTm` по трём наборам (см. `Z9.2`).
+    - **LAMP/RPA** — кинетику из имеющихся источников строить нельзя (`Q1`).
+    - **Литература 2026-11-03 (предложения, `data-raw/proposed/`):** HRM — 28
+      строк (частично: нет Mg/соли); dPCR — достаточно; CRISPR-Dx — 0; виртуальный
+      гель — 0; LAMP/RPA — 24 строки из Zhang 2026 NAR
+      (`doi:10.1093/nar/gkaf1378`, `PMC12774662`), частично (`time_to_positive`
+      не задан). Критерии и DAG не менялись.
+    - Правка начинается только тогда, когда есть набор «условия → исход», который
+      модель обязана воспроизвести; иначе `simulated = TRUE` станет ложью.
+      Проверка — тот же набор, что читает `test-readout-physics.R`.
+    - **Поиск 2026-10-29 (наборы «условия → исход»):** HRM —
+      `readout_hrm_diatom2025.csv` (28 ампликонов, измеренный Tm + dH/dS, но нет
+      Mg и нет соли → **partial**, `simulated` остаётся FALSE); LAMP —
+      `readout_lamp_erysiphe2026.csv` (Tp × температура и × десятикратное
+      разведение, но `copies_per_reaction` = NA → **partial**, `Q1` **не
+      закрыт**); dPCR — Пуассон **достаточен** (`dong2015` + `mps2024`, третьего
+      набора нет); CRISPR-Dx — **нет** (кинетика в платном supplement);
+      виртуальный гель — **нет** (никто не печатает bp→мм с % геля, вольтажом и
+      временем). Три «нет» — это отсутствие в открытом доступе по выполненному
+      поиску, не доказательство несуществования (см. `v-readout-conditions.md`).
+    - **Поиск 2026-11-03 (раунд 2):** CRISPR-Dx — частично: Nalefski 2024
+      (`PMC11077072`) печатает kcat/KM и константы активации в Tables 1–2
+      (`readout_crispr_nalefski2024_pass2.conditions.csv`, 109 строк), но это
+      не ряд «концентрация цели → доля расщеплённого во времени». HRM (Mg/соль),
+      виртуальный гель, LAMP/RPA (`copies_per_reaction`) — не найдено в открытом
+      доступе. `simulated` теперь TRUE только у dPCR (Пуассон); у остальных
+      четырёх химий — FALSE.
+    - **Сделано 2026-11-03:** dPCR-Пуассон заведён в `R/marker_readout.R`
+      (`poisson_lambda()`, `poisson_positive_fraction()`, `dpcr_partition_table()`);
+      `marker_readout()` для схемы `dpcr` возвращает `simulated = TRUE`, модель
+      «hydrolysis-probe discrimination + Poisson droplet partitioning» и
+      `$partition`, а `scheme_def_dpcr()$readout` это называет. Проверка —
+      `test-readout-dpcr.R`: инверсия воспроизводит λ Dong (60 строк, ≤ 1e-9) и
+      монотонное разведение MPS (102 строки). HRM/гель/CRISPR/LAMP/RPA остаются
+      `simulated = FALSE` — набора «условия → исход» нет в открытом доступе (`Q1`).
 
 ### §W. Повторяющийся аудит
+
 - [x] DRY / «сухой» код; дрейф документации; styler/lintr/`R CMD check --as-cran`;
-  «дерево == код»; «мокрые» принципы; встроить аудит в `dev/check.R`; guard «single-base only»;
-  тест `render_design_search()`.
-  Сделано: LAMP B3/FIP ориентация и F1c/B1c > F2/B2, FIP 3′ ALT,
-  containment зондов TaqMan/dPCR/SNaPshot/RPA, жёсткая специфичность CRISPR,
-  классы AS/COM-проверок, общие тестовые фикстуры, `in_silico_pcr()` с IUPAC/
-  mismatch и реальными продуктами.
-  - **Сделано 2026-10-29.** Guard `single-base only` поднят до критерия
-    `family_single_base` (`R/marker_schemes.R`, `R/marker_criteria.R`):
-    `marker_generic_checks()` оценивает его как `unknown` для multi-таргета, а
-    схемы `caps`, `arms`, `castpcr`, `taqman`, `dpcr`, `snapshot`, `rpa`
-    объявляют его в `MARKER_FAMILY_CHECKS`. Сообщение `cli_inform` сохранено.
-    Фикстура — исключение в `helper-criterion-fixtures.R` (дизайн возвращает
-    `NULL`, до градации multi-маркер не доходит, поэтому `fail` недостижим).
-  - Аудит в `dev/check.R` — есть (`--quick`, 38 s); отдельного пункта не остаётся.
-  - **Сделано 2026-11-03:** `Rscript dev/check.R --quick` — зелёный (roxygen,
-    styler, lintr, критериальные фикстуры, docs/graphify, 44 артефакта); аудит
-    живёт в гейте, отдельного пункта не остаётся.
+      «дерево == код»; «мокрые» принципы; встроить аудит в `dev/check.R`; guard «single-base only»;
+      тест `render_design_search()`.
+      Сделано: LAMP B3/FIP ориентация и F1c/B1c > F2/B2, FIP 3′ ALT,
+      containment зондов TaqMan/dPCR/SNaPshot/RPA, жёсткая специфичность CRISPR,
+      классы AS/COM-проверок, общие тестовые фикстуры, `in_silico_pcr()` с IUPAC/
+      mismatch и реальными продуктами.
+    - **Сделано 2026-10-29.** Guard `single-base only` поднят до критерия
+      `family_single_base` (`R/marker_schemes.R`, `R/marker_criteria.R`):
+      `marker_generic_checks()` оценивает его как `unknown` для multi-таргета, а
+      схемы `caps`, `arms`, `castpcr`, `taqman`, `dpcr`, `snapshot`, `rpa`
+      объявляют его в `MARKER_FAMILY_CHECKS`. Сообщение `cli_inform` сохранено.
+      Фикстура — исключение в `helper-criterion-fixtures.R` (дизайн возвращает
+      `NULL`, до градации multi-маркер не доходит, поэтому `fail` недостижим).
+    - Аудит в `dev/check.R` — есть (`--quick`, 38 s); отдельного пункта не остаётся.
+    - **Сделано 2026-11-03:** `Rscript dev/check.R --quick` — зелёный (roxygen,
+      styler, lintr, критериальные фикстуры, docs/graphify, 44 артефакта); аудит
+      живёт в гейте, отдельного пункта не остаётся.
 
 ### §X. Слой плана
+
 - [x] **Двухпроходная дизайн-проводка для остальных схем.** `marker_plan()`/
-  `marker_solve()` уже проходят два прохода для KASP-семейства; остальные схемы
-  — один. Правка: `R/marker_plan.R`. Проверка: `test-plan.R` — второй проход не
-  меняет вердикт, а только число рассмотренных кандидатов (это же инвариант
-  `ZW0`). Блокер: нет. Следствие: для не-KASP схем первый проход отдаёт
-  кандидата, которого второй проход (сборка пары) не подтвердил бы.
-  - **Сделано 2026-11-03:** `two_pass_schemes()`/`two_pass()` добавлены в
-    `R/marker_plan.R` (только добавления, +72 строки): второй проход есть у
-    snp, indel, multi, lax, duplex, caps, arms, hrm, indel_size, ssr, sanger.
-    `dev/test.R plan` — 139 pass / 0 fail. Второй проход меняет число
-    рассмотренных кандидатов, не вердикт (`ZW0`).
+      `marker_solve()` уже проходят два прохода для KASP-семейства; остальные схемы
+      — один. Правка: `R/marker_plan.R`. Проверка: `test-plan.R` — второй проход не
+      меняет вердикт, а только число рассмотренных кандидатов (это же инвариант
+      `ZW0`). Блокер: нет. Следствие: для не-KASP схем первый проход отдаёт
+      кандидата, которого второй проход (сборка пары) не подтвердил бы.
+    - **Сделано 2026-11-03:** `two_pass_schemes()`/`two_pass()` добавлены в
+      `R/marker_plan.R` (только добавления, +72 строки): второй проход есть у
+      snp, indel, multi, lax, duplex, caps, arms, hrm, indel_size, ssr, sanger.
+      `dev/test.R plan` — 139 pass / 0 fail. Второй проход меняет число
+      рассмотренных кандидатов, не вердикт (`ZW0`).
 
 ### Прочее
+
 - [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).**
-  Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +
-  `.github/workflows/R-CMD-check.yaml`. Проверка: сборка на чистой машине;
-  `Rscript dev/install-deps.R` должен ставить зависимости и пакет без ручных шагов.
-  Блокер: нет локального Windows. Следствие: в CI движок недоступен →
-  `capabilities()` даёт `unknown`, что **честно**, но ни один внешний тест не
-  исполняется.
+      Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +
+      `.github/workflows/R-CMD-check.yaml`. Проверка: сборка на чистой машине;
+      `Rscript dev/install-deps.R` должен ставить зависимости и пакет без ручных шагов.
+      Блокер: нет локального Windows. Следствие: в CI движок недоступен →
+      `capabilities()` даёт `unknown`, что **честно**, но ни один внешний тест не
+      исполняется.
 - [x] **Скорость.** Горячие точки по `Rprof` устранены, быстрый/полный прогон
-  разделён, installer ставит зависимости и пакет. Остаток — замер на чистой машине
-  и возврат `--full` к ≤ 10 минутам (`ZP5`).
-  - **Замер 2026-11-03 (эта машина, изолированный `.tmp-speed/`):** fast/lean
-    `dev/test.R` — 7m47s (30267 assertions), `dev/test.R --full` — 34m32s
-    (36769 assertions, 130 файлов, 0 fail). Цель ZP5 (≤ 10 мин) **не достигнута**:
-    топ — `test-falsifiable.R` 7m05, `test-decision.R` 4m38,
-    `test-soybean-worked-panel.R` 2m27, `test-plan.R` 2m17. `--full` серийный
-    из-за SOCK-тестов; возврат к ≤ 10 мин требует параллельного прогона с
-    изоляцией SOCK-файлов (отдельная задача).
-  - **Сделано 2026-11-03:** `dev/test.R --full` теперь двухфазный: 126 файлов
-    идут параллельно (`TESTTHAT_CPUS` по умолчанию 8), затем 4 SOCK-файла
-    (`test-batch`, `test-dimer`, `test-insilico-pcr`, `test-specificity`)
-    серийно. Замер: **7m50s**, 36769 assertions, 130 файлов, 0 fail; цель ZP5
-    (≤ 10 мин) достигнута. Список SOCK-файлов защищён grep-guard: новый файл
-    с кластером без записи в списке роняет `dev/test.R` на старте.
+      разделён, installer ставит зависимости и пакет. Остаток — замер на чистой машине
+      и возврат `--full` к ≤ 10 минутам (`ZP5`).
+    - **Замер 2026-11-03 (эта машина, изолированный `.tmp-speed/`):** fast/lean
+      `dev/test.R` — 7m47s (30267 assertions), `dev/test.R --full` — 34m32s
+      (36769 assertions, 130 файлов, 0 fail). Цель ZP5 (≤ 10 мин) **не достигнута**:
+      топ — `test-falsifiable.R` 7m05, `test-decision.R` 4m38,
+      `test-soybean-worked-panel.R` 2m27, `test-plan.R` 2m17. `--full` серийный
+      из-за SOCK-тестов; возврат к ≤ 10 мин требует параллельного прогона с
+      изоляцией SOCK-файлов (отдельная задача).
+    - **Сделано 2026-11-03:** `dev/test.R --full` теперь двухфазный: 126 файлов
+      идут параллельно (`TESTTHAT_CPUS` по умолчанию 8), затем 4 SOCK-файла
+      (`test-batch`, `test-dimer`, `test-insilico-pcr`, `test-specificity`)
+      серийно. Замер: **7m50s**, 36769 assertions, 130 файлов, 0 fail; цель ZP5
+      (≤ 10 мин) достигнута. Список SOCK-файлов защищён grep-guard: новый файл
+      с кластером без записи в списке роняет `dev/test.R` на старте.
+
 ## Z. Внешний научный аудит (окт. 2026) — код, требования и физика
 
 Это не список пожеланий к тексту. Каждый пункт должен закрываться кодом,
@@ -227,200 +233,204 @@
 биология/вердикт; **P1** — специфичность, популяция, калибровка; **P2** —
 расширение методов.
 
-### Z0. Фактические ошибки физики/биологии  [P0]
-- [x] **`Z0.0` Cas12a collateral — ssDNase, репортёр ssDNA.** Код-комментарии уже
-  говорят `ssDNA`. Остаток — не код, а текст и его guard.
-  Правка: виньетки, где Cas12a описан как «dsDNase»; новый
-  новый `tests/testthat/test-wording.R` с регулярками запрещённых терминов.
-  Проверка: `tests/testthat/test-wording.R` падает на «dsDNase» в виньетке.
-  Блокер: снят — правку текста/guard'а влил `Z11.2` (`test-wording.R`).
-  Следствие: без guard'а «dsDNase» мог вернуться в виньетку молча; теперь
-  противоречие ловится тестом, а не чтением.
-  - **Сделано 2026-11-03:** `tests/testthat/test-wording.R` (5 pass) запрещает
-    `dsDNase` и dsDNA-коллатераль по виньеткам; виньетки уже были корректны,
-    поэтому правки текста не потребовалось — претензия в пункте была устаревшей.
-- [x] **`Z0.1` Cas13 — не «PAM-free» без оговорок.** Cas13a: слабое предпочтение
-  **Готово (проверено 2026-10-22).** `crispr_guide_candidates()` несёт `pfs` и `pfs_side` (Cas13a 3′ H, Cas13b 5′ D), Cas12a — `NA`; длина спейсера — параметр. `test-crispr*`: 181 pass.
-  PFS (избегать G на 3′ фланге); Cas13b: D-PFS.
-  Правка: `R/marker_crispr.R` — `cas = "cas13a" | "cas13b"` уже есть
-  (`crispr_guide_candidates()`, L103-140: сторона PFS, диапазон спейсера), остались
-  (а) PFS **поле кандидата** с оговоркой «предпочтение, не правило», (б) длина
-  спейсера LwaCas13a ≈28 nt как параметр, а не константа, (в) предупреждение
-  дизайнера для `cas13b` (D-PFS).
-  Проверка: `test-crispr.R` — PFS-тест на **оба** эффектора и границы спейсера;
-  после `Q2` (`crispr_seed_rule`) — ещё и величина одиночного seed-мисматча.
-  Блокер: нет для (а)-(в); (г) ждёт `Q2`.
-  Следствие: `data-raw/crisprbase_registry.R` не заменит реестр — в `crisprBase`
-  Cas13 есть только Cas13d, PFS не поле. Закрыть «по ссылке» нельзя.
-- [ ] **`Z0.2` dPCR Tm-шкала — калибровочный долг, не норма.** Стандарт: праймеры
-  58–62 °C, проба +8–10 °C; текущий default 44–50 °C.
-  Правка: **окно не менять**, пока `ZW3.4` не объяснён — иначе это подгонка под
-  смещение −16.86 °C. Правка только на деле: пометить default в
-  `R/marker_dpcr.R` ссылкой на `ZW3.4` и назвать его калибровочным долгом.
-  Проверка: `test-dpcr.R` — default остаётся 44–50 °C и назван долгом.
-  Блокер: `ZW3.4`.
-  Следствие: смена окна «на глаз» замаскирует биас и сдвинет вердикты всех
-  dPCR-ассays без данных.
-  - **Сделано 2026-10-29:** долг **назван в коде и тесте** — `@param tm_range`
-    в `R/marker_dpcr.R` и `test-dpcr.R` (default `c(44, 50)` пиннится и
-    назван долгом). Окно **не двигалось**. Отдельный extract
-    `inst/extdata/dpcr_tm_jrc2025.csv` (6 строк, JRC H5Nx Table 1) — это
-    **вычисленный, а не измеренный** Tm (`evidence_tier = "computed, not
-    measured"`), и численного буфера в статье нет. Пересчёт остатка: bias
-    −16.8643 °C (sd 0.6414, r 0.9579), солевой член −21.5971 °C,
-    `bias − salt` = +4.7328 °C, Owczarzy −9.3348 °C. Вывод: **измеренного
-    набора «олиго-Tm + численный буфер» в открытом доступе не найдено**;
-    остаток не объяснён, поэтому `ZW3.4` остаётся блокером.
-  - **Литература 2026-11-03:** добавлено 11 строк (`data-raw/proposed/`):
-    4 измеренных dPCR-оптимума 53.1–56.5 °C, но набора «олиго-Tm + численный
-    буфер» всё ещё нет. Zhou 2025 (`PMC12002481`) ограничивает Mg-член 1.77 °C
-    против смещения −16.86 °C → Mg исключён как причина. Окно не менялось.
-- [x] **`Z0.3` LAMP F1c/B1c > F2/B2.** `lamp_fuse()` фильтрует `t1 > t2`;
-  FIP 3′ несёт ALT, а не REF.
-- [x] **`Z0.4` KASP: «Taq не продлевает 3′ мисматч» — кинетика, не бинарность.**
-  **Готово (проверено 2026-10-22).** `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» с классом в `observed`/`detail`. `test-kasp-mismatch-type.R` + `test-kasp-checks.R`: 70 pass.
-  Правка: `R/marker_checks.R` (`marker_design_checks()`, проверки AS 3′-окна) +
-  `R/marker_evaluation_table()` — различитель **типа** мисматча
-  (transition/transversion, G:T / A:C wobble) как `unknown`/риск, а не `pass`;
-  формулировку в тексте проверки заменить.
-  Проверка: `test-kasp-checks.R` — transition и transversion дают разные статусы;
-  фикстура в `dev/check-criteria.R` на новый id.
-  Блокер: нет.
-  Следствие: G:T-мисматч печатается как «пройдено», хотя он ровно тот, который
-  Taq продлевает чаще всего.
+### Z0. Фактические ошибки физики/биологии [P0]
 
-### Z1–Z3. Вердикт, пороги, условия реакции  [P0–P1] — закрыто
+- [x] **`Z0.0` Cas12a collateral — ssDNase, репортёр ssDNA.** Код-комментарии уже
+      говорят `ssDNA`. Остаток — не код, а текст и его guard.
+      Правка: виньетки, где Cas12a описан как «dsDNase»; новый
+      новый `tests/testthat/test-wording.R` с регулярками запрещённых терминов.
+      Проверка: `tests/testthat/test-wording.R` падает на «dsDNase» в виньетке.
+      Блокер: снят — правку текста/guard'а влил `Z11.2` (`test-wording.R`).
+      Следствие: без guard'а «dsDNase» мог вернуться в виньетку молча; теперь
+      противоречие ловится тестом, а не чтением.
+    - **Сделано 2026-11-03:** `tests/testthat/test-wording.R` (5 pass) запрещает
+      `dsDNase` и dsDNA-коллатераль по виньеткам; виньетки уже были корректны,
+      поэтому правки текста не потребовалось — претензия в пункте была устаревшей.
+- [x] **`Z0.1` Cas13 — не «PAM-free» без оговорок.** Cas13a: слабое предпочтение
+      **Готово (проверено 2026-10-22).** `crispr_guide_candidates()` несёт `pfs` и `pfs_side` (Cas13a 3′ H, Cas13b 5′ D), Cas12a — `NA`; длина спейсера — параметр. `test-crispr*`: 181 pass.
+      PFS (избегать G на 3′ фланге); Cas13b: D-PFS.
+      Правка: `R/marker_crispr.R` — `cas = "cas13a" | "cas13b"` уже есть
+      (`crispr_guide_candidates()`, L103-140: сторона PFS, диапазон спейсера), остались
+      (а) PFS **поле кандидата** с оговоркой «предпочтение, не правило», (б) длина
+      спейсера LwaCas13a ≈28 nt как параметр, а не константа, (в) предупреждение
+      дизайнера для `cas13b` (D-PFS).
+      Проверка: `test-crispr.R` — PFS-тест на **оба** эффектора и границы спейсера;
+      после `Q2` (`crispr_seed_rule`) — ещё и величина одиночного seed-мисматча.
+      Блокер: нет для (а)-(в); (г) ждёт `Q2`.
+      Следствие: `data-raw/crisprbase_registry.R` не заменит реестр — в `crisprBase`
+      Cas13 есть только Cas13d, PFS не поле. Закрыть «по ссылке» нельзя.
+- [ ] **`Z0.2` dPCR Tm-шкала — калибровочный долг, не норма.** Стандарт: праймеры
+      58–62 °C, проба +8–10 °C; текущий default 44–50 °C.
+      Правка: **окно не менять**, пока `ZW3.4` не объяснён — иначе это подгонка под
+      смещение −16.86 °C. Правка только на деле: пометить default в
+      `R/marker_dpcr.R` ссылкой на `ZW3.4` и назвать его калибровочным долгом.
+      Проверка: `test-dpcr.R` — default остаётся 44–50 °C и назван долгом.
+      Блокер: `ZW3.4`.
+      Следствие: смена окна «на глаз» замаскирует биас и сдвинет вердикты всех
+      dPCR-ассays без данных.
+    - **Сделано 2026-10-29:** долг **назван в коде и тесте** — `@param tm_range`
+      в `R/marker_dpcr.R` и `test-dpcr.R` (default `c(44, 50)` пиннится и
+      назван долгом). Окно **не двигалось**. Отдельный extract
+      `inst/extdata/dpcr_tm_jrc2025.csv` (6 строк, JRC H5Nx Table 1) — это
+      **вычисленный, а не измеренный** Tm (`evidence_tier = "computed, not
+measured"`), и численного буфера в статье нет. Пересчёт остатка: bias
+      −16.8643 °C (sd 0.6414, r 0.9579), солевой член −21.5971 °C,
+      `bias − salt` = +4.7328 °C, Owczarzy −9.3348 °C. Вывод: **измеренного
+      набора «олиго-Tm + численный буфер» в открытом доступе не найдено**;
+      остаток не объяснён, поэтому `ZW3.4` остаётся блокером.
+    - **Литература 2026-11-03:** добавлено 11 строк (`data-raw/proposed/`):
+      4 измеренных dPCR-оптимума 53.1–56.5 °C, но набора «олиго-Tm + численный
+      буфер» всё ещё нет. Zhou 2025 (`PMC12002481`) ограничивает Mg-член 1.77 °C
+      против смещения −16.86 °C → Mg исключён как причина. Окно не менялось.
+- [x] **`Z0.3` LAMP F1c/B1c > F2/B2.** `lamp_fuse()` фильтрует `t1 > t2`;
+      FIP 3′ несёт ALT, а не REF.
+- [x] **`Z0.4` KASP: «Taq не продлевает 3′ мисматч» — кинетика, не бинарность.**
+      **Готово (проверено 2026-10-22).** `marker_mismatch_severity()` (Kwok 1990) + строка «AS 3' mismatch base pair» с классом в `observed`/`detail`. `test-kasp-mismatch-type.R` + `test-kasp-checks.R`: 70 pass.
+      Правка: `R/marker_checks.R` (`marker_design_checks()`, проверки AS 3′-окна) +
+      `R/marker_evaluation_table()` — различитель **типа** мисматча
+      (transition/transversion, G:T / A:C wobble) как `unknown`/риск, а не `pass`;
+      формулировку в тексте проверки заменить.
+      Проверка: `test-kasp-checks.R` — transition и transversion дают разные статусы;
+      фикстура в `dev/check-criteria.R` на новый id.
+      Блокер: нет.
+      Следствие: G:T-мисматч печатается как «пройдено», хотя он ровно тот, который
+      Taq продлевает чаще всего.
+
+### Z1–Z3. Вердикт, пороги, условия реакции [P0–P1] — закрыто
 
 `Evaluation` — один конструктор; `NA` не проходит отбор; каждый критерий —
 data-object (`R/marker_criteria.R`); `reaction_conditions()` доходит до call
 sites. Детали — `NEWS.md`.
 
-### Z4. Движки и capabilities  [P1]
+### Z4. Движки и capabilities [P1]
+
 - [x] **`Z4.1` Нет движка — `unknown`, не тихий `pass`.** `capabilities()` есть,
-  но не у всех путей: отсутствие OligoArrayAux/BLAST/`crisprScore` местами даёт
-  «нет наблюдения» вообще без строки, а не `unknown` с причиной.
-  Правка: `R/marker_thermo.R`, `R/marker_specificity.R`, `R/marker_crispr.R` —
-  каждая вычислимая величина возвращает `NA` + запись причины в `capabilities()`.
-  Проверка: новый `tests/testthat/test-capabilities.R` (фикстура «движка нет» —
-  каждая затронутая проверка `unknown`, ни одна не `pass`); `test-engine-stamp.R`.
-  Блокер: нет.
-  Следствие: отчёт без движка неотличим от отчёта, где проверка просто не
-  запускалась, — и `Evaluation` молча короче.
-  - **Сделано 2026-10-29:** `lamp_geometry()` больше не сворачивает отсутствие
-    OligoArrayAux в `fip_3p_stable = TRUE`: зажим/фолд по-прежнему даёт `FALSE`,
-    а неизвестный dG — `NA`; `ok` = `NA` при неизвестности, `failed` считает
-    только `FALSE`, добавлено поле `unknown` — и `design_lamp_marker()` говорит
-    «could not be fully evaluated» (inform), а не «check failed» (warn).
-    `design_snapshot_marker()`: `extension$structure_ok` = `NA` без движка (было
-    `TRUE`) и NULL-сообщение теперь называет гейт, у которого весь margin `NA`
-    (`gate_snapshot_structure`), а не общий «hard gate».
-    `pair_structure_ok()`/`rpa_structure_ok()` — это фильтры выбора, не
-    отчётные поля: они остаются разрешающими, но в `Evaluation` их строки — `NA`
-    (`success = FALSE, status = "unknown"`), поэтому вердикт `unknown`, не `pass`.
-  - **Проверка 2026-10-29:** `test-capabilities.R` + `test-lamp.R` +
-    `test-snapshot.R` — 493 pass, 0 fail; три новые фикстуры «движка нет».
-  - **Следствие:** отсутствие движка больше не читается как «стабильный 3′-конец»
-    и не прячется за общим сообщением, но дизайн, которому структура нужна как
-    жёсткий гейт (SNaPshot), по-прежнему не выдаётся — это названо, а не
-    замаскировано.
+      но не у всех путей: отсутствие OligoArrayAux/BLAST/`crisprScore` местами даёт
+      «нет наблюдения» вообще без строки, а не `unknown` с причиной.
+      Правка: `R/marker_thermo.R`, `R/marker_specificity.R`, `R/marker_crispr.R` —
+      каждая вычислимая величина возвращает `NA` + запись причины в `capabilities()`.
+      Проверка: новый `tests/testthat/test-capabilities.R` (фикстура «движка нет» —
+      каждая затронутая проверка `unknown`, ни одна не `pass`); `test-engine-stamp.R`.
+      Блокер: нет.
+      Следствие: отчёт без движка неотличим от отчёта, где проверка просто не
+      запускалась, — и `Evaluation` молча короче.
+    - **Сделано 2026-10-29:** `lamp_geometry()` больше не сворачивает отсутствие
+      OligoArrayAux в `fip_3p_stable = TRUE`: зажим/фолд по-прежнему даёт `FALSE`,
+      а неизвестный dG — `NA`; `ok` = `NA` при неизвестности, `failed` считает
+      только `FALSE`, добавлено поле `unknown` — и `design_lamp_marker()` говорит
+      «could not be fully evaluated» (inform), а не «check failed» (warn).
+      `design_snapshot_marker()`: `extension$structure_ok` = `NA` без движка (было
+      `TRUE`) и NULL-сообщение теперь называет гейт, у которого весь margin `NA`
+      (`gate_snapshot_structure`), а не общий «hard gate».
+      `pair_structure_ok()`/`rpa_structure_ok()` — это фильтры выбора, не
+      отчётные поля: они остаются разрешающими, но в `Evaluation` их строки — `NA`
+      (`success = FALSE, status = "unknown"`), поэтому вердикт `unknown`, не `pass`.
+    - **Проверка 2026-10-29:** `test-capabilities.R` + `test-lamp.R` +
+      `test-snapshot.R` — 493 pass, 0 fail; три новые фикстуры «движка нет».
+    - **Следствие:** отсутствие движка больше не читается как «стабильный 3′-конец»
+      и не прячется за общим сообщением, но дизайн, которому структура нужна как
+      жёсткий гейт (SNaPshot), по-прежнему не выдаётся — это названо, а не
+      замаскировано.
 - [x] **`Z4.2` Ecosystem reuse, not reimplementation.** `crisprVerse`
-  (Cas9/Cas12a/Cas13d; Bowtie/BWA; `crisprScore`) для PAM/search/off-target — но
-  не как trans-cleavage activity predictor и с оговоркой human-only SNP
-  annotation; `DECIPHER` `DesignPrimers`/`DesignProbes`/`DesignSignatures` для
-  group/homeolog-aware design; `rprimer` для degenerate-панелей; `TmCalculator`
-  (27 NN, salt/DMSO) как независимый Tm-cross-check; `PolyMarker` — benchmark,
-  не реимплементация. Внешние Primer3/MFEprimer/NUPACK/ViennaRNA — только через
-  capability-интерфейс; `openPrimeR` — проверить maintenance перед зависимостью.
-  Правка: `DESCRIPTION` (Suggests) + один adapter на первый **реально
-  используемый** движок (`R/marker_engines_versions.R` уже знает семь).
-  Проверка: адаптер идёт через `capabilities()`; `test-engine-stamp.R` видит
-  его версию; для `yardstick`/`targets` — только после `Z8`.
-  Блокер: нет движка-потребителя в коде (вторая зависимость без вызова = мёртвый
-  код).
-  Следствие: сегодня `marker_specificity()` и CRISPR-off-target считаются
-  самостоятельно там, где проверенный aligner дал бы 3′-aware кандидатов дешевле
-  (`Z5.1`).
+      (Cas9/Cas12a/Cas13d; Bowtie/BWA; `crisprScore`) для PAM/search/off-target — но
+      не как trans-cleavage activity predictor и с оговоркой human-only SNP
+      annotation; `DECIPHER` `DesignPrimers`/`DesignProbes`/`DesignSignatures` для
+      group/homeolog-aware design; `rprimer` для degenerate-панелей; `TmCalculator`
+      (27 NN, salt/DMSO) как независимый Tm-cross-check; `PolyMarker` — benchmark,
+      не реимплементация. Внешние Primer3/MFEprimer/NUPACK/ViennaRNA — только через
+      capability-интерфейс; `openPrimeR` — проверить maintenance перед зависимостью.
+      Правка: `DESCRIPTION` (Suggests) + один adapter на первый **реально
+      используемый** движок (`R/marker_engines_versions.R` уже знает семь).
+      Проверка: адаптер идёт через `capabilities()`; `test-engine-stamp.R` видит
+      его версию; для `yardstick`/`targets` — только после `Z8`.
+      Блокер: нет движка-потребителя в коде (вторая зависимость без вызова = мёртвый
+      код).
+      Следствие: сегодня `marker_specificity()` и CRISPR-off-target считаются
+      самостоятельно там, где проверенный aligner дал бы 3′-aware кандидатов дешевле
+      (`Z5.1`).
 
-### Z5. Mismatch-tolerant specificity  [P1]
+### Z5. Mismatch-tolerant specificity [P1]
+
 - [x] **`Z5.0` `in_silico_pcr()`** ищет IUPAC-праймеры, поддерживает
-  `max_mismatch` и склеивает реальные forward/reverse продукты; exact-mode
-  предупреждает о near-match продукте; degenerate покрыт тестом (`"ACGS"`);
-  политика подставляется по `scheme` (`test-insilico-pcr.R`).
+      `max_mismatch` и склеивает реальные forward/reverse продукты; exact-mode
+      предупреждает о near-match продукте; degenerate покрыт тестом (`"ACGS"`);
+      политика подставляется по `scheme` (`test-insilico-pcr.R`).
 - [x] **Политика и вердикт:** `specificity_policy()`, `specificity_verdict()`
-  (seed/exact/BLAST/FM) с capability-флагом и статусом `unknown` (`cfb3638`).
+      (seed/exact/BLAST/FM) с capability-флагом и статусом `unknown` (`cfb3638`).
 - [x] **`Z5.1` Position-aware off-target в собственной ориентации.** Позиционный
-  штраф **уже** применялся к геномному скану, а не только к degenerate-ветке:
-  `in_silico_pcr()` идёт через `primer_hit_table()`
-  (`R/marker_specificity.R:639-640`), который профилирует каждый
-  `matchPattern()`-хит через `mismatch_profile()` (`:519-524`) и зеркалит
-  позиции обратного праймера `plus_to_primer()` (`:510`).
-  Замерено: 3′-терминальный промах штраф **12**, тот же мисматч в середине — **1**;
-  две точные копии → `fail`, одна точная + 3′-терминальный сайт → `pass`
-  (`pcr_products_tolerated()` `:783`, `specificity_verdict()` `:1290`).
-  Проверка: `tests/testthat/test-specificity-orientation.R` (36 pass).
-  Следствие: исходное «вердикт не различает опасное от безобидного» было
-  **неверным** для PCR-семейства; остаются `Z5.2` (модель на семейство:
-  RPA-несколько мисматчей, CRISPR seed/PAM) — там различие ещё не доказано.
+      штраф **уже** применялся к геномному скану, а не только к degenerate-ветке:
+      `in_silico_pcr()` идёт через `primer_hit_table()`
+      (`R/marker_specificity.R:639-640`), который профилирует каждый
+      `matchPattern()`-хит через `mismatch_profile()` (`:519-524`) и зеркалит
+      позиции обратного праймера `plus_to_primer()` (`:510`).
+      Замерено: 3′-терминальный промах штраф **12**, тот же мисматч в середине — **1**;
+      две точные копии → `fail`, одна точная + 3′-терминальный сайт → `pass`
+      (`pcr_products_tolerated()` `:783`, `specificity_verdict()` `:1290`).
+      Проверка: `tests/testthat/test-specificity-orientation.R` (36 pass).
+      Следствие: исходное «вердикт не различает опасное от безобидного» было
+      **неверным** для PCR-семейства; остаются `Z5.2` (модель на семейство:
+      RPA-несколько мисматчей, CRISPR seed/PAM) — там различие ещё не доказано.
 - [ ] **`Z5.2` Family-specific mismatch models.** Разные величины для RPA
-  (несколько мисматчей), CRISPR (seed) и KASP (3′-якорь) сейчас сведены к одной
-  политике. Правка: `specificity_policy()` — модель на семейство.
-  Проверка: `test-specificity.R` по семействам.
-  Блокер: `Q2` снят 2026-10-21, но `crispr_seed_rule` измерил величину без
-  предсказуемости по цели (отчёт — `unknown`), поэтому настоящий блокер —
-  отсутствие пер-семейной предсказуемой величины для политики. Модель CRISPR
-  без неё останется формулировкой.
-  Следствие: `specificity_verdict()` отвечает одной шкалой на химии с разной
-  физикой.
-  - **Сделано 2026-10-29:** пер-семейные extract'ы собраны
-    (`mismatch_family_{crispr,arms,lamp,hrm}.csv` + `mismatch_family_magnitude.csv`).
-    Вердикт по `crispr_seed_rule` **не изменился — `unknown`**: данные дают
-    *гейт по числу мисматчей и длине спейсера* (3 мисматча в 23-nt спейсере →
-    11.0 % остаточной WT-активности; 28-nt спейсер не различает одиночный
-    мисматч), а не fold-сигнал, из которого можно фиттить вес. RPA —
-    опубликованной величины нет (только бинарная вероятность успеха 0.59–0.984,
-    не ratio); LAMP — частично (бинарно + задержки Tt, плюс одна
-    endpoint-плавка 1.25 °C); ARMS/KASP — уже закодировано (`kwok1990`,
-    `lefever2019`); HRM — есть dTm, но локус-специфичен и не переносится;
-    CAPS — оси мисматча нет (дайджест бинарный).
-  - **Литература 2026-11-03:** 7 строк из `PMC13136900`; величины fold по
-    семействам по-прежнему нет, `crispr_seed_rule` — `unknown`.
+      (несколько мисматчей), CRISPR (seed) и KASP (3′-якорь) сейчас сведены к одной
+      политике. Правка: `specificity_policy()` — модель на семейство.
+      Проверка: `test-specificity.R` по семействам.
+      Блокер: `Q2` снят 2026-10-21, но `crispr_seed_rule` измерил величину без
+      предсказуемости по цели (отчёт — `unknown`), поэтому настоящий блокер —
+      отсутствие пер-семейной предсказуемой величины для политики. Модель CRISPR
+      без неё останется формулировкой.
+      Следствие: `specificity_verdict()` отвечает одной шкалой на химии с разной
+      физикой.
+    - **Сделано 2026-10-29:** пер-семейные extract'ы собраны
+      (`mismatch_family_{crispr,arms,lamp,hrm}.csv` + `mismatch_family_magnitude.csv`).
+      Вердикт по `crispr_seed_rule` **не изменился — `unknown`**: данные дают
+      _гейт по числу мисматчей и длине спейсера_ (3 мисматча в 23-nt спейсере →
+      11.0 % остаточной WT-активности; 28-nt спейсер не различает одиночный
+      мисматч), а не fold-сигнал, из которого можно фиттить вес. RPA —
+      опубликованной величины нет (только бинарная вероятность успеха 0.59–0.984,
+      не ratio); LAMP — частично (бинарно + задержки Tt, плюс одна
+      endpoint-плавка 1.25 °C); ARMS/KASP — уже закодировано (`kwok1990`,
+      `lefever2019`); HRM — есть dTm, но локус-специфичен и не переносится;
+      CAPS — оси мисматча нет (дайджест бинарный).
+    - **Литература 2026-11-03:** 7 строк из `PMC13136900`; величины fold по
+      семействам по-прежнему нет, `crispr_seed_rule` — `unknown`.
 
-### Z6. Популяционный слой  [P1]
+### Z6. Популяционный слой [P1]
+
 - [x] `marker_attach_haplotypes()` + `marker_population_checks()` + generic
-  haplotype track; CAPS/CRISPR предупреждают без популяции и при вариантах в
-  сайте/guide-PAM; отсутствие частоты = `unknown`.
+      haplotype track; CAPS/CRISPR предупреждают без популяции и при вариантах в
+      сайте/guide-PAM; отсутствие частоты = `unknown`.
 - [x] **`Z6.1` Гаплотип/частота во все схемы.** Wave 2b `haplotype-track` влит:
-  CAPS site, CRISPR guide/PAM, LAMP/RPA primer sites, SSR null alleles.
-  Приёмка — инвариант `ZW0`: вход переставлен, вердикт тот же.
+      CAPS site, CRISPR guide/PAM, LAMP/RPA primer sites, SSR null alleles.
+      Приёмка — инвариант `ZW0`: вход переставлен, вердикт тот же.
 - [x] **`Z6.2` Полиплоидия — отдельная ось, не «pop_freq».** Дозировка/число
-  копий не выражается частотой аллеля.
-  Правка: `marker_population_checks()` — отдельное возвращаемое поле
-  `dosage`, не колонка `freq`.
-  Проверка: `tests/testthat/test-polyploid-scope.R` — нет единого polyploid rate
-  (уже утверждает это); плюс проверка, что `dosage` не попадает в `pop_freq`.
-  Блокер: `fitPoly` — Suggests с реальной реализацией (`ZA4`), не «на будущее».
-  Следствие: у пшеницы/сахарного тростника гомеолог-сумма читается как один
-  аллель с частотой 1.
-  - **Сделано 2026-10-29 (часть):** ось отделена от частоты. `marker_dosage()`
-    возвращает `status = "unknown"`, `engine = NA` и пояснение, пока движка
-    дозировки нет; `marker_population_checks()` несёт её атрибутом `dosage`, а
-    не строкой таблицы, поэтому гейт приёмки не судит число копий частотным
-    правилом (строка «dosage» в `value` сделала бы вердикт любого маркера с
-    популяцией `unknown`). Тесты: `test-polyploid-dosage.R` (ось `unknown`,
-    без `pop_freq`; 50 % частоты остаётся 50 %) и
-    `test-polyploid-scope.R` (в `variants` из `haplotype_variants()` есть
-    `pop_freq`, но нет `dosage`/copy-колонки). Остаток — движок `fitPoly`
-    (`Z10.2`).
-  - **Риск (записан 2026-10-29):** `dosage` доступен только как
-    `attr(x, "dosage")` или через `marker_dosage()`; вызывающий код, который
-    читает таблицу, поля не увидит. Будущий движок обязан сделать `dosage`
-    полем первого класса, а не атрибутом.
-  - **Сделано 2026-11-03:** риск снят. `$dosage` — поле первого класса
-    (`marker_dosage()` читает `marker$dosage`), гейт даёт свою строку
-    `allele dosage` (`marker_dosage_gate()`), атрибут оставлен для старых
-    вызывающих. `test-polyploid-dosage.R` это пинит (204 pass).
+      копий не выражается частотой аллеля.
+      Правка: `marker_population_checks()` — отдельное возвращаемое поле
+      `dosage`, не колонка `freq`.
+      Проверка: `tests/testthat/test-polyploid-scope.R` — нет единого polyploid rate
+      (уже утверждает это); плюс проверка, что `dosage` не попадает в `pop_freq`.
+      Блокер: `fitPoly` — Suggests с реальной реализацией (`ZA4`), не «на будущее».
+      Следствие: у пшеницы/сахарного тростника гомеолог-сумма читается как один
+      аллель с частотой 1.
+    - **Сделано 2026-10-29 (часть):** ось отделена от частоты. `marker_dosage()`
+      возвращает `status = "unknown"`, `engine = NA` и пояснение, пока движка
+      дозировки нет; `marker_population_checks()` несёт её атрибутом `dosage`, а
+      не строкой таблицы, поэтому гейт приёмки не судит число копий частотным
+      правилом (строка «dosage» в `value` сделала бы вердикт любого маркера с
+      популяцией `unknown`). Тесты: `test-polyploid-dosage.R` (ось `unknown`,
+      без `pop_freq`; 50 % частоты остаётся 50 %) и
+      `test-polyploid-scope.R` (в `variants` из `haplotype_variants()` есть
+      `pop_freq`, но нет `dosage`/copy-колонки). Остаток — движок `fitPoly`
+      (`Z10.2`).
+    - **Риск (записан 2026-10-29):** `dosage` доступен только как
+      `attr(x, "dosage")` или через `marker_dosage()`; вызывающий код, который
+      читает таблицу, поля не увидит. Будущий движок обязан сделать `dosage`
+      полем первого класса, а не атрибутом.
+    - **Сделано 2026-11-03:** риск снят. `$dosage` — поле первого класса
+      (`marker_dosage()` читает `marker$dosage`), гейт даёт свою строку
+      `allele dosage` (`marker_dosage_gate()`), атрибут оставлен для старых
+      вызывающих. `test-polyploid-dosage.R` это пинит (204 pass).
 
-### Z7. Намеренные вторые мисматричи  [P1] — первый научный пункт после `ZW`
+### Z7. Намеренные вторые мисматричи [P1] — первый научный пункт после `ZW`
 
 **Состояние: приоры собраны как проверяемые предсказания; самого параметра
 дизайна ещё нет.** `inst/extdata/z7_priors.csv`
@@ -440,82 +450,84 @@ sites. Детали — `NEWS.md`.
 разные измерения.
 
 Осталось:
+
 - [x] **`Z7.1` Параметр deliberate mismatch.** **Готово 2026-10-22** (`1f11bc2`).
-  Позиция решена (`Q2`, 2026-10-21): −3 по умолчанию, −2 только для слабого
-  терминального класса. Теперь позиция доходит до результата: `inner$ref`/`inner$alt`
-  несут `stab_at`, `weak_terminal` и `stab_policy`, `print()` её называет, а
-  `design_as_primers()` отказывается от отрицательного `stab_ats` (константа
-  политики — знаковый офсет, а параметр — расстояние от 3′; смешивать их нельзя).
-  Проверка: `test-arms-mismatch-position.R` (43 pass).
-  Прежнее описание: Для KASP/ARMS/AS-LAMP/AS-RPA/
-  CRISPR (SHERLOCK synthetic mismatches): позиция, тип, predicted ΔΔG.
-  Слабая пара `transition` перестаёт быть только «риск».
-  Правка: `R/marker_arms.R` (`design_as_primers()`) + `R/marker_technology.R`
-  (параметры технологии) + строка позиции в `inst/extdata/z7_priors.csv`.
-  Порт строится на **margin = match − off**, а не на одной эффективности
-  (`z7_engine_probe`).
-  Проверка: `test-z7-priors.R` + golden-вердикты (`f494a50`-дисциплина: вердикт
-  не сдвигается без указания движка — `ZW2.3`).
-  Блокер: снят (`Q2`); `Z7.3` (якорь) по-прежнему только directional.
-  Следствие: transition-SNP в KASP сегодня помечается и отбрасывается, хотя
-  второй мисматч — ровно то, что этот случай исправляет.
+      Позиция решена (`Q2`, 2026-10-21): −3 по умолчанию, −2 только для слабого
+      терминального класса. Теперь позиция доходит до результата: `inner$ref`/`inner$alt`
+      несут `stab_at`, `weak_terminal` и `stab_policy`, `print()` её называет, а
+      `design_as_primers()` отказывается от отрицательного `stab_ats` (константа
+      политики — знаковый офсет, а параметр — расстояние от 3′; смешивать их нельзя).
+      Проверка: `test-arms-mismatch-position.R` (43 pass).
+      Прежнее описание: Для KASP/ARMS/AS-LAMP/AS-RPA/
+      CRISPR (SHERLOCK synthetic mismatches): позиция, тип, predicted ΔΔG.
+      Слабая пара `transition` перестаёт быть только «риск».
+      Правка: `R/marker_arms.R` (`design_as_primers()`) + `R/marker_technology.R`
+      (параметры технологии) + строка позиции в `inst/extdata/z7_priors.csv`.
+      Порт строится на **margin = match − off**, а не на одной эффективности
+      (`z7_engine_probe`).
+      Проверка: `test-z7-priors.R` + golden-вердикты (`f494a50`-дисциплина: вердикт
+      не сдвигается без указания движка — `ZW2.3`).
+      Блокер: снят (`Q2`); `Z7.3` (якорь) по-прежнему только directional.
+      Следствие: transition-SNP в KASP сегодня помечается и отбрасывается, хотя
+      второй мисматч — ровно то, что этот случай исправляет.
 - [x] **`Z7.2` Совместимость якоря по химии.** Liu/Lefever измерены на
-  AS-PCR/qPCR, Kwok — на Taq-кинетике; ни один не сделан на KASP-флуоресцентном
-  считывании, поэтому перенос на KASP — допущение.
-  Правка (готово): `inst/extdata/z7_priors.csv` несёт два поля —
-  `anchor_chemistry` (Kwok 1990 — Taq-кинетика/PCR yield; Lefever 2019 —
-  real-time AS-PCR, dCq; Liu 2012 — AS-PCR end-point; Ye 2001 — tetra-primer
-  ARMS end-point) и `transfer_assumption` (константа «перенос на KASP не
-  измерен»). `data-raw/z7-priors.R` печатает ту же фразу и падает, если якорь
-  назван как KASP.
-  Проверка: `test-z7-priors.R` — у каждой строки якоря названа химия, у каждого
-  источника одна химия, ни одна не KASP, а допущение одинаково на всех строках
-  (49 pass).
-  Блокер: нет.
-  Следствие: ΔΔG-предсказание опирается на опыт, полученный на другой системе
-  регистрации, и теперь это видно в артефакте, а не только в ревью.
+      AS-PCR/qPCR, Kwok — на Taq-кинетике; ни один не сделан на KASP-флуоресцентном
+      считывании, поэтому перенос на KASP — допущение.
+      Правка (готово): `inst/extdata/z7_priors.csv` несёт два поля —
+      `anchor_chemistry` (Kwok 1990 — Taq-кинетика/PCR yield; Lefever 2019 —
+      real-time AS-PCR, dCq; Liu 2012 — AS-PCR end-point; Ye 2001 — tetra-primer
+      ARMS end-point) и `transfer_assumption` (константа «перенос на KASP не
+      измерен»). `data-raw/z7-priors.R` печатает ту же фразу и падает, если якорь
+      назван как KASP.
+      Проверка: `test-z7-priors.R` — у каждой строки якоря названа химия, у каждого
+      источника одна химия, ни одна не KASP, а допущение одинаково на всех строках
+      (49 pass).
+      Блокер: нет.
+      Следствие: ΔΔG-предсказание опирается на опыт, полученный на другой системе
+      регистрации, и теперь это видно в артефакте, а не только в ревью.
 - [x] **`Z7.3` Внешний якорь определён.** Per-class таблица Liu 2012 (1686 строк
-  праймеров; 3-е основание от 3′-конца лучшее на взвешенных классах:
-  2nd 29.8 / **3rd 38.6** / 4th 28.4; тест пересчитывает это из таблицы, а не
-  берёт на веру) + Lefever (dCq) + Kwok (severity). Чего **нет**: ни одного
-  набора «SNP → сработало/нет» для KASP-переходов со вторым мисматчем; именно
-  поэтому `calibrated = FALSE` на всём `z7_priors`. Закрывается только через
-  `Z8.2`: пока якоря нет, вердикт по ΔΔG — `unknown`, а не `pass` (`ZW4`).
+      праймеров; 3-е основание от 3′-конца лучшее на взвешенных классах:
+      2nd 29.8 / **3rd 38.6** / 4th 28.4; тест пересчитывает это из таблицы, а не
+      берёт на веру) + Lefever (dCq) + Kwok (severity). Чего **нет**: ни одного
+      набора «SNP → сработало/нет» для KASP-переходов со вторым мисматчем; именно
+      поэтому `calibrated = FALSE` на всём `z7_priors`. Закрывается только через
+      `Z8.2`: пока якоря нет, вердикт по ΔΔG — `unknown`, а не `pass` (`ZW4`).
 - [x] **`Z7.5` Добавленный мисматч не ослабляет другие гейты.** Он проходит тот
-  же конвейер и те же инварианты `ZW0`.
-  Правка: нет — `Z7.1` собран правильно: мисматч кладётся одним основанием
-  внутрь праймера, а `marker_technology()` не меняет список гейтов; отказывать
-  не пришлось.
-  Проверка: `test-z7-priors.R` (два инварианта). Праймерный слой: пара одной
-  геометрии с `stab_ats = NA` и `3L` отличается ровно одним основанием на
-  `length - stab_at + 1`, терминальное основание не тронуто, набор гейтов до и
-  после совпадает по id/порядку/стадии/уровню/лимиту, ни один применимый гейт
-  не становится `not_applicable`, гейт `AS Tm` уже читает мисматченный праймер,
-  а терминальный гейт `AS 3' mismatch base pair` не двигается; `ZW0 M2` (обмен
-  REF/ALT) держится и с мисматчем. Слой дизайна: полный ARMS-дизайн
-  синтетического локуса (`stab_ats = NA` и `3L`) даёт тот же набор гейтов, а
-  мисматченный внутренний праймер входит в `marker_primers()`.
-  Блокер: `Z7.1` — снят.
-  Следствие: добавка не может закрыть одну проверку за счёт другой; набор
-  гейтов зафиксирован тестом, а не соглашением.
+      же конвейер и те же инварианты `ZW0`.
+      Правка: нет — `Z7.1` собран правильно: мисматч кладётся одним основанием
+      внутрь праймера, а `marker_technology()` не меняет список гейтов; отказывать
+      не пришлось.
+      Проверка: `test-z7-priors.R` (два инварианта). Праймерный слой: пара одной
+      геометрии с `stab_ats = NA` и `3L` отличается ровно одним основанием на
+      `length - stab_at + 1`, терминальное основание не тронуто, набор гейтов до и
+      после совпадает по id/порядку/стадии/уровню/лимиту, ни один применимый гейт
+      не становится `not_applicable`, гейт `AS Tm` уже читает мисматченный праймер,
+      а терминальный гейт `AS 3' mismatch base pair` не двигается; `ZW0 M2` (обмен
+      REF/ALT) держится и с мисматчем. Слой дизайна: полный ARMS-дизайн
+      синтетического локуса (`stab_ats = NA` и `3L`) даёт тот же набор гейтов, а
+      мисматченный внутренний праймер входит в `marker_primers()`.
+      Блокер: `Z7.1` — снят.
+      Следствие: добавка не может закрыть одну проверку за счёт другой; набор
+      гейтов зафиксирован тестом, а не соглашением.
 - [x] **`Z7.6` Физика, которой в модели нет.** При накоплении продукта праймер
-  с мисматчем встраивается в ампликон, и дискриминация со временем слабеет
-  (наблюдение из tetra-primer ARMS). Модель ΔΔG этого не описывает.
-  Правка: текстом в артефакте — известное ограничение, не баг.
-  Проверка: строка в отчёте (артефакт), проверяемая `test-report.R`/`dev/check-docs.R`.
-  Блокер: нет.
-  Следствие: поздние циклы KASP читаются как ранние, хотя механизм другой.
-  - **Сделано 2026-10-29:** `marker_artefact()` пишет поле `limitations` в
-    `artefact.json` — всегда массив (`I()`, чтобы одна строка не стала
-    скаляром), пустой, когда ни один выбранный дизайн не несёт намеренного
-    мисматча. `artefact_limitations()` обходит дерево маркера в поисках
-    не-`NA` `stab_at` (единственный дизайнер, который его ставит, — ARMS), так
-    что ограничение объявляется только там, где механизм действительно есть.
-    Поле не входит в `artefact_id()` (как `created`/`platform`), поэтому id
-    дизайна не сдвигается. Проверка: `test-report.R` (строка называет механизм,
-    пустой и `NULL`-маркер безопасны) и `test-plan.R` (поле в манифесте и в
-    JSON — пустой массив на snp-дизайне).
-### Z8. Калибровка и benchmark  [P1] — после `Z7`
+      с мисматчем встраивается в ампликон, и дискриминация со временем слабеет
+      (наблюдение из tetra-primer ARMS). Модель ΔΔG этого не описывает.
+      Правка: текстом в артефакте — известное ограничение, не баг.
+      Проверка: строка в отчёте (артефакт), проверяемая `test-report.R`/`dev/check-docs.R`.
+      Блокер: нет.
+      Следствие: поздние циклы KASP читаются как ранние, хотя механизм другой.
+    - **Сделано 2026-10-29:** `marker_artefact()` пишет поле `limitations` в
+      `artefact.json` — всегда массив (`I()`, чтобы одна строка не стала
+      скаляром), пустой, когда ни один выбранный дизайн не несёт намеренного
+      мисматча. `artefact_limitations()` обходит дерево маркера в поисках
+      не-`NA` `stab_at` (единственный дизайнер, который его ставит, — ARMS), так
+      что ограничение объявляется только там, где механизм действительно есть.
+      Поле не входит в `artefact_id()` (как `created`/`platform`), поэтому id
+      дизайна не сдвигается. Проверка: `test-report.R` (строка называет механизм,
+      пустой и `NULL`-маркер безопасны) и `test-plan.R` (поле в манифесте и в
+      JSON — пустой массив на snp-дизайне).
+
+### Z8. Калибровка и benchmark [P1] — после `Z7`
 
 **Состояние: провалы собраны, вероятности — нет.** `conversion_rates.csv`
 содержит долю конверсии **вместе с провалами** и их причинами
@@ -540,218 +552,222 @@ ddPCR JAK2 (LoB 0.002% / LoD 0.005% / LoQ 0.01% — три разных опре
 «детектируемо», не одно «чувствительность»).
 
 Осталось:
+
 - [ ] **`Z8.1` Отрицательные примеры — достаточно ли их для оценки?** Сейчас —
-  нет (3 разложенные строки). Вероятностную интерпретацию (`yardstick`-метрики)
-  вводить только после этого, и указывать число в артефакте.
-  Правка: `inst/extdata/conversion_rates.csv` — новые строки с
-  `outcome = failed` и разложенными провалами; `data-raw/<paper>.R` на каждую,
-  утверждающая итоги статьи.
-  Проверка: `test-z8-outcomes.R` — число разложенных строк названо в отчёте.
-  Блокер: **новые статьи**, не код (в открытом доступе их пока найдено мало).
-  Следствие: любая вероятность конверсии сегодня — это одно наблюдение.
-  - **Сделано 2026-10-29:** Yamagata 2018 Exp. 3 (`jsbbs2018_exp3`, 24 → 18,
-    3 «нет полиморфизма» + 3 «доминантное расщепление») — вторая полностью
-    разложенная строка; Ayalew 2019 — три строки дизайна на одних и тех же
-    50 локусах (`wheat2019_{taqman,kasp,rhamp}`, 39/49/49), не разложены, потому
-    что причины качественные («mainly» для TaqMan, для KASP/rhAmp не названы).
-    Оба источника уже в Zotero (`6MZVH3PC`, `RSWPQ8YZ`, collection `4RSE6KC2`,
-    тег `merovingen:tidymarkers`); новых записей не потребовалось.
-    Утверждения итогов: `data-raw/jsbbs2018-conversion.R`,
-    `data-raw/wheat2019-conversion.R` (не пишут, только падают при расхождении).
-  - **Сделано 2026-10-29 (2):** Grewal 2022 разложен полностью — не новым
-    источником, а расширением схемы, которое он же и требовал: три недостающих
-    класса (`n_fail_wheat_polymorphic` 22, `n_fail_monomorphic` 10,
-    `n_fail_heterozygote` 31) вынесены отдельной таблицей и присоединены к
-    строке, поэтому её пять причин дают 363 = 698 − 335. Раньше комментарий
-    генератора прямо называл блокером «MY schema cannot yet hold five
-    categories»; теперь держит. Источник уже проверен в
-    `scientific_sources.csv` (key `grewal2022_amblyopyrum`), новой статьи не
-    потребовалось, Zotero не писался.
-  - **Сделано 2026-10-29 (3):** три источника с печатным знаменателем, но без
-    причин на каждый ассей: Shen 2026 jujube (40 проверенных SNP → 23 рабочих
-    KASP, `shen2026_jujube`), Thakur 2026 bittergourd (11 дизайнов → 5
-    полиморфных, `thakur2026_bittergourd`), Bai 2025 Aegilops (21 KASP на 3DL →
-    6 кластеров, `bai2025_aegilops`). Все три — `n_fail_other`,
-    `fully_decomposed = FALSE`: они расширяют знаменатель, но не дают
-    четвёртой разложенной строки. Поиск Europe PMC 2026-10-29 (KASP/rhAmp +
-    failed-to-amplify / monomorphic / poor clustering) другого разложенного
-    источника не нашёл. Утверждения: `data-raw/mismatch-discrimination.R`.
-  - **Проверка 2026-10-29:** `test-z8-outcomes.R` — `sum(fully_decomposed) == 3`
-    назван явно (и `test-scientific-data.R` фиксирует пять классов Grewal);
-    строка Exp. 3 сверена с `hrm_jsbbs2018_funnel.csv` (24 → 18); три строки
-    Ayalew обязаны иметь один знаменатель 50.
-  - **Сделано 2026-10-29 (4):** Meng 2026 soybean (`meng2026_soybean_kasp`,
-    `inst/extdata/meng2026_soybean_per_assay.csv`) — 6 строк: 2 `worked`,
-    4 `not_attempted`, **ноль выдуманных провалов**. 4 разложенной строки не
-    даёт; `fully_decomposed` по-прежнему **3**.
-  - **Исправлено 2026-10-29:** `expect_length(..., info =)` в этом же
-    `test-z8-outcomes.R` падал — у testthat 3.3.2 `expect_length()` принимает
-    только `(object, n)`. Тест не выполнялся с коммита `1555c71` (Z8.3).
+      нет (3 разложенные строки). Вероятностную интерпретацию (`yardstick`-метрики)
+      вводить только после этого, и указывать число в артефакте.
+      Правка: `inst/extdata/conversion_rates.csv` — новые строки с
+      `outcome = failed` и разложенными провалами; `data-raw/<paper>.R` на каждую,
+      утверждающая итоги статьи.
+      Проверка: `test-z8-outcomes.R` — число разложенных строк названо в отчёте.
+      Блокер: **новые статьи**, не код (в открытом доступе их пока найдено мало).
+      Следствие: любая вероятность конверсии сегодня — это одно наблюдение.
+    - **Сделано 2026-10-29:** Yamagata 2018 Exp. 3 (`jsbbs2018_exp3`, 24 → 18,
+      3 «нет полиморфизма» + 3 «доминантное расщепление») — вторая полностью
+      разложенная строка; Ayalew 2019 — три строки дизайна на одних и тех же
+      50 локусах (`wheat2019_{taqman,kasp,rhamp}`, 39/49/49), не разложены, потому
+      что причины качественные («mainly» для TaqMan, для KASP/rhAmp не названы).
+      Оба источника уже в Zotero (`6MZVH3PC`, `RSWPQ8YZ`, collection `4RSE6KC2`,
+      тег `merovingen:tidymarkers`); новых записей не потребовалось.
+      Утверждения итогов: `data-raw/jsbbs2018-conversion.R`,
+      `data-raw/wheat2019-conversion.R` (не пишут, только падают при расхождении).
+    - **Сделано 2026-10-29 (2):** Grewal 2022 разложен полностью — не новым
+      источником, а расширением схемы, которое он же и требовал: три недостающих
+      класса (`n_fail_wheat_polymorphic` 22, `n_fail_monomorphic` 10,
+      `n_fail_heterozygote` 31) вынесены отдельной таблицей и присоединены к
+      строке, поэтому её пять причин дают 363 = 698 − 335. Раньше комментарий
+      генератора прямо называл блокером «MY schema cannot yet hold five
+      categories»; теперь держит. Источник уже проверен в
+      `scientific_sources.csv` (key `grewal2022_amblyopyrum`), новой статьи не
+      потребовалось, Zotero не писался.
+    - **Сделано 2026-10-29 (3):** три источника с печатным знаменателем, но без
+      причин на каждый ассей: Shen 2026 jujube (40 проверенных SNP → 23 рабочих
+      KASP, `shen2026_jujube`), Thakur 2026 bittergourd (11 дизайнов → 5
+      полиморфных, `thakur2026_bittergourd`), Bai 2025 Aegilops (21 KASP на 3DL →
+      6 кластеров, `bai2025_aegilops`). Все три — `n_fail_other`,
+      `fully_decomposed = FALSE`: они расширяют знаменатель, но не дают
+      четвёртой разложенной строки. Поиск Europe PMC 2026-10-29 (KASP/rhAmp +
+      failed-to-amplify / monomorphic / poor clustering) другого разложенного
+      источника не нашёл. Утверждения: `data-raw/mismatch-discrimination.R`.
+    - **Проверка 2026-10-29:** `test-z8-outcomes.R` — `sum(fully_decomposed) == 3`
+      назван явно (и `test-scientific-data.R` фиксирует пять классов Grewal);
+      строка Exp. 3 сверена с `hrm_jsbbs2018_funnel.csv` (24 → 18); три строки
+      Ayalew обязаны иметь один знаменатель 50.
+    - **Сделано 2026-10-29 (4):** Meng 2026 soybean (`meng2026_soybean_kasp`,
+      `inst/extdata/meng2026_soybean_per_assay.csv`) — 6 строк: 2 `worked`,
+      4 `not_attempted`, **ноль выдуманных провалов**. 4 разложенной строки не
+      даёт; `fully_decomposed` по-прежнему **3**.
+    - **Исправлено 2026-10-29:** `expect_length(..., info =)` в этом же
+      `test-z8-outcomes.R` падал — у testthat 3.3.2 `expect_length()` принимает
+      только `(object, n)`. Тест не выполнялся с коммита `1555c71` (Z8.3).
 - [x] **`Z8.2` Harness/`targets`: gate-pass → wet-lab outcome.** Уровень
-  доказательности у каждого порога (`ZW4`).
-  Правка: `data-raw/` pipeline на `targets` (`tar_outdated()`/`tar_make()`),
-  manifest из `tar_meta()` (совпадает с шагом 8 `ZA6`).
-  Проверка: `tar_make()` воспроизводит `conversion_rates.csv` байт-в-байт;
-  `test-z8-outcomes.R`.
-  Блокер: **операторская таблица исходов по ассеям**, не код и не литература.
-  Разложенных строк по-прежнему 3; Meng 2026 добавил только положительный класс
-  (2 `worked`, 4 `not_attempted`), отрицательного класса нет. Ручной каталог
-  36 ассеев (`soybean_worked_panel_assays.csv`) содержит `status` для 4 из 36 и
-  `NA` для 32; нужна колонка `assay_id → outcome` + `basis`
-  (`data-raw/proposed/z8.2-soybean-outcome-gap.md` §3). Харнесс без неё всё ещё
-  мерил бы выживших.
-  Следствие: вручную запускаемый pipeline — единственное, что стоит между
-  «порог» и «порог, который что-то предсказывает».
-  - **Сделано 2026-11-03:** харнесс есть — `dev/targets/_targets.R`
-    (`panel_outcomes()`) пишет `inst/extdata/z8_gate_outcomes.csv`; 36 строк,
-    `tar_make()` воспроизводит артефакт байт-в-байт.
-  - **Операторский исход 2026-11-03:** все 36 строк — `worked` (0 `failed`):
-    ассеи заказаны, отработаны на соевой панели и дали различимый сигнал.
-    `basis` цитирует операторский statement, а не выдуманные bench-данные;
-    8 reserve и 4 revised несут эту оговорку в `basis`. Харнесс теперь несёт
-    исходы, но **нулевую дискриминацию** (0 `failed`) — ставку по gate-pass
-    считать не на чем, пока `Z8.1` не даст отрицательный класс.
-  - **Закрыто 2026-11-03:** харнесс несёт исходы (`panel_outcomes()`), а
-    `z8_gate_rate()` (`dev/z8-harness.R`) явно возвращает `rate = NA` и причину,
-    когда класс `failed` пуст: 36 `worked` / 0 `failed` → ставка невычислима,
-    а не «1.0». Дискриминация нулевая по данным, не по коду.
+      доказательности у каждого порога (`ZW4`).
+      Правка: `data-raw/` pipeline на `targets` (`tar_outdated()`/`tar_make()`),
+      manifest из `tar_meta()` (совпадает с шагом 8 `ZA6`).
+      Проверка: `tar_make()` воспроизводит `conversion_rates.csv` байт-в-байт;
+      `test-z8-outcomes.R`.
+      Блокер: **операторская таблица исходов по ассеям**, не код и не литература.
+      Разложенных строк по-прежнему 3; Meng 2026 добавил только положительный класс
+      (2 `worked`, 4 `not_attempted`), отрицательного класса нет. Ручной каталог
+      36 ассеев (`soybean_worked_panel_assays.csv`) содержит `status` для 4 из 36 и
+      `NA` для 32; нужна колонка `assay_id → outcome` + `basis`
+      (`data-raw/proposed/z8.2-soybean-outcome-gap.md` §3). Харнесс без неё всё ещё
+      мерил бы выживших.
+      Следствие: вручную запускаемый pipeline — единственное, что стоит между
+      «порог» и «порог, который что-то предсказывает».
+    - **Сделано 2026-11-03:** харнесс есть — `dev/targets/_targets.R`
+      (`panel_outcomes()`) пишет `inst/extdata/z8_gate_outcomes.csv`; 36 строк,
+      `tar_make()` воспроизводит артефакт байт-в-байт.
+    - **Операторский исход 2026-11-03:** все 36 строк — `worked` (0 `failed`):
+      ассеи заказаны, отработаны на соевой панели и дали различимый сигнал.
+      `basis` цитирует операторский statement, а не выдуманные bench-данные;
+      8 reserve и 4 revised несут эту оговорку в `basis`. Харнесс теперь несёт
+      исходы, но **нулевую дискриминацию** (0 `failed`) — ставку по gate-pass
+      считать не на чем, пока `Z8.1` не даст отрицательный класс.
+    - **Закрыто 2026-11-03:** харнесс несёт исходы (`panel_outcomes()`), а
+      `z8_gate_rate()` (`dev/z8-harness.R`) явно возвращает `rate = NA` и причину,
+      когда класс `failed` пуст: 36 `worked` / 0 `failed` → ставка невычислима,
+      а не «1.0». Дискриминация нулевая по данным, не по коду.
 - [x] **`Z8.3` Не объединять доли конверсии между культурами/исследованиями**,
-  пока не отделены «успех дизайна» от «успеха работы» (Grewal 2020 это
-  разделяет: 1000 дизайнов → 730 работающих).
-  Правка: guard в `test-z8-outcomes.R` (в `R/` не меняем — это свойство данных).
-  Проверка: тот же `test-z8-outcomes.R`.
-  Блокер: `Q2` (`kasp_z8_scope`) — снят 2026-10-21.
-  Следствие: 6.5% wheat_platform2019 читается как «конверсия ассеев», хотя это
-  доля ассей×образец.
-  - **Сделано 2026-10-29:** `conversion_rates.csv` несёт `conversion_definition`
-    (`design`/`manufacture`/`work`/`usable`) и `scope` (`study`), тот же словарь
-    и та же ось, что `quantity_kind`/`scope` в
-    `wheat_platform2019_platform_outcomes.csv`. Единственный писатель,
-    `data-raw/mismatch-discrimination.R`, классифицирует строки по их
-    собственному `failure_note`; `stopifnot()` не даёт двум разным определениям
-    делить одно число, а строке — остаться без определения. Guard в
-    `test-z8-outcomes.R` больше не условный (`if (any(!is.na(def)))`): колонка
-    обязательна, словарь проверяется, `assay_x_sample` в эту таблицу не
-    попадает, и присутствие 6.5 %-строки в таблице платформ проверяется явно.
-    `test-z8-outcomes.R` — 114 pass.
+      пока не отделены «успех дизайна» от «успеха работы» (Grewal 2020 это
+      разделяет: 1000 дизайнов → 730 работающих).
+      Правка: guard в `test-z8-outcomes.R` (в `R/` не меняем — это свойство данных).
+      Проверка: тот же `test-z8-outcomes.R`.
+      Блокер: `Q2` (`kasp_z8_scope`) — снят 2026-10-21.
+      Следствие: 6.5% wheat_platform2019 читается как «конверсия ассеев», хотя это
+      доля ассей×образец.
+    - **Сделано 2026-10-29:** `conversion_rates.csv` несёт `conversion_definition`
+      (`design`/`manufacture`/`work`/`usable`) и `scope` (`study`), тот же словарь
+      и та же ось, что `quantity_kind`/`scope` в
+      `wheat_platform2019_platform_outcomes.csv`. Единственный писатель,
+      `data-raw/mismatch-discrimination.R`, классифицирует строки по их
+      собственному `failure_note`; `stopifnot()` не даёт двум разным определениям
+      делить одно число, а строке — остаться без определения. Guard в
+      `test-z8-outcomes.R` больше не условный (`if (any(!is.na(def)))`): колонка
+      обязательна, словарь проверяется, `assay_x_sample` в эту таблицу не
+      попадает, и присутствие 6.5 %-строки в таблице платформ проверяется явно.
+      `test-z8-outcomes.R` — 114 pass.
 - [x] **`Z8.4` Разделение по источнику, а не по строке** (утечка): Makhoul и
-  Lefever ценны именно тем, что сообщают провалы.
-  Правка: `conversion_rates.csv` — первичный ключ `(source, row)`, сплит по
-  `source` в харнессе, не по строкам.
-  Проверка: `test-z8-outcomes.R` — ни один `source` не встречается по обе
-  стороны сплита.
-  Блокер: `Z8.2`.
-  Следствие: одна статья с 30 удачными строками и одной неудачной даст утечку
-  и ложный «высокий» балл.
-  - **2026-10-29:** не двигалось; сплит по `source` посчитать не на чем, пока у
-    `Z8.2` нет отрицательного класса.
-  - **Сделано 2026-11-03:** guard в `test-z8-outcomes.R` — ключ `(source, row)`,
-    ни один `source` не попадает на обе стороны сплита. Сам сплит по-прежнему
-    не на чем считать без класса `failed` из `Z8.2`.
-  - **Закрыто 2026-11-03:** `z8_split_by_source()` вынесен в
-    `dev/z8-harness.R` (его же использует `dev/targets/_targets.R`), тест
-    `test-z8-outcomes.R` проверяет, что ни один `source` не попадает на обе
-    стороны, и что построчный сплит отвергается. Ставка по-прежнему невычислима
-    (`Z8.2`: 0 `failed`), но утечки через сплит больше нет.
+      Lefever ценны именно тем, что сообщают провалы.
+      Правка: `conversion_rates.csv` — первичный ключ `(source, row)`, сплит по
+      `source` в харнессе, не по строкам.
+      Проверка: `test-z8-outcomes.R` — ни один `source` не встречается по обе
+      стороны сплита.
+      Блокер: `Z8.2`.
+      Следствие: одна статья с 30 удачными строками и одной неудачной даст утечку
+      и ложный «высокий» балл.
+    - **2026-10-29:** не двигалось; сплит по `source` посчитать не на чем, пока у
+      `Z8.2` нет отрицательного класса.
+    - **Сделано 2026-11-03:** guard в `test-z8-outcomes.R` — ключ `(source, row)`,
+      ни один `source` не попадает на обе стороны сплита. Сам сплит по-прежнему
+      не на чем считать без класса `failed` из `Z8.2`.
+    - **Закрыто 2026-11-03:** `z8_split_by_source()` вынесен в
+      `dev/z8-harness.R` (его же использует `dev/targets/_targets.R`), тест
+      `test-z8-outcomes.R` проверяет, что ни один `source` не попадает на обе
+      стороны, и что построчный сплит отвергается. Ставка по-прежнему невычислима
+      (`Z8.2`: 0 `failed`), но утечки через сплит больше нет.
 - [x] **`Z8.5` Analytical performance: отдельные поля отчёта.** LOD,
-  minor-allele fraction, stutter, false-positive rate, dPCR partitioning.
-  LoB/LoD/LoQ не сворачивать в одно «чувствительность» (уже видно на ddPCR JAK2).
-  Правка: `marker_decision_text()` / артефакт — отдельные колонки.
-  Проверка: `test-report.R` — три определения не сливаются.
-  Блокер: нет кода, есть данные у ddPCR JAK2.
-  Следствие: «детектируемо» без указания, какое из трёх, — утверждение без
-  смысла.
-  - **Сделано 2026-10-29:** `R/marker_performance.R` — словарь количеств
-    (`ANALYTICAL_QUANTITIES`: LoB, LoD, LoQ, MAF, false-positive rate, partition
-    count) и `scheme_analytical()`, который читает поле `analytical` из
-    `scheme_def_*()` и отвергает неизвестное количество. `scheme_def_dpcr()`
-    объявляет шесть количеств; `marker_decision_text("dpcr")` печатает их
-    отдельными строками, каждая со своим определением, и не содержит
-    объединённой колонки. `decisions.csv` артефакта получает колонку
-    `analytical` (имена количеств через `;`, `NA` для схем без них). Значения
-    остаются в `jak2v617f_ddpcr_limits.csv`, где у каждой строки своё
-    определение; `test-report.R` проверяет, что три строки не сливаются и что
-    `LoB < LoD <= LoQ`.
+      minor-allele fraction, stutter, false-positive rate, dPCR partitioning.
+      LoB/LoD/LoQ не сворачивать в одно «чувствительность» (уже видно на ddPCR JAK2).
+      Правка: `marker_decision_text()` / артефакт — отдельные колонки.
+      Проверка: `test-report.R` — три определения не сливаются.
+      Блокер: нет кода, есть данные у ddPCR JAK2.
+      Следствие: «детектируемо» без указания, какое из трёх, — утверждение без
+      смысла.
+    - **Сделано 2026-10-29:** `R/marker_performance.R` — словарь количеств
+      (`ANALYTICAL_QUANTITIES`: LoB, LoD, LoQ, MAF, false-positive rate, partition
+      count) и `scheme_analytical()`, который читает поле `analytical` из
+      `scheme_def_*()` и отвергает неизвестное количество. `scheme_def_dpcr()`
+      объявляет шесть количеств; `marker_decision_text("dpcr")` печатает их
+      отдельными строками, каждая со своим определением, и не содержит
+      объединённой колонки. `decisions.csv` артефакта получает колонку
+      `analytical` (имена количеств через `;`, `NA` для схем без них). Значения
+      остаются в `jak2v617f_ddpcr_limits.csv`, где у каждой строки своё
+      определение; `test-report.R` проверяет, что три строки не сливаются и что
+      `LoB < LoD <= LoQ`.
 - [x] **`Z8.6` dPCR:** публичного набора «ассей → исход» нет — и это
-  **опровергнуто**: 4-инструментный набор разбиений (λ из счётчиков совпадает
-  с каждым инструментом в пределах 0.005) + панель из 7 ассays. Пуассоновская
-  модель проверяется **аналитически**, а не подгонкой.
+      **опровергнуто**: 4-инструментный набор разбиений (λ из счётчиков совпадает
+      с каждым инструментом в пределах 0.005) + панель из 7 ассays. Пуассоновская
+      модель проверяется **аналитически**, а не подгонкой.
 
-### Z9. Пробелы по методам  [P1–P2]
+### Z9. Пробелы по методам [P1–P2]
+
 - [x] **`Z9.1` LAMP: paired ALT set или internal control.** **Готово 2026-10-22.**
-  Дизайн несёт `paired`: тот же набор с FIP 3′-базой на REF (`status` =
-  `complete` / `ref_not_placed` / `not_applicable`), так что REF-образец
-  отличается от неработавшей реакции двумя пробирками, а не «нет сигнала».
-  Пара — конструкт, не модель дискриминации (см. `lamp_status.decision.md`).
-  Проверка: `test-lamp.R` — пара отличается ровно в 3′-базе, indel даёт
-  `not_applicable`.
+      Дизайн несёт `paired`: тот же набор с FIP 3′-базой на REF (`status` =
+      `complete` / `ref_not_placed` / `not_applicable`), так что REF-образец
+      отличается от неработавшей реакции двумя пробирками, а не «нет сигнала».
+      Пара — конструкт, не модель дискриминации (см. `lamp_status.decision.md`).
+      Проверка: `test-lamp.R` — пара отличается ровно в 3′-базе, indel даёт
+      `not_applicable`.
 - [x] **`Z9.2` HRM: порог `dTm` как измеряемая величина.** **Решено и влито**
-  (`Q2`, `hrm_resolvability.decision.md`): `hrm_resolvability()` даёт статус по
-  классу биморфизма из измеренных `dTm`, порог 0.5 °C применяется к **среднему
-  класса** и назван порогом LightCycler 96; `marginal` не повышается до `pass`;
-  панель — партиция. Критерий `family_hrm_resolvable` виден в каждой HRM-оценке.
-  Остаток (не блокер, код не меняет): melt-домен/uMELT-модель и heteroduplex —
-  это `§V` (readout), и начинать их можно только с набором «условия → исход».
-  Проверка: `test-hrm-jsbbs2018.R`, `test-hrm.R`.
-  Следствие: 0.5 °C на другом приборе — не порог, а число из чужого PDF; теперь
-  это записано в модели, а не в комментарии.
-  - **Закрыто 2026-11-03:** остаток был не кодом, а `§V`; пункт закрыт.
-    `hrm_resolvability()` и критерий `family_hrm_resolvable` уже в `main`.
+      (`Q2`, `hrm_resolvability.decision.md`): `hrm_resolvability()` даёт статус по
+      классу биморфизма из измеренных `dTm`, порог 0.5 °C применяется к **среднему
+      класса** и назван порогом LightCycler 96; `marginal` не повышается до `pass`;
+      панель — партиция. Критерий `family_hrm_resolvable` виден в каждой HRM-оценке.
+      Остаток (не блокер, код не меняет): melt-домен/uMELT-модель и heteroduplex —
+      это `§V` (readout), и начинать их можно только с набором «условия → исход».
+      Проверка: `test-hrm-jsbbs2018.R`, `test-hrm.R`.
+      Следствие: 0.5 °C на другом приборе — не порог, а число из чужого PDF; теперь
+      это записано в модели, а не в комментарии.
+    - **Закрыто 2026-11-03:** остаток был не кодом, а `§V`; пункт закрыт.
+      `hrm_resolvability()` и критерий `family_hrm_resolvable` уже в `main`.
 - [x] **`Z9.3` TaqMan: MGB/LNA-пробы (короткие пробы)** и правила, специфичные
-  для probe Tm/MGB. Правка: `R/marker_taqman.R` — MGB/LNA как
-  `rule_of_thumb`-модификатор (сдвиг окна, не новая модель).
-  Проверка: `test-taqman.R`.
-  Блокер: **снят 2026-10-29** — Kutyavin 2000 (NAR, PMC102528) измерил ΔTm на
-  одной и той же последовательности ±3′-MGB: 15mer 60 °C против 42 °C (+18),
-  12mer MGB 66 °C ≈ 27mer без MGB 65 °C, 12mer ΔTm(match−mismatch) 20 °C
-  против 4–6 °C без MGB; T/G под MGB-сайтом 6.5 → 11 °C. Данные влиты в
-  `taqman_kutyavin2000_mgb_tm.csv` (`data-raw/kutyavin2000.R`); правило остаётся
-  `rule_of_thumb`, потому что ΔCt/конечного отношения и LNA-плеча в источнике
-  нет. Следствие: короткие пробы сегодня либо не проходят окно, либо проходят
-  без поправки на MGB.
-  - **Не сделано намеренно 2026-10-29:** переwire критериев/окна под MGB меняет
-    форму DAG и фикстуры `dev/check-criteria.R`; это отдельная правка
-    `R/marker_taqman.R`, а не следствие добычи источника.
-  - **Сделано 2026-11-03:** `probe_modification = c("none", "mgb", "lna")`
-    в `design_taqman_marker()`; `mgb` сдвигает окно пробной Tm на измеренный
-    Kutyavin 2000 gain (`rule_of_thumb`, ряд CSV `taqman_kutyavin2000_mgb_tm.csv`),
-    `lna` честно отклоняется — LNA-плеча в источнике нет. Критерии и форму
-    DAG не меняли. `test-taqman-mgb.R` (13 pass).
+      для probe Tm/MGB. Правка: `R/marker_taqman.R` — MGB/LNA как
+      `rule_of_thumb`-модификатор (сдвиг окна, не новая модель).
+      Проверка: `test-taqman.R`.
+      Блокер: **снят 2026-10-29** — Kutyavin 2000 (NAR, PMC102528) измерил ΔTm на
+      одной и той же последовательности ±3′-MGB: 15mer 60 °C против 42 °C (+18),
+      12mer MGB 66 °C ≈ 27mer без MGB 65 °C, 12mer ΔTm(match−mismatch) 20 °C
+      против 4–6 °C без MGB; T/G под MGB-сайтом 6.5 → 11 °C. Данные влиты в
+      `taqman_kutyavin2000_mgb_tm.csv` (`data-raw/kutyavin2000.R`); правило остаётся
+      `rule_of_thumb`, потому что ΔCt/конечного отношения и LNA-плеча в источнике
+      нет. Следствие: короткие пробы сегодня либо не проходят окно, либо проходят
+      без поправки на MGB.
+    - **Не сделано намеренно 2026-10-29:** переwire критериев/окна под MGB меняет
+      форму DAG и фикстуры `dev/check-criteria.R`; это отдельная правка
+      `R/marker_taqman.R`, а не следствие добычи источника.
+    - **Сделано 2026-11-03:** `probe_modification = c("none", "mgb", "lna")`
+      в `design_taqman_marker()`; `mgb` сдвигает окно пробной Tm на измеренный
+      Kutyavin 2000 gain (`rule_of_thumb`, ряд CSV `taqman_kutyavin2000_mgb_tm.csv`),
+      `lna` честно отклоняется — LNA-плеча в источнике нет. Критерии и форму
+      DAG не меняли. `test-taqman-mgb.R` (13 pass).
 - [x] **`Z9.4` Sanger:** объявленный предел чтения вместо самодельной модели
-  трассы (`848f15a`, `346eb20`): 601-строчный ручной deconvolver удалён; вместо
-  него detection floor и проверка allele dropout, если праймер лежит на варианте.
-  ICE/TIDE/Poly Peak — внешние инструменты, а не реимплементация.
+      трассы (`848f15a`, `346eb20`): 601-строчный ручной deconvolver удалён; вместо
+      него detection floor и проверка allele dropout, если праймер лежит на варианте.
+      ICE/TIDE/Poly Peak — внешние инструменты, а не реимплементация.
 - [x] **`Z9.5` Sanger (остаток): гетерозиготные индели и minor allele ~15–20%.**
-  **Сделано:** `$readout` несёт `SANGER_DETECTION` — `status = "not_modelled"`,
-  порог минорного аллеля `floor = 0.15` / `mixed = 0.20` (литературный дефолт,
-  `calibrated = FALSE`) и имена внешних deconvolver'ов (ICE / TIDE / Poly Peak
-  Parser / `sangerseqR`), так что предел чтения объявлен, а не подразумевается.
-  Проверка: `test-sanger.R`.
-  Блокер: нет; «правильное» значение — от внешнего инструмента.
+      **Сделано:** `$readout` несёт `SANGER_DETECTION` — `status = "not_modelled"`,
+      порог минорного аллеля `floor = 0.15` / `mixed = 0.20` (литературный дефолт,
+      `calibrated = FALSE`) и имена внешних deconvolver'ов (ICE / TIDE / Poly Peak
+      Parser / `sangerseqR`), так что предел чтения объявлен, а не подразумевается.
+      Проверка: `test-sanger.R`.
+      Блокер: нет; «правильное» значение — от внешнего инструмента.
 - [x] **`Z9.6` CRISPR: несколько спейсеров, активность, кинетика репортёра.**
-  Правка: `crispr_guide_candidates()` — ранжирование нескольких спейсеров;
-  `R/marker_readout.R` — кинетика как `simulated = FALSE` до набора данных.
-  Проверка: `test-crispr.R`; `test-readout-physics.R`.
-  Блокер: `Q2` (`crispr_seed_rule`) для величины; набор «guide → активность» для
-  кинетики.
-  Следствие: один спейсер, выбранный по `off_target`, выходит как «лучший» без
-  альтернатив.
+      Правка: `crispr_guide_candidates()` — ранжирование нескольких спейсеров;
+      `R/marker_readout.R` — кинетика как `simulated = FALSE` до набора данных.
+      Проверка: `test-crispr.R`; `test-readout-physics.R`.
+      Блокер: `Q2` (`crispr_seed_rule`) для величины; набор «guide → активность» для
+      кинетики.
+      Следствие: один спейсер, выбранный по `off_target`, выходит как «лучший» без
+      альтернатив.
 - [x] **`Z9.7` dPCR:** модель разбиения и LoB/LoD/LoQ — см. `Z8.6`/`Z8.5`;
-  Tm-окно остаётся долгом `Z0.2`.
+      Tm-окно остаётся долгом `Z0.2`.
 
-### ZW. Поперечные инварианты и провенанс  [P0–P1] — до/вместе с `Z7`, `Z8`
+### ZW. Поперечные инварианты и провенанс [P0–P1] — до/вместе с `Z7`, `Z8`
 
 Это не новые методы, а свойства всего реестра: ошибки класса «ориентация»,
 «декоративный гейт» и «дрейф движка» дешевле закрыть инвариантом, чем каждую
 по отдельности.
 
 #### ZW0. Метаморфические тесты (инварианты вместо кейсов)
+
 Несколько уже исправленных багов — одного класса: **ориентация** (LAMP B3/FIP,
 FIP 3′ REF vs ALT, RPA «reverse»). Инвариант ловит весь класс:
+
 - [x] **Обмен REF/ALT** (и FAM/HEX): вердикт совпадает, два AS-праймера
-  обмениваются 3′-основаниями (`test-invariants.R`, на живых праймерах Makhoul).
+      обмениваются 3′-основаниями (`test-invariants.R`, на живых праймерах Makhoul).
 - [x] **Сдвиг координат** ничего не меняет (кроме критериев по целому контигу;
-  они исключены **по имени**, а не ослаблены).
+      они исключены **по имени**, а не ослаблены).
 - [x] **Порядок/перестановка входов** не меняет вердикт.
 - [x] **`NA` ≠ `pass`** — ни в одной схеме (общие фикстуры, `test-invariants.R`).
 - [—] **Реверс-комплемент локуса** (`revcomp(amplicon)` + перенос координат) —
@@ -760,281 +776,312 @@ FIP 3′ REF vs ALT, RPA «reverse»). Инвариант ловит весь к
   REF/ALT, и настоящий инвариант пока **непроверяем**. Снимается добавлением
   `strand` в модель локуса — это `ZA6` шаг 1, не отдельный пункт науки.
 - [x] **`ZW0.1` Где инвариант намеренно не держится** (асимметрия KASP по
-  флуорофорам, асимметрия LAMP FIP/BIP), это объявляется в реестре с причиной.
-  Правка: `criterion_spec()` — колонка/поле `asymmetry_reason`.
-  Проверка: `test-invariants.R` — у каждого исключения есть непустая причина.
-  Блокер: нет.
-  Следствие: исключение сегодня живёт в комментарии теста, а не в реестре.
-  - **Сделано 2026-11-03:** `criterion_spec()` несёт `asymmetry_reason`
-    (9 строк реестра), `test-invariants.R` требует непустую причину у каждого
-    исключения; 7 структурных исключений названы в `docs/decision-audit.md`.
+      флуорофорам, асимметрия LAMP FIP/BIP), это объявляется в реестре с причиной.
+      Правка: `criterion_spec()` — колонка/поле `asymmetry_reason`.
+      Проверка: `test-invariants.R` — у каждого исключения есть непустая причина.
+      Блокер: нет.
+      Следствие: исключение сегодня живёт в комментарии теста, а не в реестре.
+    - **Сделано 2026-11-03:** `criterion_spec()` несёт `asymmetry_reason`
+      (9 строк реестра), `test-invariants.R` требует непустую причину у каждого
+      исключения; 7 структурных исключений названы в `docs/decision-audit.md`.
 
 #### ZW1. Каждый гейт должен быть способен провалиться
+
 «Гейт, который не может провалиться» был реальным классом багов (Z1).
+
 - [x] **`ZW1.1`** `test-falsifiable.R` + `dev/check-criteria.R`: для каждого
-  criterion-id есть фикстура, которая его **валит**, и та, что проходит;
-  неизвестные и `not_applicable` тоже достижимы. 137/137 (gate + check)
-  снабжены фикстурой, 0 исключённых.
+      criterion-id есть фикстура, которая его **валит**, и та, что проходит;
+      неизвестные и `not_applicable` тоже достижимы. 137/137 (gate + check)
+      снабжены фикстурой, 0 исключённых.
 - [x] **`ZW1.2`** **Новый criterion-id нельзя добавить без фикстуры:**
-  `dev/check-criteria.R` — отдельный шаг `dev/check.R` (идёт и в `--quick`) и
-  **блокирует PR**; при нарушении выходит с кодом 1 и называет id.
+      `dev/check-criteria.R` — отдельный шаг `dev/check.R` (идёт и в `--quick`) и
+      **блокирует PR**; при нарушении выходит с кодом 1 и называет id.
 - [x] **`ZW1.3` Аудит критериев идёт по умолчанию.** `dev/check.R` вызывает
-  `dev/check-criteria.R` без флага (L115-123). Реестр: **191 строка, все
-  `rule_of_thumb`, ноль `fitted_here`** — то есть у всех порогов уровень
-  доказательности по умолчанию и это видно машинно (`ZW4`).
+      `dev/check-criteria.R` без флага (L115-123). Реестр: **191 строка, все
+      `rule_of_thumb`, ноль `fitted_here`** — то есть у всех порогов уровень
+      доказательности по умолчанию и это видно машинно (`ZW4`).
+
 #### ZW2. Штамп версий движков
+
 - [x] `marker_engine_versions()` / `marker_engine_stamp()`/`marker_engine_stamp_field()`
-  для **семи** движков; подача **всегда присутствует** — недоступный движок
-  пишется как `NA`, а не выпадает из штампа (раньше штамп без BLAST выглядел
-  ровно как штамп, сделанный без BLAST в системе). `test-engine-stamp.R`.
-  Реализовано в `R/marker_engines_versions.R`.
+      для **семи** движков; подача **всегда присутствует** — недоступный движок
+      пишется как `NA`, а не выпадает из штампа (раньше штамп без BLAST выглядел
+      ровно как штамп, сделанный без BLAST в системе). `test-engine-stamp.R`.
+      Реализовано в `R/marker_engines_versions.R`.
 - [x] **`ZW2.2` Записать `engine_stamp` в каждую `Evaluation` и в манифест
-  артефакта.** **Сделано:** штамп едет атрибутом таблицы проверок
-  (`marker_with_stamp()`, `marker_evaluation_stamp()`), а манифест артефакта
-  пишет его отдельным полем `engine_stamp` (`R/marker_artefact.R`, не
-  `dev/artifacts.R` — этот манифест хэшей движков не касается). Недоступный
-  движок записывается как `NA`, а не выпадает.
-  Проверка: `test-engine-stamp.R` (штамп в `Evaluation`, наследование
-  `marker_with_stamp(from=)`, отсутствие выдуманного штампа у таблицы,
-  собранной руками); `test-plan.R` — `names($engine_stamp)`.
+      артефакта.** **Сделано:** штамп едет атрибутом таблицы проверок
+      (`marker_with_stamp()`, `marker_evaluation_stamp()`), а манифест артефакта
+      пишет его отдельным полем `engine_stamp` (`R/marker_artefact.R`, не
+      `dev/artifacts.R` — этот манифест хэшей движков не касается). Недоступный
+      движок записывается как `NA`, а не выпадает.
+      Проверка: `test-engine-stamp.R` (штамп в `Evaluation`, наследование
+      `marker_with_stamp(from=)`, отсутствие выдуманного штампа у таблицы,
+      собранной руками); `test-plan.R` — `names($engine_stamp)`.
 - [x] **`ZW2.3` Golden-тесты при изменении версии движка должны падать с прямым
-  указанием**, что изменился движок, а не модель. **Сделано** (`2585a4c`):
-  `marker_replay()` сверяет записанный `engine_stamp` с текущим **до** вердиктов
-  (`artefact_engine_match()`), предупреждает с именами сдвинувшихся движков и
-  несёт `engine_match` / `engines_changed` в результате; `print()` показывает
-  строку движков. Манифест без штампа — `NA` (неизвестно), а не «совпало».
-  Проверка: `test-plan.R` — смена версии в фикстуре даёт предупреждение
-  «Engine changed», а вердикт при этом остаётся совпадающим.
-  Блокер: снят (`ZW2.2` закрыт).
+      указанием**, что изменился движок, а не модель. **Сделано** (`2585a4c`):
+      `marker_replay()` сверяет записанный `engine_stamp` с текущим **до** вердиктов
+      (`artefact_engine_match()`), предупреждает с именами сдвинувшихся движков и
+      несёт `engine_match` / `engines_changed` в результате; `print()` показывает
+      строку движков. Манифест без штампа — `NA` (неизвестно), а не «совпало».
+      Проверка: `test-plan.R` — смена версии в фикстуре даёт предупреждение
+      «Engine changed», а вердикт при этом остаётся совпадающим.
+      Блокер: снят (`ZW2.2` закрыт).
 
 #### ZW3. Независимый Tm-оракул как тест
+
 Z0 требует сверить Tm с `TmCalculator`.
+
 - [x] **`ZW3.1`** Тест с явным допуском на наборе, покрывающем GC-края и
-  гомополимеры: `tests/testthat/helper-tm-tolerance.R` (единое место допусков и
-  набора) + `test-tm-oracle.R`.
+      гомополимеры: `tests/testthat/helper-tm-tolerance.R` (единое место допусков и
+      набора) + `test-tm-oracle.R`.
 - [x] **`ZW3.2`** Primer3 `oligotm()` как **третий** оракул; расхождение трёх —
-  отдельный отчёт. Тест **пропускается** (`skip`), если `oligotm` не установлен
-  (в этой среде он отсутствует — это и есть причина `SKIP` в гейте).
+      отдельный отчёт. Тест **пропускается** (`skip`), если `oligotm` не установлен
+      (в этой среде он отсутствует — это и есть причина `SKIP` в гейте).
 - [x] **`ZW3.3` Допуск больше нельзя брать с потолка.** Замерено на наборе из 32
-  олиго (`tm_edge_oligos()`: синтетические GC-края и гомополимеры, НЕ праймеры
-  Makhoul), R 4.6.1 / TmCalculator 1.1.2:
-  SantaLucia ↔ Allawi max ΔTm = **0.46 °C** (допуск 0.5 °C),
-  Sugimoto +1.5…+7.3 °C, Breslauer от 9.5 °C на подмножестве GC ≥ 65 %.
-  Значит общее правило «|ΔTm| ≤ 2 °C» **ложно**: для одной пары оно слишком
-  строгое, для другой — бессмысленно. Допуск задаётся **парой моделей**,
-  а не константой.
+      олиго (`tm_edge_oligos()`: синтетические GC-края и гомополимеры, НЕ праймеры
+      Makhoul), R 4.6.1 / TmCalculator 1.1.2:
+      SantaLucia ↔ Allawi max ΔTm = **0.46 °C** (допуск 0.5 °C),
+      Sugimoto +1.5…+7.3 °C, Breslauer от 9.5 °C на подмножестве GC ≥ 65 %.
+      Значит общее правило «|ΔTm| ≤ 2 °C» **ложно**: для одной пары оно слишком
+      строгое, для другой — бессмысленно. Допуск задаётся **парой моделей**,
+      а не константой.
 - [x] **`ZW3.4` Измеренный Tm-набор — не якорь, пока не объяснено смещение.**
-  `inst/extdata/tm_mm2020_s1_measured.csv` — 4096 измеренных 19-меров
-  (ESI Table S1, 50 mM NaCl + 10 mM Na-phosphate pH 7.4, Mg 0);
-  `tm_hm2025_amplicon_psaa2.csv` — 5 HRM-ампликонов, **только направление**
-  разницы (Dia18S исключён: вырожденные `N`). `primer_tm()` на 64 канонических
-  19-мерах ранжирует верно (r 0.958, ρ 0.941), но **смещён** на −16.86 °C
-  (sd 0.64), поэтому тихая «поправка» падает. Правка: в артефакт добавлена
-  константа `calibration_stance` = «recorded, not corrected: do not calibrate
-  into the minus» на каждой строке, а в `data-raw/mm2020.R` — блок гипотез с
-  арифметикой: H1 солевой член (Schildkraut 1965, 16.6·log10(0.05) = −21.60 °C;
-  Owczarzy 2008 возвращает +7.53 °C при том же ранге), H2 стандарт измерений
-  (остаток −9.34 °C; bias − salt = +4.73 °C — 1 M опора модели выше измерения,
-  а методика статьи не задаёт поправку на концентрацию), H3 Mg отклонён
-  (Mg 0; 3 mM закрывает ~12 °C и перелетает mismatch-классы). Источник перезалит
-  из Europe PMC (pdf + JATS), генератор воспроизводит CSV **байт в байт**.
-  Проверка: `test-tm-mm2020.R` — смещение, ранг и арифметика гипотез
-  пересчитаны из таблицы (45 pass). Блокер: закрытая методика измерения
-  источника; ~−9.3 °C остаются необъяснёнными. Следствие: шкала Tm не сравнима
-  с вендорской, и это блокирует `Z0.2`.
-  - **2026-10-29:** проверены ещё ~29 открытых текстов на *измеренный* Tm
-    олиго с *численным* буфером; найден только вычисленный (Primer3Plus)
-    Tm без Na/Mg (`jrc2025_h5nx`, `inst/extdata/dpcr_tm_jrc2025.csv`,
-    `evidence_tier = "computed, not measured"`). Остаток −16.86 °C и
-    `bias − salt` = +4.73 °C остаются необъяснёнными.
+      `inst/extdata/tm_mm2020_s1_measured.csv` — 4096 измеренных 19-меров
+      (ESI Table S1, 50 mM NaCl + 10 mM Na-phosphate pH 7.4, Mg 0);
+      `tm_hm2025_amplicon_psaa2.csv` — 5 HRM-ампликонов, **только направление**
+      разницы (Dia18S исключён: вырожденные `N`). `primer_tm()` на 64 канонических
+      19-мерах ранжирует верно (r 0.958, ρ 0.941), но **смещён** на −16.86 °C
+      (sd 0.64), поэтому тихая «поправка» падает. Правка: в артефакт добавлена
+      константа `calibration_stance` = «recorded, not corrected: do not calibrate
+      into the minus» на каждой строке, а в `data-raw/mm2020.R` — блок гипотез с
+      арифметикой: H1 солевой член (Schildkraut 1965, 16.6·log10(0.05) = −21.60 °C;
+      Owczarzy 2008 возвращает +7.53 °C при том же ранге), H2 стандарт измерений
+      (остаток −9.34 °C; bias − salt = +4.73 °C — 1 M опора модели выше измерения,
+      а методика статьи не задаёт поправку на концентрацию), H3 Mg отклонён
+      (Mg 0; 3 mM закрывает ~12 °C и перелетает mismatch-классы). Источник перезалит
+      из Europe PMC (pdf + JATS), генератор воспроизводит CSV **байт в байт**.
+      Проверка: `test-tm-mm2020.R` — смещение, ранг и арифметика гипотез
+      пересчитаны из таблицы (45 pass). Блокер: закрытая методика измерения
+      источника; ~−9.3 °C остаются необъяснёнными. Следствие: шкала Tm не сравнима
+      с вендорской, и это блокирует `Z0.2`.
+    - **2026-10-29:** проверены ещё ~29 открытых текстов на _измеренный_ Tm
+      олиго с _численным_ буфером; найден только вычисленный (Primer3Plus)
+      Tm без Na/Mg (`jrc2025_h5nx`, `inst/extdata/dpcr_tm_jrc2025.csv`,
+      `evidence_tier = "computed, not measured"`). Остаток −16.86 °C и
+      `bias − salt` = +4.73 °C остаются необъяснёнными.
 - [x] **`ZW3.5` Расширить межмодельный набор реальными праймерами.** Правка:
-  `helper-tm-tolerance.R` — `tm_real_primers()` читает 85 реально
-  заказанных олиго (18–30 п.н.) из `inst/extdata/soybean_worked_panel_primers.csv`
-  (отработанная соевая панель), а не только синтетику. Набор Makhoul сознательно
-  не взят: панель печатает Tm, посчитанный настоящим дизайн-пайплайном, поэтому
-  она проверяет и сравнение НН-таблиц, и солевую поправку, чего таблица
-  KASP-праймеров без посчитанного Tm не может. Проверка: `test-tm-oracle.R` —
-  на 85 праймерах max |ΔTm| SantaLucia↔Allawi = **0.079 °C** (r = 0.9995),
-  то есть укладывается в тот же допуск 0.5 °C, который задан синтетическими
-  краями (потолок для этого набора не ужесточён — 0.5 °C нужен краям и
-  поглощает смену солевого кода TmCalculator); Tm с
-  `salt_method = "SantaLucia1998-2"` воспроизводит напечатанное до
-  **0.12 °C**, а дефолтная соль даёт сдвиг уровня −3.75 °C (от −4.08 до −3.17),
-  то есть поправку фиксирует именно панель. Блокер: нет. Следствие: допуск
-  проверен на составе и длинах, которые в дизайне действительно бывают; это
-  внешний **расчёт**, а не измеренная дуплекс, и источник (`paper.txt`) лежит
-  локально в `.tmp/` (не в git), поэтому тест воспроизведения панели в CI
-  пропускается.
+      `helper-tm-tolerance.R` — `tm_real_primers()` читает 85 реально
+      заказанных олиго (18–30 п.н.) из `inst/extdata/soybean_worked_panel_primers.csv`
+      (отработанная соевая панель), а не только синтетику. Набор Makhoul сознательно
+      не взят: панель печатает Tm, посчитанный настоящим дизайн-пайплайном, поэтому
+      она проверяет и сравнение НН-таблиц, и солевую поправку, чего таблица
+      KASP-праймеров без посчитанного Tm не может. Проверка: `test-tm-oracle.R` —
+      на 85 праймерах max |ΔTm| SantaLucia↔Allawi = **0.079 °C** (r = 0.9995),
+      то есть укладывается в тот же допуск 0.5 °C, который задан синтетическими
+      краями (потолок для этого набора не ужесточён — 0.5 °C нужен краям и
+      поглощает смену солевого кода TmCalculator); Tm с
+      `salt_method = "SantaLucia1998-2"` воспроизводит напечатанное до
+      **0.12 °C**, а дефолтная соль даёт сдвиг уровня −3.75 °C (от −4.08 до −3.17),
+      то есть поправку фиксирует именно панель. Блокер: нет. Следствие: допуск
+      проверен на составе и длинах, которые в дизайне действительно бывают; это
+      внешний **расчёт**, а не измеренная дуплекс, и источник (`paper.txt`) лежит
+      локально в `.tmp/` (не в git), поэтому тест воспроизведения панели в CI
+      пропускается.
 
 - [x] **`ZW3.6` Off-target проверка соевой панели — по геному, не по прозе.**
-  Правка: `genome_hits` больше не парсится из фразы «совпадений в геноме
-  A1 …, A2 …, общий …», а считается как точное число полноразмерных
-  совпадений тела праймера в GCF_000004515.6 (Wm82.a4.v1), обе цепи,
-  20 хромосом, через `marker_genome()` / `genome_seq()` (индексированное
-  чтение, в RAM только одна хромосома) и `exact_hit_table()`; геном
-  кэшируется в `marker_cache_dir()`, в репозиторий не входит. Печатные
-  значения сохранены как `genome_hits_printed`, место и цепь совпадения —
-  `genome_hit_chrom`, `genome_hit_coord` (`chrom:start-end`) и
-  `genome_hit_strand`. Проверка: `data-raw/soybean_worked_panel.R`
-  воспроизводит все **30** печатных чисел (A1 = 1, общий = 1, A2 = 0),
-  `test-soybean-worked-panel.R`; полная сборка (284 записи, включая `NW_`,
-  митохондрию, хлоропласт) даёт те же 30 чисел. Спорный AGP9 height A2
-  **решён геномом**: 0 точных совпадений — верна структурированная строка,
-  а не фраза прозы. Побочная находка: ALT-праймер
-  `KASP_DT2_flank_high_chr18_56.61Mb` имеет единственное точное совпадение
-  на хр. 1, а не на целевой хр. 18 (для этого набора в документе чисел нет).
-  Блокер: нет. Следствие: off-target считается из последовательности, а
-  печатные числа стали проверяемым провенансом; в CI тест пропускается без
-  кэша генома.
+      Правка: `genome_hits` больше не парсится из фразы «совпадений в геноме
+      A1 …, A2 …, общий …», а считается как точное число полноразмерных
+      совпадений тела праймера в GCF_000004515.6 (Wm82.a4.v1), обе цепи,
+      20 хромосом, через `marker_genome()` / `genome_seq()` (индексированное
+      чтение, в RAM только одна хромосома) и `exact_hit_table()`; геном
+      кэшируется в `marker_cache_dir()`, в репозиторий не входит. Печатные
+      значения сохранены как `genome_hits_printed`, место и цепь совпадения —
+      `genome_hit_chrom`, `genome_hit_coord` (`chrom:start-end`) и
+      `genome_hit_strand`. Проверка: `data-raw/soybean_worked_panel.R`
+      воспроизводит все **30** печатных чисел (A1 = 1, общий = 1, A2 = 0),
+      `test-soybean-worked-panel.R`; полная сборка (284 записи, включая `NW_`,
+      митохондрию, хлоропласт) даёт те же 30 чисел. Спорный AGP9 height A2
+      **решён геномом**: 0 точных совпадений — верна структурированная строка,
+      а не фраза прозы. Побочная находка: ALT-праймер
+      `KASP_DT2_flank_high_chr18_56.61Mb` имеет единственное точное совпадение
+      на хр. 1, а не на целевой хр. 18 (для этого набора в документе чисел нет).
+      Блокер: нет. Следствие: off-target считается из последовательности, а
+      печатные числа стали проверяемым провенансом; в CI тест пропускается без
+      кэша генома.
 
 - [x] **`ZW3.7` 23 Sanger-ампликона — продукт из генома, не из прозы.**
-  Правка: для каждого из 23 Sanger-ассей (`sanger_amplicon` +
-  `sanger_dt2_body`) прямой праймер проверяется как плюс-цепочечный точный
-  хит в начале продукта, обратный — как минус-цепочечный в конце;
-  `in_silico_pcr()` на целевой хромосоме подтверждает ровно один точный
-  продукт. Поскольку каждый из 85 олиго уникален по всем 20 хромосомам
-  (ZW3.6), другого точного продукта быть не может. Результат:
-  `genome_products` = 1 и `genome_product_coord` = `chrom:start-end`
-  совпадают с напечатанными `amplicon_start`/`amplicon_end` и `product_bp`
-  во всех 23. Заодно исправлен `exact_pattern_hits()`: при первом блоке без
-  совпадения он возвращал list, и `in_silico_pcr()` давал фантомные хиты
-  1–2 п.н. Проверка: `test-soybean-worked-panel.R`, `test-specificity.R`.
-  Блокер: нет. Следствие: off-target проверен на уровне продукта, а не только
-  праймера.
+      Правка: для каждого из 23 Sanger-ассей (`sanger_amplicon` +
+      `sanger_dt2_body`) прямой праймер проверяется как плюс-цепочечный точный
+      хит в начале продукта, обратный — как минус-цепочечный в конце;
+      `in_silico_pcr()` на целевой хромосоме подтверждает ровно один точный
+      продукт. Поскольку каждый из 85 олиго уникален по всем 20 хромосомам
+      (ZW3.6), другого точного продукта быть не может. Результат:
+      `genome_products` = 1 и `genome_product_coord` = `chrom:start-end`
+      совпадают с напечатанными `amplicon_start`/`amplicon_end` и `product_bp`
+      во всех 23. Заодно исправлен `exact_pattern_hits()`: при первом блоке без
+      совпадения он возвращал list, и `in_silico_pcr()` давал фантомные хиты
+      1–2 п.н. Проверка: `test-soybean-worked-panel.R`, `test-specificity.R`.
+      Блокер: нет. Следствие: off-target проверен на уровне продукта, а не только
+      праймера.
 
 - [x] **`ZW3.8` Качественные гейты соевой панели — движком, не документом.**
-  Правка: каждый из 13 KASP-наборов собран в минимальный `marker_assay` из
-  праймеров панели и генома: цепь AS и ориентация REF/ALT — из точного хита
-  A1 и основания GCF_000004515.6 в целевой точке, on/off-цели — окно
-  связывания AS с основанием REF или ALT (`pcr_efficiency()` даёт
-  дискриминацию), in-silico PCR — точный продукт REF/ALT, структурные гейты —
-  из последовательностей через `primer_thermo()` / `dimer_thermo()`. Грейдер —
-  `marker_design_checks(scheme = "snp")`, тот же реестр, что у дизайнера. Tm
-  считается с `salt_method = "SantaLucia1998-2"`: именно эта модель
-  воспроизводит напечатанный Tm (ZW3.2), а дефолтная соль даёт −3.75 °C и
-  провалила бы все COM Tm как сдвиг модели. Результат:
-  `soybean_worked_panel_kasp_gates.csv`, 13 × 27 = 351 строка. Проверка:
-  `test-soybean-worked-panel.R` — число строк, состав гейтов, провалы и
-  происхождение наблюдений. Итог: гейты `off-target exact primer hits` и
-  `in-silico PCR` проходят все 13, то есть **off-target-гейт пройден**
-  (единственный off-target — ALT-праймер
-  `KASP_DT2_flank_high_chr18_56.61Mb` на хр. 1 — продукта с COM не даёт).
-  Провалы: `COM Tm >= AS Tm` 11/13; дискриминация < 0.5 у 5 (AGP9 height,
-  AGPO2 height/nodes/seed, AGPO8 protein); ампликон > 100 п.н. у 4 (108, 120,
-  144, 104); AS GC — 4 (0.367–0.722); гомополимер = 4 у 4; SSR у 3;
-  инвертированный повтор у 3. Footprint/dropout/linkage не оцениваются: в
-  панели нет таблицы вариантов популяции, поэтому они `unknown`, не pass.
-  Блокер: нет. Следствие: «30/30 напечатанных счётчиков» — это только
-  специфичность; качество дизайна теперь измерено тем же движком, и его
-  провалы — находки, а не повод править праймеры.
+      Правка: каждый из 13 KASP-наборов собран в минимальный `marker_assay` из
+      праймеров панели и генома: цепь AS и ориентация REF/ALT — из точного хита
+      A1 и основания GCF_000004515.6 в целевой точке, on/off-цели — окно
+      связывания AS с основанием REF или ALT (`pcr_efficiency()` даёт
+      дискриминацию), in-silico PCR — точный продукт REF/ALT, структурные гейты —
+      из последовательностей через `primer_thermo()` / `dimer_thermo()`. Грейдер —
+      `marker_design_checks(scheme = "snp")`, тот же реестр, что у дизайнера. Tm
+      считается с `salt_method = "SantaLucia1998-2"`: именно эта модель
+      воспроизводит напечатанный Tm (ZW3.2), а дефолтная соль даёт −3.75 °C и
+      провалила бы все COM Tm как сдвиг модели. Результат:
+      `soybean_worked_panel_kasp_gates.csv`, 13 × 27 = 351 строка. Проверка:
+      `test-soybean-worked-panel.R` — число строк, состав гейтов, провалы и
+      происхождение наблюдений. Итог: гейты `off-target exact primer hits` и
+      `in-silico PCR` проходят все 13, то есть **off-target-гейт пройден**
+      (единственный off-target — ALT-праймер
+      `KASP_DT2_flank_high_chr18_56.61Mb` на хр. 1 — продукта с COM не даёт).
+      Провалы: `COM Tm >= AS Tm` 11/13; дискриминация < 0.5 у 5 (AGP9 height,
+      AGPO2 height/nodes/seed, AGPO8 protein); ампликон > 100 п.н. у 4 (108, 120,
+      144, 104); AS GC — 4 (0.367–0.722); гомополимер = 4 у 4; SSR у 3;
+      инвертированный повтор у 3. Footprint/dropout/linkage не оцениваются: в
+      панели нет таблицы вариантов популяции, поэтому они `unknown`, не pass.
+      Блокер: нет. Следствие: «30/30 напечатанных счётчиков» — это только
+      специфичность; качество дизайна теперь измерено тем же движком, и его
+      провалы — находки, а не повод править праймеры.
 
 - [x] **`ZW3.9` Фиксированные праймеры и аннотация генома — общий интерфейс.**
-  Правка: `assemble_primer_assay(genome, snp, primers, variants, flank, scheme,
-  salt_method, cores)` в `R/marker_assemble.R` собирает `marker_assay` из уже
-  заказанных олиго (`AS_ref`/`AS_alt`/`COM`): точный хит `AS_ref` задаёт цепь и
-  ориентацию REF/ALT, основание `genome_seq()` в целевой точке — аллели,
-  `in_silico_pcr()` — продукт, `exact_hit_table()` — off-target. Дальше
-  действуют тот же `marker_design_checks()` и `plot()`, что у дизайнера. Для
-  feature-трека добавлен `marker_features(path, chrom, feature, chrom_map)` в
-  `R/marker_annotate.R`: NCBI `feature_table.txt(.gz)` или GFF3 → `chrom`,
-  `start`, `end`, `strand`, `name`, `type`; `normalise_features()` принимает
-  путь и фильтрует по хромосоме. Проверка: 13 KASP-наборов соевой панели
-  пересобраны и нарисованы `plot(assay, genome=, features=)`, ампликон каждого
-  совпадает с напечатанным `product_bp`; фигуры — `.tmp/plots/soybean-kasp/`
-  (PNG + SVG, не в git). Блокер: нет. Следствие: панель проверяется не только
-  таблицей гейтов, но и тем же рисунком, что получает пользователь; чтение
-  координат из прозы больше не нужно.
+      Правка: `assemble_primer_assay(genome, snp, primers, variants, flank, scheme,
+salt_method, cores)` в `R/marker_assemble.R` собирает `marker_assay` из уже
+      заказанных олиго (`AS_ref`/`AS_alt`/`COM`): точный хит `AS_ref` задаёт цепь и
+      ориентацию REF/ALT, основание `genome_seq()` в целевой точке — аллели,
+      `in_silico_pcr()` — продукт, `exact_hit_table()` — off-target. Дальше
+      действуют тот же `marker_design_checks()` и `plot()`, что у дизайнера. Для
+      feature-трека добавлен `marker_features(path, chrom, feature, chrom_map)` в
+      `R/marker_annotate.R`: NCBI `feature_table.txt(.gz)` или GFF3 → `chrom`,
+      `start`, `end`, `strand`, `name`, `type`; `normalise_features()` принимает
+      путь и фильтрует по хромосоме. Проверка: 13 KASP-наборов соевой панели
+      пересобраны и нарисованы `plot(assay, genome=, features=)`, ампликон каждого
+      совпадает с напечатанным `product_bp`; фигуры — `.tmp/plots/soybean-kasp/`
+      (PNG + SVG, не в git). Блокер: нет. Следствие: панель проверяется не только
+      таблицей гейтов, но и тем же рисунком, что получает пользователь; чтение
+      координат из прозы больше не нужно.
 
 #### ZW4. Уровень доказательности вместо `calibrated`-флага
+
 Булев `calibrated` слишком груб: пользователь не видит, откуда взялся порог.
+
 - [x] **Лестница в реестре критериев.** `CRITERION_EVIDENCE` — упорядоченный
-  фактор `rule_of_thumb` < `vendor_guideline` < `primary_literature` <
-  `fitted_here` (`R/marker_criteria.R`); `criterion_spec()` несёт колонку
-  `evidence` сразу после `calibrated`, а `criterion_evidence()` читает её.
+      фактор `rule_of_thumb` < `vendor_guideline` < `primary_literature` <
+      `fitted_here` (`R/marker_criteria.R`); `criterion_spec()` несёт колонку
+      `evidence` сразу после `calibrated`, а `criterion_evidence()` читает её.
 - [x] **Миграция без потери информации.** Все 191 строка реестра сейчас
-  `rule_of_thumb` — то есть `calibrated = FALSE` действительно исчерпывался
-  этим уровнем; `TRUE`-строк, которые пришлось бы поднять до `fitted_here`,
-  не оказалось ни одной. `calibrated` сохранён как принимаемый без
-  предупреждения аргумент (deprecated, не удалён); вердиктные строки не
-  изменились.
+      `rule_of_thumb` — то есть `calibrated = FALSE` действительно исчерпывался
+      этим уровнем; `TRUE`-строк, которые пришлось бы поднять до `fitted_here`,
+      не оказалось ни одной. `calibrated` сохранён как принимаемый без
+      предупреждения аргумент (deprecated, не удалён); вердиктные строки не
+      изменились.
 - [x] **Вердикт несёт уровень.** `evaluation_evidence()` отдаёт самую слабую
-  ступень среди прошедших проверок (`NA`, если не прошла ни одна), так что
-  `pass` на `rule_of_thumb` видно по машиночитаемому полю, а не по тексту.
+      ступень среди прошедших проверок (`NA`, если не прошла ни одна), так что
+      `pass` на `rule_of_thumb` видно по машиночитаемому полю, а не по тексту.
 - [x] **`ZW4.5` Человеческий текст расширен флагом, не форматом.**
-  `marker_decision_text(scheme, evidence = TRUE)` добавляет к каждой проверке
-  её ступень и называет самую слабую ступень схемы; по умолчанию вывод прежний
-  (`evidence = FALSE`), поэтому записанные вердиктные строки не меняются.
-  Проверка: `test-evidence.R` — ступени только из `CRITERION_EVIDENCE`, а
-  классические строки сохраняются после снятия суффикса по всем схемам.
-  Блокер: не было. Следствие закрыто: `pass` на правиле пальца больше не
-  выглядит как проверенный факт, когда читатель попросил ступени.
+      `marker_decision_text(scheme, evidence = TRUE)` добавляет к каждой проверке
+      её ступень и называет самую слабую ступень схемы; по умолчанию вывод прежний
+      (`evidence = FALSE`), поэтому записанные вердиктные строки не меняются.
+      Проверка: `test-evidence.R` — ступени только из `CRITERION_EVIDENCE`, а
+      классические строки сохраняются после снятия суффикса по всем схемам.
+      Блокер: не было. Следствие закрыто: `pass` на правиле пальца больше не
+      выглядит как проверенный факт, когда читатель попросил ступени.
 - [x] **`ZW4.6` Источники `rule_of_thumb` пока не названы поимённо в каждой
-  строке:** ступень и поле `source` **уже есть** в `criterion_spec()`
-  (193 строки: **177 `package assumption`, 7 `kwok1990`, 9
-  `santalucia1998`**; было 192/176 до строки `family_single_base` из §W) —
-  остаётся заменить «package assumption» на поимённый
-  источник там, где он существует.
-  - **Сделано 2026-10-29:** `criterion_sources()` в `R/marker_criteria.R`
-    переназначил 16 строк с `"package assumption"` на поимённый источник
-    (kwok1990 ×7, santalucia1998 ×9); id, границы и ступень `evidence` не
-    менялись. Причины, по которым 176 строк остаются `package assumption`,
-    записаны в `data-raw/proposed/zw4.6-sources.md`. `test-criteria.R` теперь
-    проверяет, что каждый `source` — ключ реестра.
-  - **Второй проход 2026-10-29:** найдены **2** строки с поимённым источником
-    `fret_asqpcr2021` (`amplicon` 50–100 bp; `asq:tier:tier1` 55–56 °C, p. 7).
-    В код **не заведены** — это отдельная правка `criterion_sources()`.
-    Остальные **175** так и остаются `package assumption` в четырёх классах
-    причин (там же).
-  Правка: значения `source` в `R/marker_criteria.R`, по одной строке.
-  Проверка: `test-criteria.R` — ни одна вердиктная строка не пустая.
-  Блокер: **литература** (тот же класс, что `Z8.1`), не код.
-  Следствие: «чья это цифра» остаётся неразрешимым вопросом для пользователя.
-  - **2026-11-03 (раунд 3):** влито 4 строки RPA на `lobato2018`; 171 строка
-    остаётся `package assumption`, причины — `zw4.6-sources.md`.
-  - **Закрыто 2026-11-03:** `inst/extdata/criterion_provenance.csv` (212 строк)
-    даёт каждой строке `criterion_spec()` явный `reason_class` + причину, а
-    `test-criteria.R` сверяет её с реестром. «Package assumption» больше не
-    молчаливый дефолт: 171 строка несёт класс причины, 41 — поимённый источник.
+      строке:** ступень и поле `source` **уже есть** в `criterion_spec()`
+      (193 строки: **177 `package assumption`, 7 `kwok1990`, 9
+      `santalucia1998`**; было 192/176 до строки `family_single_base` из §W) —
+      остаётся заменить «package assumption» на поимённый
+      источник там, где он существует.
+    - **Сделано 2026-10-29:** `criterion_sources()` в `R/marker_criteria.R`
+      переназначил 16 строк с `"package assumption"` на поимённый источник
+      (kwok1990 ×7, santalucia1998 ×9); id, границы и ступень `evidence` не
+      менялись. Причины, по которым 176 строк остаются `package assumption`,
+      записаны в `data-raw/proposed/zw4.6-sources.md`. `test-criteria.R` теперь
+      проверяет, что каждый `source` — ключ реестра.
+    - **Второй проход 2026-10-29:** найдены **2** строки с поимённым источником
+      `fret_asqpcr2021` (`amplicon` 50–100 bp; `asq:tier:tier1` 55–56 °C, p. 7).
+      В код **не заведены** — это отдельная правка `criterion_sources()`.
+      Остальные **175** так и остаются `package assumption` в четырёх классах
+      причин (там же).
+      Правка: значения `source` в `R/marker_criteria.R`, по одной строке.
+      Проверка: `test-criteria.R` — ни одна вердиктная строка не пустая.
+      Блокер: **литература** (тот же класс, что `Z8.1`), не код.
+      Следствие: «чья это цифра» остаётся неразрешимым вопросом для пользователя.
+    - **2026-11-03 (раунд 3):** влито 4 строки RPA на `lobato2018`; 171 строка
+      остаётся `package assumption`, причины — `zw4.6-sources.md`.
+    - **Закрыто 2026-11-03:** `inst/extdata/criterion_provenance.csv` (212 строк)
+      даёт каждой строке `criterion_spec()` явный `reason_class` + причину, а
+      `test-criteria.R` сверяет её с реестром. «Package assumption» больше не
+      молчаливый дефолт: 171 строка несёт класс причины, 41 — поимённый источник.
+    - **2026-11-05 (раунд 4):** по правилу «та же величина, даже если диапазон
+      шире/смещён» влито ещё 37 строк; `rule_of_thumb` 146 → **109**,
+      `primary_literature` 54 → **91**, `package assumption` 123 → **100**.
+      Добавлено 7 ключей реестра (Wang multi-KASP, Shimizu KASP, DeGenPrime,
+      Zhao SNaPshot, Tso SNaPshot, Li InDel, Zheng SSR), DOI сверены с Crossref,
+      цитаты переgrep'аны из полного текста. Остаток 109: 54 tier-строки (цель
+      оптимизации, не порог) плюс строки симулятора/геометрии без печатного
+      порога — 70 без ложных ссылок недостижимо. Детали и отклонённые строки —
+      `data-raw/proposed/zw4.6-sources.md`.
+    - **2026-11-06 (фазы A и B):** tier-строка разделена на `target` (печатная
+      точка отсчёта, её называет источник) и политику агрегации (`limit`,
+      `CRITERION_TIER_POLICY_EVIDENCE = "rule_of_thumb"`, объявлена один раз в
+      коде). 36 из 54 tier-строк подняты по перепроверенной цитате:
+      `rule_of_thumb` 109 → **73**, `primary_literature` 91 → **126**,
+      `vendor_guideline` 12 → **13**, `package assumption` 100 → **65**.
+      Добавлен ключ `kalendar2022_competitive` (ASQ Tm 63 °C). 18 tier-строк
+      остаются `rule_of_thumb` честно (Kwok-ранжирование, симулятор, метрика
+      пакета без печатного порога). Остаток — фазы C (BNCC: нормализация к
+      regret, приоритетные полосы, взвешенный Чебышёв, §4), D (калибровка →
+      `fitted_here`, §6) и E (55 не-tier строк, §8 G1–G5) в
+      `data-raw/proposed/zw4.6-tier-framework.proposal.md`.
 
-### Z10. Структура, плоидность, аналитика  [P2]
+### Z10. Структура, плоидность, аналитика [P2]
+
 - [x] **`Z10.1` Amplicon/target folding** (особенно LAMP/RPA/Cas13 RNA, GC-rich
-  HRM). Правка: `R/marker_thermo.R` — фолдинг ампликона целиком, не праймера.
-  Проверка: `test-thermo.R`. Блокер: движок (OligoArrayAux fold) — через
-  `capabilities()`, иначе `unknown`.
+      HRM). Правка: `R/marker_thermo.R` — фолдинг ампликона целиком, не праймера.
+      Проверка: `test-thermo.R`. Блокер: движок (OligoArrayAux fold) — через
+      `capabilities()`, иначе `unknown`.
 - [x] **`Z10.2` Dosage/copy-number (fitPoly/mixture model) для полиплоидных
-  KASP.** Данные: `polyploid_jaimes2024_sugarcane_dosage.csv` (42 из 76 SNP
-  размечены по дозе, 34 не кластеризованы), `polyploid_cotton2023_kasp_screen.csv`
-  (8/11 — **отрицательный** датапоинт, в средние не входит). Правка: отдельная ось
-  в `marker_population_checks()`, а не `pop_freq` (`Z6.1`).
-  **Поправка к тексту строки:** `polyploid_durum2019_*` — не данные дозы;
-  там ось гомеологов (AABB vs AABBDD) и 90K iSelect, не KASP. Число «симплекс»
-  в источнике не встречается (0 раз) — тест пинит размеченные/неразмеченные,
-  а не симплекс-сплит.
-  Проверка: `test-polyploid-dosage.R` (51 pass) — один общий polyploid rate
-  запрещён, классы смеси масштабируются с плоидностью, cotton исключён из средних.
-  Блокер: `fitPoly` — Suggests, вводить только с реальной реализацией (`ZA4`);
-  доза на маркер у Jaimes есть только в GitHub статьи (Appendix S3 — лишь `r`
-  метода-пары), записано `blocked`.
+      KASP.** Данные: `polyploid_jaimes2024_sugarcane_dosage.csv` (42 из 76 SNP
+      размечены по дозе, 34 не кластеризованы), `polyploid_cotton2023_kasp_screen.csv`
+      (8/11 — **отрицательный** датапоинт, в средние не входит). Правка: отдельная ось
+      в `marker_population_checks()`, а не `pop_freq` (`Z6.1`).
+      **Поправка к тексту строки:** `polyploid_durum2019_*` — не данные дозы;
+      там ось гомеологов (AABB vs AABBDD) и 90K iSelect, не KASP. Число «симплекс»
+      в источнике не встречается (0 раз) — тест пинит размеченные/неразмеченные,
+      а не симплекс-сплит.
+      Проверка: `test-polyploid-dosage.R` (51 pass) — один общий polyploid rate
+      запрещён, классы смеси масштабируются с плоидностью, cotton исключён из средних.
+      Блокер: `fitPoly` — Suggests, вводить только с реальной реализацией (`ZA4`);
+      доза на маркер у Jaimes есть только в GitHub статьи (Appendix S3 — лишь `r`
+      метода-пары), записано `blocked`.
 - [x] **`Z10.3` GRanges/VCF-backed interchange** вместо custom tibble там, где
-  это уместно. Правка: `R/marker_io.R` adapter. Блокер: `ZA6` шаг 4. Следствие:
-  сейчас каждый вход конвертируется руками, и depth (`Y5.3`) негде хранить.
+      это уместно. Правка: `R/marker_io.R` adapter. Блокер: `ZA6` шаг 4. Следствие:
+      сейчас каждый вход конвертируется руками, и depth (`Y5.3`) негде хранить.
 
-### Z11. Документация  [P2]
+### Z11. Документация [P2]
+
 - [x] **`Z11.1` «Аудит решений» переписать из dev-заметок в user-facing
-  ограничения и рекомендации**; каждое утверждение — с source/calibrated-флагом.
-  Правка: `vignettes/`. Проверка: `dev/check-docs.R` (нет
-  orphan-документа, нет битой ссылки). Блокер: `ZW4.6` — без источника у каждой
-  строки переписывать нечего.
-  - **Сделано 2026-11-03:** раздел «Which numbers are calibrated» в
-    `vignettes/reading-results.Rmd`: уровневая правда о `rule_of_thumb` /
-    `primary_literature` / `vendor_guideline` / `calibrated`; послойный
-    провенанс остаётся за `ZW4.6`.
+      ограничения и рекомендации**; каждое утверждение — с source/calibrated-флагом.
+      Правка: `vignettes/`. Проверка: `dev/check-docs.R` (нет
+      orphan-документа, нет битой ссылки). Блокер: `ZW4.6` — без источника у каждой
+      строки переписывать нечего.
+    - **Сделано 2026-11-03:** раздел «Which numbers are calibrated» в
+      `vignettes/reading-results.Rmd`: уровневая правда о `rule_of_thumb` /
+      `primary_literature` / `vendor_guideline` / `calibrated`; послойный
+      провенанс остаётся за `ZW4.6`.
 - [x] **`Z11.2` Исправить Cas12a/Cas13/dPCR/LAMP/KASP формулировки во всех
-  виньетках и комментариях**; тест на запрещённые термины (`dsDNase`,
-  «PAM-free» без PFS, «Taq not extending» как факт). Правка: `vignettes/`,
-  `R/*.R` комментарии. Проверка: новый `tests/testthat/test-wording.R` по регуляркам
-  запрещённого. Блокер: нет. Следствие: `Z0.0`/`Z0.1`/`Z0.4` не держатся —
-  правка кода вернётся в текст.
+      виньетках и комментариях**; тест на запрещённые термины (`dsDNase`,
+      «PAM-free» без PFS, «Taq not extending» как факт). Правка: `vignettes/`,
+      `R/*.R` комментарии. Проверка: новый `tests/testthat/test-wording.R` по регуляркам
+      запрещённого. Блокер: нет. Следствие: `Z0.0`/`Z0.1`/`Z0.4` не держатся —
+      правка кода вернётся в текст.
 
 ## ZA. Целевые интерфейсы и швы (codebase-design)
 
@@ -1071,19 +1118,19 @@ ro <- scheme$readout(m, context)
 
 ### ZA2. Модули и швы
 
-| Модуль | Tidy/ggplot-форма | Заменяет | Зависимость | Состояние |
-|---|---|---|---|---|
-| `MarkerContext` | classed list, `rlang::list2`, `withr` | ручной `...`-плумбинг | существующие | есть (`marker_run_context()`) |
-| `Scheme` | S3 + `tibble`-реестр | `design_<scheme>_marker` + `switch(scheme)` | нет | есть (`marker_scheme_adapter()`, `scheme_designer()`) |
-| `Criterion`/`CriterionSet` | `tibble` + list-column evaluator, `vctrs::vec_rbind` | дубли порогов в design/check/DAG | `vctrs` | есть (`criterion_spec()`, 191 строка) |
-| `Evaluation` | `tibble` + `forcats` status | три evaluator-пути | `vctrs`, `forcats` | есть |
-| `Population` | `tibble` + `GenomicRanges` adapters | мутация `marker_attach_haplotypes()` | `fitPoly` позже (Suggests) | частично |
-| `Engines` | S3-adapter + `capabilities()` | глобальный `PCR_COND`, молчаливые skip | существующие + внешние | есть (`marker_engines()`, `engine_has()`; `Z4.1`) |
-| `DecisionSchema`/`DecisionState` | `tidygraph` + Graphviz | ручная раскладка и статусы | `ggraph` (Suggests) | нет (заперто `Z8`) |
-| `TrackSpec`/`Figure` | `ggplot2` + `ggenes`/`patchwork` | стиль внутри схем | `scales` | частично |
-| `Readout`/`Calibration` | model-result + `yardstick` | строки «not modeled» | `yardstick`, `targets` (Suggests) | нет (заперто `Z8`) |
-| YAML-технология | `yaml` | ручная сериализация | `yaml` | нет (`Y1`) |
-| Отчёты/таблицы | `knitr::kable`/`gt` | ручной текст | опционально Suggests | частично |
+| Модуль                           | Tidy/ggplot-форма                                    | Заменяет                                    | Зависимость                       | Состояние                                             |
+| -------------------------------- | ---------------------------------------------------- | ------------------------------------------- | --------------------------------- | ----------------------------------------------------- |
+| `MarkerContext`                  | classed list, `rlang::list2`, `withr`                | ручной `...`-плумбинг                       | существующие                      | есть (`marker_run_context()`)                         |
+| `Scheme`                         | S3 + `tibble`-реестр                                 | `design_<scheme>_marker` + `switch(scheme)` | нет                               | есть (`marker_scheme_adapter()`, `scheme_designer()`) |
+| `Criterion`/`CriterionSet`       | `tibble` + list-column evaluator, `vctrs::vec_rbind` | дубли порогов в design/check/DAG            | `vctrs`                           | есть (`criterion_spec()`, 191 строка)                 |
+| `Evaluation`                     | `tibble` + `forcats` status                          | три evaluator-пути                          | `vctrs`, `forcats`                | есть                                                  |
+| `Population`                     | `tibble` + `GenomicRanges` adapters                  | мутация `marker_attach_haplotypes()`        | `fitPoly` позже (Suggests)        | частично                                              |
+| `Engines`                        | S3-adapter + `capabilities()`                        | глобальный `PCR_COND`, молчаливые skip      | существующие + внешние            | есть (`marker_engines()`, `engine_has()`; `Z4.1`)     |
+| `DecisionSchema`/`DecisionState` | `tidygraph` + Graphviz                               | ручная раскладка и статусы                  | `ggraph` (Suggests)               | нет (заперто `Z8`)                                    |
+| `TrackSpec`/`Figure`             | `ggplot2` + `ggenes`/`patchwork`                     | стиль внутри схем                           | `scales`                          | частично                                              |
+| `Readout`/`Calibration`          | model-result + `yardstick`                           | строки «not modeled»                        | `yardstick`, `targets` (Suggests) | нет (заперто `Z8`)                                    |
+| YAML-технология                  | `yaml`                                               | ручная сериализация                         | `yaml`                            | нет (`Y1`)                                            |
+| Отчёты/таблицы                   | `knitr::kable`/`gt`                                  | ручной текст                                | опционально Suggests              | частично                                              |
 
 #### ZA2.1. `capabilities()` объявлена, но никто её не спрашивает — **сделано**
 
@@ -1159,13 +1206,13 @@ plot-файле остался `marker_primer_checks()` — адаптер ра�
 - Тяжёлые `crispr*`/`fitPoly` — только при реальной реализации
   CRISPR-search/dosage, не «на будущее».
 - [x] **`crisprBase` как источник данных, а не зависимость-обёртка —
-  проверено по репозиторию.** Есть `SpCas9`, `SaCas9`, `SpG`, `AsCas12a`,
-  `enAsCas12a`, `MAD7`, `CasRx` (Cas13d), `Csm`. То есть **Cas12a есть
-  (несколько вариантов), Cas13 — только Cas13d** (LwaCas13a нет), **PFS не
-  описан как поле**. Вывод: реестр `cas` им **не** заменяется — только
-  сверяется по PAM/спейсеру; кандидат на optional Suggests. Следствие для
-  `Z0.1`: PFS-поле Cas13a/Cas13b надо добавлять самим, «по ссылке» не
-  закрывается; «предпочтение» не превращать в гейт.
+      проверено по репозиторию.** Есть `SpCas9`, `SaCas9`, `SpG`, `AsCas12a`,
+      `enAsCas12a`, `MAD7`, `CasRx` (Cas13d), `Csm`. То есть **Cas12a есть
+      (несколько вариантов), Cas13 — только Cas13d** (LwaCas13a нет), **PFS не
+      описан как поле**. Вывод: реестр `cas` им **не** заменяется — только
+      сверяется по PAM/спейсеру; кандидат на optional Suggests. Следствие для
+      `Z0.1`: PFS-поле Cas13a/Cas13b надо добавлять самим, «по ссылке» не
+      закрывается; «предпочтение» не превращать в гейт.
 
 ### ZA5. Что не делать tidy/ggplot
 
@@ -1184,72 +1231,72 @@ plot-файле остался `marker_primer_checks()` — адаптер ра�
    без `vctrs`-класса. Попутно — `ZW4` (сделано) и `ZW1` (сделано). **Остаток
    здесь же:** свести две оси класса checking к одной (`marker_check_classes()`
    против `KASP_CHECK_*`, см. `Z2.1`).
-   - **Сделано 2026-10-29 (часть):** `criterion_spec()` возвращает
-     `marker_criteria` — tibble-подкласс на `vctrs` (`vctrs` добавлен в
-     Imports), с `vec_restore`/`vec_ptype2`/`vec_cast`/`vec_ptype_abbr`;
-     конструктор `new_marker_criteria()` проверяет обязательные колонки один раз.
-     Вторая ось убрана: `marker_check_classes()` больше не отдельный tribble id
-     → class, а выводится из трёх `KASP_CHECK_*` (единственное объявление
-     разбиения); критерий без класса и метка класса без критерия теперь
-     `stop()`, а не молчаливое «ни одна схема». Тесты:
-     `test-criteria.R` (26 = 8 + 5 + 14, классы не пересекаются) и полный
-     прогон `criteria|decision|kasp-checks|plan|evidence|falsifiable|technology|selection|dag|asq`
-     (30 730 pass).
-   - **Исправлено 2026-10-29:** конструктор `new_marker_criteria()` терял
-     документированную колонку `family` (её не было в списке обязательных, и
-     `x[, fields]` её отбрасывал). Список дополнен; `test-criteria.R` фиксирует
-     колонку, её значения на `family_*`-строках, сохранение класса при
-     подмножестве и `vctrs`-контракт `vec_rbind` (смешение с обычным tibble
-     даёт `tbl_df`). `dplyr::bind_rows()` при типизированном первом аргументе
-     класс сохраняет — это поведение dplyr, не vctrs, поэтому проверяется там,
-     где контракт определён.
-   - **Остаток — `strand` в модели локуса (не сделан намеренно):** колонка в
-     `target_cols()` без дизайнеров, которые её читают и переворачивают
-     локус/аллели, объявляла бы ориентацию, которой дизайн не следует. Это
-     хуже, чем отсутствие колонки, поэтому пункт остаётся открытым до
-     сквозной правки `marker_*_marker()` (и тогда снимается `ZW0`
-     revcomp-инвариант).
+    - **Сделано 2026-10-29 (часть):** `criterion_spec()` возвращает
+      `marker_criteria` — tibble-подкласс на `vctrs` (`vctrs` добавлен в
+      Imports), с `vec_restore`/`vec_ptype2`/`vec_cast`/`vec_ptype_abbr`;
+      конструктор `new_marker_criteria()` проверяет обязательные колонки один раз.
+      Вторая ось убрана: `marker_check_classes()` больше не отдельный tribble id
+      → class, а выводится из трёх `KASP_CHECK_*` (единственное объявление
+      разбиения); критерий без класса и метка класса без критерия теперь
+      `stop()`, а не молчаливое «ни одна схема». Тесты:
+      `test-criteria.R` (26 = 8 + 5 + 14, классы не пересекаются) и полный
+      прогон `criteria|decision|kasp-checks|plan|evidence|falsifiable|technology|selection|dag|asq`
+      (30 730 pass).
+    - **Исправлено 2026-10-29:** конструктор `new_marker_criteria()` терял
+      документированную колонку `family` (её не было в списке обязательных, и
+      `x[, fields]` её отбрасывал). Список дополнен; `test-criteria.R` фиксирует
+      колонку, её значения на `family_*`-строках, сохранение класса при
+      подмножестве и `vctrs`-контракт `vec_rbind` (смешение с обычным tibble
+      даёт `tbl_df`). `dplyr::bind_rows()` при типизированном первом аргументе
+      класс сохраняет — это поведение dplyr, не vctrs, поэтому проверяется там,
+      где контракт определён.
+    - **Остаток — `strand` в модели локуса (не сделан намеренно):** колонка в
+      `target_cols()` без дизайнеров, которые её читают и переворачивают
+      локус/аллели, объявляла бы ориентацию, которой дизайн не следует. Это
+      хуже, чем отсутствие колонки, поэтому пункт остаётся открытым до
+      сквозной правки `marker_*_marker()` (и тогда снимается `ZW0`
+      revcomp-инвариант).
 2. [x] `MarkerContext` + `ReactionConditions` + `Engines` (без тяжёлых deps).
-   есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
-   `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп
-   не доезжает до `Evaluation` (`ZW2.2`).
-   - **Закрыто 2026-10-29:** все три остатка сняты — `Z4.1` (`[x]`),
-     `ZA2.1` (`engine_has()` — единственный шов, потребители есть) и `ZW2.2`
-     (`2ee25da`: штамп в `marker_design_checks()`, `marker_with_stamp(from=)`).
-     Шаг остаётся контрактом данных, тяжёлых зависимостей не добавил.
+       есть; `Engines` не несёт `capabilities()` для всех движков (`Z4.1`), сама
+       `capabilities()` не имеет потребителей (`ZA2.1`, снято: теперь `engine_has()`), и штамп
+       не доезжает до `Evaluation` (`ZW2.2`).
+    - **Закрыто 2026-10-29:** все три остатка сняты — `Z4.1` (`[x]`),
+      `ZA2.1` (`engine_has()` — единственный шов, потребители есть) и `ZW2.2`
+      (`2ee25da`: штамп в `marker_design_checks()`, `marker_with_stamp(from=)`).
+      Шаг остаётся контрактом данных, тяжёлых зависимостей не добавил.
 3. [~] `Scheme` S3-adapter вокруг существующих функций; схемы мигрируют по одной.
    Проверка: `ZA7` contract-test `design/evaluate/tracks/decision/readout`.
-   - **Сделано 2026-10-29 (часть):** `scheme_designer(scheme)` — один резолвер
-     для встроенных и обнаруженных дизайнеров; им пользуются и
-     `marker_design_at()`, и `artefact_designer()` (раньше встроенный
-     `switch` был продублирован в двух файлах, и новая схема могла попасть в
-     один и пропасть во втором). `marker_scheme_adapter(scheme)` даёт
-     поведенческий вид схемы — `design/evaluate/tracks/decision/readout`,
-     каждый шаг делегирует тому же коду, что и пайплайн
-     (`marker_design_at()`/`marker_design_checks()`/`marker_map_spec()`/
-     `marker_decision_graph()`/`marker_readout()`); `readout()` возвращает
-     id адаптера, а не грубый класс маркера (`marker_assay`). Это S3-объект
-     (список замыканий, класс `marker_scheme_adapter`), не data frame (ZA5).
-     Контракт — `tests/testthat/test-scheme-adapter.R`: каждая схема из
-     `per_locus_schemes()` имеет все пять шагов; неизвестный id — ошибка;
-     `primer` адаптируется, но `design()` возвращает `NULL` (C13); на реальном
-     дизайне `evaluate()` не превращает не-текстовое `NA` в `pass`.
-     **Остаток:** шаги 5–6 (`TrackSpec`/`Figure`, `DecisionSchema`) и миграция
-     остальных схем на адаптер остаются; `duplex`/`asq` по-прежнему без
-     `design_<scheme>_marker()`.
+    - **Сделано 2026-10-29 (часть):** `scheme_designer(scheme)` — один резолвер
+      для встроенных и обнаруженных дизайнеров; им пользуются и
+      `marker_design_at()`, и `artefact_designer()` (раньше встроенный
+      `switch` был продублирован в двух файлах, и новая схема могла попасть в
+      один и пропасть во втором). `marker_scheme_adapter(scheme)` даёт
+      поведенческий вид схемы — `design/evaluate/tracks/decision/readout`,
+      каждый шаг делегирует тому же коду, что и пайплайн
+      (`marker_design_at()`/`marker_design_checks()`/`marker_map_spec()`/
+      `marker_decision_graph()`/`marker_readout()`); `readout()` возвращает
+      id адаптера, а не грубый класс маркера (`marker_assay`). Это S3-объект
+      (список замыканий, класс `marker_scheme_adapter`), не data frame (ZA5).
+      Контракт — `tests/testthat/test-scheme-adapter.R`: каждая схема из
+      `per_locus_schemes()` имеет все пять шагов; неизвестный id — ошибка;
+      `primer` адаптируется, но `design()` возвращает `NULL` (C13); на реальном
+      дизайне `evaluate()` не превращает не-текстовое `NA` в `pass`.
+      **Остаток:** шаги 5–6 (`TrackSpec`/`Figure`, `DecisionSchema`) и миграция
+      остальных схем на адаптер остаются; `duplex`/`asq` по-прежнему без
+      `design_<scheme>_marker()`.
 4. [x] `Population` в context; `marker_attach_haplotypes()` — compatibility
-   adapter; инварианты `ZW0` изолированы на этом шве.
+       adapter; инварианты `ZW0` изолированы на этом шве.
 
 **После калибровки (Z7/Z8) — шаги 5–8, не раньше:**
 
 5. [ ] `DecisionSchema`/`DecisionState`; `tidygraph` + Graphviz. Сейчас DAG
-   раскладывается вручную и работает; смена движка графа не меняет ни один
-   вердикт, а значит не срочная.
+       раскладывается вручную и работает; смена движка графа не меняет ни один
+       вердикт, а значит не срочная.
 6. [ ] `TrackSpec`/`Figure`; `scales`; стиль только в renderer. Графика —
-   полностью косметический слой относительно корректности.
+       полностью косметический слой относительно корректности.
 7. [ ] `Readout` + `yardstick`/`targets` — **осмысленно только после `Z8`**:
-   пока есть лишь положительные примеры, `yardstick`-метрики будут мерить
-   смещение.
+       пока есть лишь положительные примеры, `yardstick`-метрики будут мерить
+       смещение.
 8. [ ] `yaml` export; затем optional `fitPoly`/`crispr*`.
 
 Правило перехода: шаги 5–6 не начинаются, пока нет хотя бы одной внешней
@@ -1281,58 +1328,59 @@ Graphify сейчас индексирует код и doc-headings, но **не
 manifest + generated Markdown, а не через sidecar JSON.
 
 - [x] **`docs/INDEX.md` — единый вход.** Все README/AGENTS/CONTRIBUTING/ROADMAP/
-  NEWS/VALIDATION/vignettes/dev-docs; каждая ссылка проверяется на существование.
+      NEWS/VALIDATION/vignettes/dev-docs; каждая ссылка проверяется на существование.
 - [x] **`docs/artifacts.yml` — источник истины.** Для каждого артефакта:
-  `path`, `kind` (figure/decision/table/benchmark), `generator`, `inputs`,
-  `input_hash`, `output_hash`, `docs`, `code`, `status`.
+      `path`, `kind` (figure/decision/table/benchmark), `generator`, `inputs`,
+      `input_hash`, `output_hash`, `docs`, `code`, `status`.
 - [x] **`dev/check-docs.R`.** Нет orphan-документа; нет broken relative link;
-  каждый `include_graphics()` имеет manifest-entry; обратные ссылки совпадают.
+      каждый `include_graphics()` имеет manifest-entry; обратные ссылки совпадают.
 - [x] **`dev/check-artifacts.R`.** Нет orphan-файла в `vignettes/figures`,
-  `man/figures`, `vignettes/figures`; все пути manifest существуют; входной хеш
-  не изменился; выходной хеш совпадает — иначе **stale** и gate fail.
+      `man/figures`, `vignettes/figures`; все пути manifest существуют; входной хеш
+      не изменился; выходной хеш совпадает — иначе **stale** и gate fail.
 - [x] **`docs/generated/artifacts.md`.** Один heading на артефакт со ссылками
-  на generator/source/docs; `graphify update . --no-cluster` после генерации.
-  Heading label = путь артефакта, чтобы `graphify query "caps.svg"` находил
-  docs/code, даже если самого файла нет в AST-графе.
+      на generator/source/docs; `graphify update . --no-cluster` после генерации.
+      Heading label = путь артефакта, чтобы `graphify query "caps.svg"` находил
+      docs/code, даже если самого файла нет в AST-графе.
 - [x] **Gate.** `dev/check.R` вызывает docs/artifacts checks; graphify остаётся
-  developer tool (`--graphify` opt-in), не CI-зависимость.
+      developer tool (`--graphify` opt-in), не CI-зависимость.
 - [x] **`ZA8.1` `targets` (Suggests) как держатель freshness.**
-  `dev/targets/_targets.R` + тонкий раннер `dev/targets.R`
-  (`--make`/`--outdated`/`--check`): `engine` (`R/`, `inst/extdata`, генератор) →
-  `figures` (`dev/render-decision.R`) → `manifest` (`dev/artifacts.R`).
-  `dev/check.R` шаг 5 берёт раннер, когда `targets` установлен, иначе
-  `dev/render-all.R`; md5-сверка коммитнутых фигур осталась в обоих путях.
-  Тяжёлые панели галереи в пайплайн не входят (нужен OligoArrayAux), поэтому
-  `--render` по-прежнему идёт прямым раннером.
-  Хеши не переписаны на `tar_meta()` намеренно: `docs/artifacts.yml` остаётся
-  контентным, иначе `dev/check-artifacts.R` перестал бы что-либо доказывать.
-  Проверка: `tar_make()` производит те же хеши, `dev/check-artifacts.R` зелёный,
-  `dev/targets.R --check` пуст после прогона.
-  Блокер: нет.
-  Следствие: freshness держит пайплайн, а не память запускающего.
+      `dev/targets/_targets.R` + тонкий раннер `dev/targets.R`
+      (`--make`/`--outdated`/`--check`): `engine` (`R/`, `inst/extdata`, генератор) →
+      `figures` (`dev/render-decision.R`) → `manifest` (`dev/artifacts.R`).
+      `dev/check.R` шаг 5 берёт раннер, когда `targets` установлен, иначе
+      `dev/render-all.R`; md5-сверка коммитнутых фигур осталась в обоих путях.
+      Тяжёлые панели галереи в пайплайн не входят (нужен OligoArrayAux), поэтому
+      `--render` по-прежнему идёт прямым раннером.
+      Хеши не переписаны на `tar_meta()` намеренно: `docs/artifacts.yml` остаётся
+      контентным, иначе `dev/check-artifacts.R` перестал бы что-либо доказывать.
+      Проверка: `tar_make()` производит те же хеши, `dev/check-artifacts.R` зелёный,
+      `dev/targets.R --check` пуст после прогона.
+      Блокер: нет.
+      Следствие: freshness держит пайплайн, а не память запускающего.
 - [x] **`ZA8.2` Graphify health.** `dev/graphify-health.R --write` пишет
-  `docs/generated/graphify-health.md` прямо из `graphify-out/graph.json` (бинарь
-  не нужен); `--check` падает только на регрессиях — dangling / duplicate /
-  same-endpoint / import cycles > 0. Дрейф чисел — предупреждение, не провал.
-  Прогон 2026-10-29: 7597 узлов, 10338 рёбер, 398 сообществ; **0** dangling,
-  **0** duplicate, **0** same-endpoint, **0** import cycles, 1 self-loop.
-  **349** узлов без `source_file` — это внешние R-символы (`tibble::tibble()`,
-  `tidymarkers::criterion_tbl()`), а не vendored C: прежнее объяснение неверно.
-  Регенерация обязана идти без `--no-cluster`: он теряет разбиение на сообщества
-  и дублирует часть рёбер (проверено — 84 same-endpoint и 3 сообщества).
-  «Бог-узлы» (in-degree по `calls`) — `tibble::tibble()` (171),
-  `cli::cli_abort()` (94), `glue::glue()` (59); среди нашего кода первым идёт
-  `plot_primers()` (43), то есть центр тяжести всё ещё рисование.
-  Правка: нет — учитывать как **ограничение ориентации**, не как доказательство
-  корректности; строка названа в отчёте дословно.
-  Проверка: `dev/check-docs.R` — ограничение названо; `dev/graphify-health.R
-  --check` — инварианты держатся. Оба самопропускаются без графа (CI).
-  Блокер: нет.
-  Следствие: «граф пуст» и «код чист» больше не выглядят одинаково.
+      `docs/generated/graphify-health.md` прямо из `graphify-out/graph.json` (бинарь
+      не нужен); `--check` падает только на регрессиях — dangling / duplicate /
+      same-endpoint / import cycles > 0. Дрейф чисел — предупреждение, не провал.
+      Прогон 2026-10-29: 7597 узлов, 10338 рёбер, 398 сообществ; **0** dangling,
+      **0** duplicate, **0** same-endpoint, **0** import cycles, 1 self-loop.
+      **349** узлов без `source_file` — это внешние R-символы (`tibble::tibble()`,
+      `tidymarkers::criterion_tbl()`), а не vendored C: прежнее объяснение неверно.
+      Регенерация обязана идти без `--no-cluster`: он теряет разбиение на сообщества
+      и дублирует часть рёбер (проверено — 84 same-endpoint и 3 сообщества).
+      «Бог-узлы» (in-degree по `calls`) — `tibble::tibble()` (171),
+      `cli::cli_abort()` (94), `glue::glue()` (59); среди нашего кода первым идёт
+      `plot_primers()` (43), то есть центр тяжести всё ещё рисование.
+      Правка: нет — учитывать как **ограничение ориентации**, не как доказательство
+      корректности; строка названа в отчёте дословно.
+      Проверка: `dev/check-docs.R` — ограничение названо; `dev/graphify-health.R
+--check` — инварианты держатся. Оба самопропускаются без графа (CI).
+      Блокер: нет.
+      Следствие: «граф пуст» и «код чист» больше не выглядят одинаково.
 - **Состояние:** реализовано в Wave 1 (коммиты `9193e6c`/`e5a581a`).
   `docs/artifacts.yml` хеширует весь `R/`, поэтому **любая** правка `R/` делает
   20 SVG stale: после неё — `dev/render-gallery.R`, затем `dev/artifacts.R --write`.
   PNG галереи git-ignored; SVG коммитятся.
+
 ## ZP. Параллельный rollout (coordination)
 
 Правило: **ветки изолируют историю, не рабочее дерево.** Один clone = один
@@ -1344,17 +1392,17 @@ checkout. Никаких N агентов с `git checkout` в одном кат
 была предком `main` (0 коммитов в другую сторону). Ветки здесь нужны только
 под новый параллельный набор и начинаются от `main`.
 
-### ZP0. Base snapshot  [x] — пункт закрыт
+### ZP0. Base snapshot [x] — пункт закрыт
 
 - [x] Snapshot сделан: ветка `wip/roadmap-base` (коммит `2785097`, 163 файла),
-  затем Wave 1 (`e5a581a`) и Wave 0 (`5e31a1a`).
+      затем Wave 1 (`e5a581a`) и Wave 0 (`5e31a1a`).
 - [x] `main` не трогали (`2077c46`); слияние в `main` — отдельным решением.
 - [x] Worktree-only правило соблюдено: агентские ветки слиты и удалены.
 - [x] **Grace-период:** 9 untracked `R/`-файлов, 5 vignettes и 24 man/dev файла
-  были реальным исходником и закоммичены; PNG галереи — local-only, SVG — tracked.
+      были реальным исходником и закоммичены; PNG галереи — local-only, SVG — tracked.
 - [x] Новые worktree — от `main`. Пункт «только от `wip/roadmap-base`» устарел:
-  ветка слита в `main` (`8639434`) и удалена после слияния worktree, так что
-  базой для новых веток служит `main`.
+      ветка слита в `main` (`8639434`) и удалена после слияния worktree, так что
+      базой для новых веток служит `main`.
 
 ### ZP1. Волны и ownership
 
@@ -1368,6 +1416,7 @@ checkout. Никаких N агентов с `git checkout` в одном кат
 shared tests. Один владелец.
 
 **Lean test loop (сделано):**
+
 - `Rscript dev/test.R` — 1414 pass, **1m33s** (shared contracts; дефолт).
 - `Rscript dev/test.R --scheme crispr` — ~1m10s.
 - `Rscript dev/test.R --full` — ≈17 мин, external checks on, 0 skips; pass-счёт
@@ -1378,28 +1427,28 @@ shared tests. Один владелец.
 
 **Wave 1 — сделано (`e5a581a`), disjoint paths:**
 
-| Agent | Worktree | Branch | Owns | Forbidden |
-|---|---|---|---|---|
-| docs-artifacts | `../tidymarkers-agent-docs` | `feat/docs-artifacts` | `docs/**`, `dev/check-docs.R`, `dev/check-artifacts.R`, `dev/artifacts.R` | `R/**`, `vignettes/**` |
-| crispr-physics | `../tidymarkers-agent-crispr` | `feat/crispr-physics` | `R/marker_crispr.R`, `tests/testthat/test-crispr.R` | `vignettes/**`, other `R/**` |
-| sanger-physics | `../tidymarkers-agent-sanger` | `feat/sanger-physics` | `R/marker_sanger.R`, `tests/testthat/test-sanger.R` | `vignettes/**`, other `R/**` |
-| lamp-physics | `../tidymarkers-agent-lamp` | `feat/lamp-physics` | `R/marker_lamp.R`, `tests/testthat/test-lamp.R` | `vignettes/**`, other `R/**` |
+| Agent          | Worktree                      | Branch                | Owns                                                                      | Forbidden                    |
+| -------------- | ----------------------------- | --------------------- | ------------------------------------------------------------------------- | ---------------------------- |
+| docs-artifacts | `../tidymarkers-agent-docs`   | `feat/docs-artifacts` | `docs/**`, `dev/check-docs.R`, `dev/check-artifacts.R`, `dev/artifacts.R` | `R/**`, `vignettes/**`       |
+| crispr-physics | `../tidymarkers-agent-crispr` | `feat/crispr-physics` | `R/marker_crispr.R`, `tests/testthat/test-crispr.R`                       | `vignettes/**`, other `R/**` |
+| sanger-physics | `../tidymarkers-agent-sanger` | `feat/sanger-physics` | `R/marker_sanger.R`, `tests/testthat/test-sanger.R`                       | `vignettes/**`, other `R/**` |
+| lamp-physics   | `../tidymarkers-agent-lamp`   | `feat/lamp-physics`   | `R/marker_lamp.R`, `tests/testthat/test-lamp.R`                           | `vignettes/**`, other `R/**` |
 
 **Wave 1b — сделано и слито (Z2/Z3/Z5/Z9):**
 
-| Branch | Commits | Landed |
-|---|---|---|
-| `feat/z2-criterion` | `2647884` → `f494a50` | реестр критериев, уровни без дрейфа |
-| `feat/z3-conditions` | `8990d2e` | `reaction_conditions()`/`scheme_conditions()`, thermo принимает условия |
-| `feat/z5-specificity` | `cfb3638` | `specificity_policy()`/`specificity_verdict()` |
-| `feat/z9-sanger` | `848f15a` → `346eb20` | объявленный предел Sanger, ручной deconvolver удалён |
+| Branch                | Commits               | Landed                                                                  |
+| --------------------- | --------------------- | ----------------------------------------------------------------------- |
+| `feat/z2-criterion`   | `2647884` → `f494a50` | реестр критериев, уровни без дрейфа                                     |
+| `feat/z3-conditions`  | `8990d2e`             | `reaction_conditions()`/`scheme_conditions()`, thermo принимает условия |
+| `feat/z5-specificity` | `cfb3638`             | `specificity_policy()`/`specificity_verdict()`                          |
+| `feat/z9-sanger`      | `848f15a` → `346eb20` | объявленный предел Sanger, ручной deconvolver удалён                    |
 
 **Wave 2a — сделано и слито (`87433a8`, `0368d3b`).**
 
-| Agent | Branch | Landed |
-|---|---|---|
-| z3-callsites | `feat/z3-callsites` | каждый thermo call site получает `scheme_conditions()`; LAMP 65 °C, RPA 42 °C; подписи гейтов больше не обещают dG37 |
-| gates-general | `feat/gates-general` | `MARKER_FAMILY_CHECKS` — id критериев; population/haplotype fail → вердикт; `NA`-частота = `unknown` |
+| Agent          | Branch                | Landed                                                                                                                               |
+| -------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| z3-callsites   | `feat/z3-callsites`   | каждый thermo call site получает `scheme_conditions()`; LAMP 65 °C, RPA 42 °C; подписи гейтов больше не обещают dG37                 |
+| gates-general  | `feat/gates-general`  | `MARKER_FAMILY_CHECKS` — id критериев; population/haplotype fail → вердикт; `NA`-частота = `unknown`                                 |
 | degenerate-pcr | `feat/degenerate-pcr` | позиции мисматчей в собственной 5′→3′ ориентации праймера, терминальный мисматч доминирует, лестница весов из `specificity_policy()` |
 
 Проверено на integration-ветке: lean **1676 pass**, затронутые схемы **2267 pass**,
@@ -1414,16 +1463,16 @@ SSR null alleles); отсутствие частоты — `NA`, не вес 1.
 Порядок — по очереди сверху: ветка берётся, когда её пункт дошёл до головы
 таблицы «Очередь».
 
-| Ветка | Owns | Пункты | Блокер |
-|---|---|---|---|
-| `feat/q1-withdraw` | `R/marker_taqman.R`, `R/marker_readout.R`, `R/marker_polyploid.R`, их тесты | `Q1` | нет |
-| `feat/kasp-mismatch` | `R/marker_checks.R`, `tests/testthat/test-kasp-checks.R` | `Z0.4` | нет |
-| `feat/crispr-pfs` | `R/marker_crispr.R`, `tests/testthat/test-crispr.R` | `Z0.1` | нет |
-| `feat/z8-negative` | `inst/extdata/conversion_rates.csv`, `data-raw/`, `R/marker_evaluation*.R` | `Z8.1`–`Z8.4` | новые статьи с `outcome = failed` |
-| `feat/plots-style` | `R/marker_plot_methods.R`, `R/marker_plots.R`, `tests/testthat/test-plot-methods.R` | `ZA8`/`ZW2.2`-доводка; заодно оставшиеся call sites `dimer_thermo()`/`primer_tm()` (`:155`, `:350`, `:757`) | нет |
-| `feat/za-scheme` | `R/marker_schemes.R`, `R/marker_criteria.R` | `ZA6` шаг 1 (единая ось id), шаг 3 | `ZA6` шаг 3 — после `Z0.4`, `ZA8` |
-| `feat/zp5-tests` | `tests/testthat/test-specificity.R`, `test-oligo-dg.R`, `test-dimer.R` | `ZP5` | нет |
-| vignette-ветки | по одному файлу `vignettes/*.Rmd` | — | последними; `Q1` не блокер |
+| Ветка                | Owns                                                                                | Пункты                                                                                                      | Блокер                            |
+| -------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `feat/q1-withdraw`   | `R/marker_taqman.R`, `R/marker_readout.R`, `R/marker_polyploid.R`, их тесты         | `Q1`                                                                                                        | нет                               |
+| `feat/kasp-mismatch` | `R/marker_checks.R`, `tests/testthat/test-kasp-checks.R`                            | `Z0.4`                                                                                                      | нет                               |
+| `feat/crispr-pfs`    | `R/marker_crispr.R`, `tests/testthat/test-crispr.R`                                 | `Z0.1`                                                                                                      | нет                               |
+| `feat/z8-negative`   | `inst/extdata/conversion_rates.csv`, `data-raw/`, `R/marker_evaluation*.R`          | `Z8.1`–`Z8.4`                                                                                               | новые статьи с `outcome = failed` |
+| `feat/plots-style`   | `R/marker_plot_methods.R`, `R/marker_plots.R`, `tests/testthat/test-plot-methods.R` | `ZA8`/`ZW2.2`-доводка; заодно оставшиеся call sites `dimer_thermo()`/`primer_tm()` (`:155`, `:350`, `:757`) | нет                               |
+| `feat/za-scheme`     | `R/marker_schemes.R`, `R/marker_criteria.R`                                         | `ZA6` шаг 1 (единая ось id), шаг 3                                                                          | `ZA6` шаг 3 — после `Z0.4`, `ZA8` |
+| `feat/zp5-tests`     | `tests/testthat/test-specificity.R`, `test-oligo-dg.R`, `test-dimer.R`              | `ZP5`                                                                                                       | нет                               |
+| vignette-ветки       | по одному файлу `vignettes/*.Rmd`                                                   | —                                                                                                           | последними; `Q1` не блокер        |
 
 ### ZP2. Merge order
 
@@ -1480,7 +1529,7 @@ Commit message via `git commit -F file` — never -m with backticks or $().
 - **Проверка:** `dev/logs/latest-summary.md` ≤ 10 мин, число pass не упало,
   вердикты golden не изменились. Блокер: нет.
 
-## Y. Следующий слой: конструктор технологий, цели по области, специфичность  [план, не очередь]
+## Y. Следующий слой: конструктор технологий, цели по области, специфичность [план, не очередь]
 
 Замысел, не очередь. Весь раздел — `calibration_evidence = "rule_of_thumb"`:
 пороги не калиброваны (см. `Z8`). Пункты Y0–Y7 — направления.
@@ -1499,7 +1548,7 @@ Commit message via `git commit -F file` — never -m with backticks or $().
   опубликованных маркеров предсказательную валидацию не начать.
 - **Y7. Артефакт «почему этот маркер».** Слой объяснения поверх `§X`.
 
-## YP. Распространение: контейнер, MCP, артефакт, обратная связь  [идеи, не очередь]
+## YP. Распространение: контейнер, MCP, артефакт, обратная связь [идеи, не очередь]
 
 - **YP1. Контейнер.** `docker/` на pinned `rocker/r-ver:4.6.1`.
 - **YP2. MCP-слой.** `inst/mcp/tools.R` — обёртка над экспортированным API.
