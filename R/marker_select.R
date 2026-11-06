@@ -429,12 +429,18 @@ rank_candidates <- function(data, tiers, ties) order_by_margins(data, tiers, tie
 #' @param skip_on_failure when nothing clears the gates, return `best = NULL`
 #'   (`FALSE`, the default: the pairing is doomed) or the least-bad candidate
 #'   (`TRUE`: it goes to the second pass, which dooms it if it is not clean).
+#' @param bncc optional BNCC policy (a list passed to `bncc_rank()`, e.g.
+#'   `list(stage = "pair")`).  `NULL` keeps the declared lexicographic order
+#'   (the default); when set, the survivors are ranked by band priority and the
+#'   weighted Chebyshev regret of `R/marker_bncc.R` instead, and the winner is
+#'   the first row of the ranked table.  The Pareto front rides on the returned
+#'   table as `.pareto`.
 #' @return list with `best` (one row, or `NULL`), `relaxed` and `violated`.
 #' @keywords internal
 #' @noRd
 select_with_ladder <- function(data, gates, relax_order, tiers, ties,
                                gate_margin = NULL, gate_floor = NULL,
-                               skip_on_failure = FALSE) {
+                               skip_on_failure = FALSE, bncc = NULL) {
   if (!nrow(data)) {
     return(list(best = NULL, relaxed = character(0), violated = character(0)))
   }
@@ -472,7 +478,14 @@ select_with_ladder <- function(data, gates, relax_order, tiers, ties,
     return(list(best = best, relaxed = lowered, violated = gates))
   }
   surv <- data[ok, , drop = FALSE]
-  best <- order_by_margins(surv, tiers, intersect(ties, names(surv)))[1L, , drop = FALSE]
+  best <- if (is.null(bncc)) {
+    order_by_margins(surv, tiers, intersect(ties, names(surv)))[1L, , drop = FALSE]
+  } else {
+    args <- utils::modifyList(list(data = surv, tiers = tiers), bncc)
+    if (is.null(args$ties)) args$ties <- intersect(ties, names(surv))
+    args$ties <- intersect(args$ties, names(surv))
+    do.call(bncc_rank, args)$data[1L, , drop = FALSE]
+  }
   violated <- gates[vapply(gates, function(g) {
     m <- best[[gate_margin[[g]]]]
     !is.na(m) && m < 0
