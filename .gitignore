@@ -29,7 +29,8 @@ Thumbs.db
 # test + check artefacts
 *.Rcheck/
 *.tar.gz
-revdep/
+revdep/*
+!revdep/README.md
 tests/testthat/_snaps/**/*.new.md
 tests/testthat/Rplots.pdf
 

@@ -27,6 +27,9 @@
 ^\.cursor$
 ^ROADMAP\.md$
 ^VALIDATION\.md$
+^cran-comments\.md$
+^CITATION\.cff$
+^revdep$
 ^\.i18n-lib$
 ^\.tmp-rt$
 ^.*\.Rproj$

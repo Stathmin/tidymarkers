@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use tidymarkers in your work, please cite it as below."
+type: software
+title: "tidymarkers: Tidy Design and Quality Control of Genetic Markers"
+abstract: >-
+  An opinionated, reproducible toolkit for designing and quality controlling
+  genetic markers across many chemistries (KASP, CAPS/dCAPS, tetra-primer ARMS,
+  HRM, Sanger, SSR, InDel-size, TaqMan/dPCR, SNaPshot, LAMP/RPA, CRISPR-Dx).
+version: 0.4.0
+date-released: 2026-11-06
+license: MIT
+repository-code: https://github.com/Stathmin/tidymarkers
+url: https://github.com/Stathmin/tidymarkers
+authors:
+  - given-names: Daniil
+    family-names: Ulyanov
+    name-particle: Stathmin
+    email: uldas1508@gmail.com
+    orcid: https://orcid.org/0000-0002-5880-5931
+    affiliation: >-
+      All-Russian Research Institute of Agricultural Biotechnology (VNIISB),
+      Moscow, Russia
+keywords:
+  - plant breeding
+  - marker-assisted selection
+  - KASP
+  - primer design
+  - reproducibility
