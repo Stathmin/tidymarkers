@@ -26,7 +26,7 @@
 # Band membership per stage, ordered band by band: A = validity (would it work
 # at all?), B = robustness (will it work across the sample?), C = operational
 # (cost / convenience).  Positions index the stage's `tiers` vector, i.e. the
-# order the designer passes to `select_with_ladder()`.  See proposal §5.
+# order the designer passes to `select_with_ladder()`.  See proposal section 5.
 BNCC_BANDS <- list(
   as = list(A = c(1L, 2L), C = c(3L, 4L)),
   pair = list(A = c(1L, 2L), B = 3L, C = c(4L, 5L)),
@@ -53,13 +53,13 @@ BNCC_BANDS <- list(
 )
 
 # L5 -- the calibration hook.  The only fitted quantities are the weights and
-# the band boundaries (proposal §6).  Nothing here is fitted: `fitted` is FALSE
+# the band boundaries (proposal section 6).  Nothing here is fitted: `fitted` is FALSE
 # and every weight is 1, so `bncc_rank()` is deterministic and no criterion row
 # becomes `fitted_here`.  A fit lands by replacing this list with one whose
 # `fitted` is TRUE and whose `weights` / `bands` carry the dataset hash and CIs.
 BNCC_CALIBRATION <- list(
   fitted = FALSE,
-  protocol = "monotone ordinal regression of wet-lab outcome on regret, bootstrap CIs (proposal §6)",
+  protocol = "monotone ordinal regression of wet-lab outcome on regret, bootstrap CIs (proposal section 6)",
   weights = list(),
   bands = list()
 )
@@ -224,8 +224,10 @@ bncc_rank <- function(data, stage = NULL, tiers, ties = character(0), bands = NU
     return(list(data = data, bands = list(), calibration = BNCC_CALIBRATION))
   }
   if (is.null(bands)) bands <- bncc_bands(stage, tiers)
-  scores <- bncc_scores(data, tiers, bands, ideal = ideal, nadir = nadir,
-                        weights = weights)
+  scores <- bncc_scores(data, tiers, bands,
+    ideal = ideal, nadir = nadir,
+    weights = weights
+  )
   tie_cols <- intersect(ties, names(data))
   ord <- do.call(
     order,
