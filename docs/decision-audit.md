@@ -14,18 +14,18 @@ string is recycled by `criterion_tbl()`):
 
 | column             | value                                         | rows of 212 |
 | ------------------ | --------------------------------------------- | ----------- |
-| `source`           | `package assumption` — no printed source      | 65          |
-| `source`           | a named key of the source registry (132 rows) | 147         |
-| `evidence`         | `rule_of_thumb` (weakest rung)                | 73          |
+| `source`           | `package assumption` — no printed source      | 63          |
+| `source`           | a named key of the source registry (132 rows) | 149         |
+| `evidence`         | `rule_of_thumb` (weakest rung)                | 71          |
 | `evidence`         | `vendor_guideline`                            | 13          |
-| `evidence`         | `primary_literature`                          | 126         |
+| `evidence`         | `primary_literature`                          | 128         |
 | `evidence`         | `fitted_here`                                 | 0           |
 | `asymmetry_reason` | non-`NA` (a declared exception, below)        | 9           |
 
 ### Reading the flags
 
 - **`source = package assumption`** — the bar is what this package chose. It is
-  not wrong, but it is not cited, and no paper should be implied. 65 of 212 rows
+  not wrong, but it is not cited, and no paper should be implied. 63 of 212 rows
   are in this class.
 - **A `*:tier:*` row carries two quantities, and only one is citable.** The
   `target` column is the reference point the tier ranks toward (an amplicon
@@ -36,6 +36,13 @@ string is recycled by `criterion_tbl()`):
   (`CRITERION_TIER_POLICY_EVIDENCE`). 36 of 54 tiers now name a source for their
   target; the other 18 rank a computed quantity (Kwok ranking, a simulator, a
   population metric) and stay `rule_of_thumb`.
+- **The aggregation policy is declared once, and there are two of them.** The
+  default is the lexicographic tier order; an opt-in BNCC policy
+  (`R/marker_bncc.R`) normalises margins to a regret, compares declared priority
+  bands lexicographically, scores a band by its weighted Chebyshev (min-max)
+  regret and reports the Pareto front. Both are package policies: neither is a
+  printed threshold, so neither raises a rung, and `BNCC_CALIBRATION` stays
+  `fitted = FALSE` until wet-lab outcomes exist (proposal §6).
 - **`source = kwok1990`** — the 3'-terminal mismatch _ranking_ is Kwok's (Kwok et
   al., NAR 1990, doi 10.1093/nar/18.4.999). It does not state the
   `discrimination >= 0.5` or the 0.1 dropout number; it ranks mismatch classes by

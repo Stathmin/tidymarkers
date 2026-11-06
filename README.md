@@ -102,6 +102,14 @@ checks belong to the tier, and the order between tiers. No paper prints that
 policy; it is declared once in code (`CRITERION_TIER_POLICY_EVIDENCE`) and stays
 `rule_of_thumb` however well sourced the target is.
 
+The lexicographic order is the default. The engine can also rank with a
+**banded, non-compensatory Chebyshev** policy (`R/marker_bncc.R`, opt-in via
+`select_with_ladder(bncc = )`): margins normalise to a regret in [0, 1], declared
+priority bands are compared lexicographically, a band scores by its worst
+weighted regret, and the Pareto front is reported beside the winner. That too is
+a package policy and stays `rule_of_thumb`; `BNCC_CALIBRATION` is inert
+(`fitted = FALSE`), so it never raises an evidence rung.
+
 That policy is **data, not prose**: `marker_decision_schema()` reads the same
 constants as the engine (`KASP_GATES_*`, `KASP_RELAX_*`, `KASP_TIERS_*`), so the
 graph cannot drift from the code. `plot_decision_tree()` draws it, and an
@@ -212,11 +220,14 @@ short answer is published measurements, not a bench run by the maintainers:
   extract tables in `inst/extdata/`, and 212 ledger links from an extract to the
   test file that asserts it (46 distinct test files). The join is machine-checked,
   so a test cannot claim an extract it does not read. Across the 212 criterion
-  rows the rungs are 126 `primary_literature`, 13 `vendor_guideline` and 73
+  rows the rungs are 128 `primary_literature`, 13 `vendor_guideline` and 71
   `rule_of_thumb`; `fitted_here` is **0**, so nothing is calibrated to this
   package's own measurements. Of the 54 tier rows, 36 cite a printed target; the
   other 18 rank a computed quantity (a mismatch ranking, a simulator output, a
-  population metric) and stay `rule_of_thumb`.
+  population metric) and stay `rule_of_thumb`. Two CAPS family rows were raised
+  in phase E on a re-read full text; the other non-tier rows either name a
+  source that ranks rather than prints the bar, or their anchor has no readable
+  attachment in the collected library and stays `rule_of_thumb`.
 - **Cross-engine where it is fair**: `thermo_crosscheck()` compares SantaLucia
   2004, Allawi 1998, Sugimoto 1996 and Breslauer 1986; Primer3's `oligotm` and
   `rprimer` join as external oracles when installed, and disagreement is
