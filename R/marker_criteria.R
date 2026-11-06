@@ -567,6 +567,12 @@ criterion_sources <- function() {
     "caps:gate:gate_caps_site" = "liu2016_caps",
     "ssr:gate:gate_ssr_offtarget" = "zheng2025_ssr",
     "ssr:gate:gate_ssr_flanks" = "zheng2025_ssr",
+    # CAPS: the digest fragments of an allele sum to its undigested product
+    # (printed in the Fig. 2 legend of the marker-development paper).
+    family_caps_digest_spans = "liu2016_caps",
+    # CAPS: VCF2CAPS keeps only markers with a single restriction site - the
+    # target, polymorphic one - inside the amplified sequence.
+    family_caps_site_conserved = "vcf2caps2021",
     family_lamp_fip_alt = "nemeth2025",
     family_lamp_fip_variant = "nemeth2025",
     # CAPS: the polymorphic cut site is defined within the amplicon and
@@ -789,6 +795,8 @@ criterion_evidence_sources <- function() {
     family_lamp_fip_variant = "primary_literature",
     family_caps_site_defined = "primary_literature",
     family_caps_site_separates = "primary_literature",
+    family_caps_digest_spans = "primary_literature",
+    family_caps_site_conserved = "primary_literature",
     family_lamp_inner_inside = "primary_literature",
     family_probe_spans = "primary_literature",
     # the review prints the 30-35 nt rule before noting PCR primers also work
