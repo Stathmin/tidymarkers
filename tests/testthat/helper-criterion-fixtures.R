@@ -725,6 +725,15 @@ zw1_package_root <- function() {
     if (file.exists(file.path(path, "DESCRIPTION"))) {
       return(path)
     }
+    # `R CMD check` runs the suite from `<pkg>.Rcheck/tests/testthat` and keeps
+    # the checked sources in `<pkg>.Rcheck/00_pkg_src/<pkg>`; nothing else on
+    # the upward path carries a DESCRIPTION, so the walk below would otherwise
+    # return the testthat directory.
+    check_src <- list.files(file.path(path, "00_pkg_src"), full.names = TRUE)
+    check_src <- check_src[file.exists(file.path(check_src, "DESCRIPTION"))]
+    if (length(check_src)) {
+      return(normalizePath(check_src[[1L]], winslash = "/"))
+    }
     parent <- dirname(path)
     if (identical(parent, path)) {
       return(normalizePath(".", winslash = "/"))
