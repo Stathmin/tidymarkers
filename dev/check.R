@@ -19,7 +19,10 @@
 #       also redraws the heavy panels (target panel - needs genome
 #       data/OligoArrayAux).  Skip the step with `--no-render`.
 #    6. install smoke -- R CMD INSTALL must succeed
-#    7. R CMD check -- only with `--full` (slow; builds and checks the tarball)
+#    7. R CMD check -- only with `--full`: dev/test.R --full (parallel, ~7 min)
+#       runs the complete suite, then the tarball is built and checked as CI does
+#       (`R CMD build` applies .Rbuildignore and prebuilds + indexes the
+#       vignettes; a source-directory check does neither and fails on .tmp/)
 #
 #  Modes:
 #    --quick  routine loop: steps 1-3 only (roxygen, styler, lintr, criterion
@@ -29,8 +32,10 @@
 #             the coordinator regenerates it once, after the merge
 #    default  the gate before a change lands: steps 1-3 + figures + install smoke
 #             (spelling stays opt-in with --spelling)
-#    --full   release gate: default + R CMD check --as-cran, which runs the
-#             complete test suite (biology/external cross-checks included)
+#    --full   release gate: default + the whole suite via dev/test.R --full, then
+#             R CMD build + R CMD check --as-cran on the tarball.  The suite is
+#             not re-run inside R CMD check (that serial rerun cost ~30 min for
+#             the same files); CI still runs it inside `R CMD check`.
 #
 #  A missing tool is a message, not a failure, so it runs on a bare machine.
 #  Run:  Rscript dev/check.R [--quick] [--full] [--spelling] [--render] [--no-render]
@@ -228,8 +233,44 @@ step("install (smoke)", function() {
 # 7. R CMD check ------------------------------------------------------------
 step("R CMD check", function() {
   if (!full) return(message("  skip (pass --full to build and check)"))
-  status <- system2("R", c("CMD", "check", "--no-manual", "--as-cran", "."))
-  if (!identical(as.integer(status), 0L)) stop("R CMD check failed (status ", status, ")")
+  # Run the suite through the parallel runner once (the SOCK files are sequenced
+  # there); R CMD check's own serial rerun costs ~30 min for the same files.
+  if (!identical(as.integer(system2("Rscript", c("dev/test.R", "--full"))), 0L)) {
+    stop("dev/test.R --full failed")
+  }
+  ok("the full test suite passes (parallel)")
+
+  work <- tempfile("tm-check-")
+  dir.create(work)
+  on.exit(unlink(work, recursive = TRUE), add = TRUE)
+  old <- setwd(work)
+  on.exit(setwd(old), add = TRUE, after = FALSE)
+  # Build first, as CI does: a check of the source directory ignores
+  # .Rbuildignore (it descends into .tmp/, graphify-out/ and stale *.Rcheck
+  # trees and fails on non-portable paths), and the build is what prebuilds the
+  # vignettes into inst/doc -- the index R CMD check requires.
+  build <- suppressWarnings(system2("R", c("CMD", "build", "--no-manual", root),
+    stdout = TRUE, stderr = TRUE
+  ))
+  tarball <- Sys.glob("tidymarkers_*.tar.gz")
+  if (!length(tarball)) {
+    cat(build, sep = "\n")
+    stop("R CMD build failed")
+  }
+  # `_R_CHECK_FORCE_SUGGESTS_=false` matches CI's *installed* suggests: the
+  # heavy annotation/BLAST/Rsubread packages are optional here (see AGENTS.md).
+  status <- system2("R", c(
+    "CMD", "check", "--no-manual", "--as-cran", "--no-tests",
+    shQuote(tarball[[1L]])
+  ), env = "_R_CHECK_FORCE_SUGGESTS_=false")
+  if (!identical(as.integer(status), 0L)) {
+    log <- file.path(getwd(), "tidymarkers.Rcheck", "00check.log")
+    if (file.exists(log)) {
+      bad <- grep("ERROR|WARNING", readLines(log, warn = FALSE), value = TRUE)
+      cat(bad, sep = "\n")
+    }
+    stop("R CMD check failed (status ", status, ")")
+  }
   ok("R CMD check clean")
 })
 

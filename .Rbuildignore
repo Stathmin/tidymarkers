@@ -22,6 +22,7 @@
 ^CREDITS\.md$
 ^SECURITY\.md$
 ^\.agents$
+^\.superpowers$
 ^\.cursor$
 ^ROADMAP\.md$
 ^VALIDATION\.md$
