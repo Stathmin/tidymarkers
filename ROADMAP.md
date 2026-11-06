@@ -1411,6 +1411,20 @@ manifest + generated Markdown, а не через sidecar JSON.
 --check` — инварианты держатся. Оба самопропускаются без графа (CI).
       Блокер: нет.
       Следствие: «граф пуст» и «код чист» больше не выглядят одинаково.
+- [x] **`ZA8.3` Имена сообществ и `supersedes`-рёбра (2026-11-06).**
+      `dev/relabel-bonsai.R` — повторяемый строгий проход локальной моделью
+      (`Ternary-Bonsai-2-27B-tight`, `temperature=0`): по умолчанию чинит
+      `missing`/`duplicate`/`echo-stale`, `--all-echo` переименовывает и честные
+      однофайловые эхо, `--dry-run` печатает цели, `--limit` — дымовая проба.
+      Все **424** сообщества `named` (`echo-honest` 254 → 0), каждый проход
+      записан в `.graphify_labels.origin.json`. Реестр хендроллов переехал в
+      `dev/handrolled.yml` (данные, не код); `dev/graphify-handrolled.R`
+      идемпотентно вставляет узел `package::fn` и ребро `supersedes` в граф,
+      `dev/check.R` шаг 3b запускает его до docs/artifacts. Проверка:
+      `dev/graphify-health.R --check` — инварианты держатся, 8011 узлов /
+      10688 рёбер / 424 сообщества, 2 ребра `supersedes`.
+      Блокер: нет.
+      Следствие: граф отвечает, что заменило хендролл, а имена не врут.
 - **Состояние:** реализовано в Wave 1 (коммиты `9193e6c`/`e5a581a`).
   `docs/artifacts.yml` хеширует весь `R/`, поэтому **любая** правка `R/` делает
   20 SVG stale: после неё — `dev/render-gallery.R`, затем `dev/artifacts.R --write`.

@@ -1,0 +1,32 @@
+# Hand-roll registry.
+#
+# Every function in R/ whose body matches a "reinvention" heuristic must appear
+# here with a decision, or `Rscript dev/check-handrolled.R` fails. The ledger is
+# data (not code) so dev/graphify-handrolled.R can turn each `replacement` into a
+# `supersedes` edge in the code graph. Adapted from GWASILIY's R/handrolled.yml.
+#
+# status:
+#   replaced  - the hand-rolled symbol is gone; `replacement` is what replaced it
+#   justified - the symbol stays for a stated reason
+#   todo      - the symbol still exists but must be replaced; the gate fails
+#
+# `replacement` is `package::function`. It becomes a `supersedes` edge in the
+# graphify graph, so the graph answers "what replaced this hand-roll".
+
+entries:
+  - symbol: normalise_allele
+    replacement: Biostrings::replaceAmbiguities
+    status: justified
+    reason: >-
+      replaceAmbiguities() needs a valid DNAStringSet and rejects a raw allele
+      string that is not IUPAC; this entry point must fold any non-ACGTN
+      character (and lowercase) before a DNAString can be built.
+
+  - symbol: plot_self_complementarity
+    replacement: Biostrings::complement
+    status: justified
+    reason: >-
+      The chartr() builds a base-by-base logical pairing matrix for a ggplot;
+      Biostrings::complement() returns a DNAStringSet, which would be turned
+      back into characters to fill the same matrix. The output here is a plot
+      matrix, not a sequence.

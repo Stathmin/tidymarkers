@@ -7,6 +7,8 @@
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean
+#   2b. every hand-rolled sequence primitive is registered with a reason
+#   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
 #    4. spelling -- only with `--spelling` (the prose is English now, so spelling
@@ -119,6 +121,17 @@ step("lintr", function() {
   ok("no lints")
 })
 
+# 2b. hand-roll registry + docs/artifacts graph ------------------------------
+step("hand-roll registry", function() {
+  # a function that reimplements a sequence primitive Biostrings/TmCalculator
+  # already provides must be registered with a reason (see dev/check-handrolled.R)
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-handrolled.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-handrolled.R failed (status ", status, ")")
+  }
+  ok("every hand-rolled sequence primitive is registered or replaced")
+})
+
 # 3. criterion fixtures + docs/artifacts graph ------------------------------
 step("criterion fixtures", function() {
   # ZW1: a criterion without a fail fixture (or an exemption with a reason) must
@@ -129,6 +142,20 @@ step("criterion fixtures", function() {
     stop("dev/check-criteria.R failed (status ", status, ")")
   }
   ok("every registered criterion has a fail fixture or a reasoned exemption")
+})
+
+step("hand-roll graph edges", function() {
+  # injects `package::function` nodes + `supersedes` edges so the graph answers
+  # "what replaced this hand-roll". Mutates the gitignored graphify-out/graph.json
+  # (a developer tool, as GWASILIY does) and self-skips when the graph is absent.
+  if (!file.exists("graphify-out/graph.json")) {
+    return(message("  skip (no graphify-out/graph.json - CI has no graph)"))
+  }
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/graphify-handrolled.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/graphify-handrolled.R failed (status ", status, ")")
+  }
+  ok("hand-roll replacements are in the graph as `supersedes` edges")
 })
 
 step("docs/artifacts", function() {

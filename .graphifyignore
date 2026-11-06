@@ -1,0 +1,11 @@
+# Design scratch, not package API: proposed marker sets inflate the node count
+# and pollute query/community names.
+data-raw/proposed/
+
+# Local run output, never part of the package graph.
+results/
+.tmp/
+
+# Vendored external tool (OligoArrayAux/elk JS), not package API; also the
+# source of the one accepted self-loop.
+.tools/
