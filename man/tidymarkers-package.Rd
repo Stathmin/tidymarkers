@@ -37,11 +37,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID})
+\strong{Maintainer}: Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID}) (affiliation: All-Russian Research Institute of Agricultural Biotechnology (VNIISB))
 
 Authors:
 \itemize{
-  \item Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID})
+  \item Daniil Ulyanov \email{uldas1508@gmail.com} (\href{https://orcid.org/0000-0002-5880-5931}{ORCID}) (affiliation: All-Russian Research Institute of Agricultural Biotechnology (VNIISB))
 }
 
 }

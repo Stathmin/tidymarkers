@@ -3,7 +3,8 @@ Title: Tidy Design and Quality Control of Genetic Markers
 Version: 0.4.0
 Authors@R: person("Daniil", "Ulyanov", email = "uldas1508@gmail.com",
     role = c("aut", "cre"),
-    comment = c(ORCID = "0000-0002-5880-5931"))
+    comment = c(ORCID = "0000-0002-5880-5931",
+    affiliation = "All-Russian Research Institute of Agricultural Biotechnology (VNIISB)"))
 Description: An opinionated, reproducible toolkit for designing and quality
     controlling genetic markers across many chemistries (KASP, CAPS/dCAPS,
     tetra-primer ARMS, HRM, Sanger, SSR, InDel-size, TaqMan/dPCR, SNaPshot,

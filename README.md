@@ -290,6 +290,41 @@ and [`SECURITY.md`](SECURITY.md) to report a vulnerability privately.
   catalogue (`n_3p`), which is not exhaustive: rare variants in your own samples
   are invisible to it.
 
+## How to cite
+
+`tidymarkers` is research software by Daniil Ulyanov at the [All-Russian
+Research Institute of Agricultural Biotechnology
+(VNIISB)](https://www.vniisb.ru), Moscow. If it contributed to a publication,
+please cite the package and the version you ran:
+
+```r
+citation("tidymarkers")
+```
+
+which prints, at version 0.4.0:
+
+```bibtex
+@Manual{,
+  title = {tidymarkers: Tidy Design and Quality Control of Genetic Markers},
+  author = {Daniil Ulyanov},
+  organization = {All-Russian Research Institute of Agricultural Biotechnology (VNIISB)},
+  year = {2026},
+  note = {R package version 0.4.0},
+  url = {https://github.com/Stathmin/tidymarkers},
+}
+```
+
+Machine-readable metadata is in [`CITATION.cff`](CITATION.cff) (picked up by
+GitHub and Zenodo), so a release can be cited by DOI once it is archived. The
+author's ORCID is [0000-0002-5880-5931](https://orcid.org/0000-0002-5880-5931).
+
+Beyond the package itself, `tidymarkers` rests on published measurements —
+132 sources, every one with a DOI and 110 also with a PubMed Central id, in
+[`inst/extdata/scientific_sources.csv`](inst/extdata/scientific_sources.csv).
+Cite the primary source for any rule that shaped your design, not the package
+alone; the rule-to-source mapping is in
+[`VALIDATION.md`](VALIDATION.md).
+
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE), copyright 2026 Daniil Ulyanov.
