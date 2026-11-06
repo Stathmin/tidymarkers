@@ -1,49 +1,73 @@
 # GitHub Actions CI for tidymarkers.
 #
-# Runs on every push and pull request: R CMD check --as-cran on the package,
-# with OligoArrayAux available because DECIPHER needs `hybrid-min`/`hybrid-ss-min`
-# for its dG/Tm estimates. The genome, variation and indexes are *not* needed --
-# every network example is wrapped in \dontrun{} and tests use fixtures.
+# Runs on every push and pull request: R CMD check --as-cran across the
+# platforms CRAN builds on. `release` is checked on Linux, macOS and Windows;
+# `oldrel-1` and `devel` only on Linux, where they catch R-version breakage
+# without tripling the wall clock.
+#
+# OligoArrayAux (`hybrid-min`/`hybrid-ss-min`) and BLAST+ are *optional*
+# engines: the suite skips an assertion when an engine is absent, so the Linux
+# legs install both and the macOS/Windows legs install only what their package
+# manager offers. The genome, variation and indexes are never needed -- every
+# network example is wrapped in \dontrun{} and tests use fixtures.
 name: R-CMD-check
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 jobs:
-  R-CMD-check:
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-      _R_CHECK_FORCE_SUGGESTS_: false
-    steps:
-      - uses: actions/checkout@v4
+    R-CMD-check:
+        name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+        runs-on: ${{ matrix.config.os }}
+        env:
+            GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+            R_KEEP_PKG_SOURCE: yes
+            _R_CHECK_FORCE_SUGGESTS_: false
+        strategy:
+            fail-fast: false
+            matrix:
+                config:
+                    - { os: ubuntu-latest, r: "release", engines: unix }
+                    - { os: ubuntu-latest, r: "oldrel-1", engines: unix }
+                    - { os: ubuntu-latest, r: "devel", engines: unix }
+                    - { os: macos-latest, r: "release", engines: mac }
+                    - { os: windows-latest, r: "release", engines: none }
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
+            - uses: r-lib/actions/setup-r@v2
+              with:
+                  r-version: ${{ matrix.config.r }}
+                  use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::rcmdcheck
-          needs: check
+            - uses: r-lib/actions/setup-r-dependencies@v2
+              with:
+                  extra-packages: any::rcmdcheck
+                  needs: check
 
-      # OligoArrayAux provides `hybrid-min`, which DECIPHER needs for dG/Tm.
-      - name: Install OligoArrayAux
-        run: |
-          conda install -y -c bioconda -c conda-forge oligoarrayaux
-          echo "$CONDA/bin" >> "$GITHUB_PATH"
+            # OligoArrayAux provides `hybrid-min`, which DECIPHER needs for dG/Tm.
+            - name: Install OligoArrayAux (Linux)
+              if: matrix.config.engines == 'unix'
+              run: |
+                  conda install -y -c bioconda -c conda-forge oligoarrayaux
+                  echo "$CONDA/bin" >> "$GITHUB_PATH"
 
-      # BLAST+ is the fourth measurement engine in the provenance stamp. The
-      # suite skips the stamp assertion when an engine is absent, so this step
-      # is what keeps that assertion exercised here.
-      - name: Install BLAST+
-        run: sudo apt-get update && sudo apt-get install -y ncbi-blast+
+            # BLAST+ is the fourth measurement engine in the provenance stamp. The
+            # suite skips the stamp assertion when an engine is absent, so this step
+            # is what keeps that assertion exercised here.
+            - name: Install BLAST+ (Linux)
+              if: matrix.config.engines == 'unix'
+              run: sudo apt-get update && sudo apt-get install -y ncbi-blast+
 
-      - uses: r-lib/actions/check-r-package@v2
-        with:
-          args: 'c("--no-manual", "--as-cran")'
-          error-on: '"warning"'
+            - name: Install BLAST+ (macOS)
+              if: matrix.config.engines == 'mac'
+              run: brew install blast
+
+            - uses: r-lib/actions/check-r-package@v2
+              with:
+                  args: 'c("--no-manual", "--as-cran")'
+                  error-on: '"warning"'
+                  upload-snapshots: true
