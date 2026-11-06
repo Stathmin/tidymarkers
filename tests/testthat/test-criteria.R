@@ -43,7 +43,7 @@ test_that("marker_criteria declares gates, tiers and checks with metadata", {
   # `rule` is the snapshot multiplex-rule class (§U): stated guidance with no
   # continuous limit, so it is neither a gate, a tier, nor a check.
   expect_setequal(unique(crit$role), c("gate", "tier", "check", "rule"))
-  expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "order", "schemes") %in% names(crit)))
+  expect_true(all(c("stage", "id", "label", "level", "hard", "limit", "target", "order", "schemes") %in% names(crit)))
   # ZW4: the spec carries the evidence rung (the public view does not expose it yet),
   # right after the deprecated `calibrated` column so no existing column moves
   spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
@@ -88,6 +88,48 @@ test_that("ZW4.6: a criterion names a source only where one states the bar", {
   ))
   # the citation is a KEY of the source registry, not prose a reader cannot look up
   expect_true(all(map %in% utils::read.csv(tm_extdata("scientific_sources.csv"))$key))
+})
+
+test_that("ZW4.6: a raised rung always has a printed source", {
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  ev <- tidymarkers:::criterion_evidence_sources()
+  # every raised rung names a real criterion and a legal ladder value
+  expect_true(all(names(ev) %in% spec$id))
+  expect_identical(anyDuplicated(names(ev)), 0L)
+  expect_true(all(ev %in% tidymarkers:::CRITERION_EVIDENCE))
+  # the rung on the row is the one the map names
+  expect_true(all(as.character(spec$evidence[match(names(ev), spec$id)]) == ev))
+  # a raised rung is never above the base without a citation: every raised row
+  # is also in criterion_sources(), so it names a registry key
+  expect_true(all(names(ev) %in% names(tidymarkers:::criterion_sources())))
+  # and every raised row is off the default source
+  expect_false(any(spec$source[match(names(ev), spec$id)] == "package assumption"))
+})
+
+test_that("ZW4.6: a tier splits into a printed target and a package policy", {
+  spec <- tidymarkers:::criterion_spec(KASP_LIMITS)
+  tiers <- spec[spec$role == "tier", ]
+  expect_gt(nrow(tiers), 0L)
+  # every tier has a reference point (the citable half), sourced or not
+  expect_false(anyNA(tiers$target))
+  expect_true(all(nzchar(tiers$target)))
+  # the aggregation policy is a package decision, declared once, and no source
+  # overlay ever promotes it: `evidence` on a tier row is the target's rung
+  expect_identical(
+    tidymarkers:::CRITERION_TIER_POLICY_EVIDENCE, "rule_of_thumb"
+  )
+  expect_identical(tiers$limit, rep(tidymarkers:::CRITERION_TIER_LIMIT, nrow(tiers)))
+  # a promoted tier names its target's source; an unsourced tier keeps the
+  # package default and the weakest rung
+  promoted <- as.character(tiers$evidence) != "rule_of_thumb"
+  expect_true(any(promoted))
+  expect_true(all(tiers$source[promoted] != "package assumption"))
+  expect_true(all(tiers$source[!promoted] == "package assumption"))
+  expect_true(all(as.character(tiers$evidence[!promoted]) == "rule_of_thumb"))
+  # only a tier row carries a target
+  expect_true(all(is.na(spec$target[spec$role != "tier"])))
+  # the public view exposes the same split
+  expect_true("target" %in% names(marker_criteria()))
 })
 
 test_that("ZW4.6: every criterion carries a machine-checkable provenance statement", {

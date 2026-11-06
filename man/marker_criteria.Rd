@@ -15,7 +15,8 @@ criteria that scheme serves are returned.}
 \value{
 tibble with \code{stage}, \code{role} (\code{gate}/\code{tier}/\code{check}), \code{id}, \code{label},
 \code{level} (\code{site}/\code{feature}/\code{alignment}/\code{specificity}), \code{hard}, \code{limit},
-\code{order}, \code{schemes} (list-column of scheme ids).
+\code{target} (a tier's printed reference point, \code{NA} elsewhere), \code{order},
+\code{schemes} (list-column of scheme ids).
 }
 \description{
 One row per criterion the pipeline applies: the selection gates and ranking

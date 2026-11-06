@@ -73,6 +73,7 @@ marker_amplicon_window <- function(family = "kasp", limits = KASP_LIMITS) {
   switch(family,
     caps = caps_limits()$amplicon,
     arms = as.numeric(KASP_ARMS_WINDOW$control),
+    asq = ASQ_AMPLICON,
     crispr = product_window(design_crispr_marker),
     dpcr = product_window(design_dpcr_marker),
     indel_size = KASP_INDEL_SIZE_LIMITS$amplicon,
@@ -114,6 +115,18 @@ marker_amplicon_window <- function(family = "kasp", limits = KASP_LIMITS) {
 # The one textual limit a ranking tier carries (the tiers are maximised, so their
 # bar is the ranking itself, not a threshold on the observed value).
 CRITERION_TIER_LIMIT <- "maximise (per-tier bottleneck min)"
+
+# ZW4.6: a `*:tier:*` row is two quantities, and only one of them is citable.
+#   * the TARGET - the reference point the tier ranks candidates toward (a
+#     window, a dG floor, a design rule).  A paper or a vendor manual does print
+#     this, so it carries the row's `evidence` rung and is stored in `target`.
+#   * the AGGREGATION POLICY - bottleneck `min` within a tier, tier membership,
+#     lexicographic order across tiers.  No source prints it, so it stays
+#     `rule_of_thumb` by construction.  It is declared once, here, and
+#     `order_by_margins()` / `select_with_ladder()` implement it.
+# Before the split the two shared one `limit` string, which pinned every tier at
+# `rule_of_thumb` even when its target was fully sourced.
+CRITERION_TIER_POLICY_EVIDENCE <- "rule_of_thumb"
 
 # Criterion kinds: a numeric bar, a set of allowed levels, or a tested predicate.
 CRITERION_KINDS <- c("numeric", "categorical", "boolean")
@@ -263,6 +276,8 @@ criterion_tbl <- function(id, scope, stage, role, label, level, kind, bounds,
     kind = kind,
     bounds = bounds,
     units = units,
+    # the reference point a tier ranks toward; NA on every other row (ZW4.6)
+    target = rep(NA_character_, n),
     source = rep(source, length.out = n),
     calibrated = rep(as.logical(calibrated %||% NA), length.out = n),
     evidence = rung,
@@ -400,21 +415,27 @@ criterion_sources <- function() {
     # `as_mismatch_type` names its source at its own row in marker_check_ways();
     # repeating it here keeps the map a complete view of the sourced rows.
     as_mismatch_type = "kwok1990",
-    # Pairwise dG from the unified nearest-neighbour parameters, secondary
-    # structure filtered thermodynamically.
-    hairpin_dg = "santalucia1998",
-    cross_dimer_dg = "santalucia1998",
-    homodimer_dg = "santalucia1998",
-    "pair:gate:gate_structure" = "santalucia1998",
-    "indel_size:gate:gate_indel_size_structure" = "santalucia1998",
-    "dpcr:gate:gate_dpcr_probe_structure" = "santalucia1998",
-    "taqman:gate:gate_taqman_probe_structure" = "santalucia1998",
-    "snapshot:gate:gate_snapshot_structure" = "santalucia1998",
-    "rpa:gate:gate_rpa_structure" = "santalucia1998",
+    # The dG *values* use SantaLucia 1998's nearest-neighbour parameters, but
+    # the *threshold* a design has to clear is printed in the papers below:
+    # DeGenPrime filters a combined hairpin/dimer dG below -3 kcal/mol (the
+    # same number as each *_structure bar), and an allele-specific qPCR protocol
+    # keeps primers/probes with a secondary-structure dG >= -9 kcal/mol (the
+    # cross_dimer_dg / homodimer_dg bars).
+    hairpin_dg = "degenprime2024",
+    cross_dimer_dg = "vavilov2024",
+    homodimer_dg = "vavilov2024",
+    "pair:gate:gate_structure" = "degenprime2024",
+    "indel_size:gate:gate_indel_size_structure" = "degenprime2024",
+    "dpcr:gate:gate_dpcr_probe_structure" = "degenprime2024",
+    "taqman:gate:gate_taqman_probe_structure" = "degenprime2024",
+    "snapshot:gate:gate_snapshot_structure" = "degenprime2024",
+    "rpa:gate:gate_rpa_structure" = "degenprime2024",
     # The Barley ASQ method paper states its own amplicon (50-100 bp) and the
     # forward primers' Tm window (55-56 C, p. 7) for these two rows.
     amplicon = "fret_asqpcr2021",
-    "asq:tier:tier1" = "fret_asqpcr2021",
+    # ZW4.6 A/B: the 63 C ASQ optimum (range 62-64 C) is printed here, not in
+    # the FRET method paper, which states the amplicon window only.
+    "asq:tier:tier1" = "kalendar2022_competitive",
     # Lobato & O'Sullivan 2018 (a review) states the RPA primer-length,
     # amplicon and nfo-probe geometry bars the RPA scheme inherited.  The
     # primer-length sentence is the historical belief the review then softens
@@ -422,7 +443,399 @@ criterion_sources <- function() {
     "rpa:gate:gate_rpa_primer_len" = "lobato2018",
     family_rpa_primer_length = "lobato2018",
     "rpa:gate:gate_rpa_amplicon" = "lobato2018",
-    "rpa:gate:gate_rpa_probe" = "lobato2018"
+    "rpa:gate:gate_rpa_probe" = "lobato2018",
+    # ZW4.6 round 4.  The FAASA protocol (a peer-reviewed Bio-protocol) prints
+    # the 40-60 % GC window its allele-specific primers are designed to.
+    as_gc = "faasa2026",
+    com_gc = "faasa2026",
+    # EasyKASP states the KASP amplicon range as a typical design property
+    # (50-100 bp); see its `access_detail` for the "typically" caveat.
+    "pair:gate:gate_amplicon" = "easykasp2025",
+    # Ichida 2018 prints the 50-100 bp product window its HRM primers were
+    # designed to produce.
+    "hrm:gate:gate_hrm_amplicon" = "jsbbs2018",
+    # De Keyzer 2026 applies the Piepenburg/TwistDx manual's homopolymer rule
+    # (no more than three identical nucleotides = run < 4) to its RPA primers.
+    max_run = "dekeyzer2026",
+    # A Cas12a editing protocol prints the canonical TTTV PAM (the family row's
+    # whole bar).  The combined per-scheme row (Cas12a + Cas13a + Cas13b) is
+    # NOT sourced: no single text prints all three tokens.
+    family_crispr_pam = "cas12a_beech2026",
+    # ZW4.6 round 4, relaxed same-quantity rule: a source that prints a design
+    # rule for the same quantity qualifies even when its range is wider or
+    # offset; the printed number and the offset live in the source's
+    # `access_detail`, and the package `bounds` never move.
+    #
+    # FAASA (57-60 C for each primer / TSP-CGSP within 1-2 C).
+    as_tm = "faasa2026",
+    com_tm = "faasa2026",
+    # EasyKASP common-primer Tm +2 C above the specific primers.
+    com_tm_ge_as_tm = "easykasp2025",
+    "pair:gate:gate_tm" = "easykasp2025",
+    # mxKASP targets two non-homologous markers in one reaction (the dKASP
+    # homologous branch is stated separately in the literature).
+    "duplex:gate:gate_duplex_targets" = "mxkasp2025",
+    # LAMP review: F2/B2 arm 60-65 C; target <=300 nt, typically 130-260;
+    # no secondary structure.
+    "lamp:gate:gate_lamp_inner_tm" = "nemeth2025",
+    "lamp:gate:gate_lamp_amplicon" = "nemeth2025",
+    "lamp:gate:gate_lamp_structure" = "nemeth2025",
+    # SNP-LAMP puts the allele-specific base at the 3' terminus of an inner
+    # primer (B2/BIP) - the same principle as the package's FIP rule.
+    "lamp:gate:gate_lamp_variant" = "snp_lamp_lfd2025",
+    # Cas12a crRNA design: 19-24 nt spacer and 30-70 % GC.
+    "crispr:gate:gate_crispr_spacer" = "cas12a_beech2026",
+    "crispr:gate:gate_crispr_gc" = "cas12a_beech2026",
+    # ddPCR: amplicon 70-150 bp, primer Tm 58-62, probe Tm +5-10, probe
+    # GC 40-60 %.
+    "dpcr:gate:gate_dpcr_probe_comp" = "ppr_ddpcr2026",
+    "dpcr:gate:gate_dpcr_primer_tm" = "ppr_ddpcr2026",
+    "dpcr:gate:gate_dpcr_amplicon" = "ppr_ddpcr2026",
+    "dpcr:gate:gate_dpcr_probe_tm" = "ppr_ddpcr2026",
+    # TaqMan allele-specific qPCR: probe GC 30-70, no 5' G, no 4+ G run;
+    # primer Tm 58-60; amplicon 80-120; probe +6-8 C.
+    "taqman:gate:gate_taqman_probe_comp" = "vavilov2024",
+    "taqman:gate:gate_taqman_primer_tm" = "vavilov2024",
+    "taqman:gate:gate_taqman_amplicon" = "vavilov2024",
+    # castPCR is TaqMan-probe allele-specific chemistry, so the same qPCR
+    # criteria apply to its ASP, probe and amplicon.
+    "castpcr:gate:gate_castpcr_as_tm" = "vavilov2024",
+    "castpcr:gate:gate_castpcr_probe_tm" = "vavilov2024",
+    "castpcr:gate:gate_castpcr_amplicon" = "vavilov2024",
+    family_probe_tm_delta = "vavilov2024",
+    # Sanger read margin: >=50 nt from the sequencing primer to the variant.
+    "sanger:gate:gate_sanger_dist" = "vavilov2024",
+    family_sanger_read_distance = "vavilov2024",
+    # RPA: a mismatch at the primer 3' end suppresses amplification.
+    "rpa:gate:gate_rpa_variant" = "lobato2018",
+    # Avoid inverted repeats in a primer.
+    inverted_repeat = "kalendar2025",
+    # Gel band resolution >=10 bp; product-size delta >=10 bp; SSR amplicon
+    # 50-150 bp.
+    "caps:gate:gate_caps_resolvable" = "ssr_gel2026",
+    "arms:gate:gate_arms_bands" = "ssr_gel2026",
+    family_caps_band_gap = "ssr_gel2026",
+    family_size_delta = "ssr_gel2026",
+    "ssr:gate:gate_ssr_amplicon" = "ssr_gel2026",
+    # SSR repeat-copy floor (motif-dependent; trinucleotide floor is 5).
+    "ssr:gate:gate_ssr_polymorphic" = "moso_bamboo2026",
+    # InDel amplicon window printed as 200-320 bp.
+    "indel_size:gate:gate_indel_size_amplicon" = "indel_melon2025",
+    "indel_size:gate:gate_indel_size_gap" = "ssr_gel2026",
+    # General PCR-primer Tm window (58-60 C) printed under "Design of primers"
+    # in an allele-specific qPCR protocol; the same quantity as each scheme's
+    # primer-Tm bar.
+    "hrm:gate:gate_hrm_tm" = "vavilov2024",
+    "indel_size:gate:gate_indel_size_tm" = "vavilov2024",
+    "ssr:gate:gate_ssr_tm" = "vavilov2024",
+    "caps:gate:gate_caps_tm" = "vavilov2024",
+    "sanger:gate:gate_sanger_tm" = "vavilov2024",
+    "duplex:gate:gate_duplex_tm" = "vavilov2024",
+    # Repeat-copy floor (motif-dependent; trinucleotide floor is 5).
+    family_size_repeat_copies = "moso_bamboo2026",
+    # Standard TaqMan guideline (preferred probe Tm 68-70 C) restated by a
+    # paper whose own probe fell outside it.
+    "taqman:gate:gate_taqman_probe_tm" = "cov_a4_qpcr2026",
+    # ZW4.6 round 4 continued: multiplex KASP prints the exact primer-dimer
+    # and self-complementarity bars; the TaqMan protocol prints the probe
+    # variant-position rule; two more amplicon/probe windows are printed
+    # verbatim.
+    "duplex:gate:gate_duplex_complement" = "wang2025_multikasp",
+    "duplex:gate:gate_duplex_selfcomp" = "wang2025_multikasp",
+    "caps:gate:gate_caps_amplicon" = "liu2016_caps",
+    "taqman:gate:gate_taqman_centrality" = "vavilov2024",
+    # The SNaPshot extension primer inherits the same composition rule as a
+    # probe (GC floor, homopolymer ceiling, no long SSR): a forensic InDel
+    # paper prints it for its probes.
+    "snapshot:gate:gate_snapshot_comp" = "dekeyzer2026",
+    # The RPA amplicon window the CRISPR scheme inherits (80-250 bp) is the
+    # RPA guide's 100-200 bp window, stated for the same quantity.
+    "crispr:gate:gate_crispr_amplicon" = "lobato2018",
+    # SNaPshot/SBE design: a protocol places the extension primer one base
+    # upstream of the SNP; a 14-plex cSNP SNaPshot assay prints the extension
+    # primer Tm window. An InDel-marker paper prints the single-locus rule.
+    "snapshot:gate:gate_snapshot_placement" = "tso2022_snapshot",
+    "snapshot:gate:gate_snapshot_tm" = "zhao2026_snapshot",
+    "indel_size:gate:gate_indel_size_unique" = "li2026_indel",
+    # A probe must bind only one region; the same protocol prints the 3'-end
+    # homopolymer / secondary-structure primer rule.
+    "taqman:gate:gate_taqman_probe_specific" = "vavilov2024",
+    "sanger:gate:gate_sanger_primer" = "faasa2026",
+    # CAPS: the polymorphic enzyme cut sits in the middle of the amplicon;
+    # SSR: one in-silico product and primers from unique flanking sequence;
+    # SNP-LAMP: the variant sits at the FIP 3' end (or BIP 5' end).
+    "caps:gate:gate_caps_site" = "liu2016_caps",
+    "ssr:gate:gate_ssr_offtarget" = "zheng2025_ssr",
+    "ssr:gate:gate_ssr_flanks" = "zheng2025_ssr",
+    family_lamp_fip_alt = "nemeth2025",
+    family_lamp_fip_variant = "nemeth2025",
+    # CAPS: the polymorphic cut site is defined within the amplicon and
+    # separates the alleles (distinct bands after digestion).  LAMP: FIP/BIP
+    # 3' ends lie inside the F3/B3 footprint.  TaqMan: the probe spans the
+    # variant (site in the middle third of an 18-30 nt probe).
+    family_caps_site_defined = "liu2016_caps",
+    family_caps_site_separates = "liu2016_caps",
+    family_lamp_inner_inside = "nemeth2025",
+    family_probe_spans = "vavilov2024",
+    # generic primer QC: avoid repeats inside the primer, and require no
+    # non-specific genome binding (the InDel paper drops such primers).
+    ssr = "faasa2026",
+    offtarget_hits = "li2026_indel",
+    # SSR repeat-unit length: the sugar-beet marker paper prints 1-6 bp
+    # (the package's 2-4 nt is the subset it designs for).
+    family_size_repeat_unit = "ssr_gel2026",
+    # ZW4.6 phases A/B: the TARGET half of each ranking tier.  A tier's `limit`
+    # is its aggregation policy (a package decision, `rule_of_thumb` by
+    # construction); these keys name the source that prints the reference point
+    # the tier ranks toward.  Printed number and any offset are in `target` and
+    # the source's `access_detail`.
+    "as:tier:tier2" = "vavilov2024",
+    "pair:tier:tier1" = "degenprime2024",
+    "pair:tier:tier2" = "easykasp2025",
+    "pair:tier:tier3" = "easykasp2025",
+    "duplex:tier:tier1" = "wang2025_multikasp",
+    "duplex:tier:tier2" = "wang2025_multikasp",
+    "caps:tier:tier1" = "ssr_gel2026",
+    "caps:tier:tier2" = "vavilov2024",
+    "caps:tier:tier3" = "liu2016_caps",
+    "arms:tier:tier2" = "ssr_gel2026",
+    "arms:tier:tier3" = "vavilov2024",
+    "hrm:tier:tier1" = "jsbbs2018",
+    "hrm:tier:tier2" = "vavilov2024",
+    "castpcr:tier:tier2" = "vavilov2024",
+    "castpcr:tier:tier3" = "vavilov2024",
+    "crispr:tier:guide" = "cas12a_beech2026",
+    "dpcr:tier:tier1" = "ppr_ddpcr2026",
+    "dpcr:tier:tier2" = "degenprime2024",
+    "dpcr:tier:tier3" = "ppr_ddpcr2026",
+    "indel_size:tier:tier1" = "vavilov2024",
+    "indel_size:tier:tier3" = "vavilov2024",
+    "lamp:tier:tier2" = "nemeth2025",
+    "lamp:tier:tier3" = "nemeth2025",
+    "lamp:tier:tier4" = "nemeth2025",
+    "rpa:tier:tier2" = "lobato2018",
+    "rpa:tier:tier3" = "lobato2018",
+    "rpa:tier:tier4" = "lobato2018",
+    "sanger:tier:tier2" = "vavilov2024",
+    "snapshot:tier:tier1" = "zhao2026_snapshot",
+    "snapshot:tier:tier2" = "degenprime2024",
+    "ssr:tier:tier1" = "vavilov2024",
+    "ssr:tier:tier2" = "moso_bamboo2026",
+    "ssr:tier:tier3" = "vavilov2024",
+    "taqman:tier:tier2" = "cov_a4_qpcr2026",
+    "taqman:tier:tier3" = "ppr_ddpcr2026"
+  )
+}
+
+# The reference point each ranking tier ranks candidates toward (ZW4.6).  This
+# is the citable half of the row; the aggregation policy - the bottleneck `min`,
+# tier membership and order - is the package's, is declared once by
+# `CRITERION_TIER_LIMIT` / `CRITERION_TIER_POLICY_EVIDENCE`, and is never
+# disguised as a threshold.  A target is present for every tier, sourced or not;
+# when a source states it, `criterion_sources()` names the key and
+# `criterion_evidence_sources()` sets the rung.
+#
+# Keys are criterion ids.  Printed numbers are given in the source's own units;
+# where the package bar is offset or narrower, the offset is repeated in the
+# source's `access_detail`.
+criterion_tier_targets <- function() {
+  c(
+    "as:tier:tier1" = "mutant/WT discrimination margin (computed in-silico)",
+    "as:tier:tier2" = "AS primer Tm 58-60 C (package bar 58-63 C)",
+    "as:tier:tier3" = "3'-terminal mismatch weakness (Kwok rank)",
+    "as:tier:tier4" = "footprint load (simulated dropout)",
+    "pair:tier:tier1" = "hairpin + homodimer dG >= -3 kcal/mol",
+    "pair:tier:tier2" = "common-primer Tm >= AS Tm, ideally +2 C",
+    "pair:tier:tier3" = "amplicon 50-100 bp",
+    "pair:tier:tier4" = "footprint load (simulated dropout)",
+    "pair:tier:tier5" = "weakest COM 3'-terminal 5-mer dG (package rule)",
+    "duplex:tier:tier1" = "<= 5 self-complementary bases",
+    "duplex:tier:tier2" = "shared amplicon <= 150 bp",
+    "asq:tier:tier1" = "AS primer Tm 63 C (range 62-64 C)",
+    "caps:tier:tier1" = ">= 10 bp band gap (gel resolvability)",
+    "caps:tier:tier2" = "primer pair dTm <= 2 C, Tm 58-60 C",
+    "caps:tier:tier3" = "CAPS product 200-1000 bp",
+    "arms:tier:tier1" = "inner-primer discrimination margin (Kwok rank)",
+    "arms:tier:tier2" = ">= 10 bp band separation",
+    "arms:tier:tier3" = "primer Tm spread <= 2 C across the tube",
+    "hrm:tier:tier1" = "variant at the centre of the amplified sequence",
+    "hrm:tier:tier2" = "primer pair dTm <= 2 C",
+    "castpcr:tier:tier1" = "ASP mutant/WT discrimination margin (Kwok rank)",
+    "castpcr:tier:tier2" = "AS/probe Tm 58-60 C, dTm <= 2 C",
+    "castpcr:tier:tier3" = "amplicon 80-120 nt",
+    "crispr:tier:guide" = "Cas12a TTTV PAM; spacer 19-24 nt; GC 30-70 %",
+    "crispr:tier:seed" = "variant inside the PAM-proximal seed window",
+    "crispr:tier:specificity" = "guide off-target count (computed)",
+    "crispr:tier:amplicon" = "pre-amplification product window (scheme default)",
+    "dpcr:tier:tier1" = "probe Tm 5-10 C above the primer Tm",
+    "dpcr:tier:tier2" = "probe hairpin/homodimer dG >= -3 kcal/mol",
+    "dpcr:tier:tier3" = "amplicon 70-150 bp",
+    "indel_size:tier:tier1" = "primer pair dTm <= 2 C, Tm 58-60 C",
+    "indel_size:tier:tier2" = "amplicon wide enough to resolve the InDel (scheme default)",
+    "indel_size:tier:tier3" = "<= 2 G/C in the last 5 nt; no T at the 3' end",
+    "lamp:tier:tier1" = "variant at the FIP 3' end / BIP 5' end (mismatch position)",
+    "lamp:tier:tier2" = "F2/B2 arm Tm 60-65 C",
+    "lamp:tier:tier3" = "no secondary structure in the primers",
+    "lamp:tier:tier4" = "target 130-260 nt, at most 300 nt",
+    "lax:tier:tier1" = "resolvable ALT haplotype frequency (computed)",
+    "rpa:tier:tier1" = "3'-anchor mismatch class (classification)",
+    "rpa:tier:tier2" = "primer length 30-35 nt",
+    "rpa:tier:tier3" = "THF probe: >= 30 nt from the 5' end, >= 15 nt from the 3' end",
+    "rpa:tier:tier4" = "amplicon 100-200 bp",
+    "sanger:tier:tier1" = "variant central in the amplicon",
+    "sanger:tier:tier2" = "primer pair dTm <= 2 C",
+    "sanger:tier:tier3" = "amplicon length (scheme default)",
+    "snapshot:tier:tier1" = "extension-primer Tm 53-60 C",
+    "snapshot:tier:tier2" = "extension primer hairpin/homodimer dG >= -3 kcal/mol",
+    "snapshot:tier:tier3" = "amplicon near the ideal (scheme default)",
+    "ssr:tier:tier1" = "primer pair dTm <= 2 C, Tm 58-60 C",
+    "ssr:tier:tier2" = "amplicon 100-300 bp",
+    "ssr:tier:tier3" = "<= 2 G/C in the last 5 nt; no T at the 3' end",
+    "taqman:tier:tier1" = "probe-variant mismatch dG margin (package rule)",
+    "taqman:tier:tier2" = "probe Tm 68-70 C, 8-10 C above the primers",
+    "taqman:tier:tier3" = "amplicon 70-150 bp"
+  )
+}
+
+# The rung behind each raised row.  `criterion_sources()` says WHERE the number
+# is printed; this says HOW STRONGLY it is fixed, and only ever raises a row that
+# has a source (a rung with no citation would be provenance without a page).
+# Rows absent here keep the constructor's `rule_of_thumb`.
+criterion_evidence_sources <- function() {
+  c(
+    as_gc = "primary_literature",
+    com_gc = "primary_literature",
+    "pair:gate:gate_amplicon" = "primary_literature",
+    "hrm:gate:gate_hrm_amplicon" = "primary_literature",
+    # the number is a vendor (TwistDx/Piepenburg) default reproduced in a paper
+    max_run = "vendor_guideline",
+    family_crispr_pam = "primary_literature",
+    # ZW4.6 round 4 expansion: a peer-reviewed paper or protocol prints the
+    # same quantity as the bar (see each source's `access_detail` for the
+    # printed number and its offset from the package `bounds`).
+    as_tm = "primary_literature",
+    com_tm = "primary_literature",
+    com_tm_ge_as_tm = "primary_literature",
+    "pair:gate:gate_tm" = "primary_literature",
+    "duplex:gate:gate_duplex_targets" = "primary_literature",
+    "lamp:gate:gate_lamp_inner_tm" = "primary_literature",
+    "lamp:gate:gate_lamp_amplicon" = "primary_literature",
+    "lamp:gate:gate_lamp_structure" = "primary_literature",
+    "lamp:gate:gate_lamp_variant" = "primary_literature",
+    "crispr:gate:gate_crispr_spacer" = "primary_literature",
+    "crispr:gate:gate_crispr_gc" = "primary_literature",
+    "dpcr:gate:gate_dpcr_probe_comp" = "primary_literature",
+    "dpcr:gate:gate_dpcr_primer_tm" = "primary_literature",
+    "dpcr:gate:gate_dpcr_amplicon" = "primary_literature",
+    "dpcr:gate:gate_dpcr_probe_tm" = "primary_literature",
+    "taqman:gate:gate_taqman_probe_comp" = "primary_literature",
+    "taqman:gate:gate_taqman_primer_tm" = "primary_literature",
+    "taqman:gate:gate_taqman_amplicon" = "primary_literature",
+    "castpcr:gate:gate_castpcr_as_tm" = "primary_literature",
+    "castpcr:gate:gate_castpcr_probe_tm" = "primary_literature",
+    "castpcr:gate:gate_castpcr_amplicon" = "primary_literature",
+    family_probe_tm_delta = "primary_literature",
+    "sanger:gate:gate_sanger_dist" = "primary_literature",
+    family_sanger_read_distance = "primary_literature",
+    "rpa:gate:gate_rpa_variant" = "primary_literature",
+    inverted_repeat = "primary_literature",
+    "caps:gate:gate_caps_resolvable" = "primary_literature",
+    "arms:gate:gate_arms_bands" = "primary_literature",
+    family_caps_band_gap = "primary_literature",
+    family_size_delta = "primary_literature",
+    "ssr:gate:gate_ssr_amplicon" = "primary_literature",
+    "ssr:gate:gate_ssr_polymorphic" = "primary_literature",
+    "indel_size:gate:gate_indel_size_amplicon" = "primary_literature",
+    "indel_size:gate:gate_indel_size_gap" = "primary_literature",
+    "hrm:gate:gate_hrm_tm" = "primary_literature",
+    "indel_size:gate:gate_indel_size_tm" = "primary_literature",
+    "ssr:gate:gate_ssr_tm" = "primary_literature",
+    "caps:gate:gate_caps_tm" = "primary_literature",
+    "sanger:gate:gate_sanger_tm" = "primary_literature",
+    "duplex:gate:gate_duplex_tm" = "primary_literature",
+    family_size_repeat_copies = "primary_literature",
+    # a vendor default restated inside a paper
+    "taqman:gate:gate_taqman_probe_tm" = "vendor_guideline",
+    # ZW4.6 round 4 continued: the secondary-structure thresholds and the
+    # primer-dimer / self-complementarity bars are all printed (see each
+    # source's `access_detail` for the number and its offset).
+    hairpin_dg = "primary_literature",
+    cross_dimer_dg = "primary_literature",
+    homodimer_dg = "primary_literature",
+    "pair:gate:gate_structure" = "primary_literature",
+    "indel_size:gate:gate_indel_size_structure" = "primary_literature",
+    "dpcr:gate:gate_dpcr_probe_structure" = "primary_literature",
+    "taqman:gate:gate_taqman_probe_structure" = "primary_literature",
+    "snapshot:gate:gate_snapshot_structure" = "primary_literature",
+    "rpa:gate:gate_rpa_structure" = "primary_literature",
+    "duplex:gate:gate_duplex_complement" = "primary_literature",
+    "duplex:gate:gate_duplex_selfcomp" = "primary_literature",
+    "caps:gate:gate_caps_amplicon" = "primary_literature",
+    "taqman:gate:gate_taqman_centrality" = "primary_literature",
+    "rpa:gate:gate_rpa_amplicon" = "primary_literature",
+    "rpa:gate:gate_rpa_probe" = "primary_literature",
+    amplicon = "primary_literature",
+    "snapshot:gate:gate_snapshot_comp" = "primary_literature",
+    "crispr:gate:gate_crispr_amplicon" = "primary_literature",
+    "snapshot:gate:gate_snapshot_placement" = "primary_literature",
+    "snapshot:gate:gate_snapshot_tm" = "primary_literature",
+    "indel_size:gate:gate_indel_size_unique" = "primary_literature",
+    "taqman:gate:gate_taqman_probe_specific" = "primary_literature",
+    "sanger:gate:gate_sanger_primer" = "primary_literature",
+    "caps:gate:gate_caps_site" = "primary_literature",
+    "ssr:gate:gate_ssr_offtarget" = "primary_literature",
+    "ssr:gate:gate_ssr_flanks" = "primary_literature",
+    family_lamp_fip_alt = "primary_literature",
+    family_lamp_fip_variant = "primary_literature",
+    family_caps_site_defined = "primary_literature",
+    family_caps_site_separates = "primary_literature",
+    family_lamp_inner_inside = "primary_literature",
+    family_probe_spans = "primary_literature",
+    # the review prints the 30-35 nt rule before noting PCR primers also work
+    "rpa:gate:gate_rpa_primer_len" = "primary_literature",
+    family_rpa_primer_length = "primary_literature",
+    ssr = "primary_literature",
+    offtarget_hits = "primary_literature",
+    family_size_repeat_unit = "primary_literature",
+    # ZW4.6 phases A/B: the target's rung.  Every tier above has a printed
+    # reference point; the aggregation policy stays rule_of_thumb by
+    # construction (CRITERION_TIER_POLICY_EVIDENCE), never promoted here.
+    "as:tier:tier2" = "primary_literature",
+    "pair:tier:tier1" = "primary_literature",
+    "pair:tier:tier2" = "primary_literature",
+    "pair:tier:tier3" = "primary_literature",
+    "duplex:tier:tier1" = "primary_literature",
+    "duplex:tier:tier2" = "primary_literature",
+    "asq:tier:tier1" = "primary_literature",
+    "caps:tier:tier1" = "primary_literature",
+    "caps:tier:tier2" = "primary_literature",
+    "caps:tier:tier3" = "primary_literature",
+    "arms:tier:tier2" = "primary_literature",
+    "arms:tier:tier3" = "primary_literature",
+    "hrm:tier:tier1" = "primary_literature",
+    "hrm:tier:tier2" = "primary_literature",
+    "castpcr:tier:tier2" = "primary_literature",
+    "castpcr:tier:tier3" = "primary_literature",
+    "crispr:tier:guide" = "primary_literature",
+    "dpcr:tier:tier1" = "primary_literature",
+    "dpcr:tier:tier2" = "primary_literature",
+    "dpcr:tier:tier3" = "primary_literature",
+    "indel_size:tier:tier1" = "primary_literature",
+    "indel_size:tier:tier3" = "primary_literature",
+    "lamp:tier:tier2" = "primary_literature",
+    "lamp:tier:tier3" = "primary_literature",
+    "lamp:tier:tier4" = "primary_literature",
+    "rpa:tier:tier2" = "primary_literature",
+    "rpa:tier:tier3" = "primary_literature",
+    "rpa:tier:tier4" = "primary_literature",
+    "sanger:tier:tier2" = "primary_literature",
+    "snapshot:tier:tier1" = "primary_literature",
+    "snapshot:tier:tier2" = "primary_literature",
+    "ssr:tier:tier1" = "primary_literature",
+    "ssr:tier:tier2" = "primary_literature",
+    "ssr:tier:tier3" = "primary_literature",
+    "taqman:tier:tier2" = "vendor_guideline",
+    "taqman:tier:tier3" = "primary_literature"
   )
 }
 
@@ -771,7 +1184,7 @@ new_marker_criteria <- function(x) {
   fields <- c(
     "id", "scope", "family", "stage", "role", "label", "level", "kind",
     "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
-    "limit", "order", "schemes", "asymmetry_reason"
+    "limit", "order", "schemes", "asymmetry_reason", "target"
   )
   miss <- setdiff(fields, names(x))
   if (length(miss)) {
@@ -962,6 +1375,18 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   src <- criterion_sources()
   hit <- match(out$id, names(src))
   out$source[!is.na(hit)] <- src[hit[!is.na(hit)]]
+  # the rung behind a raised row: `evidence` may be an ordered factor at this
+  # point (snapshot rules), so coerce before replacing and re-impose below
+  out$evidence <- as.character(out$evidence)
+  ev <- criterion_evidence_sources()
+  hit <- match(out$id, names(ev))
+  out$evidence[!is.na(hit)] <- unname(ev[hit[!is.na(hit)]])
+  # ZW4.6: the reference point a tier ranks toward (the citable half of the row;
+  # the aggregation policy stays `CRITERION_TIER_POLICY_EVIDENCE` by construction)
+  out$target <- rep(NA_character_, nrow(out))
+  tg <- criterion_tier_targets()
+  hit <- match(out$id, names(tg))
+  out$target[!is.na(hit)] <- unname(tg[hit[!is.na(hit)]])
   # ZW0.1: declare where a metamorphic invariant deliberately does not hold;
   # every other row is symmetric and stays `NA`.
   asym <- criterion_asymmetry()
@@ -974,7 +1399,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   cols <- c(
     "id", "scope", "family", "stage", "role", "label", "level", "kind",
     "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
-    "limit", "order", "schemes", "asymmetry_reason"
+    "limit", "order", "schemes", "asymmetry_reason", "target"
   )
   # `bind_rows()` drops an ordered factor's class when the other side of the bind
   # is a plain character column, so the ladder is re-imposed once, on the whole
@@ -1001,13 +1426,20 @@ criterion_spec <- function(limits = KASP_LIMITS) {
 #'   criteria that scheme serves are returned.
 #' @return tibble with `stage`, `role` (`gate`/`tier`/`check`), `id`, `label`,
 #'   `level` (`site`/`feature`/`alignment`/`specificity`), `hard`, `limit`,
-#'   `order`, `schemes` (list-column of scheme ids).
+#'   `target` (a tier's printed reference point, `NA` elsewhere), `order`,
+#'   `schemes` (list-column of scheme ids).
 #' @examples
 #' marker_criteria()
 #' marker_criteria(scheme = "duplex")
 #' @family checks
 #' @export
 marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
+  # `asq` is graded against its own windows (100-200 bp, 62-64 C); a bare
+  # `marker_criteria(scheme = "asq")` shows them too.  An assay's own `$limits`
+  # (passed by `marker_design_checks()`) always wins over this default.
+  if (!is.null(scheme) && identical(scheme, "asq") && identical(limits, KASP_LIMITS)) {
+    limits <- asq_limits()
+  }
   # a product read by size is graded against the scheme's own window, never the
   # KASP 50-100 bp optimum (C2/C5).  Overriding `amplicon` here keeps the gate,
   # the check, its `bounds` and the rendered `limit` in step.
@@ -1023,6 +1455,7 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     level = spec$level,
     hard = spec$hard,
     limit = spec$limit,
+    target = spec$target,
     order = spec$order,
     schemes = spec$schemes
   )

@@ -132,6 +132,22 @@ test_that("no criterion row claims provenance it does not have", {
   expect_false(any(spec$calibrated))
 })
 
+test_that("ZW4.6: a tier's rung belongs to its target, not to the aggregation policy", {
+  spec <- tidymarkers:::criterion_spec()
+  tiers <- spec[spec$role == "tier", ]
+  # the policy is rule_of_thumb by construction and has one declaration
+  expect_identical(
+    tidymarkers:::CRITERION_TIER_POLICY_EVIDENCE, "rule_of_thumb"
+  )
+  # every tier carries the target its rung describes
+  expect_false(anyNA(tiers$target))
+  raised <- as.character(tiers$evidence) != "rule_of_thumb"
+  expect_true(any(raised))
+  # a raised tier names a registry key, so the target's citation is lookupable
+  keys <- utils::read.csv(tm_extdata("scientific_sources.csv"))$key
+  expect_true(all(tiers$source[raised] %in% keys))
+})
+
 test_that("the evidence rung reaches the verdict, without a new verdict string", {
   ch <- marker_design_checks(ev_good_assay())
   expect_equal(evaluation_verdict(ch), "usable")
@@ -172,7 +188,11 @@ test_that("evaluation_evidence takes the weakest rung among passing checks only"
   # a fabricated registry where one check is strong and another weak
   lab <- crit[crit$role == "check", ]
   strong <- lab$id[[which(lab$level == "site")[1L]]]
-  weak <- lab$id[[which(lab$level == "alignment")[1L]]]
+  # a genuinely weak check: the first alignment-level check is now sourced
+  # (`amplicon`), so select on the rung rather than on row order
+  weak <- lab$id[[which(
+    lab$level == "alignment" & as.character(lab$evidence) == "rule_of_thumb"
+  )[1L]]]
   spec <- crit
   spec$evidence[match(strong, spec$id)] <- "primary_literature"
   spec$evidence <- tidymarkers:::criterion_evidence(as.character(spec$evidence))

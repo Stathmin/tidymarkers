@@ -209,6 +209,8 @@ test_that("ZW0.1: a deliberate invariant asymmetry is declared with a reason", {
   expect_setequal(spec$id[!is.na(spec$asymmetry_reason)], names(map))
   expect_false(any(!nzchar(spec$asymmetry_reason[!is.na(spec$asymmetry_reason)])))
   expect_true(all(spec$asymmetry_reason[match(names(map), spec$id)] == unname(map)))
-  # and the column is append-only: no existing column moved
-  expect_identical(names(spec)[[length(names(spec))]], "asymmetry_reason")
+  # and the columns are append-only: `asymmetry_reason` kept its position and the
+  # ZW4.6 `target` column was appended after it, so no existing column moved
+  expect_identical(names(spec)[[length(names(spec)) - 1L]], "asymmetry_reason")
+  expect_identical(names(spec)[[length(names(spec))]], "target")
 })

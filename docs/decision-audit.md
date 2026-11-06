@@ -12,42 +12,46 @@ Every criterion row carries two different things: where the number comes from
 `CRITERION_EVIDENCE`). Counted through `criterion_spec()`, never by `grep` (the
 string is recycled by `criterion_tbl()`):
 
-| column             | value                                    | rows of 212 |
-| ------------------ | ---------------------------------------- | ----------- |
-| `source`           | `package assumption` — no printed source | 171         |
-| `source`           | `kwok1990`                               | 7           |
-| `source`           | `santalucia1998`                         | 9           |
-| `source`           | a named SNaPshot source (§U; 7 papers)   | 19          |
-| `source`           | `fret_asqpcr2021` (barley ASQ, p. 7)     | 2           |
-| `source`           | `lobato2018` (RPA review)                | 4           |
-| `evidence`         | `rule_of_thumb` (weakest rung)           | 194         |
-| `evidence`         | `vendor_guideline`                       | 10          |
-| `evidence`         | `primary_literature`                     | 8           |
-| `evidence`         | `fitted_here`                            | 0           |
-| `asymmetry_reason` | non-`NA` (a declared exception, below)   | 9           |
+| column             | value                                         | rows of 212 |
+| ------------------ | --------------------------------------------- | ----------- |
+| `source`           | `package assumption` — no printed source      | 65          |
+| `source`           | a named key of the source registry (132 rows) | 147         |
+| `evidence`         | `rule_of_thumb` (weakest rung)                | 73          |
+| `evidence`         | `vendor_guideline`                            | 13          |
+| `evidence`         | `primary_literature`                          | 126         |
+| `evidence`         | `fitted_here`                                 | 0           |
+| `asymmetry_reason` | non-`NA` (a declared exception, below)        | 9           |
 
 ### Reading the flags
 
 - **`source = package assumption`** — the bar is what this package chose. It is
-  not wrong, but it is not cited, and no paper should be implied. 171 of 212 rows
+  not wrong, but it is not cited, and no paper should be implied. 65 of 212 rows
   are in this class.
+- **A `*:tier:*` row carries two quantities, and only one is citable.** The
+  `target` column is the reference point the tier ranks toward (an amplicon
+  window, a dG floor, a printed design rule); the `limit` column is the
+  aggregation policy (bottleneck `min`, tier membership, order), a package
+  decision no paper prints. A tier's `evidence` is the rung of its target; the
+  policy stays `rule_of_thumb` by construction
+  (`CRITERION_TIER_POLICY_EVIDENCE`). 36 of 54 tiers now name a source for their
+  target; the other 18 rank a computed quantity (Kwok ranking, a simulator, a
+  population metric) and stay `rule_of_thumb`.
 - **`source = kwok1990`** — the 3'-terminal mismatch _ranking_ is Kwok's (Kwok et
   al., NAR 1990, doi 10.1093/nar/18.4.999). It does not state the
   `discrimination >= 0.5` or the 0.1 dropout number; it ranks mismatch classes by
-  yield.
-- **`source = santalucia1998`** — the nearest-neighbour parameters behind the
-  hairpin / homodimer / cross-dimer ΔG numbers (SantaLucia, PNAS 1998,
-  doi 10.1073/pnas.95.4.1460). These are **model** outputs, a prediction and not
-  a measurement.
-- **Naming a source does not raise the rung.** `kwok1990` and `santalucia1998`
-  are keys for decisions this package made, so those 16 rows stay
-  `rule_of_thumb`: the ladder is about how the number was fixed, not about
-  whether a paper can be cited next to it. The one exception is the 18 SNaPshot
-  (single-base-extension) rows of §U: a printed, checkable number in the source
-  fixes 8 of them at `primary_literature` and 10 at `vendor_guideline`; the row
-  with no printed number stays at the base. `fitted_here` is still 0, so nothing
-  in this package is calibrated to its own measurements. Check the bars on your
-  own instrument before a genotype call.
+  yield, so these rows stay `rule_of_thumb`.
+- **The ΔG numbers still use SantaLucia 1998's nearest-neighbour parameters**
+  (doi 10.1073/pnas.95.4.1460); those are a **model**, not a measurement. Round 4
+  found papers that print the _threshold_ the model output has to clear —
+  DeGenPrime (a combined hairpin/dimer dG below -3 kcal/mol), Vavilov (primers
+  and probes at ΔG >= -9 kcal/mol) and Shimizu (self-/cross-dimer below -10
+  kcal/mol triggers redesign) — so the threshold rows rise while the parameter
+  source does not.
+- **Naming a source does not raise the rung.** A paper that only ranks or
+  predicts is not enough; the same-quantity rule (below) requires a printed
+  threshold. `fitted_here` is still 0, so nothing in this package is calibrated
+  to its own measurements. Check the bars on your own instrument before a
+  genotype call.
 - The one legacy string `primary literature` on `as_mismatch_type` is not a rung
   name; that row names `kwok1990` in the source key map.
 

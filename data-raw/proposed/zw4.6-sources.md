@@ -270,3 +270,95 @@ Classes:
 
 No threshold, bound or `evidence` rung changed to produce this table; it
 records provenance only.
+
+## Round 4, 2026-11-05 — same-quantity sourcing
+
+The user authorised a second sourcing pass and an explicit acceptance rule:
+
+> Raise a row when a source prints a design rule for the **same quantity**, even
+> if the printed range is wider or offset from the package bar. Record the exact
+> printed number and the offset in `access_detail`. **Never** change `bounds` /
+> `limit`; the rung rises, the threshold does not. Every raised row must name a
+> registry key whose `claim` is a quotation re-runnable from the cached full text.
+
+Result (`criterion_spec()`, 212 rows): `rule_of_thumb` 146 → **109**,
+`primary_literature` 54 → **91**, `vendor_guideline` 12, `fitted_here` 0;
+`source = package assumption` 123 → **100**. 37 rows moved.
+
+### New registry keys (all DOI verified via Crossref, quotes grepped from the full text)
+
+| key | DOI | anchors |
+| --- | --- | --- |
+| `wang2025_multikasp` | 10.1186/s12870-025-07005-8 | `duplex:gate:gate_duplex_complement`, `duplex:gate:gate_duplex_selfcomp` (exact: "<6 bp inter-pair" / "<=5 self-complementary") |
+| `shimizu2025_kasp` | 10.1270/jsbbs.24052 | (registered for the -10 kcal/mol self/cross-dimer rule) |
+| `degenprime2024` | 10.1093/bioadv/vbae044 | `hairpin_dg` and every `*_structure` gate (exact -3 kcal/mol combined hairpin/dimer filter) |
+| `zhao2026_snapshot` | 10.1186/s12864-026-13173-0 | `snapshot:gate:gate_snapshot_tm` (printed 53-60 C vs [50,60]) |
+| `tso2022_snapshot` | 10.1186/s13007-022-00923-w | `snapshot:gate:gate_snapshot_placement` (exact: "one base upstream of the SNP") |
+| `li2026_indel` | 10.1186/s12863-026-01486-8 | `indel_size:gate:gate_indel_size_unique`, `offtarget_hits` (non-specific primers removed) |
+| `zheng2025_ssr` | 10.3390/plants14233589 | `ssr:gate:gate_ssr_offtarget` (multiple in-silico amplicons excluded), `ssr:gate:gate_ssr_flanks` (unique flanking sequence) |
+
+### Rows raised onto existing keys
+
+- `caps:gate:gate_caps_amplicon` and `caps:gate:gate_caps_site`, plus the family
+  `caps_site_defined` / `caps_site_separates` — `liu2016_caps`: cut site in the
+  middle of the amplicon, PCR products 200-1000 bp (bar [120,1200]).
+- `cross_dimer_dg`, `homodimer_dg` — `vavilov2024`: ΔG >= -9 kcal/mol for primers
+  and probes (exact).
+- `taqman:gate:gate_taqman_centrality`, `taqman:gate:gate_taqman_probe_specific`,
+  `family_probe_spans` — `vavilov2024`: polymorphic site in the middle third of
+  an 18-30 nt probe; a probe must bind only one region.
+- `rpa:gate:gate_rpa_amplicon`, `rpa:gate:gate_rpa_probe`,
+  `rpa:gate:gate_rpa_primer_len`, `family_rpa_primer_length` — `lobato2018`:
+  amplicons 100-200 bp (exact), nfo probe 46-52 nt with >=30/>=15 nt THF arms
+  (exact), primers 30-35 nt (the review then softens it).
+- `amplicon` — `fret_asqpcr2021`: "an amplicon of 50-100 bp" (exact).
+- `snapshot:gate:gate_snapshot_comp` — `dekeyzer2026`: probe GC >30, homopolymer
+  <5, no repeat motif >6 (offset).
+- `crispr:gate:gate_crispr_amplicon` — `lobato2018`: RPA 100-200 bp under the
+  80-250 bp bar.
+- `sanger:gate:gate_sanger_primer` and the generic `ssr` — `faasa2026`: avoid
+  homopolymers / hairpins / dimers; avoid repetitive sequences.
+- `family_lamp_fip_alt`, `family_lamp_fip_variant` — `nemeth2025`: the SNP sits
+  at the FIP 3' end (or BIP 5' end); variants at FIP/BIP ends inhibit LAMP.
+- `family_lamp_inner_inside` — `nemeth2025`: FIP/BIP 3' ends lie in regions
+  flanked by F3/B3.
+- `family_size_repeat_unit` — `ssr_gel2026`: motifs typically 1-6 bp (bar 2-4 nt).
+
+### Printed bars still not found (stayed `rule_of_thumb`)
+
+- **All 54 `*:tier:*` rows** — the limit is `maximise (per-tier bottleneck min)`,
+  an optimisation objective, not a threshold any paper prints. Hard floor.
+- `arms:gate:gate_arms_outer` [200,800] — every tetra-primer ARMS paper read
+  prints only concrete band sizes (191/494, 382/667, ...), no window.
+- `lamp:gate:gate_lamp_outer_tm` [55,62], `lamp:gate:gate_lamp_cross_dimer`
+  (run >=8), `family_lamp_inner_tm_balance` (<=5 C) — the LAMP reviews read say
+  only "somewhat lower" / "slightly higher"; no number.
+- `sanger:gate:gate_sanger_amplicon` [400,800], `snapshot:gate:gate_snapshot_amplicon`
+  [100,300] — no printed amplicon window (Sanger protocols print read length,
+  ~700 bp-1 kb, a different quantity).
+- `taqman:gate:gate_taqman_discrimination` (dG >=1.5) — Vavilov gives a direction
+  (bigger ΔTm = better) but no numeric threshold.
+- `crispr:gate:gate_crispr_pam` / `_seed` — the combined row needs Cas12a + Cas13a
+  + Cas13b tokens; no single source prints all three.
+- `snapshot:gate:gate_snapshot_unique` / `sanger:gate:gate_sanger_unique` /
+  `dpcr:gate:gate_dpcr_probe_specific` — only generic "check specificity", no
+  printed site count.
+- The rest are the package's own bookkeeping and simulator outputs:
+  `site_*`, `*_dropout`, `discrimination`, `in_silico_pcr`, `as_n_*`,
+  `com_n_var`, `lax:*`, `family_crispr_*`, `family_rpa_thf_off`,
+  `family_probe_extension`, `family_single_base`, `family_sanger_pair_defined`,
+  `castpcr_as3/mismatch/blocker` (Kwok ranks, does not measure), and the
+  chemistry geometry rows.
+
+### Why 70 was not reached
+
+`rule_of_thumb` stands at 109. The floor under the same-quantity rule is 54 (the
+tiers) plus the simulator/geometry rows above, which have no external printed
+threshold at all. Reaching 70 would require either re-labelling simulator
+thresholds as "literature" (false citation) or dropping/loosening the tier rows —
+neither is a sourcing change. The gap is reported, not papered over.
+
+**Zotero.** The user authorised importing the new DOIs into the library
+(collection `tidymarkers — marker design sources`, tag `merovingen:tidymarkers`).
+Writes are the operator's action per ADR-0037; this round only adds the records
+the registry cites.
