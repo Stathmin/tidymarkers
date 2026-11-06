@@ -15,6 +15,8 @@ write_kasp_results(...)
 \item{gene}{gene record (used for the file base name).}
 
 \item{dir}{output directory.}
+
+\item{...}{arguments passed on to \code{\link[=write_marker_results]{write_marker_results()}}.}
 }
 \value{
 character vector of the written paths (invisibly).

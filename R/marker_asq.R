@@ -93,6 +93,8 @@ asq_limits <- function(amplicon = ASQ_AMPLICON, as_tm = ASQ_AS_TM_LIMITS,
 #' @param haplotypes optional tidy haplotype table (see [assemble_kasp_assay()]).
 #' @param flank template half-width (bp); ASQ products reach 200 bp, so the
 #'   default is larger than KASP's 150.
+#' @param BPPARAM optional `BiocParallel` backend for the genome-wide steps
+#'   (see [assemble_kasp_assay()]); `NULL` runs them serially.
 #' @param ... further arguments passed to [assemble_kasp_assay()].
 #' @examples
 #' \dontrun{

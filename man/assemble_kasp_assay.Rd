@@ -110,6 +110,30 @@ comparing subgenomes, so the candidate never infers it from one genome; with
 \code{NULL} the subgenome verdict is \code{NA}, with a supplied mask the common
 primer's 3' base is checked against it and a miss warns and reports
 \code{multicopy}.}
+
+\item{limits}{acceptance thresholds, a named list like \code{KASP_LIMITS}.  The
+same object grades the candidates and is stored on the object (see
+\code{\link[=marker_design_checks]{marker_design_checks()}}); \code{\link[=design_asq_marker]{design_asq_marker()}} passes ASQ's own windows.}
+
+\item{variant_offset}{bases between the variant block and the primer's 3'
+terminus: \code{0} puts the variant at the terminal base (KASP), \code{1} one base
+inside it (ASQ's penultimate placement, see \code{\link[=design_asq_marker]{design_asq_marker()}}).}
+
+\item{as_tm_target}{preferred AS-primer Tm (C) the lexicographic grader
+ranks towards; the accepted window is still \code{limits$as_tm} / \code{tm_range}.}
+
+\item{com_tm_target}{preferred common-primer Tm (C) the pair grader ranks
+towards (default \code{COM_TM_TARGET}).}
+
+\item{com_tm_range}{optional common-primer Tm window; \code{NULL} reuses
+\code{tm_range}, so both primers are held to the same window.}
+
+\item{com_gaps}{distances (bp) from the variant anchor to the common primer
+that the search tries; passed to \code{\link[=design_common_primers]{design_common_primers()}}'s \code{gaps}.}
+
+\item{as_lengths}{AS-primer lengths to try (passed to
+\code{\link[=design_as_primers]{design_as_primers()}}'s \code{lengths}; ASQ needs longer primers than KASP's
+20-27 nt to reach its Tm window).}
 }
 \value{
 a \code{marker_assay} object: a list holding the \code{snp}, the template, the

@@ -229,6 +229,9 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' @param conditions reaction conditions for [primer_tm()] (`NULL` = the
 #'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
 #'   enter the nearest-neighbour Tm.
+#' @param variant_offset bases between the variant block and the primer's 3'
+#'   terminus: `0` puts the block at the terminal base (KASP), `1` one base
+#'   inside it (ASQ's penultimate placement).
 #' @return a tibble, one row per primer configuration, with `strand`,
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
 #'   `ref_on`/`ref_off`/`alt_on`/`alt_off`, `discrimination`, `tm`, `gc`,

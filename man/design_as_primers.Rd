@@ -59,6 +59,10 @@ the 3'-stability map are run across cores (\code{NULL} = serial).}
 \item{conditions}{reaction conditions for \code{\link[=primer_tm]{primer_tm()}} (\code{NULL} = the
 historical 50 mM Na / 37 C buffer).  Only the buffer fields of \code{conditions}
 enter the nearest-neighbour Tm.}
+
+\item{variant_offset}{bases between the variant block and the primer's 3'
+terminus: \code{0} puts the block at the terminal base (KASP), \code{1} one base
+inside it (ASQ's penultimate placement).}
 }
 \value{
 a tibble, one row per primer configuration, with \code{strand},

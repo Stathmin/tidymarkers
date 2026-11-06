@@ -27,6 +27,9 @@ design_asq_marker(
 \item{flank}{template half-width (bp); ASQ products reach 200 bp, so the
 default is larger than KASP's 150.}
 
+\item{BPPARAM}{optional \code{BiocParallel} backend for the genome-wide steps
+(see \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}); \code{NULL} runs them serially.}
+
 \item{...}{further arguments passed to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 }
 \description{

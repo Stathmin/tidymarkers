@@ -583,6 +583,23 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   carries `haplotypes` and a per-haplotype `haplotype_hits` table (which AS
 #'   primer each is expected to bind).
 #' @param min_gc,max_gc accepted AS GC window.
+#' @param limits acceptance thresholds, a named list like `KASP_LIMITS`.  The
+#'   same object grades the candidates and is stored on the object (see
+#'   [marker_design_checks()]); [design_asq_marker()] passes ASQ's own windows.
+#' @param variant_offset bases between the variant block and the primer's 3'
+#'   terminus: `0` puts the variant at the terminal base (KASP), `1` one base
+#'   inside it (ASQ's penultimate placement, see [design_asq_marker()]).
+#' @param as_tm_target preferred AS-primer Tm (C) the lexicographic grader
+#'   ranks towards; the accepted window is still `limits$as_tm` / `tm_range`.
+#' @param com_tm_target preferred common-primer Tm (C) the pair grader ranks
+#'   towards (default `COM_TM_TARGET`).
+#' @param com_tm_range optional common-primer Tm window; `NULL` reuses
+#'   `tm_range`, so both primers are held to the same window.
+#' @param com_gaps distances (bp) from the variant anchor to the common primer
+#'   that the search tries; passed to [design_common_primers()]'s `gaps`.
+#' @param as_lengths AS-primer lengths to try (passed to
+#'   [design_as_primers()]'s `lengths`; ASQ needs longer primers than KASP's
+#'   20-27 nt to reach its Tm window).
 #' @param scheme the marker chemistry this assay is assembled *as* (see
 #'   [marker_schemes()]): stored on the object, and used to build the matching
 #'   decision graph and to grade the acceptance checks, so a scheme never shows

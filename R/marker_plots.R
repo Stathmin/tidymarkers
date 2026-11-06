@@ -1449,6 +1449,7 @@ write_marker_results <- function(assay, gene, dir = tempdir()) {
 }
 
 #' @rdname write_marker_results
+#' @param ... arguments passed on to [write_marker_results()].
 #' @export
 write_kasp_results <- function(...) {
   .Deprecated("write_marker_results")
