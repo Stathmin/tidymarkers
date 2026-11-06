@@ -577,30 +577,43 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
 #' the block's last base; on the minus strand (where the primer is the reverse
 #' complement) it sits on the block's first base.  All primer geometry is then
 #' expressed through this single anchor, so SNP and MNP share one code path.
+#'
+#' `variant_offset` moves the block `0`, `1`, `2`, ... bases inside the 3' end:
+#' `0` puts it on the terminal base (KASP), `1` on the penultimate base (ASQ /
+#' PACE), `2` on the antepenultimate one.  The anchor is the primer's 3'-terminal
+#' base, so it moves outwards by the same amount.
 #' @param v_start plus-strand start of the variant block.
 #' @param ref_len length of the REF allele (block size; 1 for a SNP).
 #' @param strand binding strand.
+#' @param variant_offset bases between the variant block and the 3' terminus
+#'   (`0` = terminal/KASP, `1` = penultimate/ASQ).
 #' @return a single integer plus-strand coordinate.
 #' @examples
 #' as_anchor(100L, 1L, "+")
 #' as_anchor(100L, 3L, "-")
+#' as_anchor(100L, 1L, "+", variant_offset = 1L)
 #' @family geometry
 #' @export
-as_anchor <- function(v_start, ref_len, strand) {
-  if (identical(strand, "+")) v_start + ref_len - 1L else v_start
+as_anchor <- function(v_start, ref_len, strand, variant_offset = 0L) {
+  if (identical(strand, "+")) {
+    v_start + ref_len - 1L + variant_offset
+  } else {
+    v_start - variant_offset
+  }
 }
 
 #' Index range of the variant block inside an AS-primer binding window
 #'
 #' For `strand = "+"` the block is at the 3' end of the window; for `"-"`
-#' (reverse-complementary primer) it is at the 5' end.
+#' (reverse-complementary primer) it is at the 5' end.  `variant_offset` shifts
+#' it that many bases inside the 3' terminus (see [as_anchor()]).
 #' @keywords internal
 #' @noRd
-block_in_seg <- function(ref_len, primer_len, strand) {
+block_in_seg <- function(ref_len, primer_len, strand, variant_offset = 0L) {
   if (identical(strand, "+")) {
-    IRanges::IRanges(primer_len - ref_len + 1L, primer_len)
+    IRanges::IRanges(primer_len - ref_len + 1L - variant_offset, primer_len - variant_offset)
   } else {
-    IRanges::IRanges(1L, ref_len)
+    IRanges::IRanges(1L + variant_offset, ref_len + variant_offset)
   }
 }
 

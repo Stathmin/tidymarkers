@@ -189,11 +189,11 @@ if (nzchar(f_sat)) {
   )
 }
 
-# ASQ has no separate engine: the KASP primer anatomy is what the scheme describes
-fa <- snp_fixture()
-a_asq <- suppressWarnings(assemble_kasp_assay(
-  fa$genome, fa$snp, variants = variants_of(fa), flank = 150L, cores = 1L,
-  scheme = "asq"
+# ASQ: a real engine, with the variant on the penultimate 3' base (Kalendar 2022).
+# A different fixture from the SNP figure, so the two panels are not identical.
+fa <- snp_fixture(n = 900L, seed = 4L, pos = 300L)
+a_asq <- suppressWarnings(design_asq_marker(
+  fa$genome, fa$snp, variants = variants_of(fa), flank = 200L, cores = 1L
 ))
 save_marker("asq", a_asq, variants_of(fa), fa$genome)
 

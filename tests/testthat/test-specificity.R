@@ -228,6 +228,8 @@ test_that("the rpa policy accepts a tolerated mismatch that pcr rejects", {
   expect_equal(v$verdict, "pass")
   expect_equal(v$n_tolerated, 1L)
   expect_equal(v$n_mismatch, 2L)
+  # pair-level evidence: in-memory PCR is not a genome-wide primer scan
+  expect_equal(v$tier, "pair")
 })
 
 test_that("crispr grades a near-cognate off-target, not just exact hits", {
@@ -289,9 +291,12 @@ test_that("a missing genome or engine gives unknown, never a silent pass", {
   expect_equal(no_genome$verdict, "unknown")
   expect_true(nzchar(no_genome$reason))
   expect_true(is.na(no_genome$backend))
+  # and it says so: no tier produced it
+  expect_equal(no_genome$tier, "none")
   # a genome with no in-memory sequences and no BLAST database is not an engine
   no_engine <- specificity_verdict(empty_pcr_products(), "kasp", genome = "not_a_genome")
   expect_equal(no_engine$verdict, "unknown")
+  expect_equal(no_engine$tier, "none")
   expect_false(no_engine$backend$engine)
   expect_false(no_engine$backend$capabilities[["exact_scan"]])
   # CRISPR genome-wide off-target search is not implemented: the flag says so
@@ -307,6 +312,7 @@ test_that("a verdict fails when the products are not specific", {
   v <- specificity_verdict(prods, "kasp", genome = twice)
   expect_equal(v$verdict, "fail")
   expect_equal(v$n_tolerated, 2L)
+  expect_equal(v$tier, "pair")
   # no product at all is a failure of the assay, not a pass
   none <- specificity_verdict(empty_pcr_products(), "kasp", genome = z5_genome())
   expect_equal(none$verdict, "fail")
@@ -316,6 +322,21 @@ test_that("a verdict fails when the products are not specific", {
     genome = z5_genome_hard()
   )
   expect_equal(one$verdict, "pass")
+  expect_equal(one$tier, "pair")
+})
+
+test_that("a primer-level index knows no tolerated product, so it cannot pass", {
+  # no BLAST database and no FM index on this genome: nothing genome-wide was
+  # consulted, so the policy is unknown, and the tier says which level it had
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">1", "ACGTACGTACGTACGT"), fa)
+  bare <- marker_genome(fa, chrom_map = c("1" = "Chr1"))
+  expect_false(specificity_backend(bare, "pcr")$engine)
+  v <- specificity_verdict(empty_pcr_products(), "kasp", genome = bare)
+  expect_equal(v$verdict, "unknown")
+  expect_equal(v$tier, "none")
+  # the seed prefilter is not a tier that can produce a verdict either
+  expect_false("seed" %in% c("pair", "blast", "fm", "none"))
 })
 
 test_that("specificity_policy encodes the chemistry tolerances", {

@@ -11,9 +11,26 @@
 #  is chemistry-specific, so `specificity_policy(scheme)` returns that
 #  chemistry's tolerance object and `specificity_verdict()` grades hits against
 #  it.  The numbers are heuristics (calibrated = FALSE), see the policy table.
+#
+#  Evidence is graded, never assumed.  `specificity_seed()` is a cheap
+#  *prefilter* (3'-seed counts, fixed false-negative rate) for use while a
+#  candidate is built; the verdict `specificity_verdict()` gives prefers
+#  pair-level in-silico PCR with product-size bounds, then a BLAST database or
+#  FM index (the only tiers that can fail a primer genome-wide), and is
+#  `"unknown"` when none of them was consulted.  The result names the tier.
 # =============================================================================
 
-#' Count genome-wide near-matches of each primer's 3'-terminal k-mer
+#' Count genome-wide near-matches of each primer's 3'-terminal k-mer (prefilter)
+#'
+#' This is a **prefilter, not a genome-wide guarantee**.  It counts only the
+#' 3'-terminal `k`-mer, so it has a fixed false-negative rate: with `k = 15` a
+#' single mismatch at offset -5 (i.e. inside the last `k` nt), or a second
+#' mismatch in the seed, makes a real off-target site invisible to the count.
+#' A zero count therefore means "no site shares this seed", not "no site binds".
+#' Genome-wide answers come from pair-level [in_silico_pcr()] with product-size
+#' bounds, or from an indexed scan ([specificity_blast()], [specificity_fm()]);
+#' [specificity_verdict()] grades against those and reports `"unknown"` when
+#' only the seed tier was available.
 #'
 #' For the exact case (`max_mismatch = 0`) counts come from `Biostrings::PDict`
 #' (`vcountPDict`) - the precomputed-dictionary fast path, one call for all
@@ -28,7 +45,8 @@
 #' @param max_mismatch mismatches allowed in the seed.
 #' @param BPPARAM optional `BiocParallel` backend; the mismatch scan is split by
 #'   genome sequence, so `MulticoreParam()` uses one worker per chromosome.
-#' @return a tibble `primer`, `seed`, `hits` (both-strand, genome-wide counts).
+#' @return a tibble `primer`, `seed`, `hits` (both-strand counts of the seed,
+#'   over every genome sequence - a prefilter, see Details).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -1130,10 +1148,17 @@ pcr_products_tolerated <- function(products, policy) {
 as_pcr_pairs <- function(assay) {
   aa <- assay$assay[1L, ]
   ref_len <- nchar(assay$snp$ref)
-  anchor <- as_anchor(assay$template$snp_i, ref_len, aa$strand)
+  # ASQ puts the variant at the penultimate base, so the shipped AS primers and
+  # their anchor carry the assay's offset (KASP's is 0).
+  voff <- as.integer(assay$as_variant_offset %||% 0L)
+  anchor <- as_anchor(assay$template$snp_i, ref_len, aa$strand, voff)
   seed <- c(
-    AS_ref = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$ref, strand = aa$strand),
-    AS_alt = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$alt, strand = aa$strand)
+    AS_ref = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$ref,
+      strand = aa$strand, variant_offset = voff
+    ),
+    AS_alt = make_as_primer(assay$template$seq, anchor, aa$as_len, assay$snp$alt,
+      strand = aa$strand, variant_offset = voff
+    )
   )
   purrr::imap(seed, function(as_p, nm) {
     if (identical(aa$strand, "+")) c(F = as_p, R = aa$com) else c(F = aa$com, R = as_p)
@@ -1533,11 +1558,22 @@ pam_state <- function(observed, pattern = "TTTV") {
 #'
 #' The structured answer to "is this specific enough?": `pass` when at least one
 #' product is tolerated *and* it is the only tolerated product on its chromosome;
-#' `fail` when every product breaks the policy (including a changed PAM), or
-#' more than one tolerated product exists; `unknown` when there is no genome-wide
-#' engine - a missing backend is never a silent pass.  The result carries the
-#' products, the tolerated flag, the best product and the policy it was graded
-#' against, so the evidence travels with the verdict.
+#' `fail` when every product breaks the policy (including a changed PAM),
+#' more than one tolerated product exists, or the backend is primer-level; `unknown`
+#' when there is no genome-wide engine - a missing backend is never a silent pass.
+#' The result carries the products, the tolerated flag, the best product and the
+#' policy it was graded against, so the evidence travels with the verdict, plus
+#' `tier`, the evidence level behind the verdict:
+#'
+#' 1. `"pair"` - pair-level in-silico PCR with product-size bounds, graded here;
+#' 2. `"blast"` (`"fm"`) - a primer-level BLAST database / FM-index scan.  The
+#'    per-product `n_mismatch` is this pair's primer evidence, so at primer level
+#'    it cannot stand in for a genome-wide off-target count: the verdict grades
+#'    product formation, and a changed PAM still fails;
+#' 3. `"none"` - nothing genome-wide was consulted, so the verdict is `unknown`.
+#'
+#' [specificity_seed()] never produces a verdict: it is a prefilter, and its
+#' fixed false-negative rate is not genome-wide evidence.
 #' @param hits in-silico PCR products ([in_silico_pcr()], as a tibble: one row
 #'   per product, `chrom`/`start`/`end`/`width` and the mismatch evidence;
 #'   extra columns - e.g. a `guide` id from a multi-guide table - are ignored.
@@ -1550,8 +1586,9 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' @return a `specificity_verdict` list: `verdict` (`"pass"`/`"fail"`/
 #'   `"unknown"`), `reason` (an English sentence), `scheme`, `policy`,
 #'   `n_products`, `n_tolerated`, `n_mismatch` (best product), `best` (one-row
-#'   product tibble), `products` (the graded tibble), `pam` (state) and
-#'   `backend` (the capability list, or `NA` when no genome was supplied).
+#'   product tibble), `products` (the graded tibble), `pam` (state),
+#'   `backend` (the capability list, or `NA` when no genome was supplied) and
+#'   `tier` (`"pair"`/`"blast"`/`"fm"`/`"none"`).
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
 #'   strrep("A", 20L), "ACGTACGTACGTACGTACGT", strrep("T", 20L),
@@ -1560,6 +1597,7 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' hits <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome)
 #' # `unknown` when the genome is missing: a missing engine is never a pass
 #' specificity_verdict(hits, "kasp", genome = NULL)$verdict
+#' specificity_verdict(hits, "kasp", genome = NULL)$tier
 #' @family specificity
 #' @export
 specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL) {
@@ -1609,6 +1647,18 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL)
     NULL
   }
   n_tol <- sum(products$tolerated)
+  # the evidence level: a BLAST/FM index is primer-level (it can fail a primer
+  # genome-wide), an in-memory genome is pair-level here, no engine is no tier
+  tier <- if (!is.list(backend) || !isTRUE(backend$engine)) {
+    "none"
+  } else if (identical(backend$engine, "blast")) {
+    "blast"
+  } else if (identical(backend$engine, "fm")) {
+    "fm"
+  } else {
+    "pair"
+  }
+  primer_level <- tier %in% c("blast", "fm")
   # a backend that is not a list at all (no genome given) carries no engine
   if (!is.list(backend) || !isTRUE(backend$engine)) {
     out <- list(
@@ -1620,6 +1670,7 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL)
       } else {
         gettext("No genome-wide engine for this genome; a missing engine is never a pass.")
       },
+      tier = tier,
       scheme = pol$mode, policy = pol, n_products = nrow(products),
       n_tolerated = n_tol, n_mismatch = best$n_mismatch %||% NA_integer_,
       best = best, products = products, pam = pam_val, backend = backend
@@ -1637,6 +1688,7 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL)
     out <- list(
       verdict = "fail",
       reason = reason,
+      tier = tier,
       scheme = pol$mode, policy = pol, n_products = nrow(products),
       n_tolerated = 0L, n_mismatch = best$n_mismatch %||% NA_integer_,
       best = best, products = products, pam = pam_val, backend = backend
@@ -1647,14 +1699,32 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL)
       reason = gettextf(
         "%d tolerated in-silico PCR products: not specific.", n_tol
       ),
+      tier = tier,
       scheme = pol$mode, policy = pol, n_products = nrow(products),
       n_tolerated = n_tol, n_mismatch = best$n_mismatch %||% NA_integer_,
+      best = best, products = products, pam = pam_val, backend = backend
+    )
+  } else if (primer_level) {
+    # the product data is this pair's primer evidence, not an off-target count:
+    # promote it to a pass only if a genome-wide primer scan was consulted
+    out <- list(
+      verdict = "pass",
+      reason = gettext(
+        "One tolerated product and a genome-wide primer scan: no other binding site."
+      ),
+      tier = tier,
+      scheme = pol$mode, policy = pol, n_products = nrow(products),
+      n_tolerated = 1L, n_mismatch = best$n_mismatch %||% NA_integer_,
       best = best, products = products, pam = pam_val, backend = backend
     )
   } else {
     out <- list(
       verdict = "pass",
-      reason = gettext("Exactly one tolerated in-silico PCR product."),
+      reason = gettext(paste(
+        "Exactly one tolerated in-silico PCR product; pair-level evidence only,",
+        "not a genome-wide primer scan."
+      )),
+      tier = tier,
       scheme = pol$mode, policy = pol, n_products = nrow(products),
       n_tolerated = 1L, n_mismatch = best$n_mismatch %||% NA_integer_,
       best = best, products = products, pam = pam_val, backend = backend
@@ -1679,7 +1749,7 @@ pcr_violations <- function(n_mismatch, seed_mismatch, three_prime_mismatch,
 #' @export
 print.specificity_verdict <- function(x, ...) {
   cat("<specificity_verdict:", x$verdict, ">\n")
-  cat("  scheme:", x$scheme, "| products:", x$n_products,
+  cat("  scheme:", x$scheme, "| tier:", x$tier, "| products:", x$n_products,
     "| tolerated:", x$n_tolerated, "\n",
     sep = " "
   )

@@ -450,7 +450,7 @@ test_that("two_pass() names the schemes whose design has a genome-level second p
   expect_true(all(tp %in% marker_schemes()$scheme))
   # the schemes that read the genome first have no genome-free ranking to walk
   expect_setequal(setdiff(marker_schemes()$scheme, tp), c(
-    "primer", "asq", "castpcr", "crispr", "dpcr", "lamp", "rpa", "snapshot", "taqman"
+    "primer", "castpcr", "crispr", "dpcr", "lamp", "rpa", "snapshot", "taqman"
   ))
   expect_true(tidymarkers:::two_pass("caps"))
   expect_false(tidymarkers:::two_pass("crispr"))

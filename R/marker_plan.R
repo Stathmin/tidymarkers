@@ -88,7 +88,7 @@ pair_screen_ok <- function(genome, primer_f, primer_r) {
 #' @keywords internal
 #' @noRd
 two_pass_schemes <- function() {
-  c("snp", "indel", "multi", "lax", "duplex", "caps", "arms", "hrm", "indel_size", "ssr", "sanger")
+  c("snp", "indel", "multi", "lax", "duplex", "asq", "caps", "arms", "hrm", "indel_size", "ssr", "sanger")
 }
 
 #' Does a scheme's design run a second, genome-level pass? (roadmap X)

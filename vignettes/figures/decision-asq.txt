@@ -95,9 +95,9 @@ edges:
   provisional best         -check -> amplicon length (bp)
 
 == assay acceptance checks ==
-  check   amplicon length (bp)               [50, 100]
-  check   AS Tm (C)                          [55, 65]
-  check   COM Tm (C)                         [58, 63]
+  check   amplicon length (bp)               [100, 200]
+  check   AS Tm (C)                          [62, 64]
+  check   COM Tm (C)                         [62, 68]
   check   COM Tm >= AS Tm                    >= 0
   check   AS GC                              [0.4, 0.6]
   check   COM GC                             [0.4, 0.6]

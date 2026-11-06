@@ -9,7 +9,6 @@ test_that("is_target_designable covers every marker class", {
 })
 
 test_that("marker_design_at dispatches by scheme and is NULL for unsupported ones", {
-  expect_null(marker_design_at(NULL, NULL, "asq"))
   expect_null(marker_design_at(NULL, NULL, "primer"))
 })
 
@@ -22,10 +21,10 @@ test_that("pick_target_snp with a scheme warns and returns the best when none de
     id = "v", chrom = "Chr1", pos = 20L,
     ref_genome = list(c("T", "A")), consequence = "missense_variant"
   )
-  # "asq" has no engine in this build, so nothing designs: warn + best-ranked
+  # "primer" has no designer, so nothing designs: warn + best-ranked
   expect_warning(
-    tgt <- pick_target_snp(variants, genome, gene, scheme = "asq"),
-    "designable for scheme asq"
+    tgt <- pick_target_snp(variants, genome, gene, scheme = "primer"),
+    "designable for scheme primer"
   )
   expect_equal(tgt$id, "v")
   # without a scheme the same locus is the plain pick
@@ -50,11 +49,11 @@ test_that("a context does not change dispatch or the no-context result", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
   ctx <- marker_run_context(genome)
-  # "asq" has no designer in this build: both calls report the same null verdict
-  expect_null(marker_design_at(NULL, NULL, "asq"))
-  expect_null(marker_design_at(NULL, NULL, "asq", context = ctx))
-  a <- suppressWarnings(design_auto_marker(genome, snp, schemes = "asq"))
-  b <- suppressWarnings(design_auto_marker(genome, snp, schemes = "asq", context = ctx))
+  # "primer" has no designer: both calls report the same null verdict
+  expect_null(marker_design_at(NULL, NULL, "primer"))
+  expect_null(marker_design_at(NULL, NULL, "primer", context = ctx))
+  a <- suppressWarnings(design_auto_marker(genome, snp, schemes = "primer"))
+  b <- suppressWarnings(design_auto_marker(genome, snp, schemes = "primer", context = ctx))
   expect_identical(a, b)
   expect_false(a$tried$ok)
 })
@@ -62,16 +61,16 @@ test_that("a context does not change dispatch or the no-context result", {
 test_that("design_marker is a deprecated alias of design_auto_marker", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
-  expect_warning(d <- design_marker(genome, snp, schemes = "asq"), "deprecated")
-  expect_identical(d, design_auto_marker(genome, snp, schemes = "asq"))
+  expect_warning(d <- design_marker(genome, snp, schemes = "primer"), "deprecated")
+  expect_identical(d, suppressWarnings(design_auto_marker(genome, snp, schemes = "primer")))
 })
 
 test_that("design_markers accepts a context and keeps its result", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 20L)))
   loci <- tibble::tibble(chrom = "Chr1", pos = 20L, ref = "T", alt = "A")
   ctx <- marker_run_context(genome)
-  a <- design_markers(genome, loci, scheme = "asq")
-  b <- design_markers(genome, loci, scheme = "asq", context = ctx)
+  a <- design_markers(genome, loci, scheme = "primer")
+  b <- design_markers(genome, loci, scheme = "primer", context = ctx)
   expect_identical(a, b)
   expect_false(b$ok)
 })

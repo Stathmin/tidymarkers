@@ -9,6 +9,9 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# embed SVG as a data URI: pandoc's --embed-resources inlines SVG and prefixes
+# every id, but not the url(#...) references, so arrowheads and clip paths break
+knitr::opts_knit$set(upload.fun = knitr::image_uri)
 ```
 
 ```{r}
@@ -64,7 +67,8 @@ knitr::include_graphics("figures/indel.svg")
 ```
 
 ```{r, eval = FALSE}
-ins <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "GTTTTTTTTT")
+# VCF-anchored insertion: ALT = REF base + inserted bases (gallery fixture)
+ins <- tibble::tibble(chrom = "Chr1", pos = 218L, ref = "C", alt = "CGGG")
 assay <- assemble_kasp_assay(genome, ins, flank = 150)
 ```
 
@@ -140,14 +144,22 @@ plot(m)
 
 ## ASQ / PACE
 
-ASQ/PACE is an allele-specific quantitative reaction with extension readout;
-the primer anatomy is the same as in KASP (AS + common), but the package has no
-separate engine for it yet. The scheme is registered as documentation-only:
-the gates of the class are visible, and the design does not claim more than it
-is. Overview of allele-specific PCR:
-[Gaudet et al. (2009)](https://doi.org/10.1007/978-1-60327-411-1_26).
+ASQ/PACE is an allele-specific quantitative reaction with extension readout. It
+uses the same AS + common primer pair as KASP, but places the variant at the
+**penultimate** 3' base of the allele-specific primer, so that base (not the
+terminus) is the mismatch that controls extension. `design_asq_marker()` is the
+real engine for that geometry: the same KASP assembly with `variant_offset = 1`,
+ASQ's own windows (`asq_limits()`: 100-200 bp amplicon, AS Tm 62-64 C with a 63 C
+optimum) and longer AS primers (22-35 nt) to reach the 63 C window. The universal
+probe/plexity rules (UP1-4, up to 4-plex) are a master-mix and instrument
+property, so they are not selection gates. Indels are not designed by this
+geometry and are reported as doomed rather than silently built as KASP.
+Overview of allele-specific PCR:
+[Gaudet et al. (2009)](https://doi.org/10.1007/978-1-60327-411-1_26); the ASQ
+rules are from
+[Kalendar et al. (2022)](https://doi.org/10.3389/fmolb.2022.773956).
 
-```{r asq-fig, echo = FALSE, out.width = "100%", fig.cap = "ASQ: KASP-like AS + COM anatomy; no separate design is claimed."}
+```{r asq-fig, echo = FALSE, out.width = "100%", fig.cap = "ASQ: AS + COM anatomy with the variant on the AS primer's penultimate 3' base."}
 knitr::include_graphics("figures/asq.svg")
 ```
 
@@ -313,9 +325,10 @@ structure, nor polymerase kinetics are varied. The 5' universal tails
 (`KASP_TAIL_FAM`/`KASP_TAIL_HEX`) are added at synthesis and are **not included**
 in `assay$thermo`/`assay$complementarity`, so their hairpins/dimers and the real
 Tm of the tailed oligo are not checked. "All checks pass" is a design prior, not
-a genotyping guarantee. For `asq` there is no separate engine: the checks are
-the KASP core only, extension/readout is not modelled; for `primer` there is no
-allelic discrimination at all.
+a genotyping guarantee. `asq` now has its own engine and windows
+(`design_asq_marker()`, `asq_limits()`: 100-200 bp, AS Tm 62-64 C); the
+extension/readout (kinetics, universal probes) is still not modelled. For
+`primer` there is no allelic discrimination at all.
 
 **Recommendation.** Check the tailed oligo in the real buffer/instrument, run
 three controls + NTC, and for ASQ/PACE do not read the KASP verdict as a kinetic
@@ -371,13 +384,13 @@ In `vignettes/figures/decision-snp.svg` the `check:target_site_class` node is
 drawn as hard (bold border), but it has no edge into `DOOMED`: edges into
 `DOOMED` come only from `as:gate:*`, `pair:gate:*` and refine. So
 `target site class` can be FAIL and the path will still carry on down the tree.
-For the `indel` scheme this is not theory: `marker_site_class()` returns
-`disc = FALSE` for any substitution with a length change
-(`R/marker_alleles.R`), and `marker_design_checks()` counts pass as
-`isTRUE(site$disc)` (`R/marker_checks.R`). That is, a valid indel gets a red
-site check; `tests/testthat/test-indel.R` checks only the column types of the
-table, not `pass`. This looks like a bug, not by design: a comment in the same
-test calls indel the same 3' mechanism as SNP.
+For the `indel` scheme this was a bug, now fixed: `marker_site_class()` returns
+`disc = TRUE` for a length-changing ALT because the indel-junction path designs
+it (`R/marker_alleles.R`), so `marker_design_checks()` no longer paints a valid
+indel red; `tests/testthat/test-indel.R` pins that pass. A genuinely
+non-designable site (`class = "none"`, no usable ALT) still fails the check -
+but, as above, a FAIL on a *check* node is a colour: it is not an edge into
+`DOOMED`.
 
 **Acceptance checks converge on one verdict.** `marker_decision_schema()` strings
 all check nodes into one chain and connects the last to `assay:decision` ("all
@@ -425,15 +438,18 @@ are no frequencies; `as_variant_table()` does the same (`R/marker_chunk.R`). So
 can change the outcome of the gate depending on whether the `pop_freq` column is
 present. The frequency of the target ALT itself does not enter the graph at all:
 the MAF tie-break is described correctly above, but in Ensembl Plants MAF =
-`null` . The population step stays outside.
+`null`. The population step stays outside.
 
-**The specificity 3' seed is only a tie-break, not a check.** `specificity_seed()`
+**The specificity 3' seed is a prefilter, not a check.** `specificity_seed()`
 (15 nt, 1 mismatch) is called in `pick_target_snp()` and `marker_pick_as()` and
-stored as `assay$specificity`; `marker_design_checks()` uses exact `ideogram`
-hits and allows ≤1 (`ot_pass`). `run_blast = FALSE` by default. A paralogue with
-one mismatch has neither a gate nor a check node; the 15 nt point is made
-correctly above, but not the fact that the seed is not assessed at acceptance
-at all.
+stored as `assay$specificity`; it has a fixed false-negative rate, so a zero
+count means "no site shares this seed", not "no site binds". The acceptance
+check reads exact `ideogram` hits and allows ≤1 (`ot_pass`). For a genome-wide
+answer, `specificity_verdict()` grades the evidence tier and names it: pair-level
+`in_silico_pcr()` with product-size bounds, then a BLAST/FM scan, and `unknown`
+- never a silent pass - when none was consulted. `run_blast = FALSE` by default,
+so a paralogue with one mismatch has neither a gate nor a check node unless you
+ask for the genome-wide tier.
 
 **Lax and duplex: an empty set passes the gate, and the figure does not show
 it.** `design_lax_marker(haplotypes = NULL)` calls `lax_stage_pick()` with

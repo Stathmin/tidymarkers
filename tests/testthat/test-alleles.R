@@ -27,9 +27,14 @@ test_that("marker_site_class names the designable and the hopeless sites", {
   expect_true(c1$disc)
   expect_equal(marker_site_class("C", "G")$class, "biallelic")
 
-  # non-SNP ALTs are the indel path's business; a lone REF is nothing
-  expect_equal(marker_site_class("A", "AT")$class, "indel")
-  expect_equal(marker_site_class("A", "A")$class, "none")
+  # non-SNP ALTs are the indel path's business and ARE designable there; a lone
+  # REF is nothing
+  ind <- marker_site_class("A", "AT")
+  expect_equal(ind$class, "indel")
+  expect_true(ind$disc)
+  none <- marker_site_class("A", "A")
+  expect_equal(none$class, "none")
+  expect_false(none$disc)
 })
 
 test_that("marker_snp_alts resolves an ALT roster into the set the primer must cover", {

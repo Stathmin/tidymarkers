@@ -4,7 +4,7 @@
 \alias{as_anchor}
 \title{Plus-strand coordinate of the AS primer's 3'-terminal base for a variant}
 \usage{
-as_anchor(v_start, ref_len, strand)
+as_anchor(v_start, ref_len, strand, variant_offset = 0L)
 }
 \arguments{
 \item{v_start}{plus-strand start of the variant block.}
@@ -12,6 +12,9 @@ as_anchor(v_start, ref_len, strand)
 \item{ref_len}{length of the REF allele (block size; 1 for a SNP).}
 
 \item{strand}{binding strand.}
+
+\item{variant_offset}{bases between the variant block and the 3' terminus
+(\code{0} = terminal/KASP, \code{1} = penultimate/ASQ).}
 }
 \value{
 a single integer plus-strand coordinate.
@@ -23,9 +26,16 @@ the block's last base; on the minus strand (where the primer is the reverse
 complement) it sits on the block's first base.  All primer geometry is then
 expressed through this single anchor, so SNP and MNP share one code path.
 }
+\details{
+\code{variant_offset} moves the block \code{0}, \code{1}, \code{2}, ... bases inside the 3' end:
+\code{0} puts it on the terminal base (KASP), \code{1} on the penultimate base (ASQ /
+PACE), \code{2} on the antepenultimate one.  The anchor is the primer's 3'-terminal
+base, so it moves outwards by the same amount.
+}
 \examples{
 as_anchor(100L, 1L, "+")
 as_anchor(100L, 3L, "-")
+as_anchor(100L, 1L, "+", variant_offset = 1L)
 }
 \seealso{
 Other geometry:

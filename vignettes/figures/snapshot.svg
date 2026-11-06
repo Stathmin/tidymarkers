@@ -118,7 +118,7 @@
 <line x1='97.78' y1='452.32' x2='640.38' y2='452.32' style='stroke-width: 0.43; stroke: #BFBFBF; stroke-linecap: butt;' />
 <polygon points='97.78,149.42 97.78,157.93 131.15,157.93 131.15,159.34 142.49,153.67 131.15,148.01 131.15,149.42 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
 <polygon points='640.38,224.08 640.38,232.59 602.95,232.59 602.95,234.00 591.61,228.34 602.95,222.67 602.95,224.08 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
-<polygon points='189.23,298.74 189.23,307.25 161.95,307.25 161.95,308.66 150.61,303.00 161.95,297.33 161.95,298.74 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
+<polygon points='191.26,298.74 191.26,307.25 161.95,307.25 161.95,308.66 150.61,303.00 161.95,297.33 161.95,298.74 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
 <rect x='97.78' y='60.35' width='542.61' height='37.33' style='stroke-width: 0.85; stroke: #737373; stroke-linecap: butt; stroke-linejoin: miter; fill: #E7E5E4;' />
 <text x='97.78' y='154.55' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>A</text>
 <text x='99.81' y='154.55' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>T</text>
@@ -168,6 +168,7 @@
 <text x='595.67' y='229.22' text-anchor='middle' style='font-size: 3.13px; font-weight: bold; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>A</text>
 <text x='593.64' y='229.22' text-anchor='middle' style='font-size: 3.13px; font-weight: bold; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>T</text>
 <text x='591.61' y='229.22' text-anchor='middle' style='font-size: 3.13px; font-weight: bold; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>G</text>
+<text x='191.26' y='303.87' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>G</text>
 <text x='189.23' y='303.87' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>C</text>
 <text x='187.19' y='303.87' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>T</text>
 <text x='185.16' y='303.87' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>T</text>
@@ -458,7 +459,7 @@
 <text x='640.38' y='79.89' text-anchor='middle' style='font-size: 3.13px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='1.88px' lengthAdjust='spacingAndGlyphs'>T</text>
 <text x='146.55' y='155.73' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>61°C</text>
 <text x='587.54' y='230.39' text-anchor='end' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>61°C</text>
-<text x='146.55' y='305.05' text-anchor='end' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>52°C</text>
+<text x='146.55' y='305.05' text-anchor='end' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>55°C</text>
 <circle cx='154.68' cy='153.67' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='579.42' cy='228.34' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='138.42' cy='303.00' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
@@ -560,11 +561,11 @@
 <text x='840.43' y='411.85' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='3.92px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='840.43' y='300.15' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='3.92px' lengthAdjust='spacingAndGlyphs'>2</text>
 <text x='840.43' y='188.45' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>-1.7</text>
-<text x='840.43' y='132.61' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>-2.8</text>
+<text x='840.43' y='132.61' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>-4.2</text>
 <text x='840.43' y='244.30' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>-7.7</text>
 <text x='840.43' y='523.54' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>61.3</text>
 <text x='840.43' y='579.39' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>61.3</text>
-<text x='840.43' y='467.70' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>52.2</text>
+<text x='840.43' y='467.70' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='15.69px' lengthAdjust='spacingAndGlyphs'>55.4</text>
 </g>
 <g clip-path='url(#cpMC4wMHw4NjQuMDB8MC4wMHw3MjAuMDA=)'>
 </g>

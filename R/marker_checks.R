@@ -281,6 +281,9 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     cls <- class(assay)[1L]
     if (startsWith(cls, "marker_")) sub("^marker_", "", cls) else "snp"
   }
+  # an assay carries the thresholds it was designed against (ASQ's 100-200 bp and
+  # 62-64 C windows, not KASP's), so its own object wins over the default
+  if (!is.null(assay$limits)) limits <- assay$limits
   # Non-KASP markers use the same family criterion set and the generic
   # amplicon/primer/structure/specificity evaluator.  The KASP path below reads
   # the richer assay object only when that object is present.
@@ -355,7 +358,16 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
     }
     marker_mismatch_severity(snp$ref[1L], unlist(snp$alt)[1L])
   })
-  as_tm <- memo(function() mean(th$tm[th$name %in% c("AS_ref", "AS_alt")]))
+  as_tm <- memo(function() {
+    # ASQ's ALT primer carries the SNP mismatch at its penultimate base, so its
+    # predicted Tm is lower than the designed REF primer by construction; the
+    # 62-64 C rule (Kalendar 2022) is about the designed AS primers' window, so
+    # ASQ is graded on the REF primer, not on the REF/ALT mean.
+    if (identical(scheme, "asq")) {
+      return(mean(th$tm[th$name == "AS_ref"]))
+    }
+    mean(th$tm[th$name %in% c("AS_ref", "AS_alt")])
+  })
   com_tm <- memo(function() aa$com_tm)
   hair <- memo(function() min(th$hairpin_dg))
   cross <- memo(function() min(d$dg[d$a != d$b])) # worst hetero-dimer
@@ -613,6 +625,9 @@ marker_with_population_checks <- function(out, marker) {
 #' @keywords internal
 #' @noRd
 evaluation_verdict <- function(x, limits = KASP_LIMITS) {
+  # an assay carries the thresholds it was designed against (ASQ's 100-200 bp and
+  # 62-64 C windows, not KASP's), so its own object wins over the default
+  if (!is.data.frame(x) && !is.null(x$limits)) limits <- x$limits
   ev <- if (is.data.frame(x)) {
     x
   } else {

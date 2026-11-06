@@ -30,10 +30,12 @@ strand_gc_hint(g, "Chr1", 15L, flank = 5L)
 \seealso{
 Other design:
 \code{\link[=allele_templates]{allele_templates()}},
+\code{\link[=asq_limits]{asq_limits()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},
 \code{\link[=design_as_primers_indel]{design_as_primers_indel()}},
+\code{\link[=design_asq_marker]{design_asq_marker()}},
 \code{\link[=design_auto_marker]{design_auto_marker()}},
 \code{\link[=design_common_primers]{design_common_primers()}},
 \code{\link[=design_duplex]{design_duplex()}},

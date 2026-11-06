@@ -189,22 +189,24 @@ marker_dropout_batch <- function(tmpl, off, vpos, valt, vweight, use_eff, BPPARA
 #' @noRd
 marker_as_candidates <- function(tmpl, snp, alt_pass, is_indel, off, strands, tm_range,
                                  min_gc, max_gc, linked_off, ref_len, alt_len, BPPARAM,
-                                 conditions = NULL) {
+                                 conditions = NULL, variant_offset = 0L,
+                                 as_lengths = KASP_AS_LENGTHS) {
   if (!is_indel) {
     # cheap pre-gate: when no length can clear the GC/Tm window the whole grid is
     # built and thrown away, so answer the doomed case before paying for it.  The
     # reason/stage are the ones the empty table produced below, unchanged.
     if (!as_grid_can_pass(
-      tmpl$seq, tmpl$snp_i, snp$ref, strands, KASP_AS_LENGTHS,
-      gc_range = c(min_gc, max_gc), tm_range = tm_range, conditions = conditions
+      tmpl$seq, tmpl$snp_i, snp$ref, strands, as_lengths,
+      gc_range = c(min_gc, max_gc), tm_range = tm_range, conditions = conditions,
+      variant_offset = variant_offset
     )) {
       return(marker_doomed(gettext("No AS primer passed the GC/Tm filter."), "as", snp, tmpl))
     }
     raw_as <- design_as_primers(
       tmpl$seq, tmpl$snp_i, snp$ref, alt_pass,
-      strands = strands, linked = linked_off,
+      strands = strands, linked = linked_off, lengths = as_lengths,
       gc_range = c(min_gc, max_gc), tm_range = tm_range, BPPARAM = BPPARAM,
-      conditions = conditions
+      conditions = conditions, variant_offset = variant_offset
     )
     if (nrow(raw_as) == 0L) {
       return(marker_doomed(gettext("No AS primer passed the GC/Tm filter."), "as", snp, tmpl))
@@ -335,12 +337,23 @@ marker_degenerate_alt_gate <- function(as_cand, alt_pass, snp, tmpl) {
 #' @keywords internal
 #' @noRd
 marker_as_zone_metrics <- function(as_cand, clean_3p, vpos, vweight, as_exclude,
-                                   batch_or_safe, max_footprint_variants, snp, tmpl) {
-  # clean-3' window and footprint variant load come from the stored interval
+                                   batch_or_safe, max_footprint_variants, snp, tmpl,
+                                   variant_offset = 0L) {
+  # clean-3' window and footprint variant load come from the stored interval.
+  # The window sits just inside the 3' terminus; with `variant_offset` bases
+  # between the variant and that terminus (ASQ), it starts past them.
   as_cand <- as_cand |>
     dplyr::mutate(
-      win3p_start = dplyr::if_else(.data$strand == "+", .data$as_end - clean_3p + 1L, .data$as_start + 1L),
-      win3p_end = dplyr::if_else(.data$strand == "+", .data$as_end - 1L, .data$as_start + clean_3p - 1L),
+      win3p_start = dplyr::if_else(
+        .data$strand == "+",
+        .data$as_end - clean_3p + 1L - variant_offset,
+        .data$as_start + 1L + variant_offset
+      ),
+      win3p_end = dplyr::if_else(
+        .data$strand == "+",
+        .data$as_end - 1L - variant_offset,
+        .data$as_start + clean_3p - 1L + variant_offset
+      ),
       n_3p = purrr::map2_int(.data$win3p_start, .data$win3p_end, function(a, b) {
         # clean_3p = 0 collapses the window; an empty range would abort IRanges
         if (is.na(a) || is.na(b) || a > b) {
@@ -389,8 +402,9 @@ marker_as_zone_metrics <- function(as_cand, clean_3p, vpos, vweight, as_exclude,
 #' the tidied candidate table, or a `marker_doomed` object.
 #' @keywords internal
 #' @noRd
-marker_pick_as <- function(as_cand, genome, min_disc, specificity_candidates, BPPARAM, snp, tmpl) {
-  graded_as <- grade_as_candidates(as_cand, KASP_LIMITS, min_disc)
+marker_pick_as <- function(as_cand, genome, min_disc, specificity_candidates, BPPARAM, snp, tmpl,
+                           limits = KASP_LIMITS, tm_target = AS_TM_TARGET) {
+  graded_as <- grade_as_candidates(as_cand, limits, min_disc, tm_target = tm_target)
   graded_as$data$seed_hits <- NA_integer_
   if (specificity_candidates > 0L && !inherits(genome, "marker_genome")) {
     short <- rank_candidates(graded_as$data, graded_as$tiers, setdiff(graded_as$ties, "seed_hits")) |>
@@ -585,7 +599,12 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 linked = NULL, haplotypes = NULL, run_blast = FALSE,
                                 scheme = "snp", on_offtarget = NULL,
                                 cores = getOption("tidymarkers.cores", 1L), BPPARAM = NULL,
-                                diagnostic_positions = NULL) {
+                                diagnostic_positions = NULL,
+                                limits = KASP_LIMITS, variant_offset = 0L,
+                                as_tm_target = AS_TM_TARGET,
+                                com_tm_target = COM_TM_TARGET,
+                                com_tm_range = NULL, com_gaps = 18:80,
+                                as_lengths = KASP_AS_LENGTHS) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
   mask <- normalise_diagnostic_positions(diagnostic_positions)
   # the scheme's own reaction conditions, so every dG this assay reports is
@@ -650,7 +669,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   as_cand <- marker_as_candidates(
     tmpl, snp, alt_pass, is_indel, off, strands, tm_range, min_gc, max_gc,
     linked_off, ref_len, alt_len, BPPARAM,
-    conditions = conditions
+    conditions = conditions, variant_offset = variant_offset, as_lengths = as_lengths
   )
   if (is_kasp_doomed(as_cand)) {
     return(as_cand)
@@ -658,7 +677,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   as_cand <- marker_as_zone_metrics(
     as_cand, clean_3p, vpos, vweight, as_exclude, batch_or_safe,
-    max_footprint_variants, snp, tmpl
+    max_footprint_variants, snp, tmpl,
+    variant_offset = variant_offset
   )
   if (is_kasp_doomed(as_cand)) {
     return(as_cand)
@@ -666,7 +686,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # prioritise with the shared grader: gate the grave sins, then rank
   # lexicographically on the margins (the genome 3'-seed screen is a tie-break)
-  as_pick <- marker_pick_as(as_cand, genome, min_disc, specificity_candidates, BPPARAM, snp, tmpl)
+  as_pick <- marker_pick_as(
+    as_cand, genome, min_disc, specificity_candidates, BPPARAM, snp, tmpl,
+    limits = limits, tm_target = as_tm_target
+  )
   if (is_kasp_doomed(as_pick)) {
     return(as_pick)
   }
@@ -682,7 +705,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # closes.  design_common_primers() works in TEMPLATE coordinates, so its
   # anchor is the template-local variant anchor (not the genomic one).
   common <- design_common_primers(tmpl$seq, as_anchor(tmpl$snp_i, ref_len, best_as$strand),
-    strand = best_as$strand, tm_range = tm_range, n = 60L,
+    strand = best_as$strand, gaps = com_gaps,
+    tm_range = com_tm_range %||% tm_range, n = 60L,
     conditions = conditions
   ) |>
     dplyr::mutate(
@@ -735,7 +759,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # choose among the pairings: gate the grave sins, then rank lexicographically
   # on tier margins, relaxing gates one at a time only when nothing clears them
-  graded <- grade_assay_pairs(assays, KASP_LIMITS, as_tm_mean)
+  graded <- grade_assay_pairs(assays, limits, as_tm_mean, com_tm_target = com_tm_target)
   pick <- select_with_ladder(
     graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties,
     graded$gate_margin, graded$gate_floor
@@ -814,11 +838,15 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # specificity uses the template-matched allele for the AS primers (no
   # deliberate mismatch): that answers "is the target site unique?".
   # make_as_primer() works in TEMPLATE coordinates, hence the template anchor.
-  tmpl_anchor <- as_anchor(tmpl$snp_i, ref_len, best$strand)
+  tmpl_anchor <- as_anchor(tmpl$snp_i, ref_len, best$strand, variant_offset)
   seed_primers <- c(
-    AS_ref = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$ref, strand = best$strand),
-    AS_alt = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$alt, strand = best$strand),
-    COM    = best$com
+    AS_ref = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$ref,
+      strand = best$strand, variant_offset = variant_offset
+    ),
+    AS_alt = make_as_primer(tmpl$seq, tmpl_anchor, best$as_len, snp$alt,
+      strand = best$strand, variant_offset = variant_offset
+    ),
+    COM = best$com
   )
 
   # in-silico PCR: the REF primer must give one product, the ALT primer none.
@@ -858,6 +886,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   out <- list(
     scheme = scheme,
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
+    limits = limits, as_variant_offset = variant_offset,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
     thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x, BPPARAM = BPPARAM), name = .y)) |>
@@ -945,7 +974,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them
-  out$evaluation <- tryCatch(marker_design_checks(out), error = function(e) {
+  out$evaluation <- tryCatch(marker_design_checks(out, limits = limits), error = function(e) {
     # A failed evaluator is not "no opinion": say so, or the gap looks like a
     # design that simply has no checks.
     cli::cli_warn(c(

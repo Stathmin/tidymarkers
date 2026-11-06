@@ -18,7 +18,7 @@
 #' @keywords internal
 #' @noRd
 per_locus_schemes <- function() {
-  base <- c("snp", "indel", "multi", "caps", "arms", "hrm")
+  base <- c("snp", "indel", "multi", "asq", "caps", "arms", "hrm")
   disc <- names(extra_scheme_defs())
   disc <- disc[!vapply(disc, function(s) is.null(extra_scheme_designer(s)), logical(1))]
   intersect(marker_schemes()$scheme, c(base, disc))

@@ -43,7 +43,9 @@ zw1_good_assay <- function() {
 zw1_check_drivers <- function() {
   list(
     site_class = function(a) {
-      a$site <- marker_site_class("A", c("AT"))
+      # a ref-only site (class "none") is the genuinely non-designable case; an
+      # indel is designable by the junction path and must not drive a failure
+      a$site <- marker_site_class("A", "A")
       a
     },
     site_alt_alleles = function(a) {

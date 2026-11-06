@@ -87,7 +87,9 @@ marker_site_class <- function(ref, alts) {
     tibble::tibble(class = class, disc = disc, code = code, n_alt = length(alts))
   }
   if (!length(snp)) {
-    return(out(if (length(alts)) "indel" else "none", FALSE))
+    # an indel is designable by the junction path; only a ref-only site is not
+    cls <- if (length(alts)) "indel" else "none"
+    return(out(cls, cls == "indel"))
   }
   if (length(snp) > 1L) {
     code <- iupac_code(snp)

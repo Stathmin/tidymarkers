@@ -65,6 +65,8 @@ test_that("assemble_kasp_assay designs an indel end-to-end", {
   chk <- marker_design_checks(a)
   expect_true(all(c("criterion", "observed", "limit", "pass") %in% names(chk)))
   expect_true(is.logical(chk$pass))
+  # a designed indel IS a designable target site (regression: `disc` was FALSE)
+  expect_true(chk$pass[chk$criterion == "target site class"])
 })
 
 # ---- the indel DAG and its (formerly vacuous) wobble gate -------------------

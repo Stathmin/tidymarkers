@@ -2,7 +2,7 @@
 % Please edit documentation in R/marker_specificity.R
 \name{specificity_seed}
 \alias{specificity_seed}
-\title{Count genome-wide near-matches of each primer's 3'-terminal k-mer}
+\title{Count genome-wide near-matches of each primer's 3'-terminal k-mer (prefilter)}
 \usage{
 specificity_seed(
   primers,
@@ -25,9 +25,21 @@ specificity_seed(
 genome sequence, so \code{MulticoreParam()} uses one worker per chromosome.}
 }
 \value{
-a tibble \code{primer}, \code{seed}, \code{hits} (both-strand, genome-wide counts).
+a tibble \code{primer}, \code{seed}, \code{hits} (both-strand counts of the seed,
+over every genome sequence - a prefilter, see Details).
 }
 \description{
+This is a \strong{prefilter, not a genome-wide guarantee}.  It counts only the
+3'-terminal \code{k}-mer, so it has a fixed false-negative rate: with \code{k = 15} a
+single mismatch at offset -5 (i.e. inside the last \code{k} nt), or a second
+mismatch in the seed, makes a real off-target site invisible to the count.
+A zero count therefore means "no site shares this seed", not "no site binds".
+Genome-wide answers come from pair-level \code{\link[=in_silico_pcr]{in_silico_pcr()}} with product-size
+bounds, or from an indexed scan (\code{\link[=specificity_blast]{specificity_blast()}}, \code{\link[=specificity_fm]{specificity_fm()}});
+\code{\link[=specificity_verdict]{specificity_verdict()}} grades against those and reports \code{"unknown"} when
+only the seed tier was available.
+}
+\details{
 For the exact case (\code{max_mismatch = 0}) counts come from \code{Biostrings::PDict}
 (\code{vcountPDict}) - the precomputed-dictionary fast path, one call for all
 primers.  With mismatches Biostrings has no counting index (\code{PDict()} builds an

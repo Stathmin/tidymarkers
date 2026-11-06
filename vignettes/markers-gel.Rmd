@@ -9,6 +9,9 @@ vignette: >
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center")
+# embed SVG as a data URI: pandoc's --embed-resources inlines SVG and prefixes
+# every id, but not the url(#...) references, so arrowheads and clip paths break
+knitr::opts_knit$set(upload.fun = knitr::image_uri)
 ```
 
 ```{r}

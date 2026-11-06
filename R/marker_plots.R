@@ -1040,7 +1040,9 @@ plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
   }
   panels <- patchwork::wrap_plots(parts, ncol = 1, heights = heights)
 
-  patchwork::wrap_plots(panels, plot_checks(assay), widths = c(1, 0.12)) +
+  # the tumbler needs room for its criterion labels and observed values; a
+  # width below ~0.2 clips them into the map panel on the left
+  patchwork::wrap_plots(panels, plot_checks(assay), widths = c(1, 0.22)) +
     patchwork::plot_annotation(
       title = "KASP assay: local map + acceptance checks",
       subtitle = glue::glue(

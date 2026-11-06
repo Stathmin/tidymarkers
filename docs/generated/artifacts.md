@@ -291,7 +291,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `1866334e979f251228f7059bbc003426`
+- output_hash: `62efd58b6518ff01f9abeaef3f8c9ee2`
 
 ## vignettes/figures/caps.svg
 
@@ -302,7 +302,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_caps.R](../../R/marker_caps.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `478253e744e0d07a1fedddb17bd65cb0`
+- output_hash: `947f582bdb42872de8599d85400ac342`
 
 ## vignettes/figures/castpcr.svg
 
@@ -324,7 +324,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_crispr.R](../../R/marker_crispr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
-- output_hash: `d8f4626704256d8fcaa6d1ef78917206`
+- output_hash: `d93edaa158b99059641ef17818aab5d6`
 
 ## vignettes/figures/dpcr.svg
 
@@ -368,7 +368,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `0c94776c57c5e1437920ea492d77ec4e`
+- output_hash: `f24f34da798365a3eb799f63f5d8b6bb`
 
 ## vignettes/figures/indel_size.svg
 
@@ -401,7 +401,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_lax.R](../../R/marker_lax.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `7998fb51cc5dffa1ad0e11556feca16a`
+- output_hash: `54535fafebdcf5166b1014b30c595ae4`
 
 ## vignettes/figures/multi.svg
 
@@ -412,7 +412,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `6f4c8e39c8c5a1b92e56f344975186ff`
+- output_hash: `97a8b1c8f3db6134cde7a6be5dac58a4`
 
 ## vignettes/figures/primer.svg
 
@@ -423,7 +423,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `911db1fb414d98d171220830de5bf4bb`
+- output_hash: `c1878e443230d2af08b12f69fa35426a`
 
 ## vignettes/figures/rpa.svg
 
@@ -434,7 +434,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_rpa.R](../../R/marker_rpa.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
-- output_hash: `40a9449f502928b0fe307ddf663a9a58`
+- output_hash: `871eac5d90bb187b380d52b54e320387`
 
 ## vignettes/figures/sanger.svg
 
@@ -456,7 +456,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_snapshot.R](../../R/marker_snapshot.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `ff8cd2e54523ac6c85a3896aff54e5dd`
+- output_hash: `bb14f7be370c4a685dad063c7659a396`
 
 ## vignettes/figures/snp.svg
 
@@ -467,7 +467,7 @@ consumers.
 - code: (none)
 - inputs: [R/marker_assemble.R](../../R/marker_assemble.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `1866334e979f251228f7059bbc003426`
+- output_hash: `a939021b91c15e27f55b987294f2d7ba`
 
 ## vignettes/figures/ssr.svg
 

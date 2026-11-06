@@ -228,7 +228,7 @@ marker_gate_relaxed_bar <- function(label, limits = KASP_LIMITS) {
 #' @return a list with `data` (graded tibble), `gates`, `tiers` and `ties`.
 #' @keywords internal
 #' @noRd
-grade_assay_pairs <- function(assays, limits, as_tm_mean) {
+grade_assay_pairs <- function(assays, limits, as_tm_mean, com_tm_target = COM_TM_TARGET) {
   tol <- limits$footprint_dropout %||% 0.05
   # the COM primer's 3'-terminal dG37 (its 3'-end stability) is a design dimension
   # only when the designer computed it; a bare candidate table (unit tests) omits
@@ -265,7 +265,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
         .data$com_hairpin - limits$hairpin_dg
       ),
       m_tm_com = .data$com_tm - as_tm_mean,
-      m_tm_tgt = -abs(.data$com_tm - COM_TM_TARGET),
+      m_tm_tgt = -abs(.data$com_tm - com_tm_target),
       m_amplicon = pmin(
         .data$amplicon - limits$amplicon[1L],
         limits$amplicon[2L] - .data$amplicon
@@ -325,7 +325,7 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean) {
 #'   `ties`.
 #' @keywords internal
 #' @noRd
-grade_as_candidates <- function(as_cand, limits, min_disc) {
+grade_as_candidates <- function(as_cand, limits, min_disc, tm_target = AS_TM_TARGET) {
   tol <- limits$footprint_dropout %||% 0.05
   use_drop <- "as_dropout" %in% names(as_cand) && any(!is.na(as_cand$as_dropout))
   win_margin <- if (use_drop) -as.numeric(as_cand$as_dropout) else -as.numeric(as_cand$n_3p)
@@ -354,7 +354,7 @@ grade_as_candidates <- function(as_cand, limits, min_disc) {
     dplyr::mutate(
       as_row = dplyr::row_number(),
       m_disc = .data$discrimination - min_disc,
-      m_tm = -abs(.data$tm - AS_TM_TARGET),
+      m_tm = -abs(.data$tm - tm_target),
       # KASP wants a WEAK 3' end on the allele-specific primer: Taq must fail to
       # extend the primer on the mismatched (wrong) allele, and the deliberate
       # destabilising mismatch near the 3' end (see design_as_primers()) works

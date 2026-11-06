@@ -148,7 +148,7 @@ plus_3p_base <- function(primer, strand) {
 #' @keywords internal
 #' @noRd
 make_as_primer <- function(window, anchor, length, allele, strand = "+",
-                           stab_at = NULL, stab_base = NULL) {
+                           stab_at = NULL, stab_base = NULL, variant_offset = 0L) {
   # Plain strings throughout.  The old body built and mutated a DNAString per
   # configuration (subseq, replaceAt x2, reverseComplement), and the AS grid is
   # 8 lengths x 2 strands x 3 mismatch ranks x up to 3 bases: thousands of S4
@@ -158,23 +158,22 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
   iv <- primer_interval(anchor, strand, length, role = "AS")
   s <- as.character(window)
   wlen <- nchar(s)
+  blk <- block_in_seg(nchar(allele), length, strand, variant_offset)
   if (IRanges::start(iv) < 1L || IRanges::end(iv) > wlen) {
     # the edge case: let `as_window()` pad and the S4 path decide the bases
     seg <- as_window(window, anchor, length, strand)
-    blk <- block_in_seg(nchar(allele), length, strand)
     p <- Biostrings::replaceAt(seg, blk, allele)
     if (!identical(strand, "+")) p <- Biostrings::reverseComplement(p)
-  } else if (identical(strand, "+")) {
-    # the variant block is the window's 3'-terminal `nchar(allele)` bases
-    k <- nchar(allele)
-    p <- paste0(substr(s, IRanges::start(iv), IRanges::end(iv) - k), allele)
+    p <- as.character(p)
   } else {
-    # minus strand: the 3' end is the window's LOW coordinate, so the block is
-    # its first `nchar(allele)` bases and the primer is the reverse complement
-    k <- nchar(allele)
-    p <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(
-      paste0(allele, substr(s, IRanges::start(iv) + k, IRanges::end(iv)))
-    )))
+    # the block is written into the binding window at `blk`; both strands then
+    # share one path (`"/"` = the block at the 3' end, `"-"` at its 5' end)
+    seg <- substr(s, IRanges::start(iv), IRanges::end(iv))
+    p <- paste0(
+      substr(seg, 1L, IRanges::start(blk) - 1L), allele,
+      substr(seg, IRanges::end(blk) + 1L, nchar(seg))
+    )
+    if (!identical(strand, "+")) p <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))
   }
   if (!is.null(stab_at)) {
     i <- length - stab_at + 1L # 3'-relative -> 5'-index
@@ -240,7 +239,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
                               lengths = KASP_AS_LENGTHS, stab_ats = c(NA, 2L, 3L),
                               temp = PCR_EFF$temp, P = PCR_EFF$P, ions = PCR_EFF$ions,
                               linked = NULL, gc_range = NULL, tm_range = NULL, BPPARAM = NULL,
-                              conditions = NULL) {
+                              conditions = NULL, variant_offset = 0L) {
   ref_len <- nchar(ref)
   alts <- unique(as.character(alt))
   alts <- alts[!is.na(alts) & nzchar(alts)]
@@ -285,8 +284,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     before <- as.integer(linked$offset) < v_start
     v_alt <- v_start + sum(delta[before])
   }
-  anchor_of <- function(strand) as_anchor(v_start, ref_len, strand)
-  anchor_alt <- function(strand) as_anchor(v_alt, ref_len, strand)
+  anchor_of <- function(strand) as_anchor(v_start, ref_len, strand, variant_offset)
+  anchor_alt <- function(strand) as_anchor(v_alt, ref_len, strand, variant_offset)
   # candidate mismatch bases at `k` bases from the 3' end: any base other than
   # the one the (perfectly matching) primer already carries there.  The base is
   # READ off the window - the same geometry `make_as_primer()` uses, index
@@ -324,7 +323,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
         function(L, st, k, b) {
           make_as_primer(window, anchor_of(st), L, ref,
             strand = st,
-            stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b
+            stab_at = if (is.na(k)) NULL else k, stab_base = if (is.na(b)) NULL else b,
+            variant_offset = variant_offset
           )
         }
       ),
@@ -403,11 +403,12 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       alt_primer <- make_as_primer(window_alt, anchor_alt(strand), L, a,
         strand = strand,
         stab_at = if (is.na(stab_at)) NULL else stab_at,
-        stab_base = if (is.na(stab_base)) NULL else stab_base
+        stab_base = if (is.na(stab_base)) NULL else stab_base,
+        variant_offset = variant_offset
       )
       seg_alt <- Biostrings::replaceAt(
         as_window(window_alt, anchor_alt(strand), L, strand),
-        block_in_seg(ref_len, L, strand), a
+        block_in_seg(ref_len, L, strand, variant_offset), a
       )
       t_alt <- as.character(as_target(seg_alt, strand))
       # explicit on/off pairing: the "on" target carries the primer's own allele,
@@ -521,7 +522,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
 #' @keywords internal
 #' @noRd
 as_grid_can_pass <- function(window, v_start, ref, strands, lengths,
-                             gc_range = NULL, tm_range = NULL, conditions = NULL) {
+                             gc_range = NULL, tm_range = NULL, conditions = NULL,
+                             variant_offset = 0L) {
   if (is.null(gc_range) && is.null(tm_range)) {
     return(TRUE)
   }
@@ -530,7 +532,11 @@ as_grid_can_pass <- function(window, v_start, ref, strands, lengths,
     dplyr::mutate(
       ref_primer = purrr::pmap_chr(
         list(.data$as_length, .data$strand),
-        function(L, st) make_as_primer(window, as_anchor(v_start, ref_len, st), L, ref, strand = st)
+        function(L, st) {
+          make_as_primer(window, as_anchor(v_start, ref_len, st, variant_offset), L, ref,
+            strand = st, variant_offset = variant_offset
+          )
+        }
       ),
       tm = primer_tm(.data$ref_primer, conditions = conditions),
       gc = gc_frac(.data$ref_primer)

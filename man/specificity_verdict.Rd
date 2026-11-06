@@ -24,17 +24,32 @@ answer into \code{unknown} (see \code{specificity_backend()}).}
 a \code{specificity_verdict} list: \code{verdict} (\code{"pass"}/\code{"fail"}/
 \code{"unknown"}), \code{reason} (an English sentence), \code{scheme}, \code{policy},
 \code{n_products}, \code{n_tolerated}, \code{n_mismatch} (best product), \code{best} (one-row
-product tibble), \code{products} (the graded tibble), \code{pam} (state) and
-\code{backend} (the capability list, or \code{NA} when no genome was supplied).
+product tibble), \code{products} (the graded tibble), \code{pam} (state),
+\code{backend} (the capability list, or \code{NA} when no genome was supplied) and
+\code{tier} (\code{"pair"}/\code{"blast"}/\code{"fm"}/\code{"none"}).
 }
 \description{
 The structured answer to "is this specific enough?": \code{pass} when at least one
 product is tolerated \emph{and} it is the only tolerated product on its chromosome;
-\code{fail} when every product breaks the policy (including a changed PAM), or
-more than one tolerated product exists; \code{unknown} when there is no genome-wide
-engine - a missing backend is never a silent pass.  The result carries the
-products, the tolerated flag, the best product and the policy it was graded
-against, so the evidence travels with the verdict.
+\code{fail} when every product breaks the policy (including a changed PAM),
+more than one tolerated product exists, or the backend is primer-level; \code{unknown}
+when there is no genome-wide engine - a missing backend is never a silent pass.
+The result carries the products, the tolerated flag, the best product and the
+policy it was graded against, so the evidence travels with the verdict, plus
+\code{tier}, the evidence level behind the verdict:
+}
+\details{
+\enumerate{
+\item \code{"pair"} - pair-level in-silico PCR with product-size bounds, graded here;
+\item \code{"blast"} (\code{"fm"}) - a primer-level BLAST database / FM-index scan.  The
+per-product \code{n_mismatch} is this pair's primer evidence, so at primer level
+it cannot stand in for a genome-wide off-target count: the verdict grades
+product formation, and a changed PAM still fails;
+\item \code{"none"} - nothing genome-wide was consulted, so the verdict is \code{unknown}.
+}
+
+\code{\link[=specificity_seed]{specificity_seed()}} never produces a verdict: it is a prefilter, and its
+fixed false-negative rate is not genome-wide evidence.
 }
 \examples{
 genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
@@ -44,6 +59,7 @@ genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
 hits <- in_silico_pcr("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT", genome)
 # `unknown` when the genome is missing: a missing engine is never a pass
 specificity_verdict(hits, "kasp", genome = NULL)$verdict
+specificity_verdict(hits, "kasp", genome = NULL)$tier
 }
 \seealso{
 Other specificity:

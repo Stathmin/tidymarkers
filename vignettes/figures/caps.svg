@@ -124,7 +124,7 @@
 <text x='504.06' y='256.85' text-anchor='middle' style='font-size: 8.00px;fill: #4D4D4D; font-family: "Liberation Sans";' textLength='14.09px' lengthAdjust='spacingAndGlyphs'>ALT</text>
 <text transform='translate(17.34,152.14) rotate(-90)' text-anchor='middle' style='font-size: 10.00px; font-family: "Liberation Sans";' textLength='90.06px' lengthAdjust='spacingAndGlyphs'>fragment length (bp)</text>
 <text x='64.57' y='50.36' style='font-size: 10.00px; font-family: "Liberation Sans";' textLength='125.05px' lengthAdjust='spacingAndGlyphs'>REF: 154+53  |  ALT: 207 bp</text>
-<text x='64.57' y='36.01' style='font-size: 12.00px; font-family: "Liberation Sans";' textLength='200.77px' lengthAdjust='spacingAndGlyphs'>CAPS gel: Chr1:300 via AgsI TTS^AA</text>
+<text x='64.57' y='36.01' style='font-size: 12.00px; font-family: "Liberation Sans";' textLength='226.77px' lengthAdjust='spacingAndGlyphs'>CAPS gel: Chr1:300 via Bci528I G^AATTC</text>
 </g>
 <defs>
   <clipPath id='cpNjQuNTd8Njg2LjUzfDI2Ny40OHw1MDQuMjg='>
@@ -174,7 +174,7 @@
 <polygon points='113.21,316.21 113.21,324.72 157.91,324.72 157.91,326.13 169.25,320.47 157.91,314.80 157.91,316.21 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
 <polygon points='637.89,347.38 637.89,355.89 593.19,355.89 593.19,357.31 581.85,351.64 593.19,345.97 593.19,347.38 ' style='stroke-width: 0.75; stroke: #737373; fill: #E7E5E4;' />
 <rect x='113.21' y='281.50' width='524.67' height='15.59' style='stroke-width: 0.85; stroke: #737373; stroke-linecap: butt; stroke-linejoin: miter; fill: #E7E5E4;' />
-<rect x='497.80' y='375.01' width='10.19' height='15.59' style='stroke-width: 0.85; stroke: #737373; stroke-linecap: butt; stroke-linejoin: miter; fill: #E7E5E4;' />
+<rect x='502.90' y='375.01' width='12.73' height='15.59' style='stroke-width: 0.85; stroke: #737373; stroke-linecap: butt; stroke-linejoin: miter; fill: #E7E5E4;' />
 <text x='113.21' y='321.67' text-anchor='middle' style='font-size: 4.27px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='2.56px' lengthAdjust='spacingAndGlyphs'>A</text>
 <text x='115.76' y='321.67' text-anchor='middle' style='font-size: 4.27px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='2.56px' lengthAdjust='spacingAndGlyphs'>A</text>
 <text x='118.31' y='321.67' text-anchor='middle' style='font-size: 4.27px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='2.56px' lengthAdjust='spacingAndGlyphs'>A</text>
@@ -433,7 +433,7 @@
 <circle cx='184.53' cy='320.47' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='566.57' cy='351.64' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <text x='502.90' y='411.61' text-anchor='middle' style='font-size: 6.26px;fill: #B22222; font-family: "Liberation Sans";' textLength='12.69px' lengthAdjust='spacingAndGlyphs'>G&gt;A</text>
-<text x='502.90' y='372.21' text-anchor='middle' style='font-size: 5.69px; font-weight: bold;fill: #292524; font-family: "Liberation Sans";' textLength='36.17px' lengthAdjust='spacingAndGlyphs'>AgsI TTS^AA</text>
+<text x='509.27' y='372.21' text-anchor='middle' style='font-size: 5.69px; font-weight: bold;fill: #292524; font-family: "Liberation Sans";' textLength='48.06px' lengthAdjust='spacingAndGlyphs'>Bci528I G^AATTC</text>
 <polygon points='197.26,440.89 197.26,449.40 797.19,449.40 797.19,450.82 808.53,445.15 797.19,439.48 797.19,440.89 ' style='stroke-width: 0.64; stroke: #666666; fill: #B8B8B8;' />
 <text x='502.90' y='447.20' text-anchor='middle' style='font-size: 5.98px; font-weight: bold; font-family: "Liberation Sans";' textLength='16.56px' lengthAdjust='spacingAndGlyphs'>target</text>
 <line x1='502.90' y1='459.17' x2='502.90' y2='267.48' style='stroke-width: 0.78; stroke: #666666; stroke-dasharray: 4.14,4.14; stroke-linecap: butt;' />
