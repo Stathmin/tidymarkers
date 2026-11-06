@@ -11,9 +11,9 @@
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
-#    4. spelling -- only with `--spelling` (the prose is English now, so spelling
-#             is meaningful but needs a WORDLIST before it can gate)
-#       dictionary flags every word; the R/roxygen code is checked by lintr)
+#    4. spelling -- only with `--spelling`: English prose (README, man/, vignettes/)
+#       is checked against `inst/WORDLIST`; the Russian NEWS.md/ROADMAP.md are out
+#       of scope because `spelling` has no per-file exclusion
 #    5. figures -- regenerate the figures from the engine and fail if a committed
 #       one (man/figures, vignettes/figures/decision-*.svg) changed, so the
 #       diagrams never drift from the pipeline (see dev/render-all.R).  By
@@ -182,12 +182,21 @@ step("spelling", function() {
   if (quick && !spelling) return(message("  skip (--quick)"))
   if (!spelling) return(message("  skip (pass --spelling)"))
   if (!requireNamespace("spelling", quietly = TRUE)) return(message("  skip (spelling not installed)"))
-  words <- spelling::spell_check_package()
+  # English prose only: `NEWS.md` and `ROADMAP.md` are Russian and
+  # `spell_check_package()` has no per-file exclusion. `inst/WORDLIST` holds the
+  # technical terms (chemistries, package names, gene/locus IDs).
+  ignore <- readLines("inst/WORDLIST", warn = FALSE)
+  files <- c(
+    "README.md",
+    list.files("man", pattern = "[.]Rd$", full.names = TRUE),
+    list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE)
+  )
+  words <- spelling::spell_check_files(files, ignore = ignore, lang = "en_US")
   if (nrow(words)) {
     print(words)
     stop(nrow(words), " unknown word(s)")
   }
-  ok("no unknown words")
+  ok("no unknown words in the English prose")
 })
 
 # 5. figures ----------------------------------------------------------------
