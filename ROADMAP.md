@@ -226,10 +226,23 @@
       терминов) и шаг 4 в `dev/check.R` гейтит английскую прозу.
       Размер: тарбол 2.3 MB при лимите CRAN 5 MB — обосновано в
       `cran-comments.md`, ничего не удалено. Проверено: `Rscript dev/check.R
-  --quick --spelling` и `Rscript dev/check.R --full`.
+--quick --spelling` и `Rscript dev/check.R --full`.
       Остаток (честно): ноги macOS/Windows не прогнаны вне GitHub Actions
       (локальной Windows нет); win-builder и R-hub — первый шаг после пуша;
       `--spelling` остаётся опт-ин, а русские `NEWS.md`/`ROADMAP.md` вне гейта.
+      Блокер: нет.
+- [x] **CRAN-остаток, второй проход (2026-11-09).** `vignettes/index.Rmd`
+      (страница входа; `inst/doc/index.html`) и ссылка на него в
+      `docs/INDEX.md`; битая `https://www.vniisb.ru` убрана из `README.md`
+      (единственная непрошедшая ссылка — `000`; остальные отдают `200`);
+      `dev/prose-tics.R` — отчёт по словам-филлерам LLM (`--check` гейтит
+      только нулевой «filler»-уровень; «X, not Y» не гейтится — это стиль);
+      `Suggests` перепроверены против `R/`/`tests/`/`vignettes/` — все 20
+      используются, удалять нечего. Проверка: `Rscript dev/check.R --quick
+    --spelling` (перед пушем — `--full`).
+      Остаток (честно): ноги CI на macOS/Windows локально не прогнаны;
+      win-builder и R-hub — первый шаг после пуша; `prose-tics` в гейт не
+      включён по замыслу (контрастивный слой пока не нулевой).
       Блокер: нет.
 - [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).**
       Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +
