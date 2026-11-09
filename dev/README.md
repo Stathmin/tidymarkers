@@ -135,14 +135,14 @@ Rscript dev/check.R --render    # + тяжёлые панели (мишени) �
 ## `prose-tics.R` — филлеры и антипаттерны в прозе и комментариях
 
 ```sh
-Rscript dev/prose-tics.R               # все девять уровней: счётчики и образец
+Rscript dev/prose-tics.R               # все десять уровней: счётчики и образец
 Rscript dev/prose-tics.R --list        # + каждая находка целиком
 Rscript dev/prose-tics.R --contrastive # только «X, not Y» (не гейтится)
-Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment, verbosity, prose_verbose
+Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment, verbosity, prose_verbose, encoding
 ```
 
 Читает `DESCRIPTION`, `README.md`, `man/`, `vignettes/` и roxygen-строки
-`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Девять уровней:
+`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Десять уровней:
 
 - `filler` («it's worth noting», «delve», «seamless», «moreover»…) — слова без
   информации; гейтит `--check`;
@@ -155,27 +155,36 @@ Rscript dev/prose-tics.R --check       # ненулевой код на filler, 
   стиль репозитория (сотни совпадений), поэтому только счётчик; `--contrastive` —
   его алиас;
 - `meta` — самоуказание: «the point is», «here's the thing», «importantly»,
-  «note that», «at its heart», «serves as»;
-- `hedge` — усиление и смягчение: «simply», «really», «seems to», «of course»,
-  «perhaps», «in fact»;
+  «note that», «at its heart», «serves as». Обычные связки («in practice»,
+  «precisely because», «which is why») исключены; сейчас 0;
+- `hedge` — настоящие смягчения: «simply», «basically», «seems to», «perhaps»,
+  «of course», «in fact». Технические квалификаторы («actually», «very»,
+  «really», «particularly», «especially», «highly») исключены; сейчас 4, все
+  четыре — требования или измеренное поведение;
 - `verbosity` — многословные обороты с коротким эквивалентом: «in order to»,
   «the fact that», «prior to», «a number of»; гейтит `--check`;
-- `punctuation` — тире и «!!», которых прозе обычно не нужно;
+- `punctuation` — тире и «!!» только в бегущей прозе: строки разметки (таблицы,
+  списки) сканер пропускает. Сейчас 0;
+- `encoding` — не-Unicode сигналы: невалидный UTF-8, U+FFFD, мойбейк (`Ã`, `Â`,
+  `â€`), zero-width (U+200B/C/D, U+FEFF) и управляющие символы в
+  `DESCRIPTION`, `README.md`, `man/*.Rd`, `vignettes/*.Rmd`, `R/*.R`, `tests/`,
+  `inst/{csv,txt,md,yml}`; гейтит `--check`;
 - `comment_verbose` — блок обычных `#`-строк от 15 строк (баннер файла не в счёт)
   или строка шире 100 колонок (URL не считается);
 - `prose_verbose` — абзац длиннее 120 слов без ссылки, `code` или вызова, абзац
   длиннее 150 слов либо блок вывода `##` длиннее 15 строк.
 
-Последние шесть уровней печатаются счётчиком и восемью образцами (`--list` —
-все). Гейтит `filler`, `comment`, `verbosity` и `prose_verbose`: они держатся
-на нуле. `negation`, `meta`, `hedge` и `punctuation` — в основном осознанная
-проза («the temperature the chemistry actually runs at», «this very namespace»,
-«X, not Y»), `comment_verbose` — шесть плотных блоков ограничений (прочитаны и
-оставлены); массовая правка сломала бы голос репозитория. Разбор каждого
-уровня и очередь работы — в [`dev/lang_purity.md`](lang_purity.md).
+Последние восемь уровней печатаются счётчиком и восемью образцами (`--list` —
+все). Гейтит `filler`, `comment`, `verbosity`, `prose_verbose` и `encoding`:
+они держатся на нуле. `negation` (397) прочитан целиком: каждое попадание
+называет технический контраст («data, not prose»), поэтому оставлена
+осознанно. `comment_verbose` — шесть плотных блоков ограничений (прочитаны и
+оставлены). Разбор каждого уровня и очередь работы — в
+[`dev/lang_purity.md`](lang_purity.md).
 
 Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler`,
-`comment`, `verbosity` и `prose_verbose` не могут вырасти незаметно.
+`comment`, `verbosity`, `prose_verbose` и `encoding` не могут вырасти
+незаметно.
 
 ## `render-all.R` — фигуры как код
 

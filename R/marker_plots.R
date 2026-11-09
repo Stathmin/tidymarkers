@@ -506,7 +506,7 @@ primer_hits <- function(primers, genome, BPPARAM = NULL) {
 #' The underlying data are computed once at design time and carried on the assay
 #' (`assay$ideogram`), so plotting only reads the object; when it is absent (an
 #' older assay) and a `genome` is supplied they are recomputed.  Returns `NULL`
-#' when neither is available, so [plot_primers()] simply drops the panel.
+#' when neither is available, so [plot_primers()] drops the panel.
 #' @keywords internal
 #' @noRd
 assay_ideogram <- function(assay, snp, genome = NULL) {

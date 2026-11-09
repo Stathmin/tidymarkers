@@ -4,7 +4,7 @@
 #  marker_design_checks() is a long flat table; an experimenter wants a single
 #  call.  Not every failed check is equal: no allele discrimination, an
 #  off-target product, a variant in the AS 3' window or a saturated footprint
-#  mean the assay can simply fail, whereas a shorter homopolymer or a small Tm
+#  mean the assay can fail, whereas a shorter homopolymer or a small Tm
 #  drift is a nuisance.  So the verdict is tiered, not a mean of everything
 #  (matching the grain of the selection policy, which also gates the grave and
 #  ranks the minor).  The reasons are always returned - never a bare label.

@@ -453,7 +453,7 @@ design_duplex_marker <- function(genome, marker = NULL, snp = NULL, ...) {
 #' The compatibility table as an acceptance evaluation
 #'
 #' The duplex stage's gates (`duplex_compatibility()`) read as `criterion` rows,
-#' so [marker_scheme_adapter()]'s `evaluate()` grades a pairing the same way it
+#' so `marker_scheme_adapter()`'s `evaluate()` grades a pairing the same way it
 #' grades any other marker: `NA` stays `unknown`, never `pass` (ZA7).  The
 #' per-locus checks of the two assembled assays are not repeated here.
 #' @param marker a `marker_duplex`.

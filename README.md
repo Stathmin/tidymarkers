@@ -42,7 +42,7 @@ tidymarkers::marker_install_tools()   # once; hybrid-min / hybrid-ss-min
 
 **R >= 4.5** is required. The hard `Imports` are Bioconductor plus the tidyverse;
 the heavy optional pieces (a `TxDb`/`BSgenome`, `Rsubread`, `ensembldb`, `rBLAST`,
-`Rsamtools`, `systemfonts`) live in `Suggests` and are never installed implicitly —
+`Rsamtools`, `systemfonts`) live in `Suggests` and are never installed implicitly:
 each is reached only through a guarded call, so a missing one degrades a single
 feature instead of breaking the load. `marker_cache_dir()` reports where
 downloaded genomes, variation, indexes and the external tools are kept
@@ -76,18 +76,18 @@ design_kasp_markers(genome, loci)                       # pass / warn / fail per
 ```
 
 Two project-level knobs are arguments rather than constants: `strands` (search
-the AS primer on `"+"`, `"-"` or both — the common primer flips with it) and
+the AS primer on `"+"`, `"-"` or both; the common primer flips with it) and
 `tm_range` (the permitted melting window, °C).
 
 `ath_genome()` is only a convenience downloader for the demo: it pulls one gzipped
 TAIR10 FASTA from the Ensembl Plants FTP into `marker_cache_dir()` and never
-touches the package repository. Any other reference is passed in directly — a
+touches the package repository. Any other reference is passed in directly: a
 FASTA path through `marker_genome()` / `read_genome_fasta()`, a `DNAStringSet`, or
 a Bioconductor `BSgenome` (see `vignette("custom-genome")`).
 
 ## How a candidate is chosen
 
-Candidate AS x COM pairs first face **hard gates** — a known variant under the
+Candidate AS x COM pairs first face **hard gates**: a known variant under the
 primer, an allele the primer cannot discriminate, `Tm_COM < Tm_AS`, an amplicon
 outside the window, impossible secondary structure. Survivors are ranked
 **lexicographically by tier**; within a tier the bottleneck (`min`) decides, so an
@@ -97,8 +97,8 @@ with a warning naming every violated gate. A marker therefore always arrives wit
 a reason, never a silent `NA`.
 
 Each tier criterion carries two separate things. Its **`target`** is a printed
-reference point the tier steers toward — an amplicon window, a ΔG floor, a
-vendor's Tm range — and the target is what a source can be cited for. Its
+reference point the tier steers toward (an amplicon window, a ΔG floor, a
+vendor's Tm range), and the target is what a source can be cited for. Its
 **`limit`** is the package's aggregation policy: the bottleneck `min`, which
 checks belong to the tier, and the order between tiers. No paper prints that
 policy; it is declared once in code (`CRITERION_TIER_POLICY_EVIDENCE`) and stays
@@ -130,23 +130,23 @@ primer pair" (composition, structure, repeats, off-target).
 
 ## What the pipeline computes
 
-1. `ensembl_gene()` / `ensembl_variants()` — gene model and SNPs from Ensembl
+1. `ensembl_gene()` / `ensembl_variants()`: gene model and SNPs from Ensembl
    Plants (1001 Genomes), cached and retried.
-2. `pick_target_snp()` — chooses a designable substitution: prefers a clean 3'
+2. `pick_target_snp()`: chooses a designable substitution: prefers a clean 3'
    AS window (no other variant in the last 5 nt, best of both strands), then
    missense > splice > synonymous > UTR, and transitions.
-3. `design_common_primers()` / `design_as_primers()` — a candidate scan over
+3. `design_common_primers()` / `design_as_primers()`: a candidate scan over
    strand x length x mismatch position x base, scored with `TmCalculator`,
    `Biostrings` and `DECIPHER`.
-4. `primer_thermo()` / `dimer_thermo()` — Tm, GC, hairpins, 3'-terminal
+4. `primer_thermo()` / `dimer_thermo()`: Tm, GC, hairpins, 3'-terminal
    stability, self- and cross-complementarity; `has_repeat()` / `find_repeats()` for
    homopolymers and SSRs; `wobble_mismatch()` flags weak G:T / A:C pairs.
-5. `specificity_seed()` / `in_silico_pcr()` / `blast_primers()` — 3' seed hits,
+5. `specificity_seed()` / `in_silico_pcr()` / `blast_primers()`: 3' seed hits,
    virtual amplification (uniqueness and product size), BLAST.
-6. `assemble_kasp_assay()` — one assay for SNP/MNP/InDel;
-   `design_kasp_markers()` — a batch with a `pass`/`warn`/`fail` verdict per locus.
-7. `marker_design_checks()` — acceptance criteria in `KASP_LIMITS`;
-   `kasp_mix_recipe()` — the primer mix and reaction recipe.
+6. `assemble_kasp_assay()`: one assay for SNP/MNP/InDel;
+   `design_kasp_markers()`: a batch with a `pass`/`warn`/`fail` verdict per locus.
+7. `marker_design_checks()`: acceptance criteria in `KASP_LIMITS`;
+   `kasp_mix_recipe()`: the primer mix and reaction recipe.
 
 ## Shipped objects
 
@@ -248,8 +248,8 @@ failures and never pooled into a probability), and the known gaps.
 ## Getting help
 
 Open an [issue](https://github.com/Stathmin/tidymarkers/issues/new/choose) and
-pick the bug or feature template. Both ask for a **reprex** — a minimal
-reproducible example — because a design bug cannot be debugged from a
+pick the bug or feature template. Both ask for a **reprex**, a minimal
+reproducible example, because a design bug cannot be debugged from a
 description alone:
 
 ```r
@@ -268,7 +268,7 @@ Two reports are not bugs:
 - **A thermodynamic model disagreeing with your bench result.** That is
   expected; see [`VALIDATION.md`](VALIDATION.md) for what is measured versus
   modelled.
-- **A source that does not say what a rule claims.** That is a real bug — file
+- **A source that does not say what a rule claims.** That is a real bug: file
   it with the DOI or PMC id and the sentence you read.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the four kinds of change and the
@@ -318,7 +318,7 @@ Machine-readable metadata is in [`CITATION.cff`](CITATION.cff) (picked up by
 GitHub and Zenodo), so a release can be cited by DOI once it is archived. The
 author's ORCID is [0000-0002-5880-5931](https://orcid.org/0000-0002-5880-5931).
 
-Beyond the package itself, `tidymarkers` rests on published measurements —
+Beyond the package itself, `tidymarkers` rests on published measurements:
 132 sources, every one with a DOI and 110 also with a PubMed Central id, in
 [`inst/extdata/scientific_sources.csv`](inst/extdata/scientific_sources.csv).
 Cite the primary source for any rule that shaped your design, not the package

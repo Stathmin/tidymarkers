@@ -428,7 +428,7 @@ unambiguous_blocks <- function(subject) {
   b_end <- c(a_start - 1L, len)
   ok <- b_end >= b_start
   out <- list(start = b_start[ok], end = b_end[ok])
-  # a simple bound: the block list of the current genome is what matters
+  # memory bound: keep only the current genome's block list
   if (length(.marker_state$blocks) > 16L) {
     rm(list = ls(.marker_state$blocks, all.names = TRUE), envir = .marker_state$blocks)
   }

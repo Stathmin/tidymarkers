@@ -186,7 +186,7 @@ artefact_inputs <- function(plan) {
 #' The designer a scheme dispatches to, for reading its defaults
 #'
 #' Only used to answer "was this knob left at its default?"; a scheme this table
-#' does not know simply reports `default = NA`, which reads as "unknown" rather
+#' does not know reports `default = NA`, which reads as "unknown" rather
 #' than as "unchanged".
 #' @keywords internal
 #' @noRd

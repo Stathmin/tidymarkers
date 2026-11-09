@@ -10,7 +10,7 @@
 #  reimplemented - this file only wires the Bioconductor annotation into the
 #  tidy variant table so the rest of the pipeline keeps working unchanged.
 #
-#  Everything is optional: with no `TxDb` installed `annotate_variants()` simply
+#  Everything is optional: with no `TxDb` installed `annotate_variants()`
 #  explains what to install, and the pipeline still runs off the input
 #  consequence.
 # =============================================================================

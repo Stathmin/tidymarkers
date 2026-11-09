@@ -90,7 +90,7 @@ bncc_bands <- function(stage, tiers) {
   lapply(declared, function(i) tiers[i])
 }
 
-#' Normalise margins to a regret in [0, 1]
+#' Normalise margins to a regret in `[0, 1]`
 #'
 #' `x` is a margin where larger is better.  `ideal` is the best value the tier
 #' ranks toward (the printed target, when available); `nadir` is the worst value

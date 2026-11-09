@@ -44,7 +44,7 @@ haplotype_schemes <- function() c("snp", "indel", "multi", "lax")
 #' failure is fatal only where the scheme is strict (`KASP_SPECIFICITY_STRICT`):
 #' strict, the pass can doom the target; tolerant, it only moves the winner.
 #' HRM melts its whole amplicon, so a locus that amplifies twice still resolves.
-#' Every scheme in [two_pass_schemes()] is decided here; a scheme outside it has
+#' Every scheme in `two_pass_schemes()` is decided here; a scheme outside it has
 #' no second pass and the question does not arise.
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return a single logical.
@@ -77,14 +77,14 @@ pair_screen_ok <- function(genome, primer_f, primer_r) {
 #'
 #' The assembly family screens its leading assay through `pair_screen` in
 #' [assemble_kasp_assay()]; the remaining designers screen the pairing they
-#' picked (`confirm` in [select_flanking_pair()], or HRM's widened shortlist).
+#' picked (`confirm` in `select_flanking_pair()`, or HRM's widened shortlist).
 #' Every scheme here therefore decides on genome-free margins in the first pass
 #' and only *moves the winner* in the second, except where
-#' [pair_failure_dooms()] makes the failure fatal.  The schemes left out have no
+#' `pair_failure_dooms()` makes the failure fatal.  The schemes left out have no
 #' genome-free ranking to walk - they read the genome directly (probes, guides,
 #' isothermal, multiplex).
 #' @return a character vector of scheme ids.
-#' @seealso [pair_failure_dooms()], [pair_screen_ok()]
+#' @seealso `pair_failure_dooms()`, `pair_screen_ok()`
 #' @keywords internal
 #' @noRd
 two_pass_schemes <- function() {
@@ -96,7 +96,7 @@ two_pass_schemes <- function() {
 #' `TRUE` when the designer screens its leading pairing against the genome after
 #' ranking it on genome-free margins.  The second pass decides *how many
 #' candidates are considered*; it moves the verdict only through
-#' [pair_failure_dooms()].
+#' `pair_failure_dooms()`.
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return a single logical (`FALSE` for a scheme without a second pass).
 #' @keywords internal

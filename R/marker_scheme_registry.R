@@ -158,7 +158,7 @@ extra_scheme_designer <- function(scheme) {
 #' The designer for a scheme, built-in or discovered
 #'
 #' One place resolves a scheme id to the function that designs it.  Both the
-#' design seam ([marker_design_at()]) and the artefact manifest need that
+#' design seam (`marker_design_at()`) and the artefact manifest need that
 #' answer, and they used to carry the built-in `switch` twice; a scheme added
 #' to one could silently miss the other.  Returning the function itself (not a
 #' call) also lets a caller read its formals, which is how both decide what an
@@ -166,7 +166,7 @@ extra_scheme_designer <- function(scheme) {
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return a function `(genome, snp, ...)`, or `NULL` when the scheme has no
 #'   designer (`primer`, `asq`).  `duplex` has one, but it takes two loci, so
-#'   [per_locus_schemes()] keeps it out of the single-locus ladder.
+#'   `per_locus_schemes()` keeps it out of the single-locus ladder.
 #' @keywords internal
 #' @noRd
 scheme_designer <- function(scheme) {
@@ -205,11 +205,11 @@ scheme_designer <- function(scheme) {
 #' It is a list of closures with class `marker_scheme_adapter`, an S3 behaviour
 #' object rather than a data frame (ZA5).  Each step delegates to the
 #' implementation the pipeline already uses, so the adapter cannot drift from
-#' the design path: `design` is [marker_design_at()], `evaluate` is
-#' [marker_evaluate()] (`marker_design_checks()`, plus the duplex compatibility
-#' stage), `tracks` is the [marker_map_spec()] generic (the
+#' the design path: `design` is `marker_design_at()`, `evaluate` is
+#' `marker_evaluate()` (`marker_design_checks()`, plus the duplex compatibility
+#' stage), `tracks` is the `marker_map_spec()` generic (the
 #' track spec, ZA6 step 6), `decision` is [marker_decision_graph()], `schema` is
-#' [marker_decision_schema()] (the graph's node/edge data, ZA6 step 5) and
+#' `marker_decision_schema()` (the graph's node/edge data, ZA6 step 5) and
 #' `readout` is [marker_readout()].  The adapter adds no data model of its own:
 #' `schema()` and `tracks()` return exactly what the pipeline returns.
 #' @param scheme a scheme id (see [marker_schemes()]).

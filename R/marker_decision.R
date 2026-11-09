@@ -238,7 +238,7 @@ marker_decision_schema <- function(scheme = "snp") {
     push(node(stage_sink_ids[k], stage_sink_stage[k], "doomed", "DOOMED", stage_sink_order[k]))
   }
   if (length(stage_sink_ids)) {
-    # the last rung of a spent ladder dooms (an earlier rung failure simply falls
+    # the last rung of a spent ladder dooms (an earlier rung failure falls
     # through to the next rung); every hard gate / unrelaxable decision too
     add_edge(tibble::tibble(from = doomed_sources, to = doomed_owners, kind = "doomed"))
   }

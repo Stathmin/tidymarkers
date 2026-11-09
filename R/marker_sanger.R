@@ -285,7 +285,7 @@ pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
 #'   (unknown, accept); `NULL` skips the phase.
 #' @param max_alternatives how many rejected candidates to walk past: `Inf`
 #'   screens every candidate (the first pass always hands the second one a
-#'   pairing, see [pair_failure_dooms()]).
+#'   pairing, see `pair_failure_dooms()`).
 #' @param skip_on_failure passed to `select_with_ladder()` (walk a shortlist with
 #'   `FALSE`); `TRUE` routes an unusable ladder to `confirm()` instead of dooming.
 #' @return the `select_with_ladder()` result (`best`, `relaxed`, `violated`),

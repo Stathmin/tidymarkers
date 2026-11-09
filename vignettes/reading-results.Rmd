@@ -21,13 +21,13 @@ library(knitr)
 
 ## Four questions for an assay
 
-1. **Can it be designed at all?** — did a `marker_assay` or a `marker_doomed`
+1. **Can it be designed at all?** Did a `marker_assay` or a `marker_doomed`
    come back.
-2. **Is it specific?** — `marker_design_checks()` (the table "criterion / observed
+2. **Is it specific?** `marker_design_checks()` (the table "criterion / observed
    / limit / pass").
-3. **How well does it discriminate the alleles?** — `discrimination` (the
+3. **How well does it discriminate the alleles?** `discrimination` (the
    `DECIPHER` efficiency).
-4. **Does structure get in the way?** — dimers/hairpins and 3' stability.
+4. **Does structure get in the way?** Dimers/hairpins and 3' stability.
 
 Every answer is a row in a table, not a spoken conclusion: so the same assay can
 be compared with another and that comparison can itself be tested.
@@ -45,7 +45,7 @@ assay <- assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L)
 ## Verdict by criterion
 
 `marker_design_checks()` returns a tidy table; a "good" assay passes **all** the
-applicable rows. The thresholds live in `KASP_LIMITS` — they are visible and can
+applicable rows. The thresholds live in `KASP_LIMITS`; they are visible and can
 be overridden.
 
 ```{r, eval = FALSE}
@@ -130,7 +130,7 @@ fs::dir_ls(dir)
 - `solved.rds` — the whole object: plan, report and the markers themselves.
 - `artefact.json` — the manifest: SHA-256 of the reference and the variant
   table, package version and git SHA, every engine version, the design
-  parameters, and `overrides` — the knobs that differ from the defaults;
+  parameters, and `overrides`: the knobs that differ from the defaults;
 - `decisions.csv` — one row per (target, chemistry) with `outcome`, `verdict`,
   `risk`, the relaxed gates and, for a rejection, the reason the designer gave;
 - `checks.csv` — the gate table of the chosen markers;
@@ -150,7 +150,7 @@ replay$inputs_match # FALSE if the reference was replaced
 ```
 
 When a lab has run the assay, the result comes back to the same id. The call is
-ordinal and keeps every observation — a second run appends a row instead of
+ordinal and keeps every observation: a second run appends a row instead of
 replacing the first, and a failure must say what happened:
 
 ```{r, eval = FALSE}
@@ -180,8 +180,8 @@ strongly the number is fixed, from weakest to strongest:
 | `calibrated` | the bar was fitted to this package's own wet-lab measurements |
 
 The last rung does not exist yet in the package's criteria. `marker_decision_text(evidence = TRUE)`
-prints the rung beside every check and one closing line — the weakest rung the
-scheme relies on — so a run whose weakest rung is `rule_of_thumb` says "this
+prints the rung beside every check and one closing line: the weakest rung the
+scheme relies on. A run whose weakest rung is `rule_of_thumb` says "this
 design passed the package's own heuristics", not "these thresholds are validated".
 
 Two things are worth reading plainly:
@@ -195,14 +195,14 @@ Two things are worth reading plainly:
   the papers rank or predict, they do not measure this package's threshold. The
   exception is the single-base-extension (SNaPshot) scheme, whose thresholds
   carry a printed, checkable number in the source: 18 of its 19 rows rise to
-  `primary_literature` or `vendor_guideline`. Everything else — 177 rows — is a
+  `primary_literature` or `vendor_guideline`. Everything else (177 rows) is a
   package default with no printed source.
 
 You can see the rung per run with
 `marker_decision_text(scheme, evidence = TRUE)`; the plain form (default) omits
 it, so recorded verdicts still compare line for line. Your own results are
 separate: `marker_outcomes(art)` returns the observations you recorded, and each
-row keeps `calibrated = FALSE` — an observation is not a correction, and the
+row keeps `calibrated = FALSE`: an observation is not a correction, and the
 package never turns those rows into a success rate.
 
 `readRDS()` returns a working object, not a picture: from there you can run
@@ -280,7 +280,7 @@ txt[grep("^== assay acceptance", txt) + seq_len(8)]
 
 `plot_decision_tree(scheme = "snp")` draws the same thing as a graph, and
 `plot_decision_tree(assay)` draws the path of a particular assay through that
-graph (green — applied, amber — relaxed, red — violated).
+graph (green = applied, amber = relaxed, red = violated).
 
 ## On-screen summary
 
@@ -323,7 +323,7 @@ Rscript dev/profile.R run .tmp/probe/solve-one.R .tmp/prof/probe
 Rscript dev/profile.R stacks .tmp/prof/probe/probe.out     # analysis without re-running
 ```
 
-`Rprof` writes a stack per sample, and `dev/profile.R` reads it directly —
+`Rprof` writes a stack per sample, and `dev/profile.R` reads it directly.
 `summaryRprof()` aggregates by function name and **hides the caller**, and the
 question "who is repeating this?" cannot be answered without the caller. The
 output is four files:
@@ -364,7 +364,7 @@ ttl <- profile_ttl_read(".tmp/prof/probe/probe.ttl") # strict N-Triples, error w
 
 RDF here is an exchange format: the vocabulary `https://tidymarkers.org/profile#`
 (`ProfileRun`, `Function`, `calledBy`) lets the profile be read where there is no
-R. Do not debug with it — that is what `Rprof` is for.
+R. Do not debug with it; that is what `Rprof` is for.
 
 And last: `pkgload::load_all()` caches the function body. If behaviour has not
 changed after an edit, reload with `recompile = TRUE` before hunting for the bug

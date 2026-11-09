@@ -166,8 +166,8 @@ print.marker_hrm_resolvability <- function(x, ...) {
 #' since the class mean - not this SNP - is what falls short), `below_threshold`
 #' and `unknown` report `unknown` too: no fetched source measures a dTm for the
 #' pair, so nothing is known and nothing is claimed.  No design is failed by it
-#' - the scheme has no per-SNP dTm to fail it with - and the reason is carried in
-#' `detail` so a report can say which way it leans.
+#' - the scheme has no per-SNP dTm to fail it with - and the explanation is
+#' carried in `detail` so a report can say which way it leans.
 #' @param marker an HRM marker.
 #' @return a one-row evaluation tibble (empty when the target alleles are
 #'   unknown).

@@ -993,7 +993,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # results instead of recomputing them
   out$evaluation <- tryCatch(marker_design_checks(out, limits = limits), error = function(e) {
     # A failed evaluator is not "no opinion": say so, or the gap looks like a
-    # design that simply has no checks.
+    # design that has no checks.
     cli::cli_warn(c(
       gettext("The acceptance checks could not be evaluated: {conditionMessage(e)}"),
       i = gettext("assay$evaluation is NULL; the verdict is unknown, not usable.")

@@ -19,7 +19,7 @@ library(tidymarkers)
 library(knitr)
 ```
 
-KASP (Kompetitive Allele-Specific PCR) — a homogeneous endpoint assay: two
+KASP (Kompetitive Allele-Specific PCR), a homogeneous endpoint assay: two
 allele-specific primers (AS-ref / AS-alt) with different fluorophores and one
 common primer (COM). Discrimination rests on **a single 3' base** of the AS
 primer: a 3'-terminal mismatch usually suppresses extension by Taq, much less
@@ -215,14 +215,14 @@ cover the whole set or includes REF.
 
 **Weak spot.** DECIPHER is a model, not wet kinetics; 0.5 is a proxy. Wobble
 can be lifted by the ladder. For a degenerate site one primer discriminates
-REF vs non-REF and does **not** discriminate the ALTs from one another — this
+REF vs non-REF and does **not** discriminate the ALTs from one another; this
 is a property of the scheme. For an indel, wobble is checked only when the REF
 and ALT primers are of the same length (substitution-like junction);
 length-changing bulges are not flagged. Finally, in the registry
 `ALT primer covers all ALTs` is a `check`, not a hard gate: with a mixed ALT
 set (SNP + indel) the primer is built on the first ALT, the rest are not
-covered, and this is a warning, not doom. Separately, it is worth remembering
-that `pick_target_snp()` prefers transitions (A>G / C>T), and these give the
+covered, and this is a warning, not doom. Separately, `pick_target_snp()`
+prefers transitions (A>G / C>T), and these give the
 worst G:T / A:C; the soft `gate_wobble` can admit such a warning through the
 ladder.
 
@@ -408,7 +408,7 @@ graph and in `evaluation_verdict()`, but not in `assemble_kasp_assay()` itself.
 
 **NA is a pass in selection and a green circle in acceptance.**
 `select_with_ladder()` skips an unknown margin: `is.na(m) | m >= bar`
-(`R/marker_select.R`) — for example, `m_structure` without OligoArrayAux.
+(`R/marker_select.R`), for example `m_structure` without OligoArrayAux.
 `marker_design_checks()` treats dropout the same way (`is.na(obs) | obs <= tol`)
 and off-target the same way (`is.na(o) || o <= 1`). But with `use_eff = FALSE`
 (`R/marker_assemble.R`) the layers diverge: `marker_dropout_batch()` gives all

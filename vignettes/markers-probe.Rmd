@@ -55,8 +55,7 @@ and minimal competition.
 [Huggett et al. (2013)](https://doi.org/10.1373/clinchem.2013.206375).
 
 The package designs the construct; partitioning into droplets and the Poisson
-conversion are **not simulated** — this is stated explicitly in
-`marker_readout()`.
+conversion are **not simulated**; `marker_readout()` says so explicitly.
 
 ```{r dpcr-fig, echo = FALSE, out.width = "100%", fig.cap = "dPCR: a short amplicon and hydrolysis probes; the droplet model is not simulated."}
 knitr::include_graphics("figures/dpcr.svg")
@@ -119,7 +118,7 @@ discrimination of the probe is additionally computed (`probe_discrimination()`).
   is **not a gate** here: because of the package's compressed Tm scale, the
   ordering "probe hotter than the primers" is only tier2 ranking, and the hard
   window is the absolute [56, 72] °C. A design may pass, but in a real mix the
-  probe may lack competition for the template — check on your own
+  probe may lack competition for the template; check on your own
   buffer/instrument.
 - **Probe too short or GC-poor.** There is no separate minimum length:
   candidates are enumerated at 18–25 nt, and the extreme GC is filtered out by
@@ -146,7 +145,7 @@ OligoArrayAux), but it does not enter the gates.
 - **Probe composition.** Candidates 18–25 nt, GC 40–60%, no 5'-G; as in TaqMan,
   this is a filter, not proof of efficiency.
 - **Weak discrimination with the variant under the probe.** Unlike TaqMan,
-  there is no separate gate on the mismatch dG — the readout table is
+  there is no separate gate on the mismatch dG; the readout table is
   informational. Allelic discrimination must be confirmed with droplet
   clusters, not only dG.
 - **Allele fraction below the limit of detection.** The Poisson conversion and
@@ -156,13 +155,13 @@ OligoArrayAux), but it does not enter the gates.
   [Huggett et al. (2013)](https://doi.org/10.1373/clinchem.2013.206375) with a
   confidence interval and a check of the number of positive droplets.
 - **Partitioning assumptions.** Droplet independence, equal volume, absence of
-  competition/inhibition and threshold correctness are not checked; a review of
-  the limitations —
-  [Quan et al. (2018)](https://doi.org/10.3390/s18041271), the platform —
+  competition/inhibition and threshold correctness are not checked; the
+  limitations are reviewed in
+  [Quan et al. (2018)](https://doi.org/10.3390/s18041271), the platform in
   [Hindson et al. (2011)](https://doi.org/10.1021/ac202028g).
 - **WT background.** Only the perfect probe site is taken into account; the
   contribution of WT DNA, false-positive droplets and cross-reactivity are not
-  modelled — WT genotypes, NTC and negative droplets are needed.
+  modelled; WT genotypes, NTC and negative droplets are needed.
 
 ### SNaPshot
 
@@ -179,9 +178,10 @@ structure, Tm [50, 55] °C and an amplicon of 100–300 bp.
   not scored (any base is allowed), and the efficiency of single-nucleotide
   extension, ddNTP incorporation and peak heights are **not simulated**
   (`marker_readout()`). Positive controls and optimisation of the extension
-  time are needed; design examples —
-  [Fanis et al. (2014)](https://doi.org/10.1186/1471-2164-15-108),
-  [Namdar Aligoodarzi et al. (2023)](https://doi.org/10.52547/ibj.3856).
+  time are needed; see
+  [Fanis et al. (2014)](https://doi.org/10.1186/1471-2164-15-108) and
+  [Namdar Aligoodarzi et al. (2023)](https://doi.org/10.52547/ibj.3856) for
+  design examples.
 - **Dye/mobility.** The channel colour and the mobility of the product in the
   capillary are not modelled; multiplexing and the size standard are verified
   experimentally only.
@@ -198,14 +198,14 @@ hard gates.
 
 - **ASP and WT blocker balance.** The package picks the longest "clean" WT
   blocker and places the ASP, but does not model their competition or
-  concentration ratio. Tune it empirically; mechanism —
-  [Barbano et al. (2015)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4686972/),
-  [Roma et al. (2013)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3864078/).
+  concentration ratio. Tune it empirically; the mechanism is described by
+  [Barbano et al. (2015)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4686972/)
+  and [Roma et al. (2013)](https://pmc.ncbi.nlm.nih.gov/articles/PMC3864078/).
 - **Blocker does not suppress WT.** Only the WT anchor and the composition are
   checked, while the suppression efficiency and the MGB contribution (the rise
-  in effective Tm) are not simulated. WT-only controls and ΔCt are needed; the
-  clinical format —
-  [Husain et al. (2023)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10334107/).
+  in effective Tm) are not simulated. WT-only controls and ΔCt are needed; see
+  [Husain et al. (2023)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10334107/)
+  for the clinical format.
 - **Locus probe.** The placement inside the amplicon without overlap with the
   ASP and Tm > ASP + 8 °C is implemented, but the genomic uniqueness of the
   probe/blocker/ASP is not gated by the designer (unlike TaqMan/dPCR), and MGB
@@ -220,8 +220,8 @@ In all four schemes uniqueness is computed by **perfect** site
 (`max.mismatch = 0`, both orientations); 1–2 mismatches, 3'-seed priming and
 probe/blocker cross-reactivity remain outside the check. For diagnostic markers
 this is an obligatory external step: primer-BLAST/BLAST, in-silico PCR with
-mismatches and negative controls. General rules of qPCR specificity —
-[MacLeod et al. (2021)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7892852/).
+mismatches and negative controls. General rules of qPCR specificity are given
+by [MacLeod et al. (2021)](https://pmc.ncbi.nlm.nih.gov/articles/PMC7892852/).
 
 ### Decision audit
 
@@ -257,10 +257,10 @@ knitr::include_graphics("figures/decision-castpcr.svg")
 - **Probe Tm vs primers.** *Visible:* in TaqMan the ordering "probe above the
   primers" stays tier2 (not a gate), in dPCR/castPCR it is a hard +8 °C
   (**threshold**, not a measured offset). SVG:
-  TaqMan probes 59.4/61.3 °C with primers at 58.7 (+0.7/+2.6), dPCR —
-  57.2/58.1 with 48.8 (+8.4/+9.3), castPCR — 67.7 with ASP 59.0 (+8.7).
+  TaqMan probes 59.4/61.3 °C with primers at 58.7 (+0.7/+2.6); dPCR
+  57.2/58.1 with 48.8 (+8.4/+9.3); castPCR 67.7 with ASP 59.0 (+8.7).
   *Weak spot:* `probes$tm[1L]` holds a single Tm for both allelic probes; the
-  ALT probe is not recomputed — add its Tm to the gate/tier.
+  ALT probe is not recomputed; add its Tm to the gate/tier.
 
 - **Probe placement.** *Visible:* a hard placement node exists only in
   SNaPshot; in TaqMan the placement is set by the soft centrality gate, in dPCR
@@ -270,11 +270,11 @@ knitr::include_graphics("figures/decision-castpcr.svg")
   failure the designer returns `NULL`. Add a gap node and the reason for
   rejection.
 
-- **Mismatch discrimination.** *Visible:* TaqMan — hard ΔG ≥ 1.5 kcal/mol
-  (**threshold** on **model** output — `DECIPHER` hybridisation × Taq, not
-  cleavage), but for the REF probe only; dPCR — no gate, `probe_discrimination()` stays
-  informational (DECIPHER: hybridisation × Taq, not cleavage); SNaPshot —
-  discrimination by base, not by ΔG; castPCR — `alt_on − alt_off > 0` (the
+- **Mismatch discrimination.** *Visible:* TaqMan: hard ΔG ≥ 1.5 kcal/mol
+  (**threshold** on **model** output, `DECIPHER` hybridisation × Taq, not
+  cleavage), but for the REF probe only; dPCR: no gate, `probe_discrimination()` stays
+  informational (DECIPHER: hybridisation × Taq, not cleavage); SNaPshot:
+  discrimination by base, not by ΔG; castPCR: `alt_on − alt_off > 0` (the
   predicted DECIPHER margin), i.e. only the sign. *Weak spot:* the ALT TaqMan
   probe is not scored, in castPCR even 0.001 passes, and the SVG has no
   discrimination/ΔG row; score both alleles with an effect threshold, then
@@ -315,7 +315,7 @@ knitr::include_graphics("figures/decision-castpcr.svg")
   only for the TaqMan/dPCR probes and the SNaPshot extension primer; castPCR has
   none. The `off-target exact primer hits` row in the graph is declarative,
   while the SVG panel computes exact hits for all oligos from
-  `marker_primers()` — but for castPCR without the blocker. *Weak spot:* 1–2
+  `marker_primers()`, but for castPCR without the blocker. *Weak spot:* 1–2
   mismatches, the 3'-seed and probe/blocker cross-reactivity are not computed;
   turn this row into an executable gate or remove it from the graph, and keep
   the mismatch-tolerant check external.
@@ -332,7 +332,7 @@ the colour as a heuristic.
 A correction to the first pass: the soft windows are TaqMan
 centrality/amplicon/structure, dPCR amplicon/structure, SNaPshot
 amplicon/Tm/structure, castPCR amplicon/ASP Tm; the ladder shifts them, so these
-are ideal thresholds, not hard boundaries — and all of them are package
+are ideal thresholds, not hard boundaries, and all of them are package
 **thresholds**, not values a source prints. References for the mechanisms are
 the same as above (Holland 1991; Pastinen 1997; Hindson 2011; Huggett 2013;
 Barbano 2015; Roma 2013; MacLeod 2021); they explain the mechanism, not the

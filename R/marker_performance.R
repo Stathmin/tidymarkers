@@ -20,7 +20,7 @@
 #'
 #' Kept as a named vector so a scheme declares *which* quantities it reports and
 #' the report prints the same definition everywhere.  A new quantity must be
-#' added here first; [scheme_analytical()] then rejects a scheme that names an
+#' added here first; `scheme_analytical()` then rejects a scheme that names an
 #' unknown one.
 #' @keywords internal
 #' @noRd

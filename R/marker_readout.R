@@ -55,7 +55,7 @@ probe_discrimination <- function(seq, snp_i, probes, alt) {
 #'
 #' The dPCR counting law, nothing more: a partition carrying k molecules is
 #' Poisson with mean `lambda`, so the empty fraction is `exp(-lambda)` and
-#' `lambda = -ln(N_neg / N_total)`.  The inverse of [poisson_positive_fraction()].
+#' `lambda = -ln(N_neg / N_total)`.  The inverse of `poisson_positive_fraction()`.
 #' Non-physical input (empty, missing, or more negatives than partitions) returns
 #' `NA_real_`; it is not silently carried as `Inf`/`NaN`.
 #' @param negative the number of negative partitions.

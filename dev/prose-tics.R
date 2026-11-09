@@ -13,13 +13,21 @@
 #              "not just", "rather than", "unlike", "far from". This is the
 #              repository's deliberate teaching style, so it is reported, never
 #              gated. --contrastive is an alias that lists only this tier.
-#  meta        signposting and self-commentary: "the point is", "here's the
-#              thing", "importantly", "note that", "at its heart", "serves as".
-#  hedge       intensifiers and softeners: "simply", "really", "seems to",
-#              "of course", "perhaps", "in fact".
+#  meta        signposting and self-commentary that points at the writing instead
+#              of the subject: "the upshot", "the point is", "here's the thing",
+#              "at its heart", "serves as". Ordinary connectives such as "in
+#              practice", "precisely because" and "which is why" are technical
+#              English, not signposts, so they are excluded.
+#  hedge       softeners: "simply", "basically", "seems to", "of course".
+#              Qualifiers that carry technical meaning in this domain ("actually",
+#              "particularly", "especially", "highly", "very", "really") are
+#              excluded; they distinguish the effective value from the nominal one.
 #  verbosity   wordy phrases with a shorter equivalent: "in order to",
 #              "the fact that", "prior to", "a number of".
-#  punctuation em dashes and "!!", which prose rarely needs.
+#  punctuation em dashes in running prose and "!!". Table cells and list-item
+#              separators are markup, so they are skipped.
+#  encoding    non-Unicode signals: invalid UTF-8, U+FFFD, mojibake, zero-width
+#              and control characters. Gated by --check (must stay 0).
 #  comment_verbose
 #              a long ordinary-`#` block (>= 15 lines, banner excluded) or a
 #              comment line wider than 100 columns.
@@ -97,18 +105,16 @@ tics <- list(
       "\\bthe (key|main) (point|argument|thing)\\b",
       "\\bthe (point|key) is (that|this|not)\\b",
       "\\bhere(')?s the (thing|point|catch)\\b",
-      "\\bin (short|essence|other words|effect|practice)\\b",
+      "\\bin (short|essence|other words|effect)\\b",
       "\\bthat is to say\\b",
       "\\bwhat matters\\b",
       paste0(
         "\\b(importantly|crucially|notably|interestingly|ultimately|",
-        "fundamentally|essentially|arguably|precisely)\\b"
+        "fundamentally|essentially|arguably)\\b"
       ),
       "\\bit is (important|worth|essential|key|critical|vital) to\\b",
       "\\bnote that\\b",
       "\\b(keep in mind|remember that|bear in mind)\\b",
-      "\\b(which|this|that) is why\\b",
-      "\\bthe reason (is|being)\\b",
       "\\bthink of\\b",
       "\\ba reminder that\\b",
       "\\bat (its|the) (heart|core)\\b",
@@ -120,10 +126,9 @@ tics <- list(
   hedge = list(
     gate = FALSE,
     patterns = c(
-      "\\b(simply|basically|obviously|clearly|trivially|essentially|actually|literally)\\b",
+      "\\b(simply|basically|obviously|clearly|trivially|essentially|literally)\\b",
       paste0(
-        "\\b(very|really|quite|fairly|somewhat|rather|pretty|extremely|",
-        "particularly|especially|highly|truly)\\b(?![[:space:]]+than)"
+        "\\b(quite|fairly|somewhat|pretty|extremely|truly)\\b(?![[:space:]]+than)"
       ),
       "\\b(it seems|seems to|appears to|arguably|perhaps|maybe|presumably)\\b",
       "\\b(of course|needless to say)\\b",
@@ -153,6 +158,7 @@ tics <- list(
     gate = FALSE,
     patterns = c("\u2014", "!{2,}")
   ),
+  encoding = list(gate = TRUE, patterns = character(0)),
   # Structural tiers: no regex; filled by the helpers below.
   comment_verbose = list(gate = FALSE, patterns = character(0)),
   prose_verbose = list(gate = TRUE, patterns = character(0))
@@ -353,6 +359,74 @@ prose_verbosity <- function() {
   if (length(hits)) do.call(rbind, hits) else NULL
 }
 
+# Em dashes and "!!" in running prose.  A table row's empty cell (`| \u2014 |`) and
+# a list-item term-definition separator are markup, so they are not counted.
+punctuation_hits <- function(surface) {
+  markup <- grepl("^[[:space:]]*\\|", surface$text) |
+    grepl("^[[:space:]]*[-*+][[:space:]]", surface$text) |
+    grepl("^[[:space:]]*[0-9]+[.][[:space:]]", surface$text)
+  hits <- list()
+  for (pat in c("\u2014", "!{2,}")) {
+    m <- grepl(pat, surface$text, perl = TRUE) & !markup
+    for (i in which(m)) {
+      hits[[length(hits) + 1L]] <- verbose_hit(
+        surface$file[[i]], surface$line[[i]],
+        trimws(substr(surface$text[[i]], 1L, 160L)), "punctuation"
+      )
+    }
+  }
+  if (!length(hits)) {
+    return(NULL)
+  }
+  hits <- do.call(rbind, hits)
+  hits[!duplicated(hits[c("file", "line")]), , drop = FALSE]
+}
+
+# Non-Unicode signals: bytes or characters that should never appear in a UTF-8
+# source tree.  Valid non-ASCII (`\u0394`, `\u00b0C`, `\u2265`, `\u00d7`, Greek, Cyrillic) is
+# fine and is not flagged.
+encoding_hits <- function() {
+  files <- c(
+    if (file.exists("DESCRIPTION")) "DESCRIPTION",
+    if (file.exists("README.md")) "README.md",
+    list.files("man", pattern = "[.]Rd$", full.names = TRUE),
+    list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE),
+    list.files("R", pattern = "[.]R$", full.names = TRUE),
+    list.files("tests", pattern = "[.][Rr]$", full.names = TRUE, recursive = TRUE),
+    list.files(
+      "inst", pattern = "[.](csv|txt|md|yml|yaml)$",
+      full.names = TRUE, recursive = TRUE
+    )
+  )
+  hits <- list()
+  add <- function(f, line, what) {
+    hits[[length(hits) + 1L]] <<- verbose_hit(f, line, what, "encoding")
+  }
+  for (f in files) {
+    x <- readLines(f, warn = FALSE)
+    for (i in which(!validUTF8(x))) add(f, i, "invalid UTF-8")
+    for (i in seq_along(x)) {
+      if (grepl("\uFFFD", x[[i]], fixed = TRUE)) {
+        add(f, i, "U+FFFD replacement character")
+      }
+      if (grepl("\u00c3", x[[i]], fixed = TRUE) ||
+        grepl("\u00c2", x[[i]], fixed = TRUE) ||
+        grepl("\u00e2\u20ac", x[[i]], fixed = TRUE)) {
+        add(f, i, "mojibake")
+      }
+      if (grepl("[\u200b\u200c\u200d\ufeff]", x[[i]])) add(f, i, "zero-width character")
+      if (grepl("[\x01-\x08\x0B\x0C\x0E-\x1F]", x[[i]], perl = TRUE)) {
+        add(f, i, "control character")
+      }
+    }
+  }
+  if (!length(hits)) {
+    return(NULL)
+  }
+  hits <- do.call(rbind, hits)
+  hits[!duplicated(hits[c("file", "line", "text")]), , drop = FALSE]
+}
+
 report <- function(hits, name, gated) {
   tag <- if (gated) " (gated by --check)" else ""
   if (is.null(hits)) {
@@ -389,6 +463,8 @@ if (!is.null(results$comment)) {
 }
 results$comment_verbose <- comment_verbosity()
 results$prose_verbose <- prose_verbosity()
+results$punctuation <- punctuation_hits(broad)
+results$encoding <- encoding_hits()
 
 if (only_contrastive) {
   report(results$negation, "negation", FALSE)

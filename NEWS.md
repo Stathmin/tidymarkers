@@ -99,6 +99,37 @@
   `R/`, `tests/` или `vignettes/`; инструменты репозитория (`dev/`) вынесены
   ещё в первом проходе. Ничего не удалено.
 
+### Проза: разбор по случаям, кодировка, ссылки roxygen (2026-11-09)
+
+- **Уровни prose-tics разобраны по случаям.** `meta` сужен до настоящих
+  указателей — теперь **0**. `hedge` оставляет только настоящие смягчения
+  (технические квалификаторы «actually», «very», «really», «particularly»,
+  «especially», «highly» исключены), 80 → **4**; все четыре — требование или
+  измеренное поведение (`clearly distinguishable`, `somewhat sticky`,
+  `not to be pretty`, `*somewhat* relaxed`). `punctuation`: сканер больше не
+  считает строки разметки (таблицы, списки), поэтому видит только бегущую
+  прозу; оставшиеся тире в `README.md` и шести виньетках заменены двоеточием,
+  запятой, точкой с запятой или скобками — 104 → **0**. `negation` прочитан
+  целиком: 397 попаданий, каждое называет технический контраст («data, not
+  prose», «the gate is not Tm»), поэтому оставлен; массовой правки нет по
+  замыслу. Попутно убрано «simply» в девяти местах `R/`.
+- **Гейт не-Unicode сигналов.** Новый уровень `encoding`: невалидный UTF-8,
+  U+FFFD, мойбейк (`Ã`, `Â`, `â€`), zero-width и управляющие символы в
+  `DESCRIPTION`, `README.md`, `man/*.Rd`, `vignettes/*.Rmd`, `R/*.R`, `tests/`,
+  `inst/{csv,txt,md,yml}`. Сейчас 0 и гейтится `--check`.
+- **Ссылки roxygen разрешаются по причине.** 14 WARN «Could not resolve link»
+  шли из `[foo()]` на внутренние функции без темы (`@noRd`):
+  `marker_evaluate`, `marker_map_spec`, `marker_decision_schema`,
+  `marker_design_at`, `marker_scheme_adapter`, `scheme_analytical`,
+  `two_pass_schemes`, `select_flanking_pair`, `pair_failure_dooms`,
+  `pair_screen_ok`, `poisson_positive_fraction`, `per_locus_schemes`, а также
+  `[0, 1]` в заголовке `marker_bncc.R`. Заменены на code-span `` `foo()` ``;
+  темы у них нет, и заводить её ради ссылки незачем. `roxygen2::roxygenise()` —
+  **0 WARN**, `man/` не менялся (правки в блоках `@noRd`).
+- **Артефакты перегенерированы.** Правки `R/*.R` меняют входные хэши фигур:
+  `dev/render-gallery.R` + `dev/artifacts.R --write` обновили 44 артефакта;
+  `dev/check.R --quick --spelling` зелёный.
+
 ### Новые возможности
 
 - **Граф: имена сообществ и `supersedes`-рёбра (2026-11-06).**

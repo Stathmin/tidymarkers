@@ -302,7 +302,7 @@ The [decision audit](https://github.com/Stathmin/tidymarkers/blob/main/docs/deci
 where its number comes from and on which rung of `CRITERION_EVIDENCE` it sits.
 Every band gap, Tm window and amplicon window here is a `rule_of_thumb` bar: 31
 of the 33 `caps`/`arms`/`hrm`/`ssr`/`indel_size` rows are `package assumption`,
-and the one named source — `kwok1990` on `arms:gate:gate_arms_disc` — ranks
+and the one named source, `kwok1990` on `arms:gate:gate_arms_disc`, ranks
 mismatch classes, it does not state a number. The ARMS discrimination figure is
 **model** output (ΔG), a prediction and not a measurement.
 
@@ -377,7 +377,7 @@ CAPS/ARMS/HRM, `off-target exact primer hits (n)` is listed – this is the shar
 
 **Audit summary.** Every node of the graph is a *construct* check; the steps
 listed on the right have no node and remain wet validation, and no bar in the
-table above is a measured effect — the ΔG figures are **model** output, the
+table above is a measured effect: the ΔG figures are **model** output, the
 windows and gaps are **thresholds**. The figures confirm
 this: `caps.svg` shows only REF/ALT (53 bp gap), `arms.svg` only `REF/REF` and
 `ALT/ALT`, `hrm.svg` a map without a curve, `ssr.svg` a 2 bp step, `indel_size.svg`

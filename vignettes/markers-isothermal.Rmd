@@ -28,7 +28,7 @@ reaction kinetics.
 
 ## LAMP
 
-LAMP uses 4 obligatory primers: outer F3/B3 and inner FIP/BIP — chimeras of two
+LAMP uses 4 obligatory primers: outer F3/B3 and inner FIP/BIP, chimeras of two
 arms (F1c + F2, B1c + B2). The inner primers form loops, so the product
 amplifies in a self-sustaining way. The temperature is usually 60–65 °C and the
 enzyme is Bst polymerase with strand displacement.
@@ -108,7 +108,7 @@ FIP = revcomp(F1) + F2, BIP = revcomp(B1) + revcomp(B2).
   package does not enforce it. The scheme allows a variant on a loop primer,
   but the designer always places it on FIP; BIP-anchored markers are not
   designed. If the variant ends up in the loop between the arms, no 3' end
-  reads it — it is not a marker but simply a stretch of the amplicon (the
+  reads it: it is not a marker but a stretch of the amplicon (the
   package avoids this by putting the FIP 3' end on the variant;
   [Shirshikov et al. 2019](https://doi.org/10.7717/peerj.6801)).
 - **F3/B3.** The outer pair is placed outside the inner block (`end < lo`,
@@ -176,10 +176,10 @@ THF ≥ 30 nt from 5' / ≥ 15 nt from 3' / FQ gap ≤ 4, amplicon 100–200 bp
   THF: the code moves the THF towards the variant only where the geometry
   allows it, and the position of the mismatch relative to the THF is not gated.
   The probe is plus-strand only; the 3' block is flagged via `blocked_3p`, but
-  the returned sequence carries no 3' modification — you need to add it when
+  the returned sequence carries no 3' modification; you need to add it when
   ordering. The probe does not enter the hard structure gate (only
   `compatibility`, which is not gated), so a poor probe dimer can pass. The
-  exo probe geometry is inherited from the abasic/nfo probe — this is the
+  exo probe geometry is inherited from the abasic/nfo probe; this is the
   package's assumption
   ([Lobato & O'Sullivan 2018](https://doi.org/10.1016/j.trac.2017.10.015)).
 - **Reverse primer and off-target.** The pair is obligatory, and in probe mode
@@ -258,8 +258,8 @@ implemented. None of this needs reworking.
 
 Both smoke examples pass the composition checks (run 3 < 4, SSR 0, inverted
 repeat 0, off-target 1), but these are checks of the construct, not of the
-reaction. The ladder order in the DAG matches the code: LAMP —
-`amplicon` -> `outer Tm` -> `cross-dimers`, RPA — `amplicon` -> `probe` ->
+reaction. The ladder order in the DAG matches the code: LAMP:
+`amplicon` -> `outer Tm` -> `cross-dimers`; RPA: `amplicon` -> `probe` ->
 `primer length`; the hard `variant`/`inner Tm`/`structure` (LAMP) and
 `variant`/`structure` (RPA) lead to `DOOMED`.
 
@@ -291,13 +291,13 @@ reaction. The ladder order in the DAG matches the code: LAMP —
   arm direction; check the 3'-terminal base of FIP against REF *and* ALT; for
   dimers, a 3'-end screen at 60–65 °C rather than only run >= 8; add a check of
   the amplicon secondary structure. NTC/early window, UNG/dUTP, zone
-  separation, threshold/standard curve — outside the designer
+  separation, threshold/standard curve are outside the designer
   ([Tomita et al. 2008](https://doi.org/10.1038/nprot.2008.57);
   [Mori et al. 2001](https://doi.org/10.1006/bbrc.2001.5921)).
 - **RPA.** Make 30–35 nt a hard limit regardless of `primer_len`; add an
   absolute Tm window and a ΔTm threshold (or explicitly leave Tm as
   informational); a window added here would be a **threshold**, not a
-  calibration — no source in the tree prints an RPA Tm window; do not place the THF on the variant, gate the mismatch–THF
+  calibration: no source in the tree prints an RPA Tm window; do not place the THF on the variant, gate the mismatch–THF
   distance, return the 3' block in the sequence, include the probe in the
   structural/dimer gate and in off-target; search for a paired product/in-silico
   PCR rather than only exact primer hits; when OligoArrayAux is absent, show

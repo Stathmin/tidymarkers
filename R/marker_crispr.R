@@ -20,7 +20,7 @@
 #     Chen JS et al. (2018) Science 360:436-439, doi:10.1126/science.aar6245.
 #     Addgene CRISPR Guide, PAM table (AsCpf1/LbCpf1: 5' TTTV; seed at the
 #     PAM-proximal end): https://www.addgene.org/guides/crispr/
-#   * Cas13 (SHERLOCK) targets ssRNA, so it has no DNA PAM - but it is NOT simply
+#   * Cas13 (SHERLOCK) targets ssRNA, so it has no DNA PAM - but it is not
 #     "PAM-free": a protospacer-flanking site (PFS) constrains the target.  Cas13a
 #     has a weak 3' PFS preference for H (A/C/U), so a G immediately 3' of the
 #     protospacer is avoided; that conservative rule is enforced here even though
