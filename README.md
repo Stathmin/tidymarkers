@@ -293,8 +293,9 @@ and [`SECURITY.md`](SECURITY.md) to report a vulnerability privately.
 ## How to cite
 
 `tidymarkers` is research software by Daniil Ulyanov at the All-Russian
-Research Institute of Agricultural Biotechnology (VNIISB), Moscow. If it
-contributed to a publication, please cite the package and the version you ran:
+Research Institute of Agricultural Biotechnology ([VNIISB](http://www.vniisb.ru/ru/news/)),
+Moscow. If it contributed to a publication, please cite the package and the
+version you ran:
 
 ```r
 citation("tidymarkers")

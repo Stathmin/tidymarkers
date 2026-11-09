@@ -55,10 +55,12 @@
   проверке каталога исходников: релизный гейт собирает пакет первым, и
   `build/vignette.rds` в тарболе уже есть, поэтому у проверки распакованного
   тарбола этого замечания нет.
-- **Битая внешняя ссылка.** `https://www.vniisb.ru` не отвечает (curl `000`),
-  и `R CMD check --as-cran` писал по ней NOTE. Ссылка убрана из `README.md`;
-  название института осталось, а стабильные ссылки (ORCID, OligoArrayAux,
-  BLAST+, doi.org) проверены — `200`.
+- **Ссылка на VNIISB восстановлена по HTTP.** `https://www.vniisb.ru` не
+  отвечает (TLS не обслуживается, curl `000`), из-за чего
+  `R CMD check --as-cran` писал NOTE. Рабочий адрес — только `http://` и он
+  делает один редирект на `/ru/news/`; в `README.md` стоит конечная цель
+  `http://www.vniisb.ru/ru/news/` (`200` без редиректа). Остальные внешние
+  ссылки (ORCID, OligoArrayAux, BLAST+, doi.org) проверены — `200`.
 - **`dev/prose-tics.R`.** Отчёт по словам-филлерам LLM («it's worth noting»,
   «delve», «seamless», «moreover», …) в `README.md`, `DESCRIPTION`, `man/`,
   `vignettes/` и roxygen-комментариях. `--check` валит только этот уровень
