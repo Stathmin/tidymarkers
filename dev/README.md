@@ -135,13 +135,14 @@ Rscript dev/check.R --render    # + тяжёлые панели (мишени) �
 ## `prose-tics.R` — филлеры и антипаттерны в прозе и комментариях
 
 ```sh
-Rscript dev/prose-tics.R               # filler + comment + подсказка про контрастивный слой
-Rscript dev/prose-tics.R --contrastive # + «X, not Y», «rather than» (не гейтится)
-Rscript dev/prose-tics.R --check       # ненулевой код на filler или comment
+Rscript dev/prose-tics.R               # все семь уровней: счётчики и образец
+Rscript dev/prose-tics.R --list        # + каждая находка целиком
+Rscript dev/prose-tics.R --contrastive # только «X, not Y» (не гейтится)
+Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment или verbosity
 ```
 
 Читает `DESCRIPTION`, `README.md`, `man/`, `vignettes/` и roxygen-строки
-`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Три уровня:
+`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Семь уровней:
 
 - `filler` («it's worth noting», «delve», «seamless», «moreover»…) — слова без
   информации; гейтит `--check`;
@@ -149,12 +150,26 @@ Rscript dev/prose-tics.R --check       # ненулевой код на filler �
   «trivially»), разговор о себе или инструменте («as an AI», «the agent»),
   `TODO`/`FIXME`/`HACK` без владельца и комментарий, дословно повторяющий
   строку кода под ним; гейтит `--check`;
-- `contrastive` («X, not Y», «rather than», «not just») — осознанный стиль
-  репозитория, сотни совпадений; печатается по `--contrastive` и никогда не
-  валит.
+- `negation` — семейство «not X, it's Y» во всех формах: «is, not», «not but»,
+  «not just», «rather than», «without», «unlike», «far from». Осознанный
+  стиль репозитория (сотни совпадений), поэтому только счётчик; `--contrastive` —
+  его алиас;
+- `meta` — самоуказание: «the point is», «here's the thing», «importantly»,
+  «note that», «at its heart», «serves as»;
+- `hedge` — усиление и смягчение: «simply», «really», «seems to», «of course»,
+  «perhaps», «in fact»;
+- `verbosity` — многословные обороты с коротким эквивалентом: «in order to»,
+  «the fact that», «prior to», «a number of»; гейтит `--check`;
+- `punctuation` — тире и «!!», которых прозе обычно не нужно.
 
-Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler` и
-`comment` не могут вырасти незаметно.
+Последние пять уровней печатаются счётчиком и восемью образцами (`--list` —
+все). Гейтит только `filler`, `comment` и `verbosity`: они держатся на нуле.
+`negation`, `meta`, `hedge` и `punctuation` — в основном осознанная проза
+(«the temperature the chemistry actually runs at», «this very namespace»,
+«X, not Y»), и массовая правка сломала бы голос репозитория.
+
+Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler`,
+`comment` и `verbosity` не могут вырасти незаметно.
 
 ## `render-all.R` — фигуры как код
 

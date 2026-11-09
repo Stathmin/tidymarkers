@@ -35,7 +35,7 @@ primer introduces one mismatch that creates the site only in one allele.
 [Konieczny & Ausubel (1993)](https://doi.org/10.1046/j.1365-313X.1993.04020403.x),
 [Neff et al. (1998)](https://doi.org/10.1046/j.1365-313X.1998.00124.x).
 
-The key point: the variant must change the restriction pattern, and the fragment
+The variant must change the restriction pattern, and the fragment
 difference must be above the gel resolution; the dCAPS mismatch must not break
 annealing.
 

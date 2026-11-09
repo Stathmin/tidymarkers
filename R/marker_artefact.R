@@ -3,7 +3,7 @@
 # =============================================================================
 #  "We log everything" is a claim; an artefact is the thing that makes it
 #  checkable.  `marker_artefact()` writes, beside the solved plan, the three
-#  things a later reader needs in order to disagree with the result:
+#  things a later reader needs to disagree with the result:
 #
 #    * inputs     -- which reference and which variant table, hashed;
 #    * provenance -- package version, git SHA, engine versions, every parameter

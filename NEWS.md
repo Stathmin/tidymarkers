@@ -61,14 +61,19 @@
   делает один редирект на `/ru/news/`; в `README.md` стоит конечная цель
   `http://www.vniisb.ru/ru/news/` (`200` без редиректа). Остальные внешние
   ссылки (ORCID, OligoArrayAux, BLAST+, doi.org) проверены — `200`.
-- **`dev/prose-tics.R`, теперь с проверкой комментариев.** Три уровня:
+- **`dev/prose-tics.R`, теперь с широкой таксономией.** Семь уровней:
   `filler` (слова без информации), `comment` (антипаттерны комментария:
   «obviously»/«basically»/«trivially», речь от лица инструмента, `TODO` без
-  владельца, комментарий, дословно повторяющий строку кода) и `contrastive`
-  («X, not Y» — осознанный стиль, сотни совпадений). `--check` валит `filler`
-  и `comment` (оба 0); `contrastive` печатается по `--contrastive`.
-  **Шаг «prose tics» есть в `dev/check.R`**, поэтому эти два уровня не могут
-  вырасти незаметно.
+  владельца, комментарий, дословно повторяющий строку кода), `negation`
+  («not X, it's Y» во всех формах), `meta` (самоуказание: «the point is»,
+  «note that», «at its heart»), `hedge` («simply», «really», «seems to»),
+  `verbosity` («in order to», «the fact that», «prior to») и `punctuation`
+  (тире, «!!»). `--check` валит `filler`, `comment` и `verbosity` (все 0);
+  остальные печатаются счётчиком и образцом (`--list` — всё). Замеры на
+  репозитории: negation 541, meta 22, hedge 80, punctuation 104 — в основном
+  осознанная проза, поэтому не гейтятся. `--contrastive` — алиас `negation`.
+  **Шаг «prose tics» есть в `dev/check.R`**, поэтому гейтированные уровни не
+  могут вырасти незаметно.
 - **`Suggests` перепроверены.** Все 20 записей действительно вызываются в
   `R/`, `tests/` или `vignettes/`; инструменты репозитория (`dev/`) вынесены
   ещё в первом проходе. Ничего не удалено.

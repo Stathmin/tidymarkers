@@ -57,7 +57,7 @@ amplicon, and nested read primers read through the variant from both sides.
 There is no "primer-based" discrimination – there is read quality.
 [Sanger et al. (1977)](https://doi.org/10.1073/pnas.74.12.5463).
 
-The key point: the variant must be far enough from the read ends (usually
+The variant must be far enough from the read ends (usually
 >= 50 bp), the amplicon unique, and the read primers inside the product, not
 conflicting with the amplification ones.
 
