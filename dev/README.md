@@ -138,7 +138,7 @@ Rscript dev/check.R --render    # + тяжёлые панели (мишени) �
 Rscript dev/prose-tics.R               # все девять уровней: счётчики и образец
 Rscript dev/prose-tics.R --list        # + каждая находка целиком
 Rscript dev/prose-tics.R --contrastive # только «X, not Y» (не гейтится)
-Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment или verbosity
+Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment, verbosity, prose_verbose
 ```
 
 Читает `DESCRIPTION`, `README.md`, `man/`, `vignettes/` и roxygen-строки
@@ -166,15 +166,16 @@ Rscript dev/prose-tics.R --check       # ненулевой код на filler, 
 - `prose_verbose` — абзац длиннее 120 слов без ссылки, `code` или вызова, абзац
   длиннее 150 слов либо блок вывода `##` длиннее 15 строк.
 
-Последние семь уровней печатаются счётчиком и восемью образцами (`--list` —
-все). Гейтит только `filler`, `comment` и `verbosity`: они держатся на нуле.
-`negation`, `meta`, `hedge` и `punctuation` — в основном осознанная проза
-(«the temperature the chemistry actually runs at», «this very namespace»,
-«X, not Y»), и массовая правка сломала бы голос репозитория. Разбор каждого
+Последние шесть уровней печатаются счётчиком и восемью образцами (`--list` —
+все). Гейтит `filler`, `comment`, `verbosity` и `prose_verbose`: они держатся
+на нуле. `negation`, `meta`, `hedge` и `punctuation` — в основном осознанная
+проза («the temperature the chemistry actually runs at», «this very namespace»,
+«X, not Y»), `comment_verbose` — шесть плотных блоков ограничений (прочитаны и
+оставлены); массовая правка сломала бы голос репозитория. Разбор каждого
 уровня и очередь работы — в [`dev/lang_purity.md`](lang_purity.md).
 
 Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler`,
-`comment` и `verbosity` не могут вырасти незаметно.
+`comment`, `verbosity` и `prose_verbose` не могут вырасти незаметно.
 
 ## `render-all.R` — фигуры как код
 

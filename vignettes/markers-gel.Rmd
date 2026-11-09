@@ -174,10 +174,13 @@ enzyme does not cut the product" and "the bands have merged".
 accepts no panels, MAF or population polymorphism. A site that is rare or absent
 in the population (for example because of a second SNP inside the recognition
 sequence) will pass design, and a failed digest will give an uncut product that
-is read as a REF-like allele. Incomplete digest, methylation (Dam/Dcm/CpG),
-star activity, buffer/temperature and enzyme efficiency are not modelled; the
-catalogue is limited to palindromic Type II, and only the top strand is cut. The
-threshold of 20 bp (10 bp after relaxation) is weaker than the ≥ 50 bp rule for
+is read as a REF-like allele.
+
+Incomplete digest, methylation (Dam/Dcm/CpG), star activity, buffer/temperature
+and enzyme efficiency are not modelled; the catalogue is limited to palindromic
+Type II, and only the top strand is cut.
+
+The 20 bp threshold (10 bp after relaxation) is weaker than the ≥ 50 bp rule for
 medium fragments on 1–2 % agarose that the code itself cites; for dCAPS the
 difference is limited to the primer length anyway (~20–28 bp). An uncut-product
 control is a recommendation: `plot_caps_gel()` draws only the REF and ALT lanes,
@@ -241,14 +244,17 @@ or a homopolymer.
 package does not know the allele distribution in the population, so a 5-copy
 repeat may be monomorphic, and one of 3 copies accepted after relaxation almost
 certainly is. Stutter is not modelled: long dinucleotides give a ladder that is
-easily mistaken for alleles. Overlap of allele sizes and multiplexing are not
-checked – there is one locus, and pooling is left to the caller. Flanking primers
-are checked on the reference only, so null alleles caused by a SNP in the primer
-site are invisible. Repeat search covers perfect tandems with period 2–4
-(`units = 2:4`) only, so 1-nt and 5–6-nt repeats are not found without an explicit
-`units`, and an interrupted repeat falls apart into short perfect blocks. In
-practice: tetra-/pentanucleotides (for penta, `units = 5`), checking the allele
-spectrum on a panel, a capillary with an internal standard.
+easily mistaken for alleles.
+
+Overlap of allele sizes and multiplexing are not checked – there is one locus,
+and pooling is left to the caller. Flanking primers are checked on the reference
+only, so null alleles caused by a SNP in the primer site are invisible. Repeat
+search covers perfect tandems with period 2–4 (`units = 2:4`) only, so 1-nt and
+5–6-nt repeats are not found without an explicit `units`, and an interrupted
+repeat falls apart into short perfect blocks.
+
+In practice: tetra-/pentanucleotides (for penta, `units = 5`), checking the
+allele spectrum on a panel, a capillary with an internal standard.
 Method: [Tautz (1989)](https://doi.org/10.1093/nar/17.16.6463); primer/product
 windows: [Primer3 manual](https://primer3.org/manual.html).
 
@@ -329,25 +335,30 @@ step that is absent from the designer.
 product (`caps_grade()`), yet the hard `gate_caps_site` for a natural site is
 `site_change` computed on the scan window (`find_caps_enzymes()`), and for dCAPS
 it is set to `TRUE` by construction; a candidate whose site does not cut the
-product is discarded as `gap = Inf` rather than flagged as a gate failure. For
-ARMS, `inner specificity` is
+product is discarded as `gap = Inf` rather than flagged as a gate failure.
+
+For ARMS, `inner specificity` is
 `DECIPHER::CalculateEfficiencyPCR(taqEfficiency = TRUE)`, i.e. hybridisation ×
 extension efficiency, not kinetics; `disc = pmin(fwd, rev)`, and `tube Tm balance`
 is only tier3. The 0.5 discrimination bar is a **threshold**, not a calibrated
-margin. For HRM, `variant centrality (melt domain)` is the geometric
-centrality of the amplicon (`|(start_f + end_r)/2 − centre|`), not the melting
-domain; `hrm.svg` is a map, there is no melting curve. For SSR, `repeat
-variability` is the number of copies (≥5, floor 3), not the allele spectrum;
-`ssr.svg` gives `(AC)5 · 166 bp` versus `(AC)6 · 168 bp (+2)`, and there is no
-separate gate for step resolution. For InDel the default `resolvable gap` is
-5 bp (not only "after relaxation"), the 3 bp floor is capillary; both, and the
-`>= 5` SSR copy count, are **thresholds** (design tweaks), not measured
-resolutions. `indel_size.svg`
-shows a convenient +10 bp. The first pass's sentence about an indel in a repeat
-should be narrowed: a multi-locus repeat is caught by the hard `primer
-uniqueness` through `in_silico_pcr()`; the only unverified case is an indel lying
-inside a longer repeat or next to it – the length of such a repeat can vary in
-the population, and the product difference no longer equals the indel length.
+margin.
+
+For HRM, `variant centrality (melt domain)` is the geometric centrality of the
+amplicon (`|(start_f + end_r)/2 − centre|`), not the melting domain; `hrm.svg` is
+a map, there is no melting curve.
+
+For SSR, `repeat variability` is the number of copies (≥5, floor 3), not the
+allele spectrum; `ssr.svg` gives `(AC)5 · 166 bp` versus `(AC)6 · 168 bp (+2)`, and
+there is no separate gate for step resolution.
+
+For InDel the default `resolvable gap` is 5 bp (not only "after relaxation"),
+the 3 bp floor is capillary; both, and the `>= 5` SSR copy count, are
+**thresholds** (design tweaks), not measured resolutions. `indel_size.svg` shows
+a convenient +10 bp. The first pass's sentence about an indel in a repeat should
+be narrowed: a multi-locus repeat is caught by the hard `primer uniqueness`
+through `in_silico_pcr()`; the only unverified case is an indel lying inside a
+longer repeat or next to it – the length of such a repeat can vary in the
+population, and the product difference no longer equals the indel length.
 
 **The graph is stronger than the implementation.** In the assay block of
 CAPS/ARMS/HRM, `off-target exact primer hits (n)` is listed – this is the shared

@@ -384,13 +384,15 @@ In `vignettes/figures/decision-snp.svg` the `check:target_site_class` node is
 drawn as hard (bold border), but it has no edge into `DOOMED`: edges into
 `DOOMED` come only from `as:gate:*`, `pair:gate:*` and refine. So
 `target site class` can be FAIL and the path will still carry on down the tree.
+
 For the `indel` scheme this was a bug, now fixed: `marker_site_class()` returns
 `disc = TRUE` for a length-changing ALT because the indel-junction path designs
 it (`R/marker_alleles.R`), so `marker_design_checks()` no longer paints a valid
-indel red; `tests/testthat/test-indel.R` pins that pass. A genuinely
-non-designable site (`class = "none"`, no usable ALT) still fails the check -
-but, as above, a FAIL on a *check* node is a colour: it is not an edge into
-`DOOMED`.
+indel red; `tests/testthat/test-indel.R` pins that pass.
+
+A genuinely non-designable site (`class = "none"`, no usable ALT) still fails
+the check - but, as above, a FAIL on a *check* node is a colour: it is not an
+edge into `DOOMED`.
 
 **Acceptance checks converge on one verdict.** `marker_decision_schema()` strings
 all check nodes into one chain and connects the last to `assay:decision` ("all

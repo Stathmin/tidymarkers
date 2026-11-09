@@ -19,17 +19,17 @@ visible so a regression is noticed, not to drive a mass rewrite.
 
 ## Measured tiers
 
-| tier | count | files | verdict |
-|---|---:|---:|---|
-| filler | 0 | 0 | gated; keep at zero |
-| comment | 0 | 0 | gated; keep at zero |
-| negation | 399 | 110 | house voice — keep, do not rewrite |
-| meta | 13 | 11 | mostly regex false positives — keep report-only |
-| hedge | 80 | 46 | deliberate technical emphasis — keep |
-| verbosity | 0 | 0 | gated; keep at zero |
-| punctuation | 104 | 8 | em-dash as term—definition separator — documented style |
-| comment_verbose | 6 | 5 | long comment blocks, all justified — review only |
-| prose_verbose | 4 | 2 | long audit paragraphs — split when next edited |
+| tier            | count | files | verdict                                                     |
+| --------------- | ----: | ----: | ----------------------------------------------------------- |
+| filler          |     0 |     0 | gated; keep at zero                                         |
+| comment         |     0 |     0 | gated; keep at zero                                         |
+| negation        |   399 |   110 | house voice — keep, do not rewrite                          |
+| meta            |    13 |    11 | mostly regex false positives — keep report-only             |
+| hedge           |    80 |    46 | deliberate technical emphasis — keep                        |
+| verbosity       |     0 |     0 | gated; keep at zero                                         |
+| punctuation     |   104 |     8 | em-dash as term—definition separator — documented style     |
+| comment_verbose |     6 |     5 | long comment blocks, all justified — reviewed 2026-11, keep |
+| prose_verbose   |     0 |     0 | gated; long audit paragraphs split                          |
 
 The counts move only when the regexes change, so a diff in this table is a
 signal to re-run the audit, not a bug.
@@ -40,16 +40,16 @@ signal to re-run the audit, not a bug.
 
 The patterns and their raw hit counts (before two fixes):
 
-| pattern | hits | what it matches |
-|---|---:|---|
-| `is|are|was|were … , not` | 178 | “That policy is **data, not prose**” |
-| `not … (but|rather than|instead)` | 18 | “not by haplotype, but …” |
-| `not (just|only|merely|simply)` | 39 | “computed, not merely scored” |
-| `not (a|an)` | 247 | **removed** — plain English, not the tell |
-| `rather than|instead of|as opposed to` | 174 | “ranks rather than prints” |
-| `is not a … it’s` | 1 | |
-| `unlike` | 5 | “unlike a KASP amplicon” |
-| `more than just`, `not because`, `far from` | 0 | |
+| pattern                                     |        hits | what it matches          |
+| ------------------------------------------- | ----------: | ------------------------ |
+| `is                                         |         are | was                      | were … , not`                             | 178                        | “That policy is **data, not prose**” |
+| `not … (but                                 | rather than | instead)`                | 18                                        | “not by haplotype, but …”  |
+| `not (just                                  |        only | merely                   | simply)`                                  | 39                         | “computed, not merely scored”        |
+| `not (a                                     |        an)` | 247                      | **removed** — plain English, not the tell |
+| `rather than                                |  instead of | as opposed to`           | 174                                       | “ranks rather than prints” |
+| `is not a … it’s`                           |           1 |                          |
+| `unlike`                                    |           5 | “unlike a KASP amplicon” |
+| `more than just`, `not because`, `far from` |           0 |                          |
 
 The `not (a|an)` alternation was counting every ordinary “not a numeric
 threshold” / “not a replacement”. It is not the “not X, it’s Y” rhetorical
@@ -94,17 +94,18 @@ Ordinary-`#` blocks of 15+ lines whose file banner is excluded. All six
 a non-obvious constraint: source-file ordering, why a band gap is 20 bp not 50,
 the criterion schema, the cache signature. This is what a comment is for.
 Wide comment lines: max 117 columns, one line, and it is a URL that cannot
-wrap. **Keep.** The tier is a guard against new rambling blocks, not a queue.
+wrap. **Reviewed 2026-11: all six are constraint or dense-reference blocks and
+stay.** The tier is a guard against new rambling blocks, not a queue.
 
-### prose_verbose — 4
+### prose_verbose — 0
 
 Thresholds: a paragraph over 120 words with **no** link, `` `code` ``, call or
 DOI (measured: **0** — the vignettes already cite), a paragraph over 150 words
-(measured: 4), or a `##` output block over 15 lines (measured: **0**). The four
-long paragraphs are audit prose — `markers-gel.Rmd` 173/240/328 and
-`markers-kasp.Rmd` 380 — each lead by a bold verdict and each carrying code
-references. **Split only when the paragraph is next edited**; the content is
-dense, not padded, so a rewrite for length alone would lose facts.
+(measured: **0**), or a `##` output block over 15 lines (measured: **0**). The
+four long audit paragraphs — `markers-gel.Rmd` 173/240/328 and
+`markers-kasp.Rmd` 380 — were split at their existing verdict and scheme
+boundaries, facts intact; the worst (271 words) is now five scheme paragraphs.
+Gated by `--check`.
 
 ## Actionable roadmap
 
@@ -117,12 +118,14 @@ deliberate non-action with its reason.
 2. **Done — the verbosity meter.** `comment_verbose` and `prose_verbose` above;
    URL-only comment lines are not “wide”.
 3. **Guard, not queue.** Keep every remaining gated tier at zero with
-   `--check`; keep the four prose and six comment hits as reviewed exceptions.
-4. **When the worst paragraph is touched**, split `markers-gel.Rmd:328`
-   (271 words) at its existing sentence boundaries; do not shorten the facts.
-5. **Comment-block review is per file, not global.** A new 15-line block is
-   acceptable only if it states a constraint the code cannot; a narrative block
-   should be cut.
+   `--check` (`filler`, `comment`, `verbosity`, `prose_verbose`); keep the six
+   comment hits as reviewed exceptions.
+4. **Done — split the long audit paragraphs.** `markers-gel.Rmd` 173/240/328
+   and `markers-kasp.Rmd` 380 were split at their sentence and scheme
+   boundaries; no fact was dropped. `prose_verbose` is now 0 and gated.
+5. **Done — comment-block review.** All six long blocks were read; each states
+   a constraint or is dense reference, so all stay. New 15-line blocks are still
+   held to the same bar.
 6. **Em dash rule** (already true): prose tier may use `—`; `#` comments and
    roxygen `#'` under `R/` should not. Enforce by eye at review, not by gate.
 7. **Do not** mass-edit negation, hedge or punctuation. Prior audits show they

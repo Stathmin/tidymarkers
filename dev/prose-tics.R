@@ -26,10 +26,11 @@
 #  prose_verbose
 #              a prose paragraph over 120 words with no link, `code` or call,
 #              a paragraph over 150 words, or a `##` output block over 15 lines.
+#              Gated by --check (currently 0).
 #
 #  The report-only tiers are printed as counts plus a bounded sample; --list
-#  prints every hit. filler, comment and verbosity are gated; the rest are
-#  report-only because their hits are mostly deliberate.
+#  prints every hit. filler, comment, verbosity and prose_verbose are gated;
+#  the rest are report-only because their hits are mostly deliberate.
 #
 #  Dev-only: `dev/` is in .Rbuildignore.
 #
@@ -154,7 +155,7 @@ tics <- list(
   ),
   # Structural tiers: no regex; filled by the helpers below.
   comment_verbose = list(gate = FALSE, patterns = character(0)),
-  prose_verbose = list(gate = FALSE, patterns = character(0))
+  prose_verbose = list(gate = TRUE, patterns = character(0))
 )
 
 r_files <- list.files("R", pattern = "[.]R$", full.names = TRUE)
