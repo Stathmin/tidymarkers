@@ -1,0 +1,14 @@
+.git
+.tools
+renv
+renv.lock
+.Rprofile
+results
+docs
+graphify-out
+.superpowers
+.agents
+.cursor
+dev/logs
+*.Rcheck
+*.tar.gz

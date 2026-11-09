@@ -191,6 +191,20 @@ decisions), [`NEWS.md`](NEWS.md) (changelog), [`VALIDATION.md`](VALIDATION.md)
 [`docs/INDEX.md`](docs/INDEX.md) (the index of every document and every
 committed figure).
 
+## Container and MCP server
+
+A pinned image (`rocker/r-ver:4.6.1`) builds the package with its `Imports` and
+starts a stdio MCP server; see [`docker/README.md`](docker/README.md). The
+container opens no port: the server reads JSON-RPC on stdin and writes it on
+stdout. Mount data **read-only** (`-v /path/to/data:/data:ro`); nothing is
+written into the image. The network is not needed at run time (the build fetches
+packages, and the optional demo downloads its genome on first use). The
+artefact's decision log carries `outcome`, `verdict`, `relaxed`, `violated` and
+`risk` as typed columns, so an agent reads a field instead of parsing a sentence.
+The design tools take the mounts as arguments: `genome_path` and `variants_path`
+name a FASTA and a VCF under `/data`, and `oligoarrayaux_dir` points at a mounted
+`OligoArrayAux` build for the thermodynamics calls.
+
 ## Reproducibility
 
 `renv.lock` pins the exact versions used in development. It is deliberately not

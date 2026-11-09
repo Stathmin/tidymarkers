@@ -163,7 +163,8 @@
     - блокер: `ZW3.4` — смещение разложено: `Schildkraut` −16.9 °C, NN-консистентный
       `SantaLucia1998-2` −9.6 °C при 25 нМ, −5.4 °C при 1 мкМ тотальной нити
       (`dnac=`), остаток ≈−5.4 — метка/развёртка. Внешнего измеренного якоря на
-      KASP/dPCR-условиях нет, поэтому окно не двигается.
+      KASP/dPCR-условиях нет, поэтому окно не двигается. Перенос координаты на
+      SL2 (с пере-якорением окон) — отдельный пункт `ZW3.10`.
     - следствие: смена окна «на глаз» замаскирует биас и сдвинет вердикты всех
       dPCR-ассays без данных.
 - [x] **`Z0.3` LAMP F1c/B1c > F2/B2.** `lamp_fuse()` фильтрует `t1 > t2`; FIP 3′
@@ -379,6 +380,25 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
 - [x] **`ZW3.9` Фиксированные праймеры и аннотация — общий интерфейс.**
       `assemble_primer_assay()` (`R/marker_assemble.R`), `marker_features()`
       (`R/marker_annotate.R`); 13 наборов пересобраны и нарисованы.
+- [ ] **`ZW3.10` Пере-якорение Tm-координаты (flip на `SantaLucia1998-2`).**
+      Дефолт `TM_SALT_METHOD` (`R/marker_core.R`) — `"Schildkraut2010"`; окна
+      KASP (`KASP_LIMITS$as_tm` 55–65, `com_tm` 58–63) и dPCR `tm_range` (44–50)
+      выписаны на этой координате. `ZW3.5`: NN-консистентный
+      `SantaLucia1998-2` — пара к `DNA_NN_SantaLucia_2004` (Primer3/oligotm,
+      Biopython), воспроизводит печатную сою до 0.08 °C и лежит в основе `ZW3.4`.
+      правка: сменить дефолт **одновременно** с пере-якорением окон (вывести из
+      SL2-шкалы, не «подогнать под биас»), пере-пин `tm_tolerances()`
+      (`helper-tm-tolerance.R` — таблица снята на Schildkraut) и фикстур
+      `test-taqman.R` (центральность), `test-selection.R`,
+      `test-plot-methods.R`; обновить ожидания биаса `test-tm-mm2020.R` /
+      `test-tm-oracle.R`.
+      проверка: `dev/test.R --full`; `ZW0` — ни один вердикт не сдвигается молча
+      (любой сдвиг фиксируется в `NEWS.md`).
+      блокер: нет внешнего измеренного якоря на KASP/dPCR-условиях; пере-якорение
+      переносит координату на SL2, а не калибрует (`fitted_here` остаётся 0).
+      следствие: без flip 13 тестов держат старую координату; наивный flip без
+      пере-якорения роняет `snp_fixture()` в doom на стадии pair (AS 55.3–63.8,
+      COM ≤ 63, `COM ≥ AS`), то есть молча сдвигает дизайн.
 
 #### ZW4. Уровень доказательности вместо `calibrated`-флага
 
@@ -712,14 +732,26 @@ merge без gate; удаление worktree до merge; новые worktree о�
 
 ## YP. Распространение: контейнер, MCP, артефакт, обратная связь
 
-- [ ] **YP1.** Контейнер: `docker/` на pinned `rocker/r-ver:4.6.1`.
-      блокер: нет. проверка: сборка образа + smoke.
-- [ ] **YP2.** MCP-слой: `inst/mcp/tools.R` — обёртка над экспортированным API.
-      блокер: нет. проверка: вызов каждого tool.
+- [x] **YP1.** Контейнер: `docker/Dockerfile` на pinned `rocker/r-ver:4.6.1`,
+      `docker/entrypoint.sh`, `.dockerignore`; ставит только `Imports` через
+      `pak` (бинарники PPM), `R CMD INSTALL`, `ENTRYPOINT` — stdio MCP.
+      проверка: образ собран (`docker build -f docker/Dockerfile`, ~5.5 мин) и
+      smoke в контейнере — `initialize`/`tools/call` вернули Tm 58.6 и KASP-микс.
+- [x] **YP2.** MCP-слой: `inst/mcp/tools.R` — реестр 14 инструментов: Tm/dG/
+      terminal (с опциональным `oligoarrayaux_dir`), схемы, критерии,
+      технологии, приоры, KASP-микс, специфичность; `genome_info`,
+      `read_variants`, `in_silico_pcr` и `design_marker` принимают путь к
+      геному/VCF (`genome_path`/`variants_path`); `inst/mcp/server.R` — stdio
+      JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`). проверка:
+      `test-mcp.R` вызывает каждый tool (58 pass), включая реальный продукт
+      `in_silico_pcr` и вердикт `design_marker` на смонтированном FASTA + smoke
+      сервера на stdin.
 - [x] **YP3.** `marker_artefact()`/`marker_replay()` — манифест, провенанс,
       переигровка вердикта.
-- [ ] **YP4.** Риски агентского вызова: `verdict`/`relaxed`/`rejected` — поля
+- [x] **YP4.** Риски агентского вызова: `verdict`/`relaxed`/`rejected` — поля
       структуры, не текст; README — что монтируется и какая сеть.
-      блокер: `YP1`/`YP2`. проверка: схема структуры в тесте.
+      проверка: `test-plan.R` пиннит типизированные колонки `outcome`/`verdict`/
+      `relaxed`/`violated`/`risk`; `README.md` §Container and MCP server +
+      `docker/README.md` — mount read-only `/data`, сеть не нужна на рантайме.
 - [x] **YP5.** `marker_record_outcome()` дописывает исход в `outcomes.csv`,
       привязанный к `id`; `fails` без `notes` — ошибка.

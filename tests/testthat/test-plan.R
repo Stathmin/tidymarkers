@@ -361,6 +361,11 @@ test_that("a decision row is chosen only for its own target's winner", {
   expect_identical(dec$target[dec$chosen], as.character(tg$label[1L]))
   expect_true(all(nzchar(dec$reason[!dec$chosen])))
   expect_identical(dec$stage[!dec$chosen][[1L]], "as")
+  # YP4: an agent reads the outcome as typed columns, never as prose to parse
+  expect_true(all(c("outcome", "verdict", "relaxed", "violated", "risk") %in% names(dec)))
+  expect_type(dec$outcome, "character")
+  expect_true(all(c("chosen", "rejected") %in% dec$outcome))
+  expect_true(all(dec$outcome != ""))
 })
 
 test_that("marker_replay re-runs the design and compares the verdicts", {

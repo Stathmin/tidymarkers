@@ -32,7 +32,9 @@
 ^revdep$
 ^\.i18n-lib$
 ^\.tmp-rt$
-^.*\.Rproj$
+^\*\.Rproj$
+^docker$
+^\.dockerignore$
 ^\.Rproj\.user$
 ^\.tmp$
 ^\.tmp/

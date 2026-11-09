@@ -6,6 +6,27 @@
 
 ## 0.4.1 (в работе)
 
+### Контейнер и MCP-слой (2026-11-09)
+
+- **`YP1` контейнер.** `docker/Dockerfile` на pinned `rocker/r-ver:4.6.1`,
+  `docker/entrypoint.sh`, `.dockerignore`; только `Imports` через `pak`
+  (бинарники PPM), затем `R CMD INSTALL`. `ENTRYPOINT` запускает stdio
+  MCP-сервер. Образ собран (~5.5 мин), smoke в контейнере прошёл.
+- **`YP2` MCP-слой.** `inst/mcp/tools.R` — реестр 14 инструментов: Tm/dG/
+  terminal (опциональный `oligoarrayaux_dir`), схемы, критерии, технологии,
+  приоры, KASP-микс, специфичность, а также `genome_info`, `read_variants`,
+  `in_silico_pcr` и `design_marker`, принимающие монтированные `genome_path`
+  и `variants_path`; `inst/mcp/server.R` — stdio JSON-RPC 2.0 (`initialize`,
+  `tools/list`, `tools/call`). `test-mcp.R` вызывает каждый tool (58 pass),
+  включая реальный продукт in-silico PCR и вердикт дизайна на FASTA + VCF.
+- **`YP4` структура вердикта.** `decisions.csv` несёт `outcome`/`verdict`/
+  `relaxed`/`violated`/`risk` типизированными колонками (пиннится в
+  `test-plan.R`); `README.md` §Container and MCP server и `docker/README.md`
+  описывают read-only mount `/data` и сетевую политику рантайма.
+- **`ZW3.10` в очереди.** Пере-якорение Tm-координаты на `SantaLucia1998-2`
+  вместе с окнами KASP/dPCR, `tm_tolerances()` и фикстурами — добавлено в
+  `ROADMAP.md` как открытый пункт.
+
 ### Tm-смещение, края VCF, `marker_explain` (2026-11-09)
 
 - **`ZW3.4` разложен, а не скорректирован.** На измеренном наборе mm2020
