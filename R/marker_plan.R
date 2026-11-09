@@ -106,8 +106,9 @@ two_pass <- function(scheme) {
 }
 
 # The columns every target table carries (an `alt2` keeps a multi-allelic site's
-# second ALT, `type` its class; `label` falls back to the panel's `id`)
-target_cols <- function() c("label", "chrom", "pos", "ref", "alt", "alt2", "type")
+# second ALT, `type` its class; `label` falls back to the panel's `id`; `strand`
+# is the strand `ref`/`alt` are written on, normalised by `marker_design_at()`)
+target_cols <- function() c("label", "chrom", "pos", "ref", "alt", "alt2", "type", "strand")
 
 #' An empty target table
 #' @keywords internal
@@ -115,7 +116,8 @@ target_cols <- function() c("label", "chrom", "pos", "ref", "alt", "alt2", "type
 empty_targets <- function() {
   tibble::tibble(
     label = character(), chrom = character(), pos = integer(),
-    ref = character(), alt = character(), alt2 = character(), type = character()
+    ref = character(), alt = character(), alt2 = character(), type = character(),
+    strand = character()
   )
 }
 
@@ -145,13 +147,15 @@ normalise_targets <- function(x) {
   if (!"alt2" %in% names(x)) x$alt2 <- NA_character_
   x$alt2 <- as.character(x$alt2)
   if (!"type" %in% names(x)) x$type <- NA_character_
+  if (!"strand" %in% names(x)) x$strand <- "+"
+  x$strand <- as.character(x$strand)
   x[, target_cols()]
 }
 
 #' One row (or a table) of target loci for [marker_targets()]
 #' @keywords internal
 #' @noRd
-target_rows <- function(chrom, pos, ref, alt, data, type, label) {
+target_rows <- function(chrom, pos, ref, alt, data, type, label, strand = "+") {
   if (!is.null(data)) {
     return(normalise_targets(data))
   }
@@ -169,6 +173,7 @@ target_rows <- function(chrom, pos, ref, alt, data, type, label) {
   }
   out$alt2 <- NA_character_
   out$type <- if (is.null(type)) NA_character_ else as.character(type)
+  out$strand <- as.character(strand)
   out[, target_cols()]
 }
 
@@ -232,10 +237,12 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' or explicit columns.  Added twice, the rows accumulate (so several
 #' [marker_targets()] layers compose).
 #' @param data a target table (`chrom`, `pos`, `ref`, `alt`; optional `label`,
-#'   `type`, `alt2`, `id`) used instead of the explicit columns.
+#'   `type`, `alt2`, `strand`, `id`) used instead of the explicit columns.
 #' @param chrom,pos,ref,alt one or more loci (vectors, recycled).
 #' @param type optional free-text class per target (e.g. `"snp"`, `"indel"`).
 #' @param label optional display label; derived from the coordinates otherwise.
+#' @param strand strand the `ref`/`alt` alleles are written on (`"+"` or
+#'   `"-"`); a minus-strand locus is reverse-complemented before design.
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' \dontrun{
@@ -246,10 +253,12 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' @family plan
 #' @export
 marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
-                           alt = NULL, type = NULL, label = NULL) {
+                           alt = NULL, type = NULL, label = NULL, strand = "+") {
   marker_layer(
     function(plan) {
-      plan$targets <- dplyr::bind_rows(plan$targets, target_rows(chrom, pos, ref, alt, data, type, label))
+      plan$targets <- dplyr::bind_rows(
+        plan$targets, target_rows(chrom, pos, ref, alt, data, type, label, strand)
+      )
       plan
     },
     label = "targets"

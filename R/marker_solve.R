@@ -20,6 +20,9 @@ target_snp <- function(row) {
   if (!is.null(row$alt2) && !is.na(row$alt2[[1L]])) {
     out$alt2 <- as.character(row$alt2[[1L]])
   }
+  if ("strand" %in% names(row)) {
+    out$strand <- as.character(row$strand[[1L]])
+  }
   out
 }
 

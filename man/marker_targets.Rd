@@ -11,18 +11,22 @@ marker_targets(
   ref = NULL,
   alt = NULL,
   type = NULL,
-  label = NULL
+  label = NULL,
+  strand = "+"
 )
 }
 \arguments{
 \item{data}{a target table (\code{chrom}, \code{pos}, \code{ref}, \code{alt}; optional \code{label},
-\code{type}, \code{alt2}, \code{id}) used instead of the explicit columns.}
+\code{type}, \code{alt2}, \code{strand}, \code{id}) used instead of the explicit columns.}
 
 \item{chrom, pos, ref, alt}{one or more loci (vectors, recycled).}
 
 \item{type}{optional free-text class per target (e.g. \code{"snp"}, \code{"indel"}).}
 
 \item{label}{optional display label; derived from the coordinates otherwise.}
+
+\item{strand}{strand the \code{ref}/\code{alt} alleles are written on (\code{"+"} or
+\code{"-"}); a minus-strand locus is reverse-complemented before design.}
 }
 \value{
 a plan layer (add it with \code{+}).

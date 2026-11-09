@@ -164,8 +164,8 @@ extra_scheme_designer <- function(scheme) {
 #' call) also lets a caller read its formals, which is how both decide what an
 #' argument means to a scheme.
 #' @param scheme a scheme id (see [marker_schemes()]).
-#' @return a function `(genome, snp, ...)`, or `NULL` when the scheme has no
-#'   designer (`primer`, `asq`).  `duplex` has one, but it takes two loci, so
+#' @return a function `(genome, snp, ...)`, or `NULL` for `primer`, which has no
+#'   locus-level designer (C13).  `duplex` has one, but it takes two loci, so
 #'   `per_locus_schemes()` keeps it out of the single-locus ladder.
 #' @keywords internal
 #' @noRd

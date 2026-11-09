@@ -103,7 +103,8 @@ design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
     snp <- tibble::tibble(
       chrom = as.character(r$chrom), pos = as.integer(r$pos),
       ref = as.character(r$ref), alt = as.character(r$alt),
-      alt2 = if ("alt2" %in% names(r)) as.character(r$alt2) else NA_character_
+      alt2 = if ("alt2" %in% names(r)) as.character(r$alt2) else NA_character_,
+      strand = if ("strand" %in% names(r)) as.character(r$strand) else "+"
     )
     if (is.null(scheme)) {
       d <- design_auto_marker(genome, snp, ..., context = context)

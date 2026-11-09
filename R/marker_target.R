@@ -473,6 +473,39 @@ marker_run_context_args <- function(context, variants = NULL, haplotypes = NULL)
   )
 }
 
+#' Put a locus on the genome's plus strand
+#'
+#' A target may write its `ref`/`alt` on either strand (`strand` column); the
+#' genome and every designer read the plus strand.  A minus-strand locus is
+#' therefore reverse-complemented once, here, before any scheme sees it.  Without
+#' this step the `strand` column would name an orientation the design ignores
+#' (ROADMAP ZW0).
+#' @param snp a one-row target tibble (`chrom`, `pos`, `ref`, `alt`, optional
+#'   `strand`).
+#' @return `snp`, with a plus-strand `strand` and complemented alleles when the
+#'   input was on the minus strand.
+#' @keywords internal
+#' @noRd
+normalise_locus_strand <- function(snp) {
+  if (is.null(snp) || nrow(snp) != 1L || !"strand" %in% names(snp)) {
+    return(snp)
+  }
+  if (!identical(as.character(snp$strand[[1L]]), "-")) {
+    return(snp)
+  }
+  rc <- function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAString(x)))
+  ref <- as.character(snp$ref[[1L]])
+  snp$ref <- rc(ref)
+  snp$alt <- rc(as.character(snp$alt[[1L]]))
+  if (!is.null(snp$alt2) && !is.na(snp$alt2[[1L]])) {
+    snp$alt2 <- rc(as.character(snp$alt2[[1L]]))
+  }
+  # a variant's anchor is its last plus-strand base, so a multi-base REF shifts
+  snp$pos <- as.integer(snp$pos[[1L]]) + nchar(ref) - 1L
+  snp$strand <- "+"
+  snp
+}
+
 #' Design a target with one scheme's engine (for designability checks)
 #'
 #' "Doomed" is not one thing: a SNP may be undesignable as a KASP but fine as a
@@ -484,6 +517,7 @@ marker_run_context_args <- function(context, variants = NULL, haplotypes = NULL)
 #' @noRd
 marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = NULL,
                              BPPARAM = NULL, ..., context = NULL) {
+  snp <- normalise_locus_strand(snp)
   ctx <- marker_run_context_args(context, variants, haplotypes)
   variants <- ctx$variants
   haplotypes <- ctx$haplotypes

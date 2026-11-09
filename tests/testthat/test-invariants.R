@@ -7,11 +7,11 @@
 #  "is this verdict right?" -- it asks "does the verdict survive a change that
 #  cannot change the answer?".  Four such changes:
 #
-#    M1  reverse-complement the LOCUS  -> same verdict.
-#       LIMITATION, asserted below: our locus model is strandless
-#       (`chrom`/`pos`/`ref`/`alt`, no strand column), so a revcomp locus is only
-#       expressible as a different REF/ALT.  The real invariant is therefore not
-#       testable yet; M2 covers the part that is (REF/ALT symmetry).
+#    M1  reverse-complement the LOCUS (write it on the minus strand) -> same
+#       verdict.  The locus model now carries a `strand` column and the design
+#       seam (`marker_design_at()`) reverse-complements a minus-strand locus once
+#       before any scheme reads it, so a revcomp locus is expressible and this is
+#       a real metamorphic test.
 #
 #    M2  swap REF/ALT -> same verdict, and the two AS primers exchange their 3'
 #       bases.  Tested on REAL published primers (Makhoul 2020 Table S1).
@@ -178,13 +178,30 @@ test_that("ZW0 KNOWN GAP: the design search is not frame-invariant", {
   skip_if_not_installed("Rsamtools")
 })
 
-test_that("ZW0 M1: a revcomp locus is not representable in a strandless model", {
-  # Documented limitation.  Asserted so that it fails loudly if the schema grows
-  # a `strand` column and nobody adds the real invariant.
-  snp <- locus_at("ACGTACGTACGT", 5L)
-  expect_false("strand" %in% names(snp))
-  # A:T and C:G self-pair, so mirroring REF/ALT collapses for half the bases
-  expect_true(rc("A") == "T" && rc("C") == "G")
+test_that("ZW0 M1: a locus written on the minus strand designs the same verdict", {
+  skip_if_not_installed("Rsamtools")
+  skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
+  gen <- syn_genome(seed = 5L, n = 400L)
+  g <- indexed_syn_genome(gen)
+  plus <- locus_at(gen$seq, 200L)
+  # the same locus written on the minus strand: alleles complemented, strand "-"
+  minus <- plus
+  minus$ref <- rc(plus$ref)
+  minus$alt <- rc(plus$alt)
+  minus$strand <- "-"
+  design <- function(snp) {
+    suppressWarnings(tryCatch(
+      marker_design_at(g, snp, "snp"),
+      error = function(e) NULL
+    ))
+  }
+  m_plus <- design(plus)
+  m_minus <- design(minus)
+  skip_if(is.null(m_plus) || is.null(m_minus), "the synthetic locus did not design")
+  expect_equal(
+    evaluation_verdict(m_plus$evaluation),
+    evaluation_verdict(m_minus$evaluation)
+  )
 })
 
 test_that("ZW0.1: a deliberate invariant asymmetry is declared with a reason", {
