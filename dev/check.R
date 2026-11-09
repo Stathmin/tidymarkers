@@ -7,6 +7,8 @@
 #
 #    1. NAMESPACE / man/ are in sync with the roxygen comments
 #    2. R/ and tests/ are styler-clean and lintr-clean
+#   2a. prose is free of filler phrases and comment antipatterns (see
+#       dev/prose-tics.R; the contrastive "X, not Y" style is never gated)
 #   2b. every hand-rolled sequence primitive is registered with a reason
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
@@ -119,6 +121,20 @@ step("lintr", function() {
     stop(length(l), " lint(s)")
   }
   ok("no lints")
+})
+
+# 2a. prose tics -------------------------------------------------------------
+step("prose tics", function() {
+  # filler phrases and comment antipatterns must stay empty; the contrastive
+  # "X, not Y" teaching style is printed on demand and never gated
+  status <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("dev/prose-tics.R", "--check")
+  )
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/prose-tics.R failed (status ", status, ")")
+  }
+  ok("no filler phrases or comment antipatterns")
 })
 
 # 2b. hand-roll registry + docs/artifacts graph ------------------------------

@@ -237,14 +237,17 @@
       `README.md` стоит только-HTTP-адрес конечной цели
       `http://www.vniisb.ru/ru/news/` (`200` без редиректа), остальные
       внешние ссылки отдают `200`;
-      `dev/prose-tics.R` — отчёт по словам-филлерам LLM (`--check` гейтит
-      только нулевой «filler»-уровень; «X, not Y» не гейтится — это стиль);
+      `dev/prose-tics.R` — слова-филлеры LLM плюс антипаттерны комментариев
+      (`comment`: «obviously»/«basically», речь от лица инструмента, `TODO` без
+      владельца, комментарий-пересказ кода); `--check` гейтит `filler` и
+      `comment` (оба 0), «X, not Y» — стиль и не гейтится; шаг «prose tics»
+      включён в `dev/check.R`;
       `Suggests` перепроверены против `R/`/`tests/`/`vignettes/` — все 20
       используются, удалять нечего. Проверка: `Rscript dev/check.R --quick
-  --spelling` (перед пушем — `--full`).
+--spelling` (перед пушем — `--full`).
       Остаток (честно): ноги CI на macOS/Windows локально не прогнаны;
-      win-builder и R-hub — первый шаг после пуша; `prose-tics` в гейт не
-      включён по замыслу (контрастивный слой пока не нулевой).
+      win-builder и R-hub — первый шаг после пуша; `prose-tics --check` в гейте
+      (контрастивный слой остаётся вне гейта по замыслу).
       Блокер: нет.
 - [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).**
       Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +

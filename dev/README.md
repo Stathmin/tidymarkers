@@ -128,23 +128,33 @@ Rscript dev/check.R --render    # + тяжёлые панели (мишени) �
 
 Орфография вынесена за флаг: `inst/WORDLIST` (527 терминов) снимает шум от
 химий, имён пакетов и локусов, но список пополняется вручную, поэтому шаг
-включается явно (`--spelling`). Английские roxygen/комментарии и так проверяет
-`lintr`.
+включается явно (`--spelling`). Слова-филлеры и антипаттерны в комментариях
+ловит отдельный `dev/prose-tics.R` (шаг гейта, см. ниже); `lintr` прозу не
+проверяет.
 
-## `prose-tics.R` — отчёт по словам-филлерам
+## `prose-tics.R` — филлеры и антипаттерны в прозе и комментариях
 
 ```sh
-Rscript dev/prose-tics.R               # filler + подсказка про контрастивный слой
+Rscript dev/prose-tics.R               # filler + comment + подсказка про контрастивный слой
 Rscript dev/prose-tics.R --contrastive # + «X, not Y», «rather than» (не гейтится)
-Rscript dev/prose-tics.R --check       # ненулевой код, если есть filler
+Rscript dev/prose-tics.R --check       # ненулевой код на filler или comment
 ```
 
 Читает `DESCRIPTION`, `README.md`, `man/`, `vignettes/` и roxygen-строки
-`R/*.R`. `filler` («it's worth noting», «delve», «seamless», «moreover»…) —
-слова без информации; его гейтит `--check`. `contrastive` («X, not Y»,
-«rather than», «not just») — осознанный стиль репозитория, сотни совпадений;
-печатается и никогда не валит. В `dev/check.R` не включён: это отчёт, а не
-контракт.
+`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Три уровня:
+
+- `filler` («it's worth noting», «delve», «seamless», «moreover»…) — слова без
+  информации; гейтит `--check`;
+- `comment` — антипаттерны комментария: хеджирование («obviously», «basically»,
+  «trivially»), разговор о себе или инструменте («as an AI», «the agent»),
+  `TODO`/`FIXME`/`HACK` без владельца и комментарий, дословно повторяющий
+  строку кода под ним; гейтит `--check`;
+- `contrastive` («X, not Y», «rather than», «not just») — осознанный стиль
+  репозитория, сотни совпадений; печатается по `--contrastive` и никогда не
+  валит.
+
+Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler` и
+`comment` не могут вырасти незаметно.
 
 ## `render-all.R` — фигуры как код
 
