@@ -135,14 +135,14 @@ Rscript dev/check.R --render    # + тяжёлые панели (мишени) �
 ## `prose-tics.R` — филлеры и антипаттерны в прозе и комментариях
 
 ```sh
-Rscript dev/prose-tics.R               # все семь уровней: счётчики и образец
+Rscript dev/prose-tics.R               # все девять уровней: счётчики и образец
 Rscript dev/prose-tics.R --list        # + каждая находка целиком
 Rscript dev/prose-tics.R --contrastive # только «X, not Y» (не гейтится)
 Rscript dev/prose-tics.R --check       # ненулевой код на filler, comment или verbosity
 ```
 
 Читает `DESCRIPTION`, `README.md`, `man/`, `vignettes/` и roxygen-строки
-`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Семь уровней:
+`R/*.R`; слой `comment` смотрит все `#`-строки `R/*.R`. Девять уровней:
 
 - `filler` («it's worth noting», «delve», «seamless», «moreover»…) — слова без
   информации; гейтит `--check`;
@@ -160,13 +160,18 @@ Rscript dev/prose-tics.R --check       # ненулевой код на filler, 
   «perhaps», «in fact»;
 - `verbosity` — многословные обороты с коротким эквивалентом: «in order to»,
   «the fact that», «prior to», «a number of»; гейтит `--check`;
-- `punctuation` — тире и «!!», которых прозе обычно не нужно.
+- `punctuation` — тире и «!!», которых прозе обычно не нужно;
+- `comment_verbose` — блок обычных `#`-строк от 15 строк (баннер файла не в счёт)
+  или строка шире 100 колонок (URL не считается);
+- `prose_verbose` — абзац длиннее 120 слов без ссылки, `code` или вызова, абзац
+  длиннее 150 слов либо блок вывода `##` длиннее 15 строк.
 
-Последние пять уровней печатаются счётчиком и восемью образцами (`--list` —
+Последние семь уровней печатаются счётчиком и восемью образцами (`--list` —
 все). Гейтит только `filler`, `comment` и `verbosity`: они держатся на нуле.
 `negation`, `meta`, `hedge` и `punctuation` — в основном осознанная проза
 («the temperature the chemistry actually runs at», «this very namespace»,
-«X, not Y»), и массовая правка сломала бы голос репозитория.
+«X, not Y»), и массовая правка сломала бы голос репозитория. Разбор каждого
+уровня и очередь работы — в [`dev/lang_purity.md`](lang_purity.md).
 
 Гейт `dev/check.R` (шаг «prose tics») запускает `--check`, так что `filler`,
 `comment` и `verbosity` не могут вырасти незаметно.

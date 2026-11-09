@@ -41,6 +41,8 @@ Other vignettes:
 - [dev/README](../dev/README.md) — the internal checks, renderers and benchmarks.
 - [dev/dag-rebuild-plan](../dev/dag-rebuild-plan.md) — the decision-DAG rebuild:
   plan, invariants (C1–C14), agent scopes.
+- [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
+  tiers, per-tier triage, and the verbosity meter roadmap.
 
 ## Docs and artifacts layer
 

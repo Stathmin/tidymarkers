@@ -255,6 +255,20 @@
       (report-only уровни — negation/meta/hedge/punctuation — остаются вне
       гейта по замыслу).
       Блокер: нет.
+- [x] **Языковая чистота: разбор уровней и измеритель многословия (2026-11-09).**
+      Правка: `dev/prose-tics.R` — снято ложное срабатывание `not (a|an)`
+      (`negation` 541 → 399), сужен `meta` (идентификаторы «the key of the
+      row»/«the key is the signature» и ссылки на roadmap больше не в счёте;
+      22 → 13, настоящих ноль); добавлены уровни `comment_verbose` (блок
+      обычных `#` от 15 строк без баннера, строка шире 100 колонок, URL не
+      в счёт) и `prose_verbose` (абзац >120 слов без ссылки/`code`, >150 слов,
+      `##`-вывод >15 строк). Новый `dev/lang_purity.md` — разбор каждого
+      уровня и очередь работ; связан из `docs/INDEX.md`. Замеры:
+      `comment_verbose` 6 (все — плотные пояснения ограничений),
+      `prose_verbose` 4 (аудитная проза, делить при следующей правке).
+      Проверка: `Rscript dev/prose-tics.R --check` (0) и
+      `Rscript dev/check.R --quick --spelling`. Следствие: счётчики видны,
+      массовой правки голоса нет по замыслу. Блокер: нет.
 - [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI (`lifecycle`, R-CMD-check).**
       Правка: `data-raw/install-oligoarrayaux.R` (сейчас unix-only) +
       `.github/workflows/R-CMD-check.yaml`. Проверка: сборка на чистой машине;

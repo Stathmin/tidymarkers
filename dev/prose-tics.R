@@ -19,9 +19,15 @@
 #              "of course", "perhaps", "in fact".
 #  verbosity   wordy phrases with a shorter equivalent: "in order to",
 #              "the fact that", "prior to", "a number of".
-#  punctuation em dashes, en dashes and "!!", which prose rarely needs.
+#  punctuation em dashes and "!!", which prose rarely needs.
+#  comment_verbose
+#              a long ordinary-`#` block (>= 15 lines, banner excluded) or a
+#              comment line wider than 100 columns.
+#  prose_verbose
+#              a prose paragraph over 120 words with no link, `code` or call,
+#              a paragraph over 150 words, or a `##` output block over 15 lines.
 #
-#  The last five tiers are printed as counts plus a bounded sample; --list
+#  The report-only tiers are printed as counts plus a bounded sample; --list
 #  prints every hit. filler, comment and verbosity are gated; the rest are
 #  report-only because their hits are mostly deliberate.
 #
@@ -74,7 +80,7 @@ tics <- list(
     patterns = c(
       "\\b(is|are|was|were|isn't|aren't)\\b[^.]{0,140},[[:space:]]*not\\b",
       "\\bnot\\b[^.]{0,90}\\b(but|rather than|instead)\\b",
-      "\\bnot (just|only|merely|simply|a|an)\\b",
+      "\\bnot (just|only|merely|simply)\\b",
       "\\b(rather than|instead of|as opposed to)\\b",
       "\\b(is|are) not a\\b[^.]{0,90}\\bit(')?s\\b",
       "\\bmore than just\\b",
@@ -86,7 +92,9 @@ tics <- list(
   meta = list(
     gate = FALSE,
     patterns = c(
-      "\\bthe (point|key|upshot|takeaway|lesson|bottom line)\\b",
+      "\\bthe (upshot|takeaway|bottom line|lesson)\\b",
+      "\\bthe (key|main) (point|argument|thing)\\b",
+      "\\bthe (point|key) is (that|this|not)\\b",
       "\\bhere(')?s the (thing|point|catch)\\b",
       "\\bin (short|essence|other words|effect|practice)\\b",
       "\\bthat is to say\\b",
@@ -143,7 +151,10 @@ tics <- list(
   punctuation = list(
     gate = FALSE,
     patterns = c("\u2014", "!{2,}")
-  )
+  ),
+  # Structural tiers: no regex; filled by the helpers below.
+  comment_verbose = list(gate = FALSE, patterns = character(0)),
+  prose_verbose = list(gate = FALSE, patterns = character(0))
 )
 
 r_files <- list.files("R", pattern = "[.]R$", full.names = TRUE)
@@ -241,6 +252,106 @@ combine <- function(...) {
   if (length(hits)) do.call(rbind, hits) else NULL
 }
 
+verbose_hit <- function(file, line, text, tier) {
+  data.frame(file = file, line = line, tier = tier, text = text,
+             stringsAsFactors = FALSE)
+}
+
+# Long ordinary-comment blocks and over-wide comment lines.  Roxygen (`#'`) and
+# the leading file banner are documentation, not commentary, so they are skipped.
+comment_verbosity <- function() {
+  hits <- list()
+  for (f in r_files) {
+    x <- readLines(f, warn = FALSE, encoding = "UTF-8")
+    is_c <- grepl("^\\s*#", x) & !grepl("^\\s*#'", x)
+    r <- rle(is_c)
+    pos <- 0L
+    for (k in seq_along(r$lengths)) {
+      len <- r$lengths[[k]]
+      banner <- pos == 0L && grepl("#\\s*===|#\\s*---", x[[1L]])
+      if (r$values[[k]] && len >= 15L && !banner) {
+        hits[[length(hits) + 1L]] <- verbose_hit(
+          f, pos + 1L, sprintf("%d-line comment block", len), "comment_verbose"
+        )
+      }
+      pos <- pos + len
+    }
+    long <- is_c & nchar(x) > 100L & !grepl("https?://", x)
+    for (i in which(long)) {
+      hits[[length(hits) + 1L]] <- verbose_hit(
+        f, i, sprintf("%d-char comment line", nchar(x[[i]])), "comment_verbose"
+      )
+    }
+  }
+  if (length(hits)) do.call(rbind, hits) else NULL
+}
+
+# Prose paragraphs that ramble: long and uncited, or very long, plus long
+# printed-output blocks.  Fenced code, tables and list items are not prose.
+prose_verbosity <- function() {
+  docs <- c(
+    if (file.exists("README.md")) "README.md",
+    list.files("vignettes", pattern = "[.]Rmd$", full.names = TRUE)
+  )
+  hits <- list()
+  for (f in docs) {
+    x <- readLines(f, warn = FALSE, encoding = "UTF-8")
+    fence <- grepl("^\\s*```", x)
+    in_code <- FALSE
+    skip <- logical(length(x))
+    for (i in seq_along(x)) {
+      if (fence[[i]]) {
+        in_code <- !in_code
+        skip[[i]] <- TRUE
+        next
+      }
+      skip[[i]] <- in_code
+    }
+    x[skip] <- ""
+    blank <- !nzchar(trimws(x)) |
+      grepl("^[[:space:]]*\\|", x) |
+      grepl("^[[:space:]]*([-*+]|[0-9]+[.])\\s", x)
+    r <- rle(!blank)
+    pos <- 0L
+    for (k in seq_along(r$lengths)) {
+      len <- r$lengths[[k]]
+      if (r$values[[k]]) {
+        idx <- (pos + 1L):(pos + len)
+        txt <- paste(x[idx], collapse = " ")
+        words <- length(strsplit(trimws(txt), "\\s+")[[1L]])
+        linked <- grepl(
+          "\\]\\(|https?://|\\bdoi\\b|\\\\code\\{|`|[[:alnum:]_]+\\(\\)",
+          txt, ignore.case = TRUE
+        )
+        if ((words > 120L && !linked) || words > 150L) {
+          why <- if (words > 150L) {
+            sprintf("%d-word paragraph", words)
+          } else {
+            sprintf("%d-word paragraph, no link", words)
+          }
+          hits[[length(hits) + 1L]] <- verbose_hit(
+            f, pos + 1L, why, "prose_verbose"
+          )
+        }
+      }
+      pos <- pos + len
+    }
+    is_d <- grepl("^##", x)
+    r <- rle(is_d)
+    pos <- 0L
+    for (k in seq_along(r$lengths)) {
+      if (r$values[[k]] && r$lengths[[k]] >= 15L) {
+        hits[[length(hits) + 1L]] <- verbose_hit(
+          f, pos + 1L, sprintf("%d-line output block", r$lengths[[k]]),
+          "prose_verbose"
+        )
+      }
+      pos <- pos + r$lengths[[k]]
+    }
+  }
+  if (length(hits)) do.call(rbind, hits) else NULL
+}
+
 report <- function(hits, name, gated) {
   tag <- if (gated) " (gated by --check)" else ""
   if (is.null(hits)) {
@@ -275,6 +386,8 @@ if (!is.null(results$comment)) {
     !duplicated(results$comment[c("file", "line")]), , drop = FALSE
   ]
 }
+results$comment_verbose <- comment_verbosity()
+results$prose_verbose <- prose_verbosity()
 
 if (only_contrastive) {
   report(results$negation, "negation", FALSE)
