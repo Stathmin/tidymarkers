@@ -31,6 +31,7 @@ Marker chemistries:
 
 Other vignettes:
 
+- [Vignette index](../vignettes/index.Rmd) — one page into all of them.
 - [KASP introduction](../vignettes/kasp-intro.Rmd)
 - [Custom genome](../vignettes/custom-genome.Rmd)
 - [Reading results](../vignettes/reading-results.Rmd)

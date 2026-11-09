@@ -1,0 +1,32 @@
+---
+title: "tidymarkers vignettes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tidymarkers vignettes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The vignettes are the manual. Each one states the biology, the gates that
+decide a design, and the evidence behind them.
+
+## Chemistries
+
+- [KASP and allele-specific designs](markers-kasp.html) — `snp`, `indel`,
+  `multi`, `duplex`, `lax`, `asq`, `primer`.
+- [Gel and melt designs](markers-gel.html) — `caps`, `arms`, `hrm`, `ssr`,
+  `indel_size`.
+- [Probe designs](markers-probe.html) — `taqman`, `dpcr`, `snapshot`, `castpcr`.
+- [Isothermal designs](markers-isothermal.html) — `lamp`, `rpa`.
+- [CRISPR and Sanger sequencing](markers-crispr-sequencing.html) — `crispr`,
+  `sanger`.
+
+## Workflows
+
+- [KASP introduction](kasp-intro.html) — the full workflow in 15 minutes.
+- [Custom genome](custom-genome.html) — your own FASTA or VCF.
+- [Reading results](reading-results.html) — export a solved plan, audit a
+  candidate, read a rejection.
+
+Open any of them in R with `vignette("kasp-intro")` and the rest by the names
+above.
