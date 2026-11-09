@@ -201,9 +201,19 @@ written into the image. The network is not needed at run time (the build fetches
 packages, and the optional demo downloads its genome on first use). The
 artefact's decision log carries `outcome`, `verdict`, `relaxed`, `violated` and
 `risk` as typed columns, so an agent reads a field instead of parsing a sentence.
-The design tools take the mounts as arguments: `genome_path` and `variants_path`
-name a FASTA and a VCF under `/data`, and `oligoarrayaux_dir` points at a mounted
-`OligoArrayAux` build for the thermodynamics calls.
+
+The registry (`inst/mcp/tools.R`, 37 tools) follows the vignette workflow: read
+a genome/VCF, classify and screen variants, run the thermodynamics and QC
+helpers, check specificity, design one marker (`design_scheme`) or a batch
+(`design_markers`), and read the verdict (`marker_decision_text`,
+`rescue_strategy`).
+
+The design tools take the mounts as arguments: `genome_path` and
+`variants_path` name a FASTA and a VCF under `/data`, `blast_db` names a
+prebuilt BLAST index, and `oligoarrayaux_dir` points at a mounted
+`OligoArrayAux` build. Plotting calls, the `marker_plan()`/`marker_solve()`
+pipeline objects and the writers stay out of the registry: they return R
+structures that JSON cannot carry, or they write outside the mount.
 
 ## Reproducibility
 

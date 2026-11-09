@@ -9,6 +9,16 @@
 #  or `bin/`).  The paths are mounted by the caller; when a path is absent the
 #  call falls back to the package search (demo cache, `.tools/`, `PATH`).
 #
+#  The registry covers the workflow the vignettes show: read a genome/VCF,
+#  classify a variant, screen targets, design one marker or a batch by scheme,
+#  and read the verdict.  Thermo/QC helpers and the engine probes are exposed
+#  as such.  Calls that cannot cross the wire are deliberately absent: the
+#  plotting calls and the pipeline objects from marker_plan()/marker_solve()
+#  (both are R structures, not JSON), the writers (marker_export(),
+#  write_marker_results()) because an MCP call should not write outside its
+#  mount, and the Ensembl lookups (ensembl_gene()/ensembl_variants()) because
+#  they need the network and the server is offline by default.
+#
 #  This file is not part of the package namespace.  Source it after loading the
 #  package; the handlers resolve the exported functions from the search path.
 # =============================================================================
@@ -44,6 +54,57 @@ mcp_named_chr <- function(args, name) {
   if (is.null(value)) NULL else unlist(value)
 }
 
+mcp_num <- function(args, name) {
+  value <- mcp_arg(args, name)
+  if (is.null(value)) NULL else as.numeric(value)
+}
+
+# A primer set arrives as an array (labelled p1, p2, ...) or as an object whose
+# names are the labels the caller wants back.
+mcp_primers <- function(args, name = "primers") {
+  value <- mcp_named_chr(args, name)
+  if (is.null(value)) {
+    value <- mcp_chr(args, name)
+  }
+  if (is.null(value)) {
+    return(NULL)
+  }
+  if (is.null(names(value)) || any(!nzchar(names(value)))) {
+    names(value) <- paste0("p", seq_along(value))
+  }
+  value
+}
+
+# One locus as the one-row tibble the design calls expect.
+mcp_snp <- function(args) {
+  tibble::tibble(
+    chrom = as.character(mcp_arg(args, "chrom")),
+    pos = as.integer(mcp_arg(args, "pos")),
+    ref = as.character(mcp_arg(args, "ref")),
+    alt = as.character(mcp_arg(args, "alt"))
+  )
+}
+
+# Everything a caller needs from a designed marker that survives JSON: the
+# class, the pass verdict, the primers, risk, the check table and what the
+# scheme does or does not simulate. An extractor that does not apply to this
+# marker returns NULL, which means "not applicable", not a failed call.
+mcp_marker_summary <- function(marker) {
+  if (is.null(marker)) {
+    return(NULL)
+  }
+  take <- function(f) tryCatch(f(marker), error = function(e) NULL)
+  primers <- take(marker_primers)
+  list(
+    class = class(marker)[1L],
+    passes = tryCatch(isTRUE(passes_all(marker)), error = function(e) NA),
+    primers = if (is.data.frame(primers) || is.character(primers)) primers else NULL,
+    risk = take(marker_risk),
+    checks = take(marker_explain),
+    readout = take(marker_readout)
+  )
+}
+
 # -- external inputs -----------------------------------------------------
 
 # A design call reads its genome from `genome_path`; an optional `chrom_map`
@@ -54,7 +115,12 @@ mcp_genome <- function(args) {
   if (is.null(path)) {
     stop("`genome_path` is required: a FASTA file (plain or gzipped)")
   }
-  marker_genome(path = path, chrom_map = mcp_named_chr(args, "chrom_map"))
+  marker_genome(
+    path = path,
+    chrom_map = mcp_named_chr(args, "chrom_map"),
+    blast_db = mcp_arg(args, "blast_db"),
+    fm_index = mcp_arg(args, "fm_index")
+  )
 }
 
 # Point the thermodynamics engine at a mounted OligoArrayAux prefix for one
@@ -381,17 +447,483 @@ mcp_tool_specs <- function() {
         required = list("genome_path", "chrom", "pos", "ref", "alt")
       ),
       handler = function(args) {
-        snp <- tibble::tibble(
-          chrom = as.character(mcp_arg(args, "chrom")),
-          pos = as.integer(mcp_arg(args, "pos")),
-          ref = as.character(mcp_arg(args, "ref")),
-          alt = as.character(mcp_arg(args, "alt"))
+        result <- design_auto_marker(
+          mcp_genome(args), mcp_snp(args),
+          schemes = mcp_chr(args, "schemes")
         )
-        result <- design_auto_marker(mcp_genome(args), snp, schemes = mcp_chr(args, "schemes"))
         list(
           scheme = result$scheme,
           tried = result$tried[, c("scheme", "ok"), drop = FALSE]
         )
+      }
+    ),
+    variant_type = list(
+      title = "Variant type",
+      description = "Classify a REF/ALT pair: SNP, insertion, deletion, MNP or complex.",
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          ref = list(type = "string", description = "reference allele"),
+          alt = list(type = "string", description = "alternate allele")
+        ),
+        required = list("ref", "alt")
+      ),
+      handler = function(args) {
+        variant_type(mcp_arg(args, "ref"), mcp_arg(args, "alt"))
+      }
+    ),
+    marker_site_class = list(
+      title = "Site class of a multi-allelic locus",
+      description = paste(
+        "Group a REF and its ALT alleles by the IUPAC code a primer must carry",
+        "at the 3' end to cover all of them."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          ref = list(type = "string", description = "reference allele"),
+          alts = list(type = "array", items = list(type = "string"), description = "alternate alleles")
+        ),
+        required = list("ref", "alts")
+      ),
+      handler = function(args) {
+        marker_site_class(mcp_arg(args, "ref"), mcp_chr(args, "alts"))
+      }
+    ),
+    mask_positions = list(
+      title = "Mask variant positions",
+      description = paste(
+        "Replace the given 1-based positions of a DNA sequence with N, so a",
+        "neighbouring variant cannot leak into a designed primer."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          seq = list(type = "string", description = "DNA sequence"),
+          positions = list(
+            type = "array", items = list(type = "integer"),
+            description = "1-based positions to mask"
+          )
+        ),
+        required = list("seq", "positions")
+      ),
+      handler = function(args) {
+        as.character(mask_positions(
+          mcp_arg(args, "seq"),
+          as.integer(unlist(mcp_arg(args, "positions")))
+        ))
+      }
+    ),
+    asq_limits = list(
+      title = "Allele-specific qPCR limits",
+      description = paste(
+        "The amplicon and Tm windows an ASQ/allele-specific qPCR design must sit",
+        "in, and the flags each window carries."
+      ),
+      inputSchema = list(type = "object", properties = list()),
+      handler = function(args) asq_limits()
+    ),
+    reaction_conditions = list(
+      title = "Reaction conditions",
+      description = paste(
+        "The salt, dNTP, DMSO and temperature values the thermodynamics engines",
+        "read. Absent fields keep the package defaults."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          Na = list(type = "number", description = "sodium, mM"),
+          Mg = list(type = "number", description = "magnesium, mM"),
+          dNTPs = list(type = "number", description = "dNTPs, mM"),
+          DMSO = list(type = "number", description = "DMSO, percent"),
+          temperature = list(type = "number", description = "temperature, Celsius")
+        )
+      ),
+      handler = function(args) {
+        over <- list(
+          Na = mcp_num(args, "Na"), Mg = mcp_num(args, "Mg"),
+          dNTPs = mcp_num(args, "dNTPs"), DMSO = mcp_num(args, "DMSO"),
+          temperature = mcp_num(args, "temperature")
+        )
+        do.call(reaction_conditions, over[!vapply(over, is.null, logical(1))])
+      }
+    ),
+    scheme_conditions = list(
+      title = "Scheme reaction conditions",
+      description = "The reaction conditions a marker scheme defaults to.",
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          scheme = list(type = "string", description = "scheme id (default \"pcr\")")
+        )
+      ),
+      handler = function(args) {
+        scheme_conditions(mcp_arg(args, "scheme") %||% "pcr")
+      }
+    ),
+    primer_thermo = list(
+      title = "Primer thermodynamics",
+      description = paste(
+        "Length, Tm, GC, hairpin dG and terminal dG for each primer, in one",
+        "table. The dG columns are null without the OligoArrayAux engine."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          primers = list(type = "array", items = list(type = "string"), description = "primers, 5'->3'")
+        ),
+        required = list("primers")
+      ),
+      handler = function(args) primer_thermo(mcp_chr(args, "primers"))
+    ),
+    primer_set_compatibility = list(
+      title = "Primer set compatibility",
+      description = paste(
+        "Pairwise complementarity of a primer set: self versus cross runs, the",
+        "cross-dimer dG, and whether each pair passes the tube thresholds."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          primers = list(type = "array", items = list(type = "string"), description = "primers, 5'->3'"),
+          min_cross_run = list(type = "integer", description = "minimum cross complementarity run (default 6)"),
+          max_selfcomp = list(type = "integer", description = "maximum self complementarity run (default 5)")
+        ),
+        required = list("primers")
+      ),
+      handler = function(args) {
+        primer_set_compatibility(
+          mcp_primers(args),
+          min_cross_run = mcp_int(args, "min_cross_run") %||% 6L,
+          max_selfcomp = mcp_int(args, "max_selfcomp") %||% 5L
+        )
+      }
+    ),
+    dimer_thermo = list(
+      title = "Dimer free energy",
+      description = paste(
+        "dG of every distinct pair in a primer set (self pairs included). Primers",
+        "may arrive as an array or as an object with labels."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          primers = list(type = "array", items = list(type = "string"), description = "primers, 5'->3'")
+        ),
+        required = list("primers")
+      ),
+      handler = function(args) dimer_thermo(mcp_primers(args))
+    ),
+    hairpin_dg_thermo = list(
+      title = "Hairpin free energy",
+      description = "The hairpin dG of one oligo at the reaction conditions.",
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          seq = list(type = "string", description = "DNA sequence, 5'->3'")
+        ),
+        required = list("seq")
+      ),
+      handler = function(args) hairpin_dg_thermo(mcp_arg(args, "seq"))
+    ),
+    fold_amplicon = list(
+      title = "Fold an amplicon",
+      description = paste(
+        "Minimum free energy and dot-bracket structure of a single strand, or",
+        "status `unknown` with the reason when no folding engine is present."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          seq = list(type = "string", description = "sequence to fold"),
+          kind = list(type = "string", enum = c("DNA", "RNA"), description = "nucleic acid (default DNA)")
+        ),
+        required = list("seq")
+      ),
+      handler = function(args) {
+        fold_amplicon(mcp_arg(args, "seq"), kind = mcp_arg(args, "kind") %||% "DNA")
+      }
+    ),
+    pcr_efficiency = list(
+      title = "PCR amplification efficiency",
+      description = paste(
+        "Primer/target amplification efficiency (0-1) from the thermodynamics",
+        "model. Requires OligoArrayAux and DECIPHER."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          primers = list(type = "array", items = list(type = "string"), description = "primers, 5'->3'"),
+          targets = list(
+            type = "array", items = list(type = "string"),
+            description = "reverse-complement of each binding site, same length as primers"
+          ),
+          temp = list(type = "number", description = "annealing temperature, Celsius"),
+          cores = list(type = "integer", description = "processors for the vectorised call")
+        ),
+        required = list("primers", "targets")
+      ),
+      handler = function(args) {
+        extra <- list(temp = mcp_num(args, "temp"), cores = mcp_int(args, "cores"))
+        do.call(pcr_efficiency, c(
+          list(mcp_chr(args, "primers"), mcp_chr(args, "targets")),
+          extra[!vapply(extra, is.null, logical(1))]
+        ))
+      }
+    ),
+    wobble_mismatch = list(
+      title = "Wobble mismatch",
+      description = paste(
+        "Does an on/off-allele pair form the worst-case G:T or A:C wobble, which",
+        "does not stop extension?"
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          on_allele = list(type = "string", description = "on-target allele base"),
+          off_allele = list(type = "string", description = "off-target allele base")
+        ),
+        required = list("on_allele", "off_allele")
+      ),
+      handler = function(args) {
+        wobble_mismatch(mcp_arg(args, "on_allele"), mcp_arg(args, "off_allele"))
+      }
+    ),
+    find_palindromes = list(
+      title = "Inverted repeats",
+      description = paste(
+        "Inverted repeats in a sequence that can fold into a hairpin, with the",
+        "arm length and loop constraints."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          seq = list(type = "string", description = "DNA sequence"),
+          min_armlength = list(type = "integer", description = "minimum arm length (default 4)"),
+          max_looplength = list(type = "integer", description = "maximum loop length (default 6)"),
+          max_mismatch = list(type = "integer", description = "allowed arm mismatches (default 0)")
+        ),
+        required = list("seq")
+      ),
+      handler = function(args) {
+        find_palindromes(
+          mcp_arg(args, "seq"),
+          min_armlength = mcp_int(args, "min_armlength") %||% 4L,
+          max_looplength = mcp_int(args, "max_looplength") %||% 6L,
+          max_mismatch = mcp_int(args, "max_mismatch") %||% 0L
+        )[[1L]]
+      }
+    ),
+    has_palindrome = list(
+      title = "Has an inverted repeat",
+      description = "Whether a sequence folds into a hairpin under the given constraints.",
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          seq = list(type = "string", description = "DNA sequence"),
+          min_armlength = list(type = "integer", description = "minimum arm length (default 4)"),
+          max_looplength = list(type = "integer", description = "maximum loop length (default 6)"),
+          max_mismatch = list(type = "integer", description = "allowed arm mismatches (default 0)")
+        ),
+        required = list("seq")
+      ),
+      handler = function(args) {
+        has_palindrome(
+          mcp_arg(args, "seq"),
+          min_armlength = mcp_int(args, "min_armlength") %||% 4L,
+          max_looplength = mcp_int(args, "max_looplength") %||% 6L,
+          max_mismatch = mcp_int(args, "max_mismatch") %||% 0L
+        )
+      }
+    ),
+    find_caps_enzymes = list(
+      title = "CAPS/dCAPS enzymes",
+      description = paste(
+        "Restriction enzymes whose site is gained or lost by the ALT allele and",
+        "whose digest fragments are resolvable on a gel. Needs a mounted genome."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          chrom_map = list(type = "object", description = "optional defline -> name map"),
+          chrom = list(type = "string", description = "locus chromosome"),
+          pos = list(type = "integer", description = "locus position (1-based)"),
+          ref = list(type = "string", description = "reference allele"),
+          alt = list(type = "string", description = "alternate allele"),
+          flank = list(type = "integer", description = "window around the locus (default 250)"),
+          min_gap = list(type = "integer", description = "minimum resolvable band gap (default 50)")
+        ),
+        required = list("genome_path", "chrom", "pos", "ref", "alt")
+      ),
+      handler = function(args) {
+        find_caps_enzymes(
+          mcp_genome(args), mcp_snp(args),
+          flank = mcp_int(args, "flank") %||% 250L,
+          min_gap = mcp_int(args, "min_gap") %||% 50L
+        )
+      }
+    ),
+    rescue_strategy = list(
+      title = "Rescue strategy",
+      description = paste(
+        "The ordered ladder of marker schemes to try for a locus, with each",
+        "scheme's discrimination and readout."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          schemes = list(type = "array", items = list(type = "string"), description = "scheme ids to order")
+        )
+      ),
+      handler = function(args) rescue_strategy(mcp_chr(args, "schemes"))
+    ),
+    marker_decision_text = list(
+      title = "Decision graph as text",
+      description = paste(
+        "A scheme's decision graph as text, one node per line. `evidence`",
+        "attaches each criterion's evidence rung."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          evidence = list(type = "boolean", description = "include the evidence rung")
+        )
+      ),
+      handler = function(args) {
+        marker_decision_text(
+          mcp_arg(args, "scheme") %||% "snp",
+          evidence = isTRUE(mcp_arg(args, "evidence"))
+        )
+      }
+    ),
+    screen_snp_targets = list(
+      title = "Screen SNP targets",
+      description = paste(
+        "For every variant in a VCF, count the flanking primer candidates that",
+        "clear the 3' cleanliness, length and amplicon windows. Needs a genome."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          variants_path = list(type = "string", description = "VCF file"),
+          genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          chrom_map = list(type = "object", description = "optional defline -> name map")
+        ),
+        required = list("variants_path", "genome_path")
+      ),
+      handler = function(args) {
+        path <- mcp_arg(args, "variants_path")
+        if (is.null(path)) {
+          stop("`variants_path` is required: a VCF file")
+        }
+        screen_snp_targets(read_variants_vcf(path), mcp_genome(args))
+      }
+    ),
+    engine_status = list(
+      title = "Engine availability",
+      description = "Whether the external engines (OligoArrayAux, BLAST+) are installed.",
+      inputSchema = list(type = "object", properties = list()),
+      handler = function(args) {
+        list(oligoarrayaux = has_oligoarrayaux(), blast = has_blast())
+      }
+    ),
+    engine_capabilities = list(
+      title = "Engine capabilities",
+      description = paste(
+        "The capability flags of an engine: Tm, salt, duplex/hairpin dG, fold for",
+        "thermo; in-silico PCR, seed counts, IUPAC, mismatch and BLAST for",
+        "specificity."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          engine = list(type = "string", enum = c("thermo", "specificity"), description = "engine (default thermo)")
+        )
+      ),
+      handler = function(args) {
+        capabilities(marker_engines()[[mcp_arg(args, "engine") %||% "thermo"]])
+      }
+    ),
+    design_scheme = list(
+      title = "Design a marker with one scheme",
+      description = paste(
+        "Design one locus with a named scheme and return the verdict, primers,",
+        "risk, check table and readout. `params` is passed to the scheme's",
+        "designer unchanged (e.g. `{ \"flank\": 200, \"cas\": \"cas12a\" }`)."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          chrom_map = list(type = "object", description = "optional defline -> name map"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          chrom = list(type = "string", description = "locus chromosome"),
+          pos = list(type = "integer", description = "locus position (1-based)"),
+          ref = list(type = "string", description = "reference allele"),
+          alt = list(type = "string", description = "alternate allele"),
+          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          params = list(type = "object", description = "extra arguments for the scheme's designer")
+        ),
+        required = list("genome_path", "chrom", "pos", "ref", "alt")
+      ),
+      handler = function(args) {
+        params <- mcp_arg(args, "params")
+        if (is.null(params)) {
+          params <- list()
+        }
+        result <- do.call(design_auto_marker, c(
+          list(mcp_genome(args), mcp_snp(args), schemes = mcp_arg(args, "scheme") %||% "snp"),
+          params
+        ))
+        list(
+          scheme = result$scheme,
+          tried = result$tried[, c("scheme", "ok"), drop = FALSE],
+          marker = mcp_marker_summary(result$marker)
+        )
+      }
+    ),
+    design_markers = list(
+      title = "Design a batch of markers",
+      description = paste(
+        "Design every variant in a VCF, or a region of it, with one scheme, and",
+        "return one verdict row per locus."
+      ),
+      inputSchema = list(
+        type = "object",
+        properties = list(
+          genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          chrom_map = list(type = "object", description = "optional defline -> name map"),
+          variants_path = list(type = "string", description = "VCF file"),
+          chrom = list(type = "string", description = "region chromosome"),
+          start = list(type = "integer", description = "region start (1-based)"),
+          end = list(type = "integer", description = "region end (inclusive)"),
+          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          flank = list(type = "integer", description = "window around each locus")
+        ),
+        required = list("genome_path", "variants_path")
+      ),
+      handler = function(args) {
+        path <- mcp_arg(args, "variants_path")
+        if (is.null(path)) {
+          stop("`variants_path` is required: a VCF file")
+        }
+        loci <- read_variants_vcf(
+          path,
+          chrom = mcp_arg(args, "chrom"),
+          start = mcp_int(args, "start"),
+          end = mcp_int(args, "end")
+        )
+        extra <- list()
+        flank <- mcp_int(args, "flank")
+        if (!is.null(flank)) {
+          extra$flank <- flank
+        }
+        do.call(design_markers, c(
+          list(mcp_genome(args), loci, scheme = mcp_arg(args, "scheme") %||% "snp"),
+          extra
+        ))
       }
     )
   )

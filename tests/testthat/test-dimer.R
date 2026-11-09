@@ -1,5 +1,14 @@
 # Duplex free energies must form a symmetric matrix with a homodimer diagonal.
 
+test_that("dimer_thermo labels an unnamed primer set like the pool checks", {
+  skip_if_no_oligoarrayaux()
+  unnamed <- c("ACGTACGTACGTACGTACGT", "TTTTGGGGCCCCAAAATTTT")
+  d <- dimer_thermo(unnamed)
+  expect_equal(nrow(d), length(unnamed)^2)
+  expect_setequal(unique(c(d$a, d$b)), c("p1", "p2"))
+  expect_equal(d, dimer_thermo(stats::setNames(unnamed, c("p1", "p2"))))
+})
+
 test_that("dimer_thermo is symmetric and includes homodimers", {
   skip_if_no_oligoarrayaux()
   p <- c(

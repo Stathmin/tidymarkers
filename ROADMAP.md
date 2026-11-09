@@ -737,15 +737,22 @@ merge без gate; удаление worktree до merge; новые worktree о�
       `pak` (бинарники PPM), `R CMD INSTALL`, `ENTRYPOINT` — stdio MCP.
       проверка: образ собран (`docker build -f docker/Dockerfile`, ~5.5 мин) и
       smoke в контейнере — `initialize`/`tools/call` вернули Tm 58.6 и KASP-микс.
-- [x] **YP2.** MCP-слой: `inst/mcp/tools.R` — реестр 14 инструментов: Tm/dG/
-      terminal (с опциональным `oligoarrayaux_dir`), схемы, критерии,
-      технологии, приоры, KASP-микс, специфичность; `genome_info`,
-      `read_variants`, `in_silico_pcr` и `design_marker` принимают путь к
-      геному/VCF (`genome_path`/`variants_path`); `inst/mcp/server.R` — stdio
-      JSON-RPC 2.0 (`initialize`, `tools/list`, `tools/call`). проверка:
-      `test-mcp.R` вызывает каждый tool (58 pass), включая реальный продукт
-      `in_silico_pcr` и вердикт `design_marker` на смонтированном FASTA + smoke
-      сервера на stdin.
+- [x] **YP2.** MCP-слой: `inst/mcp/tools.R` — реестр 37 инструментов,
+      покрывающий рабочий процесс виньеток: вход (`genome_info`, `read_variants`,
+      `mask_positions`, `fasta`-пути), классификация (`variant_type`,
+      `marker_site_class`), термодинамика/QC (`primer_tm`, `primer_thermo`,
+      `oligo_dg`, `terminal_dg`, `dimer_thermo`, `hairpin_dg_thermo`,
+      `primer_set_compatibility`, `fold_amplicon`, `pcr_efficiency`,
+      `wobble_mismatch`), специфичность (`in_silico_pcr`, `find_caps_enzymes`,
+      `screen_snp_targets`), проектирование (`design_marker`, `design_scheme`,
+      `design_markers` — по `genome_path`/`variants_path`), решение
+      (`marker_criteria`, `marker_decision_text`, `rescue_strategy`,
+      `engine_status`, `engine_capabilities`) и конфигурация схем. Не входят
+      сознательно: графики и объекты `marker_plan()`/`marker_solve()` (не JSON),
+      писатели (`marker_export`/`write_marker_results` — не пишут вне монтирования)
+      и Ensembl-запросы (сеть). `inst/mcp/server.R` — stdio JSON-RPC 2.0.
+      проверка: `test-mcp.R` вызывает каждый tool (419 pass) и валидирует
+      каждый `inputSchema` (`required` ⊆ `properties`, у каждого своя `type`).
 - [x] **YP3.** `marker_artefact()`/`marker_replay()` — манифест, провенанс,
       переигровка вердикта.
 - [x] **YP4.** Риски агентского вызова: `verdict`/`relaxed`/`rejected` — поля

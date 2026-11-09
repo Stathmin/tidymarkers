@@ -12,13 +12,24 @@
   `docker/entrypoint.sh`, `.dockerignore`; только `Imports` через `pak`
   (бинарники PPM), затем `R CMD INSTALL`. `ENTRYPOINT` запускает stdio
   MCP-сервер. Образ собран (~5.5 мин), smoke в контейнере прошёл.
-- **`YP2` MCP-слой.** `inst/mcp/tools.R` — реестр 14 инструментов: Tm/dG/
-  terminal (опциональный `oligoarrayaux_dir`), схемы, критерии, технологии,
-  приоры, KASP-микс, специфичность, а также `genome_info`, `read_variants`,
-  `in_silico_pcr` и `design_marker`, принимающие монтированные `genome_path`
-  и `variants_path`; `inst/mcp/server.R` — stdio JSON-RPC 2.0 (`initialize`,
-  `tools/list`, `tools/call`). `test-mcp.R` вызывает каждый tool (58 pass),
-  включая реальный продукт in-silico PCR и вердикт дизайна на FASTA + VCF.
+- **`YP2` MCP-слой.** `inst/mcp/tools.R` — реестр 37 инструментов по
+  рабочему процессу виньеток: вход (`genome_info`, `read_variants`,
+  `mask_positions`), классификация (`variant_type`, `marker_site_class`),
+  термодинамика/QC (`primer_tm`/`primer_thermo`/`oligo_dg`/`terminal_dg`/
+  `dimer_thermo`/`hairpin_dg_thermo`/`primer_set_compatibility`/
+  `fold_amplicon`/`pcr_efficiency`/`wobble_mismatch`), специфичность
+  (`in_silico_pcr`, `find_caps_enzymes`, `screen_snp_targets`),
+  проектирование (`design_marker`, `design_scheme`, `design_markers` — по
+  `genome_path`/`variants_path`) и решение (`marker_criteria`,
+  `marker_decision_text`, `rescue_strategy`, `engine_status`,
+  `engine_capabilities`). Графики, объекты `marker_plan()`/`marker_solve()`,
+  писатели и Ensembl-запросы исключены сознательно (не JSON / не пишут вне
+  монтирования / сеть). `inst/mcp/server.R` — stdio JSON-RPC 2.0.
+  `test-mcp.R` вызывает каждый tool и валидирует каждый `inputSchema`
+  (419 pass).
+- **`dimer_thermo()` без имён.** Неименованный набор праймеров теперь
+  метится `p1`, `p2`, ... как в `primer_set_compatibility()`, а не падает на
+  `Column a not found`.
 - **`YP4` структура вердикта.** `decisions.csv` несёт `outcome`/`verdict`/
   `relaxed`/`violated`/`risk` типизированными колонками (пиннится в
   `test-plan.R`); `README.md` §Container and MCP server и `docker/README.md`

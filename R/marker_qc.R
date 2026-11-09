@@ -180,6 +180,11 @@ marker_mismatch_severity <- function(ref, alt) {
 dimer_thermo <- function(primers, BPPARAM = NULL,
                          conditions = reaction_conditions()) {
   conditions <- as_reaction_conditions(conditions)
+  # an unnamed set is still a set: label it the way primer_set_compatibility()
+  # does, so the caller does not have to invent names to get a dG table
+  if (is.null(names(primers)) || any(!nzchar(names(primers)))) {
+    names(primers) <- paste0("p", seq_along(primers))
+  }
   nm <- names(primers)
   # upper triangle (i <= j) is all DISTINCT pairs; the full grid is then a join
   grid <- tidyr::crossing(a = nm, b = nm) |>

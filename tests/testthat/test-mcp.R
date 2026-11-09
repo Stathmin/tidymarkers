@@ -44,12 +44,12 @@ test_that("every registered tool is wired and returns content", {
 
   # A mounted genome and VCF: the design tools take paths, not in-memory objects.
   genome <- withr::local_tempfile(fileext = ".fa")
-  writeLines(c(">chr1", strrep("ACGT", 60L)), genome)
+  writeLines(c(">Chr1", strrep("ACGT", 60L)), genome)
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
-    "chr1\t81\t.\tA\tG\t.\t.\t."
+    "Chr1\t81\t.\tA\tG\t.\t.\t."
   ), vcf)
   primer <- "ACGTACGTACGTACGTACGT"
 
@@ -70,8 +70,42 @@ test_that("every registered tool is wired and returns content", {
     read_variants = list(variants_path = vcf),
     in_silico_pcr = list(f_primer = primer, r_primer = primer, genome_path = genome),
     design_marker = list(
-      genome_path = genome, chrom = "chr1", pos = 81L,
+      genome_path = genome, chrom = "Chr1", pos = 81L,
       ref = "A", alt = "G", schemes = list("snp")
+    ),
+    variant_type = list(ref = "A", alt = "G"),
+    marker_site_class = list(ref = "A", alts = list("G", "T")),
+    mask_positions = list(seq = "ACGTACGT", positions = list(2L, 5L)),
+    asq_limits = list(),
+    reaction_conditions = list(),
+    scheme_conditions = list(scheme = "pcr"),
+    primer_thermo = list(primers = list(primer)),
+    primer_set_compatibility = list(primers = list(primer, "GCATCGATTAGCGATCGATCG")),
+    dimer_thermo = list(primers = list(primer, "GCATCGATTAGCGATCGATCG")),
+    hairpin_dg_thermo = list(seq = primer),
+    fold_amplicon = list(seq = "ACGTACGTACGTACGTACGTACGTACGTACGT", kind = "DNA"),
+    pcr_efficiency = list(
+      primers = list("GAAGGTGACCAAGTTCATGCT"),
+      targets = list("AGCATGAACTTGGTCACCTTC")
+    ),
+    wobble_mismatch = list(on_allele = "G", off_allele = "T"),
+    find_palindromes = list(seq = "ACGTACGTAAAAACGTACGT"),
+    has_palindrome = list(seq = "ACGTACGT"),
+    find_caps_enzymes = list(
+      genome_path = genome, chrom = "Chr1", pos = 81L,
+      ref = "A", alt = "G", flank = 40L, min_gap = 20L
+    ),
+    rescue_strategy = list(),
+    marker_decision_text = list(scheme = "snp"),
+    screen_snp_targets = list(variants_path = vcf, genome_path = genome),
+    engine_status = list(),
+    engine_capabilities = list(engine = "thermo"),
+    design_scheme = list(
+      genome_path = genome, chrom = "Chr1", pos = 81L,
+      ref = "A", alt = "G", scheme = "caps", params = list(flank = 40L)
+    ),
+    design_markers = list(
+      genome_path = genome, variants_path = vcf, scheme = "snp", flank = 40L
     )
   )
   expect_setequal(names(specs), names(arguments))
@@ -84,17 +118,41 @@ test_that("every registered tool is wired and returns content", {
   }
 })
 
+test_that("every inputSchema is well formed", {
+  skip_if_not_installed("jsonlite")
+  env <- .mcp_env()
+  specs <- env$mcp_tool_specs()
+  expect_gt(length(specs), 30L)
+
+  for (nm in names(specs)) {
+    spec <- specs[[nm]]
+    expect_true(nzchar(spec$title), info = nm)
+    expect_true(nzchar(spec$description), info = nm)
+    expect_type(spec$handler, "closure")
+
+    schema <- spec$inputSchema
+    expect_equal(schema$type, "object", info = nm)
+    props <- names(schema$properties)
+    required <- unlist(schema$required, use.names = FALSE)
+    # a required name that is not declared is a schema the client cannot satisfy
+    expect_true(all(required %in% props), info = nm)
+    for (p in props) {
+      expect_false(is.null(schema$properties[[p]]$type), info = paste(nm, p))
+    }
+  }
+})
+
 test_that("genome tools answer from the mounted files", {
   skip_if_not_installed("jsonlite")
   env <- .mcp_env()
 
   genome <- withr::local_tempfile(fileext = ".fa")
-  writeLines(c(">chr1", strrep("ACGT", 60L)), genome)
+  writeLines(c(">Chr1", strrep("ACGT", 60L)), genome)
   primer <- "ACGTACGTACGTACGTACGT"
 
   info <- .mcp_call(env, "genome_info", list(genome_path = genome))
   expect_false(isTRUE(info$result$isError))
-  expect_equal(info$result$structuredContent$chrom, "chr1")
+  expect_equal(info$result$structuredContent$chrom, "Chr1")
   expect_equal(info$result$structuredContent$length, 240L)
 
   # An exact forward/reverse pair in a repeated genome still resolves to products.
