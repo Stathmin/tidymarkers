@@ -26,6 +26,15 @@ KASP_TAIL_HEX <- "GAAGGTCGGAGTCAACGGATT" # "HEX/VIC" channel
 # Tm conditions (mM) for TmCalculator
 PCR_COND <- list(Na = 50, Mg = 1.5, dNTPs = 0.6, DMSO = 0)
 NN_TABLE <- "DNA_NN_SantaLucia_2004"
+# The design Tm coordinate.  The KASP/AS/COM and dPCR windows are stated on this
+# correction, so it stays the default until those windows are re-anchored
+# together (see ZW3.4).  It is a historical GC-era monovalent correction
+# applied to a nearest-neighbour model, not the NN-consistent one.  The
+# NN-consistent reference model is "SantaLucia1998-2": the same SantaLucia 1998
+# paper as the NN table, the pair Primer3/`oligotm` and Biopython apply.  It
+# reproduces the printed soybean Primer3 panel to 0.08 C (ZW3.5) and is the
+# model every external Tm comparison is stated in (ZW3.4).
+TM_SALT_METHOD <- "Schildkraut2010"
 # PCR conditions (molar) for DECIPHER::CalculateEfficiencyPCR
 PCR_EFF <- list(temp = 60, P = 4e-7, ions = 0.2)
 

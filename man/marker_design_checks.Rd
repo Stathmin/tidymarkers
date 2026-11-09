@@ -76,6 +76,7 @@ Other checks:
 \code{\link[=marker_criteria]{marker_criteria()}},
 \code{\link[=marker_decision_graph]{marker_decision_graph()}},
 \code{\link[=marker_decision_text]{marker_decision_text()}},
+\code{\link[=marker_explain]{marker_explain()}},
 \code{\link[=marker_priors]{marker_priors()}},
 \code{\link[=marker_risk]{marker_risk()}},
 \code{\link[=marker_schemes]{marker_schemes()}},

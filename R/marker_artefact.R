@@ -522,11 +522,13 @@ marker_artefact <- function(solved, dir = tempdir()) {
   knobs <- solved$knobs %||% list()
   decisions <- artefact_decisions(solved)
   checks <- artefact_checks(solved)
+  why <- if (is.null(checks)) NULL else marker_explain(checks)
   signals <- solved$signals %||% NULL
 
   readr::write_csv(decisions, fs::path(dir, "decisions.csv"))
   if (!is.null(checks)) {
     readr::write_csv(checks, fs::path(dir, "checks.csv"))
+    readr::write_csv(tibble::as_tibble(why), fs::path(dir, "why.csv"))
   }
   if (!is.null(signals) && nrow(signals)) {
     readr::write_csv(signals, fs::path(dir, "signals.csv"))
@@ -579,6 +581,7 @@ marker_artefact <- function(solved, dir = tempdir()) {
     files = list(
       decisions = "decisions.csv",
       checks = if (is.null(checks)) NA_character_ else "checks.csv",
+      why = if (is.null(why)) NA_character_ else "why.csv",
       signals = if (is.null(signals) || !nrow(signals)) NA_character_ else "signals.csv",
       targets = "targets.csv",
       solved = "solved.rds"

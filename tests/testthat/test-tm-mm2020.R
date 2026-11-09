@@ -112,6 +112,37 @@ test_that("ZW3/mm2020: primer_tm() ranks the 64 canonical duplexes with measurem
   expect_lt(stats::sd(tm - can$measured_tm_c), 2)
 })
 
+test_that("ZW3.4: the residual decomposes into model, strand concentration and readout", {
+  skip_if_not(file.exists(mm2020_path()), "tm_mm2020 CSV not present")
+  d <- utils::read.csv(mm2020_path(), stringsAsFactors = FALSE)
+  can <- d[d$mismatch_class == "canonical", ]
+  cond <- reaction_conditions(Na = 50, Mg = 0, dNTPs = 0, DMSO = 0)
+  m <- can$measured_tm_c
+  bias <- function(...) mean(primer_tm(can$top_18, conditions = cond, ...) - m)
+
+  # (1) the obsolete GC-era correction, applied to a nearest-neighbour model.
+  expect_equal(round(bias(salt_method = "Schildkraut2010")), -17)
+  # (2) the NN-consistent reference model (the same paper as the NN table).
+  expect_equal(round(bias(salt_method = "SantaLucia1998-2")), -10)
+  # (3) the measured set used 1 uM TOTAL strand; the design convention is 25 nM
+  # each.  Matching it with dnac removes the dimerisation term.
+  expect_equal(round(bias(salt_method = "SantaLucia1998-2", dnac = 500)), -5)
+  # the concentration shift is real and monotone, not a fudge factor
+  dnac <- c(25, 250, 500, 1000)
+  b <- vapply(dnac, function(x) bias(salt_method = "SantaLucia1998-2", dnac = x), 0)
+  expect_true(all(diff(b) > 0))
+  expect_gt(b[dnac == 500] - b[dnac == 25], 3.5)
+  expect_lt(b[dnac == 500] - b[dnac == 25], 5)
+  # what remains at the paper's own conditions is the fluorescent-label /
+  # first-derivative readout reference state (~-5 C), recorded and not removed.
+  expect_gt(bias(salt_method = "SantaLucia1998-2", dnac = 500), -6.5)
+  expect_lt(bias(salt_method = "SantaLucia1998-2", dnac = 500), -4)
+  # none of these level terms touch the ranking
+  v <- primer_tm(can$top_18, conditions = cond, salt_method = "SantaLucia1998-2", dnac = 500)
+  expect_gt(stats::cor(v, m), 0.9)
+  expect_lt(stats::sd(v - m), 1)
+})
+
 test_that("ZW3/mm2020: the artifact records the offset and forbids a calibration", {
   skip_if_not(file.exists(mm2020_path()), "tm_mm2020 CSV not present")
   d <- utils::read.csv(mm2020_path(), stringsAsFactors = FALSE)

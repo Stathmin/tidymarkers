@@ -154,11 +154,12 @@ primer pair" (composition, structure, repeats, off-target).
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `assemble_kasp_assay()`    | `<marker_assay>`: primers, amplicon, discrimination, `$decision`                                        |
 | `marker_design_checks()`   | tidy table: `stage`, `criterion`, `observed`, `limit`, `status`                                         |
+| `marker_explain()`         | the checks as ordered, readable reasons (failures first) with a one-line headline                       |
 | `marker_risk()`            | `low` / `medium` / `high` with the reasons behind it                                                    |
 | `marker_decision_text()`   | the decision graph of a scheme as readable text (`evidence = TRUE` adds each check's evidence rung)     |
 | `write_marker_results()`   | `marker_design.csv`, `marker_primer_qc.csv`, `marker_dimer_dg.csv`                                      |
 | `marker_export()`          | `markers.csv`, `attempts.csv`, `primers.csv`, `solved.rds` + the artefact                               |
-| `marker_artefact()`        | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv`                   |
+| `marker_artefact()`        | `artefact.json` (hashed inputs, provenance, overrides), `decisions.csv`, `checks.csv`, `why.csv`        |
 | `marker_replay()`          | re-runs a saved artefact and compares the verdict per target                                            |
 | `marker_record_outcome()`  | appends a lab result (`works` / `fails` / `unknown`) to an artefact's `outcomes.csv`, bound to its `id` |
 | `marker_technology()`      | composes a technology from a base scheme + `params`, `blocks` and `specificity` (returned invisibly)    |

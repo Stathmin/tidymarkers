@@ -9,7 +9,8 @@ primer_tm(
   DMSO = NULL,
   nn_table = NN_TABLE,
   conditions = NULL,
-  salt_method = NULL
+  salt_method = NULL,
+  dnac = NULL
 )
 }
 \arguments{
@@ -25,21 +26,32 @@ primer_tm(
 \code{DMSO} fields are used.  \code{temperature} does not enter the nearest-neighbour
 Tm calculation (the NN model gives Tm directly), so passing
 \code{scheme_conditions("lamp")} shifts the Tm only through the buffer fields.
-\code{NULL} uses \code{\link[=reaction_conditions]{reaction_conditions()}}, i.e. the package's historical numbers.
+\code{NULL} uses \code{\link[=reaction_conditions]{reaction_conditions()}}.
 For an isothermal method whose buffer this model does not represent (RPA's
 crowded recombinase buffer) the Tm is informational, not a gate.}
 
 \item{salt_method}{monovalent-salt correction passed to
-\code{TmCalculator::tm_calculate()}.  \code{NULL} keeps the engine default
-(\code{"Schildkraut2010"}, Schildkraut & Lifson 1965, \verb{16.6*log10[Na+]}), so
-existing designs do not move.  A caller who has a measured buffer can ask
-for a modern form: \code{"Owczarzy2004"} / \code{"Owczarzy2008"} (Owczarzy et al.
-2004, 2008, which correct \code{1/T} and include a duplex-length term) or
-\code{"SantaLucia1998-1"} / \code{"SantaLucia1998-2"} (SantaLucia 1998,
-\verb{11.7*log10[Na+]}).  This is a level shift, not a precision gain: on the
-mm2020 oracle (500 mM Na equivalent, no Mg) the default reads 16.9 C low
-and Owczarzy 2008 reads 9.3 C low, with the same correlation; see
-\code{.tmp/sdd/report-tmfix.md}.}
+\code{TmCalculator::tm_calculate()}.  \code{NULL} uses the design coordinate,
+\code{TM_SALT_METHOD} (\code{"Schildkraut2010"}, Schildkraut & Lifson 1965,
+\verb{16.6*log10[Na+]}).  The design windows (KASP 55-65/58-63 C, dPCR 44-50 C)
+are stated on that coordinate, so it does not move on its own; see ZW3.4.
+For a value comparable with Primer3/\code{oligotm} and Biopython, pass
+\code{"SantaLucia1998-2"}, the NN-consistent entropy
+correction of the same SantaLucia 1998 paper as the NN table; it reproduces
+a printed Primer3 panel to 0.08 C (ZW3.5).  \code{"Owczarzy2004"} /
+\code{"Owczarzy2008"} are available for a cross-check.  On the mm2020 measured
+set (50 mM Na, no Mg) the default reads 16.9 C low and the reference model
+9.6 C low at the design strand concentration; matching the set's own 1 uM
+total strand with \code{dnac} closes a further ~4.2 C, and the remainder is the
+fluorescent-label / first-derivative reference state, recorded and not
+removed (ZW3.4, \code{test-tm-mm2020.R}).}
+
+\item{dnac}{strand concentration (nM, each strand) passed to
+\code{TmCalculator::tm_calculate()}.  \code{NULL} keeps the engine/design default of
+25 nM each (50 nM total), the Biopython \code{MeltingTemp} and Primer3 design
+convention.  Match a measured set's own strand concentration here when
+comparing against it: the dimerisation term makes Tm rise ~1.4 C per
+e-fold of concentration (ZW3.4).}
 }
 \value{
 a numeric vector of Tm (C), one per oligo.
@@ -55,6 +67,7 @@ thermodynamic cross-check, see \code{\link[=thermo_crosscheck]{thermo_crosscheck
 primer_tm("GAAGGTGACCAAGTTCATGCT")
 primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
 primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
+primer_tm("GAAGGTGACCAAGTTCATGCT", dnac = 500)
 }
 \seealso{
 Other thermodynamics:

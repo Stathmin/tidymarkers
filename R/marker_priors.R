@@ -5,10 +5,11 @@
 #  their provenance: one table naming each parameter, its value and the source
 #  it follows (LGC/KASP practice, EasyKASP 2025, primerblast-oss), so a tuning
 #  decision is auditable.  It also holds the independent thermodynamic check
-#  that keeps those numbers honest: our Tm engine is the Primer3/oligotm
-#  nearest-neighbour family (TmCalculator, SantaLucia tables); running the same
-#  oligos through several published NN parameter sets shows how much the Tm -
-#  and therefore the window built on it - actually wobbles.
+#  that keeps those numbers honest: our Tm engine is the TmCalculator
+#  nearest-neighbour family (SantaLucia tables).  The default salt correction is
+#  the design coordinate the windows are stated on (Schildkraut 1965); the
+#  NN-consistent reference model is SantaLucia 1998-2, the one Primer3/oligotm
+#  applies, and it is what every external Tm comparison is stated in (ZW3.4).
 # =============================================================================
 
 #' Provenance of every KASP threshold
@@ -38,7 +39,9 @@ marker_priors <- function() {
     "clean_3p (nt)", "5", "primerblast-oss 3' window",
     "as_tm target (C)", as.character(AS_TM_TARGET), "LGC/EasyKASP (AS below the COM)",
     "com_tm target (C)", as.character(COM_TM_TARGET), "LGC/EasyKASP",
-    "Tm model", NN_TABLE, "TmCalculator (Primer3/oligotm NN family, SantaLucia)",
+    "Tm model", NN_TABLE, "TmCalculator (SantaLucia nearest-neighbour tables)",
+    "Tm salt correction", TM_SALT_METHOD,
+    "design coordinate (windows on it); reference = SantaLucia 1998-2 (Primer3/oligotm)",
     "dG model", "OligoArrayAux (hybrid-min / hybrid-ss-min)", "DECIPHER's engine"
   )
 }

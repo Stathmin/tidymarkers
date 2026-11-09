@@ -72,6 +72,47 @@ test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   expect_true(all(v$chrom == "Chr4")) # names normalised
 })
 
+test_that("read_variants_vcf handles empty, mixed and long-header VCFs (Y5)", {
+  skip_if_not_installed("vroom")
+  hdr <- c("##fileformat=VCFv4.2", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")
+  # a header with no records returns a typed zero-row frame, not an error
+  empty <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(hdr, empty)
+  v <- read_variants_vcf(empty)
+  expect_equal(nrow(v), 0L)
+  expect_named(v, c("chrom", "pos", "ref", "alt"))
+  # `.` (absent) and `*` (spanning) alleles are dropped, a real SNV is kept
+  mixed <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    hdr,
+    "1\t250\t.\tA\tG\t.\t.\t.",
+    "1\t260\t.\tC\t.\t.\t.\t.",
+    "1\t270\t.\tT\t*\t.\t.\t."
+  ), mixed)
+  expect_setequal(read_variants_vcf(mixed)$pos, 250L)
+  # more `##` metadata lines than a fixed 1000-line scan: the header is still found
+  long <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    paste0("##INFO=<ID=T", seq_len(1500), ",Number=1,Type=Integer,Description=\"x\">"),
+    hdr[-1L],
+    "1\t250\t.\tA\tG\t.\t.\t."
+  ), long)
+  expect_equal(read_variants_vcf(long)$pos, 250L)
+  # a header without ALT is refused with a readable reason, not a vroom internal
+  noalt <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tQUAL\tFILTER\tINFO",
+    "1\t250\t.\tA\t.\t.\t."
+  ), noalt)
+  expect_error(read_variants_vcf(noalt), "missing")
+  # a file with no header at all errors instead of silently returning nothing
+  bare <- withr::local_tempfile(fileext = ".vcf")
+  writeLines("1\t250\t.\tA\tG", bare)
+  expect_error(read_variants_vcf(bare), "#CHROM")
+})
+
 test_that("read_variants_vcf filters by region", {
   skip_if_not_installed("vroom")
   vcf <- withr::local_tempfile(fileext = ".vcf")

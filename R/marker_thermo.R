@@ -266,37 +266,50 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
 #'   `DMSO` fields are used.  `temperature` does not enter the nearest-neighbour
 #'   Tm calculation (the NN model gives Tm directly), so passing
 #'   `scheme_conditions("lamp")` shifts the Tm only through the buffer fields.
-#'   `NULL` uses [reaction_conditions()], i.e. the package's historical numbers.
+#'   `NULL` uses [reaction_conditions()].
 #'   For an isothermal method whose buffer this model does not represent (RPA's
 #'   crowded recombinase buffer) the Tm is informational, not a gate.
 #' @param salt_method monovalent-salt correction passed to
-#'   `TmCalculator::tm_calculate()`.  `NULL` keeps the engine default
-#'   (`"Schildkraut2010"`, Schildkraut & Lifson 1965, `16.6*log10[Na+]`), so
-#'   existing designs do not move.  A caller who has a measured buffer can ask
-#'   for a modern form: `"Owczarzy2004"` / `"Owczarzy2008"` (Owczarzy et al.
-#'   2004, 2008, which correct `1/T` and include a duplex-length term) or
-#'   `"SantaLucia1998-1"` / `"SantaLucia1998-2"` (SantaLucia 1998,
-#'   `11.7*log10[Na+]`).  This is a level shift, not a precision gain: on the
-#'   mm2020 oracle (500 mM Na equivalent, no Mg) the default reads 16.9 C low
-#'   and Owczarzy 2008 reads 9.3 C low, with the same correlation; see
-#'   `.tmp/sdd/report-tmfix.md`.
+#'   `TmCalculator::tm_calculate()`.  `NULL` uses the design coordinate,
+#'   `TM_SALT_METHOD` (`"Schildkraut2010"`, Schildkraut & Lifson 1965,
+#'   `16.6*log10[Na+]`).  The design windows (KASP 55-65/58-63 C, dPCR 44-50 C)
+#'   are stated on that coordinate, so it does not move on its own; see ZW3.4.
+#'   For a value comparable with Primer3/`oligotm` and Biopython, pass
+#'   `"SantaLucia1998-2"`, the NN-consistent entropy
+#'   correction of the same SantaLucia 1998 paper as the NN table; it reproduces
+#'   a printed Primer3 panel to 0.08 C (ZW3.5).  `"Owczarzy2004"` /
+#'   `"Owczarzy2008"` are available for a cross-check.  On the mm2020 measured
+#'   set (50 mM Na, no Mg) the default reads 16.9 C low and the reference model
+#'   9.6 C low at the design strand concentration; matching the set's own 1 uM
+#'   total strand with `dnac` closes a further ~4.2 C, and the remainder is the
+#'   fluorescent-label / first-derivative reference state, recorded and not
+#'   removed (ZW3.4, `test-tm-mm2020.R`).
+#' @param dnac strand concentration (nM, each strand) passed to
+#'   `TmCalculator::tm_calculate()`.  `NULL` keeps the engine/design default of
+#'   25 nM each (50 nM total), the Biopython `MeltingTemp` and Primer3 design
+#'   convention.  Match a measured set's own strand concentration here when
+#'   comparing against it: the dimerisation term makes Tm rise ~1.4 C per
+#'   e-fold of concentration (ZW3.4).
 #' @return a numeric vector of Tm (C), one per oligo.
 #' @examples
 #' primer_tm("GAAGGTGACCAAGTTCATGCT")
 #' primer_tm(c("ACGTACGTACGTACGTACGT", "TTTTGGCGCGCCGATATATAT"))
 #' primer_tm("GAAGGTGACCAAGTTCATGCT", conditions = reaction_conditions(Na = 100))
+#' primer_tm("GAAGGTGACCAAGTTCATGCT", dnac = 500)
 #' @family thermodynamics
 #' @export
 primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
-                      conditions = NULL, salt_method = NULL) {
+                      conditions = NULL, salt_method = NULL, dnac = NULL) {
   conditions <- as_reaction_conditions(conditions)
   DMSO <- DMSO %||% conditions$DMSO
   seq <- as.character(seq)
   gr <- TmCalculator::to_genomic_ranges(seq)
+  dnac <- dnac %||% formals(TmCalculator::tm_nn)$dnac_high
   res <- TmCalculator::tm_calculate(gr,
     method = "tm_nn", nn_table = nn_table,
     Na = conditions$Na, Mg = conditions$Mg, dNTPs = conditions$dNTPs, DMSO = DMSO,
-    salt_method = salt_method %||% "Schildkraut2010"
+    dnac_high = dnac, dnac_low = dnac,
+    salt_method = salt_method %||% TM_SALT_METHOD
   )
   as.numeric(S4Vectors::mcols(res$gr)$Tm)
 }

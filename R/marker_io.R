@@ -93,10 +93,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #' @noRd
 read_variants_vcf_vroom <- function(path) {
   rlang::check_installed("vroom", reason = gettext("to read large VCF files"))
-  hdr <- readr::read_lines(path, n_max = 1000L)
-  hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
-  if (is.na(hdr)) cli::cli_abort(gettext("{path} has no '#CHROM' header line."))
-  nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
+  nms <- vcf_header_names(path)
 
   ct <- vroom::cols(
     .default = vroom::col_skip(),
@@ -111,6 +108,39 @@ read_variants_vcf_vroom <- function(path) {
       ref = .data$REF, alt = .data$ALT
     ) |>
     tidyr::separate_longer_delim("alt", delim = ",") # one row per ALT allele
+}
+
+#' The `#CHROM` header names of a VCF, scanned without a line cap
+#'
+#' A VCF may carry any number of `##` metadata lines (some build thousands);
+#' the header is the last such line and starts with a single `#CHROM`.  Reading
+#' to find it is bounded by the metadata block, not by the file size.
+#' @keywords internal
+#' @noRd
+vcf_header_names <- function(path) {
+  con <- file(path, "r")
+  on.exit(close(con), add = TRUE)
+  repeat {
+    line <- readLines(con, n = 1L, warn = FALSE)
+    if (!length(line)) {
+      cli::cli_abort(gettext("{path} has no '#CHROM' header line."))
+    }
+    if (startsWith(line, "##") || !nzchar(line)) next
+    if (!startsWith(line, "#CHROM")) {
+      cli::cli_abort(gettext(
+        "{path}: the first non-'##' line does not start with '#CHROM'."
+      ))
+    }
+    nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
+    missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
+    if (length(missing)) {
+      cli::cli_abort(c(
+        gettext("{path}: the '#CHROM' header is missing {.val {missing}}."),
+        i = gettext("A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf().")
+      ))
+    }
+    return(nms)
+  }
 }
 
 #' Canonical VCF reader (`VariantAnnotation::readVcf`)
