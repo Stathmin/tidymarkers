@@ -147,6 +147,16 @@ mcp_json <- function(x) {
 
 # -- the registry --------------------------------------------------------
 
+# The chemistries the package registers, computed from the registry so the
+# advertised enum cannot drift.  A design enum is the per-locus ladder
+# (`rescue_strategy()$scheme`): it drops `primer` (no locus designer, C13) and
+# `duplex` (two loci), which the single-locus design tools cannot take.  A
+# criteria/decision-text enum keeps every scheme, because those calls evaluate
+# any of them.
+mcp_scheme_ids <- function(design = FALSE) {
+  if (design) rescue_strategy()$scheme else marker_schemes()$scheme
+}
+
 # Every entry: title, description, inputSchema (JSON Schema draft 2020-12), and
 # a handler taking the parsed `arguments` object.
 mcp_tool_specs <- function() {
@@ -254,7 +264,11 @@ mcp_tool_specs <- function() {
       inputSchema = list(
         type = "object",
         properties = list(
-          scheme = list(type = "string", description = "scheme id (default \"snp\")")
+          scheme = list(
+            type = "string",
+            enum = mcp_scheme_ids(),
+            description = "scheme id (default \"snp\")"
+          )
         )
       ),
       handler = function(args) {
@@ -442,7 +456,11 @@ mcp_tool_specs <- function() {
           pos = list(type = "integer", description = "locus position (1-based)"),
           ref = list(type = "string", description = "reference allele"),
           alt = list(type = "string", description = "alternate allele"),
-          schemes = list(type = "array", items = list(type = "string"), description = "scheme ids to try, in order")
+          schemes = list(
+            type = "array",
+            items = list(type = "string", enum = mcp_scheme_ids(design = TRUE)),
+            description = "scheme ids to try, in order (one per registered designer; \"primer\" is excluded)"
+          )
         ),
         required = list("genome_path", "chrom", "pos", "ref", "alt")
       ),
@@ -554,7 +572,11 @@ mcp_tool_specs <- function() {
       inputSchema = list(
         type = "object",
         properties = list(
-          scheme = list(type = "string", description = "scheme id (default \"pcr\")")
+          scheme = list(
+            type = "string",
+            enum = mcp_scheme_ids(),
+            description = "scheme id (default \"pcr\")"
+          )
         )
       ),
       handler = function(args) {
@@ -773,7 +795,11 @@ mcp_tool_specs <- function() {
       inputSchema = list(
         type = "object",
         properties = list(
-          schemes = list(type = "array", items = list(type = "string"), description = "scheme ids to order")
+          schemes = list(
+            type = "array",
+            items = list(type = "string", enum = mcp_scheme_ids(design = TRUE)),
+            description = "scheme ids to order (one per registered designer; \"primer\" is excluded)"
+          )
         )
       ),
       handler = function(args) rescue_strategy(mcp_chr(args, "schemes"))
@@ -787,7 +813,11 @@ mcp_tool_specs <- function() {
       inputSchema = list(
         type = "object",
         properties = list(
-          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          scheme = list(
+            type = "string",
+            enum = mcp_scheme_ids(),
+            description = "scheme id (default \"snp\")"
+          ),
           evidence = list(type = "boolean", description = "include the evidence rung")
         )
       ),
@@ -846,6 +876,22 @@ mcp_tool_specs <- function() {
         capabilities(marker_engines()[[mcp_arg(args, "engine") %||% "thermo"]])
       }
     ),
+    design_chemistries = list(
+      title = "Chemistries available for design",
+      description = paste(
+        "The selection object a design call accepts: the per-locus ladder",
+        "(`per_locus`, the valid `scheme`/`schemes` ids), every registered scheme,",
+        "and the relative costs used to order the ladder."
+      ),
+      inputSchema = list(type = "object", properties = list()),
+      handler = function(args) {
+        list(
+          per_locus = rescue_strategy()$scheme,
+          all = marker_schemes()$scheme,
+          costs = marker_costs()
+        )
+      }
+    ),
     design_scheme = list(
       title = "Design a marker with one scheme",
       description = paste(
@@ -863,7 +909,11 @@ mcp_tool_specs <- function() {
           pos = list(type = "integer", description = "locus position (1-based)"),
           ref = list(type = "string", description = "reference allele"),
           alt = list(type = "string", description = "alternate allele"),
-          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          scheme = list(
+            type = "string",
+            enum = mcp_scheme_ids(design = TRUE),
+            description = "scheme id (default \"snp\"; \"primer\" has no locus-level designer)"
+          ),
           params = list(type = "object", description = "extra arguments for the scheme's designer")
         ),
         required = list("genome_path", "chrom", "pos", "ref", "alt")
@@ -899,7 +949,11 @@ mcp_tool_specs <- function() {
           chrom = list(type = "string", description = "region chromosome"),
           start = list(type = "integer", description = "region start (1-based)"),
           end = list(type = "integer", description = "region end (inclusive)"),
-          scheme = list(type = "string", description = "scheme id (default \"snp\")"),
+          scheme = list(
+            type = "string",
+            enum = mcp_scheme_ids(design = TRUE),
+            description = "scheme id (default \"snp\"; \"primer\" has no locus-level designer)"
+          ),
           flank = list(type = "integer", description = "window around each locus")
         ),
         required = list("genome_path", "variants_path")

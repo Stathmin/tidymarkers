@@ -100,6 +100,7 @@ test_that("every registered tool is wired and returns content", {
     screen_snp_targets = list(variants_path = vcf, genome_path = genome),
     engine_status = list(),
     engine_capabilities = list(engine = "thermo"),
+    design_chemistries = list(),
     design_scheme = list(
       genome_path = genome, chrom = "Chr1", pos = 81L,
       ref = "A", alt = "G", scheme = "caps", params = list(flank = 40L)
@@ -124,6 +125,10 @@ test_that("every inputSchema is well formed", {
   specs <- env$mcp_tool_specs()
   expect_gt(length(specs), 30L)
 
+  # Chemistries the package registers: the enum comes from marker_schemes(), not a
+  # hand-written vector, so the schema cannot drift from the registry.
+  marker_schemes <- env$marker_schemes
+
   for (nm in names(specs)) {
     spec <- specs[[nm]]
     expect_true(nzchar(spec$title), info = nm)
@@ -139,7 +144,41 @@ test_that("every inputSchema is well formed", {
     for (p in props) {
       expect_false(is.null(schema$properties[[p]]$type), info = paste(nm, p))
     }
+    # An enum (on the property or on an array's items) holds no duplicates.
+    for (p in props) {
+      prop <- schema$properties[[p]]
+      enum <- if (is.null(prop$enum)) prop$items$enum else prop$enum
+      if (!is.null(enum)) {
+        expect_false(anyDuplicated(enum) > 0L, info = paste(nm, p))
+      }
+    }
   }
+
+  # Every scheme-carrying property names real schemes.  The set comes from
+  # marker_schemes(), so a hand-written enum cannot drift from the registry.
+  scheme_props <- list(
+    marker_criteria = "scheme", scheme_conditions = "scheme",
+    marker_decision_text = "scheme", design_scheme = "scheme",
+    design_markers = "scheme", design_marker = "schemes",
+    rescue_strategy = "schemes"
+  )
+  for (tool in names(scheme_props)) {
+    prop <- specs[[tool]]$inputSchema$properties[[scheme_props[[tool]]]]
+    enum <- if (is.null(prop$enum)) prop$items$enum else prop$enum
+    expect_true(all(enum %in% marker_schemes()$scheme), info = tool)
+  }
+
+  # A design enum advertises every per-locus designer: `rescue_strategy()$scheme`
+  # drops `primer` (C13) and `duplex` (two loci), neither of which the
+  # single-locus design tools can take.
+  designable <- rescue_strategy()$scheme
+  expect_setequal(specs$design_scheme$inputSchema$properties$scheme$enum, designable)
+  expect_setequal(
+    specs$design_marker$inputSchema$properties$schemes$items$enum,
+    designable
+  )
+  expect_false("primer" %in% designable)
+  expect_false("duplex" %in% designable)
 })
 
 test_that("genome tools answer from the mounted files", {

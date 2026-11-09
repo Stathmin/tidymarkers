@@ -737,7 +737,7 @@ merge без gate; удаление worktree до merge; новые worktree о�
       `pak` (бинарники PPM), `R CMD INSTALL`, `ENTRYPOINT` — stdio MCP.
       проверка: образ собран (`docker build -f docker/Dockerfile`, ~5.5 мин) и
       smoke в контейнере — `initialize`/`tools/call` вернули Tm 58.6 и KASP-микс.
-- [x] **YP2.** MCP-слой: `inst/mcp/tools.R` — реестр 37 инструментов,
+- [x] **YP2.** MCP-слой: `inst/mcp/tools.R` — реестр 38 инструментов,
       покрывающий рабочий процесс виньеток: вход (`genome_info`, `read_variants`,
       `mask_positions`, `fasta`-пути), классификация (`variant_type`,
       `marker_site_class`), термодинамика/QC (`primer_tm`, `primer_thermo`,
@@ -747,11 +747,13 @@ merge без gate; удаление worktree до merge; новые worktree о�
       `screen_snp_targets`), проектирование (`design_marker`, `design_scheme`,
       `design_markers` — по `genome_path`/`variants_path`), решение
       (`marker_criteria`, `marker_decision_text`, `rescue_strategy`,
-      `engine_status`, `engine_capabilities`) и конфигурация схем. Не входят
+      `engine_status`, `engine_capabilities`, `design_chemistries`) и конфигурация схем.
+      Схемные аргументы несут `enum` из `marker_schemes()`/`rescue_strategy()`
+      (проектирование — 18: без `primer` и `duplex`). Не входят
       сознательно: графики и объекты `marker_plan()`/`marker_solve()` (не JSON),
       писатели (`marker_export`/`write_marker_results` — не пишут вне монтирования)
       и Ensembl-запросы (сеть). `inst/mcp/server.R` — stdio JSON-RPC 2.0.
-      проверка: `test-mcp.R` вызывает каждый tool (419 pass) и валидирует
+      проверка: `test-mcp.R` вызывает каждый tool (448 pass) и валидирует
       каждый `inputSchema` (`required` ⊆ `properties`, у каждого своя `type`).
 - [x] **YP3.** `marker_artefact()`/`marker_replay()` — манифест, провенанс,
       переигровка вердикта.

@@ -12,7 +12,7 @@
   `docker/entrypoint.sh`, `.dockerignore`; только `Imports` через `pak`
   (бинарники PPM), затем `R CMD INSTALL`. `ENTRYPOINT` запускает stdio
   MCP-сервер. Образ собран (~5.5 мин), smoke в контейнере прошёл.
-- **`YP2` MCP-слой.** `inst/mcp/tools.R` — реестр 37 инструментов по
+- **`YP2` MCP-слой.** `inst/mcp/tools.R` — реестр 38 инструментов по
   рабочему процессу виньеток: вход (`genome_info`, `read_variants`,
   `mask_positions`), классификация (`variant_type`, `marker_site_class`),
   термодинамика/QC (`primer_tm`/`primer_thermo`/`oligo_dg`/`terminal_dg`/
@@ -22,11 +22,13 @@
   проектирование (`design_marker`, `design_scheme`, `design_markers` — по
   `genome_path`/`variants_path`) и решение (`marker_criteria`,
   `marker_decision_text`, `rescue_strategy`, `engine_status`,
-  `engine_capabilities`). Графики, объекты `marker_plan()`/`marker_solve()`,
+  `engine_capabilities`, `design_chemistries`). Графики, объекты `marker_plan()`/`marker_solve()`,
   писатели и Ensembl-запросы исключены сознательно (не JSON / не пишут вне
-  монтирования / сеть). `inst/mcp/server.R` — stdio JSON-RPC 2.0.
-  `test-mcp.R` вызывает каждый tool и валидирует каждый `inputSchema`
-  (419 pass).
+  монтирования / сеть). Схемные аргументы несут `enum`, посчитанный из
+  реестра (`rescue_strategy()$scheme` для проектирования — 18, без `primer`
+  и `duplex`); дрейф от реестра невозможен. `inst/mcp/server.R` — stdio
+  JSON-RPC 2.0. `test-mcp.R` вызывает каждый tool и валидирует каждый
+  `inputSchema` (448 pass).
 - **`dimer_thermo()` без имён.** Неименованный набор праймеров теперь
   метится `p1`, `p2`, ... как в `primer_set_compatibility()`, а не падает на
   `Column a not found`.
