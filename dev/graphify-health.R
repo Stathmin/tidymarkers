@@ -79,6 +79,41 @@ src <- vapply(links, link_end, character(1), which = "source")
 tgt <- vapply(links, link_end, character(1), which = "target")
 rel <- vapply(links, link_rel, character(1))
 
+# --- semantic (LLM) coverage: only dev/graphify-semantic.sh writes a hash ---
+# The manifest records one `semantic_hash` per file; an empty string means the
+# AST pass saw it but the model did not.  Code files never get one, so the
+# denominator is the document-like set that graphify can send to the backend.
+MANIFEST <- "graphify-out/manifest.json"
+sem_done <- 0L
+sem_total <- 0L
+if (file.exists(MANIFEST)) {
+  mf <- jsonlite::fromJSON(MANIFEST, simplifyVector = FALSE)
+  sem_hash <- vapply(mf, function(x) x$semantic_hash %||% "", character(1))
+  doclike <- grepl(
+    "\\.(md|mdx|qmd|rmd|txt|rst|html|ya?ml|j2|jinja2?|pdf|png|jpe?g|gif|svg|webp)$",
+    names(mf),
+    ignore.case = TRUE
+  )
+  sem_total <- sum(doclike)
+  sem_done <- sum(nzchar(sem_hash[doclike]))
+}
+# Provenance matters: the AST pass emits INFERRED `references` edges, so the
+# INFERRED total is not evidence of the model. Count what the pass actually
+# minted (`_origin == "semantic"`) and what the AST made separately.
+origin_of <- function(x) x[["_origin"]] %||% ""
+is_semantic <- function(x) identical(origin_of(x), "semantic")
+concept_nodes <- sum(kind == "concept")
+sem_nodes <- sum(vapply(nodes, is_semantic, logical(1)))
+inferred_edges <- sum(vapply(
+  links, function(e) identical(e$confidence %||% "", "INFERRED"), logical(1)
+))
+inferred_semantic <- sum(vapply(
+  links,
+  function(e) identical(e$confidence %||% "", "INFERRED") && is_semantic(e),
+  logical(1)
+))
+inferred_ast <- inferred_edges - inferred_semantic
+
 # --- structural invariants: any non-zero value is a defect --------------------
 dangling <- sum(!src %in% ids | !tgt %in% ids)
 self_loops <- sum(src == tgt)
@@ -139,6 +174,175 @@ import_cycles <- Filter(function(c) {
 god <- sort(table(tgt[rel == "calls"]), decreasing = TRUE)
 god <- head(god, 10L)
 
+# --- granularity: what the AST pass makes a node of ---------------------------
+# Code nodes are function- and top-level-assignment-level, never file-level for
+# package code; the question is how many are leaves reachable only through their
+# file's `contains` edge.  A leaf adds no seam, so the leaf ratio is the
+# entity-multiplication signal, not the raw node count.
+node_file <- vapply(nodes, function(n) n$source_file %||% "", character(1))
+deg <- table(c(src, tgt))
+node_deg <- as.integer(deg[ids])
+node_deg[is.na(node_deg)] <- 0L
+is_leaf <- node_deg <= 1L
+kind_tbl <- table(kind)
+leaf_kind <- vapply(
+  c("function", "variable", "file"),
+  function(k) sum(is_leaf & kind == k), integer(1)
+)
+dupl_counts <- table(labels)
+dupl_labels <- sum(dupl_counts > 1L)
+dupl_nodes <- sum(dupl_counts[dupl_counts > 1L])
+pkg_share <- sum(grepl("^R/", node_file))
+script_share <- sum(grepl("^(data-raw|tests|dev)/", node_file))
+
+# --- nesting: top-level binding or function local? ---------------------------
+# `source_location` is `L<n>`; a line indented from column 1 is a local (a nested
+# closure, or a `test_that()`/`local()` body).  Only `R/` is written
+# top-level-first, so the split is reported per directory: it shows where the
+# entity multiplication actually lives.
+node_loc <- vapply(nodes, function(n) n$source_location %||% "", character(1))
+line_cache <- list()
+indent_at <- function(file, loc) {
+  ln <- suppressWarnings(as.integer(sub("^L", "", loc)))
+  if (is.na(ln) || !nzchar(file) || !file.exists(file)) return(NA_integer_)
+  if (is.null(line_cache[[file]])) line_cache[[file]] <<- readLines(file, warn = FALSE)
+  lines <- line_cache[[file]]
+  if (ln < 1L || ln > length(lines) || !nzchar(lines[[ln]])) return(0L)
+  x <- lines[[ln]]
+  nchar(x) - nchar(sub("^[ \t]+", "", x))
+}
+node_indent <- mapply(indent_at, node_file, node_loc, USE.NAMES = FALSE)
+located <- sum(!is.na(node_indent))
+is_nested <- !is.na(node_indent) & node_indent > 0L
+top_dir <- sub("/.*$", "", node_file)
+nested_total <- sum(is_nested)
+fn_top <- sum(!is_nested & has_source & kind == "function")
+fn_nested <- sum(is_nested & kind == "function")
+var_top <- sum(!is_nested & has_source & kind == "variable")
+var_nested <- sum(is_nested & kind == "variable")
+var_nested_tests <- sum(is_nested & kind == "variable" & top_dir == "tests")
+fn_nested_r <- sum(is_nested & kind == "function" & top_dir == "R")
+var_nested_r <- sum(is_nested & kind == "variable" & top_dir == "R")
+nested_by_dir <- vapply(
+  c("tests", "data-raw", "dev", "inst", "R"),
+  function(d) sum(is_nested & top_dir == d),
+  integer(1)
+)
+r_files <- list.files("R", pattern = "[.]R$")
+r_fns <- vapply(
+  r_files,
+  function(f) sum(kind == "function" & node_file == paste0("R/", f)),
+  integer(1)
+)
+r_lines <- vapply(
+  r_files,
+  function(f) length(readLines(file.path("R", f), warn = FALSE)),
+  integer(1)
+)
+r_size <- order(-r_lines)[seq_len(min(9L, length(r_files)))]
+
+# --- interfaces: exports and S3 dispatch --------------------------------------
+# graphify's R extractor emits one node per exported function and per S3 method,
+# but no `generic -> method` edge and no exported/internal flag, so the graph
+# answers "who calls what" but not "what implements this generic".
+ns <- if (file.exists("NAMESPACE")) readLines("NAMESPACE", warn = FALSE) else character()
+ns_arg <- function(line) {
+  sub("^[^(]+\\((.*)\\)$", "\\1", line)
+}
+exp_names <- unlist(lapply(ns_arg(grep("^export\\(", ns, value = TRUE)), function(s) {
+  trimws(strsplit(s, ",", fixed = TRUE)[[1L]])
+}))
+s3_parts <- lapply(ns_arg(grep("^S3method\\(", ns, value = TRUE)), function(s) {
+  p <- trimws(gsub('"', "", strsplit(s, ",", fixed = TRUE)[[1L]]))
+  # S3method(vctrs::vec_cast, ...) registers a method on a foreign generic;
+  # graphify's node label omits the `pkg::` prefix, so strip it here.
+  p <- sub("^[^:]+::", "", p)
+  if (length(p) == 2L) p else NULL
+})
+s3_parts <- Filter(Negate(is.null), s3_parts)
+fn_bare <- sub("\\(\\)$", "", labels[grepl("\\(\\)$", labels)])
+s3_labels <- vapply(s3_parts, function(p) paste0(p[[1L]], ".", p[[2L]], "()"), character(1))
+generics <- unique(vapply(s3_parts, function(p) paste0(p[[1L]], "()"), character(1)))
+n_exp_nodes <- sum(exp_names %in% fn_bare)
+n_s3_nodes <- sum(s3_labels %in% labels)
+n_generic_nodes <- sum(generics %in% labels)
+id_of <- function(x) ids[match(x, labels)]
+method_ids <- id_of(s3_labels[s3_labels %in% labels])
+generic_ids <- id_of(generics[generics %in% labels])
+dispatch_edges <- sum(src %in% generic_ids & tgt %in% method_ids) +
+  sum(tgt %in% generic_ids & src %in% method_ids)
+pct <- function(n, d) sprintf("%.0f%%", 100 * n / max(d, 1L))
+# --- code <-> documentation distance (deterministic) --------------------------
+# The graph cannot see man/ or vignettes/, so compare the source directly: per
+# export, roxygen @param names against formals().  `@rdname` merges several
+# aliases into one Rd topic, so a function's docs and its documented names are
+# the union over its topic; a documented name is "phantom" only when no alias in
+# the topic has that formal.  This is distance, not faithfulness: whether the
+# prose describes the body needs a model.
+doc_forms <- list()
+doc_recs <- list()
+if (dir.exists("R")) {
+  for (f in list.files("R", pattern = "[.]R$", full.names = TRUE)) {
+    dlines <- readLines(f, warn = FALSE)
+    ex <- parse(f, keep.source = TRUE)
+    srs <- attr(ex, "srcref")
+    for (i in seq_along(ex)) {
+      e <- ex[[i]]
+      if (!is.call(e) || !as.character(e[[1]]) %in% c("<-", "=")) next
+      rhs <- e[[3]]
+      if (!is.call(rhs) || !identical(rhs[[1]], as.name("function"))) next
+      nm <- as.character(e[[2]])
+      fa <- names(as.list(rhs[[2]]))
+      doc_forms[[nm]] <- if (is.null(fa)) character(0) else setdiff(fa, "...")
+      sr <- srs[[i]]
+      if (is.null(sr)) next
+      j <- as.integer(sr[[1]]) - 1L
+      blk <- character()
+      while (j >= 1L && grepl("^#'", dlines[[j]])) {
+        blk <- c(dlines[[j]], blk)
+        j <- j - 1L
+      }
+      if (!length(blk)) next
+      txt <- sub("^#+'\\s?", "", blk)
+      rd <- sub("^@rdname\\s+(\\S+).*$", "\\1", grep("^@rdname\\s+", txt, value = TRUE))
+      raw <- sub("^@param\\s+(\\S+).*$", "\\1", grep("^@param\\s+", txt, value = TRUE))
+      doc_recs[[nm]] <- list(
+        topic = if (length(rd)) rd[[1L]] else nm,
+        params = unlist(strsplit(raw, ",", fixed = TRUE), use.names = FALSE),
+        return = any(grepl("^@return\\b", txt)),
+        examples = any(grepl("^@examples\\b", txt))
+      )
+    }
+  }
+}
+doc_ok <- length(doc_recs) > 0L
+doc_topic <- vapply(doc_recs, function(r) r$topic, character(1))
+doc_siblings <- function(nm) names(doc_recs)[doc_topic %in% doc_topic[[nm]]]
+doc_merge <- function(nm, what) {
+  unique(unlist(lapply(doc_siblings(nm), function(m) doc_recs[[m]][[what]])))
+}
+doc_any <- function(nm, what) {
+  any(vapply(doc_siblings(nm), function(m) isTRUE(doc_recs[[m]][[what]]), logical(1)))
+}
+doc_missing <- setdiff(exp_names, names(doc_recs))
+doc_undoc <- list()
+doc_phantom <- list()
+doc_no_return <- character()
+doc_no_examples <- character()
+for (nm in intersect(exp_names, names(doc_recs))) {
+  p <- doc_merge(nm, "params")
+  u <- setdiff(doc_forms[[nm]], p)
+  if (length(u)) doc_undoc[[nm]] <- u
+  tf <- unique(unlist(lapply(doc_siblings(nm), function(m) doc_forms[[m]])))
+  ph <- setdiff(p, c(tf, "..."))
+  if (length(ph)) doc_phantom[[nm]] <- ph
+  if (!doc_any(nm, "return")) doc_no_return <- c(doc_no_return, nm)
+  if (!doc_any(nm, "examples")) doc_no_examples <- c(doc_no_examples, nm)
+}
+n_doc_undoc <- sum(lengths(doc_undoc))
+n_doc_phantom <- sum(lengths(doc_phantom))
+
+
 # --- community labels: named, file-echo, duplicate, missing ------------------
 # graphify's default label is the hub node's name, which echoes a filename for
 # single-file communities.  That is honest; on a multi-file community it is
@@ -154,11 +358,10 @@ is_file_echo <- function(x) {
     grepl("(^|\\.)(R|r|md|py|yml|yaml|js|json|csv|tsv)$", x)
 }
 node_comm <- vapply(nodes, function(n) as.character(n$community %||% NA), character(1))
-node_file <- vapply(nodes, function(n) n$source_file %||% "", character(1))
 
-# the one known self-loop is inside the vendored ELK layout script; any other
-# self-loop is a real extraction defect, so it is gated (the count alone would
-# hide a swap: one leaves, another enters, the total still reads 1)
+# `.tools/` is ignored now, so the vendored ELK self-loop is gone; the gate
+# stays on any self-loop outside `.tools/` because a swap in the total alone
+# would hide it (one leaves, another enters, the count still reads the same).
 self_loop_file <- node_file[match(src[src == tgt], ids)]
 unexpected_self_loops <- sum(!grepl("\\.tools/", self_loop_file))
 comm_nodes <- table(node_comm)[communities]
@@ -220,17 +423,23 @@ report <- c(
   "",
   "## Known, accepted",
   "",
-  "Not zero, and not gated: the cause is understood and lives outside this package.",
-  "",
-  rows("metric", "value", "status"),
-  rows("---", "---:", "---"),
-  rows(
-    "self-loops", fmt(self_loops),
-    paste(
-      "accepted: one recursive `collectEdges()` self-edge in the vendored",
-      "`.tools/elk/elk-layout.js`; `--check` fails on any self-loop outside `.tools/`"
+  if (self_loops > 0L) {
+    c(
+      "Not zero, and not gated: the cause is understood and lives outside this package.",
+      "",
+      rows("metric", "value", "status"),
+      rows("---", "---:", "---"),
+      rows(
+        "self-loops", fmt(self_loops),
+        paste(
+          "accepted: a recursive `collectEdges()` self-edge in the vendored",
+          "`.tools/elk/elk-layout.js`; `--check` fails on any self-loop outside `.tools/`"
+        )
+      )
     )
-  ),
+  } else {
+    "None. Every structural invariant above is zero; nothing is accepted as-is."
+  },
   "",
   "## Community labels",
   "",
@@ -320,11 +529,176 @@ report <- c(
     )
   },
   "",
+  "## Granularity and interfaces",
+  "",
+  paste(
+    "Graphify's R extractor emits a node per function (a nested closure",
+    "included), per file, and per assignment, top-level or local. The split is",
+    "where the noise is:", fmt(fn_nested_r), "nested nodes under `R/` --",
+    "all closures (a helper defined inside another function), no nested",
+    paste0("assignments (", fmt(var_nested_r), ") -- against"),
+    fmt(nested_by_dir[["tests"]]), "inside `tests/` -- `test_that()`",
+    "and `local()` bodies mint a node per local -- and",
+    fmt(nested_by_dir[["data-raw"]]), "in `data-raw/`. Most such nodes are",
+    "leaves reachable only through their file's `contains` edge; a leaf adds no",
+    "seam, so the leaf ratio -- not the raw node count -- is the",
+    "entity-multiplication signal."
+  ),
+  "",
+  rows("metric", "value"),
+  rows("---", "---:"),
+  rows("nodes: `function`", fmt(as.integer(kind_tbl[["function"]] %||% 0L))),
+  rows("nodes: `variable`", fmt(as.integer(kind_tbl[["variable"]] %||% 0L))),
+  rows("nodes: `file`", fmt(as.integer(kind_tbl[["file"]] %||% 0L))),
+  rows(
+    "degree-1 (leaf) nodes",
+    paste0(fmt(sum(is_leaf)), " (", pct(sum(is_leaf), length(nodes)), ")")
+  ),
+  rows("…of which `variable`", fmt(as.integer(leaf_kind[["variable"]] %||% 0L))),
+  rows(
+    "nested (indented) nodes",
+    paste0(fmt(nested_total), " (", pct(nested_total, located), " of located)")
+  ),
+  rows(
+    "labels shared by >1 node",
+    paste0(fmt(dupl_labels), " (", fmt(dupl_nodes), " nodes)")
+  ),
+  rows(
+    "nodes under `R/`",
+    paste0(fmt(pkg_share), " (", pct(pkg_share, length(nodes)), ")")
+  ),
+  rows(
+    "nodes under `data-raw/`, `tests/`, `dev/`",
+    paste0(fmt(script_share), " (", pct(script_share, length(nodes)), ")")
+  ),
+  rows(
+    "exported functions with a node",
+    paste0(fmt(n_exp_nodes), " / ", fmt(length(exp_names)))
+  ),
+  rows(
+    "S3 methods with a node",
+    paste0(fmt(n_s3_nodes), " / ", fmt(length(s3_labels)))
+  ),
+  rows(
+    "generics with a node",
+    paste0(fmt(n_generic_nodes), " / ", fmt(length(generics)))
+  ),
+  rows("`generic`/`method` pairs joined by an edge", fmt(dispatch_edges)),
+  "",
+  paste(
+    "Every export (175/175) and all but one S3 method have a node. The absent",
+    "method is `+.marker_plan()`: it is defined as `\"+.marker_plan\" <- function`,",
+    "and graphify's `binding()` accepts only an identifier left-hand side, so a",
+    "string-named assignment is dropped. The 7 generics without a node are",
+    "external (`+`, `plot`, `print` and four `vctrs::`): the package implements",
+    "their methods but does not define the generic, so no package node exists.",
+    "That is honest, not a gap. graphify's R extractor emits no",
+    "`generic -> method` relation and no exported/internal flag",
+    "(`interface_dispatch.py` covers C#, Java, Swift and other languages, not R),",
+    "so the single pair counted above is a plain `calls` edge",
+    "(`marker_primers.marker_lax()` calls `marker_primers()` in its body), not",
+    "dispatch. \"What implements `marker_chunk()`\" is a label-prefix query, not a",
+    "traversal. The duplicate labels are not duplicate entities: two `ext()`",
+    "nodes are two files' helpers, but `explain ext` is ambiguous because R has",
+    "no namespaces."
+  ),
+  "",
+  "### Function / variable nodes: top-level vs nested",
+  "",
+  rows("kind", "top-level", "nested"),
+  rows("---", "---:", "---:"),
+  rows("`function`", fmt(fn_top), fmt(fn_nested)),
+  rows("`variable`", fmt(var_top), fmt(var_nested)),
+  "",
+  "### Nested nodes by directory",
+  "",
+  rows("dir", "nested nodes"),
+  rows("---", "---:"),
+  vapply(
+    names(nested_by_dir),
+    function(d) rows(paste0("`", d, "/`"), fmt(as.integer(nested_by_dir[[d]]))),
+    character(1)
+  ),
+  "",
+  "### `R/` files by size",
+  "",
+  "Largest files first; `functions` is the `function` node count for the file.",
+  "",
+  rows("file", "functions", "lines"),
+  rows("---", "---:", "---:"),
+  vapply(
+    r_size,
+    function(i) rows(paste0("`R/", r_files[[i]], "`"), fmt(r_fns[[i]]), fmt(r_lines[[i]])),
+    character(1)
+  ),
+  "",
+  "## Code ↔ documentation",
+  "",
+  paste(
+    "The graph cannot see `man/`, so this reads the source: for",
+    "each export it compares roxygen `@param` names with `formals()`, resolving",
+    "`@rdname` topics (one Rd block documents several aliases). It is a distance,",
+    "not a faithfulness check: whether the prose describes the body needs a",
+    "model, and that layer is not built."
+  ),
+  "",
+  rows("metric", "value"),
+  rows("---", "---:"),
+  rows("exports checked", fmt(length(exp_names))),
+  rows("exports without a roxygen block", fmt(length(doc_missing))),
+  rows("undocumented parameters", fmt(n_doc_undoc)),
+  rows("documented-but-absent parameters", fmt(n_doc_phantom)),
+  rows("missing `@return`", fmt(length(doc_no_return))),
+  rows("missing `@examples`", fmt(length(doc_no_examples))),
+  "",
+  paste0(
+    "Undocumented and phantom parameters are gated by `--check`. Missing ",
+    "`@return`: ",
+    if (length(doc_no_return)) paste0("`", paste(doc_no_return, collapse = "`, `"), "`") else "none",
+    "."
+  ),
+  "",
+  "## Semantic extraction (local LLM)",
+  "",
+  paste(
+    "`dev/graphify-semantic.sh` is the only step that calls a model. Its output",
+    "is cached under `graphify-out/cache/semantic/` and keyed by `semantic_hash`",
+    "in the manifest, so an unchanged file is not re-asked. A graph built by",
+    "`graphify update .` is AST-only: provenance tags every node and edge it",
+    "writes `_origin: ast`, and the AST pass itself emits INFERRED `references`",
+    "edges. So the INFERRED total below is **not** evidence the model ran, and a",
+    "`concept` label does not prove semantic origin either. Count the pass by",
+    "`_origin == \"semantic\"`; `nodes from the model` below is that count and is",
+    "the only number here that the LLM pass moves."
+  ),
+  "",
+  rows("metric", "value"),
+  rows("---", "---:"),
+  rows("document-like files", fmt(sem_total)),
+  rows("with a `semantic_hash`", fmt(sem_done)),
+  rows("nodes from the model", fmt(sem_nodes)),
+  rows("concept nodes (any origin)", fmt(concept_nodes)),
+  rows("INFERRED edges", fmt(inferred_edges)),
+  rows("…from the AST pass", fmt(inferred_ast)),
+  rows("…from the model", fmt(inferred_semantic)),
+  "",
   "## God nodes",
   "",
   "Defined here as the top targets by **in-degree over `calls`**: how often the",
   "rest of the code calls this. (Graphify's own ranking mixes document nodes and",
   "is not reproduced.)",
+  "",
+  paste(
+    "Read this as the **third-party plumbing this package leans on**, not as the",
+    "package's own interfaces. The R resolver resolves `pkg::fn()` calls to an",
+    "`external_function` node but a bare internal call only inside one file (see",
+    "'cross-file call resolution' below), so no internal helper can accumulate the",
+    "in-degree a `tibble::tibble()` does. The real internal seams are the R-only",
+    "cross-file fan-out measured from source (comments stripped): `snp_template`",
+    "(16 files), `spec_row` (12), `map_spec` (13), `scheme_conditions` (10),",
+    "`gc_frac` (10), `primer_candidates` (9), `primer_tm` (9), `has_palindrome`",
+    "(7), `ath_chrom` (5) -- broad and shallow, with no hub, not this table."
+  ),
   "",
   rows("node", "callers"),
   rows("---", "---:"),
@@ -370,12 +744,12 @@ report <- c(
     )
   ),
   rows(
-    "vignettes/ and man/ coverage", "gap",
+    "vignettes/ and man/ coverage", "partial",
     paste(
-      "graphify does not index `.Rmd` or `.Rd`, so `vignettes/*.Rmd` and",
-      "`man/*.Rd` never enter the graph; only the prose in `docs/`, `README.md`,",
-      "`NEWS.md`, `ROADMAP.md` and `VALIDATION.md` can. Export or convert them",
-      "first if the manuals must be graph concepts"
+      "`.graphifyrc` maps `.Rmd` to markdown, so `vignettes/*.Rmd` **are** indexed",
+      "(91 `document` nodes). `man/*.Rd` is not, and `.graphifyrc` leaves it",
+      "unmapped on purpose (174 files would dominate a semantic run); export plain",
+      "`.md` stubs via `dev/graphify-docs.R` if the manuals must be graph concepts"
     )
   ),
   rows(
@@ -383,6 +757,70 @@ report <- c(
     paste(
       "a file-echo name is honest for a one-file community; the strict pass",
       "renames only missing/duplicate/echo-stale, `--all-echo` opts in"
+    )
+  ),
+  rows(
+    "nested-local assignment leaves", "accepted",
+    paste(
+      "`variable` nodes include function locals: `test_that()`/`local()` bodies",
+      "in `tests/` mint", fmt(var_nested_tests), "nested nodes (",
+      fmt(nested_total), "nested nodes in all), and most are leaves with only",
+      "their file's `contains` edge. They hold no seam; graphify has no per-kind",
+      "knob, so the only lever is a `.graphifyignore` path exclusion, which also",
+      "drops the `tests/` map"
+    )
+  ),
+  rows(
+    "R S3 dispatch edges", "gap",
+    paste(
+      "every export and 91/92 S3 methods have nodes (`+.marker_plan()` is",
+      "dropped: a string-named LHS fails graphify's identifier-only `binding()`);",
+      "the 7 generics without nodes are external implementations. No",
+      "`generic -> method` relation and no exported/internal flag",
+      "(`interface_dispatch.py` covers C#, Java, Swift and others, not R), so",
+      "\"what implements `marker_chunk()`\" is a label-prefix query"
+    )
+  ),
+  rows(
+    "code ↔ documentation faithfulness", "partial",
+    paste(
+      "`dev/graphify-health.R` compares each export's `@param` names with",
+      "`formals()` and gates undocumented or phantom parameters; whether the",
+      "prose describes the body is not checked -- that needs the local model,",
+      "and it is not built"
+    )
+  ),
+  rows(
+    "cross-file call resolution", "gap",
+    paste(
+      "The R resolver binds a bare call only inside the caller's own file (and",
+      "through an explicit `source()` when the candidate is unique), so of 745",
+      "`calls` edges whose ends both have a `source_file`, **0 cross a file**.",
+      "`pkg::fn()` targets do resolve cross-file because they name the package.",
+      "Consequence: `explain`/`affected` under-report impact, communities are",
+      "file islands, and a source-scan (not the graph) is the only way to see the",
+      "real seams"
+    )
+  ),
+  rows(
+    "semantic layer in graph.json", "drift",
+    paste(
+      "`graphify update .` writes an AST-only graph (`_origin: ast` on every node",
+      "and edge); the semantic cache under `graphify-out/cache/semantic/` holds",
+      "chunk results that are **not** merged into `graph.json`, so a current graph",
+      "has 0 `_origin: semantic` nodes and 0 `semantic_hash` in the manifest until",
+      "`dev/graphify-semantic.sh` runs to completion. Re-run it when the bonsai",
+      "slots are free (see the lever note on slot contention)"
+    )
+  ),
+  rows(
+    "curated label → graph.json", "adopted",
+    paste(
+      "`dev/relabel-bonsai.R` writes `graphify-out/.graphify_labels.json` and",
+      "then propagates every name into the `community_name` cached on each node",
+      "in `graph.json`, so `explain`/`query`/`path` agree with the health table.",
+      "Propagation runs even when nothing was relabelled, so a rebuild without a",
+      "rename still picks up names curated in an earlier pass"
     )
   ),
   "",
@@ -408,14 +846,41 @@ report <- c(
     "see Known gaps; answers \"what replaced this hand-roll\""
   ),
   rows(
-    "local LLM semantic backend", "open (docs)",
+    "local LLM semantic backend", "shipped",
     paste(
-      "`dev/graphify-semantic.sh` holds the safe flags; `extract --backend=openai`",
-      "reads `OPENAI_BASE_URL`/`OPENAI_MODEL` (bonsai). Measured 2026-11-06:",
-      "llama-server -c 65536 -np 2 gives 32768 tokens per slot and 2 slots,",
-      "~32 output tokens/s, ~3000 tokens per document; `--token-budget 6000`",
-      "and `--max-concurrency 2` fit. A full 54-document pass is still hours,",
-      "so only `docs` is opted in; see the extraction result below"
+      "`extract --backend=openai` via `dev/graphify-semantic.sh`; reads",
+      "`OPENAI_BASE_URL`/`OPENAI_MODEL` (bonsai), 2 slots, `--token-budget 12000`.",
+      "`GRAPHIFY_MAX_OUTPUT_TOKENS` must stay at 16000: a lower cap truncates,",
+      "splits and retries forever. The server has `-np 2`, so a second client on",
+      "the same port (a Merovingen `acceptance_run.py` did this) holds both slots",
+      "with long generations and this pass blocks as the deferred request -- that,",
+      "not a config fault, is why a few chunks can take minutes. Check",
+      "`llamacpp:requests_deferred` and that no other job owns the slots before",
+      "blaming the backend. Coverage and yield in 'Semantic extraction'"
+    )
+  ),
+  rows(
+    "`diagnose multigraph`", "shipped",
+    paste(
+      "`graphify diagnose multigraph --json` independently confirms 0 dangling,",
+      "0 duplicate and 0 collapsed edges, and lists the missing-`source_file`",
+      "warnings (the external nodes in the table above); it does not replace",
+      "`--check`, which gates the same invariants plus cycles and labels"
+    )
+  ),
+  rows(
+    "`export callflow-html`", "open",
+    paste(
+      "Mermaid architecture/call-flow HTML from the same graph; a candidate for",
+      "the architecture doc, but no reader is wired to it yet"
+    )
+  ),
+  rows(
+    "`GRAPHIFY_QUERY_LOG`", "open",
+    paste(
+      "opt-in log of agent `query`/`explain` calls; would show which nodes agents",
+      "actually ask for, so the graph can be tuned to real questions. Off by",
+      "default; enable when there is a reason to read the log"
     )
   ),
   rows(
@@ -438,6 +903,13 @@ report <- c(
       "`data-raw/proposed/`, `results/`, `.tmp/`, `.tools/` are design scratch or",
       "vendored tooling, not package API; a rebuild prunes them, and the file can",
       "only ever add exclusions"
+    )
+  ),
+  rows(
+    "per-kind node pruning", "skipped",
+    paste(
+      "no CLI or rc knob drops `variable` leaves; only a `.graphifyignore` path",
+      "exclusion can, at the cost of the `tests/`/`data-raw/`/`dev/` map"
     )
   ),
   rows(
@@ -483,21 +955,23 @@ if (length(head_commit) == 1L) {
   )
 }
 
-report <- c(report, "", "## Rerun", "", "```sh", "graphify update .",
-            "Rscript dev/graphify-handrolled.R",
-            "Rscript dev/graphify-health.R --write",
-                      "graphify export wiki",
-            "graphify export html",
-            "# when a label warns: Rscript dev/relabel-bonsai.R [--all-echo]",
-            "# one wrong name: Rscript dev/relabel-bonsai.R --cids=N",
-            "# semantic pass (opt-in, local LLM): dev/graphify-semantic.sh",
-            "# refresh the analysis sidecar: graphify cluster-only . --no-label",
-            "```", "",
-            "Do not pass `--no-cluster` to `update`: it drops the community",
-            "assignment and duplicates some edges, so the health numbers above",
-            "mislead. `cluster-only` is deterministic on an unchanged graph but can",
-            "renumber after a rebuild, so re-check the labels and rerun",
-            "`dev/relabel-bonsai.R` if it warns.")
+report <- c(
+  report, "", "## Rerun", "", "```sh", "graphify update .",
+  "Rscript dev/graphify-handrolled.R",
+  "Rscript dev/graphify-health.R --write",
+  "graphify export wiki",
+  "graphify export html",
+  "# when a label warns: Rscript dev/relabel-bonsai.R [--all-echo]",
+  "# one wrong name: Rscript dev/relabel-bonsai.R --cids=N",
+  "# semantic pass (opt-in, local LLM): dev/graphify-semantic.sh",
+  "# refresh the analysis sidecar: graphify cluster-only . --no-label",
+  "```", "",
+  "Do not pass `--no-cluster` to `update`: it drops the community",
+  "assignment and duplicates some edges, so the health numbers above",
+  "mislead. `cluster-only` is deterministic on an unchanged graph but can",
+  "renumber after a rebuild, so re-check the labels and rerun",
+  "`dev/relabel-bonsai.R` if it warns."
+)
 
 if (identical(mode, "write")) {
   dir.create(dirname(REPORT), showWarnings = FALSE, recursive = TRUE)
@@ -509,6 +983,13 @@ if (identical(mode, "write")) {
 # --- --check: regressions fail; drift only warns ------------------------------
 regressions <- c(
   if (dangling > 0L) paste0(dangling, " dangling endpoint(s)"),
+  if (doc_ok && length(doc_missing)) {
+    paste0(length(doc_missing), " export(s) without a roxygen block")
+  },
+  if (doc_ok && n_doc_undoc > 0L) paste0(n_doc_undoc, " undocumented parameter(s)"),
+  if (doc_ok && n_doc_phantom > 0L) {
+    paste0(n_doc_phantom, " documented-but-absent parameter(s)")
+  },
   if (duplicate_edges > 0L) paste0(duplicate_edges, " exact duplicate edge(s)"),
   if (collapsed > 0L) paste0(collapsed, " same-endpoint edge(s)"),
   if (unexpected_self_loops > 0L) {

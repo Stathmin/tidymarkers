@@ -7,6 +7,7 @@
 ^vignettes/figures/.*[.]png$
 ^graphify-out$
 ^\.graphifyignore$
+^\.graphifyrc$
 ^_pkgdown\.yml$
 ^\.lintr$
 ^.*\.Rcheck$

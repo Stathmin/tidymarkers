@@ -20,6 +20,10 @@
 #    OPENAI_MODEL    (default Ternary-Bonsai-2-27B-tight)
 #    OPENAI_API_KEY  (default "local")
 #
+#  Thinking is disabled in the request (enable_thinking=false and
+#  reasoning_effort=low). This server ignores graphify's {"thinking":{...}}
+#  shape but honours these two, which keeps the answer to one-line JSON.
+#
 #  Writes `.graphify_labels.json` in place at the end only, and never touches
 #  `.graphify_labels.json.sig` (membership-based; editing it renames hubs).
 #
@@ -203,7 +207,11 @@ ask <- function(cids, distinct = FALSE, avoid = character()) {
       list(role = "user", content = jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null"))
     ),
     temperature = 0,
-    max_tokens = 64L + 24L * length(cids)
+    max_tokens = 64L + 24L * length(cids),
+    # measured on this llama.cpp build: the {"thinking":...} shape is ignored,
+    # these two together keep output to a single JSON object
+    chat_template_kwargs = list(enable_thinking = FALSE),
+    reasoning_effort = "low"
   )
   h <- curl::new_handle()
   curl::handle_setopt(
@@ -362,11 +370,31 @@ if (length(dup_rej)) {
 }
 
 kept <- setdiff(as.character(targets), names(final))
+
+# .graphify_labels.json is only the sidecar; explain/query read
+# `community_name` cached on each node, which keeps the pre-curation hub name
+# otherwise.  Run on every path, including "nothing to rename", so a graph
+# rebuilt without a relabel still picks up names curated in an earlier pass.
+propagate <- function() {
+  if (!file.exists(GRAPH)) return(invisible())
+  g <- jsonlite::fromJSON(GRAPH, simplifyVector = FALSE)
+  for (i in seq_along(g$nodes)) {
+    cid <- as.character(g$nodes[[i]]$community %||% NA)
+    nm <- labels[[cid]]
+    if (!is.na(cid) && !is.null(nm) && nzchar(nm)) {
+      g$nodes[[i]]$community_name <- nm
+    }
+  }
+  jsonlite::write_json(g, GRAPH, auto_unbox = TRUE, null = "null", pretty = FALSE)
+  invisible()
+}
+
 if (!length(final)) {
   message("no label accepted; nothing written")
   for (cid in names(rejected)) {
     cat(sprintf("  %3s  rejected %s: %s\n", cid, rejected[[cid]]$why, rejected[[cid]]$name))
   }
+  propagate()
   quit(status = 0L)
 }
 
@@ -377,6 +405,7 @@ for (cid in names(final)) {
 }
 
 jsonlite::write_json(as.list(labels), LABELS, auto_unbox = TRUE, pretty = FALSE)
+propagate()
 
 passes <- if (file.exists(ORIGIN)) {
   prev <- tryCatch(

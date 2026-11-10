@@ -6,6 +6,12 @@ data-raw/proposed/
 results/
 .tmp/
 
+# Generated figure artifacts (logo, per-scheme schematics).  They are rendered
+# output, not package API, and their SVG is text that the semantic pass would
+# send to a text-only model as a huge prompt.
+vignettes/figures/
+man/figures/
+
 # Vendored external tool (OligoArrayAux/elk JS), not package API; also the
 # source of the one accepted self-loop.
 .tools/

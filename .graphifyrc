@@ -1,0 +1,9 @@
+# .Rmd vignettes are rendered prose, but graphify's DOC_EXTENSIONS has no .Rmd,
+# so they are invisible to the semantic pass. This mapping is the only place to
+# add one: .Rmd is classified and extracted as .md.
+language.rmd=markdown
+
+# man/*.Rd is deliberately NOT mapped. 174 files / 393 KB of prose that repeats
+# the roxygen comments in R/ and would dominate a semantic run for little new
+# structure. Map `language.rd=markdown` only for a scoped `man` pass if the
+# descriptions must enter the graph.

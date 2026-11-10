@@ -19,11 +19,7 @@ These must stay at zero. `dev/graphify-health.R --check` fails if one moves.
 
 ## Known, accepted
 
-Not zero, and not gated: the cause is understood and lives outside this package.
-
-| metric | value | status |
-| --- | ---: | --- |
-| self-loops | 1 | accepted: one recursive `collectEdges()` self-edge in the vendored `.tools/elk/elk-layout.js`; `--check` fails on any self-loop outside `.tools/` |
+None. Every structural invariant above is zero; nothing is accepted as-is.
 
 ## Community labels
 
@@ -35,7 +31,7 @@ A label that echoes a filename is honest for a single-file community and mislead
 | `duplicate` | 0 |
 | `echo-stale` | 0 |
 | `echo-honest` | 0 |
-| `named` | 401 |
+| `named` | 420 |
 
 No missing, duplicate or multi-file file-echo labels.
 
@@ -53,14 +49,23 @@ No missing, duplicate or multi-file file-echo labels.
 | 2026-11-06 | `Ternary-Bonsai-2-27B-tight` | 38 | 37 | 1 | after the .graphifyignore rebuild renumbered communities and dropped 38 label keys; 37 named here, cid 264 fixed by hand |
 | 2026-11-06 | `manual` | 1 | 1 | 0 | cid 264: single-file SECURITY.md community; model proposed the member echo 'Security Policy', fixed by hand |
 | 2026-11-06 | `Ternary-Bonsai-2-27B-tight` | 4 | 4 | 0 | targeted --cids=190,210,217,246; thin but honest names deepened to say what the cluster is for |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 12 | 12 | 0 |  |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 88 | 85 | 3 |  |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 3 | 1 | 2 |  |
+| 2026-11-10 | `manual` | 2 | 2 | 0 |  |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 41 | 39 | 2 |  |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 2 | 1 | 1 |  |
+| 2026-11-10 | `manual` | 1 | 1 | 0 |  |
+| 2026-11-10 | `Ternary-Bonsai-2-27B-tight` | 35 | 34 | 1 |  |
+| 2026-11-10 | `manual` | 1 | 1 | 0 | cid 413: the rebuild split propagate() off the relabel script; kept distinct from "Bonsai Relabeling Script" by hand |
 
 ## Size
 
 | metric | value |
 | --- | ---: |
-| nodes | 7 754 |
-| edges | 10 361 |
-| communities | 401 |
+| nodes | 8 057 |
+| edges | 10 873 |
+| communities | 420 |
 | nodes without `source_file` | 368 |
 
 ## Nodes without a `source_file`
@@ -75,11 +80,95 @@ The total is a drift signal, not a defect.
 
 | kind | count |
 | --- | ---: |
-| external_function | 297 |
-| package | 55 |
-| concept | 14 |
+| external_function | 299 |
+| package | 54 |
+| concept | 13 |
 | external_class | 1 |
 | package_function | 1 |
+
+## Granularity and interfaces
+
+Graphify's R extractor emits a node per function (a nested closure included), per file, and per assignment, top-level or local. The split is where the noise is: 99 nested nodes under `R/` -- all closures (a helper defined inside another function), no nested assignments (0) -- against 2 065 inside `tests/` -- `test_that()` and `local()` bodies mint a node per local -- and 249 in `data-raw/`. Most such nodes are leaves reachable only through their file's `contains` edge; a leaf adds no seam, so the leaf ratio -- not the raw node count -- is the entity-multiplication signal.
+
+| metric | value |
+| --- | ---: |
+| nodes: `function` | 1 541 |
+| nodes: `variable` | 5 307 |
+| nodes: `file` | 348 |
+| degree-1 (leaf) nodes | 6 137 (76%) |
+| …of which `variable` | 5 302 |
+| nested (indented) nodes | 2 504 (33% of located) |
+| labels shared by >1 node | 634 (3 479 nodes) |
+| nodes under `R/` | 1 164 (14%) |
+| nodes under `data-raw/`, `tests/`, `dev/` | 6 059 (75%) |
+| exported functions with a node | 175 / 175 |
+| S3 methods with a node | 91 / 92 |
+| generics with a node | 5 / 12 |
+| `generic`/`method` pairs joined by an edge | 1 |
+
+Every export (175/175) and all but one S3 method have a node. The absent method is `+.marker_plan()`: it is defined as `"+.marker_plan" <- function`, and graphify's `binding()` accepts only an identifier left-hand side, so a string-named assignment is dropped. The 7 generics without a node are external (`+`, `plot`, `print` and four `vctrs::`): the package implements their methods but does not define the generic, so no package node exists. That is honest, not a gap. graphify's R extractor emits no `generic -> method` relation and no exported/internal flag (`interface_dispatch.py` covers C#, Java, Swift and other languages, not R), so the single pair counted above is a plain `calls` edge (`marker_primers.marker_lax()` calls `marker_primers()` in its body), not dispatch. "What implements `marker_chunk()`" is a label-prefix query, not a traversal. The duplicate labels are not duplicate entities: two `ext()` nodes are two files' helpers, but `explain ext` is ambiguous because R has no namespaces.
+
+### Function / variable nodes: top-level vs nested
+
+| kind | top-level | nested |
+| --- | ---: | ---: |
+| `function` | 1 362 | 179 |
+| `variable` | 2 985 | 2 322 |
+
+### Nested nodes by directory
+
+| dir | nested nodes |
+| --- | ---: |
+| `tests/` | 2 065 |
+| `data-raw/` | 249 |
+| `dev/` | 82 |
+| `inst/` | 6 |
+| `R/` | 99 |
+
+### `R/` files by size
+
+Largest files first; `functions` is the `function` node count for the file.
+
+| file | functions | lines |
+| --- | ---: | ---: |
+| `R/marker_specificity.R` | 36 | 1 759 |
+| `R/marker_plots.R` | 41 | 1 544 |
+| `R/marker_criteria.R` | 35 | 1 474 |
+| `R/marker_assemble.R` | 22 | 1 419 |
+| `R/marker_checks.R` | 15 | 1 053 |
+| `R/marker_core.R` | 25 | 906 |
+| `R/marker_plot_methods.R` | 47 | 902 |
+| `R/marker_lamp.R` | 19 | 880 |
+| `R/marker_caps.R` | 23 | 822 |
+
+## Code ↔ documentation
+
+The graph cannot see `man/`, so this reads the source: for each export it compares roxygen `@param` names with `formals()`, resolving `@rdname` topics (one Rd block documents several aliases). It is a distance, not a faithfulness check: whether the prose describes the body needs a model, and that layer is not built.
+
+| metric | value |
+| --- | ---: |
+| exports checked | 175 |
+| exports without a roxygen block | 0 |
+| undocumented parameters | 0 |
+| documented-but-absent parameters | 0 |
+| missing `@return` | 1 |
+| missing `@examples` | 0 |
+
+Undocumented and phantom parameters are gated by `--check`. Missing `@return`: `design_asq_marker`.
+
+## Semantic extraction (local LLM)
+
+`dev/graphify-semantic.sh` is the only step that calls a model. Its output is cached under `graphify-out/cache/semantic/` and keyed by `semantic_hash` in the manifest, so an unchanged file is not re-asked. A graph built by `graphify update .` is AST-only: provenance tags every node and edge it writes `_origin: ast`, and the AST pass itself emits INFERRED `references` edges. So the INFERRED total below is **not** evidence the model ran, and a `concept` label does not prove semantic origin either. Count the pass by `_origin == "semantic"`; `nodes from the model` below is that count and is the only number here that the LLM pass moves.
+
+| metric | value |
+| --- | ---: |
+| document-like files | 48 |
+| with a `semantic_hash` | 0 |
+| nodes from the model | 0 |
+| concept nodes (any origin) | 13 |
+| INFERRED edges | 862 |
+| …from the AST pass | 862 |
+| …from the model | 0 |
 
 ## God nodes
 
@@ -87,9 +176,11 @@ Defined here as the top targets by **in-degree over `calls`**: how often the
 rest of the code calls this. (Graphify's own ranking mixes document nodes and
 is not reproduced.)
 
+Read this as the **third-party plumbing this package leans on**, not as the package's own interfaces. The R resolver resolves `pkg::fn()` calls to an `external_function` node but a bare internal call only inside one file (see 'cross-file call resolution' below), so no internal helper can accumulate the in-degree a `tibble::tibble()` does. The real internal seams are the R-only cross-file fan-out measured from source (comments stripped): `snp_template` (16 files), `spec_row` (12), `map_spec` (13), `scheme_conditions` (10), `gc_frac` (10), `primer_candidates` (9), `primer_tm` (9), `has_palindrome` (7), `ath_chrom` (5) -- broad and shallow, with no hub, not this table.
+
 | node | callers |
 | --- | ---: |
-| `tibble::tibble()` | 180 |
+| `tibble::tibble()` | 182 |
 | `cli::cli_abort()` | 105 |
 | `glue::glue()` | 59 |
 | `dplyr::mutate()` | 48 |
@@ -110,7 +201,14 @@ Adopted from GWASILIY's graph practice.
 | `supersedes` graph edges | adopted | `dev/graphify-handrolled.R` injects one `supersedes` edge per entry, reusing the AST `pkg::fn()` node when it exists and creating a `package::function` node otherwise; idempotent, and `dev/check.R` runs it |
 | default label prompt on rebuild | guarded | `graphify update .` re-runs the weak built-in prompt on changed communities; the strict pass and the origin ledger record and repair it |
 | `dev/relabel-bonsai.R` helper | shipped | repeatable strict pass; defaults to missing/duplicate/echo-stale, `--all-echo` also renames the honest single-file echoes, `--cids=` repairs one name, and a proposal equal to the current label is kept, not counted as a rename. A rebuild that renumbers communities drops label keys; the pass restores them as `missing` and names them |
+| vignettes/ and man/ coverage | partial | `.graphifyrc` maps `.Rmd` to markdown, so `vignettes/*.Rmd` **are** indexed (91 `document` nodes). `man/*.Rd` is not, and `.graphifyrc` leaves it unmapped on purpose (174 files would dominate a semantic run); export plain `.md` stubs via `dev/graphify-docs.R` if the manuals must be graph concepts |
 | single-file echo labels (254) | skipped | a file-echo name is honest for a one-file community; the strict pass renames only missing/duplicate/echo-stale, `--all-echo` opts in |
+| nested-local assignment leaves | accepted | `variable` nodes include function locals: `test_that()`/`local()` bodies in `tests/` mint 2 015 nested nodes ( 2 504 nested nodes in all), and most are leaves with only their file's `contains` edge. They hold no seam; graphify has no per-kind knob, so the only lever is a `.graphifyignore` path exclusion, which also drops the `tests/` map |
+| R S3 dispatch edges | gap | every export and 91/92 S3 methods have nodes (`+.marker_plan()` is dropped: a string-named LHS fails graphify's identifier-only `binding()`); the 7 generics without nodes are external implementations. No `generic -> method` relation and no exported/internal flag (`interface_dispatch.py` covers C#, Java, Swift and others, not R), so "what implements `marker_chunk()`" is a label-prefix query |
+| code ↔ documentation faithfulness | partial | `dev/graphify-health.R` compares each export's `@param` names with `formals()` and gates undocumented or phantom parameters; whether the prose describes the body is not checked -- that needs the local model, and it is not built |
+| cross-file call resolution | gap | The R resolver binds a bare call only inside the caller's own file (and through an explicit `source()` when the candidate is unique), so of 745 `calls` edges whose ends both have a `source_file`, **0 cross a file**. `pkg::fn()` targets do resolve cross-file because they name the package. Consequence: `explain`/`affected` under-report impact, communities are file islands, and a source-scan (not the graph) is the only way to see the real seams |
+| semantic layer in graph.json | drift | `graphify update .` writes an AST-only graph (`_origin: ast` on every node and edge); the semantic cache under `graphify-out/cache/semantic/` holds chunk results that are **not** merged into `graph.json`, so a current graph has 0 `_origin: semantic` nodes and 0 `semantic_hash` in the manifest until `dev/graphify-semantic.sh` runs to completion. Re-run it when the bonsai slots are free (see the lever note on slot contention) |
+| curated label → graph.json | adopted | `dev/relabel-bonsai.R` writes `graphify-out/.graphify_labels.json` and then propagates every name into the `community_name` cached on each node in `graph.json`, so `explain`/`query`/`path` agree with the health table. Propagation runs even when nothing was relabelled, so a rebuild without a rename still picks up names curated in an earlier pass |
 
 ## Configuration levers
 
@@ -121,17 +219,21 @@ What is wired into graphify here, and what is deliberately not. `open` is usable
 | `graphify update .` | shipped | code-only re-extract, no LLM; first step of Rerun below |
 | strict label pass + origin ledger | shipped | `dev/relabel-bonsai.R`; all communities named, every pass recorded |
 | `supersedes` edges from the hand-roll ledger | shipped | see Known gaps; answers "what replaced this hand-roll" |
-| local LLM semantic backend | open | `dev/graphify-semantic.sh` holds the safe flags; `extract --backend=openai` reads `OPENAI_BASE_URL`/`OPENAI_MODEL` (bonsai). Measured: the served model has an 8192-token context and graphify asks for up to 16384 output tokens, so a full 63-document pass truncates and splits for hours. Opt-in until a faster/larger-context model is available |
+| local LLM semantic backend | shipped | `extract --backend=openai` via `dev/graphify-semantic.sh`; reads `OPENAI_BASE_URL`/`OPENAI_MODEL` (bonsai), 2 slots, `--token-budget 12000`. `GRAPHIFY_MAX_OUTPUT_TOKENS` must stay at 16000: a lower cap truncates, splits and retries forever. The server has `-np 2`, so a second client on the same port (a Merovingen `acceptance_run.py` did this) holds both slots with long generations and this pass blocks as the deferred request -- that, not a config fault, is why a few chunks can take minutes. Check `llamacpp:requests_deferred` and that no other job owns the slots before blaming the backend. Coverage and yield in 'Semantic extraction' |
+| `diagnose multigraph` | shipped | `graphify diagnose multigraph --json` independently confirms 0 dangling, 0 duplicate and 0 collapsed edges, and lists the missing-`source_file` warnings (the external nodes in the table above); it does not replace `--check`, which gates the same invariants plus cycles and labels |
+| `export callflow-html` | open | Mermaid architecture/call-flow HTML from the same graph; a candidate for the architecture doc, but no reader is wired to it yet |
+| `GRAPHIFY_QUERY_LOG` | open | opt-in log of agent `query`/`explain` calls; would show which nodes agents actually ask for, so the graph can be tuned to real questions. Off by default; enable when there is a reason to read the log |
 | `export wiki` | shipped | 411 articles in gitignored `graphify-out/wiki/`, one per community plus an index; template-only, no LLM, so its quality is the curated labels |
 | git hook (`graphify hook install`) | shipped | post-commit/checkout/merge/rewrite plus the graph merge driver; it runs `update` only (no LLM), so `dev/graphify-health.R --write` stays manual |
-| `.graphifyignore` | shipped | `data-raw/proposed/` (37 files, 335 nodes), `results/`, `.tmp/` are design scratch; a rebuild prunes them, and it can only ever add exclusions |
+| `.graphifyignore` | shipped | `data-raw/proposed/`, `results/`, `.tmp/`, `.tools/` are design scratch or vendored tooling, not package API; a rebuild prunes them, and the file can only ever add exclusions |
+| per-kind node pruning | skipped | no CLI or rc knob drops `variable` leaves; only a `.graphifyignore` path exclusion can, at the cost of the `tests/`/`data-raw/`/`dev/` map |
 | `--mode deep` | skipped | richer INFERRED edges, but a full re-extract and it re-names changed communities with the weak built-in prompt; no consumer here |
 | `query` / `path` / `explain` / `affected` | shipped | verified from the shell: `explain "Biostrings::complement"` resolves one node and shows its `supersedes` edge, `affected "normalise_allele()"` lists its caller. 0.9.92 has no MCP server, so agents use this CLI |
 | `export neo4j` / `graphml` / `obsidian` / `svg` | skipped | no consumer in this repository |
 
 ## Provenance
 
-Built at commit `fd0780c1d4eb9e0896098c5a98cc6caf20c3d315`.
+Built at commit `9d87a7410ae476a6fcd3338cbccb7873bee522ca`.
 The graph matches `HEAD`.
 
 ## Rerun
