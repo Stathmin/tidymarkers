@@ -20,6 +20,22 @@ test_that("marker_blast_index builds a database and specificity_blast counts hit
   expect_equal(res$hits[res$primer == "Q"], 0L)
 })
 
+test_that("marker_blast_index returns the FASTA prefix and is idempotent", {
+  skip_if_not_full()
+  skip_if_not(has_blast(), "NCBI BLAST+ not installed")
+  skip_if_not_installed("rBLAST")
+  g <- marker_genome(blast_fa(withr::local_tempfile(fileext = ".fa")))
+  db <- marker_blast_index(g)
+  # the return is the FASTA path (= the BLAST db prefix), not a bare .n* path
+  expect_identical(db, g$path)
+  idx <- paste0(db, ".nsq")
+  expect_true(file.exists(idx))
+  before <- file.info(idx)$mtime
+  Sys.sleep(1.1) # mtime granularity
+  expect_identical(marker_blast_index(g), db)
+  expect_identical(file.info(idx)$mtime, before) # an existing index is not rebuilt
+})
+
 test_that("specificity_of routes an indexed genome to BLAST, and needs a db", {
   skip_if_not_full()
   withr::local_envvar(LANGUAGE = "en")

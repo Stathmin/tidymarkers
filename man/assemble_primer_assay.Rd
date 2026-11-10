@@ -11,7 +11,7 @@ assemble_primer_assay(
   variants = NULL,
   flank = 150L,
   scheme = "snp",
-  salt_method = "SantaLucia1998-2",
+  salt_method = TM_SALT_METHOD,
   cores = getOption("tidymarkers.cores", 1L),
   BPPARAM = NULL,
   diagnostic_positions = NULL
@@ -37,8 +37,11 @@ the amplicon.}
 \item{scheme}{the marker chemistry to assemble \emph{as} (default \code{"snp"}), which
 selects the reaction conditions and the graded criterion set.}
 
-\item{salt_method}{salt correction for \code{Tm}; the default reproduces the
-printed panel Tm (see ROADMAP \code{ZW3.2}).}
+\item{salt_method}{salt correction for \code{Tm}.  The default is the design
+coordinate \code{TM_SALT_METHOD} (\code{"Schildkraut2010"}), the same scale the
+KASP/AS/COM gate windows are stated on, so the assay is graded on the
+coordinate its limits live in.  Pass \code{"SantaLucia1998-2"} to reproduce a
+printed Primer3 panel (ROADMAP \code{ZW3.5}, \code{ZW3.10}).}
 
 \item{cores}{worker count for the genome/thermodynamics batches.}
 

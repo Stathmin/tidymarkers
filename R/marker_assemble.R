@@ -512,7 +512,8 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #' `pick_target_snp()` -> `assemble_kasp_assay()` -> `marker_design_checks()`.
 #' See `vignette("kasp-intro")`.
 #'
-#' @param genome DNAStringSet (from [ath_genome()]).
+#' @param genome a `marker_genome` or `DNAStringSet` for any genome; the examples
+#'   use the bundled Arabidopsis TAIR10 demo ([ath_genome()]).
 #' @param snp    one-row tibble (chrom, pos, ref, alt) from [pick_target_snp()].
 #' @param variants variant table (for the same chromosome) to count overlaps.
 #' @param strands which AS-primer orientations to search (see [design_as_primers()]).
@@ -1150,8 +1151,11 @@ normalise_fixed_primers <- function(primers) {
 #'   the amplicon.
 #' @param scheme the marker chemistry to assemble *as* (default `"snp"`), which
 #'   selects the reaction conditions and the graded criterion set.
-#' @param salt_method salt correction for `Tm`; the default reproduces the
-#'   printed panel Tm (see ROADMAP `ZW3.2`).
+#' @param salt_method salt correction for `Tm`.  The default is the design
+#'   coordinate `TM_SALT_METHOD` (`"Schildkraut2010"`), the same scale the
+#'   KASP/AS/COM gate windows are stated on, so the assay is graded on the
+#'   coordinate its limits live in.  Pass `"SantaLucia1998-2"` to reproduce a
+#'   printed Primer3 panel (ROADMAP `ZW3.5`, `ZW3.10`).
 #' @param cores worker count for the genome/thermodynamics batches.
 #' @param BPPARAM optional `BiocParallel` backend (overrides `cores`).
 #' @param diagnostic_positions the subgenome-diagnostic mask (roadmap Y3.1):
@@ -1171,7 +1175,7 @@ normalise_fixed_primers <- function(primers) {
 #' @export
 assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
                                   flank = 150L, scheme = "snp",
-                                  salt_method = "SantaLucia1998-2",
+                                  salt_method = TM_SALT_METHOD,
                                   cores = getOption("tidymarkers.cores", 1L),
                                   BPPARAM = NULL,
                                   diagnostic_positions = NULL) {

@@ -33,8 +33,12 @@ has_blast <- function() {
 #' database to pass to [specificity_blast()]; attach it to a `marker_genome` with
 #' `marker_genome(..., blast_db = <path>)` to let [specificity_of()] use it.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
-#' @param path FASTA path to write a `DNAStringSet` to (ignored for `marker_genome`).
-#' @return the BLAST database path (invisibly used by [specificity_blast()]).
+#' @param path FASTA path to write an in-memory `DNAStringSet` to; the BLAST
+#'   index files are created alongside it.  Ignored for a `marker_genome`, whose
+#'   own FASTA is indexed in place.
+#' @return the FASTA path the database was built from.  This is the database
+#'   *prefix* (NCBI BLAST+ writes `<path>.nhr/.nin/.nsq` next to it), the value
+#'   [specificity_blast()] expects; pass it as-is, do not append an extension.
 #' @examples
 #' \dontrun{
 #' db <- marker_blast_index(marker_genome("genome.fa"))
@@ -50,14 +54,20 @@ marker_blast_index <- function(genome, path = fs::path(fs::path_temp(), "marker_
       i = gettext("Or point the package at an existing build with options(tidymarkers.blast = ).")
     ))
   }
-  fasta <- if (inherits(genome, "marker_genome")) {
-    genome$path
+  if (inherits(genome, "marker_genome")) {
+    fasta <- genome$path
+    # build once: BLAST+ writes <fasta>.nhr/.nin/.nsq beside the FASTA, and a
+    # 14.8 GB genome must not be re-indexed on every call.  Delete the index to
+    # force a rebuild.
+    if (!file.exists(paste0(fasta, ".nsq"))) {
+      with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
+    }
   } else {
     fs::dir_create(fs::path_dir(path))
     Biostrings::writeXStringSet(genome, path)
-    path
+    fasta <- path
+    with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
   }
-  with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
   fasta
 }
 

@@ -12,10 +12,14 @@ marker_blast_index(
 \arguments{
 \item{genome}{a \code{marker_genome} or a \code{DNAStringSet}.}
 
-\item{path}{FASTA path to write a \code{DNAStringSet} to (ignored for \code{marker_genome}).}
+\item{path}{FASTA path to write an in-memory \code{DNAStringSet} to; the BLAST
+index files are created alongside it.  Ignored for a \code{marker_genome}, whose
+own FASTA is indexed in place.}
 }
 \value{
-the BLAST database path (invisibly used by \code{\link[=specificity_blast]{specificity_blast()}}).
+the FASTA path the database was built from.  This is the database
+\emph{prefix} (NCBI BLAST+ writes \verb{<path>.nhr/.nin/.nsq} next to it), the value
+\code{\link[=specificity_blast]{specificity_blast()}} expects; pass it as-is, do not append an extension.
 }
 \description{
 For an in-memory \code{DNAStringSet} the FASTA is written to \code{path} first; for a
