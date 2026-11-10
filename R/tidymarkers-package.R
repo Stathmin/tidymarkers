@@ -21,6 +21,13 @@
 #' `vignette("markers-crispr-sequencing")`, `vignette("markers-gel")` and
 #' `vignette("reading-results")`.
 #'
+#' @section Demo genome:
+#' The bundled demo and every package example use *Arabidopsis thaliana* TAIR10
+#' ([ath_genome()]) and Atlas-chip targets ([marker_example()]). That is a demo,
+#' not a default: no function falls back to Arabidopsis. Pass any `marker_genome`
+#' or `DNAStringSet` to the design functions, and see
+#' `vignette("custom-genome")` to bring your own reference.
+#'
 #' @keywords internal
 #' @importFrom rlang .data
 "_PACKAGE"

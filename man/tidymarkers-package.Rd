@@ -28,6 +28,15 @@ vignettes cover the remaining chemistries and the workflow:
 \code{vignette("markers-crispr-sequencing")}, \code{vignette("markers-gel")} and
 \code{vignette("reading-results")}.
 }
+\section{Demo genome}{
+
+The bundled demo and every package example use \emph{Arabidopsis thaliana} TAIR10
+(\code{\link[=ath_genome]{ath_genome()}}) and Atlas-chip targets (\code{\link[=marker_example]{marker_example()}}). That is a demo,
+not a default: no function falls back to Arabidopsis. Pass any \code{marker_genome}
+or \code{DNAStringSet} to the design functions, and see
+\code{vignette("custom-genome")} to bring your own reference.
+}
+
 \seealso{
 Useful links:
 \itemize{

@@ -235,7 +235,9 @@ mask_positions <- function(seq, positions) {
 #' from one hyper-variable region, and the SNP rows are verified to design (see
 #' `dev/render-targets.R`).  Handy for trying the pipeline without pulling data
 #' from Ensembl; `ref`/`alt` are the genomic alleles, so the table feeds
-#' [design_kasp_markers()] directly.
+#' [design_kasp_markers()] directly.  The rows are *Arabidopsis thaliana*
+#' (TAIR10/Atlas) demo targets for use with [ath_genome()], not a species
+#' default: pair them with any genome whose sequence names match `chrom`.
 #'
 #' @param type optional `type` to keep (`"SNP"`, `"MNP"`, `"insertion"`,
 #'   `"deletion"`); `NULL` returns every example.

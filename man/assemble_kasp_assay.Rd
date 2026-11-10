@@ -36,7 +36,8 @@ assemble_kasp_assay(
 )
 }
 \arguments{
-\item{genome}{DNAStringSet (from \code{\link[=ath_genome]{ath_genome()}}).}
+\item{genome}{a \code{marker_genome} or \code{DNAStringSet} for any genome; the examples
+use the bundled Arabidopsis TAIR10 demo (\code{\link[=ath_genome]{ath_genome()}}).}
 
 \item{snp}{one-row tibble (chrom, pos, ref, alt) from \code{\link[=pick_target_snp]{pick_target_snp()}}.}
 

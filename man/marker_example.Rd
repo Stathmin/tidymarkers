@@ -25,7 +25,9 @@ was chosen for the lowest local variant load in a real gene rather than dumped
 from one hyper-variable region, and the SNP rows are verified to design (see
 \code{dev/render-targets.R}).  Handy for trying the pipeline without pulling data
 from Ensembl; \code{ref}/\code{alt} are the genomic alleles, so the table feeds
-\code{\link[=design_kasp_markers]{design_kasp_markers()}} directly.
+\code{\link[=design_kasp_markers]{design_kasp_markers()}} directly.  The rows are \emph{Arabidopsis thaliana}
+(TAIR10/Atlas) demo targets for use with \code{\link[=ath_genome]{ath_genome()}}, not a species
+default: pair them with any genome whose sequence names match \code{chrom}.
 }
 \examples{
 marker_example()
