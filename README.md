@@ -6,7 +6,7 @@
 
 [![R-CMD-check](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Stathmin/tidymarkers/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
 
 Design and quality control of genetic markers in pure R. `tidymarkers` is
@@ -356,4 +356,6 @@ alone; the rule-to-source mapping is in
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE), copyright 2026 Daniil Ulyanov.
+MIT, copyright 2026 Daniil Ulyanov. The full text is in [`LICENSE.md`](LICENSE.md);
+[`LICENSE`](LICENSE) holds the `YEAR`/`COPYRIGHT HOLDER` stub that R's
+`DESCRIPTION` (`MIT + file LICENSE`) requires.

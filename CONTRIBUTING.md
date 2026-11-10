@@ -23,12 +23,10 @@ finding is not.
 
 ## Scope
 
-The package answers one question: given a target variant and a genome, which
-marker assay should be designed for it, and how far can you trust the answer?
-Everything in `R/` serves that path — marker design (KASP, TaqMan, LAMP, RPA,
-HRM, CRISPR), specificity against a genome, decision ladders, and the audit
-trail behind a verdict. A change that does not serve that path belongs in a
-downstream package or in the dossier, not here.
+The scope is stated once, in the `README` introduction. A change that does not
+serve that path — marker design, specificity against a genome, decision
+ladders, the audit trail behind a verdict — belongs in a downstream package or
+in the dossier, not here.
 
 ## Quick development loop
 
@@ -120,7 +118,8 @@ as a substitute for review.
 
 A change under review is asked exactly two questions, in this order. A proposal
 that anyone can check against the repository is treated as a contribution
-regardless of who raised it; the credits below record who raised what.
+regardless of who raised it; the credits in [`CREDITS.md`](CREDITS.md) record
+who raised what.
 
 1. **Is the claim measured?** Point at the file, the script in `data-raw/` and
    the test that drives the criterion to `fail`. "The paper says so" starts the

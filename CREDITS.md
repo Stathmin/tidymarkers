@@ -13,7 +13,7 @@ the repository can show — if the evidence is a test, name the test.
 | Person | Contribution | Lands as | Date | Note |
 |---|---|---|---|---|
 | Daniil "Stathmin" Ulyanov | Package author and maintainer: the design rules, the gate, the falsifiability test, the decision ladders | 311 commits | 2026-10-23 | Owns the whole history to date; the row exists so the gap is visible. |
-| fami | Proposed the acquisition and knowledge-graph change taken in `b1124a0b`: a re-keyed DOI stays one work, and the alias surface is scoped | proposal → `b1124a0b` (Merovingen) | 2026-10-26 | The proposal, not the commit, is theirs. The fix it prompted is the `_dois_disagree()` suffix rule in `src/acquisition/dedup.py`. |
+| Alexey "alermol" Ermolaev | Reported two real defects from use: the fixed-trio path graded at a different Tm salt method than the `KASP_LIMITS` windows, and `marker_blast_index()` documented a database path it did not return while rebuilding on every call | bug report → `R/marker_assemble.R`, `R/marker_scan.R`, `tests/testthat/test-scan.R` | 2026-11-10 | The report is theirs; the fixes are not. The Tm gap measured 3.51 °C; the scan idempotence test (`<fasta>.nsq` exists → skip) is the check. |
 
 ## How a contribution is ranked here
 
