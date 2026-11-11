@@ -103,6 +103,10 @@ if (file.exists(MANIFEST)) {
 origin_of <- function(x) x[["_origin"]] %||% ""
 is_semantic <- function(x) identical(origin_of(x), "semantic")
 concept_nodes <- sum(kind == "concept")
+# A `concept` node with no source_file is not a model-made idea: it is an AST
+# `import` target (Python `argparse`, `json`, ...) or a raw file-id label. Keep
+# the two apart so the semantic table does not credit the LLM with them.
+concept_unlocated <- sum(kind == "concept" & !has_source)
 sem_nodes <- sum(vapply(nodes, is_semantic, logical(1)))
 inferred_edges <- sum(vapply(
   links, function(e) identical(e$confidence %||% "", "INFERRED"), logical(1)
@@ -510,13 +514,20 @@ report <- c(
   "",
   "## Nodes without a `source_file`",
   "",
-  "Two kinds, both expected. `external_function` is the AST record of a call",
-  "into another package: it has no file here, and `explain` on one shows its",
+  "Most are expected. `external_function` is the AST record of a call into",
+  "another package: it has no file here, and `explain` on one shows its",
   "callers, not its definition. `package_function` is published deliberately by",
   "`dev/graphify-handrolled.R` for a hand-roll's replacement; when the same",
   "`pkg::fn` already exists as an AST node the injection reuses that node, so",
   "`explain \"pkg::fn\"` resolves to one node and shows the `supersedes` edge.",
-  "The total is a drift signal, not a defect.",
+  "Two kinds are accidental and unexplained by the extractor: the 13 `concept`",
+  "nodes are `import`/`source()` targets -- Python modules (`argparse`, `json`,",
+  "`urllib_request`) and R `source()` paths rendered as absolute ids",
+  "(`root_development_..._xlsx_read_r`) -- with a raw id for a label and no",
+  "file, and `external_class` has the same shape.",
+  "`explain` on any of them is vague by construction -- there is no definition",
+  "to show. The external-symbol total is a drift signal; the concept total should",
+  "be zero, and is not.",
   "",
   rows("kind", "count"),
   rows("---", "---:"),
@@ -669,7 +680,13 @@ report <- c(
     "edges. So the INFERRED total below is **not** evidence the model ran, and a",
     "`concept` label does not prove semantic origin either. Count the pass by",
     "`_origin == \"semantic\"`; `nodes from the model` below is that count and is",
-    "the only number here that the LLM pass moves."
+    "the only number here that the LLM pass moves. `concept` is a trap: graphify's",
+    "AST pass mints `concept` nodes for Python `import` and R `source()` targets,",
+    "so a nonzero `concept` count is an extractor artifact, not model output.",
+    "For this corpus the LLM pass is not the first lever anyway: the R docs are",
+    "structured",
+    "(roxygen, `man/*.Rd`, vignette headings and code chunks), so deterministic",
+    "stubs and the `@param` check above yield doc-to-code facts with no model."
   ),
   "",
   rows("metric", "value"),
@@ -678,6 +695,7 @@ report <- c(
   rows("with a `semantic_hash`", fmt(sem_done)),
   rows("nodes from the model", fmt(sem_nodes)),
   rows("concept nodes (any origin)", fmt(concept_nodes)),
+  rows("…of which import/source targets (no `source_file`)", fmt(concept_unlocated)),
   rows("INFERRED edges", fmt(inferred_edges)),
   rows("…from the AST pass", fmt(inferred_ast)),
   rows("…from the model", fmt(inferred_semantic)),
@@ -694,10 +712,15 @@ report <- c(
     "`external_function` node but a bare internal call only inside one file (see",
     "'cross-file call resolution' below), so no internal helper can accumulate the",
     "in-degree a `tibble::tibble()` does. The real internal seams are the R-only",
-    "cross-file fan-out measured from source (comments stripped): `snp_template`",
+    "cross-file fan-out measured from source (comments stripped, only `R/`",
+    "callers, test fixtures and roxygen examples excluded): `snp_template`",
     "(16 files), `spec_row` (12), `map_spec` (13), `scheme_conditions` (10),",
     "`gc_frac` (10), `primer_candidates` (9), `primer_tm` (9), `has_palindrome`",
-    "(7), `ath_chrom` (5) -- broad and shallow, with no hub, not this table."
+    "(7), `ath_chrom` (5) -- broad and shallow, with no hub, not this table.",
+    "A function called only from tests, `@examples` or a demo is not a seam at",
+    "all: `ath_genome()` has 0 `R/` callers and is a TAIR10 demo fixture, not an",
+    "interface. This list is hand-maintained and drifts; compute it in the script",
+    "from the same stripped source scan before trusting the counts."
   ),
   "",
   rows("node", "callers"),
@@ -793,13 +816,18 @@ report <- c(
   rows(
     "cross-file call resolution", "gap",
     paste(
-      "The R resolver binds a bare call only inside the caller's own file (and",
-      "through an explicit `source()` when the candidate is unique), so of 745",
-      "`calls` edges whose ends both have a `source_file`, **0 cross a file**.",
+      "The R resolver binds a bare call only inside the caller's own file, and",
+      "resolves a cross-file call only through an `imports_from` edge, which it",
+      "creates from an explicit `source()` call. An R package has neither: it",
+      "declares dependencies in `NAMESPACE`/`Collate`, not with `source()`, so of",
+      "747 `calls` edges whose ends both have a `source_file`, **0 cross a file**.",
       "`pkg::fn()` targets do resolve cross-file because they name the package.",
       "Consequence: `explain`/`affected` under-report impact, communities are",
       "file islands, and a source-scan (not the graph) is the only way to see the",
-      "real seams"
+      "real seams. Fix: a deterministic post-pass keyed on a package-wide unique",
+      "function name (skip ambiguous names, shadowed locals and test fixtures),",
+      "emitting INFERRED `calls` edges -- the same pattern",
+      "`dev/graphify-handrolled.R` uses for `supersedes`."
     )
   ),
   rows(

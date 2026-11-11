@@ -85,7 +85,10 @@ test_that("a machine without OligoArrayAux cannot grade SNaPshot structure", {
 test_that("generic checks report NA, never TRUE, without the structure engine", {
   f <- snp_fixture()
   local_mocked_bindings(has_oligoarrayaux = function() FALSE, .package = "tidymarkers")
-  m <- design_sanger_marker(f$genome, f$snp, flank = 250L)
+  expect_warning(
+    m <- design_sanger_marker(f$genome, f$snp, flank = 250L),
+    "allele dropout is not checked"
+  )
   skip_if(is.null(m), "no Sanger design at this fixture")
   e <- marker_design_checks(m, scheme = "sanger")
   rows <- e[e$criterion %in% c(

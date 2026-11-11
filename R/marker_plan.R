@@ -40,7 +40,7 @@ haplotype_schemes <- function() c("snp", "indel", "multi", "lax")
 #' first (the ladder), then genome-screens the leading ones (an off-target exact
 #' primer hit, a second in-silico PCR product, an inverted repeat) and keeps the
 #' first clean pairing - see [assemble_kasp_assay()] (`pair_screen`); the fragment
-# schemes confirm through `select_flanking_pair()` instead.  A pairing-level
+#' schemes confirm through `select_flanking_pair()` instead.  A pairing-level
 #' failure is fatal only where the scheme is strict (`KASP_SPECIFICITY_STRICT`):
 #' strict, the pass can doom the target; tolerant, it only moves the winner.
 #' HRM melts its whole amplicon, so a locus that amplifies twice still resolves.

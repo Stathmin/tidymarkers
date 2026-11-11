@@ -55,7 +55,8 @@ marker_priors <- function() {
 #' threshold is model-robust; a large spread means the window is model-dependent
 #' and should be widened or the table pinned.
 #' @param seq oligo(s) 5'->3'.
-#' @param nn_tables DNA NN tables to compare (see [primer_tm()]).
+#' @param nn_tables DNA NN tables to compare (see [primer_tm()]); `NULL` uses
+#'   SantaLucia (2004), Allawi (1997), Sugimoto (1996) and Breslauer (1986).
 #' @param ... passed to [primer_tm()] (e.g. `DMSO`).
 #' @return tidy tibble: `seq`, one column of Tm per table, `tm_min`, `tm_max` and
 #'   `spread` (max - min) in degrees C.
@@ -63,12 +64,13 @@ marker_priors <- function() {
 #' thermo_crosscheck(c("GAAGGTGACCAAGTTCATGCT", "TTTTGGCGCGCCGATATATAT"))
 #' @family thermodynamics
 #' @export
-thermo_crosscheck <- function(seq,
-                              nn_tables = c(
-                                "DNA_NN_SantaLucia_2004", "DNA_NN_Allawi_1998",
-                                "DNA_NN_Sugimoto_1996", "DNA_NN_Breslauer_1986"
-                              ),
-                              ...) {
+thermo_crosscheck <- function(seq, nn_tables = NULL, ...) {
+  if (is.null(nn_tables)) {
+    nn_tables <- c(
+      "DNA_NN_SantaLucia_2004", NN_TABLE_ALLAWI,
+      "DNA_NN_Sugimoto_1996", "DNA_NN_Breslauer_1986"
+    )
+  }
   cols <- purrr::map(nn_tables, function(tb) primer_tm(seq, nn_table = tb, ...))
   out <- tibble::tibble(seq = as.character(seq), !!!rlang::set_names(cols, nn_tables))
   out$tm_min <- rlang::exec(pmin, !!!cols, na.rm = TRUE)

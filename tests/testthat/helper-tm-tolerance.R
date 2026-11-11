@@ -23,7 +23,7 @@
 # so keep this file free of helper names that could shadow the package.
 
 NN_SANTA_LUCIA <- "DNA_NN_SantaLucia_2004"
-NN_ALLAWI <- "DNA_NN_Allawi_1998"
+NN_ALLAWI <- NN_TABLE_ALLAWI # resolved for the installed TmCalculator (1.1.3 rename)
 NN_SUGIMOTO <- "DNA_NN_Sugimoto_1996"
 NN_BRESLAUER <- "DNA_NN_Breslauer_1986"
 

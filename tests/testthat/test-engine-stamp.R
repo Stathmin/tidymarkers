@@ -91,7 +91,12 @@ assay_with_stamp <- local({
       snp <- pick_target_snp(
         ensembl_variants("4", 1188000L, 1192000L), g, ensembl_gene("AT4G00650")
       )
-      cached <<- assemble_kasp_assay(g, snp, flank = 150L, run_blast = FALSE)
+      # two documented advisories of the fixture genome: a near-match PCR
+      # product and an inverted repeat; asserted in test-specificity and
+      # test-insilico-pcr, not here.
+      cached <<- suppressWarnings(
+        assemble_kasp_assay(g, snp, flank = 150L, run_blast = FALSE)
+      )
     }
     cached
   }

@@ -386,6 +386,12 @@ oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL,
   if (n == 0L) {
     return(numeric(0))
   }
+  # duplex through the configured engine: the internal adapter is vectorised
+  # and needs no subprocess; hairpin (seq2 = NULL) always stays on UNAFold.
+  engine <- getOption("tidymarkers.thermo_engine", "auto")
+  if (!is.null(seq2) && identical(engine, "internal")) {
+    return(internal_duplex_dg(seq1, seq2, na = na, temp = temp))
+  }
   one <- function(i) {
     if (is.null(seq2)) {
       oligo_dg(seq1[[i]], na = na, temp = temp)

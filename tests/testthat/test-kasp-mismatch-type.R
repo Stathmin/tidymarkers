@@ -75,7 +75,9 @@ test_that("the wobble flag is the same call on one pair and on a batch", {
 
 test_that("a KASP evaluation reports the terminal mismatch class, not a silent pass", {
   f <- snp_fixture()
-  m <- assemble_kasp_assay(f$genome, f$snp)
+  # the fixture genome yields one near-match warning per screened pair; the
+  # message itself is asserted in test-specificity.
+  m <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp))
   ev <- marker_design_checks(m, scheme = "snp")
   # `criterion` carries the registry LABEL (the id is not a column of the
   # acceptance table), so the row is found by its label

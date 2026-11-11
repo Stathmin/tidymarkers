@@ -7,7 +7,10 @@ test_that("design_crispr_marker builds a Cas12a guide with a TTTV PAM and an amp
   substr(W, 297L, 316L) <- "ACGTGCTAGCTAGCATGCA" # GC-balanced 20 nt spacer
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "T", alt = "A")
-  m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas12a")
+  expect_warning(
+    m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas12a"),
+    "guide/PAM conservation is not checked"
+  )
   expect_s3_class(m, "marker_crispr")
   expect_equal(m$cas, "cas12a")
   expect_match(m$pam, "^TTT[ACG]$")
@@ -114,8 +117,11 @@ test_that("Cas13b warns that its 3' NAN/NNA PFS is not enforced", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   expect_warning(
-    m <- design_crispr_marker(f$genome, f$snp, flank = 200L, cas = "cas13b"),
-    "3' PFS"
+    expect_warning(
+      m <- design_crispr_marker(f$genome, f$snp, flank = 200L, cas = "cas13b"),
+      "3' PFS"
+    ),
+    "guide/PAM conservation is not checked"
   )
   expect_s3_class(m, "marker_crispr")
   expect_equal(m$cas, "cas13b")

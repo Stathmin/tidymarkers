@@ -14,19 +14,28 @@
 # graphify graph, so the graph answers "what replaced this hand-roll".
 
 entries:
-  - symbol: normalise_allele
-    replacement: Biostrings::replaceAmbiguities
-    status: justified
-    reason: >-
-      replaceAmbiguities() needs a valid DNAStringSet and rejects a raw allele
-      string that is not IUPAC; this entry point must fold any non-ACGTN
-      character (and lowercase) before a DNAString can be built.
+    - symbol: normalise_allele
+      replacement: Biostrings::replaceAmbiguities
+      status: justified
+      reason: >-
+          replaceAmbiguities() needs a valid DNAStringSet and rejects a raw allele
+          string that is not IUPAC; this entry point must fold any non-ACGTN
+          character (and lowercase) before a DNAString can be built.
 
-  - symbol: plot_self_complementarity
-    replacement: Biostrings::complement
-    status: justified
-    reason: >-
-      The chartr() builds a base-by-base logical pairing matrix for a ggplot;
-      Biostrings::complement() returns a DNAStringSet, which would be turned
-      back into characters to fill the same matrix. The output here is a plot
-      matrix, not a sequence.
+    - symbol: plot_self_complementarity
+      replacement: Biostrings::complement
+      status: justified
+      reason: >-
+          The chartr() builds a base-by-base logical pairing matrix for a ggplot;
+          Biostrings::complement() returns a DNAStringSet, which would be turned
+          back into characters to fill the same matrix. The output here is a plot
+          matrix, not a sequence.
+
+    - symbol: internal_duplex_dg_one
+      replacement: TmCalculator::tm_nn
+      status: justified
+      reason: >-
+          tm_nn() returns Tm, not a free energy, but it carries the same SantaLucia
+          2004 dH/dS table and the same initiation and salt terms. This sums that
+          table to report dG, which no installed package does without UNAFold; the
+          parameters are pinned to TmCalculator by test-dg-internal.R.

@@ -124,7 +124,7 @@ taqman_mismatch_dg <- function(probe, variant_pos, alt, engines = NULL) {
   off <- on
   j <- nchar(probe) - variant_pos + 1L
   stringr::str_sub(off, j, j) <- as.character(Biostrings::complement(Biostrings::DNAString(alt)))
-  oligo_dg(probe, off) - oligo_dg(probe, on)
+  thermo_duplex_dg(probe, off) - thermo_duplex_dg(probe, on)
 }
 
 #' Design a TaqMan 5'-nuclease allelic-discrimination marker at a variant

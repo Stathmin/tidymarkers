@@ -4,7 +4,16 @@
 \alias{marker_engines}
 \title{Marker engines and their capabilities}
 \usage{
-marker_engines()
+marker_engines(thermo = getOption("tidymarkers.thermo_engine", "auto"))
+}
+\arguments{
+\item{thermo}{\code{"auto"} (the default, or \code{options(tidymarkers.thermo_engine)})
+keeps OligoArrayAux as the \code{dg} engine when it is installed.  \code{"internal"}
+selects the pure-R duplex adapter (\link{internal_duplex_dg}) so a machine
+without OligoArrayAux can still screen duplex dG: \code{duplex_dg} is then
+\code{TRUE}, while \code{hairpin_dg} and \code{fold} stay \code{FALSE} - that adapter models a
+perfect duplex only, and the hairpin gates are calibrated on UNAFold.
+Nothing falls back silently: the adapter is chosen by name or by option.}
 }
 \value{
 a named list (\code{thermo}, \code{specificity}) of \code{marker_engine} adapters,
@@ -22,6 +31,7 @@ pass a gate.
 engines <- marker_engines()
 names(engines)
 capabilities(engines$specificity)
+capabilities(marker_engines(thermo = "internal")$thermo)
 }
 \seealso{
 Other engines:

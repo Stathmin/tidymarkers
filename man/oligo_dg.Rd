@@ -41,6 +41,7 @@ Other thermodynamics:
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
 \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
+\code{\link[=internal_duplex_dg]{internal_duplex_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},
 \code{\link[=primer_tm]{primer_tm()}},

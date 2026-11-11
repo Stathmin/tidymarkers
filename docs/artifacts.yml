@@ -587,7 +587,7 @@ artifacts:
   inputs:
   - R/marker_sanger.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 20d205f9e7dabf773920a47b3391e348
+  input_hash: fb32995a1a74983c15b4e8dc33701b90
   output_hash: 34e4b065aee9f797aa3352f754067998
   docs: vignettes/markers-crispr-sequencing.Rmd
   status: verified
@@ -631,7 +631,7 @@ artifacts:
   inputs:
   - R/marker_taqman.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 9dbb482ed781ea053492b705be8d0e26
+  input_hash: 4075d21f5568cf5f6d22ae94f8e81d1d
   output_hash: 2cb3b074a27e73221dc1c1ef05b04903
   docs: vignettes/markers-probe.Rmd
   status: verified

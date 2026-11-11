@@ -61,7 +61,10 @@ test_that("the genome-wide scan grades every near hit, not only degenerates", {
   genome <- or_genome()
   # the 3'-terminal site is one substitution away: a radius scan must find it,
   # and exact mode does not (it now says so, naming the near match)
-  exact <- in_silico_pcr(or_f, or_r, genome, max_mismatch = 0L)
+  expect_warning(
+    exact <- in_silico_pcr(or_f, or_r, genome, max_mismatch = 0L),
+    "near-match"
+  )
   # two exact sites, each hit by the one forward and the one reverse primer, so
   # `in_silico_pcr()` pairs every forward start with every downstream reverse
   # end: a product over one site (59 bp), over two (59 + 19 + 59 = 137 bp) and

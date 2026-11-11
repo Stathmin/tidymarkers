@@ -115,6 +115,9 @@
       `error-on: warning`; `cran-comments.md`; `revdep/README.md`;
       `CITATION.cff` + «How to cite»; `inst/WORDLIST` (527) + шаг 4 гейта;
       тарбол 2.3 MB при лимите 5 MB.
+- [x] **`dev/ci-status.R`.** Прогоны через `gh api`, заключение и время каждой
+      ноги, строки `* checking ... ERROR/WARNING/NOTE` из лога упавшей ноги —
+      без новых зависимостей и без клонирования логов в память.
 - [x] **CRAN-остаток, проход 2.** `vignettes/index.Rmd` + ссылка в
       `docs/INDEX.md`; `https://www.vniisb.ru` не отвечает (`000`), поэтому в
       `README.md` — только-HTTP `http://www.vniisb.ru/ru/news/` (`200`);
@@ -190,6 +193,11 @@ sites. Детали — `NEWS.md`.
       Tm-cross-check; `PolyMarker` — benchmark. Внешние Primer3/MFEprimer/
       NUPACK/ViennaRNA — только через `capabilities()`. Потребителя в коде пока
       нет (вторая зависимость без вызова = мёртвый код).
+- [x] **`Z4.3` Второй адаптер `dg` без UNAFold.** `internal_duplex_dg()` —
+      SantaLucia 2004 в R, opt-in через `marker_engines(thermo = "internal")`
+      или `options(tidymarkers.thermo_engine)`; только дуплекс, шпилька и
+      фолдинг остаются на OligoArrayAux. Оракул: `test-dg-internal.R` (dH против
+      TmCalculator, dG против `hybrid-min`, ≤0.8 ккал/моль).
 
 ### Z5. Mismatch-tolerant specificity [P1]
 

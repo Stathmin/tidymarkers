@@ -12,10 +12,10 @@
 #  a missing engine is visible in the manifest instead of disappearing.
 #
 #  `marker_engine_stamp()` keeps that contract too.  An earlier version dropped
-#  unavailable engines, which made a stamp that had silently lost BLAST
+#  unavailable engines, which made a stamp that had silently lost BLAST+
 #  indistinguishable from one taken on a machine that never had it -- exactly
-#  the failure this file exists to prevent.  It now always carries all seven
-#  entries, with NA for a missing engine, and `marker_engine_stamp_field()`
+#  the failure this file exists to prevent.  It now always carries every
+#  entry, with NA for a missing engine, and `marker_engine_stamp_field()`
 #  flattens it to ONE string for a CSV or JSON column.
 #
 #  Roles are fixed here on purpose: the stamp format must not depend on which
@@ -72,6 +72,8 @@ marker_engine_versions <- function() {
     "vmatchPattern / PDict", "sequence I/O and pattern matching",
     "Rsamtools", pkg_version("Rsamtools"),
     "FaFile / faidx", "indexed FASTA access for a marker_genome",
+    "InternalNN", pkg_version("tidymarkers"),
+    "internal_duplex_dg", "duplex free energy (pure R, SantaLucia 2004 NN)",
     "R", as.character(getRversion()),
     "base + dplyr", "the language (a release can change dplyr tie-breaking)"
   ) |>
@@ -82,7 +84,7 @@ marker_engine_versions <- function() {
 # changes the stamp format, so it is a deliberate act, not a side effect.
 marker_engine_names <- c(
   "DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+",
-  "Biostrings", "Rsamtools", "R"
+  "Biostrings", "Rsamtools", "InternalNN", "R"
 )
 
 #' A version stamp for an Evaluation or an artifact manifest

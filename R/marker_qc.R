@@ -194,7 +194,7 @@ dimer_thermo <- function(primers, BPPARAM = NULL,
     )
   keys <- dplyr::distinct(grid, .data$lo, .data$hi)
   one <- function(k) {
-    oligo_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]],
+    thermo_duplex_dg(primers[[keys$lo[k]]], primers[[keys$hi[k]]],
       na = conditions$Na / 1000, temp = conditions$temperature
     )
   }

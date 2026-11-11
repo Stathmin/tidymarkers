@@ -4,17 +4,13 @@
 \alias{thermo_crosscheck}
 \title{Independent thermodynamic cross-check of a window's Tm across NN tables}
 \usage{
-thermo_crosscheck(
-  seq,
-  nn_tables = c("DNA_NN_SantaLucia_2004", "DNA_NN_Allawi_1998", "DNA_NN_Sugimoto_1996",
-    "DNA_NN_Breslauer_1986"),
-  ...
-)
+thermo_crosscheck(seq, nn_tables = NULL, ...)
 }
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
 
-\item{nn_tables}{DNA NN tables to compare (see \code{\link[=primer_tm]{primer_tm()}}).}
+\item{nn_tables}{DNA NN tables to compare (see \code{\link[=primer_tm]{primer_tm()}}); \code{NULL} uses
+SantaLucia (2004), Allawi (1997), Sugimoto (1996) and Breslauer (1986).}
 
 \item{...}{passed to \code{\link[=primer_tm]{primer_tm()}} (e.g. \code{DMSO}).}
 }
@@ -40,6 +36,7 @@ Other thermodynamics:
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
 \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
+\code{\link[=internal_duplex_dg]{internal_duplex_dg()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},

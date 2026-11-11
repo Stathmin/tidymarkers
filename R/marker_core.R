@@ -25,6 +25,13 @@ KASP_TAIL_HEX <- "GAAGGTCGGAGTCAACGGATT" # "HEX/VIC" channel
 
 # Tm conditions (mM) for TmCalculator
 PCR_COND <- list(Na = 50, Mg = 1.5, dNTPs = 0.6, DMSO = 0)
+# TmCalculator renamed DNA_NN_Allawi_1998 to DNA_NN_Allawi_1997 in 1.1.3 and
+# warns on the old spelling.  The parameters are unchanged; resolve the name
+# the installed version knows so both 1.1.2 and >= 1.1.3 run without a warning.
+NN_TABLE_ALLAWI <- local({
+  choices <- eval(formals(TmCalculator::tm_nn)$nn_table)
+  if ("DNA_NN_Allawi_1997" %in% choices) "DNA_NN_Allawi_1997" else "DNA_NN_Allawi_1998"
+})
 NN_TABLE <- "DNA_NN_SantaLucia_2004"
 # The design Tm coordinate.  The KASP/AS/COM and dPCR windows are stated on this
 # correction, so it stays the default until those windows are re-anchored
@@ -298,15 +305,25 @@ marker_engine <- function(name, capabilities, ...) {
 #' [capabilities()] - never `TRUE` - so an unverified feature cannot silently
 #' pass a gate.
 #'
+#' @param thermo `"auto"` (the default, or `options(tidymarkers.thermo_engine)`)
+#'   keeps OligoArrayAux as the `dg` engine when it is installed.  `"internal"`
+#'   selects the pure-R duplex adapter ([internal_duplex_dg]) so a machine
+#'   without OligoArrayAux can still screen duplex dG: `duplex_dg` is then
+#'   `TRUE`, while `hairpin_dg` and `fold` stay `FALSE` - that adapter models a
+#'   perfect duplex only, and the hairpin gates are calibrated on UNAFold.
+#'   Nothing falls back silently: the adapter is chosen by name or by option.
 #' @return a named list (`thermo`, `specificity`) of `marker_engine` adapters,
 #'   classed `marker_engines`.
 #' @examples
 #' engines <- marker_engines()
 #' names(engines)
 #' capabilities(engines$specificity)
+#' capabilities(marker_engines(thermo = "internal")$thermo)
 #' @family engines
 #' @export
-marker_engines <- function() {
+marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto")) {
+  thermo <- match.arg(thermo, c("auto", "internal"))
+  internal <- identical(thermo, "internal")
   structure(
     list(
       thermo = marker_engine(
@@ -315,14 +332,14 @@ marker_engines <- function() {
           tm = TRUE,
           salt = TRUE,
           temperature = TRUE,
-          duplex_dg = has_oligoarrayaux(),
-          hairpin_dg = has_oligoarrayaux(),
-          fold = has_oligoarrayaux() && !is.null(oligoarrayaux_paths()) &&
+          duplex_dg = internal || has_oligoarrayaux(),
+          hairpin_dg = !internal && has_oligoarrayaux(),
+          fold = !internal && has_oligoarrayaux() && !is.null(oligoarrayaux_paths()) &&
             fs::file_exists(fs::path(oligoarrayaux_paths()$bin, "hybrid-ss-min"))
         ),
         tm = primer_tm,
         dimer = dimer_thermo,
-        dg = oligo_dg
+        dg = if (internal) internal_duplex_dg else oligo_dg
       ),
       specificity = marker_engine(
         "specificity",
@@ -405,7 +422,9 @@ capabilities.marker_engines <- function(engine, capability = NULL, ...) {
 #' the call sites consult *that* table, so a caller who supplies a different
 #' adapter gets that adapter's answer.  With no context (or no `engines` in it)
 #' the declaration is taken from [marker_engines()], which is the live probe:
-#' `duplex_dg` / `hairpin_dg` are `has_oligoarrayaux()`.  Anything but a `TRUE`
+#' `duplex_dg` / `hairpin_dg` are `has_oligoarrayaux()` unless
+#' `options(tidymarkers.thermo_engine = "internal")` selects the pure-R adapter.
+#' Anything but a `TRUE`
 #' in the table is a *no* - an undeclared or `"unknown"` capability is not
 #' evidence that the engine can do it.
 #'

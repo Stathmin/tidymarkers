@@ -263,7 +263,7 @@ pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
     return(FALSE)
   }
   hairpin <- oligo_dg_vec(p)
-  homodimer <- c(oligo_dg(p[[1L]], p[[1L]]), oligo_dg(p[[2L]], p[[2L]]))
+  homodimer <- c(thermo_duplex_dg(p[[1L]], p[[1L]]), thermo_duplex_dg(p[[2L]], p[[2L]]))
   all(hairpin >= limits$hairpin_dg, na.rm = TRUE) &&
     all(homodimer >= limits$homodimer_dg, na.rm = TRUE)
 }

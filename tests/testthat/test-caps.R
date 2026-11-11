@@ -41,7 +41,10 @@ test_that("design_caps_marker returns a classed marker whose pair spans the site
   substr(w, 300L, 305L) <- "GAATTC"
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
-  m <- design_caps_marker(genome, snp, flank = 250L)
+  expect_warning(
+    m <- design_caps_marker(genome, snp, flank = 250L),
+    "restriction-site frequency"
+  )
   expect_s3_class(m, "marker_caps")
   # the pair spans the discriminating site, i.e. straddles the variant
   expect_true(m$amplicon$start < 300L && m$amplicon$end > 300L)
@@ -123,7 +126,10 @@ test_that("plot_caps_gel draws a monochrome, Poisson-width two-lane readout", {
   substr(w, 300L, 305L) <- "GAATTC"
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
-  m <- design_caps_marker(genome, snp, flank = 250L)
+  expect_warning(
+    m <- design_caps_marker(genome, snp, flank = 250L),
+    "restriction-site frequency"
+  )
   p <- plot_caps_gel(m)
   expect_s3_class(p, "ggplot")
   # allele identity is carried by lane + label, not by reserved blue/red
@@ -180,7 +186,10 @@ test_that("design_caps_marker evaluates the caps gates and reports the product g
   substr(w, 300L, 305L) <- "GAATTC"
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "G", alt = "A")
-  m <- design_caps_marker(genome, snp, flank = 250L)
+  expect_warning(
+    m <- design_caps_marker(genome, snp, flank = 250L),
+    "restriction-site frequency"
+  )
   # the gates are *evaluated*, not decorative (C7): the marker carries the outcome
   expect_setequal(names(m$selection), c("relaxed", "violated"))
   expect_true(all(unlist(m$selection) %in% KASP_GATES_CAPS))
