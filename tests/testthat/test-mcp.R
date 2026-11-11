@@ -42,6 +42,15 @@ test_that("every registered tool is wired and returns content", {
   env <- .mcp_env()
   specs <- env$mcp_tool_specs()
 
+  # `marker_technology` registers into the package-level store; drop the smoke
+  # technology so it cannot leak into another file's scheme list (test-plan).
+  on.exit(
+    if (exists("mcp_smoke", envir = .marker_tech_store, inherits = FALSE)) {
+      rm("mcp_smoke", envir = .marker_tech_store)
+    },
+    add = TRUE
+  )
+
   # A mounted genome and VCF: the design tools take paths, not in-memory objects.
   genome <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">Chr1", strrep("ACGT", 60L)), genome)

@@ -461,6 +461,19 @@ test_that("two_pass() names the schemes whose design has a genome-level second p
   expect_false(tidymarkers:::two_pass("crispr"))
   expect_false(tidymarkers:::two_pass(NA_character_))
   expect_length(tidymarkers:::two_pass(c("caps", "ssr")), 1L)
+  # a composed technology answers as its base: extra_scheme_designer() dispatches
+  # to the base's, so the design question is the base's question
+  marker_technology("tp_probe_snp", base = "snp", overwrite = TRUE)
+  marker_technology("tp_probe_crispr", base = "crispr", overwrite = TRUE)
+  on.exit(
+    rm(
+      list = c("tp_probe_snp", "tp_probe_crispr"),
+      envir = .marker_tech_store
+    ),
+    add = TRUE
+  )
+  expect_true(tidymarkers:::two_pass("tp_probe_snp"))
+  expect_false(tidymarkers:::two_pass("tp_probe_crispr"))
 })
 
 test_that("every non-KASP second pass continues the same ladder pass it screened", {

@@ -32,10 +32,11 @@ library(knitr)
 Every answer is a row in a table, not a spoken conclusion: so the same assay can
 be compared with another and that comparison can itself be tested.
 
-The examples below read a small FASTA that ships with the package, so they run
-without a genome or the network:
+The examples below read a small FASTA that ships with the package, so they need
+neither a genome nor the network. They do need the Tm engine (`hybrid-min`,
+see `has_oligoarrayaux()`), and the chunk is skipped when it is absent:
 
-```{r, warning = FALSE}
+```{r, warning = FALSE, eval = has_oligoarrayaux()}
 fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 genome <- read_genome_fasta(fa)
 snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
@@ -248,7 +249,7 @@ If the object was assembled but with caveats, look at `$selection`. The
 relaxation ladder lifts the soft gates one at a time and records what exactly
 was lifted:
 
-```{r}
+```{r, eval = has_oligoarrayaux()}
 assay$selection$relaxed # which gates were relaxed
 assay$selection$violated # which are still violated
 assay$evaluation # the checks table saved at assembly
@@ -257,9 +258,10 @@ assay$evaluation # the checks table saved at assembly
 An empty `relaxed` and `violated` means the assay passed first time; a non-empty
 one means the "least bad" candidate came back, and `cli` warned about it at
 assembly. An empty selection is not a pass, though: it only says nothing had to
-be relaxed. The assay assembled above is the first kind, and it still fails
-checks: `passes_all(assay)` is `FALSE`, `marker_risk(assay)` grades the risk
-`"high"`, and 5 of its 27 check rows do not pass.
+be relaxed. When the chunk above runs, the assay assembled there is the first
+kind, and it still fails checks: `passes_all(assay)` is `FALSE`,
+`marker_risk(assay)` grades the risk `"high"`, and 5 of its 27 check rows do not
+pass.
 
 ### The decision policy as text
 
@@ -286,7 +288,7 @@ graph (green = applied, amber = relaxed, red = violated).
 
 The assay object prints itself compactly:
 
-```{r}
+```{r, eval = has_oligoarrayaux()}
 assay
 ```
 

@@ -102,7 +102,7 @@ two_pass_schemes <- function() {
 #' @keywords internal
 #' @noRd
 two_pass <- function(scheme) {
-  length(scheme) == 1L && !is.na(scheme) && scheme %in% two_pass_schemes()
+  length(scheme) == 1L && !is.na(scheme) && scheme_base(scheme) %in% two_pass_schemes()
 }
 
 # The columns every target table carries (an `alt2` keeps a multi-allelic site's

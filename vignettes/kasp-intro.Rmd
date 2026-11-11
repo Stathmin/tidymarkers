@@ -81,11 +81,12 @@ marker_design_checks(assay) # row by row, what and why
 ```
 
 Your own FASTA/VCF - same way, but through the input readers. The chunk reads a
-small FASTA that ships with the package, so it runs here without a genome; for a
+small FASTA that ships with the package, so it needs no genome; it does need the
+Tm engine (`has_oligoarrayaux()`) and is skipped when that is absent. For a
 VCF of your own, `read_variants_vcf("my.vcf.gz", chrom = "chr1")` streams the
 variants with `vroom`:
 
-```{r, warning = FALSE}
+```{r, warning = FALSE, eval = has_oligoarrayaux()}
 fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 genome <- read_genome_fasta(fa) # Rsamtools index
 snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")

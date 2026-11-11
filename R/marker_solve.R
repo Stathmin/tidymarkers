@@ -86,7 +86,7 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
     } else {
       args <- c(list(plan$genome, snp, sc), dots)
       if (!is.null(plan$variants)) args$variants <- plan$variants
-      if (!is.null(plan$haplotypes) && sc %in% haplotype_schemes()) args$haplotypes <- plan$haplotypes
+      if (!is.null(plan$haplotypes) && scheme_base(sc) %in% haplotype_schemes()) args$haplotypes <- plan$haplotypes
       m <- tryCatch(
         suppressWarnings(rlang::exec(marker_design_at, !!!args)),
         error = function(e) NULL

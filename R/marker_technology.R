@@ -32,6 +32,26 @@ marker_technology_def <- function(name) {
   }
 }
 
+# A scheme's design identity: a composed technology has no designer of its own
+# (extra_scheme_designer() dispatches to its base's), so every question about
+# how the scheme is *designed* - two-pass, haplotype support - is answered by
+# the base.  A technology may extend a technology, so resolve to the root.
+#' The built-in scheme a scheme's designer belongs to (internal)
+#' @keywords internal
+#' @noRd
+scheme_base <- function(scheme) {
+  seen <- character(0)
+  while (length(scheme) == 1L && !is.na(scheme) && !scheme %in% seen) {
+    seen <- c(seen, scheme)
+    tech <- marker_technology_def(scheme)
+    if (is.null(tech)) {
+      break
+    }
+    scheme <- tech$base
+  }
+  scheme
+}
+
 #' Compose a technology from a base chemistry
 #'
 #' Registers a new marker technology = a base scheme (its designer and DAG stage)
