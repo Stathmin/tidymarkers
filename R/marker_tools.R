@@ -65,8 +65,9 @@ tool_dirs <- function(opt) {
 #' memo).  The key carries the option and the working directory, which also
 #' decide the answer.
 #'
-#' @return `NULL` when not found, else `list(exe, bin, dat)` (`dat` is `NA` when
-#'   the `UNAFOLDDAT` tables were not found next to the executable).
+#' @return `NULL` when not found, else `list(exe, bin, dat, ss)` (`dat` is `NA`
+#'   when the `UNAFOLDDAT` tables were not found next to the executable; `ss` is
+#'   whether `hybrid-ss-min`, the folding entry point, sits beside `exe`).
 #' @keywords internal
 #' @noRd
 oligoarrayaux_paths <- function() {
@@ -90,7 +91,15 @@ oligoarrayaux_paths <- function() {
       prefix <- fs::path_dir(exe)
       if (identical(fs::path_file(prefix), "bin")) prefix <- fs::path_dir(prefix)
       dat <- fs::path(prefix, "share", "oligoarrayaux")
-      list(exe = exe, bin = fs::path_dir(exe), dat = if (fs::dir_exists(dat)) dat else NA_character_)
+      # `hybrid-ss-min` is probed here rather than by every `marker_engines()`
+      # call: `fs::file_exists()` was 69 us of that call's 106 us
+      ss <- c("hybrid-ss-min", "hybrid-ss-min.exe")
+      bin_dir <- fs::path_dir(exe)
+      list(
+        exe = exe, bin = bin_dir,
+        dat = if (fs::dir_exists(dat)) dat else NA_character_,
+        ss = any(fs::file_exists(fs::path(bin_dir, ss)))
+      )
     }
   })
 }
@@ -118,7 +127,10 @@ with_oligoarrayaux <- function(code) {
 #' @keywords internal
 #' @noRd
 blast_bin <- function() {
-  key <- paste("blast", getwd(), getOption("tidymarkers.blast", ""), sep = "|")
+  key <- paste("blast", getwd(), getOption("tidymarkers.blast", ""),
+    Sys.getenv("PATH"),
+    sep = "|"
+  )
   session_memo(key, {
     out <- NULL
     for (d in tool_dirs("tidymarkers.blast")) {
@@ -128,6 +140,11 @@ blast_bin <- function() {
         out <- fs::path_dir(b)
         break
       }
+    }
+    # the `PATH` fallback lives here, not in `has_blast()`, so the two `Sys.which()`
+    # calls are paid once per session (14 us each on a call in a tight loop)
+    if (is.null(out) && nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb"))) {
+      out <- fs::path_dir(fs::path(Sys.which("blastn")))
     }
     out
   })

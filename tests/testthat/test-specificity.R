@@ -465,12 +465,29 @@ test_that("a genomic N never satisfies a primer (no N-run phantom hits)", {
   ) == 0L))
 })
 
+test_that("a mismatch radius does not buy a hit across a genomic N", {
+  # the `fixed = TRUE` scan counts an `N` as one mismatch, so at `max_mismatch =
+  # 1` a site straddling the run would come back as a hit; the block split used
+  # to forbid that, and the fast path drops those hits explicitly
+  p <- "CCGCAATCTCATGTCCAATTATCCACC"
+  n_at <- paste0(substr(p, 1L, 13L), "N", substr(p, 15L, 27L))
+  g <- Biostrings::DNAStringSet(c(chr1 = n_at))
+  expect_length(tidymarkers:::exact_pattern_hits(p, g[["chr1"]], 1L), 0L)
+  # one substitution away from an ambiguity code is still a hit
+  sub1 <- paste0(substr(p, 1L, 3L), "A", substr(p, 5L, 27L))
+  g2 <- Biostrings::DNAStringSet(c(chr1 = sub1))
+  expect_equal(IRanges::start(tidymarkers:::exact_pattern_hits(p, g2[["chr1"]], 1L)), 1L)
+  expect_length(tidymarkers:::exact_pattern_hits(p, g2[["chr1"]], 0L), 0L)
+})
+
 test_that("exact_pattern_hits keeps coordinates when the first block has no hit", {
   # A qualifying unambiguous block that does not contain the pattern used to
   # make the per-block range list start with `NULL`.  A leading `NULL` makes
   # `c()` fall back to list semantics, so `start()` returned the block index
   # instead of the genomic coordinate and every real genome got a hit at 1-2.
-  p <- "CCGCAATCTCATGTCCAATTATCCACC"
+  # The pattern carries an IUPAC code on purpose: a plain-ACGT pattern now takes
+  # the `fixed = TRUE` scan and never enters the block path.
+  p <- sub("C$", "Y", "CCGCAATCTCATGTCCAATTATCCACC")
   g <- Biostrings::DNAStringSet(c(chr1 = paste0(
     strrep("A", 40L), strrep("N", 20L), strrep("A", 10L), p, strrep("A", 10L)
   )))

@@ -23,7 +23,7 @@
 #' @family specificity
 #' @export
 has_blast <- function() {
-  !is.null(blast_bin()) || (nzchar(Sys.which("blastn")) && nzchar(Sys.which("makeblastdb")))
+  !is.null(blast_bin())
 }
 
 #' Build (once) a BLAST database for a genome

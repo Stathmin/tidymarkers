@@ -88,7 +88,19 @@ source_carrier <- function(FUN) {
 #' GC fraction and homopolymer-run test
 #' @keywords internal
 #' @noRd
-gc_frac <- function(seq) unname(Biostrings::letterFrequency(Biostrings::DNAStringSet(seq), "GC", as.prob = TRUE)[, 1])
+gc_frac <- function(seq) {
+  # `letterFrequency(DNAStringSet(...))` spent 1.45 ms per call on a 27-mer, and
+  # the count itself is one `gsub`.  The alphabet check is what the S4 call gave
+  # for free and is kept: a silent `gc` for a bad character would reach a gate.
+  # The denominator is `nchar()`, which is what `as.prob = TRUE` divides by (a
+  # `+`/`-`/`.` in the DNA alphabet counts in it but is never GC).
+  seq <- as.character(seq)
+  n <- nchar(seq, keepNA = TRUE)
+  if (anyNA(n) || any(grepl("[^ACGTMRWSYKVHDBNacgtmrwsykvhdbn+.-]", seq))) {
+    cli::cli_abort(gettext("`seq` must be DNA (ACGT plus IUPAC ambiguity codes)."))
+  }
+  unname(nchar(gsub("[^GC]", "", toupper(seq)), keepNA = TRUE) / n)
+}
 
 #' Regex for a tandem repeat of `unit`-length units, at least `min_copies` times
 #'
@@ -247,7 +259,69 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 #' @family QC
 #' @export
 has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
-  purrr::map_int(find_palindromes(seq, min_armlength, max_looplength, max_mismatch), nrow) > 0L
+  # `findPalindromes()` plus a tibble per sequence cost ~1.2 ms (measured); the
+  # question is only "does any arm pair exist".  For a plain-ACGT oligo that is
+  # a few vectorised substring comparisons (~60 us).  Every other case (IUPAC
+  # code, mismatches, a non-default argument) takes the Biostrings path, so the
+  # fast path cannot change an answer it does not cover.
+  seq <- as.character(seq)
+  fast <- is.numeric(max_mismatch) && identical(as.integer(max_mismatch), 0L) &&
+    is.numeric(min_armlength) && length(min_armlength) == 1L &&
+    is.finite(min_armlength) && min_armlength >= 2 &&
+    min_armlength == floor(min_armlength) &&
+    is.numeric(max_looplength) && length(max_looplength) == 1L &&
+    is.finite(max_looplength) && max_looplength >= 0 &&
+    max_looplength == floor(max_looplength)
+  # unname(): the old `map_int(...) > 0L` dropped names because a comparison
+  # strips attributes; callers must not start seeing names on this vector
+  unname(vapply(seq, function(s) {
+    if (fast && !is.na(s) && !grepl("[^ACGT]", s)) {
+      palindromic_arms(s, as.integer(min_armlength), as.integer(max_looplength))
+    } else {
+      length(Biostrings::findPalindromes(Biostrings::DNAString(s),
+        min.armlength = min_armlength,
+        max.looplength = max_looplength,
+        max.mismatch = max_mismatch
+      )) > 0L
+    }
+  }, logical(1)))
+}
+
+#' Do two reverse-complementary arms of `k` bases sit within `L` of each other?
+#'
+#' `findPalindromes()` is an inverted-repeat finder: the arms match reverse-
+#' complementarily and the loop between them is arbitrary (checked: it reports
+#' `ACGTAAAAACGT` at `k = 4, L = 4`).  A view with arms `A >= k` and loop `d`
+#' contains a `k`-arm pair with the same loop `d`, and any `k`-arm pair with
+#' loop `d <= L` is such a view, so "any hit" is exactly "any `k`-arm pair".
+#'
+#' The reverse complement is taken once for the whole sequence and read back
+#' through mirrored coordinates, so no window is complemented on its own.
+#' @param s a plain-ACGT sequence.
+#' @param k arm length.
+#' @param L maximum loop length (minimum loop length is 0).
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+palindromic_arms <- function(s, k, L) {
+  n <- nchar(s)
+  if (n < 2L * k) {
+    return(FALSE)
+  }
+  rc <- intToUtf8(rev(utf8ToInt(chartr("ACGT", "TGCA", s))))
+  for (d in 0L:L) {
+    npos <- n - 2L * k - d + 1L
+    if (npos < 1L) break
+    i <- seq_len(npos)
+    left <- substring(s, i, i + k - 1L)
+    # the right arm starts at i + k + d, so its reverse complement starts at
+    # n - (i + k + d + k - 1) + 1 in the genome's reverse complement
+    rs <- n - i - 2L * k - d + 2L
+    if (any(left == substring(rc, rs, rs + k - 1L))) {
+      return(TRUE)
+    }
+  }
+  FALSE
 }
 
 #' Nearest-neighbour Tm of oligos (perfect duplex), salt-corrected (TmCalculator)

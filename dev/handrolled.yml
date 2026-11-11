@@ -39,3 +39,14 @@ entries:
           2004 dH/dS table and the same initiation and salt terms. This sums that
           table to report dG, which no installed package does without UNAFold; the
           parameters are pinned to TmCalculator by test-dg-internal.R.
+
+    - symbol: palindromic_arms
+      replacement: Biostrings::findPalindromes
+      status: justified
+      reason: >-
+          findPalindromes() builds a DNAString and a view table per sequence
+          (1.2 ms); the caller only asks "does any arm pair of >= k bases sit
+          within a loop of <= L". This answers that for a plain-ACGT oligo with
+          vectorised substring comparisons, and has_palindrome() routes every
+          other input (IUPAC code, mismatch radius, non-default argument) to
+          findPalindromes(), so the screen itself is unchanged.

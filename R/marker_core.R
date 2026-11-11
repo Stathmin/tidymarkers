@@ -324,6 +324,10 @@ marker_engine <- function(name, capabilities, ...) {
 marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto")) {
   thermo <- match.arg(thermo, c("auto", "internal"))
   internal <- identical(thermo, "internal")
+  # probe once: the three capability flags below used to call
+  # `has_oligoarrayaux()` separately and `oligoarrayaux_paths()` twice
+  oaa <- !internal && has_oligoarrayaux()
+  oaa_paths <- if (oaa) oligoarrayaux_paths() else NULL
   structure(
     list(
       thermo = marker_engine(
@@ -332,10 +336,9 @@ marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto
           tm = TRUE,
           salt = TRUE,
           temperature = TRUE,
-          duplex_dg = internal || has_oligoarrayaux(),
-          hairpin_dg = !internal && has_oligoarrayaux(),
-          fold = !internal && has_oligoarrayaux() && !is.null(oligoarrayaux_paths()) &&
-            fs::file_exists(fs::path(oligoarrayaux_paths()$bin, "hybrid-ss-min"))
+          duplex_dg = internal || oaa,
+          hairpin_dg = oaa,
+          fold = oaa && isTRUE(oaa_paths$ss)
         ),
         tm = primer_tm,
         dimer = dimer_thermo,
@@ -348,7 +351,7 @@ marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto
           seed_counts = TRUE,
           iupac = TRUE,
           mismatch = TRUE,
-          blast = requireNamespace("rBLAST", quietly = TRUE) && nzchar(Sys.which("blastn"))
+          blast = requireNamespace("rBLAST", quietly = TRUE) && has_blast()
         ),
         pcr = in_silico_pcr,
         seed = specificity_seed
