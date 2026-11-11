@@ -106,6 +106,9 @@ COM_TM_TARGET <- 60 # preferred common-primer Tm (C); KASP wants COM Tm >= AS Tm
 HAIRPIN_DG_WARN <- -3 # flag hairpins with a reaction-temperature dG below this (kcal/mol)
 SEED_K <- 15L # 3'-seed length for the fast specificity screen
 SEED_MISMATCH <- 1L
+# Largest pattern-hit set worth keeping in the per-session scan cache: a result
+# bigger than this costs more memory than the rescan it would save.
+HIT_CACHE_MAX <- 20000L
 
 # Ensembl consequence wording -> design priority (lower = preferred)
 # Sequence-Ontology term -> design priority (lower = preferred).  These are the

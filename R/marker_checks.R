@@ -780,11 +780,13 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   pass <- rep(NA, nrow(checks))
   family <- marker_scheme(scheme)$family
   native <- identical(class(marker)[1L], paste0("marker_", scheme))
+  # asked once, not once per check row: the labels are a property of the family
+  fam_labs <- marker_family_check_labels(family)
   for (i in seq_len(nrow(checks))) {
     lab <- checks$label[i]
     # family checks only make sense on the matching marker class; a KASP mock
     # graded as e.g. `caps` must get NA, not a fabricated pass/fail.
-    if (lab %in% marker_family_check_labels(family) && !native) {
+    if (lab %in% fam_labs && !native) {
       next
     }
     if (identical(lab, "amplicon length (bp)")) {

@@ -1273,6 +1273,22 @@ vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 #' @keywords internal
 #' @noRd
 criterion_spec <- function(limits = KASP_LIMITS) {
+  # The registry is a pure function of `limits`, and it is rebuilt on every
+  # `marker_family_check_labels()` call - which `marker_generic_checks()` used to
+  # call once per check row, so a design run rebuilt it thousands of times.
+  # Measured on test-falsifiable.R: 68.5 s of a 95 s file was under this one
+  # call.  Memoised under the same key shape `marker_criteria()` uses.
+  session_memo(
+    paste0("criterion_spec|", paste(deparse(limits), collapse = "")),
+    criterion_spec_build(limits)
+  )
+}
+
+#' The criterion registry, built (the uncached body of [criterion_spec()])
+#' @param limits thresholds.
+#' @keywords internal
+#' @noRd
+criterion_spec_build <- function(limits = KASP_LIMITS) {
   # a gate's scope is the scheme that declares its constant; the `as`/`pair`
   # stages are shared by the KASP family, the rest belong to their own scheme.
   # One spec for all of them: marker_builtin_stages() (R/marker_stages.R).

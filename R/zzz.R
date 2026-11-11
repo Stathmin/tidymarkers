@@ -28,12 +28,16 @@
 #' for a socket worker, and this state must not travel by value; the re-homed
 #' functions still look the name up, so the carrier gets a fresh one (the memo is
 #' cold there either way).
-#' @return an environment with `$blocks` and `$memo`.
+#' @return an environment with `$blocks`, `$hits` and `$memo`.
 #' @keywords internal
 #' @noRd
 marker_state_new <- function() {
   state <- new.env(parent = emptyenv())
   state$blocks <- new.env(parent = emptyenv())
+  # pattern search results, keyed by pattern + subject signature + radius; a
+  # design run asks for the same primer many times (each candidate pairing, the
+  # near-radius pass, the final assay) and a genome scan is the expensive part
+  state$hits <- new.env(parent = emptyenv())
   state$memo <- new.env(parent = emptyenv())
   state
 }

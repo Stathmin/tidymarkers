@@ -81,6 +81,35 @@ test_that("a BiocParallel BPPARAM gives the same mismatch counts as serial", {
   expect_equal(par$hits, serial$hits)
 })
 
+test_that("one-mismatch seed counts equal a per-seed countPattern scan", {
+  # the batched path counts the exact occurrences of the seed's Hamming
+  # neighbours; this is the oracle it must match
+  genome <- Biostrings::DNAStringSet(c(
+    chr1 = "ACGTTGCAAGGCCTTACGATCGATCGGGATCCATTACAGGCCTTAA",
+    chr2 = "TTTTGGGGCCCCAAAAGGGGTTTTAAAACCCCGGGGTTTTGGGGCC"
+  ))
+  primers <- c(P = "ACGTACGTACGTAAACCC", Q = "TTTTTTACGTTGCAAGGC")
+  manual <- vapply(unname(primers), function(p) {
+    seed <- Biostrings::DNAString(substr(p, nchar(p) - 7L, nchar(p)))
+    rc <- Biostrings::reverseComplement(seed)
+    sum(Biostrings::vcountPattern(seed, genome, max.mismatch = 1L)) +
+      sum(Biostrings::vcountPattern(rc, genome, max.mismatch = 1L))
+  }, numeric(1))
+  res <- specificity_seed(primers, genome, k = 8L, max_mismatch = 1L)
+  expect_equal(res$hits, as.integer(manual))
+})
+
+test_that("a degenerate seed falls back to the per-seed scan", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  primers <- c(P = "TTTTTTACGTACGTRR")
+  seed <- Biostrings::DNAString("GTACGTRR")
+  rc <- Biostrings::reverseComplement(seed)
+  manual <- sum(Biostrings::vcountPattern(seed, genome, max.mismatch = 1L)) +
+    sum(Biostrings::vcountPattern(rc, genome, max.mismatch = 1L))
+  res <- specificity_seed(primers, genome, k = 8L, max_mismatch = 1L)
+  expect_equal(res$hits, as.integer(manual))
+})
+
 test_that("the engines registry reports unknown for an undeclared capability", {
   eng <- marker_engines()
   expect_named(eng, c("thermo", "specificity"))

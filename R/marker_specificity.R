@@ -64,6 +64,14 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (max_mismatch == 0L) {
     hits <- exact_seed_counts(seeds, genome)
+  } else if (max_mismatch == 1L && all(grepl("^[ACGT]+$", seeds))) {
+    # A site within one substitution of a seed is exactly one of the seed's 46
+    # Hamming neighbours, so a single exact dictionary pass over the 46 * n
+    # neighbours answers every seed.  Measured on TAIR10 Chr1, 60 seeds:
+    # 4.40 s for one `countPattern(max.mismatch = 1)` pass per seed vs 0.58 s
+    # for the batched exact pass, identical counts.  Degenerate or longer-radius
+    # input takes the per-seed loop below.
+    hits <- near_seed_counts(seeds, genome)
   } else {
     # vcountPattern takes a single pattern, so loop over seeds *per chromosome*;
     # parallelism is over the genome's sequences (one worker per chromosome)
@@ -169,6 +177,53 @@ exact_seed_counts <- function(seeds, genome) {
   m <- Biostrings::vcountPDict(Biostrings::PDict(pats[keep]), genome)
   cnt <- rlang::set_names(as.integer(rowSums(m)), pats[keep])
   as.integer(cnt[seeds] + cnt[rc])
+}
+
+#' Every string within one substitution of a seed
+#'
+#' A genomic site matches a seed with at most one mismatch exactly when the site
+#' equals one of these strings, so counting the Hamming ball exactly is the same
+#' question as counting with `max.mismatch = 1`.
+#' @param seed a plain-ACGT string.
+#' @return a character vector: the seed itself, then its 3 * nchar substitutions.
+#' @keywords internal
+#' @noRd
+seed_ball <- function(seed) {
+  bases <- c("A", "C", "G", "T")
+  sp <- strsplit(seed, "")[[1L]]
+  out <- seed
+  for (i in seq_along(sp)) {
+    for (b in bases) {
+      if (b != sp[[i]]) {
+        v <- sp
+        v[[i]] <- b
+        out <- c(out, paste(v, collapse = ""))
+      }
+    }
+  }
+  out
+}
+
+#' Both-strand seed counts allowing one mismatch, by exact dictionary counting
+#'
+#' `PDict`/`vcountPDict()` cannot count with a mismatch radius, so the radius is
+#' moved into the pattern set: the exact counts of a seed's 46 Hamming neighbours
+#' sum to its one-mismatch count, and one pass over all neighbours of all seeds
+#' replaces one pass per seed.  Same counts, one genome scan.
+#' @param seeds plain-ACGT seeds (all the same width).
+#' @param genome a `DNAStringSet`.
+#' @return integer vector, one count per seed.
+#' @keywords internal
+#' @noRd
+near_seed_counts <- function(seeds, genome) {
+  ball <- lapply(seeds, seed_ball)
+  n <- lengths(ball)
+  pats <- unlist(ball, use.names = FALSE)
+  rc <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(pats)))
+  dict <- unique(c(pats, rc))
+  cnt <- as.integer(rowSums(Biostrings::vcountPDict(Biostrings::PDict(dict), genome)))
+  names(cnt) <- dict
+  as.integer(rowsum(cnt[pats] + cnt[rc], rep(seq_along(seeds), n)))
 }
 
 #' Per-position mismatch weight for a primer hit (heuristic, not calibrated)
@@ -408,18 +463,7 @@ iupac_covers <- function(code, base) {
 #' @noRd
 unambiguous_blocks <- function(subject) {
   len <- length(subject)
-  # The key is a content signature - length plus the first, middle and last 32
-  # bases - so an entry is only reused for the same sequence.  It deliberately
-  # does *not* contain the N count it memoises: counting N is the O(length) cost
-  # (`letterFrequency` on a 30 Mb chromosome), and it used to be paid on every
-  # pattern of every primer pair on that chromosome.
-  mid <- max(1L, min(len, len %/% 2L))
-  key <- paste0(len, "|", paste(
-    as.character(Biostrings::subseq(subject, 1L, min(len, 32L))),
-    as.character(Biostrings::subseq(subject, mid, min(len, mid + 31L))),
-    as.character(Biostrings::subseq(subject, max(1L, len - 31L), len)),
-    sep = "|"
-  ))
+  key <- subject_signature(subject)
   cached <- get0(key, envir = .marker_state$blocks, inherits = FALSE)
   if (!is.null(cached)) {
     return(cached)
@@ -445,6 +489,28 @@ unambiguous_blocks <- function(subject) {
   out
 }
 
+#' Content signature of a genomic sequence
+#'
+#' The key both genome-derived caches use: length plus the first, middle and
+#' last 32 bases.  It deliberately does *not* contain the N count - counting N
+#' is the O(length) cost (`letterFrequency` on a 30 Mb chromosome), and it used
+#' to be paid on every pattern of every primer pair on that chromosome.
+#'
+#' @param subject the genomic sequence as an `XString`.
+#' @return a single string.
+#' @keywords internal
+#' @noRd
+subject_signature <- function(subject) {
+  len <- length(subject)
+  mid <- max(1L, min(len, len %/% 2L))
+  paste0(len, "|", paste(
+    as.character(Biostrings::subseq(subject, 1L, min(len, 32L))),
+    as.character(Biostrings::subseq(subject, mid, min(len, mid + 31L))),
+    as.character(Biostrings::subseq(subject, max(1L, len - 31L), len)),
+    sep = "|"
+  ))
+}
+
 #' Primer hits that never match an ambiguous genomic base
 #'
 #' `Biostrings::matchPattern(fixed = FALSE)` treats the pattern as a set of IUPAC
@@ -468,6 +534,40 @@ unambiguous_blocks <- function(subject) {
 #' @keywords internal
 #' @noRd
 exact_pattern_hits <- function(pattern, subject, max_mismatch) {
+  # One design run asks for the same (pattern, chromosome, radius) several
+  # times - once per candidate pairing it is paired in, once more by the
+  # `max_mismatch = 1` near-match pass of `in_silico_pcr()`, once for the final
+  # assay - and a whole-chromosome scan is the expensive part (82 s of a 97 s
+  # 6-SNP design).  The answer is a pure function of the three arguments, so it
+  # is cached per subject content signature.  A pathological result (a long run
+  # of hits, e.g. a primer matching an N-free repeat) is not cached: the entry
+  # would cost more than the rescan.  The signature is the one
+  # `unambiguous_blocks()` uses (length + first/middle/last 32 bases), so two
+  # subjects that differ only in the middle collide - the same assumption that
+  # cache already makes, and one genome per session is the intended use.
+  key <- paste(max_mismatch, subject_signature(subject), pattern, sep = "\r")
+  cached <- get0(key, envir = .marker_state$hits, inherits = FALSE)
+  if (!is.null(cached)) {
+    return(cached)
+  }
+  out <- pattern_hits_scan(pattern, subject, max_mismatch)
+  if (length(out) <= HIT_CACHE_MAX) {
+    if (length(.marker_state$hits) > 256L) {
+      rm(list = ls(.marker_state$hits, all.names = TRUE), envir = .marker_state$hits)
+    }
+    assign(key, out, envir = .marker_state$hits)
+  }
+  out
+}
+
+#' One pattern search over one sequence (the uncached body of [exact_pattern_hits()])
+#' @param pattern the plus-strand pattern to search (IUPAC-aware).
+#' @param subject the genomic sequence as an `XString`.
+#' @param max_mismatch search radius.
+#' @return an `IRanges` of hit starts/ends in `subject` coordinates.
+#' @keywords internal
+#' @noRd
+pattern_hits_scan <- function(pattern, subject, max_mismatch) {
   width <- nchar(pattern)
   if (!grepl("[^ACGT]", pattern)) {
     # A plain-ACGT pattern needs no block split: `fixed = TRUE` matches the

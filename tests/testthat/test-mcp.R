@@ -44,9 +44,15 @@ test_that("every registered tool is wired and returns content", {
 
   # `marker_technology` registers into the package-level store; drop the smoke
   # technology so it cannot leak into another file's scheme list (test-plan).
+  # `marker_schemes()` answers from the session memo, so removing the entry is
+  # not enough - the memo has to be dropped too, exactly as `marker_technology()`
+  # does when it changes the registry.
   on.exit(
-    if (exists("mcp_smoke", envir = .marker_tech_store, inherits = FALSE)) {
-      rm("mcp_smoke", envir = .marker_tech_store)
+    {
+      if (exists("mcp_smoke", envir = .marker_tech_store, inherits = FALSE)) {
+        rm("mcp_smoke", envir = .marker_tech_store)
+      }
+      session_memo_clear()
     },
     add = TRUE
   )
