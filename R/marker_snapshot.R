@@ -299,7 +299,9 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
   if (!nrow(cand)) {
     return(NULL)
   }
-  if (has_oligoarrayaux()) {
+  # the body reads a hairpin fold and a duplex (homodimer) dG: both, or the
+  # stored flag would grade a dG nobody could compute
+  if (engine_has("hairpin_dg") && engine_has("duplex_dg")) {
     cand$hairpin_dg <- oligo_dg_vec(cand$primer)
     cand$homodimer_dg <- oligo_dg_vec(cand$primer, cand$primer)
     cand$structure_ok <- cand$hairpin_dg >= limits$hairpin_dg &

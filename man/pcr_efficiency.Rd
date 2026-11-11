@@ -35,6 +35,8 @@ a numeric vector of efficiencies (0-1), one per primer/target pair.
 \description{
 Models hybridisation (incl. side reactions) times Taq elongation efficiency,
 so a 3'-terminal mismatch is strongly penalised - the physical basis of KASP.
+Needs OligoArrayAux through DECIPHER, i.e. the \code{pcr_efficiency} capability of
+the thermo adapter (\code{\link[=marker_engines]{marker_engines()}}); callers gate on that, not on the tool.
 }
 \examples{
 \dontrun{
@@ -49,6 +51,7 @@ Other thermodynamics:
 \code{\link[=fold_amplicon]{fold_amplicon()}},
 \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
 \code{\link[=internal_duplex_dg]{internal_duplex_dg()}},
+\code{\link[=internal_hairpin_dg]{internal_hairpin_dg()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=primer_thermo]{primer_thermo()}},
 \code{\link[=primer_tm]{primer_tm()}},

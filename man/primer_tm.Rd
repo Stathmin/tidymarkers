@@ -77,6 +77,7 @@ Other thermodynamics:
 \code{\link[=fold_amplicon]{fold_amplicon()}},
 \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
 \code{\link[=internal_duplex_dg]{internal_duplex_dg()}},
+\code{\link[=internal_hairpin_dg]{internal_hairpin_dg()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},

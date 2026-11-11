@@ -202,6 +202,26 @@ test_that("design_caps_marker evaluates the caps gates and reports the product g
   expect_gte(m$gap, KASP_CAPS_GAP_MIN)
 })
 
+test_that("find_caps_enzymes reads a target near a window end without raising", {
+  # the window is clipped at the sequence end, so one flanking side is short and
+  # no candidate primer starts there: that is an empty set, not a Tm-engine error
+  withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = ""))
+  substr(w, 290L, 295L) <- "GAATTC"
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  for (pos in c(150L, 291L)) {
+    snp <- tibble::tibble(
+      chrom = "Chr1", pos = pos, ref = substr(w, pos, pos),
+      alt = if (substr(w, pos, pos) == "A") "G" else "A"
+    )
+    hits <- expect_no_error(find_caps_enzymes(genome, snp, flank = 150L))
+    expect_s3_class(hits, "tbl_df")
+    expect_gte(nrow(hits), 1L)
+    # and the designer either designs or says so - it does not raise
+    m <- suppressWarnings(expect_no_error(design_caps_marker(genome, snp, flank = 150L)))
+    expect_true(is.null(m) || inherits(m, "marker_caps"))
+  }
+})
+
 ## --- the CAPS extracts -------------------------------------------------------
 # The enzyme catalogue and the three paper tables behind the CAPS family are read
 # from inst/extdata, so what the scanner is handed is asserted, not assumed.

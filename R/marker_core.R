@@ -307,10 +307,18 @@ marker_engine <- function(name, capabilities, ...) {
 #'
 #' @param thermo `"auto"` (the default, or `options(tidymarkers.thermo_engine)`)
 #'   keeps OligoArrayAux as the `dg` engine when it is installed.  `"internal"`
-#'   selects the pure-R duplex adapter ([internal_duplex_dg]) so a machine
-#'   without OligoArrayAux can still screen duplex dG: `duplex_dg` is then
-#'   `TRUE`, while `hairpin_dg` and `fold` stay `FALSE` - that adapter models a
-#'   perfect duplex only, and the hairpin gates are calibrated on UNAFold.
+#'   selects the pure-R adapters ([internal_duplex_dg], [internal_hairpin_dg]) so
+#'   a machine without OligoArrayAux can still screen duplex dG and hairpin dG:
+#'   `duplex_dg` and `hairpin_dg` are then `TRUE`, while `fold` stays `FALSE`.
+#'   The hairpin adapter is a *screen*, not UNAFold: it scores a perfect stem plus
+#'   one loop penalty, so it has no partition function and no mismatched, bulged
+#'   or interior loops, and it predicts no structure.  On the panel in
+#'   `tests/testthat/test-dg-internal.R` it is within mean 0.54 / max 1.48 kcal/mol
+#'   of UNAFold at 37 C, and it under-reports that stability (its number is less
+#'   negative), so the `hairpin_dg >= -3` gate reads more permissively than on
+#'   UNAFold - never stricter.  `pcr_efficiency` needs UNAFold *through* DECIPHER,
+#'   so it is `TRUE` only when OligoArrayAux is installed and DECIPHER loads - the
+#'   internal adapter cannot supply it.
 #'   Nothing falls back silently: the adapter is chosen by name or by option.
 #' @return a named list (`thermo`, `specificity`) of `marker_engine` adapters,
 #'   classed `marker_engines`.
@@ -337,8 +345,9 @@ marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto
           salt = TRUE,
           temperature = TRUE,
           duplex_dg = internal || oaa,
-          hairpin_dg = oaa,
-          fold = oaa && isTRUE(oaa_paths$ss)
+          hairpin_dg = internal || oaa,
+          fold = oaa && isTRUE(oaa_paths$ss),
+          pcr_efficiency = oaa && requireNamespace("DECIPHER", quietly = TRUE)
         ),
         tm = primer_tm,
         dimer = dimer_thermo,
@@ -425,9 +434,9 @@ capabilities.marker_engines <- function(engine, capability = NULL, ...) {
 #' the call sites consult *that* table, so a caller who supplies a different
 #' adapter gets that adapter's answer.  With no context (or no `engines` in it)
 #' the declaration is taken from [marker_engines()], which is the live probe:
-#' `duplex_dg` / `hairpin_dg` are `has_oligoarrayaux()` unless
-#' `options(tidymarkers.thermo_engine = "internal")` selects the pure-R adapter.
-#' Anything but a `TRUE`
+#' `duplex_dg` / `hairpin_dg` need OligoArrayAux unless
+#' `options(tidymarkers.thermo_engine = "internal")` selects the pure-R adapter,
+#' and `pcr_efficiency` needs it through DECIPHER.  Anything but a `TRUE`
 #' in the table is a *no* - an undeclared or `"unknown"` capability is not
 #' evidence that the engine can do it.
 #'

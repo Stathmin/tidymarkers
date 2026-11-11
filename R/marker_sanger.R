@@ -249,13 +249,15 @@ seed_margin <- function(primer_f, primer_r, genome, k = SEED_K) {
 #' bare machine still returns a candidate (the design must not be blocked by a
 #' tool it cannot run), and the hairpin/dimer rows of
 #' [marker_design_checks()] remain `NA` - the verdict is `unknown`, never a pass.
+#' It needs *both* capabilities the body reads (hairpin fold and duplex dG):
+#' with only one, a missing dG would read as a pass through `na.rm = TRUE`.
 #' @param primer_f,primer_r the pair's oligos.
 #' @param limits thresholds (see `KASP_LIMITS`).
 #' @return a single logical.
 #' @keywords internal
 #' @noRd
 pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
-  if (!has_oligoarrayaux()) {
+  if (!(engine_has("hairpin_dg") && engine_has("duplex_dg"))) {
     return(TRUE)
   }
   p <- c(primer_f, primer_r)

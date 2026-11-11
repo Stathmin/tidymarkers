@@ -40,6 +40,23 @@ entries:
           table to report dG, which no installed package does without UNAFold; the
           parameters are pinned to TmCalculator by test-dg-internal.R.
 
+    - symbol: internal_duplex_terms
+      replacement: TmCalculator::tm_nn
+      status: justified
+      reason: >-
+          The dH/dS summation extracted from internal_duplex_dg_one so the hairpin
+          adapter reuses one copy of the nearest-neighbour table. Same parameters,
+          same pin: tm_nn() reports Tm and cannot report the split terms.
+
+    - symbol: hairpin_candidates
+      replacement: Biostrings::findPalindromes
+      status: justified
+      reason: >-
+          findPalindromes() reports arms and loop lengths but no free energy, and it
+          cannot be asked for the stem/loop split the hairpin dG needs. The arm
+          enumeration is a few substring comparisons; has_palindrome() still routes
+          every non-ACGT input to findPalindromes.
+
     - symbol: palindromic_arms
       replacement: Biostrings::findPalindromes
       status: justified

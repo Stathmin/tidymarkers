@@ -14,6 +14,11 @@ DECIPHER's thermodynamics runs through OligoArrayAux.  It is looked up as
 \code{options(tidymarkers.oligoarrayaux)}, a project \verb{.tools/}, the user cache (see
 \code{\link[=marker_install_tools]{marker_install_tools()}}) and finally the \code{PATH}.
 }
+\details{
+This is the probe, not the contract: design code asks \code{\link[=capabilities]{capabilities()}} /
+\code{engine_has()} for the capability it needs, and only the install hint and the
+absent-tool abort name this function.
+}
 \examples{
 has_oligoarrayaux()
 }

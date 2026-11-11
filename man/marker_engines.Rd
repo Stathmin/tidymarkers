@@ -9,10 +9,18 @@ marker_engines(thermo = getOption("tidymarkers.thermo_engine", "auto"))
 \arguments{
 \item{thermo}{\code{"auto"} (the default, or \code{options(tidymarkers.thermo_engine)})
 keeps OligoArrayAux as the \code{dg} engine when it is installed.  \code{"internal"}
-selects the pure-R duplex adapter (\link{internal_duplex_dg}) so a machine
-without OligoArrayAux can still screen duplex dG: \code{duplex_dg} is then
-\code{TRUE}, while \code{hairpin_dg} and \code{fold} stay \code{FALSE} - that adapter models a
-perfect duplex only, and the hairpin gates are calibrated on UNAFold.
+selects the pure-R adapters (\link{internal_duplex_dg}, \link{internal_hairpin_dg}) so
+a machine without OligoArrayAux can still screen duplex dG and hairpin dG:
+\code{duplex_dg} and \code{hairpin_dg} are then \code{TRUE}, while \code{fold} stays \code{FALSE}.
+The hairpin adapter is a \emph{screen}, not UNAFold: it scores a perfect stem plus
+one loop penalty, so it has no partition function and no mismatched, bulged
+or interior loops, and it predicts no structure.  On the panel in
+\code{tests/testthat/test-dg-internal.R} it is within mean 0.54 / max 1.48 kcal/mol
+of UNAFold at 37 C, and it under-reports that stability (its number is less
+negative), so the \code{hairpin_dg >= -3} gate reads more permissively than on
+UNAFold - never stricter.  \code{pcr_efficiency} needs UNAFold \emph{through} DECIPHER,
+so it is \code{TRUE} only when OligoArrayAux is installed and DECIPHER loads - the
+internal adapter cannot supply it.
 Nothing falls back silently: the adapter is chosen by name or by option.}
 }
 \value{

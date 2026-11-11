@@ -29,9 +29,9 @@ duplex only: \code{seq2} must be the reverse complement of \code{seq1}.
 }
 \details{
 \strong{Duplex only.}  \code{seq2 = NULL} (the hairpin / folding mode of
-\code{\link[=oligo_dg]{oligo_dg()}}) is not modelled: it returns \code{NA} with a warning.  Hairpin and
-amplicon-folding numbers stay on OligoArrayAux, whose ensemble is what the
-gates were calibrated on (see \code{\link[=marker_engines]{marker_engines()}}).
+\code{\link[=oligo_dg]{oligo_dg()}}) returns \code{NA} with a warning: self-folding goes through
+\code{\link[=internal_hairpin_dg]{internal_hairpin_dg()}}, and amplicon folding stays on OligoArrayAux, whose
+ensemble is what the gates were calibrated on (see \code{\link[=marker_engines]{marker_engines()}}).
 
 The model is monovalent-salt only (\code{na}, M).  It does not add Mg or dNTPs,
 for the same reason \code{\link[=oligo_dg]{oligo_dg()}} does not: neither takes them.
@@ -48,6 +48,7 @@ Other thermodynamics:
 \code{\link[=duplex_dg_thermo]{duplex_dg_thermo()}},
 \code{\link[=fold_amplicon]{fold_amplicon()}},
 \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}},
+\code{\link[=internal_hairpin_dg]{internal_hairpin_dg()}},
 \code{\link[=oligo_dg]{oligo_dg()}},
 \code{\link[=pcr_efficiency]{pcr_efficiency()}},
 \code{\link[=primer_thermo]{primer_thermo()}},

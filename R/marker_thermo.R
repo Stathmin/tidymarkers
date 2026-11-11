@@ -82,6 +82,11 @@ source_carrier <- function(FUN) {
       assign(n, rebind(get(n, envir = here), carrier), envir = carrier)
     }
   }
+  # `.marker_state` is deliberately not carried (session state, above), but the
+  # re-homed `session_memo()` still looks it up: without this the worker dies on
+  # "object '.marker_state' not found".  A fresh, empty state per task is what a
+  # worker should get anyway - the memo is cold there either way.
+  assign(".marker_state", marker_state_new(), envir = carrier)
   carrier
 }
 
@@ -394,6 +399,10 @@ primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
 #' `options(tidymarkers.oligoarrayaux)`, a project `.tools/`, the user cache (see
 #' [marker_install_tools()]) and finally the `PATH`.
 #'
+#' This is the probe, not the contract: design code asks [capabilities()] /
+#' `engine_has()` for the capability it needs, and only the install hint and the
+#' absent-tool abort name this function.
+#'
 #' @return a single logical.
 #' @examples
 #' has_oligoarrayaux()
@@ -460,10 +469,13 @@ oligo_dg_vec <- function(seq1, seq2 = NULL, BPPARAM = NULL,
   if (n == 0L) {
     return(numeric(0))
   }
-  # duplex through the configured engine: the internal adapter is vectorised
-  # and needs no subprocess; hairpin (seq2 = NULL) always stays on UNAFold.
+  # duplex and hairpin through the configured engine: the internal adapters are
+  # vectorised and need no subprocess (the hairpin one is a stem-only screen)
   engine <- getOption("tidymarkers.thermo_engine", "auto")
-  if (!is.null(seq2) && identical(engine, "internal")) {
+  if (identical(engine, "internal")) {
+    if (is.null(seq2)) {
+      return(internal_hairpin_dg(seq1, na = na, temp = temp))
+    }
     return(internal_duplex_dg(seq1, seq2, na = na, temp = temp))
   }
   one <- function(i) {
@@ -796,6 +808,8 @@ amplicon_fold_row <- function(seq, kind, conditions, min_single_stranded, max_le
 #'
 #' Models hybridisation (incl. side reactions) times Taq elongation efficiency,
 #' so a 3'-terminal mismatch is strongly penalised - the physical basis of KASP.
+#' Needs OligoArrayAux through DECIPHER, i.e. the `pcr_efficiency` capability of
+#' the thermo adapter ([marker_engines()]); callers gate on that, not on the tool.
 #'
 #' @param primers character vector, 5'->3'.
 #' @param targets character vector (same length) with the reverse-complement of

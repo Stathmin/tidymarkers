@@ -670,7 +670,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # one service for both critical zones (AS 3' window, COM footprint): DECIPHER
   # turns a footprint variant into an expected dropout (NA without it / on error)
-  use_eff <- has_oligoarrayaux()
+  use_eff <- engine_has("pcr_efficiency")
   batch_or_safe <- marker_dropout_batch(tmpl, off, vpos, valt, vweight, use_eff, BPPARAM)
 
   # co-segregating substitutions to bake into the ALT primer (see design_as_primers)
@@ -1310,7 +1310,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     vc <- marker_variant_alleles(variants, snp, tmpl$seq, off)
     vpos <- vc$vpos
     vblock <- snp$pos
-    use_eff <- has_oligoarrayaux()
+    use_eff <- engine_has("pcr_efficiency")
     batch_or_safe <- marker_dropout_batch(tmpl, off, vpos, vc$valt, vc$vweight, use_eff, BPPARAM)
     as_n_3p <- count_variants_in(win3p, vpos, vblock)
     as_n_var <- count_variants_in(IRanges::IRanges(as_start, as_end), vpos, vblock)
@@ -1392,7 +1392,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     # dropout would otherwise satisfy `is.na(dropout) | ...`)
     unknown <- if (is.null(variants)) {
       FIXED_PRIMER_NO_VARIANTS
-    } else if (!has_oligoarrayaux()) {
+    } else if (!engine_has("pcr_efficiency")) {
       FIXED_PRIMER_DROPOUTS
     } else {
       character(0)

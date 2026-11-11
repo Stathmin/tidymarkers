@@ -38,10 +38,18 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
       primer = stringr::str_sub(s, .data$start, .data$start + .data$len - 1L),
       end = .data$start + .data$len - 1L
     )
+  if (!nrow(d)) {
+    # no candidate start: an empty set has no primer to score, and the Tm
+    # engine raises on an empty sequence
+    return(d)
+  }
   if (identical(strand, "-")) {
     d$primer <- as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(d$primer)))
   }
   d <- dplyr::filter(d, !has_run(.data$primer), !has_repeat(.data$primer))
+  if (!nrow(d)) {
+    return(d)
+  }
   d$tm <- primer_tm(d$primer, conditions = conditions)
   d$gc <- gc_frac(d$primer)
   dplyr::filter(

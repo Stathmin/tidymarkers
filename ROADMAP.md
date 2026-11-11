@@ -32,6 +32,87 @@
 Дисциплина «рефакторинг не сдвигает вердикт»: шаг принимается только с
 неизменными вердиктами на золотом наборе.
 
+## Остатки в закрытых пунктах
+
+Закрытый пункт (`[x]`) может оставить живой остаток. Здесь он развёрнут в
+свой пункт с полями по формату выше; родитель ссылается сюда подпунктом.
+
+1. [!] **§U CAPS/dCAPS — откат на запасную нуклеазу** (из `§U`, CAPS/dCAPS).
+   Проверено и опровергнуто. `$isoforms` — изошизомеры того же сайта _и того
+   же реза_, поэтому гидролиз идентичен и подмена ничего не спасает (замер:
+   первичный `PpaAII` cut 1 даёт дизайн, `TaqI` — те же фрагменты); поиск
+   кандидатов уже идёт по всем ферментам таблицы, то есть «другая нуклеаза» —
+   это то, что дизайнер уже делает; запасной фермент того же сайта с _другим
+   резом_ меняет фрагменты — это другой дизайн, а не откат (и сдвинул бы
+   существующие dCAPS-исходы).
+    - правка: не требуется.
+    - проверка: замер, не код.
+    - следствие: остаток снят; повторно не открывать (см. ту же заметку в `§U`).
+2. [x] **`Z4.3` внутренний адаптер dG шпильки** (из `Z4.3`). Сделано.
+       `internal_hairpin_dg()` (`R/marker_thermo.R`); `hairpin_dg = TRUE` под
+       `thermo = "internal"`; `fold` остаётся `FALSE` (сам фолдинг — только
+       OligoArrayAux); `oligo_dg_vec(seq2 = NULL)` идёт через него.
+    - проверка: оракул `hairpin_dg_thermo()` на 11 последовательностях, mean
+      |ΔdG| 0.54 / max 1.48 ккал/моль, стебель < 4 bp → 0; ложнопропускной гейт
+      `ours - una <= 2.0`; два ledger-входа (`internal_duplex_terms`,
+      `hairpin_candidates`).
+    - блокер: нет.
+    - следствие: шпилечный гейт считается без OligoArrayAux; одна `fold`-полоса
+      остаётся на движке.
+3. [x] **`ZA2.1` шов `engine_has()` вместо литералов** (из `ZA2.1–ZA2.3`).
+       Сделано: 8 литералов `has_oligoarrayaux()` заменены на `engine_has()` —
+       `marker_assemble.R` (3: `pcr_efficiency`), `marker_checks.R` (2:
+       `hairpin_dg`, `duplex_dg`), `marker_lamp.R` (`duplex_dg`),
+       `marker_sanger.R` и `marker_snapshot.R` (`hairpin_dg` **и** `duplex_dg`);
+       новая capability `pcr_efficiency = oaa && requireNamespace("DECIPHER")`;
+       3 литерала оставлены намеренно — они называют инструмент для установки
+       (install hint, `pcr_efficiency()` abort, проба внутри `marker_engines()`).
+    - проверка: `test-capabilities.R`/`test-thermo.R` держат контракт «нет
+      движка → `unknown`, не `pass`».
+    - блокер: нет.
+    - следствие: `thermo = "internal"` больше не спотыкается о гейты
+      OligoArrayAux; остаток шва — per-call `engines` (№5 ниже).
+4. [—] **Прочее «быстрые переписывания» — остаток профиля** (из «быстрые
+   переписывания»). Отложено. Остаток — сам поиск по геному
+   (`exact_pattern_hits()`/`matchPattern`, `R/marker_specificity.R`): профиль
+   дизайна 6 SNP 96.8 с, остаток — геномный поиск.
+    - правка: профилировать и назвать, что осталось.
+    - проверка: `Rprof` + тот же замер 6-SNP, выход побайтово тот же.
+    - блокер: замер требует свободной машины (не в одной волне с тестами).
+    - следствие: без него поиск по геному остаётся пределом.
+5. [ ] **`caps_fragments()` — контракт таблицы ферментов** (найдено в этой
+       волне). `R/marker_caps.R`, `caps_fragments()` полагается на то, что
+       `enzymes$site` — символьная колонка; таблица, где `site`/`isoforms` —
+       list-колонны, молча читается как _ширина_, и каждый сайт даёт 0 хитов.
+       На дефолтном пути это скрыто (`restriction_enzymes()` отдаёт `character`).
+    - правка: guard в `caps_fragments()` — названная ошибка на
+      не-символьном `site`.
+    - проверка: регрессионный тест на list-колонну в `test-caps.R`.
+    - блокер: нет.
+    - следствие: без guard'а внешняя/собранная вручную таблица даёт тихий
+      «нет сайтов» вместо ошибки.
+6. [ ] **Гейты движка не принимают `engines`** (продолжение `ZA2.1`, найдено в
+       этой волне). `marker_assemble.R`, `marker_checks.R`, `marker_lamp.R`,
+       `marker_sanger.R`, `marker_snapshot.R` пере-пробуют сессионный реестр, поэтому
+       per-call переопределение адаптера на этих гейтах не соблюдается.
+    - правка: передавать `engines` в `engine_has()` на этих call sites.
+    - проверка: `test-capabilities.R` — per-call `engines` меняет ответ гейта.
+    - блокер: нет.
+    - следствие: `marker_engines()` — единственный способ выбрать адаптер на
+      этих гейтах.
+
+Запаркованные остатки (причина названа; отдельной правки не заводят, пока
+причина жива):
+
+- `Z7.3` — `calibrated = FALSE`, пока `Z8.1` не даст отрицательные примеры.
+- `Z8.2` — `rate = NA`, 0 строк `failed`.
+- `Z9.2` — melt-домен/heteroduplex → `§V`, заперто на `Q1`.
+- `Z9.7` — Tm-окно → долг `Z0.2`.
+- `ZW4.6` — 53 non-tier + 18 tier строк остаются `rule_of_thumb`; якорь без
+  читаемого вложения — операторское действие (ADR-0037).
+- `ZW4.6` фаза D — нет мокрых исходов.
+- `Z10.2` — `fitPoly` только с реальной реализацией.
+
 ## Решения
 
 Все решения `Q1`/`Q2` приняты; каждое — `*.decision.md` в `data-raw/proposed/`
@@ -55,7 +136,13 @@
       «смена нуклеазы» = изошизомеры (`restriction_enzymes()` отдаёт одну
       строку на пару (сайт, `cut`), остальные — в `$isoforms`);
       `design_arms()` падает на отрицательном `stab_ats`. `test-caps.R`,
-      `test-arms.R`. Остаток — откат на запасную нуклеазу, отдельная правка.
+      `test-arms.R`. Остаток — откат на запасную нуклеазу — проверен и
+      опровергнут (`## Остатки в закрытых пунктах`, №1): изошизомеры того же
+      сайта и реза дают тот же гидролиз. Заодно поправлено: цель в `flank` от
+      края окна больше не роняет `find_caps_enzymes()`/
+      `design_caps_marker()` («Invalid sequence coordinates»), и
+      `primer_candidates()` не зовёт `primer_tm(character(0))` на пустом
+      фрагменте — `test-caps.R`, `pos = 150` и `pos = 291`, `flank = 150`.
 - [x] **SNaPshot / single-base extension.** 19 критериев `family_sbe_*`
       (8 `primary_literature`, 10 `vendor_guideline`, 1 `rule_of_thumb`) в
       `criterion_spec()`; `SNAPSHOT_EXT_TM` → `c(50, 60)`,
@@ -160,7 +247,8 @@
       `marker_engines()` 106 → 58 мкс (одна проба; `hybrid-ss-min` внутри кеша
       `oligoarrayaux_paths()`), `has_blast()` 24 → 12 мкс (`Sys.which` под кешем).
       Замер: дизайн 6 SNP 123.5 с → 96.8 с (−22%), выход побайтово тот же.
-      Остаток профиля — сам поиск по геному.
+      Остаток профиля — сам поиск по геному (подпункт —
+      `## Остатки в закрытых пунктах`, №4).
 
 ## Z. Внешний научный аудит (окт. 2026) — код, требования и физика
 
@@ -215,9 +303,13 @@ sites. Детали — `NEWS.md`.
       нет (вторая зависимость без вызова = мёртвый код).
 - [x] **`Z4.3` Второй адаптер `dg` без UNAFold.** `internal_duplex_dg()` —
       SantaLucia 2004 в R, opt-in через `marker_engines(thermo = "internal")`
-      или `options(tidymarkers.thermo_engine)`; только дуплекс, шпилька и
-      фолдинг остаются на OligoArrayAux. Оракул: `test-dg-internal.R` (dH против
-      TmCalculator, dG против `hybrid-min`, ≤0.8 ккал/моль).
+      или `options(tidymarkers.thermo_engine)`; дуплекс и шпилька — в R,
+      только `fold` остаётся на OligoArrayAux. Оракул: `test-dg-internal.R` (dH
+      против TmCalculator, dG против `hybrid-min`, ≤0.8 ккал/моль). Шпилька —
+      тоже внутренняя (`internal_hairpin_dg()`, `hairpin_dg = TRUE`): оракул
+      против `hairpin_dg_thermo()` на 11 последовательностях, mean |ΔdG| 0.54 /
+      max 1.48 ккал/моль, стебель < 4 bp → 0 (`## Остатки в закрытых пунктах`,
+      №2).
 
 ### Z5. Mismatch-tolerant specificity [P1]
 
@@ -535,8 +627,15 @@ ro <- scheme$readout(m, context)
 
 - **`capabilities()` спрашивают.** Один шов `engine_has(capability, engines)`
   (`R/marker_core.R`); необъявленная/`"unknown"` — `FALSE`, никогда не проход;
-  `test-capabilities.R` (10 pass). Остаток: 13 литералов
-  `has_oligoarrayaux()` в шести файлах — переносить вместе с `Z0.1`/`Z5.1`.
+  `test-capabilities.R` (10 pass). **Итог:** 8 литералов
+  `has_oligoarrayaux()` заменены на `engine_has()` (`marker_assemble.R` ×3 —
+  `pcr_efficiency`, `marker_checks.R` ×2 — `hairpin_dg`, `duplex_dg`,
+  `marker_lamp.R` — `duplex_dg`, `marker_sanger.R`/`marker_snapshot.R` —
+  `hairpin_dg` и `duplex_dg`); новая capability
+  `pcr_efficiency = oaa && requireNamespace("DECIPHER")`; 3 литерала оставлены
+  намеренно — они называют инструмент для установки (install hint,
+  `pcr_efficiency()` abort, проба в `marker_engines()`). Остаток шва — гейты не
+  принимают per-call `engines` (`## Остатки в закрытых пунктах`, №6).
 - **`marker_generic_checks()`** перенесена из `R/marker_plot_methods.R` в
   `R/marker_checks.R`.
 - **Семь стадий селекции** — одна запись на стадию: `marker_builtin_stages()`
@@ -548,11 +647,16 @@ ro <- scheme$readout(m, context)
 
 `spec_bind()` → `purrr::list_rbind()`/`vctrs::vec_rbind()`; `format_check_value()`
 → `scales::percent()`/`number()`; progress → `cli::cli_progress_*()`;
-cache key → `rlang::hash()`; IUPAC → `Biostrings::matchPattern(fixed = FALSE)`,
-`PDict`; интервалы → `IRanges`/`GenomicRanges`; граф → `tidygraph` + Graphviz
+cache key → `rlang::hash()`; интервалы → `IRanges`/`GenomicRanges`; граф → `tidygraph` + Graphviz
 `dot`, `ggraph` для R-view; test doubles → `testthat::local_mocked_bindings()`;
 таблицы в доках → `knitr::kable()`/`gt`; метрики → `yardstick`; resampling →
 `rsample`; pipeline → `targets`.
+
+- [!] **IUPAC → `Biostrings::matchPattern(fixed = FALSE)` — опровергнуто
+  замером.** С `fixed = FALSE` `N` в _субъекте_ покрывает любой базис: на TAIR10
+  это дало 163 958 фантомных хитов. Инвариант — `fixed = TRUE` плюс
+  отбрасывание хитов, задевающих ambiguity-код, против `unambiguous_blocks()`
+  (`R/marker_specificity.R`, `exact_pattern_hits()`).
 
 ### ZA4. Политика зависимостей
 
@@ -648,9 +752,11 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
 - [x] **`ZA8.3` Имена сообществ и `supersedes`.** `dev/relabel-bonsai.R` (424
       сообщества `named`, `echo-honest` → 0); `dev/handrolled.yml` +
       `dev/graphify-handrolled.R` (8011 узлов / 10688 рёбер / 2 `supersedes`).
-- **Состояние:** `docs/artifacts.yml` хеширует весь `R/`, поэтому любая правка
-  `R/` делает 20 SVG stale: `dev/render-gallery.R`, затем
-  `dev/artifacts.R --write`. PNG git-ignored; SVG коммитятся.
+- **Состояние:** `docs/artifacts.yml` перечисляет входы явно, по артефакту; но
+  все 20 решений-SVG делят пять входов (`R/marker_decision.R`, `R/marker_select.R`,
+  `R/marker_criteria.R`, `R/marker_schemes.R`, `R/marker_scheme_registry.R`),
+  поэтому правка любого из этих пяти делает 20 SVG stale: `dev/render-gallery.R`,
+  затем `dev/artifacts.R --write`. PNG git-ignored; SVG коммитятся.
 
 ## ZP. Параллельный rollout (coordination)
 
@@ -682,16 +788,16 @@ Snapshot (`wip/roadmap-base`, `2785097`), Wave 1 (`e5a581a`), Wave 0 (`5e31a1a`)
   нет частоты — `NA`, не вес 1.
 - **Следующая волна — по одной ветке из `main`, один владелец файла.**
 
-| Ветка                | Owns                                                                                | Пункты                                                                                               | Блокер                            |
-| -------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `feat/q1-withdraw`   | `R/marker_taqman.R`, `R/marker_readout.R`, `R/marker_polyploid.R`, их тесты         | `Q1`                                                                                                 | нет                               |
-| `feat/kasp-mismatch` | `R/marker_checks.R`, `tests/testthat/test-kasp-checks.R`                            | `Z0.4`                                                                                               | нет                               |
-| `feat/crispr-pfs`    | `R/marker_crispr.R`, `tests/testthat/test-crispr.R`                                 | `Z0.1`                                                                                               | нет                               |
-| `feat/z8-negative`   | `inst/extdata/conversion_rates.csv`, `data-raw/`, `R/marker_evaluation*.R`          | `Z8.1`–`Z8.4`                                                                                        | новые статьи с `outcome = failed` |
-| `feat/plots-style`   | `R/marker_plot_methods.R`, `R/marker_plots.R`, `tests/testthat/test-plot-methods.R` | `ZA8`/`ZW2.2`-доводка; оставшиеся call sites `dimer_thermo()`/`primer_tm()` (`:155`, `:350`, `:757`) | нет                               |
-| `feat/za-scheme`     | `R/marker_schemes.R`, `R/marker_criteria.R`                                         | `ZA6` шаг 1 (единая ось id), шаг 3                                                                   | `ZA6` шаг 3 — после `Z0.4`, `ZA8` |
-| `feat/zp5-tests`     | `tests/testthat/test-specificity.R`, `test-oligo-dg.R`, `test-dimer.R`              | `ZP5`                                                                                                | нет                               |
-| vignette-ветки       | по одному файлу `vignettes/*.Rmd`                                                   | —                                                                                                    | последними; `Q1` не блокер        |
+| Ветка                | Owns                                                                                | Пункты                                                                                   | Блокер                            |
+| -------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------- |
+| `feat/q1-withdraw`   | `R/marker_taqman.R`, `R/marker_readout.R`, `R/marker_polyploid.R`, их тесты         | `Q1`                                                                                     | нет                               |
+| `feat/kasp-mismatch` | `R/marker_checks.R`, `tests/testthat/test-kasp-checks.R`                            | `Z0.4`                                                                                   | нет                               |
+| `feat/crispr-pfs`    | `R/marker_crispr.R`, `tests/testthat/test-crispr.R`                                 | `Z0.1`                                                                                   | нет                               |
+| `feat/z8-negative`   | `inst/extdata/conversion_rates.csv`, `data-raw/`, `R/marker_evaluation*.R`          | `Z8.1`–`Z8.4`                                                                            | новые статьи с `outcome = failed` |
+| `feat/plots-style`   | `R/marker_plot_methods.R`, `R/marker_plots.R`, `tests/testthat/test-plot-methods.R` | `ZA8`/`ZW2.2`-доводка; оставшиеся call sites `primer_tm()` (`marker_plot_methods.R:451`) | нет                               |
+| `feat/za-scheme`     | `R/marker_schemes.R`, `R/marker_criteria.R`                                         | `ZA6` шаг 1 (единая ось id), шаг 3                                                       | `ZA6` шаг 3 — после `Z0.4`, `ZA8` |
+| `feat/zp5-tests`     | `tests/testthat/test-specificity.R`, `test-oligo-dg.R`, `test-dimer.R`              | `ZP5`                                                                                    | нет                               |
+| vignette-ветки       | по одному файлу `vignettes/*.Rmd`                                                   | —                                                                                        | последними; `Q1` не блокер        |
 
 ### ZP2. Merge order
 
@@ -711,8 +817,9 @@ Forbidden: <paths>
 Env (every shell call):
   PATH=/opt/R-4.6.1/bin:<clone>/.tools/bin:$PATH
   UNAFOLDDAT=<clone>/.tools/share/oligoarrayaux
-  R_LIBS_USER=<clone>/.tmp-rt/lib
-  library(tidymarkers) — stale 0.4.0; use pkgload::load_all(".")
+  R_LIBS_SITE=/opt/R-4.6.1/lib/R/library
+  (R_LIBS must NOT be set — system-R `rlang.so` breaks the load)
+  load with pkgload::load_all(".")
 Tests: Rscript dev/test.R <filter>; Rscript dev/check.R --no-render
 Never run the full suite while iterating (8+ min): test_dir(filter=...) or dev/test.R.
 Commit only on feat/<slug>; verify git branch --show-current before commit.

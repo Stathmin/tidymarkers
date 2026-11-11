@@ -427,7 +427,7 @@ lamp_geometry <- function(fip, bip, max_product = 300L) {
   )
   # terminal_dg() is the package's 3'-stability (GC-clamp) diagnostic.  Report it
   # when the external engine is available; absence is unknown, not a failure.
-  dg <- if (has_oligoarrayaux()) {
+  dg <- if (engine_has("duplex_dg")) {
     rlang::set_names(
       terminal_dg(c(fip$primer, bip$primer), n = LAMP_3P_BASES),
       c("FIP", "BIP")

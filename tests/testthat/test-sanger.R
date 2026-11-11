@@ -125,6 +125,42 @@ test_that("a variant beyond the usable read is warned about, not silently paired
   expect_output(print(m), "unusable read")
 })
 
+test_that("pair_structure_ok needs both dG capabilities, not just the hairpin", {
+  # a hairpin-only engine cannot grade the homodimer half; if the guard asked
+  # only for the hairpin, the body would read the absent tool's dG (NA) and
+  # `na.rm = TRUE` would turn that into a silent pass.  So with `duplex_dg`
+  # missing the dG readers must not be consulted at all: they abort here.
+  off <- marker_engines()
+  off$thermo$capabilities$duplex_dg <- FALSE
+  no_tool <- function(...) stop("dG read without the duplex_dg capability")
+  local_mocked_bindings(
+    marker_engines = function(...) off,
+    oligo_dg_vec = no_tool,
+    thermo_duplex_dg = no_tool,
+    .package = "tidymarkers"
+  )
+  expect_true(engine_has("hairpin_dg"))
+  expect_false(engine_has("duplex_dg"))
+  # honest cannot-judge answer, reached without grading anything
+  expect_true(pair_structure_ok("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC"))
+  # the silent-pass shape the guard prevents: NA dG read by the body satisfies
+  # the thresholds, which is exactly what the guard must never allow
+  na <- rep(NA_real_, 2L)
+  expect_true(all(na >= KASP_LIMITS$homodimer_dg, na.rm = TRUE))
+  # and with both capabilities the pair is graded from numbers, not a shortcut
+  local_mocked_bindings(
+    marker_engines = function(...) {
+      full <- off
+      full$thermo$capabilities$duplex_dg <- TRUE
+      full
+    },
+    oligo_dg_vec = function(seq1, seq2 = NULL, ...) rep(-5, length(seq1)),
+    thermo_duplex_dg = function(...) -5,
+    .package = "tidymarkers"
+  )
+  expect_false(pair_structure_ok("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC"))
+})
+
 test_that("a read primer falls back to the flanking primer when no nested one qualifies", {
   W <- bseq(900L, 11L)
   genome <- Biostrings::DNAStringSet(c(Chr1 = W))

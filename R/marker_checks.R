@@ -759,12 +759,12 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     field(a1$assay, "amplicon"), amp_span(a1$amplicon)
   )
   win <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
-  thermo <- if (length(dna) && has_oligoarrayaux()) {
+  thermo <- if (length(dna) && engine_has("hairpin_dg")) {
     tryCatch(primer_thermo(dna), error = function(e) NULL)
   } else {
     NULL
   }
-  dimers <- if (length(dna) > 1L && has_oligoarrayaux()) {
+  dimers <- if (length(dna) > 1L && engine_has("duplex_dg")) {
     tryCatch(dimer_thermo(dna), error = function(e) NULL)
   } else {
     NULL
