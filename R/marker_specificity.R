@@ -395,39 +395,48 @@ iupac_covers <- function(code, base) {
 #'
 #' `as.integer()` still allocates a 60 MB integer vector, and every hit table and
 #' every `primer_hits()` call on the same genome would pay it again, so the
-#' answer is memoised per process.  The key is the sequence's content signature
-#' (`digest::digest` on the bytes is not free either, so the key is the string
-#' hash of the length and the first/last bases plus the N count) - a *changed*
-#' sequence must not reuse a stale block list.  The cache lives in the package
-#' namespace and is bounded.
+#' answer is memoised per process - the N count included, because that O(length)
+#' pass is the cost and it too is a property of the sequence, not of the pattern.
+#' The key is the sequence's content signature (`digest::digest` on the bytes is
+#' not free either, so the key is the string of the length plus the first, middle
+#' and last 32 bases) - a *changed* sequence must not reuse a stale block list.
+#' The cache lives in the package namespace and is bounded.
 #'
 #' @param subject the genomic sequence as an `XString`.
 #' @return a list of integer vectors `start`, `end` (1-based, inclusive).
 #' @keywords internal
 #' @noRd
 unambiguous_blocks <- function(subject) {
-  n_amb <- Biostrings::letterFrequency(subject, "N")
-  if (n_amb == 0L) {
-    return(list(start = 1L, end = length(subject)))
-  }
   len <- length(subject)
-  key <- paste(len, n_amb, as.character(Biostrings::subseq(subject, 1L, 32L)),
+  # The key is a content signature - length plus the first, middle and last 32
+  # bases - so an entry is only reused for the same sequence.  It deliberately
+  # does *not* contain the N count it memoises: counting N is the O(length) cost
+  # (`letterFrequency` on a 30 Mb chromosome), and it used to be paid on every
+  # pattern of every primer pair on that chromosome.
+  mid <- max(1L, min(len, len %/% 2L))
+  key <- paste0(len, "|", paste(
+    as.character(Biostrings::subseq(subject, 1L, min(len, 32L))),
+    as.character(Biostrings::subseq(subject, mid, min(len, mid + 31L))),
     as.character(Biostrings::subseq(subject, max(1L, len - 31L), len)),
     sep = "|"
-  )
+  ))
   cached <- get0(key, envir = .marker_state$blocks, inherits = FALSE)
   if (!is.null(cached)) {
     return(cached)
   }
-  ap <- which(as.integer(subject) == 15L)
-  gap <- diff(ap) > 1L
-  a_start <- ap[c(TRUE, gap)]
-  a_end <- ap[c(gap, TRUE)]
-  # the clean blocks are the complement of the ambiguous runs
-  b_start <- c(1L, a_end + 1L)
-  b_end <- c(a_start - 1L, len)
-  ok <- b_end >= b_start
-  out <- list(start = b_start[ok], end = b_end[ok])
+  out <- if (Biostrings::letterFrequency(subject, "N") == 0L) {
+    list(start = 1L, end = len)
+  } else {
+    ap <- which(as.integer(subject) == 15L)
+    gap <- diff(ap) > 1L
+    a_start <- ap[c(TRUE, gap)]
+    a_end <- ap[c(gap, TRUE)]
+    # the clean blocks are the complement of the ambiguous runs
+    b_start <- c(1L, a_end + 1L)
+    b_end <- c(a_start - 1L, len)
+    ok <- b_end >= b_start
+    list(start = b_start[ok], end = b_end[ok])
+  }
   # memory bound: keep only the current genome's block list
   if (length(.marker_state$blocks) > 16L) {
     rm(list = ls(.marker_state$blocks, all.names = TRUE), envir = .marker_state$blocks)
@@ -460,10 +469,10 @@ unambiguous_blocks <- function(subject) {
 #' @noRd
 exact_pattern_hits <- function(pattern, subject, max_mismatch) {
   width <- nchar(pattern)
-  if (Biostrings::letterFrequency(subject, "N") == 0L) {
+  bl <- unambiguous_blocks(subject)
+  if (length(bl$start) == 1L && bl$start[[1L]] == 1L && bl$end[[1L]] == length(subject)) {
     return(Biostrings::matchPattern(pattern, subject, max.mismatch = max_mismatch, fixed = FALSE))
   }
-  bl <- unambiguous_blocks(subject)
   len <- bl$end - bl$start + 1L
   keep <- len >= width
   if (!any(keep)) {

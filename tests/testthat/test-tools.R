@@ -30,9 +30,49 @@ test_that("BLAST+ needs both binaries in the same directory", {
   withr::local_options(list(tidymarkers.blast = d))
   before <- tidymarkers:::blast_bin() # only blastn -> not a usable pair
   file.create(fs::path(d, "makeblastdb"))
+  # resolution is memoised for the session, so a binary that appears afterwards
+  # is only seen once the memo is dropped (`marker_install_tools()` does that)
+  tidymarkers:::session_memo_clear()
   after <- tidymarkers:::blast_bin()
   if (!is.null(before)) {
     expect_false(identical(as.character(before), as.character(fs::path(d))))
   }
   expect_equal(as.character(after), as.character(fs::path(d)))
+})
+
+test_that("tool resolution is memoised and keyed on the option", {
+  a <- withr::local_tempdir()
+  fs::dir_create(fs::path(a, "bin"))
+  file.create(fs::path(a, "bin", "hybrid-min"))
+  b <- withr::local_tempdir()
+  fs::dir_create(fs::path(b, "bin"))
+  file.create(fs::path(b, "bin", "hybrid-min"))
+  withr::local_options(list(tidymarkers.oligoarrayaux = a))
+  first <- tidymarkers:::oligoarrayaux_paths()
+
+  # the probe is paid once: deleting the binary does not change the answer ...
+  fs::file_delete(fs::path(a, "bin", "hybrid-min"))
+  expect_identical(tidymarkers:::oligoarrayaux_paths(), first)
+
+  # ... until the memo is dropped
+  tidymarkers:::session_memo_clear()
+  expect_false(identical(tidymarkers:::oligoarrayaux_paths(), first))
+
+  # a different option value is a different probe, with no clear needed
+  withr::local_options(list(tidymarkers.oligoarrayaux = b))
+  expect_equal(
+    as.character(tidymarkers:::oligoarrayaux_paths()$exe),
+    as.character(fs::path(b, "bin", "hybrid-min"))
+  )
+})
+
+test_that("marker_install_tools() drops the session memo", {
+  # a build puts a tool where a memoised "not found" would still say otherwise
+  tidymarkers:::session_memo("sentinel", TRUE)
+  testthat::local_mocked_bindings(
+    oligoarrayaux_works = function(bin, dat) TRUE,
+    .package = "tidymarkers"
+  )
+  tidymarkers::marker_install_tools(dest = withr::local_tempdir(), ask = FALSE)
+  expect_length(ls(tidymarkers:::.marker_state$memo, all.names = TRUE), 0L)
 })

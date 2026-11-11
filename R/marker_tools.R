@@ -60,27 +60,39 @@ tool_dirs <- function(opt) {
 
 #' Resolve OligoArrayAux (executable + data tables)
 #'
+#' Memoised for the session: `oligo_dg()` asks on every oligo, and the answer
+#' only changes when a tool is installed (`marker_install_tools()` clears the
+#' memo).  The key carries the option and the working directory, which also
+#' decide the answer.
+#'
 #' @return `NULL` when not found, else `list(exe, bin, dat)` (`dat` is `NA` when
 #'   the `UNAFOLDDAT` tables were not found next to the executable).
 #' @keywords internal
 #' @noRd
 oligoarrayaux_paths <- function() {
-  exe <- NULL
-  for (d in tool_dirs("tidymarkers.oligoarrayaux")) {
-    exe <- find_exe(d, c("hybrid-min", "hybrid-min.exe"))
-    if (!is.null(exe)) break
-  }
-  if (is.null(exe)) {
-    p <- Sys.which("hybrid-min")
-    if (!nzchar(p)) {
-      return(NULL)
+  key <- paste("oligoarrayaux", getwd(),
+    getOption("tidymarkers.oligoarrayaux", ""), Sys.getenv("PATH"),
+    sep = "|"
+  )
+  session_memo(key, {
+    exe <- NULL
+    for (d in tool_dirs("tidymarkers.oligoarrayaux")) {
+      exe <- find_exe(d, c("hybrid-min", "hybrid-min.exe"))
+      if (!is.null(exe)) break
     }
-    exe <- fs::path(p)
-  }
-  prefix <- fs::path_dir(exe)
-  if (identical(fs::path_file(prefix), "bin")) prefix <- fs::path_dir(prefix)
-  dat <- fs::path(prefix, "share", "oligoarrayaux")
-  list(exe = exe, bin = fs::path_dir(exe), dat = if (fs::dir_exists(dat)) dat else NA_character_)
+    if (is.null(exe)) {
+      p <- Sys.which("hybrid-min")
+      if (nzchar(p)) exe <- fs::path(p)
+    }
+    if (is.null(exe)) {
+      NULL
+    } else {
+      prefix <- fs::path_dir(exe)
+      if (identical(fs::path_file(prefix), "bin")) prefix <- fs::path_dir(prefix)
+      dat <- fs::path(prefix, "share", "oligoarrayaux")
+      list(exe = exe, bin = fs::path_dir(exe), dat = if (fs::dir_exists(dat)) dat else NA_character_)
+    }
+  })
 }
 
 #' Run `code` with OligoArrayAux on `PATH` and `UNAFOLDDAT` set (when found)
@@ -100,18 +112,25 @@ with_oligoarrayaux <- function(code) {
 }
 
 #' Resolve the NCBI BLAST+ `bin` directory
+#'
+#' Memoised for the session, keyed on the option and working directory.
 #' @return `NULL` when both `blastn` and `makeblastdb` are not found together.
 #' @keywords internal
 #' @noRd
 blast_bin <- function() {
-  for (d in tool_dirs("tidymarkers.blast")) {
-    b <- find_exe(d, c("blastn", "blastn.exe"))
-    m <- find_exe(d, c("makeblastdb", "makeblastdb.exe"))
-    if (!is.null(b) && !is.null(m)) {
-      return(fs::path_dir(b))
+  key <- paste("blast", getwd(), getOption("tidymarkers.blast", ""), sep = "|")
+  session_memo(key, {
+    out <- NULL
+    for (d in tool_dirs("tidymarkers.blast")) {
+      b <- find_exe(d, c("blastn", "blastn.exe"))
+      m <- find_exe(d, c("makeblastdb", "makeblastdb.exe"))
+      if (!is.null(b) && !is.null(m)) {
+        out <- fs::path_dir(b)
+        break
+      }
     }
-  }
-  NULL
+    out
+  })
 }
 
 #' Run `code` with a resolved BLAST+ `bin` directory on `PATH` (when found)
@@ -206,6 +225,9 @@ marker_install_tools <- function(dest = fs::path(marker_cache_dir(), "tools"),
   bin <- fs::path(dest, "bin")
   dat <- fs::path(dest, "share", "oligoarrayaux")
   if (!force && oligoarrayaux_works(bin, dat)) {
+    # a probe cached before the build would hide it: the install is the one
+    # event that can change the answer
+    session_memo_clear()
     cli::cli_alert_success(gettext("OligoArrayAux is already installed in {.path {dest}}."))
     return(invisible(dest))
   }
@@ -268,6 +290,7 @@ marker_install_tools <- function(dest = fs::path(marker_cache_dir(), "tools"),
   if (!oligoarrayaux_works(bin, dat)) {
     cli::cli_abort(gettext("The build finished but hybrid-min did not return a dG."))
   }
+  session_memo_clear()
   cli::cli_alert_success(gettext("OligoArrayAux installed in {.path {dest}}."))
   invisible(dest)
 }

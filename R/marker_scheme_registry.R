@@ -11,16 +11,23 @@
 # =============================================================================
 
 #' Every discovered per-scheme spec (one per `scheme_def_*()` function)
+#'
+#' Memoised: the answer is fixed once the package is loaded, and the design path
+#' asks for it per candidate (a 6-target KASP design called it ~500 times).
+#' `marker_technology()` clears the memo, because composing a scheme is the only
+#' thing that changes it.
 #' @return a named list of scheme specs (name = scheme id).
 #' @keywords internal
 #' @noRd
 extra_scheme_defs <- function() {
-  ns <- asNamespace("tidymarkers")
-  nms <- sort(grep("^scheme_def_", ls(ns, all.names = TRUE), value = TRUE))
-  file_defs <- stats::setNames(lapply(nms, function(nm) get(nm, envir = ns)()), sub("^scheme_def_", "", nms))
-  # technologies composed at runtime (marker_technology()) are schemes too
-  dyn <- as.list(.marker_tech_store)
-  c(file_defs, dyn)
+  session_memo("scheme_defs", {
+    ns <- asNamespace("tidymarkers")
+    nms <- sort(grep("^scheme_def_", ls(ns, all.names = TRUE), value = TRUE))
+    file_defs <- stats::setNames(lapply(nms, function(nm) get(nm, envir = ns)()), sub("^scheme_def_", "", nms))
+    # technologies composed at runtime (marker_technology()) are schemes too
+    dyn <- as.list(.marker_tech_store)
+    c(file_defs, dyn)
+  })
 }
 
 #' A gate-label lookup merged over the built-in vectors and every scheme spec
@@ -55,21 +62,27 @@ scheme_label <- function(field, ids) {
 }
 
 #' Discovered schemes as `marker_schemes()` rows
+#'
+#' Memoised alongside [extra_scheme_defs()]: one `tibble` per scheme is not free
+#' and `marker_schemes()` is called from the design path.
 #' @keywords internal
 #' @noRd
 extra_scheme_rows <- function() {
-  defs <- extra_scheme_defs()
-  if (!length(defs)) {
-    return(NULL)
-  }
-  purrr::map(defs, function(d) {
-    tibble::tibble(
-      scheme = d$scheme, family = d$family, label = d$label,
-      discrimination = d$discrimination, readout = d$readout, zygosity = d$zygosity,
-      amplicon = d$amplicon, loci = as.integer(d$loci %||% 1L), verdict = d$verdict
-    )
-  }) |>
-    purrr::list_rbind()
+  session_memo("scheme_rows", {
+    defs <- extra_scheme_defs()
+    if (!length(defs)) {
+      NULL
+    } else {
+      purrr::map(defs, function(d) {
+        tibble::tibble(
+          scheme = d$scheme, family = d$family, label = d$label,
+          discrimination = d$discrimination, readout = d$readout, zygosity = d$zygosity,
+          amplicon = d$amplicon, loci = as.integer(d$loci %||% 1L), verdict = d$verdict
+        )
+      }) |>
+        purrr::list_rbind()
+    }
+  })
 }
 
 #' Discovered schemes' selection stages as `marker_criteria()` rows

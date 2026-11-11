@@ -127,6 +127,7 @@ marker_technology <- function(name, base = "snp", params = list(),
     cli::cli_abort(gettext("Unknown specificity mode {specificity}."))
   }
   assign(name, spec, envir = .marker_tech_store)
+  session_memo_clear() # the scheme registry changed
   invisible(spec)
 }
 

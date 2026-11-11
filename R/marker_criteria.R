@@ -1454,19 +1454,24 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
   if (!is.null(scheme)) {
     limits$amplicon <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
   }
-  spec <- criterion_spec(limits)
-  out <- tibble::tibble(
-    stage = spec$stage,
-    role = spec$role,
-    id = spec$id,
-    label = spec$label,
-    level = spec$level,
-    hard = spec$hard,
-    limit = spec$limit,
-    target = spec$target,
-    order = spec$order,
-    schemes = spec$schemes
-  )
+  # ~0.2 s per call, and the decision schema asks for it once per marker; the
+  # answer is a pure function of `limits` (a flat numeric list), so the literal
+  # is the key.
+  out <- session_memo(paste0("criteria|", paste(deparse(limits), collapse = "")), {
+    spec <- criterion_spec(limits)
+    tibble::tibble(
+      stage = spec$stage,
+      role = spec$role,
+      id = spec$id,
+      label = spec$label,
+      level = spec$level,
+      hard = spec$hard,
+      limit = spec$limit,
+      target = spec$target,
+      order = spec$order,
+      schemes = spec$schemes
+    )
+  })
   if (is.null(scheme)) {
     return(out)
   }
