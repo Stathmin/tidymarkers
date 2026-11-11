@@ -352,18 +352,18 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
       relaxed = "gate_hrm_tm"
     )
   }
-  # the second pass (roadmap X): the ranking is genome-free, so the leading pairs
-  # are screened for a single in-silico PCR product; the shortlist is widened
-  # top-up so the pass always has candidates to walk
+  # the second pass (roadmap X): the ranking is genome-free, so the leading pair
+  # is screened for a single in-silico PCR product; the shortlist is widened
+  # top-up so the pass always has candidates to walk.  Only the leading pair is
+  # ever read (both call sites take `[1L]`), so screening the whole shortlist was
+  # pure work: at n = 16 that is 31 whole-genome in-silico PCR passes per locus -
+  # measured 533 s for one locus on TAIR10, against 8 s for the KASP scheme.
   screen <- function(p) {
-    vapply(
-      seq_along(p$forward),
-      function(i) isTRUE(pair_screen_ok(genome, p$forward[[i]], p$reverse[[i]])), logical(1)
-    )
+    isTRUE(pair_screen_ok(genome, p$forward[[1L]], p$reverse[[1L]]))
   }
   n <- 1L
   sl <- shortlist(n)
-  while (!is.null(sl$primers) && !isTRUE(screen(sl$primers)[1L]) && n <= 16L) {
+  while (!is.null(sl$primers) && n <= 16L && !screen(sl$primers)) {
     n <- n * 2L
     sl <- shortlist(n)
   }
@@ -373,7 +373,7 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
   }
   primers <- sl$primers
   relaxed <- sl$relaxed
-  if (!is.null(genome) && !screen(primers)[1L]) {
+  if (!is.null(genome) && !screen(primers)) {
     reason <- gettext("No HRM flanking pair's in-silico PCR gives one product.")
     if (pair_failure_dooms("hrm")) {
       cli::cli_inform(reason)

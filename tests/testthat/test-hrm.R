@@ -91,6 +91,24 @@ test_that("the hrm DAG obeys the contract", {
   expect_dag_invariants("hrm")
 })
 
+test_that("only the leading HRM pair is screened against the genome", {
+  # The shortlist is widened top-up until the *leading* pair passes, so screening
+  # the rest was pure work: at n = 16 that is 31 whole-genome in-silico PCR
+  # passes per locus (measured 580 s for one TAIR10 locus, 2.7 s when only the
+  # leading pair is screened).  This pins the count, not the wall time.
+  skip_if_no_oligoarrayaux()
+  f <- hrm_fixture()
+  calls <- 0L
+  local_mocked_bindings(pair_screen_ok = function(...) {
+    calls <<- calls + 1L
+    FALSE
+  })
+  suppressMessages(suppressWarnings(design_hrm_marker(f$genome, f$snp, flank = 150L)))
+  # five shortlist doublings (1, 2, 4, 8, 16) - one screen each, not
+  # 1 + 2 + 4 + 8 + 16 - plus the final check of the winner
+  expect_lte(calls, 6L)
+})
+
 test_that("an HRM marker is graded on its bimorphism's measured resolvability", {
   skip_if_no_oligoarrayaux()
   f <- hrm_fixture()
