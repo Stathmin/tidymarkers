@@ -80,11 +80,12 @@ Suggests:
     RSQLite,
     xml2,
     crisprVerse,
+    parallelly,
     spelling
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/testthat/parallel: false
-Config/testthat/cores: 2
+Config/testthat/parallel: true
+Config/testthat/cores: 4
 Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.1.1
 Config/potools/style: base
