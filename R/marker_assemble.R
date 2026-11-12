@@ -887,7 +887,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   blast <- NULL
   if (isTRUE(run_blast)) {
     blast <- if (inherits(genome, "marker_genome") && !is.null(genome$bowtie_index)) {
-      tryCatch(specificity_bowtie(primers, genome$bowtie_index),
+      tryCatch(
+        specificity_bowtie(primers, genome$bowtie_index,
+          nthreads = if (is.null(BPPARAM)) 4L else 1L
+        ),
         error = function(e) {
           cli::cli_warn(gettext("bowtie scan failed: {conditionMessage(e)}"))
           NULL

@@ -25,6 +25,25 @@ test_that("a marker_genome reads the same regions as an in-memory DNAStringSet",
   )
 })
 
+test_that("a whole-sequence read is cached on the object", {
+  skip_if_not_installed("Rsamtools")
+  fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
+  gs <- marker_genome(fa, chrom_map = ATH_CHROM_MAP)
+  first <- as.character(genome_seq(gs, "Chr1"))
+
+  # a second whole read must not touch the FASTA
+  gs$fa <- "does-not-exist.fa"
+  expect_equal(as.character(genome_seq(gs, "Chr1")), first)
+  # a partial read still does, so the cache is not a blanket lie
+  expect_error(genome_seq(gs, "Chr1", 5L, 12L))
+
+  withr::local_options(tidymarkers.genome_cache = FALSE)
+  gs_off <- marker_genome(fa, chrom_map = ATH_CHROM_MAP)
+  genome_seq(gs_off, "Chr1")
+  gs_off$fa <- "does-not-exist.fa"
+  expect_error(genome_seq(gs_off, "Chr1"))
+})
+
 test_that("design helpers accept a marker_genome (no whole genome in RAM)", {
   skip_if_not_installed("Rsamtools")
   fa <- make_fa(withr::local_tempfile(fileext = ".fa"))

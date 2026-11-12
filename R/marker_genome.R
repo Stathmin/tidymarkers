@@ -26,6 +26,14 @@
 #' (`bsgenome =`), in which case regions are read with `BSgenome::getSeq()` and no
 #' FASTA needs to live on disk.
 #'
+#' Whole-sequence reads are cached in the object the first time they are asked
+#' for: the genome-wide verification steps ask for a whole chromosome once per
+#' primer pair, and re-reading it from the FASTA (not the scan) was the cost (40
+#' of 58 CPU-seconds in a measured 6-locus design on TAIR10).  The cache costs
+#' one chromosome of RAM per chromosome actually scanned; set
+#' `options(tidymarkers.genome_cache = FALSE)` before building the genome to
+#' turn it off on a memory-tight machine.
+#'
 #' @param path FASTA path (gzipped is decompressed once, see [fasta_index()]).
 #'   Ignored when `bsgenome` is given.
 #' @param chrom_map optional named character vector `defline -> name`
@@ -63,7 +71,8 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
     list(
       path = plain, fa = fa, seqnames = seqnames,
       lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
-      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index
+      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index,
+      cache = if (isTRUE(getOption("tidymarkers.genome_cache", TRUE))) new.env(parent = emptyenv()) else NULL
     ),
     class = "marker_genome"
   )
@@ -184,9 +193,24 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
   }
   raw <- genome$seqnames[[chrom]]
   if (is.null(raw)) cli::cli_abort(gettext("Unknown sequence: {chrom}"))
-  gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
   if (!is.null(genome$bsgenome)) {
+    gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
     return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])
   }
-  Rsamtools::scanFa(genome$fa, gr)[[1L]]
+  # A genome-wide step asks for the whole chromosome once per primer pair, so
+  # the read (not the scan) repeats; keep the first read per sequence.
+  whole <- start == 1L && end == as.integer(genome$lengths[[chrom]])
+  cache <- genome$cache
+  if (whole && !is.null(cache)) {
+    cached <- cache[[chrom]]
+    if (!is.null(cached)) {
+      return(cached)
+    }
+  }
+  gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
+  seq <- Rsamtools::scanFa(genome$fa, gr)[[1L]]
+  if (whole && !is.null(cache)) {
+    cache[[chrom]] <- seq
+  }
+  seq
 }

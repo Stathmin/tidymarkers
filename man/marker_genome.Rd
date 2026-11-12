@@ -47,6 +47,14 @@ design code does not care which one it is given.
 A \code{marker_genome} can also be built from a Bioconductor \code{BSgenome} object
 (\verb{bsgenome =}), in which case regions are read with \code{BSgenome::getSeq()} and no
 FASTA needs to live on disk.
+
+Whole-sequence reads are cached in the object the first time they are asked
+for: the genome-wide verification steps ask for a whole chromosome once per
+primer pair, and re-reading it from the FASTA (not the scan) was the cost (40
+of 58 CPU-seconds in a measured 6-locus design on TAIR10).  The cache costs
+one chromosome of RAM per chromosome actually scanned; set
+\code{options(tidymarkers.genome_cache = FALSE)} before building the genome to
+turn it off on a memory-tight machine.
 }
 \examples{
 fa <- withr::local_tempfile(fileext = ".fa")

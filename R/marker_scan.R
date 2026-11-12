@@ -211,7 +211,11 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
         i = gettext("Use specificity_seed() on an in-memory genome for the 3'-seed question.")
       ))
     }
-    return(specificity_bowtie(primers, genome$bowtie_index))
+    # a BPPARAM means the caller is already parallel across loci; 4 bowtie
+    # threads per worker oversubscribed a 6-worker run by 2.75x
+    return(specificity_bowtie(primers, genome$bowtie_index,
+      nthreads = if (is.null(BPPARAM)) 4L else 1L
+    ))
   }
   if (!is.null(genome$fm_index)) {
     cli::cli_abort(c(
