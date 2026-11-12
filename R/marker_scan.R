@@ -5,9 +5,10 @@
 #  specificity scan still touches every base - so for large genomes the right
 #  tool is a search index.  `specificity_seed()` counts with `Biostrings` (exact
 #  `PDict` path, or a chromosome-parallel `countPattern` scan) and is perfect up
-#  to genome sizes you can hold in RAM; beyond that, build a BLAST database once
-#  (`marker_blast_index()`, NCBI BLAST+ makes its own index - the same idea as an
-#  FM-index) and query it with `specificity_blast()`.
+#  to genome sizes you can hold in RAM; beyond that, build a search index once
+#  and query it: bowtie1 (`marker_bowtie_index()` / `specificity_bowtie()`, the
+#  default for a large genome) or an NCBI BLAST database (`marker_blast_index()`
+#  / `specificity_blast()`, a heuristic).
 #
 #  `specificity_of()` picks the right path for the genome object it is given, so
 #  the rest of the pipeline stays unaware.
@@ -136,6 +137,19 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
     # let BiocParallel partition the queries across workers
     purrr::list_rbind(bp_lapply(seq_along(query), function(i) run(query[i]), BPPARAM))
   }
+  # Count the full-length exact matches only.  `predict.BLAST` returns every
+  # HSP, so a 20-mer reports one row per 7-mer seed window (106,924 rows for 16
+  # primers whose true total is 6); without this filter the count is the seed
+  # multiplicity, not the primer's.
+  qlen <- stats::setNames(nchar(as.character(seeds)), names(primers))
+  res <- if (is.null(res) || nrow(res) == 0L) {
+    res
+  } else {
+    want <- qlen[as.character(res$qseqid)]
+    full <- res$mismatch == 0L & res$length == want &
+      res$qstart == 1L & res$qend == want
+    res[full, , drop = FALSE]
+  }
   cnt <- if (is.null(res) || nrow(res) == 0L) integer(0) else table(res$qseqid)
   hits <- as.integer(cnt[names(primers)])
   hits[is.na(hits)] <- 0L
@@ -145,17 +159,36 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' Specificity by the right path for the genome at hand
 #'
 #' In-memory `DNAStringSet` -> [specificity_seed()] (exact `PDict` path, or a
-#' chromosome-parallel scan).  Indexed `marker_genome` -> [specificity_blast()]
-#' through its BLAST database.  This is what the rest of the pipeline calls.
+#' chromosome-parallel scan).  A `marker_genome` with a `bowtie_index` ->
+#' [specificity_bowtie()] (the indexed path built for large genomes); with only a
+#' `blast_db` -> [specificity_blast()] (a heuristic BLAST index).  This is what
+#' the rest of the pipeline calls.
+#'
+#' The indexed paths answer **different questions**, and the answer's meaning
+#' follows the path: [specificity_seed()] counts 3'-seed matches, whereas the
+#' indexed paths scan the whole primer (bowtie: both strands, exact by default;
+#' BLAST: `blastn-short`).  `k` and `max_mismatch` are honoured only on the
+#' in-memory path; a non-default value on a bowtie-index genome warns rather than
+#' being silently ignored.
+#'
+#' A genome carrying only an `fm_index` is refused instead of dispatched: on
+#' TAIR10 Chr1 the Subread index costs 31.7 bytes per genome base (wheat 16 Gb
+#' would be ~490 GB), its query cost does not fall with `nthreads`, and its BAM
+#' carries no mismatch tags to verify a count against; the same site measured
+#' the bowtie1 index at 1.34 bytes/base and 5000 primers in 0.1 s, at a cost that
+#' does not grow with the genome.
+#' Build one with [marker_bowtie_index()], or call [specificity_fm()] explicitly
+#' if you want the read mapper.
 #'
 #' @param primers named character vector of oligos.
-#' @param genome a `marker_genome` (with `blast_db`) or a `DNAStringSet`.
+#' @param genome a `marker_genome` (with `bowtie_index` or `blast_db`) or a
+#'   `DNAStringSet`.
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
 #' @return a tibble with one row per primer (`primer`, `seed`, `hits`); the
 #'   in-memory path delegates to [specificity_seed()], the indexed path to
-#'   [specificity_blast()].
+#'   [specificity_bowtie()], the BLAST path to [specificity_blast()].
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
@@ -169,11 +202,30 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
       BPPARAM = BPPARAM
     ))
   }
+  if (!is.null(genome$bowtie_index)) {
+    seed_default <- identical(as.integer(k), as.integer(SEED_K)) &&
+      identical(as.integer(max_mismatch), as.integer(SEED_MISMATCH))
+    if (!seed_default) {
+      cli::cli_warn(c(
+        gettext("The bowtie path scans the whole primer and ignores `k` / `max_mismatch`."),
+        i = gettext("Use specificity_seed() on an in-memory genome for the 3'-seed question.")
+      ))
+    }
+    return(specificity_bowtie(primers, genome$bowtie_index))
+  }
+  if (!is.null(genome$fm_index)) {
+    cli::cli_abort(c(
+      gettext("This genome has only an FM index; the whole-genome scan no longer dispatches to it."),
+      i = gettext("On TAIR10 the Subread index cost 31.7 bytes/bp and 53 s/query; wheat (16 Gb) needs ~490 GB."),
+      i = gettext("Build a bowtie index instead: marker_bowtie_index(genome) (bowtie_index=)."),
+      i = gettext("Or call specificity_fm() explicitly if you want the read mapper.")
+    ))
+  }
   db <- genome$blast_db
   if (is.null(db)) {
     cli::cli_abort(c(
-      gettext("This indexed genome has no BLAST database attached."),
-      i = gettext("Build one with marker_blast_index(genome) and pass it as `blast_db=`.")
+      gettext("This indexed genome has neither a bowtie index nor a BLAST database attached."),
+      i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
     ))
   }
   specificity_blast(primers, db, k = k, BPPARAM = BPPARAM)

@@ -69,6 +69,7 @@ Suggests:
     BSgenome,
     TxDb.Athaliana.BioMart.plantsmart28,
     Rsubread,
+    Rbowtie,
     Rsamtools,
     ensembldb,
     rBLAST,

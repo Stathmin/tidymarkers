@@ -9,7 +9,8 @@ marker_genome(
   chrom_map = NULL,
   blast_db = NULL,
   bsgenome = NULL,
-  fm_index = NULL
+  fm_index = NULL,
+  bowtie_index = NULL
 )
 }
 \arguments{
@@ -27,6 +28,10 @@ of a FASTA (e.g. \code{"BSgenome.Athaliana.TAIR.TAIR9"}); \code{path} is then un
 
 \item{fm_index}{optional prebuilt FM-index basename for the indexed
 genome-wide scan (see \code{\link[=marker_fm_index]{marker_fm_index()}} / \code{\link[=specificity_fm]{specificity_fm()}}).}
+
+\item{bowtie_index}{optional prebuilt bowtie1 index basename for the indexed
+genome-wide scan (see \code{\link[=marker_bowtie_index]{marker_bowtie_index()}} / \code{\link[=specificity_bowtie]{specificity_bowtie()}});
+this is the indexed path \code{\link[=specificity_of]{specificity_of()}} prefers.}
 }
 \value{
 a \code{marker_genome} object.

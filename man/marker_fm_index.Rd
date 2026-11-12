@@ -21,6 +21,13 @@ so calling this on every run only pays the build cost once.  Attach the
 returned basename to a \code{marker_genome} with \verb{marker_genome(..., fm_index = <basename>)}
 to let the assembly use it, or pass it straight to \code{\link[=specificity_fm]{specificity_fm()}}.
 }
+\details{
+Subread needs a non-empty defline on every sequence; unnamed sequences of an
+in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  Subread
+also silently rewrites any non-ACGT base to \code{A} when it builds the index, so
+hit counts over N-rich regions are conservative; the notice is replayed as a
+warning instead of being swallowed by the progress capture.
+}
 \examples{
 \dontrun{
 idx <- marker_fm_index(marker_genome("genome.fa"))
@@ -34,13 +41,16 @@ Other specificity:
 \code{\link[=build_blast_db]{build_blast_db()}},
 \code{\link[=exact_hit_table]{exact_hit_table()}},
 \code{\link[=has_blast]{has_blast()}},
+\code{\link[=has_bowtie]{has_bowtie()}},
 \code{\link[=homeolog_axes]{homeolog_axes()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},
+\code{\link[=marker_bowtie_index]{marker_bowtie_index()}},
 \code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_bowtie]{specificity_bowtie()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
 \code{\link[=specificity_of]{specificity_of()}},
 \code{\link[=specificity_policy]{specificity_policy()}},

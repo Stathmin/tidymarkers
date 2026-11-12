@@ -22,6 +22,12 @@ FM_MISMATCH <- 2L
 #' returned basename to a `marker_genome` with `marker_genome(..., fm_index = <basename>)`
 #' to let the assembly use it, or pass it straight to [specificity_fm()].
 #'
+#' Subread needs a non-empty defline on every sequence; unnamed sequences of an
+#' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.  Subread
+#' also silently rewrites any non-ACGT base to `A` when it builds the index, so
+#' hit counts over N-rich regions are conservative; the notice is replayed as a
+#' warning instead of being swallowed by the progress capture.
+#'
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param basename index basename to create (no extension).
 #' @return the index basename (invisibly used by [specificity_fm()]).
@@ -43,12 +49,30 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
   } else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))
-    Biostrings::writeXStringSet(genome, p)
+    gs <- genome
+    nm <- names(gs)
+    if (is.null(nm)) nm <- rep("", length(gs))
+    blank <- is.na(nm) | !nzchar(nm)
+    if (any(blank)) {
+      # an empty defline makes the BAM header unusable downstream
+      nm[blank] <- paste0("seq", which(blank))
+      names(gs) <- nm
+    }
+    Biostrings::writeXStringSet(gs, p)
     p
   }
   cli::cli_alert_info(gettext("Building a Subread FM-index at {.path {basename}} (one-off)."))
   # buildindex reports progress on stdout with no quiet switch
   invisible(utils::capture.output(Rsubread::buildindex(basename = basename, reference = fasta)))
+  log <- paste0(basename, ".log")
+  rewritten <- fs::file_exists(log) &&
+    any(grepl("non-ACGT", readLines(log, warn = FALSE), fixed = TRUE))
+  if (rewritten) {
+    cli::cli_alert_warning(gettext(
+      "Subread rewrote the non-ACGT bases of this genome to 'A' when building the index;
+       counts over ambiguous regions are conservative."
+    ))
+  }
   basename
 }
 

@@ -363,6 +363,7 @@ marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto
           seed_counts = TRUE,
           iupac = TRUE,
           mismatch = TRUE,
+          bowtie = requireNamespace("Rbowtie", quietly = TRUE),
           blast = requireNamespace("rBLAST", quietly = TRUE) && has_blast()
         ),
         pcr = in_silico_pcr,

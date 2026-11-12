@@ -3,7 +3,8 @@
 # =============================================================================
 #  The design window (a few hundred bp around a variant) is all the *designer*
 #  needs; the genome-wide verification steps are the only ones that must see the
-#  whole genome, and those have their own indexed path (see marker_scan.R: BLAST).
+#  whole genome, and those have their own indexed path (see marker_scan.R: a
+#  bowtie1 index by default, BLAST as the heuristic fallback).
 #
 #  A `marker_genome` is an Rsamtools-indexed FASTA you read regions from on demand
 #  (`genome_seq()`), so `snp_template()`, `strand_gc_hint()` and the reference
@@ -33,6 +34,9 @@
 #'   genome-wide scan (see [marker_blast_index()] / [specificity_blast()]).
 #' @param fm_index optional prebuilt FM-index basename for the indexed
 #'   genome-wide scan (see [marker_fm_index()] / [specificity_fm()]).
+#' @param bowtie_index optional prebuilt bowtie1 index basename for the indexed
+#'   genome-wide scan (see [marker_bowtie_index()] / [specificity_bowtie()]);
+#'   this is the indexed path [specificity_of()] prefers.
 #' @param bsgenome a `BSgenome` object (or a package name) to read from instead
 #'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`); `path` is then unused.
 #' @return a `marker_genome` object.
@@ -43,9 +47,9 @@
 #' @family input
 #' @export
 marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
-                          bsgenome = NULL, fm_index = NULL) {
+                          bsgenome = NULL, fm_index = NULL, bowtie_index = NULL) {
   if (!is.null(bsgenome)) {
-    return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index))
+    return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index, bowtie_index))
   }
   plain <- fasta_index(path)
   fa <- Rsamtools::FaFile(plain)
@@ -59,7 +63,7 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
     list(
       path = plain, fa = fa, seqnames = seqnames,
       lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
-      blast_db = blast_db, fm_index = fm_index
+      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index
     ),
     class = "marker_genome"
   )
@@ -71,7 +75,8 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
 #' sequence, so a `marker_genome` can be backed by one instead of a FASTA file.
 #' @keywords internal
 #' @noRd
-bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL) {
+bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
+                                 bowtie_index = NULL) {
   load_namespace_quietly("BSgenome", reason = gettext("for a BSgenome genome source"))
   if (is.character(bsgenome)) {
     load_namespace_quietly(bsgenome, reason = gettext("for the BSgenome genome source"))
@@ -87,7 +92,7 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL)
     list(
       path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
       lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
-      blast_db = blast_db, fm_index = fm_index
+      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index
     ),
     class = "marker_genome"
   )
@@ -115,6 +120,7 @@ print.marker_genome <- function(x, ...) {
     paste0("(", paste(utils::head(names(x$seqnames), 6L), collapse = ", "), ")"), "\n"
   )
   cat("  BLAST db:", if (is.null(x$blast_db)) "none (see marker_blast_index())" else x$blast_db, "\n")
+  cat("  bowtie index:", if (is.null(x$bowtie_index)) "none (see marker_bowtie_index())" else x$bowtie_index, "\n")
   cat("  FM index:", if (is.null(x$fm_index)) "none (see marker_fm_index())" else x$fm_index, "\n")
   invisible(x)
 }

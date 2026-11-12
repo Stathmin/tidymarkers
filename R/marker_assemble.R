@@ -881,14 +881,15 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   )
   amplicons <- if (is.null(pcr_products)) NULL else assay_amplicon_counts(pcr_products)
 
-  # whole-primer genome scan (only when requested): an attached FM-index is
-  # queried first (index-based, multithreaded), otherwise the BLAST database
+  # whole-primer genome scan (only when requested): an attached bowtie index is
+  # queried first (index-based, flat cost in genome and primer count), otherwise
+  # a BLAST database
   blast <- NULL
   if (isTRUE(run_blast)) {
-    blast <- if (inherits(genome, "marker_genome") && !is.null(genome$fm_index)) {
-      tryCatch(specificity_fm(primers, genome$fm_index),
+    blast <- if (inherits(genome, "marker_genome") && !is.null(genome$bowtie_index)) {
+      tryCatch(specificity_bowtie(primers, genome$bowtie_index),
         error = function(e) {
-          cli::cli_warn(gettext("FM scan failed: {conditionMessage(e)}"))
+          cli::cli_warn(gettext("bowtie scan failed: {conditionMessage(e)}"))
           NULL
         }
       )

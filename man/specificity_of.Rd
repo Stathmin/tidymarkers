@@ -15,7 +15,8 @@ specificity_of(
 \arguments{
 \item{primers}{named character vector of oligos.}
 
-\item{genome}{a \code{marker_genome} (with \code{blast_db}) or a \code{DNAStringSet}.}
+\item{genome}{a \code{marker_genome} (with \code{bowtie_index} or \code{blast_db}) or a
+\code{DNAStringSet}.}
 
 \item{k}{3'-seed length.}
 
@@ -26,12 +27,31 @@ specificity_of(
 \value{
 a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}); the
 in-memory path delegates to \code{\link[=specificity_seed]{specificity_seed()}}, the indexed path to
-\code{\link[=specificity_blast]{specificity_blast()}}.
+\code{\link[=specificity_bowtie]{specificity_bowtie()}}, the BLAST path to \code{\link[=specificity_blast]{specificity_blast()}}.
 }
 \description{
 In-memory \code{DNAStringSet} -> \code{\link[=specificity_seed]{specificity_seed()}} (exact \code{PDict} path, or a
-chromosome-parallel scan).  Indexed \code{marker_genome} -> \code{\link[=specificity_blast]{specificity_blast()}}
-through its BLAST database.  This is what the rest of the pipeline calls.
+chromosome-parallel scan).  A \code{marker_genome} with a \code{bowtie_index} ->
+\code{\link[=specificity_bowtie]{specificity_bowtie()}} (the indexed path built for large genomes); with only a
+\code{blast_db} -> \code{\link[=specificity_blast]{specificity_blast()}} (a heuristic BLAST index).  This is what
+the rest of the pipeline calls.
+}
+\details{
+The indexed paths answer \strong{different questions}, and the answer's meaning
+follows the path: \code{\link[=specificity_seed]{specificity_seed()}} counts 3'-seed matches, whereas the
+indexed paths scan the whole primer (bowtie: both strands, exact by default;
+BLAST: \code{blastn-short}).  \code{k} and \code{max_mismatch} are honoured only on the
+in-memory path; a non-default value on a bowtie-index genome warns rather than
+being silently ignored.
+
+A genome carrying only an \code{fm_index} is refused instead of dispatched: on
+TAIR10 Chr1 the Subread index costs 31.7 bytes per genome base (wheat 16 Gb
+would be ~490 GB), its query cost does not fall with \code{nthreads}, and its BAM
+carries no mismatch tags to verify a count against; the same site measured
+the bowtie1 index at 1.34 bytes/base and 5000 primers in 0.1 s, at a cost that
+does not grow with the genome.
+Build one with \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}, or call \code{\link[=specificity_fm]{specificity_fm()}} explicitly
+if you want the read mapper.
 }
 \examples{
 genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
@@ -45,14 +65,17 @@ Other specificity:
 \code{\link[=build_blast_db]{build_blast_db()}},
 \code{\link[=exact_hit_table]{exact_hit_table()}},
 \code{\link[=has_blast]{has_blast()}},
+\code{\link[=has_bowtie]{has_bowtie()}},
 \code{\link[=homeolog_axes]{homeolog_axes()}},
 \code{\link[=in_silico_pcr]{in_silico_pcr()}},
 \code{\link[=marker_blast_index]{marker_blast_index()}},
+\code{\link[=marker_bowtie_index]{marker_bowtie_index()}},
 \code{\link[=marker_fm_index]{marker_fm_index()}},
 \code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
+\code{\link[=specificity_bowtie]{specificity_bowtie()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
 \code{\link[=specificity_policy]{specificity_policy()}},
 \code{\link[=specificity_seed]{specificity_seed()}},

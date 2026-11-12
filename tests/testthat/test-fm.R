@@ -23,3 +23,34 @@ test_that("a marker_genome carries an attached FM index", {
   expect_equal(gs$fm_index, "/tmp/some/index")
   expect_s3_class(gs, "marker_genome")
 })
+
+test_that("unnamed sequences are named before the index is built", {
+  skip_if_not_full()
+  skip_if_not_installed("Rsubread")
+  skip_if_not_installed("Rsamtools")
+  withr::local_seed(2)
+  motif <- paste(sample(c("A", "C", "G", "T"), 30L, TRUE), collapse = "")
+  filler <- paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = "")
+  # no names: the BAM header used to come out unusable downstream
+  genome <- Biostrings::DNAStringSet(paste0(filler, motif, filler, motif, filler))
+  base <- fs::path(withr::local_tempdir(), "unnamed")
+  idx <- marker_fm_index(genome, basename = base)
+  res <- specificity_fm(c(TWO = motif), idx)
+  expect_equal(res$hits, 2L)
+})
+
+test_that("specificity_of refuses an FM-only genome and names the bowtie path", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">chr1", "ACGTACGTACGTACGTACGT"), fa)
+  genome <- marker_genome(fa, fm_index = "/tmp/some/index")
+  # the Subread index is 24x heavier per base than bowtie1 and flat-cost per
+  # query, so it is no longer the whole-genome scan; say so, do not dispatch
+  expect_error(
+    specificity_of(c(AS = "ACGTACGT"), genome),
+    "no longer dispatches"
+  )
+  expect_error(
+    specificity_of(c(AS = "ACGTACGT"), genome),
+    "marker_bowtie_index"
+  )
+})
