@@ -658,9 +658,11 @@ hit_profile <- function(pattern, footprints, scheme, seed_len = NA_integer_,
   prof
 }
 
+
 #' Per-primer hit table for one primer against every chromosome
 #'
-#' One `matchPattern()` pass per primer (`fixed = FALSE`, so IUPAC-aware) with
+#' One `matchPattern()` pass per primer (plain-ACGT patterns are scanned with
+#' `fixed = TRUE`, IUPAC ones with `fixed = FALSE`) with
 #' the mismatch profile of every hit computed against its genomic footprint.
 #' The search is exact-or-radius as asked: a mismatched replacement character in
 #' the pattern is the only way a terminal mismatch can be scanned here, because
