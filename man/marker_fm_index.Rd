@@ -23,7 +23,8 @@ to let the assembly use it, or pass it straight to \code{\link[=specificity_fm]{
 }
 \details{
 Subread needs a non-empty defline on every sequence; unnamed sequences of an
-in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  Subread
+in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  A
+BSgenome-backed \code{marker_genome} has no FASTA and gets a named error.  Subread
 also silently rewrites any non-ACGT base to \code{A} when it builds the index, so
 hit counts over N-rich regions are conservative; the notice is replayed as a
 warning instead of being swallowed by the progress capture.

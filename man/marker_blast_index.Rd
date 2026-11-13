@@ -22,9 +22,12 @@ the FASTA path the database was built from.  This is the database
 }
 \description{
 For an in-memory \code{DNAStringSet} the FASTA is written to \code{path} first; for a
-\code{marker_genome} its indexed FASTA is used directly.  The returned path is the
-database to pass to \code{\link[=specificity_blast]{specificity_blast()}}; attach it to a \code{marker_genome} with
-\verb{marker_genome(..., blast_db = <path>)} to let \code{\link[=specificity_of]{specificity_of()}} use it.
+\code{marker_genome} its indexed FASTA is used directly.  A BSgenome-backed
+\code{marker_genome} has no FASTA, so it gets a named error; attach a database it
+built elsewhere with \verb{marker_genome(..., blast_db = <path>)} instead.  The
+returned path is the database to pass to \code{\link[=specificity_blast]{specificity_blast()}}; attach it to a
+\code{marker_genome} with \verb{marker_genome(..., blast_db = <path>)} to let
+\code{\link[=specificity_of]{specificity_of()}} use it.
 }
 \examples{
 \dontrun{

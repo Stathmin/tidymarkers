@@ -15,7 +15,10 @@ marker_genome(
 }
 \arguments{
 \item{path}{FASTA path (gzipped is decompressed once, see \code{\link[=fasta_index]{fasta_index()}}).
-Ignored when \code{bsgenome} is given.}
+Must be \code{NULL} when \code{bsgenome} is given: a BSgenome genome has no FASTA on
+disk, so \code{\link[=marker_blast_index]{marker_blast_index()}}, \code{\link[=marker_bowtie_index]{marker_bowtie_index()}} and
+\code{\link[=marker_fm_index]{marker_fm_index()}} raise an error for it, and the index must be built
+elsewhere and attached with \verb{blast_db=}, \verb{bowtie_index=} or \verb{fm_index=}.}
 
 \item{chrom_map}{optional named character vector \code{defline -> name}
 (e.g. \code{ATH_CHROM_MAP}); when given, only mapped sequences are kept.}
@@ -24,7 +27,11 @@ Ignored when \code{bsgenome} is given.}
 genome-wide scan (see \code{\link[=marker_blast_index]{marker_blast_index()}} / \code{\link[=specificity_blast]{specificity_blast()}}).}
 
 \item{bsgenome}{a \code{BSgenome} object (or a package name) to read from instead
-of a FASTA (e.g. \code{"BSgenome.Athaliana.TAIR.TAIR9"}); \code{path} is then unused.}
+of a FASTA (e.g. \code{"BSgenome.Athaliana.TAIR.TAIR9"}).  Sequencing works, but
+a BSgenome genome has no FASTA on disk, so the index builders
+\code{\link[=marker_blast_index]{marker_blast_index()}}, \code{\link[=marker_bowtie_index]{marker_bowtie_index()}} and \code{\link[=marker_fm_index]{marker_fm_index()}}
+raise an error for it; pass an index you built elsewhere with
+\verb{blast_db=}, \verb{bowtie_index=} or \verb{fm_index=}.}
 
 \item{fm_index}{optional prebuilt FM-index basename for the indexed
 genome-wide scan (see \code{\link[=marker_fm_index]{marker_fm_index()}} / \code{\link[=specificity_fm]{specificity_fm()}}).}

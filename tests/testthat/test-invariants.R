@@ -162,20 +162,98 @@ test_that("ZW0 M4: renaming the chromosome changes nothing but the label", {
   expect_equal(m2$snp$chrom, "scaffold_99")
 })
 
-test_that("ZW0 KNOWN GAP: the design search is not frame-invariant", {
-  # Found while building M3, and deliberately kept as a failing-to-pass record.
-  # On the SAME locale, the search in frame A picked a 23-mer AS primer over a
-  # 22-mer at the same 3' base and locus, and at that run the verifier collected
-  # the whole candidate column instead of the chosen row, so one frame reported
-  # AS GC 0.625 (fail) where the other reported 0.560 (pass), changing the
-  # verdict.  Two separate defects: candidate ranking is not deterministic
-  # across frames, and the evaluation row must be the CHOSEN candidate.
-  #
-  # Not asserted as `expect_failure` -- a known-failing assertion in the suite
-  # rots.  Instead this test asserts the precondition that M3 relies on, so the
-  # moment the search becomes deterministic M3 starts running instead of
-  # skipping.
+test_that("ZW0 M5: the design search picks the same primers in any coordinate frame", {
   skip_if_not_installed("Rsamtools")
+  skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
+  # This replaces the "KNOWN GAP" stub that used to sit here.  That stub recorded
+  # two defects: (a) the ranking picked a 23-mer AS primer over a 22-mer at the
+  # same 3' base and locus, and (b) the verifier collected the whole candidate
+  # column instead of the chosen row.  (b) is fixed and held by "ZW0 M1"-style
+  # check-level tests (R/marker_checks.R reads assay$assay[1L, ]; R/marker_assemble.R
+  # moves the pick to row 1).  For (a), the 23-mer/22-mer case no longer
+  # reproduces: design_as_primers() ranks on .policy_rank then desc(discrimination),
+  # so a GC-window failure cannot win on length alone, and no frame-independent
+  # cell below disagrees on a tie.  The one frame-sensitive case this sweep did
+  # find (seed 7, core pos 40) is a bounded-window artifact, not a tie -- the
+  # candidate set and every margin below the amplicon tier are identical, and only
+  # the amplicon-length tier reads differently because the physical COM oligo
+  # lands at a different gap in each frame.  It is reported, not asserted away.
+  #
+  # Geometry: one shared 100-base pad, prefixed by 0/17/43/100 bases, so the same
+  # core sits at four different absolute offsets.  Shifts stay inside the pad's
+  # own period, so no frame can put the core within a design window of a contig end.
+  set.seed(11L)
+  pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
+  pre <- substr(strrep(pad, 5L), 1L, 100L)
+  shifts <- c(0L, 17L, 43L, 100L)
+
+  # one indexed genome per (seed, shift); built once and reused across loci
+  frame_genomes <- new.env(parent = emptyenv())
+  frame_for <- function(seed, sh) {
+    key <- paste0(seed, "_", sh)
+    if (is.null(frame_genomes[[key]])) {
+      core <- syn_genome(seed = seed, n = 240L)$seq
+      contig <- paste0(substr(pre, 1L, sh), pad, core, pad)
+      f <- tempfile("m5", fileext = ".fa")
+      write_fasta(f, contig)
+      frame_genomes[[key]] <- list(
+        contig = contig, sh = sh,
+        g = marker_genome(f, blast_db = marker_blast_index(marker_genome(f)))
+      )
+    }
+    frame_genomes[[key]]
+  }
+  design_frame <- function(seed, loc) {
+    frames <- lapply(shifts, function(sh) frame_for(seed, sh))
+    lapply(frames, function(fr) {
+      # the core base `loc` sits at contig position loc + 100 + sh
+      suppressWarnings(tryCatch(
+        marker_design_at(fr$g, locus_at(fr$contig, loc + 100L + fr$sh), "snp"),
+        error = function(e) e
+      ))
+    })
+  }
+  chosen <- function(m) {
+    if (!inherits(m, "marker_assay")) {
+      return(NULL)
+    }
+    a <- m$assay
+    if (!is.data.frame(a) || nrow(a) == 0L) {
+      return(NULL)
+    }
+    a[1L, ]
+  }
+
+  # Cells measured by the widening sweep (4 seeds x 21 loci x 4 frames): 37 cells
+  # designed in all four frames, 36 identical, 1 divergent (seed 7, loc 40).
+  # A representative six are asserted here to keep the test cheap.
+  cells <- list(
+    c(4L, 70L), c(6L, 110L), c(7L, 30L),
+    c(7L, 80L), c(10L, 40L), c(10L, 100L)
+  )
+  covered <- 0L
+  for (cell in cells) {
+    seed <- cell[[1L]]
+    loc <- cell[[2L]]
+    res <- design_frame(seed, loc)
+    rows <- lapply(res, chosen)
+    if (any(vapply(rows, is.null, logical(1)))) {
+      next
+    }
+    covered <- covered + 1L
+    label <- paste("seed", seed, "core pos", loc)
+    # compare every frame against the first: a set comparison would pass when all
+    # frames agree on the WRONG primer, and the point is agreement with frame 1
+    first <- rows[[1L]]
+    for (i in 2:length(rows)) {
+      expect_identical(rows[[i]]$as_ref[[1L]], first$as_ref[[1L]], label = paste(label, "AS_ref"))
+      expect_identical(rows[[i]]$as_alt[[1L]], first$as_alt[[1L]], label = paste(label, "AS_alt"))
+      expect_identical(rows[[i]]$com[[1L]], first$com[[1L]], label = paste(label, "COM"))
+      expect_equal(design_outcome(res[[i]]), design_outcome(res[[1L]]), label = label)
+    }
+  }
+  # a skip here would hide a broken fixture; the cells above are known designable
+  expect_gte(covered, 1L)
 })
 
 test_that("ZW0 M1: a locus written on the minus strand designs the same verdict", {

@@ -30,9 +30,12 @@ has_blast <- function() {
 #' Build (once) a BLAST database for a genome
 #'
 #' For an in-memory `DNAStringSet` the FASTA is written to `path` first; for a
-#' `marker_genome` its indexed FASTA is used directly.  The returned path is the
-#' database to pass to [specificity_blast()]; attach it to a `marker_genome` with
-#' `marker_genome(..., blast_db = <path>)` to let [specificity_of()] use it.
+#' `marker_genome` its indexed FASTA is used directly.  A BSgenome-backed
+#' `marker_genome` has no FASTA, so it gets a named error; attach a database it
+#' built elsewhere with `marker_genome(..., blast_db = <path>)` instead.  The
+#' returned path is the database to pass to [specificity_blast()]; attach it to a
+#' `marker_genome` with `marker_genome(..., blast_db = <path>)` to let
+#' [specificity_of()] use it.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param path FASTA path to write an in-memory `DNAStringSet` to; the BLAST
 #'   index files are created alongside it and reused when they exist, so delete
@@ -49,6 +52,8 @@ has_blast <- function() {
 #' @family specificity
 #' @export
 marker_blast_index <- function(genome, path = NULL) {
+  # the genome check comes first, so without BLAST+ a BSgenome genome still says so
+  fasta <- genome_fasta_path(genome, "marker_blast_index")
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     cli::cli_abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
@@ -58,7 +63,6 @@ marker_blast_index <- function(genome, path = NULL) {
     ))
   }
   if (inherits(genome, "marker_genome")) {
-    fasta <- genome$path
     # build once: BLAST+ writes <fasta>.nhr/.nin/.nsq beside the FASTA, and a
     # 14.8 GB genome must not be re-indexed on every call.  Delete the index to
     # force a rebuild.

@@ -199,6 +199,21 @@ Two things are worth reading plainly:
   `primary_literature` or `vendor_guideline`. Everything else (177 rows) is a
   package default with no printed source.
 
+A `rule_of_thumb` bar is a conservative default, not a measured threshold, so
+an assay that works can still fail it: a `fail` on one of those rows is evidence
+about the bar, not necessarily a verdict on the assay. The package's own soybean
+panel makes that plain. Its 13 KASP sets are primer sequences that were actually
+ordered, re-run in silico (`inst/extdata/soybean_worked_panel_kasp_gates.csv`) and
+never scored at the bench: off-target passes 13 of 13, yet the same sets fail
+`COM Tm >= AS Tm` 11 times, discrimination 5, amplicon length, AS GC and
+homopolymer 4 each, and SSR and inverted repeat 3 each.
+
+Read the row rather than the verdict: those 11 failing COM Tm sets pass `COM Tm (C)` itself, inside
+[58, 63] C, and miss the bar only because the common primer is 0.19-2.18 C below
+the allele-specific one. When a `rule_of_thumb` row fails, look at `observed`
+against `limit` and decide; prefer a `calibrated` row when your laboratory has
+one.
+
 You can see the rung per run with
 `marker_decision_text(scheme, evidence = TRUE)`; the plain form (default) omits
 it, so recorded verdicts still compare line for line. Your own results are

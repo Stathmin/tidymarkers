@@ -37,7 +37,8 @@ has_bowtie <- function() {
 #' [specificity_of()] use it, or pass it straight to [specificity_bowtie()].
 #'
 #' bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
-#' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.
+#' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.  A
+#' BSgenome-backed `marker_genome` has no FASTA and gets a named error.
 #'
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param basename index basename to create (no extension).
@@ -51,6 +52,8 @@ has_bowtie <- function() {
 #' @export
 marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_bowtie"),
                                 threads = 4L) {
+  # the genome check comes first, so without Rbowtie a BSgenome genome still says so
+  genome_fasta_path(genome, "marker_bowtie_index")
   rlang::check_installed("Rbowtie", reason = gettext("for the bowtie genome scan"))
   basename <- as.character(basename)
   if (fs::file_exists(paste0(basename, ".1.ebwt"))) {

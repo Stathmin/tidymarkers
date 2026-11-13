@@ -29,7 +29,8 @@ only pays the build cost once.  Attach the returned basename to a
 }
 \details{
 bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
-in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.
+in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  A
+BSgenome-backed \code{marker_genome} has no FASTA and gets a named error.
 }
 \examples{
 \dontrun{

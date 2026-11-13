@@ -65,6 +65,28 @@ test_that("in_silico_pcr works through an indexed marker_genome", {
   expect_equal(pr$width, 20L)
 })
 
+test_that("a BSgenome-backed genome has no FASTA, so the index builders say so (№8)", {
+  # built by hand: the point is the missing FASTA, not the BSgenome package
+  bs <- structure(list(path = NULL, bsgenome = "any"), class = "marker_genome")
+  for (build in list(marker_blast_index, marker_bowtie_index, marker_fm_index)) {
+    expect_error(build(bs), "BSgenome-backed")
+    expect_error(build(bs), "marker_genome")
+  }
+  # the escape hatch names the argument that builder actually takes
+  expect_error(marker_blast_index(bs), "blast_db =")
+  expect_error(marker_bowtie_index(bs), "bowtie_index =")
+  expect_error(marker_fm_index(bs), "fm_index =")
+
+  # a FASTA-backed genome is indexed exactly as before
+  skip_if_not_installed("Rsamtools")
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">chr1", strrep("ACGT", 25L)), fa)
+  gs <- marker_genome(fa)
+  skip_if_not(has_blast(), "NCBI BLAST+ not installed")
+  skip_if_not_installed("rBLAST")
+  expect_identical(marker_blast_index(gs), gs$path)
+})
+
 test_that("a marker_genome can be backed by a BSgenome (getSeq)", {
   skip_if_not_full()
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")

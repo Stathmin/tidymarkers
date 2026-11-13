@@ -23,7 +23,8 @@ FM_MISMATCH <- 2L
 #' to let the assembly use it, or pass it straight to [specificity_fm()].
 #'
 #' Subread needs a non-empty defline on every sequence; unnamed sequences of an
-#' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.  Subread
+#' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.  A
+#' BSgenome-backed `marker_genome` has no FASTA and gets a named error.  Subread
 #' also silently rewrites any non-ACGT base to `A` when it builds the index, so
 #' hit counts over N-rich regions are conservative; the notice is replayed as a
 #' warning instead of being swallowed by the progress capture.
@@ -43,6 +44,8 @@ FM_MISMATCH <- 2L
 #' @family specificity
 #' @export
 marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_fm")) {
+  # the genome check comes first, so without Rsubread a BSgenome genome still says so
+  genome_fasta_path(genome, "marker_fm_index")
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
   basename <- as.character(basename) # Rsubread wants a plain string
   # a buildable index that the design pipeline never queries is a trap (D5)

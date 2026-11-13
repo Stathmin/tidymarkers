@@ -35,7 +35,10 @@
 #' turn it off on a memory-tight machine.
 #'
 #' @param path FASTA path (gzipped is decompressed once, see [fasta_index()]).
-#'   Ignored when `bsgenome` is given.
+#'   Must be `NULL` when `bsgenome` is given: a BSgenome genome has no FASTA on
+#'   disk, so [marker_blast_index()], [marker_bowtie_index()] and
+#'   [marker_fm_index()] raise an error for it, and the index must be built
+#'   elsewhere and attached with `blast_db=`, `bowtie_index=` or `fm_index=`.
 #' @param chrom_map optional named character vector `defline -> name`
 #'   (e.g. `ATH_CHROM_MAP`); when given, only mapped sequences are kept.
 #' @param blast_db optional prebuilt BLAST database path for the indexed
@@ -46,7 +49,11 @@
 #'   genome-wide scan (see [marker_bowtie_index()] / [specificity_bowtie()]);
 #'   this is the indexed path [specificity_of()] prefers.
 #' @param bsgenome a `BSgenome` object (or a package name) to read from instead
-#'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`); `path` is then unused.
+#'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`).  Sequencing works, but
+#'   a BSgenome genome has no FASTA on disk, so the index builders
+#'   [marker_blast_index()], [marker_bowtie_index()] and [marker_fm_index()]
+#'   raise an error for it; pass an index you built elsewhere with
+#'   `blast_db=`, `bowtie_index=` or `fm_index=`.
 #' @return a `marker_genome` object.
 #' @examples
 #' fa <- withr::local_tempfile(fileext = ".fa")
@@ -82,6 +89,8 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
 #'
 #' `getSeq()` on a `BSgenome` is the Bioconductor-native way to read reference
 #' sequence, so a `marker_genome` can be backed by one instead of a FASTA file.
+#' Such a genome has no FASTA, so it is built with an attached index
+#' (`blast_db=`/`bowtie_index=`/`fm_index=`) rather than by indexing it here.
 #' @keywords internal
 #' @noRd
 bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
@@ -104,6 +113,29 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
       blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index
     ),
     class = "marker_genome"
+  )
+}
+
+# an index build needs a FASTA file; a BSgenome-backed genome has none (№8)
+genome_fasta_path <- function(genome, call) {
+  if (inherits(genome, "marker_genome") && is.null(genome$path)) {
+    cli::cli_abort(c(
+      gettext("{.fn {call}} needs a FASTA file, and this genome is BSgenome-backed (no FASTA on disk)."),
+      i = gettext("Index a FASTA instead: {.code marker_genome(\"genome.fa\")}."),
+      i = gettext("Or attach a prebuilt index: {.code marker_genome(bsgenome = , {index_arg(call)} = <path>)}."),
+      i = gettext("{.fn specificity_of} uses that index as-is.")
+    ))
+  }
+  genome$path
+}
+
+# the `marker_genome()` argument that attaches each builder's index
+index_arg <- function(call) {
+  switch(call,
+    marker_blast_index = "blast_db",
+    marker_bowtie_index = "bowtie_index",
+    marker_fm_index = "fm_index",
+    cli::cli_abort(gettext("Unknown index call: {call}"))
   )
 }
 
