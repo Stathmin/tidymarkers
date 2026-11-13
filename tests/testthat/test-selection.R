@@ -265,6 +265,35 @@ test_that("the AS 3' end is ranked for weakness, not stability (KASP rationale)"
   expect_equal(pick_as(as_table(c(0.9, 0.9), dg_3p = c(-6, -1)))$best$dg_3p, -1)
 })
 
+test_that("the AS tie-break is content-only, so it cannot rank by chromosome position", {
+  # A tie on seed_hits + as_length used to fall through to as_start, an ABSOLUTE
+  # coordinate, so the last word on which AS primer wins was where it happened to
+  # sit.  The same locus handed over at a different position then flipped the
+  # winner.  Only content keys may decide.
+  expect_identical(KASP_TIES_AS, c("seed_hits", "as_length"))
+  expect_identical(KASP_TIES_PAIR, c("run", "ssr"))
+
+  # Two placements tying on every ranked margin, listed 5'-most first: same
+  # length, opposite strands, seed_hits UNKNOWN (the seed screen never reached
+  # them, which is where all 25 observed as_start ties lived).  Without as_start
+  # the earlier row wins at every position, i.e. from content and input order; a
+  # chromosome coordinate would have overruled both.
+  placements <- function(pos) {
+    tibble::tibble(
+      discrimination = c(0.9, 0.9), tm = 58, dg_3p = -1, wobble = FALSE,
+      n_var = 0L, w_var = 0, n_3p = 0L,
+      seed_hits = c(NA_integer_, NA_integer_), as_length = c(20L, 20L),
+      strand = c("-", "+"), as_id = c("leftmost", "rightmost"),
+      # `-` starts at pos, `+` ends at pos, so row 1 is the 5'-most placement
+      as_start = ifelse(c("-", "+") == "+", pos - 20L + 1L, pos)
+    )
+  }
+  winners <- vapply(c(100L, 200L, 300L), function(pos) pick_as(placements(pos))$best$as_id, character(1))
+  expect_identical(unname(winners), rep("leftmost", 3L))
+  # and the winner's identity is independent of where the locus sits
+  expect_length(unique(winners), 1L)
+})
+
 test_that("the COM primer is also ranked for a weaker 3' end (README section 3)", {
   expect_true("COM 3' end weakness" %in% marker_decision_stages("snp")$pair$tiers)
   # the two pairings differ only in the COM primer's 3'-terminal dG37

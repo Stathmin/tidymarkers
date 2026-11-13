@@ -70,6 +70,13 @@ The `status` column is the main one, not `pass`:
 is not the same as "evidence in favour". So filter by `status`, and take `pass`
 as a quick answer to "is everything demonstrated".
 
+In particular `unknown` is not a defect: it means "not classified", not "broken".
+`marker_design_checks()` returns it when a criterion could not be graded, for
+example when the terminal substitution pair is missing from Kwok's mismatch
+table, so count it apart from `fail` (see its `@return` for the full rule). A
+plain `pass == FALSE` count therefore overstates the failures: in the soybean
+panel below it gives 36 rows where the real failures are 34.
+
 Criteria: amplicon size, AS/COM Tm (and `COM Tm >= AS Tm`), GC, homopolymers,
 SSR, hairpin/cross- and homodimer, discrimination, in-silico PCR (REF=1, ALT=0).
 
@@ -207,6 +214,18 @@ ordered, re-run in silico (`inst/extdata/soybean_worked_panel_kasp_gates.csv`) a
 never scored at the bench: off-target passes 13 of 13, yet the same sets fail
 `COM Tm >= AS Tm` 11 times, discrimination 5, amplicon length, AS GC and
 homopolymer 4 each, and SSR and inverted repeat 3 each.
+
+Recount those failures by `status`, not by `pass`: the CSV has quoted fields
+with commas, so `awk -F, '$NF == "fail"'` reads the wrong column and returns 0
+rows. Read it with a CSV parser instead:
+
+```sh
+Rscript -e 'x <- read.csv("inst/extdata/soybean_worked_panel_kasp_gates.csv"); table(x[["criterion"]], x[["pass"]])'
+```
+
+That prints 34 `FALSE` rows spread over the 8 criteria above, and 211 `TRUE`.
+The 2 remaining `FALSE` cells are not failures: they sit in the `unknown`
+column (106 rows in all), on `AS 3' mismatch base pair`.
 
 Read the row rather than the verdict: those 11 failing COM Tm sets pass `COM Tm (C)` itself, inside
 [58, 63] C, and miss the bar only because the common primer is 0.19-2.18 C below

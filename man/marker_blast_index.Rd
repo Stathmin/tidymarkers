@@ -7,13 +7,14 @@
 marker_blast_index(genome, path = NULL)
 }
 \arguments{
-\item{genome}{a \code{marker_genome} or a \code{DNAStringSet}.}
+\item{genome}{a \code{marker_genome}, a \code{DNAStringSet} or a \code{BSgenome}.}
 
 \item{path}{FASTA path to write an in-memory \code{DNAStringSet} to; the BLAST
 index files are created alongside it and reused when they exist, so delete
 the \code{.nsq} to force a rebuild.  \code{NULL} derives a content-keyed name in the
 session's temp directory.  Ignored for a \code{marker_genome}, whose own FASTA is
-indexed in place.}
+indexed in place, and for a \code{BSgenome}, which is keyed by its name and
+lengths.}
 }
 \value{
 the FASTA path the database was built from.  This is the database
@@ -21,9 +22,11 @@ the FASTA path the database was built from.  This is the database
 \code{\link[=specificity_blast]{specificity_blast()}} expects; pass it as-is, do not append an extension.
 }
 \description{
-For an in-memory \code{DNAStringSet} the FASTA is written to \code{path} first; for a
-\code{marker_genome} its indexed FASTA is used directly.  A BSgenome-backed
-\code{marker_genome} has no FASTA, so it gets a named error; attach a database it
+For an in-memory \code{DNAStringSet} or a Bioconductor \code{BSgenome} the FASTA is written
+to \code{path} first (a \code{BSgenome} goes to a name-keyed file in the session's temp
+directory, rewritten only when that file is gone); for a \code{marker_genome} its
+indexed FASTA is used directly.  A \code{marker_genome()} built \emph{from} a \code{BSgenome}
+has no FASTA, so it gets a named error; attach a database it
 built elsewhere with \verb{marker_genome(..., blast_db = <path>)} instead.  The
 returned path is the database to pass to \code{\link[=specificity_blast]{specificity_blast()}}; attach it to a
 \code{marker_genome} with \verb{marker_genome(..., blast_db = <path>)} to let

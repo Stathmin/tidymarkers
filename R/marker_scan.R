@@ -29,19 +29,22 @@ has_blast <- function() {
 
 #' Build (once) a BLAST database for a genome
 #'
-#' For an in-memory `DNAStringSet` the FASTA is written to `path` first; for a
-#' `marker_genome` its indexed FASTA is used directly.  A BSgenome-backed
-#' `marker_genome` has no FASTA, so it gets a named error; attach a database it
+#' For an in-memory `DNAStringSet` or a Bioconductor `BSgenome` the FASTA is written
+#' to `path` first (a `BSgenome` goes to a name-keyed file in the session's temp
+#' directory, rewritten only when that file is gone); for a `marker_genome` its
+#' indexed FASTA is used directly.  A `marker_genome()` built *from* a `BSgenome`
+#' has no FASTA, so it gets a named error; attach a database it
 #' built elsewhere with `marker_genome(..., blast_db = <path>)` instead.  The
 #' returned path is the database to pass to [specificity_blast()]; attach it to a
 #' `marker_genome` with `marker_genome(..., blast_db = <path>)` to let
 #' [specificity_of()] use it.
-#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
 #' @param path FASTA path to write an in-memory `DNAStringSet` to; the BLAST
 #'   index files are created alongside it and reused when they exist, so delete
 #'   the `.nsq` to force a rebuild.  `NULL` derives a content-keyed name in the
 #'   session's temp directory.  Ignored for a `marker_genome`, whose own FASTA is
-#'   indexed in place.
+#'   indexed in place, and for a `BSgenome`, which is keyed by its name and
+#'   lengths.
 #' @return the FASTA path the database was built from.  This is the database
 #'   *prefix* (NCBI BLAST+ writes `<path>.nhr/.nin/.nsq` next to it), the value
 #'   [specificity_blast()] expects; pass it as-is, do not append an extension.
@@ -53,7 +56,9 @@ has_blast <- function() {
 #' @export
 marker_blast_index <- function(genome, path = NULL) {
   # the genome check comes first, so without BLAST+ a BSgenome genome still says so
-  fasta <- genome_fasta_path(genome, "marker_blast_index")
+  src <- genome_fasta_source(genome, "marker_blast_index")
+  genome <- src$genome
+  fasta <- src$fasta
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     cli::cli_abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),

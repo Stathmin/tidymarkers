@@ -116,12 +116,21 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
   )
 }
 
-# an index build needs a FASTA file; a BSgenome-backed genome has none (№8)
+# an index build needs a FASTA file; a bare BSgenome is written out once (№8, №10)
 genome_fasta_path <- function(genome, call) {
+  # `getSeq()` names the DNAStringSet, so the FASTA carries the genome's names
+  if (inherits(genome, "BSgenome")) {
+    path <- fs::path(fs::path_temp(), paste0("genome-", genome_signature(genome), ".fa"))
+    if (!file.exists(path)) {
+      Biostrings::writeXStringSet(BSgenome::getSeq(genome), path)
+    }
+    return(path)
+  }
+  # a BSgenome-backed `marker_genome` keeps no path, so it still says why
   if (inherits(genome, "marker_genome") && is.null(genome$path)) {
     cli::cli_abort(c(
-      gettext("{.fn {call}} needs a FASTA file, and this genome is BSgenome-backed (no FASTA on disk)."),
-      i = gettext("Index a FASTA instead: {.code marker_genome(\"genome.fa\")}."),
+      gettext("{.fn {call}} needs a DNAStringSet or a FASTA-backed genome, and this genome is BSgenome-backed."),
+      i = gettext("Pass the {.cls BSgenome} itself instead of {.code marker_genome(bsgenome = )}."),
       i = gettext("Or attach a prebuilt index: {.code marker_genome(bsgenome = , {index_arg(call)} = <path>)}."),
       i = gettext("{.fn specificity_of} uses that index as-is.")
     ))
@@ -137,6 +146,17 @@ index_arg <- function(call) {
     marker_fm_index = "fm_index",
     cli::cli_abort(gettext("Unknown index call: {call}"))
   )
+}
+
+# the builders branch on `inherits(genome, "marker_genome")` to use the path
+# returned here, so a materialised BSgenome is handed on as one
+genome_fasta_source <- function(genome, call) {
+  path <- genome_fasta_path(genome, call)
+  if (inherits(genome, "BSgenome")) {
+    genome <- bsgenome_kasp_genome(genome, NULL, NULL)
+    genome$path <- path
+  }
+  list(genome = genome, fasta = path)
 }
 
 #' Print a KASP genome source

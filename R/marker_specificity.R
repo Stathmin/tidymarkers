@@ -539,15 +539,22 @@ subject_signature <- function(subject) {
 #'
 #' Two genomes never share a derived file name by construction: an in-memory
 #' genome is keyed by [subject_signature()] of every sequence, an indexed one by
-#' its sequence names and lengths.
+#' its sequence names and lengths.  A `BSgenome` is keyed by its package and
+#' lengths, not by its DNA: reading 120 Mbp to name a cache file would defeat it.
 #'
-#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
 #' @return a 12-character hex string.
 #' @keywords internal
 #' @noRd
 genome_signature <- function(genome) {
   sig <- if (inherits(genome, "marker_genome")) {
     paste0(names(genome$seqnames), ":", genome$lengths, collapse = "|")
+  } else if (inherits(genome, "BSgenome")) {
+    si <- BSgenome::seqinfo(genome)
+    paste0(class(genome)[1L], ":", GenomeInfoDb::seqnames(si), ":",
+      GenomeInfoDb::seqlengths(si),
+      collapse = "|"
+    )
   } else {
     paste(vapply(genome, subject_signature, character(1)), collapse = "|")
   }

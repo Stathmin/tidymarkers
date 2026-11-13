@@ -11,7 +11,7 @@ marker_bowtie_index(
 )
 }
 \arguments{
-\item{genome}{a \code{marker_genome} or a \code{DNAStringSet}.}
+\item{genome}{a \code{marker_genome}, a \code{DNAStringSet} or a \code{BSgenome}.}
 
 \item{basename}{index basename to create (no extension).}
 
@@ -30,7 +30,8 @@ only pays the build cost once.  Attach the returned basename to a
 \details{
 bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
 in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  A
-BSgenome-backed \code{marker_genome} has no FASTA and gets a named error.
+BSgenome-backed \code{marker_genome} has no FASTA and gets a named error; pass a
+\code{BSgenome} itself and its FASTA is written once to a name-keyed temp file.
 }
 \examples{
 \dontrun{

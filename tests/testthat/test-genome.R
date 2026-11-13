@@ -97,3 +97,44 @@ test_that("a marker_genome can be backed by a BSgenome (getSeq)", {
   # the FRI stop variant at Chr4:269745 is a G on TAIR9
   expect_equal(as.character(genome_seq(gs, "Chr4", 269745L, 269745L)), "G")
 })
+
+# One planted primer and one absent primer, for both indexed backends.  The
+# absent one is the regression guard of D7: an unaligned record must not be
+# counted, so a backend that reports it as one hit fails here.
+make_planted <- function(fa) {
+  present <- "ACGTACGTACGTACGTACGT"
+  writeLines(c(">chr1", paste0(strrep("A", 300L), present, strrep("T", 300L))), fa)
+  list(
+    primers = c(present = present, absent = "GGGGGGGGGGGGGGGGGGGG"),
+    present = present
+  )
+}
+
+test_that("specificity_bowtie finds a planted primer and none that is absent", {
+  skip_if_not_installed("Rbowtie")
+  skip_if_not_installed("Rsamtools")
+  fa <- withr::local_tempfile(fileext = ".fa")
+  planted <- make_planted(fa)
+  gs <- marker_genome(fa)
+  idx <- marker_bowtie_index(gs, basename = withr::local_tempfile(pattern = "bt"))
+  hits <- specificity_bowtie(planted$primers, idx)
+  # bowtie reports both strands, so one genomic site is two alignments
+  expect_equal(hits$hits[hits$primer == "present"], 2L)
+  expect_gte(hits$hits[hits$primer == "present"], 1L)
+  expect_equal(hits$hits[hits$primer == "absent"], 0L)
+})
+
+test_that("specificity_fm finds a planted primer and none that is absent", {
+  skip_if_not_installed("Rsubread")
+  skip_if_not_installed("Rsamtools")
+  fa <- withr::local_tempfile(fileext = ".fa")
+  planted <- make_planted(fa)
+  gs <- marker_genome(fa)
+  idx <- marker_fm_index(gs, basename = withr::local_tempfile(pattern = "fm"))
+  hits <- specificity_fm(planted$primers, idx)
+  # Subread maps the forward strand by default, so the one planted site is one hit
+  expect_equal(hits$hits[hits$primer == "present"], 1L)
+  expect_gte(hits$hits[hits$primer == "present"], 1L)
+  # D7: an absent primer aligns nowhere, so an unaligned record is not a hit
+  expect_equal(hits$hits[hits$primer == "absent"], 0L)
+})

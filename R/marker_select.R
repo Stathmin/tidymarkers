@@ -70,11 +70,18 @@ KASP_TIERS_PAIR <- c(
   tier3 = "amplicon length", tier4 = "footprint load",
   tier5 = "COM 3' end weakness"
 )
-KASP_TIES_PAIR <- c("run", "ssr", "com_start")
+# Tie-breakers are CONTENT keys only (a margin or a design attribute), never an
+# absolute genomic coordinate: a coordinate would make the ranking depend on the
+# input frame, so the same locus neighbourhood supplied at a different position
+# could pick a different primer.  `as_start` / `com_start` were the last key of
+# each set and were dropped for that reason.  The `dplyr::arrange` underneath is
+# stable and the seeded screen is content-based, so the ranking stays
+# deterministic without them.
+KASP_TIES_PAIR <- c("run", "ssr")
 KASP_TIERS_AS <- c(
   tier1 = "discrimination", tier2 = "Tm", tier3 = "3' end weakness", tier4 = "footprint load"
 )
-KASP_TIES_AS <- c("seed_hits", "as_length", "as_start")
+KASP_TIES_AS <- c("seed_hits", "as_length")
 
 # The duplex / ASQ / CAPS / ARMS / HRM stage constants live with their scheme
 # (R/marker_duplex.R, R/marker_asq.R, R/marker_caps.R, R/marker_arms.R, R/marker_hrm.R),

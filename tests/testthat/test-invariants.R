@@ -256,6 +256,39 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   expect_gte(covered, 1L)
 })
 
+test_that("ZW0 M6: the AS-COM gap sits well inside the com_gaps search window", {
+  skip_if_not_installed("Rsamtools")
+  skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
+  # assemble_kasp_assay() searches COM primers only `com_gaps = 18:80` bases
+  # (R/marker_assemble.R, forwarded as `gaps` to design_common_primers()).  That
+  # grid, not the score, decides the winner whenever the selected COM sits at its
+  # edge.  Measured on 49 designs (49 selection calls: snp seeds/flanks 100-300,
+  # asq flank 200, plus a 29-cell x 4-frame sweep): the AS-COM gap ranged 19-77
+  # for KASP with a median of 47, and no design sat within 2 bp of the upper
+  # edge.  The window is measured, not assumed, so a future widening or narrowing
+  # shows up here as a design change instead of drifting silently.  Only the loci
+  # below are pinned (three calls, ~12 s); the rest of the sample is written up in
+  # the Task E report under .superpowers/sdd/roadmap-remainders.
+  gen <- syn_genome(seed = 7L, n = 400L)
+  grid <- indexed_syn_genome(gen)
+  gaps <- integer(0L)
+  for (loc in c(280L, 300L, 150L)) {
+    m <- suppressWarnings(tryCatch(
+      marker_design_at(grid, locus_at(gen$seq, loc), "snp"),
+      error = function(e) e
+    ))
+    if (!inherits(m, "marker_assay") || nrow(m$assay) == 0L) {
+      next
+    }
+    anchor <- m$snp$pos[[1L]] + nchar(as.character(m$snp$ref[[1L]])) - 1L
+    gaps <- c(gaps, abs(m$assay$com_start[[1L]] - anchor))
+  }
+  # the loci above are known designable: a skip here would hide a broken fixture
+  expect_gte(length(gaps), 1L)
+  expect_true(all(gaps >= 18L), label = "COM inside the lower com_gaps edge")
+  expect_true(all(gaps <= 66L), label = "COM never near the upper com_gaps edge")
+})
+
 test_that("ZW0 M1: a locus written on the minus strand designs the same verdict", {
   skip_if_not_installed("Rsamtools")
   skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
