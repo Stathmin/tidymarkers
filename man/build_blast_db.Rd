@@ -2,20 +2,25 @@
 % Please edit documentation in R/marker_specificity.R
 \name{build_blast_db}
 \alias{build_blast_db}
-\title{Build (once) a BLAST nucleotide database from the TAIR10 genome}
+\title{Build (once) a BLAST nucleotide database from a genome}
 \usage{
-build_blast_db(genome, path = fs::path(marker_cache_dir(), "tair10.fa"))
+build_blast_db(genome, path = NULL)
 }
 \arguments{
-\item{genome}{DNAStringSet.}
+\item{genome}{a \code{marker_genome} or a \code{DNAStringSet}.}
 
-\item{path}{FASTA path to write (and index).}
+\item{path}{FASTA path to write (and index); \code{NULL} derives a content-keyed
+name in the cache.  Ignored for a \code{marker_genome}, whose own FASTA is
+indexed in place.}
 }
 \value{
-the \code{path} to the FASTA that was written and indexed.
+the FASTA path the database was built from (the database prefix).
 }
 \description{
-Build (once) a BLAST nucleotide database from the TAIR10 genome
+Kept as an alias of \code{\link[=marker_blast_index]{marker_blast_index()}} so there is one implementation of
+the build.  The index (\verb{<path>.nhr/.nin/.nsq}) is written next to the FASTA
+and reused when present, so a second call does not repave a genome-sized
+file.  This used to write under a fixed \code{tair10.fa} name for every genome.
 }
 \examples{
 \dontrun{

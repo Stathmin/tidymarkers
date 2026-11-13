@@ -27,6 +27,11 @@ in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way
 also silently rewrites any non-ACGT base to \code{A} when it builds the index, so
 hit counts over N-rich regions are conservative; the notice is replayed as a
 warning instead of being swallowed by the progress capture.
+
+The index is \strong{not} used by the design pipeline: \code{\link[=specificity_of]{specificity_of()}} refuses
+an FM-only genome and points at \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}, because the Subread
+index costs ~24x more per base and \code{\link[=specificity_fm]{specificity_fm()}} is a read mapper, not a
+seed counter.  Building one is still supported for that use, and says so.
 }
 \examples{
 \dontrun{

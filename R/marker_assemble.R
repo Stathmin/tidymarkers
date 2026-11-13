@@ -406,7 +406,7 @@ marker_pick_as <- function(as_cand, genome, min_disc, specificity_candidates, BP
                            limits = KASP_LIMITS, tm_target = AS_TM_TARGET) {
   graded_as <- grade_as_candidates(as_cand, limits, min_disc, tm_target = tm_target)
   graded_as$data$seed_hits <- NA_integer_
-  if (specificity_candidates > 0L && !inherits(genome, "marker_genome")) {
+  if (specificity_candidates > 0L) {
     short <- rank_candidates(graded_as$data, graded_as$tiers, setdiff(graded_as$ties, "seed_hits")) |>
       dplyr::slice_head(n = specificity_candidates)
     seeds <- rlang::set_names(
@@ -537,7 +537,11 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   the reason; `"warn"` - keep the warned ranked leader.  `NULL` (default)
 #'   follows the scheme's own policy (`marker_specificity()`): `unique` /
 #'   `homeolog-aware` doom, the tolerant default `multicopy` / `off` warn.
-#' @param run_blast also build/query a genome BLAST db (needs NCBI BLAST+).
+#' @param run_blast also run a whole-primer genome scan (needs NCBI BLAST+, or
+#'   a `bowtie_index` on the genome).  On the indexed path the result is an exact
+#'   whole-primer scan (`scan` attribute `"whole-primer"`) of the AS primers
+#'   *with* their deliberate mismatch; `specificity` is the seed tier and is not
+#'   the same table.
 #' @param cores processors for the per-SNP subprocess work (the DECIPHER PCR
 #'   efficiencies and the OligoArrayAux dG maps); `1` (the default, from
 #'   `getOption("tidymarkers.cores")`) keeps CRAN happy, and larger values give a
@@ -903,6 +907,9 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       })
       blast_primers(primers, db)
     }
+    # whole-primer scan either way: the AS primers here carry their deliberate
+    # mismatch, which the 3'-seed `specificity` table above does not (D3)
+    if (!is.null(blast)) attr(blast, "scan") <- "whole-primer"
   }
 
   out <- list(

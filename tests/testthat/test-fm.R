@@ -16,6 +16,17 @@ test_that("marker_fm_index + specificity_fm count genome loci", {
   expect_true(all(c("primer", "seed", "hits") %in% names(res)))
 })
 
+test_that("marker_fm_index says the design pipeline does not query it (D5)", {
+  skip_if_not_full()
+  skip_if_not_installed("Rsubread")
+  skip_if_not_installed("Rsamtools")
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGTACGTACGTACGT"))
+  base <- fs::path(withr::local_tempdir(), "warn")
+  expect_message(idx <- marker_fm_index(genome, basename = base), "read mapper")
+  # the reuse path says it too: the trap is the index, not the build
+  expect_message(marker_fm_index(genome, basename = base), "read mapper")
+})
+
 test_that("a marker_genome carries an attached FM index", {
   fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">1", "ACGTACGTACGTACGTACGT"), fa)

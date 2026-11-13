@@ -57,8 +57,33 @@ test_that("specificity_of routes a bowtie-index genome to specificity_bowtie", {
   res <- specificity_of(c(UNIQUE = motif), genome)
   expect_equal(res$hits, 1L)
   # the bowtie path scans the whole primer; a 3'-seed request must warn
+  expect_equal(attr(res, "scan"), "whole-primer")
   expect_warning(
     specificity_of(c(UNIQUE = motif), genome, k = 12L),
     "whole primer"
   )
+})
+
+test_that("an indexed genome keeps the AS 3'-seed tie-break (D1)", {
+  skip_if_not_full()
+  skip_if_not_installed("Rbowtie")
+  withr::local_seed(4)
+  rand <- function(n) paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+  ref <- rand(25L)
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">chr1", paste0(rand(300L), ref, rand(300L))), fa)
+  genome <- marker_genome(fa)
+  genome$bowtie_index <- marker_bowtie_index(genome, basename = fs::path(withr::local_tempdir(), "bw"))
+  as_cand <- tibble::tibble(
+    ref_primer = ref, discrimination = 0.9, tm = 58, dg_3p = -1,
+    wobble = FALSE, n_var = 0L, w_var = 0, n_3p = 0L
+  )
+  res <- marker_pick_as(as_cand, genome,
+    min_disc = 0.5, specificity_candidates = 1L, BPPARAM = NULL,
+    snp = list(chrom = "chr1", pos = 301L), tmpl = NULL
+  )
+  # the indexed path used to refuse the seed question, leaving seed_hits NA
+  expect_true("seed_hits" %in% names(res$as_cand))
+  expect_false(is.na(res$as_cand$seed_hits[[1L]]))
+  expect_equal(res$as_cand$seed_hits[[1L]], 1L)
 })

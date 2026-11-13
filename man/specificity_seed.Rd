@@ -15,11 +15,13 @@ specificity_seed(
 \arguments{
 \item{primers}{named character vector of oligos.}
 
-\item{genome}{DNAStringSet.}
+\item{genome}{a \code{DNAStringSet}, or a \code{marker_genome} carrying a
+\code{bowtie_index} or a \code{blast_db}.}
 
 \item{k}{3'-seed length.}
 
-\item{max_mismatch}{mismatches allowed in the seed.}
+\item{max_mismatch}{mismatches allowed in the seed (in-memory and bowtie
+paths; the BLAST path counts exact matches only).}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend; the mismatch scan is split by
 genome sequence, so \code{MulticoreParam()} uses one worker per chromosome.}
@@ -47,6 +49,13 @@ primers.  With mismatches Biostrings has no counting index (\code{PDict()} build
 \code{vcountPattern} \strong{parallelised over the genome's sequences} (and, per
 sequence, once for all seeds), which is how this scales to large genomes.
 Results are summed over both strands and over all genome sequences.
+
+A \code{marker_genome} is dispatched to its index instead of being refused: the
+seed itself is the query, so a whole-primer scan of the seed answers exactly
+this question.  With a \code{bowtie_index} the count is a seed within
+\code{max_mismatch} substitutions; with only a \code{blast_db} it is an \strong{exact} seed
+count (that path keeps full-length exact hits only), i.e. a stricter screen
+than the in-memory one.
 }
 \examples{
 \dontrun{

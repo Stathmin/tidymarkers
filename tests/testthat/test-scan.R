@@ -45,6 +45,7 @@ test_that("specificity_of routes an indexed genome to BLAST, and needs a db", {
   gs <- marker_genome(fa, blast_db = marker_blast_index(marker_genome(fa)))
   res <- specificity_of(c(P = blast_amp), gs)
   expect_gte(res$hits[res$primer == "P"], 1L)
+  expect_equal(attr(res, "scan"), "3'-seed")
   # an indexed genome without a database is a clear error, not a silent zero
   expect_error(specificity_of(c(P = blast_amp), marker_genome(fa)), "BLAST")
 })
@@ -53,4 +54,69 @@ test_that("specificity_of uses the in-memory path for a DNAStringSet", {
   genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
   res <- specificity_of(c(P = "TTTTTTAAACCCGGG"), genome, k = 9L, max_mismatch = 0L)
   expect_equal(res$hits, 4L)
+  # the counts answer the seed question; the bowtie path answers the whole-primer
+  expect_equal(attr(res, "scan"), "3'-seed")
+})
+
+test_that("an assembled assay tags both genome scans (D3)", {
+  skip_if_not_full()
+  skip_if_no_oligoarrayaux()
+  skip_if_not_installed("Rbowtie")
+  f <- snp_fixture()
+  fa <- withr::local_tempfile(fileext = ".fa")
+  Biostrings::writeXStringSet(f$genome, fa)
+  genome <- marker_genome(fa)
+  genome$bowtie_index <- marker_bowtie_index(genome,
+    basename = fs::path(withr::local_tempdir(), "bw")
+  )
+  out <- suppressWarnings(
+    assemble_kasp_assay(genome, f$snp, flank = 150L, cores = 1L, run_blast = TRUE)
+  )
+  expect_false(inherits(out, "marker_doomed"))
+  # the two tables answer different questions: `blast` scans the AS primers with
+  # their deliberate mismatch, `specificity` the template-matched allele
+  expect_equal(attr(out$blast, "scan"), "whole-primer")
+  expect_equal(attr(out$specificity, "scan"), "whole-primer")
+  # COM carries no mismatch, so both scans must agree on it
+  expect_equal(
+    out$blast$hits[out$blast$primer == "COM"],
+    out$specificity$hits[out$specificity$primer == "COM"]
+  )
+})
+
+test_that("specificity_seed asks the indexed genome for the 3'-seed (D1)", {
+  fa <- blast_fa(withr::local_tempfile(fileext = ".fa"))
+  # no index at all: name the missing index, do not pretend the seed was counted
+  expect_error(
+    specificity_seed(c(P = blast_amp), marker_genome(fa)),
+    "neither a bowtie index nor a BLAST database"
+  )
+  skip_if_not_full()
+  skip_if_not(has_blast(), "NCBI BLAST+ not installed")
+  skip_if_not_installed("rBLAST")
+  gs <- marker_genome(fa, blast_db = marker_blast_index(marker_genome(fa)))
+  res <- specificity_seed(c(P = blast_amp, Q = "GATTACAGATTACAGATTAC"), gs, k = 15L)
+  # the query is the 3'-terminal 15-mer, not the whole primer
+  expect_equal(res$seed[res$primer == "P"], substr(blast_amp, 6L, 20L))
+  expect_gte(res$hits[res$primer == "P"], 1L)
+  expect_equal(res$hits[res$primer == "Q"], 0L)
+})
+
+test_that("marker_blast_index keys an in-memory genome by content (D4)", {
+  skip_if_not_full()
+  skip_if_not(has_blast(), "NCBI BLAST+ not installed")
+  skip_if_not_installed("rBLAST")
+  g1 <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  g2 <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGA"))
+  db1 <- marker_blast_index(g1)
+  db2 <- marker_blast_index(g2)
+  expect_match(basename(db1), "^genome-[0-9a-f]{12}\\.fa$")
+  expect_false(identical(db1, db2)) # two genomes never share a database
+  expect_false(grepl("tair10", db1))
+  # the alias shares the build, and a second call reuses the database
+  idx <- paste0(db1, ".nsq")
+  before <- file.info(idx)$mtime
+  Sys.sleep(1.1) # mtime granularity
+  expect_identical(build_blast_db(g1), db1)
+  expect_identical(file.info(idx)$mtime, before)
 })

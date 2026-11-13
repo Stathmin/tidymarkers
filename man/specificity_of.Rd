@@ -25,9 +25,11 @@ specificity_of(
 \item{BPPARAM}{optional \code{BiocParallel} backend.}
 }
 \value{
-a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}); the
-in-memory path delegates to \code{\link[=specificity_seed]{specificity_seed()}}, the indexed path to
-\code{\link[=specificity_bowtie]{specificity_bowtie()}}, the BLAST path to \code{\link[=specificity_blast]{specificity_blast()}}.
+a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}) and a
+\code{scan} attribute naming the question the counts answer: \code{"3'-seed"} on the
+in-memory and BLAST paths, \code{"whole-primer"} on the bowtie path.  Dispatch
+is in-memory -> \code{\link[=specificity_seed]{specificity_seed()}}, \code{bowtie_index} ->
+\code{\link[=specificity_bowtie]{specificity_bowtie()}}, \code{blast_db} -> \code{\link[=specificity_blast]{specificity_blast()}}.
 }
 \description{
 In-memory \code{DNAStringSet} -> \code{\link[=specificity_seed]{specificity_seed()}} (exact \code{PDict} path, or a

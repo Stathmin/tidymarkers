@@ -28,6 +28,11 @@ FM_MISMATCH <- 2L
 #' hit counts over N-rich regions are conservative; the notice is replayed as a
 #' warning instead of being swallowed by the progress capture.
 #'
+#' The index is **not** used by the design pipeline: [specificity_of()] refuses
+#' an FM-only genome and points at [marker_bowtie_index()], because the Subread
+#' index costs ~24x more per base and [specificity_fm()] is a read mapper, not a
+#' seed counter.  Building one is still supported for that use, and says so.
+#'
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param basename index basename to create (no extension).
 #' @return the index basename (invisibly used by [specificity_fm()]).
@@ -40,6 +45,11 @@ FM_MISMATCH <- 2L
 marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_fm")) {
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
   basename <- as.character(basename) # Rsubread wants a plain string
+  # a buildable index that the design pipeline never queries is a trap (D5)
+  cli::cli_alert_warning(gettext(
+    "The FM index is not used by the design pipeline: specificity_fm() is a read mapper.
+     For the design scan use marker_bowtie_index() / specificity_bowtie()."
+  ))
   if (fs::file_exists(paste0(basename, ".files"))) {
     cli::cli_alert_info(gettext("Reusing the existing FM-index at {.path {basename}}."))
     return(basename)

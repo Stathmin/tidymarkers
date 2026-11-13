@@ -39,10 +39,19 @@
 #' `vcountPattern` **parallelised over the genome's sequences** (and, per
 #' sequence, once for all seeds), which is how this scales to large genomes.
 #' Results are summed over both strands and over all genome sequences.
+#'
+#' A `marker_genome` is dispatched to its index instead of being refused: the
+#' seed itself is the query, so a whole-primer scan of the seed answers exactly
+#' this question.  With a `bowtie_index` the count is a seed within
+#' `max_mismatch` substitutions; with only a `blast_db` it is an **exact** seed
+#' count (that path keeps full-length exact hits only), i.e. a stricter screen
+#' than the in-memory one.
 #' @param primers named character vector of oligos.
-#' @param genome DNAStringSet.
+#' @param genome a `DNAStringSet`, or a `marker_genome` carrying a
+#'   `bowtie_index` or a `blast_db`.
 #' @param k 3'-seed length.
-#' @param max_mismatch mismatches allowed in the seed.
+#' @param max_mismatch mismatches allowed in the seed (in-memory and bowtie
+#'   paths; the BLAST path counts exact matches only).
 #' @param BPPARAM optional `BiocParallel` backend; the mismatch scan is split by
 #'   genome sequence, so `MulticoreParam()` uses one worker per chromosome.
 #' @return a tibble `primer`, `seed`, `hits` (both-strand counts of the seed,
@@ -56,12 +65,27 @@
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
+  seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (inherits(genome, "marker_genome")) {
-    cli::cli_abort(c(gettext("specificity_seed() needs an in-memory DNAStringSet."),
-      i = gettext("For an indexed genome use specificity_of()/specificity_blast().")
+    # the seed is the whole query, so an indexed whole-primer scan answers this
+    # question; refusing here silently dropped the AS 3'-seed tie-break
+    query <- rlang::set_names(seeds, names(primers))
+    if (!is.null(genome$bowtie_index)) {
+      return(specificity_bowtie(query, genome$bowtie_index,
+        max_mismatches = max_mismatch,
+        nthreads = if (is.null(BPPARAM)) 4L else 1L
+      ))
+    }
+    if (!is.null(genome$blast_db)) {
+      return(specificity_blast(query, genome$blast_db,
+        k = NA_integer_, BPPARAM = BPPARAM
+      ))
+    }
+    cli::cli_abort(c(
+      gettext("This indexed genome has neither a bowtie index nor a BLAST database."),
+      i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
     ))
   }
-  seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (max_mismatch == 0L) {
     hits <- exact_seed_counts(seeds, genome)
   } else if (max_mismatch == 1L && all(grepl("^[ACGT]+$", seeds))) {
@@ -509,6 +533,25 @@ subject_signature <- function(subject) {
     as.character(Biostrings::subseq(subject, max(1L, len - 31L), len)),
     sep = "|"
   ))
+}
+
+#' Short content-derived name for a genome's cache files
+#'
+#' Two genomes never share a derived file name by construction: an in-memory
+#' genome is keyed by [subject_signature()] of every sequence, an indexed one by
+#' its sequence names and lengths.
+#'
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @return a 12-character hex string.
+#' @keywords internal
+#' @noRd
+genome_signature <- function(genome) {
+  sig <- if (inherits(genome, "marker_genome")) {
+    paste0(names(genome$seqnames), ":", genome$lengths, collapse = "|")
+  } else {
+    paste(vapply(genome, subject_signature, character(1)), collapse = "|")
+  }
+  substr(rlang::hash(sig), 1L, 12L)
 }
 
 #' Primer hits that never match an ambiguous genomic base
@@ -1395,10 +1438,18 @@ blast_primers <- function(primers, db_path) {
   tibble::as_tibble(out)
 }
 
-#' Build (once) a BLAST nucleotide database from the TAIR10 genome
-#' @param genome DNAStringSet.
-#' @param path FASTA path to write (and index).
-#' @return the `path` to the FASTA that was written and indexed.
+#' Build (once) a BLAST nucleotide database from a genome
+#'
+#' Kept as an alias of [marker_blast_index()] so there is one implementation of
+#' the build.  The index (`<path>.nhr/.nin/.nsq`) is written next to the FASTA
+#' and reused when present, so a second call does not repave a genome-sized
+#' file.  This used to write under a fixed `tair10.fa` name for every genome.
+#'
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param path FASTA path to write (and index); `NULL` derives a content-keyed
+#'   name in the cache.  Ignored for a `marker_genome`, whose own FASTA is
+#'   indexed in place.
+#' @return the FASTA path the database was built from (the database prefix).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -1406,12 +1457,8 @@ blast_primers <- function(primers, db_path) {
 #' }
 #' @family specificity
 #' @export
-build_blast_db <- function(genome, path = fs::path(marker_cache_dir(), "tair10.fa")) {
-  rlang::check_installed("rBLAST", reason = gettext("to build a BLAST database"))
-  fs::dir_create(fs::path_dir(path))
-  if (!fs::file_exists(path)) Biostrings::writeXStringSet(genome, path)
-  rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE)
-  path
+build_blast_db <- function(genome, path = NULL) {
+  marker_blast_index(genome, path = path)
 }
 
 # =============================================================================

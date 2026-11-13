@@ -81,7 +81,11 @@ the \code{linked} set (both derived, see \code{haplotype_variants()}); the objec
 carries \code{haplotypes} and a per-haplotype \code{haplotype_hits} table (which AS
 primer each is expected to bind).}
 
-\item{run_blast}{also build/query a genome BLAST db (needs NCBI BLAST+).}
+\item{run_blast}{also run a whole-primer genome scan (needs NCBI BLAST+, or
+a \code{bowtie_index} on the genome).  On the indexed path the result is an exact
+whole-primer scan (\code{scan} attribute \code{"whole-primer"}) of the AS primers
+\emph{with} their deliberate mismatch; \code{specificity} is the seed tier and is not
+the same table.}
 
 \item{scheme}{the marker chemistry this assay is assembled \emph{as} (see
 \code{\link[=marker_schemes]{marker_schemes()}}): stored on the object, and used to build the matching

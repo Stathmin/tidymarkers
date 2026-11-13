@@ -4,17 +4,16 @@
 \alias{marker_blast_index}
 \title{Build (once) a BLAST database for a genome}
 \usage{
-marker_blast_index(
-  genome,
-  path = fs::path(fs::path_temp(), "marker_genome.fa")
-)
+marker_blast_index(genome, path = NULL)
 }
 \arguments{
 \item{genome}{a \code{marker_genome} or a \code{DNAStringSet}.}
 
 \item{path}{FASTA path to write an in-memory \code{DNAStringSet} to; the BLAST
-index files are created alongside it.  Ignored for a \code{marker_genome}, whose
-own FASTA is indexed in place.}
+index files are created alongside it and reused when they exist, so delete
+the \code{.nsq} to force a rebuild.  \code{NULL} derives a content-keyed name in the
+session's temp directory.  Ignored for a \code{marker_genome}, whose own FASTA is
+indexed in place.}
 }
 \value{
 the FASTA path the database was built from.  This is the database

@@ -35,8 +35,10 @@ has_blast <- function() {
 #' `marker_genome(..., blast_db = <path>)` to let [specificity_of()] use it.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param path FASTA path to write an in-memory `DNAStringSet` to; the BLAST
-#'   index files are created alongside it.  Ignored for a `marker_genome`, whose
-#'   own FASTA is indexed in place.
+#'   index files are created alongside it and reused when they exist, so delete
+#'   the `.nsq` to force a rebuild.  `NULL` derives a content-keyed name in the
+#'   session's temp directory.  Ignored for a `marker_genome`, whose own FASTA is
+#'   indexed in place.
 #' @return the FASTA path the database was built from.  This is the database
 #'   *prefix* (NCBI BLAST+ writes `<path>.nhr/.nin/.nsq` next to it), the value
 #'   [specificity_blast()] expects; pass it as-is, do not append an extension.
@@ -46,7 +48,7 @@ has_blast <- function() {
 #' }
 #' @family specificity
 #' @export
-marker_blast_index <- function(genome, path = fs::path(fs::path_temp(), "marker_genome.fa")) {
+marker_blast_index <- function(genome, path = NULL) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
     cli::cli_abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
@@ -64,10 +66,16 @@ marker_blast_index <- function(genome, path = fs::path(fs::path_temp(), "marker_
       with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
     }
   } else {
+    # a content-keyed name, so two in-memory genomes never share a database
+    if (is.null(path)) {
+      path <- fs::path(fs::path_temp(), paste0("genome-", genome_signature(genome), ".fa"))
+    }
     fs::dir_create(fs::path_dir(path))
-    Biostrings::writeXStringSet(genome, path)
+    if (!file.exists(paste0(path, ".nsq"))) {
+      Biostrings::writeXStringSet(genome, path)
+      with_blast(rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE))
+    }
     fasta <- path
-    with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
   }
   fasta
 }
@@ -186,9 +194,11 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
-#' @return a tibble with one row per primer (`primer`, `seed`, `hits`); the
-#'   in-memory path delegates to [specificity_seed()], the indexed path to
-#'   [specificity_bowtie()], the BLAST path to [specificity_blast()].
+#' @return a tibble with one row per primer (`primer`, `seed`, `hits`) and a
+#'   `scan` attribute naming the question the counts answer: `"3'-seed"` on the
+#'   in-memory and BLAST paths, `"whole-primer"` on the bowtie path.  Dispatch
+#'   is in-memory -> [specificity_seed()], `bowtie_index` ->
+#'   [specificity_bowtie()], `blast_db` -> [specificity_blast()].
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
@@ -197,9 +207,12 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                            BPPARAM = NULL) {
   if (!inherits(genome, "marker_genome")) {
-    return(specificity_seed(primers, genome,
-      k = k, max_mismatch = max_mismatch,
-      BPPARAM = BPPARAM
+    return(structure(
+      specificity_seed(primers, genome,
+        k = k, max_mismatch = max_mismatch,
+        BPPARAM = BPPARAM
+      ),
+      scan = "3'-seed"
     ))
   }
   if (!is.null(genome$bowtie_index)) {
@@ -213,8 +226,11 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     }
     # a BPPARAM means the caller is already parallel across loci; 4 bowtie
     # threads per worker oversubscribed a 6-worker run by 2.75x
-    return(specificity_bowtie(primers, genome$bowtie_index,
-      nthreads = if (is.null(BPPARAM)) 4L else 1L
+    return(structure(
+      specificity_bowtie(primers, genome$bowtie_index,
+        nthreads = if (is.null(BPPARAM)) 4L else 1L
+      ),
+      scan = "whole-primer"
     ))
   }
   if (!is.null(genome$fm_index)) {
@@ -232,5 +248,5 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
       i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
     ))
   }
-  specificity_blast(primers, db, k = k, BPPARAM = BPPARAM)
+  structure(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), scan = "3'-seed")
 }
