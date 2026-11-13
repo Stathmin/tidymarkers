@@ -22,6 +22,7 @@
 ^CODE_OF_CONDUCT\.md$
 ^CONTRIBUTING\.md$
 ^CREDITS\.md$
+^LICENSE\.md$
 ^SECURITY\.md$
 ^\.agents$
 ^\.superpowers$
@@ -33,7 +34,7 @@
 ^revdep$
 ^\.i18n-lib$
 ^\.tmp-rt$
-^\*\.Rproj$
+^.*\.Rproj$
 ^docker$
 ^\.dockerignore$
 ^\.Rproj\.user$
