@@ -538,23 +538,21 @@ subject_signature <- function(subject) {
 #' Short content-derived name for a genome's cache files
 #'
 #' Two genomes never share a derived file name by construction: an in-memory
-#' genome is keyed by [subject_signature()] of every sequence, an indexed one by
-#' its sequence names and lengths.  A `BSgenome` is keyed by its package and
-#' lengths, not by its DNA: reading 120 Mbp to name a cache file would defeat it.
+#' `DNAStringSet` is keyed by `subject_signature()` of every sequence, an indexed
+#' `marker_genome` by its sequence names and lengths.
 #'
-#' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
+#' A `BSgenome` never reaches this function: `genome_fasta_source()` materialises
+#' it as a FASTA-backed `marker_genome` first, and that FASTA is keyed by its DNA
+#' (`bsgenome_fasta_key()`) rather than by names and lengths, which cannot
+#' separate two same-sized genomes.
+#'
+#' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @return a 12-character hex string.
 #' @keywords internal
 #' @noRd
 genome_signature <- function(genome) {
   sig <- if (inherits(genome, "marker_genome")) {
     paste0(names(genome$seqnames), ":", genome$lengths, collapse = "|")
-  } else if (inherits(genome, "BSgenome")) {
-    si <- BSgenome::seqinfo(genome)
-    paste0(class(genome)[1L], ":", GenomeInfoDb::seqnames(si), ":",
-      GenomeInfoDb::seqlengths(si),
-      collapse = "|"
-    )
   } else {
     paste(vapply(genome, subject_signature, character(1)), collapse = "|")
   }
@@ -610,7 +608,7 @@ exact_pattern_hits <- function(pattern, subject, max_mismatch) {
   out
 }
 
-#' One pattern search over one sequence (the uncached body of [exact_pattern_hits()])
+#' One pattern search over one sequence (the uncached body of `exact_pattern_hits()`)
 #' @param pattern the plus-strand pattern to search (IUPAC-aware).
 #' @param subject the genomic sequence as an `XString`.
 #' @param max_mismatch search radius.

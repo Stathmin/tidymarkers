@@ -173,19 +173,23 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   # moves the pick to row 1).  For (a), the 23-mer/22-mer case no longer
   # reproduces: design_as_primers() ranks on .policy_rank then desc(discrimination),
   # so a GC-window failure cannot win on length alone, and no frame-independent
-  # cell below disagrees on a tie.  The one frame-sensitive case this sweep did
-  # find (seed 7, core pos 40) is a bounded-window artifact, not a tie -- the
-  # candidate set and every margin below the amplicon tier are identical, and only
-  # the amplicon-length tier reads differently because the physical COM oligo
-  # lands at a different gap in each frame.  It is reported, not asserted away.
+  # cell below disagrees on a tie.  One frame-sensitive case remains (seed 7,
+  # core pos 40): the AS primers are identical in all four frames, but the COM
+  # primer lands 2 bp closer (gap 74 vs 76, Tm 60.69 vs 60.24) and the amplicon
+  # reads 100 bp instead of 91.  The cause of that 2 bp gap move is not proven;
+  # the com_gaps window is ruled out -- across 49 designs the KASP gap is 19-77
+  # (median 47, none at >= 78), and widening the grid to 18:120 moved exactly one
+  # design through the Tm tie-break (R/marker_design.R:86), never reachability.
+  # It is reported, not asserted away.
   #
-  # Geometry: one shared 100-base pad, prefixed by 0/17/43/100 bases, so the same
-  # core sits at four different absolute offsets.  Shifts stay inside the pad's
-  # own period, so no frame can put the core within a design window of a contig end.
+  # Geometry: one shared 100-base pad, prefixed by 0/17/43/99 bases, so the same
+  # core sits at four different absolute offsets.  Every shift is strictly smaller
+  # than the pad's period, so no frame can put the core within a design window of
+  # a contig end (a shift of 100 would equal the period and degenerate the test).
   set.seed(11L)
   pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
   pre <- substr(strrep(pad, 5L), 1L, 100L)
-  shifts <- c(0L, 17L, 43L, 100L)
+  shifts <- c(0L, 17L, 43L, 99L)
 
   # one indexed genome per (seed, shift); built once and reused across loci
   frame_genomes <- new.env(parent = emptyenv())
@@ -254,6 +258,19 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   }
   # a skip here would hide a broken fixture; the cells above are known designable
   expect_gte(covered, 1L)
+})
+
+test_that("ZW0 M5 fixture: the shifts stay strictly inside the pad period", {
+  # The M5 geometry above is non-degenerate only while every shift is smaller than
+  # the pad length; a shift equal to the period reuses the whole pad and drops a
+  # distinct frame.  Pin that here so a future edit cannot silently reintroduce it.
+  set.seed(11L)
+  pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
+  shifts <- c(0L, 17L, 43L, 99L)
+  expect_gt(nchar(pad), max(shifts), label = "largest shift stays inside the period")
+  expect_true(any(shifts > 0L & shifts < nchar(pad)),
+    label = "at least one shift lands strictly inside the period"
+  )
 })
 
 test_that("ZW0 M6: the AS-COM gap sits well inside the com_gaps search window", {

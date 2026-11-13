@@ -116,11 +116,27 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
   )
 }
 
+# `genome_signature()` keys a BSgenome by names and lengths only (its class is
+# always "BSgenome", so even the package is absent), so two same-sized genomes
+# would share one FASTA.  The FASTA *is* whole-genome DNA, so key it by the DNA.
+# That costs one `getSeq()` pass (measured 2.3 s cold / 1.5 s warm on TAIR9,
+# 120 Mbp, so ~40 s on a 3 Gbp genome, once per index build); a cheaper base probe
+# is no cheaper, because BSgenome decompresses a whole per-chromosome rda for any
+# subsequence.  One chromosome at a time caps peak memory.
+bsgenome_fasta_key <- function(bsgenome) {
+  si <- BSgenome::seqinfo(bsgenome)
+  parts <- vapply(as.character(GenomeInfoDb::seqnames(si)), function(n) {
+    # hash the character, not the DNAString: hashing the latter is unstable
+    paste0(n, ":", rlang::hash(as.character(BSgenome::getSeq(bsgenome, n))))
+  }, character(1))
+  substr(rlang::hash(paste(parts, collapse = "|")), 1L, 12L)
+}
+
 # an index build needs a FASTA file; a bare BSgenome is written out once (№8, №10)
 genome_fasta_path <- function(genome, call) {
   # `getSeq()` names the DNAStringSet, so the FASTA carries the genome's names
   if (inherits(genome, "BSgenome")) {
-    path <- fs::path(fs::path_temp(), paste0("genome-", genome_signature(genome), ".fa"))
+    path <- fs::path(fs::path_temp(), paste0("genome-", bsgenome_fasta_key(genome), ".fa"))
     if (!file.exists(path)) {
       Biostrings::writeXStringSet(BSgenome::getSeq(genome), path)
     }

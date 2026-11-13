@@ -407,6 +407,9 @@ marker_pick_as <- function(as_cand, genome, min_disc, specificity_candidates, BP
   graded_as <- grade_as_candidates(as_cand, limits, min_disc, tm_target = tm_target)
   graded_as$data$seed_hits <- NA_integer_
   if (specificity_candidates > 0L) {
+    # Only the leading placements are seed-screened, so as_candidates carries a
+    # PARTIAL column: NA means "not screened", never "not specific".  The ladder
+    # sorts NA last, so an unscreened row can never outrank a screened one.
     short <- rank_candidates(graded_as$data, graded_as$tiers, setdiff(graded_as$ties, "seed_hits")) |>
       dplyr::slice_head(n = specificity_candidates)
     seeds <- rlang::set_names(
@@ -502,7 +505,10 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #' 4. not a weak G:T / A:C wobble mismatch;
 #' 5. quieter 3'-seed genome-wide (`seed_hits`, best of the two strands) -- a
 #'    specificity tie-break computed only for the top `specificity_candidates`
-#'    placements, mirroring [pick_target_snp()];
+#'    placements, mirroring [pick_target_snp()].  In the returned
+#'    `as_candidates` table, `seed_hits` is `NA` for every placement outside that
+#'    shortlist: `NA` means *not screened*, not *not specific*, so it is a
+#'    partial tie-break and not a complete ranking key;
 #' 6. then `|Tm - target|`, 3'-stability and length.
 #' The common primer is then placed on the winning strand and ranked by
 #' amplicon length, `COM Tm >= AS Tm`, dimers/hairpin, footprint load and Tm

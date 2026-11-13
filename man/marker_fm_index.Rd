@@ -25,11 +25,11 @@ to let the assembly use it, or pass it straight to \code{\link[=specificity_fm]{
 Subread needs a non-empty defline on every sequence; unnamed sequences of an
 in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  A
 BSgenome-backed \code{marker_genome} has no FASTA and gets a named error; pass a
-\code{BSgenome} itself and its FASTA is written once to a name-keyed temp file.
-Subread
-also silently rewrites any non-ACGT base to \code{A} when it builds the index, so
-hit counts over N-rich regions are conservative; the notice is replayed as a
-warning instead of being swallowed by the progress capture.
+\code{BSgenome} itself and its FASTA is written once to a content-keyed temp file.
+
+Subread also silently rewrites any non-ACGT base to \code{A} when it builds the
+index, so hit counts over N-rich regions are conservative; the notice is
+replayed as a warning instead of being swallowed by the progress capture.
 
 The index is \strong{not} used by the design pipeline: \code{\link[=specificity_of]{specificity_of()}} refuses
 an FM-only genome and points at \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}, because the Subread

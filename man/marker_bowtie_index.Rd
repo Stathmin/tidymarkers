@@ -31,7 +31,7 @@ only pays the build cost once.  Attach the returned basename to a
 bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
 in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way out.  A
 BSgenome-backed \code{marker_genome} has no FASTA and gets a named error; pass a
-\code{BSgenome} itself and its FASTA is written once to a name-keyed temp file.
+\code{BSgenome} itself and its FASTA is written once to a content-keyed temp file.
 }
 \examples{
 \dontrun{

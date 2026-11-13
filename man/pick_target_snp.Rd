@@ -32,7 +32,10 @@ variant just has to be clean in \emph{at least one} direction.}
 
 \item{specificity_candidates}{how many top-ranked loci to check for 3'-seed
 specificity.  The seed scan is genome-wide, so only this many of the best
-candidates (by the other criteria) are checked; set \code{0} to skip it.}
+candidates (by the other criteria) are checked; set \code{0} to skip it.  Loci
+outside the shortlist keep \code{seed_hits = NA}, which sorts last (an unscreened
+row can never outrank a screened one) but means \emph{not screened}, not \emph{not
+specific}.}
 
 \item{BPPARAM}{optional \code{BiocParallel} backend for the seed scan (split by
 chromosome, see \code{\link[=specificity_seed]{specificity_seed()}}).}
@@ -64,14 +67,17 @@ Among the designable substitutions the best one is picked by, in order:
 \item consequence severity -- the Ensembl VEP \code{impact} column if the table has it,
 otherwise the canonical SO terms in \code{SO_TERM_RANK} (\code{missense_variant}, ...);
 \item a transition (A>G / C>T) over a transversion;
-\item 3'-seed specificity (\code{seed_hits}, best of the two strands);
+\item 3'-seed specificity (\code{seed_hits}, best of the two strands) -- a \emph{partial}
+tie-break, because the genome-wide scan runs only on the best
+\code{specificity_candidates} loci and every other candidate has \code{seed_hits = NA}; \code{NA} means \emph{not screened}, not \emph{not specific};
 \item the leftmost position.
 Every substitution is separable by its 3'-terminal base, including the
 transversions A/T and C/G (their wrong-template mismatch is a strong
 \emph{same-base} pair).  The weak case is the G:T / A:C \emph{wobble} (transitions), a
 soft penalty carried by \code{\link[=wobble_mismatch]{wobble_mismatch()}}, not a reason to skip a site.
-The genome-wide seed scan runs only on the best
-\code{specificity_candidates} loci.
+The genome-wide seed scan runs only on the best \code{specificity_candidates} loci,
+so \code{seed_hits} is \code{NA} outside that shortlist and must not be used as a
+complete ranking key.
 }
 }
 

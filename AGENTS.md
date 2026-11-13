@@ -55,6 +55,15 @@ to check the idiom, not to lengthen the code.
   lookups. Build a linear index.
 - `pkgload::load_all()` caches a compiled/lazyloaded copy: if a function you
   edited still behaves like the old body, `recompile = TRUE`.
+- **`load_all()` defaults to `helpers = TRUE`**, which sources
+  `tests/testthat/helper-oligoarrayaux.R` and prepends `.tools/bin` to `PATH`;
+  `oligoarrayaux_paths()` also walks up from `getwd()`. A test for the
+  *absent*-tool branch therefore needs `helpers = FALSE` **and** a cwd outside
+  the repo, or the tool is found and the branch never runs.
+- **`BSgenome` sequence-cache entries are weakly linked.** A mock written into
+  `@.seqs_cache` with a bare `assign()` records no link, so GC evicts it
+  mid-proof and the test silently reports "no collision". Pin
+  `link_counts[[name]] <- 1e6L`.
 
 Then the usual commands:
 

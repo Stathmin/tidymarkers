@@ -294,6 +294,48 @@ test_that("the AS tie-break is content-only, so it cannot rank by chromosome pos
   expect_length(unique(winners), 1L)
 })
 
+test_that("the AS seed screen is partial: an unscreened row is NA and cannot outrank a screened one", {
+  # Only the top `specificity_candidates` placements are seed-screened, so
+  # `seed_hits` is a PARTIAL tie-break: NA means "not screened", not "not
+  # specific".  Two rows tying on every margin differ only in that column; the
+  # (lower = more specific) must win, i.e. NA sorts last rather than dropping the
+  # row or dropping the column.
+  placements <- function(hits) {
+    tibble::tibble(
+      discrimination = c(0.9, 0.9), tm = 58, dg_3p = -1, wobble = FALSE,
+      n_var = 0L, w_var = 0, n_3p = 0L,
+      seed_hits = hits, as_length = c(20L, 20L), as_id = c("row1", "row2")
+    )
+  }
+  expect_identical(pick_as(placements(c(50L, NA_integer_)))$best$as_id, "row1")
+  expect_identical(pick_as(placements(c(NA_integer_, 50L)))$best$as_id, "row2")
+  # 50 hits is the more specific row here, so it also beats a screened 80
+  expect_identical(pick_as(placements(c(80L, 50L)))$best$as_id, "row2")
+})
+
+test_that("marker_pick_as screens exactly `specificity_candidates` placements", {
+  skip_if_no_oligoarrayaux()
+  # a random genome so the seeds are unique; three placements that tie on every
+  # margin, so the reported NA count is the screen width, not the ranking
+  withr::local_seed(11)
+  rand <- function(n) paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+  genome <- Biostrings::DNAStringSet(c(chr1 = rand(400L)))
+  as_cand <- tibble::tibble(
+    ref_primer = vapply(1:3, function(i) rand(24L), character(1)),
+    discrimination = 0.9, tm = 58, dg_3p = -1,
+    wobble = FALSE, n_var = 0L, w_var = 0, n_3p = 0L
+  )
+  pick <- function(k) {
+    marker_pick_as(as_cand, genome,
+      min_disc = 0.5, specificity_candidates = k, BPPARAM = NULL,
+      snp = list(chrom = "chr1", pos = 200L), tmpl = NULL
+    )
+  }
+  short <- pick(2L)$as_cand
+  expect_equal(sum(!is.na(short$seed_hits)), 2L) # two screened of three rows
+  expect_equal(sum(is.na(pick(0L)$as_cand$seed_hits)), 3L) # 0 = no screen at all
+})
+
 test_that("the COM primer is also ranked for a weaker 3' end (README section 3)", {
   expect_true("COM 3' end weakness" %in% marker_decision_stages("snp")$pair$tiers)
   # the two pairings differ only in the COM primer's 3'-terminal dG37

@@ -39,7 +39,7 @@ has_bowtie <- function() {
 #' bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
 #' in-memory `DNAStringSet` are named `seq1`, `seq2`, ... on the way out.  A
 #' BSgenome-backed `marker_genome` has no FASTA and gets a named error; pass a
-#' `BSgenome` itself and its FASTA is written once to a name-keyed temp file.
+#' `BSgenome` itself and its FASTA is written once to a content-keyed temp file.
 #'
 #' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
 #' @param basename index basename to create (no extension).

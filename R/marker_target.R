@@ -219,14 +219,18 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #' 2. consequence severity -- the Ensembl VEP `impact` column if the table has it,
 #'    otherwise the canonical SO terms in `SO_TERM_RANK` (`missense_variant`, ...);
 #' 3. a transition (A>G / C>T) over a transversion;
-#' 4. 3'-seed specificity (`seed_hits`, best of the two strands);
+#' 4. 3'-seed specificity (`seed_hits`, best of the two strands) -- a *partial*
+#'    tie-break, because the genome-wide scan runs only on the best
+#'    `specificity_candidates` loci and every other candidate has `seed_hits =
+#'    NA`; `NA` means *not screened*, not *not specific*;
 #' 5. the leftmost position.
 #' Every substitution is separable by its 3'-terminal base, including the
 #' transversions A/T and C/G (their wrong-template mismatch is a strong
 #' *same-base* pair).  The weak case is the G:T / A:C *wobble* (transitions), a
 #' soft penalty carried by [wobble_mismatch()], not a reason to skip a site.
-#' The genome-wide seed scan runs only on the best
-#' `specificity_candidates` loci.
+#' The genome-wide seed scan runs only on the best `specificity_candidates` loci,
+#' so `seed_hits` is `NA` outside that shortlist and must not be used as a
+#' complete ranking key.
 #'
 #' @param variants variant table (Ensembl REST shape).
 #' @param genome DNAStringSet.
@@ -238,7 +242,10 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #'   variant just has to be clean in *at least one* direction.
 #' @param specificity_candidates how many top-ranked loci to check for 3'-seed
 #'   specificity.  The seed scan is genome-wide, so only this many of the best
-#'   candidates (by the other criteria) are checked; set `0` to skip it.
+#'   candidates (by the other criteria) are checked; set `0` to skip it.  Loci
+#'   outside the shortlist keep `seed_hits = NA`, which sorts last (an unscreened
+#'   row can never outrank a screened one) but means *not screened*, not *not
+#'   specific*.
 #' @param BPPARAM optional `BiocParallel` backend for the seed scan (split by
 #'   chromosome, see [specificity_seed()]).
 #' @param scheme optional marker scheme to require (see [marker_schemes()]).  When

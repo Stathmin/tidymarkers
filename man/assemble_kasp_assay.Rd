@@ -167,7 +167,10 @@ The AS placement is chosen lexicographically by:
 \item not a weak G:T / A:C wobble mismatch;
 \item quieter 3'-seed genome-wide (\code{seed_hits}, best of the two strands) -- a
 specificity tie-break computed only for the top \code{specificity_candidates}
-placements, mirroring \code{\link[=pick_target_snp]{pick_target_snp()}};
+placements, mirroring \code{\link[=pick_target_snp]{pick_target_snp()}}.  In the returned
+\code{as_candidates} table, \code{seed_hits} is \code{NA} for every placement outside that
+shortlist: \code{NA} means \emph{not screened}, not \emph{not specific}, so it is a
+partial tie-break and not a complete ranking key;
 \item then \verb{|Tm - target|}, 3'-stability and length.
 The common primer is then placed on the winning strand and ranked by
 amplicon length, \verb{COM Tm >= AS Tm}, dimers/hairpin, footprint load and Tm
