@@ -10,17 +10,31 @@
 #  schemes keep their constants; the discovered ones are appended.
 # =============================================================================
 
+#' Signature of the scheme registry's mutable part
+#'
+#' The discovered schemes are memoised, but the answer includes the technologies
+#' composed at run time (`.marker_tech_store`).  `marker_technology()` clears the
+#' memo when it composes one; a *removal* (tests call `rm()` on the store) cannot,
+#' so the memo keys carry this token and a stale snapshot can never outlive the
+#' registry it was built from.
+#' @return a single string; `""` when no technology is composed.
+#' @keywords internal
+#' @noRd
+scheme_registry_token <- function() {
+  paste(sort(ls(.marker_tech_store, all.names = TRUE)), collapse = ",")
+}
+
 #' Every discovered per-scheme spec (one per `scheme_def_*()` function)
 #'
 #' Memoised: the answer is fixed once the package is loaded, and the design path
 #' asks for it per candidate (a 6-target KASP design called it ~500 times).
-#' `marker_technology()` clears the memo, because composing a scheme is the only
-#' thing that changes it.
+#' The key carries [scheme_registry_token()], so composing or removing a scheme
+#' changes the key rather than only clearing the cache.
 #' @return a named list of scheme specs (name = scheme id).
 #' @keywords internal
 #' @noRd
 extra_scheme_defs <- function() {
-  session_memo("scheme_defs", {
+  session_memo(paste0("scheme_defs|", scheme_registry_token()), {
     ns <- asNamespace("tidymarkers")
     nms <- sort(grep("^scheme_def_", ls(ns, all.names = TRUE), value = TRUE))
     file_defs <- stats::setNames(lapply(nms, function(nm) get(nm, envir = ns)()), sub("^scheme_def_", "", nms))
@@ -68,7 +82,7 @@ scheme_label <- function(field, ids) {
 #' @keywords internal
 #' @noRd
 extra_scheme_rows <- function() {
-  session_memo("scheme_rows", {
+  session_memo(paste0("scheme_rows|", scheme_registry_token()), {
     defs <- extra_scheme_defs()
     if (!length(defs)) {
       NULL

@@ -1273,13 +1273,17 @@ vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 #' @keywords internal
 #' @noRd
 criterion_spec <- function(limits = KASP_LIMITS) {
-  # The registry is a pure function of `limits`, and it is rebuilt on every
+  # The registry is a pure function of `limits` *and* the discovered schemes
+  # (their gate/tier rows are bound in), and it is rebuilt on every
   # `marker_family_check_labels()` call - which `marker_generic_checks()` used to
   # call once per check row, so a design run rebuilt it thousands of times.
   # Measured on test-falsifiable.R: 68.5 s of a 95 s file was under this one
   # call.  Memoised under the same key shape `marker_criteria()` uses.
   session_memo(
-    paste0("criterion_spec|", paste(deparse(limits), collapse = "")),
+    paste0(
+      "criterion_spec|", scheme_registry_token(), "|",
+      paste(deparse(limits), collapse = "")
+    ),
     criterion_spec_build(limits)
   )
 }
@@ -1471,9 +1475,10 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
     limits$amplicon <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
   }
   # ~0.2 s per call, and the decision schema asks for it once per marker; the
-  # answer is a pure function of `limits` (a flat numeric list), so the literal
-  # is the key.
-  out <- session_memo(paste0("criteria|", paste(deparse(limits), collapse = "")), {
+  # answer is a pure function of `limits` (a flat numeric list) and of the
+  # discovered schemes (`extra_stage_rows()`), so both are in the key.
+  key <- paste0("criteria|", scheme_registry_token(), "|", paste(deparse(limits), collapse = ""))
+  out <- session_memo(key, {
     spec <- criterion_spec(limits)
     tibble::tibble(
       stage = spec$stage,
