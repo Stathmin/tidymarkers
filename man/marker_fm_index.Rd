@@ -9,7 +9,8 @@ marker_fm_index(genome, basename = fs::path(fs::path_temp(), "marker_fm"))
 \arguments{
 \item{genome}{a \code{marker_genome}, a \code{DNAStringSet} or a \code{BSgenome}.}
 
-\item{basename}{index basename to create (no extension).}
+\item{basename}{index basename to create (no extension); defaults to a name
+under \code{\link[=tempdir]{tempdir()}}.}
 }
 \value{
 the index basename (invisibly used by \code{\link[=specificity_fm]{specificity_fm()}}).
@@ -35,6 +36,10 @@ The index is \strong{not} used by the design pipeline: \code{\link[=specificity_
 an FM-only genome and points at \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}, because the Subread
 index costs ~24x more per base and \code{\link[=specificity_fm]{specificity_fm()}} is a read mapper, not a
 seed counter.  Building one is still supported for that use, and says so.
+
+The default \code{basename} is under \code{\link[=tempdir]{tempdir()}}, so the index is never left on
+disk by accident; pass an explicit basename under \code{\link[=marker_cache_dir]{marker_cache_dir()}} to
+keep it.  See the \emph{Index location} section of \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}.
 }
 \examples{
 \dontrun{

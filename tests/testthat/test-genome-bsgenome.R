@@ -30,7 +30,6 @@ test_that("a BSgenome genome is materialised to one FASTA, reused on the next ca
     unname(GenomeInfoDb::seqlengths(si)[GenomeInfoDb::seqnames(bs_si)]),
     unname(GenomeInfoDb::seqlengths(bs_si))
   )
-
 })
 
 test_that("an index builder accepts a BSgenome and builds from the materialised FASTA", {

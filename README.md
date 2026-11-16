@@ -225,10 +225,26 @@ and fail before `renv::restore()` can run. Use `renv::init()` then
 `Rscript dev/install-deps.R`.
 
 External data never ships with the package: the TAIR10 genome and the 1001
-Genomes variation are downloaded from Ensembl Plants, and the BLAST/FM indexes
-and thermodynamic binaries are built once, all inside `marker_cache_dir()`. The
-download source is an FTP path on `ftp.ebi.ac.uk`, so it does not depend on this
-repository's URL.
+Genomes variation are downloaded from Ensembl Plants, and the thermodynamic
+binaries are built once, all inside `marker_cache_dir()`. The download source is
+an FTP path on `ftp.ebi.ac.uk`, so it does not depend on this repository's URL.
+
+Genome indexes are **not** cached: `marker_bowtie_index()` and
+`marker_fm_index()` default to a basename under `tempdir()`, so a large index is
+never left on disk by accident — it dies with the session. That default is
+cheap for TAIR10 (a few hundred MB) and wrong for wheat, where the index is
+about 1.4× the FASTA (≈21.5 GB for 16 Gb). For a genome that size, build once
+into the cache and clean up yourself:
+
+```r
+idx <- marker_bowtie_index(wheat, basename = file.path(marker_cache_dir(), "wheat-bowtie"))
+# ... reuse across sessions by passing basename again; delete both sides when done
+unlink(Sys.glob(file.path(marker_cache_dir(), "wheat-bowtie.*")))
+```
+
+A BLAST database is written beside its FASTA (or into `tempdir()` for an
+in-memory `DNAStringSet`); delete the `.nhr`/`.nin`/`.nsq` files to force a
+rebuild.
 
 ## Validation
 

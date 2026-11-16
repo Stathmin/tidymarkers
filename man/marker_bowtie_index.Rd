@@ -13,7 +13,8 @@ marker_bowtie_index(
 \arguments{
 \item{genome}{a \code{marker_genome}, a \code{DNAStringSet} or a \code{BSgenome}.}
 
-\item{basename}{index basename to create (no extension).}
+\item{basename}{index basename to create (no extension); defaults to a name
+under \code{\link[=tempdir]{tempdir()}} (see \emph{Index location}).}
 
 \item{threads}{threads for \code{bowtie_build()}.}
 }
@@ -33,6 +34,16 @@ in-memory \code{DNAStringSet} are named \code{seq1}, \code{seq2}, ... on the way
 BSgenome-backed \code{marker_genome} has no FASTA and gets a named error; pass a
 \code{BSgenome} itself and its FASTA is written once to a content-keyed temp file.
 }
+\section{Index location}{
+
+The default \code{basename} is under \code{tempdir()}, so a built index is never left
+on disk by accident: it dies with the session.  That is cheap for a small
+genome and wrong for wheat, where the index is about 1.4x the FASTA (about
+21.5 GB for 16 Gb).  Build once into the cache instead and clean up:
+\code{marker_bowtie_index(genome, basename = file.path(marker_cache_dir(), "wheat"))},
+then \code{unlink(Sys.glob(file.path(marker_cache_dir(), "wheat.*")))} when done.
+}
+
 \examples{
 \dontrun{
 idx <- marker_bowtie_index(marker_genome("genome.fa"))

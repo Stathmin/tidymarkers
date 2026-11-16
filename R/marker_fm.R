@@ -36,8 +36,13 @@ FM_MISMATCH <- 2L
 #' index costs ~24x more per base and [specificity_fm()] is a read mapper, not a
 #' seed counter.  Building one is still supported for that use, and says so.
 #'
+#' The default `basename` is under [tempdir()], so the index is never left on
+#' disk by accident; pass an explicit basename under [marker_cache_dir()] to
+#' keep it.  See the *Index location* section of [marker_bowtie_index()].
+#'
 #' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
-#' @param basename index basename to create (no extension).
+#' @param basename index basename to create (no extension); defaults to a name
+#'   under [tempdir()].
 #' @return the index basename (invisibly used by [specificity_fm()]).
 #' @examples
 #' \dontrun{

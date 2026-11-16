@@ -41,8 +41,17 @@ has_bowtie <- function() {
 #' BSgenome-backed `marker_genome` has no FASTA and gets a named error; pass a
 #' `BSgenome` itself and its FASTA is written once to a content-keyed temp file.
 #'
+#' @section Index location:
+#' The default `basename` is under `tempdir()`, so a built index is never left
+#' on disk by accident: it dies with the session.  That is cheap for a small
+#' genome and wrong for wheat, where the index is about 1.4x the FASTA (about
+#' 21.5 GB for 16 Gb).  Build once into the cache instead and clean up:
+#' `marker_bowtie_index(genome, basename = file.path(marker_cache_dir(), "wheat"))`,
+#' then `unlink(Sys.glob(file.path(marker_cache_dir(), "wheat.*")))` when done.
+#'
 #' @param genome a `marker_genome`, a `DNAStringSet` or a `BSgenome`.
-#' @param basename index basename to create (no extension).
+#' @param basename index basename to create (no extension); defaults to a name
+#'   under [tempdir()] (see *Index location*).
 #' @param threads threads for `bowtie_build()`.
 #' @return the index basename, for [specificity_bowtie()].
 #' @examples
