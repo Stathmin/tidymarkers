@@ -26,6 +26,31 @@
   lamp 111 / snapshot 76 / kasp-checks 44 / indel-size 48 / indel 45 /
   kasp-mismatch 38 / kasp-platforms 86 — 0 fail.
 
+### Три call site догнали per-call `engines` (2026-11-16)
+
+- **`design_indel_size_marker()`** получает формал `engines = NULL` и передаёт
+  его в `pair_structure_ok()`.
+- **`marker_primer_checks()`** получает формал и передаёт его в
+  `marker_generic_checks()`.
+- **`extra_scheme_designer()`** получает формал, передаёт его в KASP-ветку и
+  проверяет `"engines" %in% names(formals(inner))` в остальных ветках.
+- **Оценка KASP-дизайнера теперь тоже его чтит.** `assemble_kasp_assay()`
+  передавал `engines` только в `marker_design_checks()`, а KASP-ветка читает уже
+  посчитанные таблицы, — вызов был no-op. Обе таблицы строятся локально и
+  обнуляются в `NA`, когда `engine_has("hairpin_dg"|"duplex_dg", engines)`
+  ложно. Отсутствие движка видно как `unknown`, а не как тихий проход.
+- **Проверка:** `dev/test.R capabilities` — 50 pass / 0 fail;
+  `dev/test.R indel` — 93 / 0; `dev/test.R 'plot|scheme'` — 369 / 0. Проба на
+  `snp_fixture()`: `identical(a$evaluation, b$evaluation)` — `FALSE`, 4 `unknown`
+  против 7. Остаток — COM-колонки кандидатов — roadmap №30.
+
+### Число тест-воркеров в CI задаёт `TESTTHAT_CPUS` (2026-11-16)
+
+- **Мёртвый ключ удалён.** `Config/testthat/cores: 4` в `DESCRIPTION` не читал
+  ни testthat, ни `dev/test.R`: воркеры берутся из `TESTTHAT_CPUS`, по умолчанию 2. В workflow добавлен `TESTTHAT_CPUS: 4` в `env: &job-env` — обе ноги.
+- **Проверка:** эффект четырёх воркеров ещё не измерен; число вписывается в
+  roadmap «Производительность CI» после следующего прогона.
+
 ### `caps_fragments()` отказывает не-символьному `site` (2026-11-16)
 
 - **Тихий «нет сайтов» заменён названной ошибкой.** `caps_fragments()` читал

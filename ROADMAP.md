@@ -414,22 +414,23 @@
       `@.seqs_cache` через голый `assign()` не создаёт слабую ссылку, и GC вытеснял
       121 МБ мока; мок и тест закрепляют `link_counts[["ChrC"]] <- 1e6L`.
 
-23. [ ] **Причина расхождения `ZW0 M5` не названа** (из №21). Вина снята с
-        `com_gaps`, но объяснения нет: на 49 дизайнах зазор KASP лежит в 19–77
-        (медиана 47), у верхней границы — 0, ASQ `18:200` — 49–164, тоже 0 у края,
-        поэтому сетка причиной быть не может. Расширение до `18:120` сдвинуло один
-        дизайн через тай-брейк `arrange(abs(com_tm - target))`
-        (`R/marker_design.R:86`), а не через достижимость.
-    - правка: разложить выбор COM по кадрам — какой кандидат выигрывает и почему —
-      и назвать причину расхождения кадра 1 с кадрами 2–4.
-    - проверка: репродьюсер даёт seed 7 / `loc` 40 и объясняет его без ссылки на
-      `com_gaps`. Закреплено: AS-праймер во всех четырёх кадрах один
-      (`TAGTCTGC…`, длина 26, цепь `-`), COM кадра 1 —
-      `TCTCACGAATGTCCATCCCACAGT` (зазор 76), кадров 2–4 —
-      `TCACGAATGTCCATCCCACAGTGT` (зазор 74), ампликон 100 против 91.
+23. [x] **Причина расхождения `ZW0 M5` названа** (из №21). Вина снята с
+        `com_gaps`: расхождение даёт пад-база на контиге 140 внутри щели 18,
+        которую локальный по шаблону вид COM-сетки не видит.
+    - сделано: выбор COM разложен по кадрам (`.tmp/zw0-m5/why_row.R`,
+      `repro_min.R`, логи `zw0_m5b.log`, `why_row.log`).
+      `design_common_primers()` работает по шаблону (`tmpl$snp_i`,
+      `R/marker_assemble.R:739`) и фильтрует только `run`/`ssr`/GC/Tm, поэтому
+      кандидат `TCTCACGAATGTCCATCCCACAGT` одинаков во всех четырёх рамках;
+      его геномный 3'-конец в рамках 2–4 уходит на 11 п.н. дальше → одна
+      лишняя строка `gate_amplicon` (1 → 30 строк) → строгие выжившие 22 → 15 →
+      `tier1` двигает `.row=16`.
+    - проверка: репродьюсер называет причину без ссылки на `com_gaps`;
+      ампликон — 91 п.н. в рамке 1 против 102 в рамках 2–4 (прежнее
+      «100 против 91» было неверной атрибуцией).
     - блокер: нет.
-    - следствие: регрессия в этом расхождении остаётся незамеченной, пока кто-то
-      не разложит выбор COM по кадрам.
+    - следствие: это дефект координатной рамки тестового фикстура, не пакета;
+      правка фикстура — №29.
 
 24. [ ] **Тёплое время установки зависимостей на devel не измерено** (из `D8`).
     - правка: не требуется — число печатает первый зелёный ночной прогон.
@@ -439,34 +440,82 @@
     - следствие: пока число не названо, «тёплый кеш экономит минуты» — гипотеза,
       а не замер.
 
-25. [ ] **`confirm()` не пробрасывает `engines`** (из №6). `R/marker_indel_size.R`
-        (~L190) зовёт `pair_structure_ok(b$primer_f, b$primer_r)` без `engines`,
+25. [x] **`confirm()` не пробрасывает `engines`** (из №6). `R/marker_indel_size.R`
+        (~L190) звал `pair_structure_ok(b$primer_f, b$primer_r)` без `engines`,
         хотя сама `pair_structure_ok()` (`R/marker_sanger.R`) его принимает.
-    - правка: формал `engines = NULL` в `confirm()` и forward в
-      `pair_structure_ok()`.
-    - проверка: per-call адаптер меняет ответ indel-гейта в
-      `test-capabilities.R`; `Rscript dev/test.R indel` — 0 fail.
+    - сделано: формал `engines = NULL` в `design_indel_size_marker()` и forward в
+      `pair_structure_ok()`; `@param engines` в roxygen.
+    - проверка: «the InDel size designer forwards a per-call engines override to
+      the structure screen» в `test-capabilities.R`; `Rscript dev/test.R indel`
+      — 93 pass / 0 fail, `capabilities` — 50 pass / 0 fail.
     - блокер: нет.
-    - следствие: indel-гейт отвечает по сессионному реестру, а не по
-      переданному адаптеру.
-26. [ ] **`marker_primer_checks()` не пробрасывает `engines`** (из №6).
-        `R/marker_plot_methods.R` (~L133) зовёт `marker_generic_checks(marker,
+    - следствие: indel-гейт отвечает по переданному адаптеру, а не по
+      сессионному реестру.
+26. [x] **`marker_primer_checks()` не пробрасывает `engines`** (из №6).
+        `R/marker_plot_methods.R` (~L133) звал `marker_generic_checks(marker,
 scheme, genome, limits)` без формала и без forward.
-    - правка: `engines = NULL` в `marker_primer_checks()` и forward в
+    - сделано: `engines = NULL` в `marker_primer_checks()` и forward в
       `marker_generic_checks()`.
-    - проверка: per-call адаптер меняет ответ проверки; `Rscript dev/test.R
-plot` — 0 fail.
+    - проверка: «marker_primer_checks() forwards a per-call engines override to
+      the thermo screen» в `test-capabilities.R`; `Rscript dev/test.R
+'plot|scheme'` — 369 pass / 0 fail.
     - блокер: нет.
-    - следствие: plot-путь зовёт старую сигнатуру и теряет per-call выбор.
-27. [ ] **`extra_scheme_designer()` не пробрасывает `engines`** (из №6).
+    - следствие: plot-путь чтит per-call выбор адаптера.
+27. [x] **`extra_scheme_designer()` не пробрасывает `engines`** (из №6).
         `R/marker_scheme_registry.R` (~L167): обёртка `function(genome, snp, ...)`
-        не имеет формала `engines` и не передаёт его в `inner`.
-    - правка: формал `engines = NULL` в обёртке и явная передача в `inner`.
-    - проверка: адаптер доходит до `inner` в `test-capabilities.R`;
-      `Rscript dev/test.R scheme` — 0 fail.
+        не имела формала `engines` и не передавала его в `inner`.
+    - сделано: формал `engines = NULL` в обёртке, явная передача в KASP-ветку и
+      guard `"engines" %in% names(formals(inner))` в остальных ветках.
+    - проверка: «a composed technology forwards a per-call engines override to
+      its designer» в `test-capabilities.R`; `Rscript dev/test.R 'plot|scheme'`
+      — 369 pass / 0 fail.
     - блокер: нет.
-    - следствие: пользовательская схема не может выбрать адаптер, хотя
-      остальные гейты это умеют.
+    - следствие: пользовательская схема может выбрать адаптер, как остальные
+      гейты.
+28. [ ] **Оценка KASP-дизайнера не чтила per-call `engines`** (из №6; найдено
+        при закрытии №25–№27). `assemble_kasp_assay()` передавал `engines` только
+        в `marker_design_checks()`, а KASP-ветка этой функции
+        (`R/marker_checks.R:313-314`) читает уже посчитанные `assay$thermo` /
+        `assay$complementarity`, которые строят `primer_thermo()` и
+        `dimer_thermo()` без формала `engines`, — вызов был no-op.
+    - сделано: обе таблицы строятся в `R/marker_assemble.R` локально и
+      обнуляются в `NA`, когда `engine_has("hairpin_dg"|"duplex_dg", engines)`
+      ложно; `marker_design_checks()` получает `engines = engines`.
+    - проверка: «the KASP designer's own evaluation honours a per-call engines
+      override» в `test-capabilities.R`; capabilities 50 pass / 0 fail. Проба на
+      `snp_fixture()`: `identical(a$evaluation, b$evaluation)` — `FALSE`,
+      4 `unknown` против 7, три критерия (`worst hairpin dG37`,
+      `worst homodimer dG37`, `worst cross-dimer dG37`) `pass` → `unknown`,
+      `observed` → `NA`.
+    - блокер: нет.
+    - следствие: неизвестность видна как `unknown`, а не как тихий проход;
+      остаток — COM-колонки кандидатов — №30.
+29. [ ] **Фикстур `ZW0 M5` держит расхождение координатной рамкой** (из №23).
+        В `test-invariants.R` (L165-257) четыре рамки на локус расходятся из-за
+        пад-базы на контиге 140 внутри щели 18, которую COM-сетка не видит:
+        префикс фикстура слишком короткий.
+    - правка: длина `pre` ≥ 100 + 300 в фикстуре, либо добавить seed 7 /
+      `loc` 40 в список `cells` (`test-invariants.R:235-238`) с ожиданием,
+      названным для этой рамки.
+    - проверка: `Rscript dev/test.R invariants` — 0 fail; тест `ZW0 M5`
+      продолжает ловить регрессию ранжирования, а не фикстур.
+    - блокер: нет.
+    - следствие: пока фикстур не поправлен, `ZW0 M5` зелёный по причине,
+      которую видно только в `.tmp/zw0-m5/`.
+30. [ ] **COM-колонки кандидатов намеренно не гейтятся `engines`** (из №28).
+        `com_homodimer` / `com_hairpin` (`R/marker_assemble.R:744-745`) считаются
+        всегда, потому что `gate_structure = m_structure >= 0`, а `NA` в
+        `m_structure` заставляет `dplyr::filter()` (`R/marker_select.R:270-272`)
+        выбросить всех кандидатов — дизайн не находится. Это семантика
+        дизайнера, не грейдера: «нет структурного движка» ≠ «структура идеальна».
+    - правка: решить и записать, что значит отсутствие движка для отбора
+      кандидатов: статус `unchecked` (не `pass`), предикат
+      `is.na(x) | x >= 0`, либо явный отказ в дизайне с названной причиной.
+    - проверка: тест, где `engines` без `duplex_dg` не даёт ни `NULL`-дизайна
+      без причины, ни молчаливого прохода; `Rscript dev/test.R 'kasp|selection'`.
+    - блокер: нет.
+    - следствие: отсутствие движка неотличимо от прохода на отборе COM, хотя на
+      оценке оно уже видно как `unknown`.
 
 Запаркованные остатки (причина названа; отдельной правки не заводят, пока
 причина жива):
@@ -634,8 +683,10 @@ manually started runner is canceled.` → `Process completed with exit code
       (18s), `checking R code for possible problems` (35s), `checking examples`
       (81s) и все Rd-проверки, и умер на 8m23s внутри `Running 'testthat.R'`.
       Release-нога того же прогона проходит весь `check` за 13m04s, то есть
-      тесты в CI идут параллельно (`Config/testthat/parallel: true`,
-      `Config/testthat/cores: 4`) и занимают ~10 мин; devel не дожил 1.5–2 мин.
+      тесты в CI идут параллельно (`Config/testthat/parallel: true`), а число
+      воркеров берётся из `TESTTHAT_CPUS`: в том прогоне переменная не была
+      задана, поэтому работали два (`Config/testthat/cores: 4` не читал никто,
+      ключ удалён) — отсюда ~10 мин; devel не дожил 1.5–2 мин.
       Это отказ среды, а не пакета.
     - правка (причина 8): не требуется, код не меняется. Прогон нельзя
       перезапустить, пока GitHub держит его в `in_progress` (`gh run rerun` →
@@ -1711,18 +1762,23 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       `exe_version("blastn")` игнорировал `options(tidymarkers.blast)` — закрыта
       в этой волне: проба читает `blast_bin()`, ключ мемо уже нёс опцию
       (`test-engine-stamp.R`).
-- [ ] **Производительность CI.** Тест-набор уже параллелен
-      (`Config/testthat/parallel: true`, 4 воркера). Замерен весь набор, а не
-      оценён: прогон `43875434419`, нога `ubuntu-latest (release)`
-      (`133327126011`) — `checking tests ... Running 'testthat.R' [758s/414s]`
-      (`13:28:42`→`13:35:36`), то есть 414 с стены, 758 с CPU, ускорение 1.83×
-      на 4 воркерах; вся нога 11м46с, из неё примеры 76 с, пересборка виньеток
-      29 с; `windows-latest (release)` — 11м15с. Локально весь набор
-      (`dev/test.R --full`, `TESTTHAT_CPUS=8`) — 3м39с,
+- [ ] **Производительность CI.** Тест-набор параллелен
+      (`Config/testthat/parallel: true`), а число воркеров задаёт переменная
+      `TESTTHAT_CPUS`: testthat берёт её через `Sys.getenv()`, по умолчанию 2.
+      Ключ `Config/testthat/cores: 4` в DESCRIPTION не читал ни testthat, ни
+      `dev/test.R`, — удалён, чтобы не выдавал себя за настройку; четыре воркера
+      теперь задаёт workflow (`TESTTHAT_CPUS: 4` в `env: &job-env`, обе ноги).
+      Замерен весь набор, а не оценён: прогон `43875434419`, нога
+      `ubuntu-latest (release)` (`133327126011`) — `checking tests ...
+    Running 'testthat.R' [758s/414s]` (`13:28:42`→`13:35:36`), то есть 414 с
+      стены, 758 с CPU, ускорение 1.83× на двух воркерах; вся нога 11м46с, из неё
+      примеры 76 с, пересборка виньеток 29 с; `windows-latest (release)` — 11м15с.
+      Локально весь набор (`dev/test.R --full`, `TESTTHAT_CPUS=8`) — 3м39с,
       `FAIL 0 | WARN 0 | SKIP 25 | PASS 37307`. Серийные 28м56.6с из
       `43857228030` больше не воспроизводятся.
       правка: бюджет времени на пшеничный набор как отдельный трек.
-      проверка: `checking tests` в CI-логе — 414 с (есть); бюджет пшеницы —
+      проверка: `checking tests` в CI-логе — 414 с (есть); эффект четырёх
+      воркеров — число вписать сюда после следующего прогона; бюджет пшеницы —
       нет (нужен фикспур 16 Гб, тот же блокер, что у `ZX3`).
       блокер: пшеничный фикспур (16 Гб) — не этот хост.
       следствие: пшеничный бюджет остаётся непроверенным; тайминги TAIR10
