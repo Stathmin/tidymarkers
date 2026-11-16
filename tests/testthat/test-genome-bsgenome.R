@@ -10,6 +10,15 @@ test_that("a BSgenome genome is materialised to one FASTA, reused on the next ca
   expect_true(file.exists(path))
   expect_match(fs::path_file(path), "^genome-[0-9a-f]{12}\\.fa$")
 
+  # a second call is the same file, untouched: no rewrite.  This runs before the
+  # `FaFile` handle below is opened: that handle stays open for the session, and
+  # on Windows it reverts the backwards `Sys.setFileTime`, so the assertion would
+  # read our own artefact rather than a rewrite.
+  mtime <- file.mtime(path)
+  Sys.setFileTime(path, mtime - 3600)
+  expect_identical(genome_fasta_path(bs, "marker_bowtie_index"), path)
+  expect_equal(file.mtime(path), mtime - 3600)
+
   # the file is a readable FASTA of the whole genome, records and widths included
   Rsamtools::indexFa(path)
   fa <- Rsamtools::FaFile(path)
@@ -22,11 +31,6 @@ test_that("a BSgenome genome is materialised to one FASTA, reused on the next ca
     unname(GenomeInfoDb::seqlengths(bs_si))
   )
 
-  # a second call is the same file, untouched: no rewrite
-  mtime <- file.mtime(path)
-  Sys.setFileTime(path, mtime - 3600)
-  expect_identical(genome_fasta_path(bs, "marker_bowtie_index"), path)
-  expect_equal(file.mtime(path), mtime - 3600)
 })
 
 test_that("an index builder accepts a BSgenome and builds from the materialised FASTA", {
