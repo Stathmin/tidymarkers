@@ -6,6 +6,23 @@
 
 ## 0.4.1 (в работе)
 
+### Демо-фикстуры в тестах: кеш или пропуск, никогда загрузка (2026-11-16)
+
+- **Класс дефекта, а не один тест.** `ath_genome()`, `ensembl_variants()` и
+  `ensembl_gene()` качают фикстуры при холодном кеше. CI-прогон `43900699435`
+  упал именно на этом: `test-arms-mismatch-position.R:108:3` →
+  `download from 'https://ftp.ebi.ac.uk/...' failed`; macOS-нога ушла в
+  `cancelled`, потому что загрузка съела время шага.
+- **Один предикат вместо `tryCatch` в каждом файле.**
+  `tests/testthat/helper-demo-cache.R` держит имена трёх кеш-файлов,
+  `demo_cache_warm()` и `skip_if_cold_demo_cache()`; `test-plan.R` больше не
+  ловит ошибку геттера, а спрашивает кеш до вызова.
+- **Проверка:** холодный кеш (`R_USER_CACHE_DIR=.tmp/coldcache`) —
+  `FAIL 0 | SKIP 8 | PASS 146`, ни одного записанного файла; тёплый кеш
+  `dev/test.R 'arms-mismatch|^plan$'` — 166 pass / 0 fail.
+- **Комментарий workflow больше не врёт.** `R-CMD-check.yaml` утверждал, что
+  тесты берут фикстуры, а не сеть; до этой правки утверждение было ложным.
+
 ### Гейты движка слышат per-call `engines` (2026-11-16)
 
 - **`engines = NULL` доведён до гейтов, а не только до дизайна.** `marker_engines()`

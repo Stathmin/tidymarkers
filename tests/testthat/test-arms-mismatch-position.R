@@ -105,6 +105,7 @@ test_that("the signed policy constant is not a stab_ats distance", {
 
 test_that("the chosen position survives into the returned marker (Z7.1)", {
   skip_if_no_oligoarrayaux()
+  skip_if_cold_demo_cache(c("genome", "variants", "gene"))
   g <- ath_genome()
   snp <- pick_target_snp(ensembl_variants("4", 1500000L, 1560000L), g, ensembl_gene("AT4G00650"))
   m <- suppressWarnings(design_arms_marker(g, snp, flank = 200L))
@@ -125,6 +126,7 @@ test_that("the chosen position survives into the returned marker (Z7.1)", {
 
 test_that("a technology carries the decided position through marker_technology()", {
   skip_if_no_oligoarrayaux()
+  skip_if_cold_demo_cache(c("genome", "variants", "gene"))
   g <- ath_genome()
   snp <- pick_target_snp(ensembl_variants("4", 1500000L, 1560000L), g, ensembl_gene("AT4G00650"))
   # the distance form the designer takes

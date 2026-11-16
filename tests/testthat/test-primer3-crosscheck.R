@@ -206,6 +206,7 @@ test_that("design_kasp_markers and Primer3 both solve the same three loci", {
   pc_skip_if_missing(c("primer3_core", "oligotm", "ntthal"))
   skip_if_not_full()
   skip_if_no_oligoarrayaux()
+  skip_if_cold_demo_cache(c("genome", "variants"))
   dat <- pc_panel(3L)
   skip_if_not(is.null(dat), "the cached variation panel is not available")
 

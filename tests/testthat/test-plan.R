@@ -1,15 +1,18 @@
 # The layered plan grammar: build with +, solve, tubes, plot, export.
 # Solved against the bundled, real Arabidopsis example panel (marker_example()).
 
-# The shipped panel needs the TAIR10 genome; use it when it is available
-# (cached, so offline), otherwise skip - a synthetic genome would not exercise
-# the real targets.
+# The shipped panel needs the TAIR10 genome; use it when it is cached, otherwise
+# skip -- a synthetic genome would not exercise the real targets, and a test
+# must never download (helper-demo-cache.R).
 # The TAIR10 genome is ~35 MB compressed: read it once per file, not once per plan.
 example_genome <- local({
   value <- NULL
   function() {
     if (is.null(value)) {
-      value <<- tryCatch(ath_genome(), error = function(e) NULL)
+      if (!demo_cache_warm("genome")) {
+        return(NULL)
+      }
+      value <<- ath_genome()
     }
     value
   }
