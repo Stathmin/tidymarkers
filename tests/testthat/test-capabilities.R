@@ -131,3 +131,126 @@ test_that("generic checks report NA, never TRUE, without the structure engine", 
   expect_true(all(rows$status == "unknown"))
   expect_false(any(rows$status == "pass"))
 })
+
+test_that("the InDel size designer forwards a per-call engines override to the structure screen", {
+  f <- snp_fixture(n = 800L, seed = 1L, pos = 400L)
+  indel <- tibble::tibble(chrom = "Chr1", pos = f$snp$pos, ref = f$ref, alt = paste0(f$ref, "TTTTTT"))
+  # a string is not an engine registry: reached by the structure gate it aborts
+  # there; dropped from the forward it would fall through `...` into
+  # in_silico_pcr() and be swallowed by its tryCatch instead
+  expect_error(
+    suppressMessages(design_indel_size_marker(f$genome, indel, flank = 250L, engines = "not an adapter")),
+    "invalid for atomic vectors"
+  )
+  off <- marker_engines()
+  off$thermo$capabilities$duplex_dg <- FALSE
+  on <- marker_engines()
+  on$thermo$capabilities$duplex_dg <- TRUE
+  # both on and off must reach the structure gate as the override says
+  expect_no_error(
+    invisible(suppressMessages(design_indel_size_marker(f$genome, indel, flank = 250L, engines = on)))
+  )
+  expect_no_error(
+    invisible(suppressMessages(design_indel_size_marker(f$genome, indel, flank = 250L, engines = off)))
+  )
+})
+
+test_that("marker_primer_checks() forwards a per-call engines override to the thermo screen", {
+  local_mocked_bindings(has_oligoarrayaux = function() TRUE, .package = "tidymarkers")
+  x <- structure(
+    list(
+      snp = tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G"),
+      amplicon = tibble::tibble(start = 250L, end = 350L),
+      primers = list(
+        forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
+      )
+    ),
+    class = "marker_caps"
+  )
+  # a dG the screen rejects: the tool answers, the adapter decides whether the
+  # screen that calls it runs at all
+  local_mocked_bindings(
+    oligo_dg_vec = function(...) rep(-20, 2L),
+    thermo_duplex_dg = function(...) -20,
+    .package = "tidymarkers"
+  )
+  off <- marker_engines()
+  off$thermo$capabilities$hairpin_dg <- FALSE
+  off$thermo$capabilities$duplex_dg <- FALSE
+  # the dG rows are emitted either way; the forwarded override decides their
+  # status: "unknown" when the thermo screen did not run, otherwise a verdict
+  dg_status <- function(chk) {
+    rows <- chk[chk$name %in% c("hairpin", "dimer", "homodimer"), ]
+    expect_equal(nrow(rows), 3L)
+    rows$status
+  }
+  expect_true(all(dg_status(marker_primer_checks(x, "caps", engines = off)) == "unknown"))
+  expect_true(all(dg_status(marker_primer_checks(x, "caps", engines = marker_engines())) == "broken"))
+  expect_true(all(dg_status(marker_primer_checks(x, "caps")) == "broken"))
+})
+
+test_that("a composed technology forwards a per-call engines override to its designer", {
+  f <- snp_fixture()
+  # the generic (non-KASP) evaluator is where the adapter decides the dG rows:
+  # it grades by calling the engines, so the override must reach the designer
+  aux <- has_oligoarrayaux()
+  skip_if_not(aux, "the structure rows need OligoArrayAux")
+  local_mocked_bindings(
+    oligo_dg_vec = function(...) rep(-20, 2L),
+    thermo_duplex_dg = function(...) -20,
+    .package = "tidymarkers"
+  )
+  on <- marker_engines()
+  on$thermo$capabilities$hairpin_dg <- TRUE
+  on$thermo$capabilities$duplex_dg <- TRUE
+  off <- marker_engines()
+  off$thermo$capabilities$hairpin_dg <- FALSE
+  off$thermo$capabilities$duplex_dg <- FALSE
+  marker_technology("caps_probe_test", base = "caps", overwrite = TRUE)
+  on.exit(rm("caps_probe_test", envir = .marker_tech_store), add = TRUE)
+  # a TaqMan technology over the KASP core: its designer is assemble_kasp_assay
+  marker_technology("snp_probe_test", base = "snp", overwrite = TRUE)
+  on.exit(rm("snp_probe_test", envir = .marker_tech_store), add = TRUE)
+  # a probe the designer cannot accept: the wrapper's explicit forward makes
+  # `...` a duplicate argument; without it the probe would just be ignored
+  for (s in c("caps_probe_test", "snp_probe_test")) {
+    expect_error(
+      scheme_designer(s)(f$genome, f$snp, flank = 150L, engines = "not an adapter", engines = NULL),
+      "formal argument \"engines\" matched by multiple actual arguments",
+      label = s
+    )
+  }
+  # the else branch: a primer-base technology delegates to its base's designer,
+  # and the index it returns is one OligoArrayAux takes; the adapter it is handed
+  # shows in the checks the design path runs on the result
+  d <- scheme_designer("caps_probe_test")
+  expect_equal(names(formals(d)), c("genome", "snp", "...", "engines"))
+  m <- suppressWarnings(d(f$genome, f$snp, flank = 150L, engines = on))
+  skip_if(is.null(m), "no composed CAPS design at this fixture")
+  dg_status <- function(eng) {
+    rows <- marker_primer_checks(m, "caps", engines = eng)
+    rows <- rows[rows$name %in% c("hairpin", "dimer", "homodimer"), ]
+    expect_equal(nrow(rows), 3L)
+    rows$status
+  }
+  expect_true(all(dg_status(off) == "unknown"))
+  expect_true(all(dg_status(on) == "broken"))
+})
+
+test_that("the KASP designer's own evaluation honours a per-call engines override", {
+  skip_if_not(has_oligoarrayaux(), "the structure row needs OligoArrayAux")
+  f <- snp_fixture()
+  off <- marker_engines()
+  off$thermo$capabilities$hairpin_dg <- FALSE
+  off$thermo$capabilities$duplex_dg <- FALSE
+  a <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, flank = 150L, engines = off))
+  skip_if(is.null(a), "no KASP design at this fixture")
+  # the override must reach the numbers the evaluation grades, not just the gates
+  expect_true(all(is.na(a$thermo$hairpin_dg)))
+  expect_true(all(is.na(a$complementarity$dg)))
+  row <- a$evaluation[a$evaluation$criterion == "worst hairpin dG37", ]
+  expect_equal(nrow(row), 1L)
+  # unknown, not a silent pass: `pass` is the legacy view and reads FALSE here
+  expect_equal(as.character(row$status), "unknown")
+  expect_true(is.na(row$observed))
+})

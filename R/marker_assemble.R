@@ -921,15 +921,23 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     if (!is.null(blast)) attr(blast, "scan") <- "whole-primer"
   }
 
+  # a per-call `engines` override must reach the numbers the evaluation grades:
+  # without the structure engine the dG columns are NA, not a silent pass
+  thermo <- purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x, BPPARAM = BPPARAM), name = .y)) |>
+    purrr::list_rbind()
+  if (!engine_has("hairpin_dg", engines)) thermo$hairpin_dg <- NA_real_
+  if (!engine_has("duplex_dg", engines)) thermo$terminal_dg <- NA_real_
+  complementarity <- dimer_thermo(primers, BPPARAM = BPPARAM, conditions = conditions)
+  if (!engine_has("duplex_dg", engines)) complementarity$dg <- NA_real_
+
   out <- list(
     scheme = scheme,
     snp = snp, template = tmpl, strand = best$strand, assay = assays,
     limits = limits, as_variant_offset = variant_offset,
     as_candidates = as_cand,
     efficiency = best_as |> dplyr::select("ref_on", "ref_off", "alt_on", "alt_off", "discrimination"),
-    thermo = purrr::imap(primers, ~ dplyr::mutate(primer_thermo(.x, BPPARAM = BPPARAM), name = .y)) |>
-      purrr::list_rbind(),
-    complementarity = dimer_thermo(primers, BPPARAM = BPPARAM, conditions = conditions),
+    thermo = thermo,
+    complementarity = complementarity,
     specificity = specificity_of(seed_primers, genome, BPPARAM = BPPARAM),
     amplicons = amplicons,
     selection = list(
@@ -1012,7 +1020,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   }
   # evaluate every registered acceptance check once, so plots/reports read the
   # results instead of recomputing them
-  out$evaluation <- tryCatch(marker_design_checks(out, limits = limits), error = function(e) {
+  out$evaluation <- tryCatch(marker_design_checks(out, limits = limits, engines = engines), error = function(e) {
     # A failed evaluator is not "no opinion": say so, or the gap looks like a
     # design that has no checks.
     cli::cli_warn(c(

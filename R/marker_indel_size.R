@@ -121,6 +121,8 @@ KASP_GATE_HARD_INDEL_SIZE <- c(
 #' @param lengths primer lengths to try.
 #' @param tm_range,gc_range accepted primer windows.
 #' @param ... passed to [in_silico_pcr()] (e.g. `BPPARAM`).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the pair structure screen.
 #' @return a `marker_indel_size` list (`snp`, `primers`, `amplicon` with the REF
 #'   and ALT product sizes, `gap`, `selection`), or `NULL` (with a message) when
 #'   the indel is too short for even a capillary readout or no flanking pair
@@ -139,7 +141,7 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
                                      max_product = KASP_INDEL_SIZE_LIMITS$amplicon[2L],
                                      lengths = 18:25,
                                      tm_range = KASP_INDEL_SIZE_LIMITS$tm,
-                                     gc_range = KASP_LIMITS$gc, ...) {
+                                     gc_range = KASP_LIMITS$gc, ..., engines = NULL) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) == nchar(alt)) {
@@ -193,7 +195,7 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
     if (nrow(in_silico_pcr(b$primer_f, b$primer_r, genome, ...)) != 1L) {
       return(FALSE)
     }
-    pair_structure_ok(b$primer_f, b$primer_r)
+    pair_structure_ok(b$primer_f, b$primer_r, engines = engines)
   }
   # the second pass (roadmap X): a ladder with no winner has no clean leading
   # pairing, and its reason is the screening one - never the rejected candidate's

@@ -123,14 +123,15 @@ primer_label_short <- function(nm) {
 # The marker-agnostic acceptance checks (the KASP_CHECK_PRIMER class), computed
 # from the marker's own primers/amplicon/genome, so the non-KASP tumbler shows
 # real observed values + ok/broken colours exactly like plot_checks().
-marker_primer_checks <- function(marker, scheme, genome = NULL, limits = KASP_LIMITS) {
+marker_primer_checks <- function(marker, scheme, genome = NULL, limits = KASP_LIMITS,
+                                 engines = NULL) {
   primers <- tryCatch(marker_primers(marker), error = function(e) character(0))
   primers <- primers[!is.na(primers) & nzchar(primers)]
   primers <- primers[grepl("^[ACGT]+$", primers)]
   if (!length(primers)) {
     return(tibble::tibble())
   }
-  generic <- marker_generic_checks(marker, scheme, genome, limits)
+  generic <- marker_generic_checks(marker, scheme, genome, limits, engines = engines)
   thermo <- attr(generic, "thermo")
   base <- generic[generic$criterion %in% KASP_CHECK_PRIMER, , drop = FALSE]
   keep <- !is.na(base$status)

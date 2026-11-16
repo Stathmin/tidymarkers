@@ -154,17 +154,28 @@ extra_scheme_designer <- function(scheme) {
   }
   params <- d$params %||% list()
   if (d$base %in% c("snp", "indel", "multi")) {
-    function(genome, snp, variants = NULL, BPPARAM = NULL, ...) {
+    function(genome, snp, variants = NULL, BPPARAM = NULL, ..., engines = NULL) {
       rlang::exec(assemble_kasp_assay, genome, snp,
-        variants = variants, scheme = scheme, BPPARAM = BPPARAM, !!!params, ...
+        variants = variants, scheme = scheme, BPPARAM = BPPARAM, engines = engines,
+        !!!params, ...
       )
     }
   } else {
+    # the base's designer may be a built-in (`design_caps_marker()`), which takes
+    # no `engines` at all: forwarding it blind is an "unused argument" error, so
+    # pass it only when the resolved designer declares it
     inner <- extra_scheme_designer(d$base)
     if (is.null(inner)) {
       return(NULL)
     }
-    function(genome, snp, ...) rlang::exec(inner, genome, snp, !!!params, ...)
+    takes_engines <- "engines" %in% names(formals(inner))
+    function(genome, snp, ..., engines = NULL) {
+      if (takes_engines) {
+        rlang::exec(inner, genome, snp, engines = engines, !!!params, ...)
+      } else {
+        rlang::exec(inner, genome, snp, !!!params, ...)
+      }
+    }
   }
 }
 

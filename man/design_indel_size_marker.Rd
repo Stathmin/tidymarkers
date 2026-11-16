@@ -14,7 +14,8 @@ design_indel_size_marker(
   lengths = 18:25,
   tm_range = KASP_INDEL_SIZE_LIMITS$tm,
   gc_range = KASP_LIMITS$gc,
-  ...
+  ...,
+  engines = NULL
 )
 }
 \arguments{
@@ -36,6 +37,9 @@ both alleles.}
 \item{tm_range, gc_range}{accepted primer windows.}
 
 \item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the pair structure screen.}
 }
 \value{
 a \code{marker_indel_size} list (\code{snp}, \code{primers}, \code{amplicon} with the REF
