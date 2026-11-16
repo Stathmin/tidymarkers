@@ -6,9 +6,10 @@
 # without tripling the wall clock.
 #
 # OligoArrayAux (`hybrid-min`/`hybrid-ss-min`) and BLAST+ are *optional*
-# engines: the suite skips an assertion when an engine is absent, so the Linux
-# legs install both and the macOS/Windows legs install only what their package
-# manager offers. The genome, variation and indexes are never needed -- every
+# engines: the suite skips an assertion when an engine is absent. The Linux legs
+# unpack a pinned bioconda tarball for OligoArrayAux (the runner images no longer
+# ship conda) and apt-install BLAST+; macOS brew-installs BLAST+ only; Windows
+# installs neither. The genome, variation and indexes are never needed -- every
 # network example is wrapped in \dontrun{} and tests use fixtures.
 name: R-CMD-check
 
@@ -54,11 +55,19 @@ jobs:
                   needs: check
 
             # OligoArrayAux provides `hybrid-min`, which DECIPHER needs for dG/Tm.
+            # `ubuntu-latest` no longer ships conda, and the bioconda package is
+            # just `bin/` + `share/oligoarrayaux/` -- the layout
+            # `oligoarrayaux_paths()` already discovers -- so unpack the pinned
+            # tarball instead of running a solver. The binary links only libm/libc.
             - name: Install OligoArrayAux (Linux)
               if: matrix.config.engines == 'unix'
               run: |
-                  conda install -y -c bioconda -c conda-forge oligoarrayaux
-                  echo "$CONDA/bin" >> "$GITHUB_PATH"
+                  curl -sSL -o "$RUNNER_TEMP/oaa.tar.bz2" \
+                    https://conda.anaconda.org/bioconda/linux-64/oligoarrayaux-3.8.1-pl5321h9948957_0.tar.bz2
+                  echo "d8b8dc76f6d0f02825e3f477008a632db36bfe46434fc3619bd637d4afb131f5  $RUNNER_TEMP/oaa.tar.bz2" | sha256sum -c -
+                  mkdir -p "$RUNNER_TEMP/oaa"
+                  tar -xjf "$RUNNER_TEMP/oaa.tar.bz2" -C "$RUNNER_TEMP/oaa"
+                  echo "$RUNNER_TEMP/oaa/bin" >> "$GITHUB_PATH"
 
             # BLAST+ is the fourth measurement engine in the provenance stamp. The
             # suite skips the stamp assertion when an engine is absent, so this step
