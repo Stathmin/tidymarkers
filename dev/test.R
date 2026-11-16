@@ -57,6 +57,10 @@ script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
 setwd(root)
 
+# the pure formatting of the summary lives in its own file so it can be tested
+# without running a suite (tests/testthat/test-dev-reporter.R)
+source(file.path(root, "dev", "reporter.R"))
+
 if (!nzchar(system.file(package = "tidymarkers"))) {
   stop("tidymarkers is not installed; run Rscript dev/install-deps.R first")
 }
@@ -65,6 +69,11 @@ if (!nzchar(system.file(package = "tidymarkers"))) {
 # test content: a renamed contract file is a deliberate edit here, not a silent
 # drop from the routine gate.
 shared <- c("criteria", "decision", "falsifiable", "kasp-checks", "plot-methods", "technology")
+
+# Cheap contract tests for the dev tooling itself (the report must never print a
+# missing measurement as NA).  They ride along with the shared contracts so a
+# regression shows up in the routine loop, not only in --full.
+routine <- c(shared, "dev-reporter")
 
 # Files that spawn their own SOCK cluster.  Running these under testthat's
 # workers nests a cluster inside a worker and crashes the pool, so --full runs
@@ -146,9 +155,9 @@ if (full) {
         call. = FALSE
       )
     }
-    filter <- paste(c(shared, scheme), collapse = "|")
+    filter <- paste(c(routine, scheme), collapse = "|")
   } else if (is.null(filter)) {
-    filter <- paste(shared, collapse = "|")
+    filter <- paste(routine, collapse = "|")
   } else if (!any(grepl(filter, contexts))) {
     # a legacy filter that matches nothing is a silent no-op, not a pass
     stop("filter ", filter, " matches no test file under tests/testthat/", call. = FALSE)
@@ -348,13 +357,6 @@ write_outputs <- function() {
   invisible(ok)
 }
 
-fmt_seconds <- function(s) {
-  if (is.na(s)) {
-    return("n/a")
-  }
-  if (s < 60) sprintf("%.1fs", s) else sprintf("%dm %02ds", floor(s / 60), round(s) %% 60)
-}
-
 summary_lines <- function(status) {
   rows <- lapply(state$file_order, function(k) state$files[[k]])
   total <- function(field) sum(vapply(rows, function(r) as.numeric(r[[field]]), 0))
@@ -398,49 +400,10 @@ summary_lines <- function(status) {
     ),
     ""
   )
-  if (length(slow_files)) {
-    # a parallel-only run has no memory column at all: printing NA per row is
-    # noise, not a measurement
-    has_mem <- any(vapply(rows, function(r) !is.na(r$mem_delta_mb), logical(1)))
-    out <- c(
-      out, "## Slowest files", "",
-      if (has_mem) {
-        "| file | started | duration | pass | fail | mem delta (MB, serial phase) |"
-      } else {
-        "| file | started | duration | pass | fail |"
-      },
-      if (has_mem) "|---|---|---|---|---|---|" else "|---|---|---|---|---|"
-    )
-    out <- c(out, vapply(slow_files, function(r) {
-      head <- sprintf(
-        "| %s | %s | %s | %d | %d", r$file,
-        if (is.na(r$started_at)) "n/a" else r$started_at, fmt_seconds(r$duration_s),
-        r$pass, r$fail
-      )
-      if (!has_mem) {
-        paste0(head, " |")
-      } else {
-        paste0(head, sprintf(" | %s |", if (is.na(r$mem_delta_mb)) "—" else sprintf("%+.1f", r$mem_delta_mb)))
-      }
-    }, character(1)))
-    out <- c(out, "")
-  }
-  if (length(test_rows)) {
-    out <- c(out, "## Slowest tests", "", "| file | test | started | duration |", "|---|---|---|---|")
-    out <- c(out, vapply(test_rows, function(r) {
-      sprintf(
-        "| %s | %s | %s | %s |", r$file, gsub("|", "\\|", r$test, fixed = TRUE),
-        if (is.na(r$started_at)) "n/a" else r$started_at, fmt_seconds(r$duration_s)
-      )
-    }, character(1)))
-    out <- c(out, "")
-  }
-  gaps <- sum(vapply(rows, function(r) is.na(r$duration_s) || is.na(r$started_at), logical(1)))
-  if (gaps > 0L) {
-    out <- c(out, sprintf(
-      "- timing gaps: %d of %d file(s) have no start/duration (events were not streamed)",
-      gaps, length(rows)
-    ), "")
+  out <- c(out, slow_files_lines(slow_files), slow_tests_lines(test_rows))
+  gaps <- timing_gaps_line(rows)
+  if (length(gaps)) {
+    out <- c(out, gaps, "")
   }
   out <- c(
     out, sprintf("- log: `%s`", file.path("dev", "logs", basename(log_path))),
