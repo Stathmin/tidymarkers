@@ -163,3 +163,21 @@ test_that("engine versions are probed once per session", {
   )))
   expect_identical(marker_engine_versions(), first)
 })
+
+test_that("the BLAST+ probe reads the path the blast option names", {
+  # the memo key names `options(tidymarkers.blast)`, so the probe has to resolve
+  # blastn through `blast_bin()`; reading PATH instead made the key vary over a
+  # dimension the value ignored (a stamped version of the wrong binary).
+  skip_on_os("windows")
+  tidymarkers:::session_memo_clear()
+  on.exit(tidymarkers:::session_memo_clear(), add = TRUE)
+  dir <- withr::local_tempdir()
+  for (nm in c("blastn", "makeblastdb")) {
+    sh <- file.path(dir, nm)
+    writeLines(c("#!/bin/sh", "echo 'blastn: 9.9.9+'"), sh)
+    Sys.chmod(sh, "0755")
+  }
+  withr::local_options(tidymarkers.blast = dir)
+  v <- marker_engine_versions()
+  expect_equal(v$version[v$engine == "BLAST+"], "9.9.9+")
+})

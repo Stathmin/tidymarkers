@@ -79,6 +79,12 @@ marker_engine_versions_probe <- function() {
   }
   oa <- tryCatch(oligoarrayaux_paths(), error = function(e) NULL)
   oa_bin <- if (is.null(oa) || !length(oa)) NA_character_ else oa[[1L]]
+  # `blast_bin()` is the one resolver for BLAST+ (option, .tools/, cache, PATH) and
+  # the memo key above already names the option, so the probe must read the same
+  # place or the key varies over a dimension the value ignores.
+  blast_dir <- tryCatch(blast_bin(), error = function(e) NULL)
+  blastn <- if (is.null(blast_dir)) "blastn" else find_exe(blast_dir, c("blastn", "blastn.exe"))
+  if (is.null(blastn)) blastn <- "blastn"
 
   tibble::tribble(
     ~engine, ~version, ~component, ~role,
@@ -88,7 +94,7 @@ marker_engine_versions_probe <- function() {
     "hybrid-min", "duplex / hairpin / dimer free energy",
     "TmCalculator", pkg_version("TmCalculator"),
     "tm_calculate (tm_nn)", "nearest-neighbour Tm (salt- and DMSO-corrected)",
-    "BLAST+", exe_version("blastn"),
+    "BLAST+", exe_version(blastn),
     "blastn / makeblastdb", "off-target hit counts, in-silico PCR products",
     "Rbowtie", pkg_version("Rbowtie"),
     "bowtie / bowtie_build", "whole-primer indexed scan",
