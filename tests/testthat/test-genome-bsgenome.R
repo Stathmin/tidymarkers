@@ -1,7 +1,9 @@
 # A bare BSgenome gets a real FASTA on disk, written once and then reused (№10).
 
 test_that("a BSgenome genome is materialised to one FASTA, reused on the next call", {
-  skip_if_not_installed("BSgenome.Athaliana.TAIR.TAIR9")
+  # the first load of the namespace emits a harmless import clash from
+  # SummarizedExperiment; it is not this package's warning
+  suppressWarnings(skip_if_not_installed("BSgenome.Athaliana.TAIR.TAIR9"))
   skip_if_not_installed("BSgenome")
   skip_if_not_installed("Biostrings")
   bs <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9

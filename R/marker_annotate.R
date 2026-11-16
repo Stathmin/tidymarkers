@@ -35,23 +35,39 @@ marker_txdb <- function(package = "TxDb.Athaliana.BioMart.plantsmart28") {
 
 # The Bioconductor stack announces a benign export collision
 # ("replacing previous import ... when loading 'SummarizedExperiment'") whenever
-# `VariantAnnotation`/a `TxDb` first pulls `SummarizedExperiment` in.  It is not
-# actionable by users, so load the namespace once and muffle only that message.
-# `rlang::is_installed()` would load the namespace (and thus emit the warning)
-# itself, so gate on `system.file()`, which never loads.
+# `VariantAnnotation`/a `TxDb`/`crisprVerse` first pulls `SummarizedExperiment`
+# in.  It is not actionable by users, and it belongs to the dependency graph
+# rather than to the answer a load-or-probe gives, so exactly that message is
+# muffled -- a real load failure still propagates.
 #' @keywords internal
 #' @noRd
-load_namespace_quietly <- function(pkg, reason = NULL) {
-  if (!nzchar(system.file(package = pkg))) rlang::check_installed(pkg, reason = reason)
+muffle_import_clash <- function(expr) {
   withCallingHandlers(
-    requireNamespace(pkg, quietly = TRUE),
+    expr,
     warning = function(w) {
       if (stringr::str_detect(conditionMessage(w), "replacing previous import")) {
         invokeRestart("muffleWarning")
       }
     }
   )
+}
+
+# `rlang::is_installed()` would load the namespace (and thus emit the warning)
+# itself, so gate on `system.file()`, which never loads.
+#' @keywords internal
+#' @noRd
+load_namespace_quietly <- function(pkg, reason = NULL) {
+  if (!nzchar(system.file(package = pkg))) rlang::check_installed(pkg, reason = reason)
+  muffle_import_clash(requireNamespace(pkg, quietly = TRUE))
   invisible(TRUE)
+}
+
+# A capability probe answers "can this be loaded?"; a dependency's import clash
+# is not part of that answer, and an absent package is `FALSE`, not an error.
+#' @keywords internal
+#' @noRd
+namespace_available <- function(pkg) {
+  isTRUE(muffle_import_clash(requireNamespace(pkg, quietly = TRUE)))
 }
 
 #' Default Arabidopsis reference genome as a `BSgenome`

@@ -333,6 +333,19 @@ test_that("a missing genome or engine gives unknown, never a silent pass", {
   expect_true(specificity_backend(z5_genome(), "crispr")$engine)
 })
 
+test_that("a capability probe does not leak a dependency's import clash", {
+  skip_if_not_installed_noload("crisprVerse")
+  # The clash is emitted by the first load of SummarizedExperiment in the
+  # session.  Whether this file's worker is that first load depends on the file
+  # order, so the contract is "the probe warns in neither case".
+  expect_no_warning(expect_true(namespace_available("crisprVerse")))
+  # an absent package is an answer, not an error
+  expect_false(namespace_available("tidymarkersNoSuchPackageXyz"))
+  # the flag the capability table publishes is the probe's own answer
+  caps <- specificity_backend(z5_genome(), "crispr")$capabilities
+  expect_identical(caps[["crisprverse"]], namespace_available("crisprVerse"))
+})
+
 test_that("a verdict fails when the products are not specific", {
   # the same primer pair on two chromosomes: two products, so neither is unique
   twice <- z5_genome_twice()

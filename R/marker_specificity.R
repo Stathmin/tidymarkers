@@ -1691,7 +1691,7 @@ specificity_backend <- function(genome = NULL, scheme = "pcr") {
     crispr_offtarget = FALSE,
     bowtie = nzchar(Sys.which("bowtie")),
     bwa = nzchar(Sys.which("bwa")),
-    crisprverse = isTRUE(requireNamespace("crisprVerse", quietly = TRUE))
+    crisprverse = namespace_available("crisprVerse")
   )
   list(
     engine = in_memory,
