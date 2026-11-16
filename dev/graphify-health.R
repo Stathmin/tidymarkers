@@ -497,7 +497,8 @@ report <- c(
           fmt(as.integer(p$requested %||% 0L)),
           fmt(as.integer(p$relabelled %||% 0L)),
           fmt(as.integer(p$kept_previous %||% 0L)),
-          p$note %||% ""
+          # a model pass repeats one prompt; a manual pass is the only note worth carrying
+          p$note %||% if (isTRUE(p$manual)) p$prompt %||% "" else ""
         )
       }, character(1))
     )
