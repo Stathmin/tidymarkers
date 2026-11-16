@@ -24,9 +24,11 @@ rather than passed through.
 \description{
 The DNA engine DECIPHER already uses: \code{hybrid-min} (duplex of two strands) or
 \code{hybrid-ss-min} (intramolecular folding of one strand).  Returns dG in kcal/mol
-(more negative = more stable); \code{NA} if OligoArrayAux is not on \code{PATH}.  A
-non-zero exit or an unparsable result is reported as a warning (not a silent
-\code{NA}), and the run goes through \code{processx} so failures are explicit.
+(more negative = more stable); \code{NA} if OligoArrayAux is not on \code{PATH}, in which
+case the missing-tool hint is printed once per session rather than once per
+oligo.  A non-zero exit or an unparsable result is reported as a warning (not a
+silent \code{NA}) on every call, and the run goes through \code{system2()} so failures
+are explicit.
 }
 \examples{
 \dontrun{

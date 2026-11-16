@@ -28,11 +28,12 @@
 #' for a socket worker, and this state must not travel by value; the re-homed
 #' functions still look the name up, so the carrier gets a fresh one (the memo is
 #' cold there either way).
-#' @return an environment with `$blocks`, `$hits` and `$memo`.
+#' @return an environment with `$hints`, `$blocks`, `$hits` and `$memo`.
 #' @keywords internal
 #' @noRd
 marker_state_new <- function() {
   state <- new.env(parent = emptyenv())
+  state$hints <- new.env(parent = emptyenv())
   state$blocks <- new.env(parent = emptyenv())
   # pattern search results, keyed by pattern + subject signature + radius; a
   # design run asks for the same primer many times (each candidate pairing, the
@@ -67,4 +68,22 @@ session_memo <- function(key, expr) {
 session_memo_clear <- function() {
   rm(list = ls(.marker_state$memo, all.names = TRUE), envir = .marker_state$memo)
   invisible(NULL)
+}
+
+#' Run `code` at most once per session, per key
+#'
+#' For user hints whose frequency follows the number of oligos, not the number of
+#' runs: a missing external tool is a property of the machine, so a 100-marker
+#' design should say it once, not once per candidate.
+#' @param key a string identifying the hint.
+#' @param code run on the first call only.
+#' @keywords internal
+#' @noRd
+session_once <- function(key, code) {
+  if (exists(key, envir = .marker_state$hints, inherits = FALSE)) {
+    return(invisible(FALSE))
+  }
+  assign(key, TRUE, envir = .marker_state$hints)
+  force(code)
+  invisible(TRUE)
 }

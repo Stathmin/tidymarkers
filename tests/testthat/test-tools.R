@@ -76,3 +76,17 @@ test_that("marker_install_tools() drops the session memo", {
   tidymarkers::marker_install_tools(dest = withr::local_tempdir(), ask = FALSE)
   expect_length(ls(tidymarkers:::.marker_state$memo, all.names = TRUE), 0L)
 })
+
+test_that("a missing OligoArrayAux is reported once per session, not per oligo", {
+  # a 100-marker design asks oligo_dg() thousands of times; the machine's
+  # missing tool is one fact, so the hint is told once
+  hints <- tidymarkers:::.marker_state$hints
+  rm(list = ls(hints, all.names = TRUE), envir = hints)
+  testthat::local_mocked_bindings(
+    oligoarrayaux_paths = function() NULL,
+    .package = "tidymarkers"
+  )
+  withr::local_envvar(PATH = "")
+  expect_warning(oligo_dg("ACGTACGTACGTTGCA"), "was not found")
+  expect_silent(expect_identical(oligo_dg("ACGTACGTACGTTGCA"), NA_real_))
+})

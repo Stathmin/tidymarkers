@@ -466,9 +466,11 @@ engine_has <- function(capability, engines = NULL) {
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or
 #' `hybrid-ss-min` (intramolecular folding of one strand).  Returns dG in kcal/mol
-#' (more negative = more stable); `NA` if OligoArrayAux is not on `PATH`.  A
-#' non-zero exit or an unparsable result is reported as a warning (not a silent
-#' `NA`), and the run goes through `processx` so failures are explicit.
+#' (more negative = more stable); `NA` if OligoArrayAux is not on `PATH`, in which
+#' case the missing-tool hint is printed once per session rather than once per
+#' oligo.  A non-zero exit or an unparsable result is reported as a warning (not a
+#' silent `NA`) on every call, and the run goes through `system2()` so failures
+#' are explicit.
 #'
 #' @param seq1,seq2 oligos 5'->3'; with `seq2 = NULL` the hairpin (folding) dG of
 #'   `seq1` alone is returned.
@@ -492,7 +494,10 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   nm <- if (.Platform$OS.type == "windows") paste0(bin, ".exe") else bin
   exe <- if (is.null(paths)) Sys.which(bin) else fs::path(paths$bin, nm)
   if (!nzchar(exe) || !fs::file_exists(exe)) {
-    cli::cli_warn(gettext("OligoArrayAux ('{bin}') was not found."))
+    # once per session: a cold machine asks this per oligo otherwise
+    session_once(paste0("oaa_missing_", bin), {
+      cli::cli_warn(gettext("OligoArrayAux ('{bin}') was not found."))
+    })
     return(NA_real_)
   }
   args <- c(
