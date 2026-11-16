@@ -12,6 +12,11 @@ results/
 vignettes/figures/
 man/figures/
 
+# Generated reports are derived from the graph itself.  Indexing them makes
+# every health-doc refresh renumber communities, drop label keys and trigger a
+# relabel pass, which rewrites the doc again: a self-sustaining rebuild loop.
+docs/generated/
+
 # Vendored external tool (OligoArrayAux/elk JS), not package API; also the
 # source of the one accepted self-loop.
 .tools/
