@@ -6,6 +6,47 @@
 
 ## 0.4.1 (в работе)
 
+### Капабилити-проба не выпускает чужой конфликт импортов (2026-11-16)
+
+- **Класс дефекта: `quietly` — не `suppressWarnings`.** `specificity_backend()`
+  пробовал `requireNamespace("crisprVerse", quietly = TRUE)`. Тихо — только
+  сообщения; предупреждение о конфликте экспортов от загрузки
+  `SummarizedExperiment` (`replacing previous import 'S4Arrays::…' by
+  'DelayedArray::…'`) печаталось пользователю при первом же
+  `specificity_verdict()` на машине с установленным `crisprVerse`. Проба — про
+  «можно ли загрузить», а не про граф зависимостей пакета.
+- **Глушение точечное, извлечено в один хелпер.** `muffle_import_clash(expr)`
+  глушит только `"replacing previous import"`, остальные предупреждения и
+  настоящие ошибки загрузки проходят; `load_namespace_quietly()` теперь
+  использует его, а не собственную копию обработчика;
+  `namespace_available(pkg)` — проба поверх него же (отсутствующий пакет —
+  `FALSE`, не ошибка).
+- **Симптом в CI:** прогон `43919840667`, ubuntu-release, `WARNING` из
+  `test-specificity-orientation.R:104` — бэктейс указывает на
+  `R/marker_specificity.R` (код пакета), а не на тест.
+- **Проверка:** новый тест «a capability probe does not leak a dependency's
+  import clash» (`test-specificity.R`) — `expect_no_warning()` на пробе и
+  совпадение `caps[["crisprverse"]]` с `namespace_available()`;
+  `dev/test.R specificity` — 0 fail.
+
+### Отсутствующий OligoArrayAux сообщается один раз за сессию (2026-11-16)
+
+- **Класс дефекта: подсказка о среде жила в самой глубокой точке вызова.**
+  `oligo_dg()` предупреждал `OligoArrayAux ('hybrid-min') was not found.` на
+  каждый олиго. На машине без инструмента (macOS и Windows в CI — он
+  устанавливается только на Linux) это давало `WARN 69` за прогон: свойство
+  машины повторялось столько раз, сколько кандидатов.
+- **`session_once(key, code)`** — новый хелпер в `R/zzz.R` поверх нового
+  `$hints` в `.marker_state`: первый вызов печатает, остальные молчат.
+- **Почему новое окружение, а не `$blocks`.** `$blocks` — не мёртвый код: это
+  LRU-кеш `unambiguous_blocks()` (`R/marker_specificity.R:497,515-518`), и чистить
+  его ради подсказки нельзя. `$hints` также **не** чистится в
+  `session_memo_clear()`, иначе `marker_technology()` при каждой композиции схемы
+  заново взводил бы подсказку и WARN вернулся бы.
+- **Проверка:** новый тест «a missing OligoArrayAux is reported once per session,
+  not per oligo» (`test-tools.R`): два вызова `oligo_dg()` → одно
+  предупреждение, оба результата `NA`; `dev/test.R tools` — 0 fail.
+
 ### Мемо реестра схем больше не переживает свою схему (2026-11-16)
 
 - **Класс дефекта: ключ мемо не содержал изменяемого состояния.** `extra_scheme_defs()`,
