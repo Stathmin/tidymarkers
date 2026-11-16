@@ -21,6 +21,7 @@ test_that("the MGB offset is read from the Kutyavin ledger, not hardcoded", {
 })
 
 test_that("mgb shifts the accepted probe Tm window down and records the rule of thumb", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   offset <- taqman_mgb_tm_offset()
   # short MGB probes (12-20 nt) anneal like longer unmodified probes: the

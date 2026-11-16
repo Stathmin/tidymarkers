@@ -53,6 +53,7 @@ test_that("z7_priors puts the measured optimum at -3, and that row is Liu's", {
 })
 
 test_that("the AS engine ranks -3 ahead of -2 at equal discrimination", {
+  skip_if_no_oligoarrayaux()
   # a synthetic window long enough for a 20-mer AS primer on both strands
   w <- Biostrings::DNAString(paste(rep("ACGT", 30L), collapse = ""))
   out <- design_as_primers(
@@ -76,6 +77,7 @@ test_that("the AS engine ranks -3 ahead of -2 at equal discrimination", {
 })
 
 test_that("a caller who asks for another position gets it, marked as not-policy", {
+  skip_if_no_oligoarrayaux()
   w <- Biostrings::DNAString(paste(rep("ACGT", 30L), collapse = ""))
   out <- design_as_primers(
     w, 40L,

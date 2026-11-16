@@ -23,8 +23,9 @@ dropped), so they line up with the Ensembl gene records used elsewhere.
 }
 \section{Caching}{
 
-The download (~35 MB) happens once and is reused; delete the cached
-\code{Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz} to refresh.
+The download (~35 MB) happens once and is reused. The transfer is written to
+a temporary file and moved into place only when it succeeds, so an
+interrupted download cannot leave a truncated FASTA behind.
 }
 
 \examples{

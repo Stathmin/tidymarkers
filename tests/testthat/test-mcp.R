@@ -126,7 +126,14 @@ test_that("every registered tool is wired and returns content", {
   )
   expect_setequal(names(specs), names(arguments))
 
-  for (name in names(specs)) {
+  # pcr_efficiency() needs DECIPHER's UNAFold call, so the tool reports an
+  # error instead of a number where OligoArrayAux is absent.  The rest of the
+  # registry is engine-free and still gets smoke-tested there.
+  if (!has_oligoarrayaux()) {
+    arguments <- arguments[setdiff(names(arguments), "pcr_efficiency")]
+  }
+
+  for (name in names(arguments)) {
     response <- .mcp_call(env, name, arguments[[name]])
     expect_false(isTRUE(response$result$isError), info = name)
     expect_equal(response$result$content[[1L]]$type, "text", info = name)

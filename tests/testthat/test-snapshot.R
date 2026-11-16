@@ -70,6 +70,7 @@ test_that("every declared SNaPshot gate is evaluated by the designer (C7)", {
 })
 
 test_that("the extension-Tm soft gate relaxes to its floor, never past it (C8)", {
+  skip_if_no_oligoarrayaux()
   # ask for a Tm window below the declared one: the winner's Tm is inside the
   # requested window but outside the gate's, so the ladder records the rung
   m <- snap_design(snap_genome, snap_snp, flank = snap_flank, ext_tm = c(46, 48))

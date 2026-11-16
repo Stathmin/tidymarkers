@@ -163,6 +163,7 @@ test_that("ZW0 M4: renaming the chromosome changes nothing but the label", {
 })
 
 test_that("ZW0 M5: the design search picks the same primers in any coordinate frame", {
+  skip_if_no_oligoarrayaux()
   skip_if_not_installed("Rsamtools")
   skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
   # This replaces the "KNOWN GAP" stub that used to sit here.  That stub recorded
@@ -274,6 +275,7 @@ test_that("ZW0 M5 fixture: the shifts stay strictly inside the pad period", {
 })
 
 test_that("ZW0 M6: the AS-COM gap sits well inside the com_gaps search window", {
+  skip_if_no_oligoarrayaux()
   skip_if_not_installed("Rsamtools")
   skip_if_not(has_blast(), "BLAST+ is not installed (indexed specificity stage)")
   # assemble_kasp_assay() searches COM primers only `com_gaps = 18:80` bases

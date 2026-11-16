@@ -36,6 +36,7 @@ test_that("a scheme without a designer still adapts, and designs nothing", {
 })
 
 test_that("the five steps compose on a real design and NA never reads as pass", {
+  skip_if_no_oligoarrayaux()
   skip_if_not_installed("tidygraph")
   f <- snp_fixture()
   a <- marker_scheme_adapter("snp")

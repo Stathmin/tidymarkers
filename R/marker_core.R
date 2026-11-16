@@ -894,8 +894,9 @@ marker_cache_dir <- function() {
 #' @param cache cache directory for the downloaded FASTA.
 #' @param release Ensembl Plants release number.
 #' @section Caching:
-#' The download (~35 MB) happens once and is reused; delete the cached
-#' `Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz` to refresh.
+#' The download (~35 MB) happens once and is reused. The transfer is written to
+#' a temporary file and moved into place only when it succeeds, so an
+#' interrupted download cannot leave a truncated FASTA behind.
 #' @return a `DNAStringSet` of the seven TAIR10 chromosomes (`Chr1`..`Chr5`,
 #'   `ChrM`, `ChrC`).
 #' @examples
@@ -908,26 +909,42 @@ marker_cache_dir <- function() {
 ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
   fs::dir_create(cache)
   fa <- fs::path(cache, "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz")
-  if (!fs::file_exists(fa)) {
-    url <- sprintf(paste0(
-      "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-%d/fasta/",
-      "arabidopsis_thaliana/dna/",
-      "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"
-    ), release)
-    cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {cache}} ..."))
-    utils::download.file(url, fa, mode = "wb", quiet = TRUE)
+  need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
+  parse <- function() {
+    g <- tryCatch(Biostrings::readDNAStringSet(fa), error = function(e) NULL)
+    if (is.null(g)) {
+      return(NULL)
+    }
+    nm <- sub("\\s.*$", "", names(g)) # keep only the first token of the defline
+    dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
+    if (length(dropped)) {
+      cli::cli_alert_info(gettext(
+        "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."
+      ))
+    }
+    g <- g[nm %in% names(ATH_CHROM_MAP)]
+    names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
+    g
   }
-  g <- Biostrings::readDNAStringSet(fa)
-  nm <- sub("\\s.*$", "", names(g)) # keep only the first token of the defline
-  dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
-  if (length(dropped)) {
-    cli::cli_alert_info(gettext(
-      "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::head(dropped, 3L)}}."
+  if (!fs::file_exists(fa)) {
+    tair10_download(fa, release)
+  }
+  g <- parse()
+  if (is.null(g) || !all(need %in% names(g))) {
+    # A truncated or renamed cache is otherwise permanent: file_exists() stays
+    # TRUE forever, so refetch once before reporting the failure.
+    if (fs::file_exists(fa)) {
+      fs::file_delete(fa)
+    }
+    tair10_download(fa, release)
+    g <- parse()
+  }
+  if (is.null(g)) {
+    cli::cli_abort(c(
+      gettext("ath_genome(): TAIR10 FASTA could not be read from {.path {fa}}."),
+      i = gettext("Delete the cached file and retry.")
     ))
   }
-  g <- g[nm %in% names(ATH_CHROM_MAP)]
-  names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
-  need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   missing <- setdiff(need, names(g))
   if (length(missing)) {
     cli::cli_abort(c(
@@ -938,4 +955,21 @@ ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
     ))
   }
   g[need]
+}
+
+tair10_download <- function(fa, release) {
+  url <- sprintf(paste0(
+    "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-%d/fasta/",
+    "arabidopsis_thaliana/dna/",
+    "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"
+  ), release)
+  tmp <- paste0(fa, ".part")
+  on.exit(unlink(tmp), add = TRUE)
+  cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {dirname(fa)}} ..."))
+  status <- utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
+  if (!identical(status, 0L) || !fs::file_exists(tmp) || fs::file_size(tmp) == 0L) {
+    cli::cli_abort(gettext("ath_genome(): downloading TAIR10 from Ensembl Plants failed."))
+  }
+  fs::file_move(tmp, fa)
+  invisible(fa)
 }

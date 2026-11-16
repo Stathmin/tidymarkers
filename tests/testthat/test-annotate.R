@@ -80,9 +80,13 @@ test_that("marker_ensdb builds an EnsDb from a GTF", {
   # Build in a subprocess: ensDbFromGtf() leaves an RSQLite connection that
   # otherwise leaks a benign "call dbDisconnect()" note at this session's exit.
   cache <- withr::local_tempfile()
+  # the code string is parsed by the child R, so a Windows path must not carry
+  # single backslashes into it
+  gtf_arg <- normalizePath(gtf, winslash = "/", mustWork = FALSE)
+  cache_arg <- normalizePath(cache, winslash = "/", mustWork = FALSE)
   code <- sprintf(
     'edb <- tidymarkers::marker_ensdb(gtf = "%s", cache = "%s"); cat("GENES", length(GenomicFeatures::genes(edb)))',
-    gtf, cache
+    gtf_arg, cache_arg
   )
   res <- processx::run(file.path(R.home("bin"), "Rscript"), c("-e", code),
     error_on_status = FALSE

@@ -67,6 +67,7 @@ Suggests:
     SummarizedExperiment,
     GenomicFeatures,
     BSgenome,
+    BSgenome.Athaliana.TAIR.TAIR9,
     TxDb.Athaliana.BioMart.plantsmart28,
     Rsubread,
     Rbowtie,

@@ -126,6 +126,7 @@ test_that("a variant beyond the usable read is warned about, not silently paired
 })
 
 test_that("pair_structure_ok needs both dG capabilities, not just the hairpin", {
+  skip_if_no_oligoarrayaux()
   # a hairpin-only engine cannot grade the homodimer half; if the guard asked
   # only for the hairpin, the body would read the absent tool's dG (NA) and
   # `na.rm = TRUE` would turn that into a silent pass.  So with `duplex_dg`

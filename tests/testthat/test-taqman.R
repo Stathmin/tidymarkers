@@ -10,6 +10,7 @@ taqman_gates <- c(
 taqman_soft <- c("gate_taqman_centrality", "gate_taqman_amplicon", "gate_taqman_probe_structure")
 
 test_that("design_taqman_marker returns a short pair with two allele-specific probes", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   genome <- f$genome
   ref <- f$ref
@@ -84,6 +85,7 @@ test_that("an ALT probe with a second perfect genomic site fails the specificity
 })
 
 test_that("every declared TaqMan gate is evaluated by the designer (C7)", {
+  skip_if_no_oligoarrayaux()
   genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(600L, 2L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "C")
   m <- design_taqman_marker(genome, snp, flank = 150L)
@@ -108,6 +110,7 @@ test_that("the mismatch dG gate is the real discrimination, not only centrality"
 })
 
 test_that("the centrality soft gate relaxes to its interior floor, never past it (C8)", {
+  skip_if_no_oligoarrayaux()
   genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(600L, 2L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "C")
   # demand a centrality the locus cannot quite reach: the winner sits inside the
@@ -123,6 +126,7 @@ test_that("the centrality soft gate relaxes to its interior floor, never past it
 })
 
 test_that("probes are centred over the variant (maximal destabilisation)", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   genome <- f$genome
   snp <- f$snp

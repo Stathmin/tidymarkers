@@ -106,6 +106,7 @@ test_that("evaluation_verdict dooms on a fail and ignores not_applicable", {
 })
 
 test_that("family checks are not_applicable to another marker class", {
+  skip_if_no_oligoarrayaux()
   # a CAPS-classed object graded as LAMP: the LAMP-only checks do not apply
   p <- kasp_primers()
   x <- structure(

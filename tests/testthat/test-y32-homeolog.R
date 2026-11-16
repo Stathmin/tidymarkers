@@ -175,6 +175,7 @@ test_that("Y3.2: PolyMarker is a benchmark and rule source, never reimplemented"
 # =============================================================================
 
 test_that("Y3.1: a designed candidate carries the two 3' axes explicitly", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   m <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
   ax <- homeolog_axes(m)
@@ -206,6 +207,7 @@ test_that("Y3.1: a designed candidate carries the two 3' axes explicitly", {
 })
 
 test_that("Y3.1: a diagnostic mask hit reports unique", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   m0 <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
   ap <- homeolog_axes(m0)$anchor_pos
@@ -221,6 +223,7 @@ test_that("Y3.1: a diagnostic mask hit reports unique", {
 })
 
 test_that("Y3.1: a diagnostic mask miss warns and reports multicopy", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   m0 <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
   ap <- homeolog_axes(m0)$anchor_pos
@@ -246,6 +249,7 @@ test_that("Y3.1: a diagnostic mask miss warns and reports multicopy", {
 })
 
 test_that("Y3.1: fixed primers carry the same two axes", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   len <- 20L
   pos <- f$snp$pos

@@ -87,15 +87,11 @@ assay_with_stamp <- local({
   cached <- NULL
   function() {
     if (is.null(cached)) {
-      g <- ath_genome()
-      snp <- pick_target_snp(
-        ensembl_variants("4", 1188000L, 1192000L), g, ensembl_gene("AT4G00650")
-      )
-      # two documented advisories of the fixture genome: a near-match PCR
-      # product and an inverted repeat; asserted in test-specificity and
-      # test-insilico-pcr, not here.
+      # synthetic fixture: the stamp does not care which locus it stamps, and a
+      # network download here made the test fail offline.
+      f <- snp_fixture()
       cached <<- suppressWarnings(
-        assemble_kasp_assay(g, snp, flank = 150L, run_blast = FALSE)
+        assemble_kasp_assay(f$genome, f$snp, flank = 150L, run_blast = FALSE)
       )
     }
     cached
@@ -103,6 +99,7 @@ assay_with_stamp <- local({
 })
 
 test_that("an evaluation carries the engines that produced it", {
+  skip_if_no_oligoarrayaux()
   # ZW2.2: a verdict that cannot name its engines cannot be re-derived after a
   # model bumps.  The stamp rides on the checks table, not on the session.
   stamp <- marker_evaluation_stamp(assay_with_stamp()$evaluation)
@@ -112,6 +109,7 @@ test_that("an evaluation carries the engines that produced it", {
 })
 
 test_that("the stamp survives the rows appended after it", {
+  skip_if_no_oligoarrayaux()
   assay <- assay_with_stamp()
   ev <- assay$evaluation
   # a real population: marker_population_gate() has three rows to append

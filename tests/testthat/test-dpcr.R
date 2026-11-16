@@ -114,6 +114,7 @@ test_that("every declared dPCR gate is evaluated by the designer (C7)", {
 })
 
 test_that("the amplicon soft gate relaxes to its floor instead of silently failing (C6/C7)", {
+  skip_if_no_oligoarrayaux()
   genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(600L, 1L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "T", alt = "A")
   # ask for a window outside the declared [60, 150] bp: the winner is inside the
