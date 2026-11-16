@@ -2,8 +2,16 @@
 #
 # Runs on every push and pull request: R CMD check --as-cran across the
 # platforms CRAN builds on. `release` is checked on Linux, macOS and Windows;
-# `oldrel-1` and `devel` only on Linux, where they catch R-version breakage
-# without tripling the wall clock.
+# `oldrel-1` only on Linux, where it catches R-version breakage without
+# tripling the wall clock.
+#
+# `devel` is a *nightly* job, not a per-push one. P3M serves binaries for
+# released R only, so the devel leg source-compiles its whole dependency tree;
+# per push it was still installing when the next push cancelled the run, and
+# `actions/cache` saves only on a successful job end -- so it recompiled from
+# scratch every time and never produced a verdict. At 03:23 UTC it runs alone,
+# finishes, and warms its own cache. R-devel breaks between R releases, not
+# between your commits. See ROADMAP D8.
 #
 # OligoArrayAux (`hybrid-min`/`hybrid-ss-min`) and BLAST+ are *optional*
 # engines: the suite skips an assertion when an engine is absent. The Linux legs
@@ -18,16 +26,29 @@ on:
         branches: [main]
     pull_request:
         branches: [main]
+    schedule:
+        # nightly: the devel leg and a fresh full matrix, uncancelled
+        - cron: "23 3 * * *"
+    workflow_dispatch:
+
+# One run per branch: a push supersedes the previous push's run. The scheduled
+# and dispatched runs get their own group, so a push can never cancel the
+# nightly leg (and throw away the cache it just warmed).
+concurrency:
+    group: ${{ github.workflow }}-${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'nightly' || github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
 jobs:
+    # The step list is identical for both jobs, so it is written once and
+    # aliased (`*steps`, `*job-env`). Job-level `if:` is evaluated *before* the
+    # matrix expands, so a `matrix.config.r != 'devel'` gate on one job is not
+    # expressible -- the split into two jobs is the honest form of it.
     R-CMD-check:
         name: ${{ matrix.config.os }} (${{ matrix.config.r }})
         runs-on: ${{ matrix.config.os }}
-        # Bounds a hang to the job rather than the runner. See ROADMAP D8: the
-        # devel leg was killed at 63m55s with no failing assertion, so install
-        # cost and test cost could not be told apart.
+        # Bounds a hang to the job rather than the runner.
         timeout-minutes: 120
-        env:
+        env: &job-env
             GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
             R_KEEP_PKG_SOURCE: yes
             _R_CHECK_FORCE_SUGGESTS_: false
@@ -37,10 +58,9 @@ jobs:
                 config:
                     - { os: ubuntu-latest, r: "release", engines: unix }
                     - { os: ubuntu-latest, r: "oldrel-1", engines: unix }
-                    - { os: ubuntu-latest, r: "devel", engines: unix }
                     - { os: macos-latest, r: "release", engines: mac }
                     - { os: windows-latest, r: "release", engines: none }
-        steps:
+        steps: &steps
             - uses: actions/checkout@v4
 
             - uses: r-lib/actions/setup-r@v2
@@ -86,3 +106,16 @@ jobs:
                   args: 'c("--no-manual", "--as-cran")'
                   error-on: '"warning"'
                   upload-snapshots: true
+
+    R-CMD-check-devel:
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        name: ubuntu-latest (devel)
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        env: *job-env
+        strategy:
+            fail-fast: false
+            matrix:
+                config:
+                    - { os: ubuntu-latest, r: "devel", engines: unix }
+        steps: *steps

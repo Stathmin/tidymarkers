@@ -254,7 +254,7 @@
       Тест `ZW0 M5` этого не показывал: в его 37 ячейках тай-брейк не
       срабатывал.
 12. [x] **Сетка `com_gaps` привязана к позиции AS** (из №7). `com_gaps =
-    18:80` (`R/marker_design.R`) считается от AS, поэтому на вырожденном
+18:80` (`R/marker_design.R`) считается от AS, поэтому на вырожденном
         шаблоне (modulo-100) кандидат входит в сетку или выходит из неё при
         сдвиге рамки. Считалось единственной наблюдённой причиной расхождения
         seed 7 / `loc` 40 в `ZW0 M5`.
@@ -541,7 +541,7 @@
       нечитаемом FASTA; при неполном наборе хромосом кеш удаляется и
       перекачивается **один** раз. `@section Caching:` описывает это поведение. 7. Все три ubuntu-ноги падали на шаге установки OligoArrayAux: прогон
       `43857228030`, шаг `Install OligoArrayAux (Linux)` → `conda: command not
-    found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
+  found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
       вызывал `conda install -c bioconda oligoarrayaux`. macOS прошёл, потому что
       на нём ставится только BLAST+, Windows — потому что `engines: none`.
       Правка: распаковать закреплённый tarball bioconda
@@ -642,11 +642,61 @@ manually started runner is canceled.` → `Process completed with exit code
       холодная (R-devel не имеет бинарного канала PPM: `__linux__`-эндпоинт
       для Bioconductor отдаёт 404, зависимости собираются из исходников),
       тесты укладываются в шаг с запасом.
+    - проверка (прогоны `43875434419`, `43883002726`): в обоих **все** ноги
+      `success` — macOS, ubuntu release, ubuntu oldrel-1, Windows — и красна
+      ровно одна, `ubuntu-latest (devel)`, причём не тестом: она стоит в шаге
+      `setup-r-dependencies` (свой `timeout-minutes: 75`) до истечения job. На
+      `14:28Z` одновременно висели **пять** прогонов (`43885783732`,
+      `43883002726`, `43878347500`, `43878222223`, `43875434419`), два
+      предыдущих — `cancelled`. Причина не «devel-нога медленная», а
+      «каждый пуш запускает новую матрицу» плюс «`actions/cache` сохраняет
+      кеш только на успешном конце job»: devel не доходит до успешного конца,
+      поэтому **никогда не засевает кеш** и каждый пуш снова собирает
+      Bioconductor из исходников.
+    - правка (применено): в `.github/workflows/R-CMD-check.yaml` —
+      `concurrency` на workflow (пуш отменяет предыдущий пуш, `pull_request`
+      тоже; `schedule` и `workflow_dispatch` идут в группе `…-nightly`, чтобы
+      ночь не отменялась пушем), в `on:` добавлены `schedule: cron '23 3 * * *'`
+      и `workflow_dispatch`, а devel вынесена в отдельный job
+      `R-CMD-check-devel` под
+      `if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'`.
+      Список шагов у двух job'ов один и тот же (`steps: &steps` /
+      `steps: *steps`, `env: &job-env` / `env: *job-env`): job-level `if:`
+      вычисляется **до** раскрытия матрицы, поэтому условие
+      `matrix.config.r != 'devel'` на одном job'е невыразимо — два job'а и
+      есть честная форма этого гейта.
     - [ ] остаётся: тёплое время установки после засеянного кеша не измерено;
-          следующий прогон его печатает. Ожидание — минуты; писать «минуты» как
-          факт нельзя.
+          его печатает первый зелёный ночной прогон. Ожидание — минуты; писать
+          «минуты» как факт нельзя.
     - блокер: нет.
-    - следствие: `D6` закрывается зелёным прогоном, а не этим пунктом.
+    - следствие: пуш больше не платит за devel вовсе; devel краснеет ночью,
+      доходит до конца и засевает свой кеш. `D6` закрывается зелёным прогоном,
+      а не этим пунктом.
+
+- [x] **D9. Сводка `dev/test.R` писала `started = NA`, `duration = NA`.**
+      `TimingReporter` (наследник `testthat::ProgressReporter`) брал дефолтные
+      `capabilities` с `parallel_updates = FALSE`. С этим флагом testthat
+      выбирает `parallel_event_loop_chunky()`: события файла буферизуются и
+      проигрываются одной пачкой на `DONE`, поэтому все `start_file`/`end_file`
+      в родителе приходят одновременно с завершением файла — любой штамп
+      оказывается моментом проигрывания, и репортер писал `NA`. `--full`
+      параллелен, то есть замеров не было именно в том прогоне, который
+      читают.
+    - правка: `capabilities = list(parallel_support = TRUE, parallel_updates = TRUE)`
+      (smooth-цикл рассылает каждое сообщение по мере поступления);
+      `end_file`/`end_test` считают длительность без ветки `parallel`; из
+      сводки убрана строка «per-test timings: NA для параллельной фазы», а
+      колонка памяти не печатается, если её нет ни у одного файла.
+    - проверка: `Rscript dev/test.R --full` — 136 из 136 строк
+      `dev/logs/test-full-*-files.csv` с непустыми `started_at` и
+      `duration_s` (`test-fm.R` 118.5 s, `test-soybean-worked-panel.R`
+      108.4 s, `test-invariants.R` 106.4 s); стена 3m48s,
+      `FAIL 0 | WARN 0 | SKIP 25 | PASS 37666`; строк файлов в логе ровно 136,
+      повторов нет.
+    - следствие: `--profile` остаётся последовательным (`Rprof` на общем
+      процессе с воркерами не разделяет файлы), а Δ кучи в параллельной фазе
+      не измеряется — это записано в `dev/README.md`, а не выдаётся за замер.
+    - блокер: нет.
 
 Пределы контракта — проверены, приняты, правки не требуют:
 
@@ -1507,8 +1557,8 @@ FALSE)`, цена — одна хромосома RAM на просмотрен�
       плюс `unlink`) записана в `README.md` §Reproducibility, `?marker_bowtie_index`
       §Index location и перекрёстно в `?marker_fm_index`.
       проверка: `grep -n "path_temp" R/marker_bowtie.R R/marker_fm.R
-    R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
-    --no-render` (roxygen sync).
+  R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
+  --no-render` (roxygen sync).
       блокер: нет.
       следствие: умолчание безопасно для диска, но пшеничный индекс
       перестраивается заново каждую сессию (~1.4x FASTA, ~3-4 мин на 16 Гб), пока
@@ -1551,7 +1601,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       проверка: `test-engine-stamp.R` (метка адаптера, штамп, ручная таблица без
       штампа, проба версий мемоизирована), `test-scan.R`, `test-bowtie.R` —
       `FAIL 0 | WARN 0 | PASS 30331` на `dev/test.R --scheme`; `dev/check.R
-    --no-render` — `all checks passed`.
+  --no-render` — `all checks passed`.
       блокер: нет.
       следствие: метку несут все четыре адаптера специфичности; `Rsubread`
       2.26.0 на этом хосте стоит, его версия видна в штампе. FM остаётся read
@@ -1607,7 +1657,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       конструкция поперёк структурного аллеля по-прежнему невозможна — это
       сказано в сообщении и в `@return`, а не в тишине.
 - [ ] **Документация ↔ код.** Часть сверки уже в гейте: шаг `hand-roll graph
-    edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
+  edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
       из `dev/graphify-handrolled.R`, шаг `docs/artifacts` (`dev/check.R:177`)
       гоняет `dev/graphify-health.R --check`. Метки на 2026-11-16: 428 `named`,
       0 `missing`, 0 `duplicate`, 0 `echo-stale`

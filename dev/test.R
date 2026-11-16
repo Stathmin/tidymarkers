@@ -230,6 +230,10 @@ state$any_parallel <- FALSE
 TimingReporter <- R6::R6Class("TimingReporter",
   inherit = testthat::ProgressReporter,
   public = list(
+    # ask testthat for the smooth event loop: workers stream their events as they
+    # happen.  The default (FALSE) buffers a whole file and replays it on DONE,
+    # which makes every parallel start/duration a replay timestamp -- i.e. NA.
+    capabilities = list(parallel_support = TRUE, parallel_updates = TRUE),
     start_file = function(filename) {
       key <- basename(filename)
       if (is.null(state$files[[key]])) {
@@ -239,8 +243,8 @@ TimingReporter <- R6::R6Class("TimingReporter",
           fail = 0L, warn = 0L, skip = 0L, error = 0L, mem_delta_mb = NA_real_
         )
         state$file_order <- c(state$file_order, key)
-        # in parallel the events replay when the file is already finished, so a
-        # start line there would be a lie; only serial runs announce starts
+        # parallel files start concurrently; interleaved start lines are noise,
+        # so only a serial run announces a start
         if (!parallel) {
           say(sprintf("[%s] %s start", hms_elapsed(), key))
         }
@@ -268,7 +272,7 @@ TimingReporter <- R6::R6Class("TimingReporter",
       super$add_result(context, test, result)
     },
     start_test = function(context, test) {
-      # parallel replays call start_test before every event; keep the first time
+      # testthat re-announces the current test before each event; keep the first
       key <- paste(self$file_name, test, sep = "\r")
       if (is.null(state$test_starts[[key]])) {
         state$test_starts[[key]] <- list(at = now(), stamp = wall_stamp())
@@ -282,23 +286,17 @@ TimingReporter <- R6::R6Class("TimingReporter",
       state$tests[[length(state$tests) + 1L]] <- list(
         file = basename(self$file_name),
         test = test,
-        started_at = if (parallel || is.null(started)) NA_character_ else started$stamp,
-        duration_s = if (parallel || is.null(started)) NA_real_ else now() - started$at
+        started_at = if (is.null(started)) NA_character_ else started$stamp,
+        duration_s = if (is.null(started)) NA_real_ else now() - started$at
       )
     },
     end_file = function() {
       key <- basename(self$file_name)
       f <- state$files[[key]]
       if (!is.null(f)) {
-        # parallel replays a whole file's events at once, so the wall time here
-        # would be the replay burst, not the run: the duration stays NA.  The
-        # stamp is still honest -- this fires as the file completes.
-        if (!parallel) {
-          f$duration_s <- now() - f$started
-        } else {
-          # the replay moment is this file's completion, not its start
-          f$started_at <- NA_character_
-        }
+        # events stream live (capabilities$parallel_updates), so both stamps are
+        # the file's own wall time in either mode
+        f$duration_s <- now() - f$started
         f$ended_at <- wall_stamp()
         if (isTRUE(have_lobstr) && !parallel && !is.na(state$mem_prev)) {
           m <- mem_used_mb()
@@ -306,7 +304,7 @@ TimingReporter <- R6::R6Class("TimingReporter",
           state$mem_prev <- m
         }
         state$files[[key]] <- f
-        dur <- if (is.na(f$duration_s)) "done (parallel)" else fmt_seconds(f$duration_s)
+        dur <- fmt_seconds(f$duration_s)
         mem <- if (is.na(f$mem_delta_mb)) "" else sprintf("  mem %+.1f MB", f$mem_delta_mb)
         say(sprintf(
           "[%s] %s %s%s  | pass %d / fail %d / error %d / warn %d / skip %d",
@@ -323,24 +321,27 @@ write_outputs <- function() {
   if (!length(state$file_order)) {
     return(invisible(NULL))
   }
-  ok <- tryCatch({
-    files_df <- do.call(rbind, lapply(state$file_order, function(k) {
-      as.data.frame(state$files[[k]], stringsAsFactors = FALSE)
-    }))
-    utils::write.csv(files_df, files_csv, row.names = FALSE)
-    if (length(state$tests)) {
-      tests_df <- do.call(rbind, lapply(state$tests, as.data.frame, stringsAsFactors = FALSE))
-      tests_df <- tests_df[order(-tests_df$duration_s, na.last = TRUE), , drop = FALSE]
-      utils::write.csv(tests_df, tests_csv, row.names = FALSE)
+  ok <- tryCatch(
+    {
+      files_df <- do.call(rbind, lapply(state$file_order, function(k) {
+        as.data.frame(state$files[[k]], stringsAsFactors = FALSE)
+      }))
+      utils::write.csv(files_df, files_csv, row.names = FALSE)
+      if (length(state$tests)) {
+        tests_df <- do.call(rbind, lapply(state$tests, as.data.frame, stringsAsFactors = FALSE))
+        tests_df <- tests_df[order(-tests_df$duration_s, na.last = TRUE), , drop = FALSE]
+        utils::write.csv(tests_df, tests_csv, row.names = FALSE)
+      }
+      TRUE
+    },
+    error = function(e) {
+      if (!isTRUE(state$write_error)) {
+        state$write_error <- TRUE
+        say("test.R: WARNING: could not write timings: ", conditionMessage(e))
+      }
+      FALSE
     }
-    TRUE
-  }, error = function(e) {
-    if (!isTRUE(state$write_error)) {
-      state$write_error <- TRUE
-      say("test.R: WARNING: could not write timings: ", conditionMessage(e))
-    }
-    FALSE
-  })
+  )
   invisible(ok)
 }
 
@@ -381,9 +382,13 @@ summary_lines <- function(status) {
       total("pass"), total("fail"), total("error"), total("warn"), total("skip")
     ),
     sprintf(
-      "- per-test timings: %s",
+      "- timings: measured in %s",
+      if (isTRUE(state$any_parallel)) "both phases" else "serial phase"
+    ),
+    sprintf(
+      "- memory delta: %s",
       if (isTRUE(state$any_parallel)) {
-        "NA for the parallel phase; measured for the serial phase"
+        "serial phase only (parallel runs interleave in one process)"
       } else {
         "measured"
       }
@@ -391,12 +396,28 @@ summary_lines <- function(status) {
     ""
   )
   if (length(slow_files)) {
-    out <- c(out, "## Slowest files", "", "| file | started | duration | pass | fail | mem delta (MB) |", "|---|---|---|---|---|---|")
+    # a parallel-only run has no memory column at all: printing NA per row is
+    # noise, not a measurement
+    has_mem <- any(vapply(rows, function(r) !is.na(r$mem_delta_mb), logical(1)))
+    out <- c(
+      out, "## Slowest files", "",
+      if (has_mem) {
+        "| file | started | duration | pass | fail | mem delta (MB) |"
+      } else {
+        "| file | started | duration | pass | fail |"
+      },
+      if (has_mem) "|---|---|---|---|---|---|" else "|---|---|---|---|---|"
+    )
     out <- c(out, vapply(slow_files, function(r) {
-      sprintf(
-        "| %s | %s | %s | %d | %d | %s |", r$file, r$started_at, fmt_seconds(r$duration_s),
-        r$pass, r$fail, if (is.na(r$mem_delta_mb)) "NA" else sprintf("%+.1f", r$mem_delta_mb)
+      head <- sprintf(
+        "| %s | %s | %s | %d | %d", r$file, r$started_at, fmt_seconds(r$duration_s),
+        r$pass, r$fail
       )
+      if (!has_mem) {
+        paste0(head, " |")
+      } else {
+        paste0(head, sprintf(" | %s |", if (is.na(r$mem_delta_mb)) "NA" else sprintf("%+.1f", r$mem_delta_mb)))
+      }
     }, character(1)))
     out <- c(out, "")
   }
@@ -411,8 +432,10 @@ summary_lines <- function(status) {
     }, character(1)))
     out <- c(out, "")
   }
-  out <- c(out, sprintf("- log: `%s`", file.path("dev", "logs", basename(log_path))),
-    sprintf("- timings: `%s`", file.path("dev", "logs", basename(files_csv))))
+  out <- c(
+    out, sprintf("- log: `%s`", file.path("dev", "logs", basename(log_path))),
+    sprintf("- timings: `%s`", file.path("dev", "logs", basename(files_csv)))
+  )
   out
 }
 
@@ -454,8 +477,10 @@ finish <- function() {
 #  Run
 # ---------------------------------------------------------------------------
 say("test.R: ", mode, " -- started ", state$started_at)
-say("test.R: filter ", if (is.null(filter)) "(all)" else filter,
-  " | parallel ", parallel, " | full tests ", full)
+say(
+  "test.R: filter ", if (is.null(filter)) "(all)" else filter,
+  " | parallel ", parallel, " | full tests ", full
+)
 say("test.R: log ", file.path("dev", "logs", basename(log_path)))
 say("")
 
