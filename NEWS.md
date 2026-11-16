@@ -6,13 +6,39 @@
 
 ## 0.4.1 (в работе)
 
+### Скан в памяти сообщает свою цену один раз за сессию (2026-11-16)
+
+- **Класс дефекта: `silent` — цена алгоритма не видна в поведении.**
+  `specificity_seed()` считает без индекса: каждый праймер перечитывает весь
+  геном. На TAIR10 это доли секунды; на пшенице (16 Гб, 133× TAIR10) — ~15 мин
+  на локус, и узнаётся это на 383-м скане, а не на первом. Проза
+  `R/marker_scan.R` уже обещала «за пределами RAM — индекс», код предупреждения
+  не давал.
+- **Один порог и один хелпер.** `SEED_SCAN_WARN_BP = 1e9` и
+  `seed_scan_cost_warn(bp, n_primers)` в `R/marker_specificity.R`: ниже порога —
+  молчание, выше — размер генома, оценка времени и путь к индексу
+  (`marker_bowtie_index()` → `bowtie_index=`, ~1.34 байт/пп, ~0.05 с на набор
+  праймеров). Вызов стоит на `DNAStringSet`-ветке; `marker_genome` и так
+  диспатчится в индекс и предупреждать не о чем.
+- **Оценка измерена, не выдумана.** 60 сидов по Chr1 TAIR10 (30.4 Мб) — 0.58 с
+  батчевого точного прохода против 4.40 с одиночного `max.mismatch = 1`, то есть
+  3.2e-4 с на праймер на Мб (`SEED_SCAN_S_PER_PRIMER_PER_MB`).
+- **Повтор глушит `session_once()`**, а не новый кеш: ключ включает размер
+  генома, потому что это свойство генома, а не вызова.
+- **`design_asq_marker` получил `@return`** — единственный экспорт без него;
+  прогон `roxygenise()` без `load_code = "source"`, поэтому `man/` изменился
+  только одним файлом и без потери `\method{}`.
+- **Проверка:** новые тесты «the in-memory scan warns once when it is O(genome)
+  per primer» и «specificity_seed stays silent on a genome under the warning
+  size» (`test-specificity.R`); `dev/test.R specificity` — 204 pass / 0 fail.
+
 ### Капабилити-проба не выпускает чужой конфликт импортов (2026-11-16)
 
 - **Класс дефекта: `quietly` — не `suppressWarnings`.** `specificity_backend()`
   пробовал `requireNamespace("crisprVerse", quietly = TRUE)`. Тихо — только
   сообщения; предупреждение о конфликте экспортов от загрузки
   `SummarizedExperiment` (`replacing previous import 'S4Arrays::…' by
-  'DelayedArray::…'`) печаталось пользователю при первом же
+'DelayedArray::…'`) печаталось пользователю при первом же
   `specificity_verdict()` на машине с установленным `crisprVerse`. Проба — про
   «можно ли загрузить», а не про граф зависимостей пакета.
 - **Глушение точечное, извлечено в один хелпер.** `muffle_import_clash(expr)`

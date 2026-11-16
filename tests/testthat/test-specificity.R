@@ -572,3 +572,23 @@ test_that("exact_hit_table reports both strands and coordinates", {
   expect_equal(nrow(h4), 0L)
   expect_equal(names(h4), names(h))
 })
+
+test_that("the in-memory scan warns once when it is O(genome) per primer", {
+  hints <- tidymarkers:::.marker_state$hints
+  on.exit(rm(list = ls(hints, all.names = TRUE), envir = hints), add = TRUE)
+  rm(list = ls(hints, all.names = TRUE), envir = hints)
+  # small genomes pay nothing worth saying
+  expect_no_warning(tidymarkers:::seed_scan_cost_warn(1e8, 20))
+  expect_warning(
+    tidymarkers:::seed_scan_cost_warn(2e9, 20),
+    "O\\(genome\\) per primer"
+  )
+  # one locus asks many times; the price is a property of the genome, so once
+  expect_no_warning(tidymarkers:::seed_scan_cost_warn(2e9, 20))
+})
+
+test_that("specificity_seed stays silent on a genome under the warning size", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTT"))
+  primers <- c(P = "TTTTTTAAACCCGGG")
+  expect_no_warning(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L))
+})

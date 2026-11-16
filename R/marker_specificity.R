@@ -20,6 +20,40 @@
 #  `"unknown"` when none of them was consulted.  The result names the tier.
 # =============================================================================
 
+# The in-memory count is O(genome) per primer, so past this size the "prefilter"
+# is the cost.  Basis: 60 seeds over TAIR10 Chr1 (30.4 Mb) measured 0.58 s.
+SEED_SCAN_WARN_BP <- 1e9
+SEED_SCAN_S_PER_PRIMER_PER_MB <- 3.2e-4
+
+#' Warn once per session when the in-memory scan pays O(genome) per primer
+#'
+#' The seed tier holds no index: every call re-reads the genome once per primer.
+#' That is invisible while the genome fits in a few hundred Mb and dominates the
+#' design at wheat scale, so say the price once instead of 15 minutes into a
+#' locus.
+#' @param bp genome size in bases.
+#' @param n_primers number of seeds scanned.
+#' @keywords internal
+#' @noRd
+seed_scan_cost_warn <- function(bp, n_primers) {
+  if (!is.finite(bp) || bp < SEED_SCAN_WARN_BP) {
+    return(invisible(NULL))
+  }
+  session_once(paste0("seed-scan-", bp), {
+    size <- format(bp, big.mark = ",", scientific = FALSE)
+    eta <- format(
+      round(bp / 1e6 * n_primers * SEED_SCAN_S_PER_PRIMER_PER_MB),
+      big.mark = ",", scientific = FALSE
+    )
+    cli::cli_warn(c(
+      gettextf("This seed scan reads %s bp in memory, O(genome) per primer.", size),
+      i = gettextf("~%s s for %d primer(s); only an index is flat in genome size.", eta, n_primers),
+      i = gettext("Build marker_bowtie_index(genome) and pass bowtie_index= (~1.34 bytes/bp, ~0.05 s per primer set).")
+    ))
+  })
+  invisible(NULL)
+}
+
 #' Count genome-wide near-matches of each primer's 3'-terminal k-mer (prefilter)
 #'
 #' This is a **prefilter, not a genome-wide guarantee**.  It counts only the
@@ -88,6 +122,9 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
       gettext("This indexed genome has neither a bowtie index nor a BLAST database."),
       i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
     ))
+  }
+  if (inherits(genome, "DNAStringSet")) {
+    seed_scan_cost_warn(sum(Biostrings::width(genome)), length(seeds))
   }
   if (max_mismatch == 0L) {
     hits <- exact_seed_counts(seeds, genome)

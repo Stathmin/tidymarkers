@@ -96,6 +96,8 @@ asq_limits <- function(amplicon = ASQ_AMPLICON, as_tm = ASQ_AS_TM_LIMITS,
 #' @param BPPARAM optional `BiocParallel` backend for the genome-wide steps
 #'   (see [assemble_kasp_assay()]); `NULL` runs them serially.
 #' @param ... further arguments passed to [assemble_kasp_assay()].
+#' @return a `marker_assay` (see [assemble_kasp_assay()]) carrying
+#'   `as_variant_offset = 1L`, or a `marker_doomed` for a length-changing indel.
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()

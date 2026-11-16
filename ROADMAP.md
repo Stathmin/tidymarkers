@@ -728,9 +728,9 @@ manually started runner is canceled.` → `Process completed with exit code
 
 - [x] **D7. CI предупреждает дважды; обе причины — чужой конфликт импортов.**
       Прогон `43919840667`, `ubuntu-latest (release)`: `[ FAIL 0 | WARN 2 |
-      SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
-      'S4Arrays::makeNindexFromArrayViewport' by
-      'DelayedArray::makeNindexFromArrayViewport'` при загрузке
+    SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
+    'S4Arrays::makeNindexFromArrayViewport' by
+    'DelayedArray::makeNindexFromArrayViewport'` при загрузке
       `SummarizedExperiment`; `macOS`/`Windows` давали `WARN 69` другого класса
       (`OligoArrayAux` не установлен — `.github/workflows/R-CMD-check.yaml:84`).
       Класс дефекта: `quietly = TRUE` глушит сообщения, но не предупреждения,
@@ -1749,6 +1749,22 @@ R/marker_scan.R` — три умолчания, что и описано; `Rscri
 
 ### ZX2. Следующее (масштаб популяции)
 
+- [x] **Скан в памяти называет свою цену.** `SEED_SCAN_WARN_BP = 1e9` и
+      `seed_scan_cost_warn(bp, n_primers)` (`R/marker_specificity.R`): ниже
+      порога — молчание, выше — размер, оценка времени и путь к индексу. Повтор
+      глушит `session_once()` с ключом по размеру генома (свойство генома, а не
+      вызова).
+      правка: `specificity_seed()` зовёт хелпер на `DNAStringSet`-ветке до
+      выбора яруса (`marker_genome` и так диспатчится в индекс); константа
+      скорости — 3.2e-4 с на праймер на Мб, из замера 60 сидов по Chr1 TAIR10
+      (30.4 Мб) — 0.58 с батчевого точного прохода против 4.40 с одиночного
+      `max.mismatch = 1`.
+      проверка: `test-specificity.R` — «the in-memory scan warns once when it is
+      O(genome) per primer» и «specificity_seed stays silent on a genome under
+      the warning size»; `dev/test.R specificity` — 204 pass / 0 fail.
+      следствие: пшеничный прогон видит цену на первом локусе, а не на 383-м
+      скане. Сама цена не изменилась — её снимает только индексный путь
+      (`ZX1`, `ZX3`); арифметика в §ZX2 ниже остаётся верной.
 - [~] **Параллель по локусам.** `design_kasp_markers(BPPARAM =
 MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре → 16.0 на 3
   → 8.0 на 6, вердикты те же.

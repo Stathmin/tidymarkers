@@ -32,6 +32,10 @@ default is larger than KASP's 150.}
 
 \item{...}{further arguments passed to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 }
+\value{
+a \code{marker_assay} (see \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}) carrying
+\code{as_variant_offset = 1L}, or a \code{marker_doomed} for a length-changing indel.
+}
 \description{
 ASQ (allele-specific qPCR, also marketed as PACE) uses the same AS + common
 primer pair as KASP, but places the variant at the \strong{penultimate} 3' base of
