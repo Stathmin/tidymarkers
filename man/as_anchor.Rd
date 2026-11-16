@@ -30,7 +30,12 @@ expressed through this single anchor, so SNP and MNP share one code path.
 \code{variant_offset} moves the block \code{0}, \code{1}, \code{2}, ... bases inside the 3' end:
 \code{0} puts it on the terminal base (KASP), \code{1} on the penultimate base (ASQ /
 PACE), \code{2} on the antepenultimate one.  The anchor is the primer's 3'-terminal
-base, so it moves outwards by the same amount.
+base, so only \code{variant_offset = 0} puts the anchor on the block: a larger
+offset leaves the block behind and puts the anchor that many bases further
+toward the primer's 3' terminus.  Measured on a 20-mer: \code{+} strand anchor
+coordinate grows (\verb{100, 101, 102}) while the block slides inwards
+(\verb{20, 19, 18}); \code{-} strand anchor shrinks (\verb{100, 99, 98}) as the block moves
+in (\verb{1, 2, 3}).
 }
 \examples{
 as_anchor(100L, 1L, "+")

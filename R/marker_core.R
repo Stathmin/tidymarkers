@@ -632,7 +632,12 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
 #' `variant_offset` moves the block `0`, `1`, `2`, ... bases inside the 3' end:
 #' `0` puts it on the terminal base (KASP), `1` on the penultimate base (ASQ /
 #' PACE), `2` on the antepenultimate one.  The anchor is the primer's 3'-terminal
-#' base, so it moves outwards by the same amount.
+#' base, so only `variant_offset = 0` puts the anchor on the block: a larger
+#' offset leaves the block behind and puts the anchor that many bases further
+#' toward the primer's 3' terminus.  Measured on a 20-mer: `+` strand anchor
+#' coordinate grows (`100, 101, 102`) while the block slides inwards
+#' (`20, 19, 18`); `-` strand anchor shrinks (`100, 99, 98`) as the block moves
+#' in (`1, 2, 3`).
 #' @param v_start plus-strand start of the variant block.
 #' @param ref_len length of the REF allele (block size; 1 for a SNP).
 #' @param strand binding strand.
