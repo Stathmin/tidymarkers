@@ -18,7 +18,8 @@ allows at most 3).}
 }
 \value{
 tibble \code{primer}, \code{seed} (the primer itself) and \code{hits} (both-strand
-genome-wide alignment count; more than one = a potential off-target).
+genome-wide alignment count; more than one = a potential off-target), plus
+\code{engine} (\code{"Rbowtie"}) and an \code{engine_stamp} attribute.
 }
 \description{
 Maps each primer to the index with \code{Rbowtie::bowtie()} (\code{a = TRUE}, so every

@@ -115,7 +115,8 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
 #'   allows at most 3).
 #' @param nthreads threads for `Rbowtie::bowtie()`.
 #' @return tibble `primer`, `seed` (the primer itself) and `hits` (both-strand
-#'   genome-wide alignment count; more than one = a potential off-target).
+#'   genome-wide alignment count; more than one = a potential off-target), plus
+#'   `engine` (`"Rbowtie"`) and an `engine_stamp` attribute.
 #' @examples
 #' \dontrun{
 #' idx <- marker_bowtie_index(marker_genome("genome.fa"))
@@ -158,5 +159,8 @@ specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4
   }
   hits <- as.integer(cnt[names(primers)])
   hits[is.na(hits)] <- 0L
-  tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits)
+  marker_with_engine(
+    tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits),
+    "Rbowtie"
+  )
 }

@@ -17,7 +17,9 @@ specificity_blast(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 \item{BPPARAM}{optional \code{BiocParallel} backend; queries are split across workers.}
 }
 \value{
-tibble \code{primer}, \code{seed}, \code{hits}.
+a tibble (\code{primer}, \code{seed}, \code{hits}, \code{engine}) with the \code{engine} column
+naming the adapter that answered (\code{"BLAST+"}) and an \code{engine_stamp}
+attribute (see \code{\link[=marker_engine_versions]{marker_engine_versions()}}).
 }
 \description{
 \verb{blastn -task blastn-short} searches both strands, so the per-primer hit count

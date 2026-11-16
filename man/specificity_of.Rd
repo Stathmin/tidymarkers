@@ -25,11 +25,14 @@ specificity_of(
 \item{BPPARAM}{optional \code{BiocParallel} backend.}
 }
 \value{
-a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}) and a
-\code{scan} attribute naming the question the counts answer: \code{"3'-seed"} on the
-in-memory and BLAST paths, \code{"whole-primer"} on the bowtie path.  Dispatch
-is in-memory -> \code{\link[=specificity_seed]{specificity_seed()}}, \code{bowtie_index} ->
-\code{\link[=specificity_bowtie]{specificity_bowtie()}}, \code{blast_db} -> \code{\link[=specificity_blast]{specificity_blast()}}.
+a tibble with one row per primer (\code{primer}, \code{seed}, \code{hits}, \code{engine})
+and a \code{scan} attribute naming the question the counts answer: \code{"3'-seed"} on
+the in-memory and BLAST paths, \code{"whole-primer"} on the bowtie path.  The
+\code{engine} column names the adapter that answered (\code{"Biostrings"},
+\code{"BLAST+"}, \code{"Rbowtie"}), and the \code{engine_stamp} attribute records the
+versions (see \code{\link[=marker_engine_versions]{marker_engine_versions()}}).  Dispatch is in-memory ->
+\code{\link[=specificity_seed]{specificity_seed()}}, \code{bowtie_index} -> \code{\link[=specificity_bowtie]{specificity_bowtie()}}, \code{blast_db}
+-> \code{\link[=specificity_blast]{specificity_blast()}}.
 }
 \description{
 In-memory \code{DNAStringSet} -> \code{\link[=specificity_seed]{specificity_seed()}} (exact \code{PDict} path, or a

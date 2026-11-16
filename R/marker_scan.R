@@ -101,7 +101,9 @@ marker_blast_index <- function(genome, path = NULL) {
 #' @param k if not `NA`, count only the 3'-terminal `k` bases of each primer
 #'   (matching the seed convention); `NA` uses the whole primer.
 #' @param BPPARAM optional `BiocParallel` backend; queries are split across workers.
-#' @return tibble `primer`, `seed`, `hits`.
+#' @return a tibble (`primer`, `seed`, `hits`, `engine`) with the `engine` column
+#'   naming the adapter that answered (`"BLAST+"`) and an `engine_stamp`
+#'   attribute (see [marker_engine_versions()]).
 #' @examples
 #' \dontrun{
 #' db <- marker_blast_index(marker_genome("genome.fa"))
@@ -170,7 +172,10 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   cnt <- if (is.null(res) || nrow(res) == 0L) integer(0) else table(res$qseqid)
   hits <- as.integer(cnt[names(primers)])
   hits[is.na(hits)] <- 0L
-  tibble::tibble(primer = names(primers), seed = seeds, hits = hits)
+  marker_with_engine(
+    tibble::tibble(primer = names(primers), seed = seeds, hits = hits),
+    "BLAST+"
+  )
 }
 
 #' Specificity by the right path for the genome at hand
@@ -203,11 +208,14 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
-#' @return a tibble with one row per primer (`primer`, `seed`, `hits`) and a
-#'   `scan` attribute naming the question the counts answer: `"3'-seed"` on the
-#'   in-memory and BLAST paths, `"whole-primer"` on the bowtie path.  Dispatch
-#'   is in-memory -> [specificity_seed()], `bowtie_index` ->
-#'   [specificity_bowtie()], `blast_db` -> [specificity_blast()].
+#' @return a tibble with one row per primer (`primer`, `seed`, `hits`, `engine`)
+#'   and a `scan` attribute naming the question the counts answer: `"3'-seed"` on
+#'   the in-memory and BLAST paths, `"whole-primer"` on the bowtie path.  The
+#'   `engine` column names the adapter that answered (`"Biostrings"`,
+#'   `"BLAST+"`, `"Rbowtie"`), and the `engine_stamp` attribute records the
+#'   versions (see [marker_engine_versions()]).  Dispatch is in-memory ->
+#'   [specificity_seed()], `bowtie_index` -> [specificity_bowtie()], `blast_db`
+#'   -> [specificity_blast()].
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)

@@ -55,7 +55,10 @@
 #' @param BPPARAM optional `BiocParallel` backend; the mismatch scan is split by
 #'   genome sequence, so `MulticoreParam()` uses one worker per chromosome.
 #' @return a tibble `primer`, `seed`, `hits` (both-strand counts of the seed,
-#'   over every genome sequence - a prefilter, see Details).
+#'   over every genome sequence - a prefilter, see Details), `engine` (the
+#'   adapter that answered: `"Biostrings"` in memory, else the indexed engine
+#'   the call delegates to) and an `engine_stamp` attribute (see
+#'   [marker_engine_stamp()]).
 #' @examples
 #' \dontrun{
 #' genome <- ath_genome()
@@ -119,7 +122,10 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
     }
     hits <- Reduce(`+`, per_chr)
   }
-  tibble::tibble(primer = names(primers), seed = seeds, hits = as.integer(hits))
+  marker_with_engine(
+    tibble::tibble(primer = names(primers), seed = seeds, hits = as.integer(hits)),
+    "Biostrings"
+  )
 }
 
 # Mismatch position weighting and the PCR product contract ---------------------

@@ -131,3 +131,35 @@ test_that("a table built by hand has no stamp rather than an invented one", {
   )
   expect_null(marker_evaluation_stamp(ev))
 })
+
+test_that("a specificity table names the adapter that answered", {
+  # the dispatcher returns whatever adapter ran, attributes intact: `scan` names
+  # the question, `engine` names the implementation.  A count that cannot say
+  # which engine produced it cannot be compared after an engine swap.
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  res <- specificity_of(c(P = "TTTTTTAAACCCGGG"), genome, k = 9L, max_mismatch = 0L)
+  expect_equal(res$engine, rep("Biostrings", nrow(res)))
+  expect_equal(attr(res, "scan"), "3'-seed")
+  expect_equal(marker_evaluation_stamp(res), marker_engine_stamp())
+  # the engine column is data, so it travels with the rows through a verb
+  flat <- dplyr::bind_rows(res)
+  expect_equal(flat$engine, res$engine)
+})
+
+test_that("a hand-built specificity table has no engine column and no stamp", {
+  tab <- tibble::tibble(primer = "P", seed = "ACGT", hits = 1L)
+  expect_false("engine" %in% names(tab))
+  expect_null(marker_evaluation_stamp(tab))
+})
+
+test_that("engine versions are probed once per session", {
+  # the stamp is provenance, and probing it shells out to four executables; the
+  # memo is keyed on the inputs that can change the answer.
+  tidymarkers:::session_memo_clear()
+  on.exit(tidymarkers:::session_memo_clear(), add = TRUE)
+  first <- marker_engine_versions()
+  expect_true(any(grepl(
+    "^engine_versions\\|", names(tidymarkers:::.marker_state$memo)
+  )))
+  expect_identical(marker_engine_versions(), first)
+})

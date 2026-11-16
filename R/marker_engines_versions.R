@@ -20,6 +20,9 @@
 #
 #  Roles are fixed here on purpose: the stamp format must not depend on which
 #  engines happen to be installed, or two manifests would not line up.
+#  The stamp deliberately grew from eight to nine engines when `Rbowtie` was
+#  added: specificity rows now name the adapter that answered them, so a scan
+#  can be re-derived without guessing which index algorithm produced the count.
 # =============================================================================
 
 #' Versions of every engine an Evaluation depends on
@@ -31,6 +34,23 @@
 #' @family utilities
 #' @export
 marker_engine_versions <- function() {
+  # Called once per locus when a specificity table is stamped, and each probe
+  # spawns a `--version` subprocess, so the answer is memoised for the session.
+  # marker_install_tools() calls session_memo_clear(), which is how a freshly
+  # installed engine becomes visible without a restart.
+  key <- paste(
+    "engine_versions", getwd(),
+    getOption("tidymarkers.oligoarrayaux", ""),
+    getOption("tidymarkers.blast", ""),
+    Sys.getenv("PATH"),
+    sep = "|"
+  )
+  session_memo(key, marker_engine_versions_probe())
+}
+
+#' @keywords internal
+#' @noRd
+marker_engine_versions_probe <- function() {
   pkg_version <- function(pkg) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       return(NA_character_)
@@ -68,6 +88,8 @@ marker_engine_versions <- function() {
     "tm_calculate (tm_nn)", "nearest-neighbour Tm (salt- and DMSO-corrected)",
     "BLAST+", exe_version("blastn"),
     "blastn / makeblastdb", "off-target hit counts, in-silico PCR products",
+    "Rbowtie", pkg_version("Rbowtie"),
+    "bowtie / bowtie_build", "whole-primer indexed scan",
     "Biostrings", pkg_version("Biostrings"),
     "vmatchPattern / PDict", "sequence I/O and pattern matching",
     "Rsamtools", pkg_version("Rsamtools"),
@@ -83,7 +105,7 @@ marker_engine_versions <- function() {
 # The engines a manifest must always name, in a stable order.  Adding one here
 # changes the stamp format, so it is a deliberate act, not a side effect.
 marker_engine_names <- c(
-  "DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+",
+  "DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+", "Rbowtie",
   "Biostrings", "Rsamtools", "InternalNN", "R"
 )
 
@@ -120,7 +142,8 @@ marker_engine_stamp <- function() {
 #' A `dplyr` verb or `bind_rows()` drops attributes, so use
 #' `marker_with_stamp()` to put the stamp back after combining tables.
 #'
-#' @param x a checks tibble (see [marker_design_checks()]).
+#' @param x a stamped table: a checks tibble (see [marker_design_checks()]) or a
+#'   specificity table (see [specificity_of()]).
 #' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
 #' @examples
 #' \dontrun{
@@ -160,6 +183,28 @@ marker_with_stamp <- function(x, stamp = NULL, from = NULL) {
     if (is.null(from)) stamp <- marker_engine_stamp() else return(x)
   }
   attr(x, "engine_stamp") <- stamp
+  x
+}
+
+#' Name the adapter that produced each specificity row
+#'
+#' The `engine` column survives a `dplyr` verb or `bind_rows()`, which the
+#' `engine_stamp` attribute does not; both name the same thing, one per row and
+#' one for the table.  `rep(engine, nrow(x))` is deliberate: a length-one column
+#' cannot be recycled into a zero-row table, and an empty scan must still carry
+#' a zero-length `engine` column rather than fail.
+#'
+#' @param x a specificity tibble; `NULL` is passed through.
+#' @param engine the engine name from [marker_engine_names()].
+#' @param stamp a stamp from [marker_engine_stamp()]; computed when `NULL`.
+#' @keywords internal
+#' @noRd
+marker_with_engine <- function(x, engine, stamp = NULL) {
+  if (is.null(x)) {
+    return(x)
+  }
+  x$engine <- rep(engine, nrow(x))
+  attr(x, "engine_stamp") <- stamp %||% marker_engine_stamp()
   x
 }
 

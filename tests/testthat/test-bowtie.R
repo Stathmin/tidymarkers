@@ -24,7 +24,8 @@ test_that("specificity_bowtie agrees with the two-strand countPattern oracle", {
   idx <- marker_bowtie_index(genome, basename = fs::path(withr::local_tempdir(), "bw"))
   primers <- c(UNIQUE = motif, REPEATED = repeated)
   res <- specificity_bowtie(primers, idx)
-  expect_setequal(names(res), c("primer", "seed", "hits"))
+  expect_setequal(names(res), c("primer", "seed", "hits", "engine"))
+  expect_equal(res$engine, rep("Rbowtie", nrow(res)))
   expect_equal(res$hits, c(oracle_hits(motif, genome), oracle_hits(repeated, genome)))
   expect_equal(res$hits[res$primer == "REPEATED"], 2L)
 })
@@ -58,6 +59,7 @@ test_that("specificity_of routes a bowtie-index genome to specificity_bowtie", {
   expect_equal(res$hits, 1L)
   # the bowtie path scans the whole primer; a 3'-seed request must warn
   expect_equal(attr(res, "scan"), "whole-primer")
+  expect_equal(res$engine, "Rbowtie")
   expect_warning(
     specificity_of(c(UNIQUE = motif), genome, k = 12L),
     "whole primer"

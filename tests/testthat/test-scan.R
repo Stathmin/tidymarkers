@@ -18,6 +18,7 @@ test_that("marker_blast_index builds a database and specificity_blast counts hit
   res <- specificity_blast(c(P = blast_amp, Q = "GATTACAGATTACAGATTAC"), db, k = NA_integer_)
   expect_equal(res$hits[res$primer == "P"], 4L) # 2 copies on both strands
   expect_equal(res$hits[res$primer == "Q"], 0L)
+  expect_equal(res$engine, rep("BLAST+", nrow(res)))
 })
 
 test_that("marker_blast_index returns the FASTA prefix and is idempotent", {
@@ -46,6 +47,7 @@ test_that("specificity_of routes an indexed genome to BLAST, and needs a db", {
   res <- specificity_of(c(P = blast_amp), gs)
   expect_gte(res$hits[res$primer == "P"], 1L)
   expect_equal(attr(res, "scan"), "3'-seed")
+  expect_equal(res$engine, "BLAST+")
   # an indexed genome without a database is a clear error, not a silent zero
   expect_error(specificity_of(c(P = blast_amp), marker_genome(fa)), "BLAST")
 })
@@ -56,6 +58,7 @@ test_that("specificity_of uses the in-memory path for a DNAStringSet", {
   expect_equal(res$hits, 4L)
   # the counts answer the seed question; the bowtie path answers the whole-primer
   expect_equal(attr(res, "scan"), "3'-seed")
+  expect_equal(res$engine, "Biostrings")
 })
 
 test_that("an assembled assay tags both genome scans (D3)", {
@@ -100,6 +103,8 @@ test_that("specificity_seed asks the indexed genome for the 3'-seed (D1)", {
   expect_equal(res$seed[res$primer == "P"], substr(blast_amp, 6L, 20L))
   expect_gte(res$hits[res$primer == "P"], 1L)
   expect_equal(res$hits[res$primer == "Q"], 0L)
+  # a delegating branch inherits the delegate's engine tag, never its own
+  expect_equal(res$engine, rep("BLAST+", nrow(res)))
 })
 
 test_that("marker_blast_index keys an in-memory genome by content (D4)", {

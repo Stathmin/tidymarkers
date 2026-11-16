@@ -7,7 +7,8 @@
 marker_evaluation_stamp(x)
 }
 \arguments{
-\item{x}{a checks tibble (see \code{\link[=marker_design_checks]{marker_design_checks()}}).}
+\item{x}{a stamped table: a checks tibble (see \code{\link[=marker_design_checks]{marker_design_checks()}}) or a
+specificity table (see \code{\link[=specificity_of]{specificity_of()}}).}
 }
 \value{
 a named character vector (see \code{\link[=marker_engine_stamp]{marker_engine_stamp()}}), or \code{NULL}.

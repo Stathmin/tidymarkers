@@ -28,7 +28,10 @@ genome sequence, so \code{MulticoreParam()} uses one worker per chromosome.}
 }
 \value{
 a tibble \code{primer}, \code{seed}, \code{hits} (both-strand counts of the seed,
-over every genome sequence - a prefilter, see Details).
+over every genome sequence - a prefilter, see Details), \code{engine} (the
+adapter that answered: \code{"Biostrings"} in memory, else the indexed engine
+the call delegates to) and an \code{engine_stamp} attribute (see
+\code{\link[=marker_engine_stamp]{marker_engine_stamp()}}).
 }
 \description{
 This is a \strong{prefilter, not a genome-wide guarantee}.  It counts only the
