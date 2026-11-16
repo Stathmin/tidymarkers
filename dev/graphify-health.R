@@ -936,6 +936,20 @@ report <- c(
     )
   ),
   rows(
+    "`dev/graphify-faithfulness.R` (per-export doc<->code)", "shipped",
+    paste(
+      "one call per export, prose against body, verdict `match`/`partial`/",
+      "`contradicts`; 173 exports, median 5.6 s, 103/69/1 on the run of",
+      "2026-11-16. Small contexts are the reason this finishes where the",
+      "document pass cannot: a roxygen block plus 70 body lines stays under",
+      "~1.5 k prompt tokens at 31 tok/s. `@rdname` aliases are skipped (their",
+      "prose belongs to the topic owner) and the prompt forbids `contradicts`",
+      "when the body delegates or is marked elided: without those two rules 6 of",
+      "7 `contradicts` were artefacts. Writes gitignored",
+      "`graphify-out/faithfulness.md`; not in `dev/check.R` (needs the model)"
+    )
+  ),
+  rows(
     "`diagnose multigraph`", "shipped",
     paste(
       "`graphify diagnose multigraph --json` independently confirms 0 dangling,",
