@@ -109,8 +109,10 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
 #' @param index FM-index basename from [marker_fm_index()].
 #' @param max_mismatches mismatches tolerated over the whole primer.
 #' @param nthreads threads for `Rsubread::align()`.
-#' @return tibble `primer`, `seed` (the primer itself) and `hits` (genome-wide
-#'   alignment count; more than one = a potential off-target).
+#' @return tibble `primer`, `seed` (the primer itself), `hits` (genome-wide
+#'   alignment count; more than one = a potential off-target) and `engine`
+#'   (`"Rsubread"`, so a row names its mapper).  The table carries the engine
+#'   stamp as its `engine_stamp` attribute.
 #' @examples
 #' \dontrun{
 #' idx <- marker_fm_index(marker_genome("genome.fa"))
@@ -144,5 +146,8 @@ specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthread
   cnt <- table(q)
   hits <- as.integer(cnt[names(primers)])
   hits[is.na(hits)] <- 0L
-  tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits)
+  marker_with_engine(
+    tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits),
+    "Rsubread"
+  )
 }

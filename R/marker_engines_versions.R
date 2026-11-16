@@ -23,6 +23,8 @@
 #  The stamp deliberately grew from eight to nine engines when `Rbowtie` was
 #  added: specificity rows now name the adapter that answered them, so a scan
 #  can be re-derived without guessing which index algorithm produced the count.
+#  It grew again to ten for `Rsubread` when [specificity_fm()] started stamping
+#  its rows: every specificity adapter now names itself, not just the BLAST one.
 # =============================================================================
 
 #' Versions of every engine an Evaluation depends on
@@ -90,6 +92,8 @@ marker_engine_versions_probe <- function() {
     "blastn / makeblastdb", "off-target hit counts, in-silico PCR products",
     "Rbowtie", pkg_version("Rbowtie"),
     "bowtie / bowtie_build", "whole-primer indexed scan",
+    "Rsubread", pkg_version("Rsubread"),
+    "align / buildindex", "whole-primer FM-index scan",
     "Biostrings", pkg_version("Biostrings"),
     "vmatchPattern / PDict", "sequence I/O and pattern matching",
     "Rsamtools", pkg_version("Rsamtools"),
@@ -106,7 +110,7 @@ marker_engine_versions_probe <- function() {
 # changes the stamp format, so it is a deliberate act, not a side effect.
 marker_engine_names <- c(
   "DECIPHER", "OligoArrayAux", "TmCalculator", "BLAST+", "Rbowtie",
-  "Biostrings", "Rsamtools", "InternalNN", "R"
+  "Rsubread", "Biostrings", "Rsamtools", "InternalNN", "R"
 )
 
 #' A version stamp for an Evaluation or an artifact manifest

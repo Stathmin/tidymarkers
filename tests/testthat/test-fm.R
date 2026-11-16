@@ -13,7 +13,9 @@ test_that("marker_fm_index + specificity_fm count genome loci", {
   res <- specificity_fm(c(TWO = motif, ONE = substr(spacer, 1L, 30L)), idx)
   expect_equal(res$hits[res$primer == "TWO"], 2L)
   expect_equal(res$hits[res$primer == "ONE"], 1L)
-  expect_true(all(c("primer", "seed", "hits") %in% names(res)))
+  expect_true(all(c("primer", "seed", "hits", "engine") %in% names(res)))
+  expect_equal(unique(res$engine), "Rsubread")
+  expect_equal(marker_evaluation_stamp(res), marker_engine_stamp())
 })
 
 test_that("marker_fm_index says the design pipeline does not query it (D5)", {

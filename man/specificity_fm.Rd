@@ -16,8 +16,10 @@ specificity_fm(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L)
 \item{nthreads}{threads for \code{Rsubread::align()}.}
 }
 \value{
-tibble \code{primer}, \code{seed} (the primer itself) and \code{hits} (genome-wide
-alignment count; more than one = a potential off-target).
+tibble \code{primer}, \code{seed} (the primer itself), \code{hits} (genome-wide
+alignment count; more than one = a potential off-target) and \code{engine}
+(\code{"Rsubread"}, so a row names its mapper).  The table carries the engine
+stamp as its \code{engine_stamp} attribute.
 }
 \description{
 Maps each primer to the genome with \code{Rsubread::align()} (\code{unique = FALSE}, so
