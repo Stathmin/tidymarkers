@@ -181,6 +181,11 @@ step("docs/artifacts", function() {
   if (!identical(as.integer(status), 0L)) {
     stop("dev/graphify-health.R failed (status ", status, ")")
   }
+  # attention list, not a proof: word-based, so an honest scope note trips it too
+  status <- system2(file.path(R.home("bin"), "Rscript"), c("dev/audit-remainders.R", "--check"))
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/audit-remainders.R failed (status ", status, ")")
+  }
   if (no_artifacts) {
     return(message("  skip (--no-artifacts; regenerate after the merge)"))
   }
@@ -190,7 +195,7 @@ step("docs/artifacts", function() {
       stop(script, " failed (status ", status, ")")
     }
   }
-  ok("docs index and artifact manifest are consistent and fresh")
+  ok("docs index, artifact manifest and roadmap remainders are consistent")
 })
 
 # 4. spelling ---------------------------------------------------------------
