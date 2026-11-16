@@ -577,9 +577,9 @@ report <- c(
   paste(
     "Graphify's R extractor emits a node per function (a nested closure",
     "included), per file, and per assignment, top-level or local. The split is",
-    "where the noise is:", fmt(fn_nested_r), "nested nodes under `R/` --",
-    "all closures (a helper defined inside another function), no nested",
-    paste0("assignments (", fmt(var_nested_r), ") -- against"),
+    "where the noise is:", fmt(fn_nested_r), "nested function nodes under",
+    "`R/` (closures, a helper defined inside another function) and",
+    paste0(fmt(var_nested_r), " nested assignment(s) -- against"),
     fmt(nested_by_dir[["tests"]]), "inside `tests/` -- `test_that()`",
     "and `local()` bodies mint a node per local -- and",
     fmt(nested_by_dir[["data-raw"]]), "in `data-raw/`. Most such nodes are",
@@ -879,8 +879,9 @@ report <- c(
       "and edge); the semantic cache under `graphify-out/cache/semantic/` holds",
       "chunk results that are **not** merged into `graph.json`, so a current graph",
       "has 0 `_origin: semantic` nodes and 0 `semantic_hash` in the manifest until",
-      "`dev/graphify-semantic.sh` runs to completion. Re-run it when the bonsai",
-      "slots are free (see the lever note on slot contention)"
+      "`dev/graphify-semantic.sh` runs to completion. Re-running it is a decision,",
+      "not maintenance: the pass does not finish a document at bonsai's 31 tok/s",
+      "(see the lever table), so budget hours and expect `finish=length`"
     )
   ),
   rows(
@@ -921,13 +922,17 @@ report <- c(
     paste(
       "`extract --backend=openai` via `dev/graphify-semantic.sh`; reads",
       "`OPENAI_BASE_URL`/`OPENAI_MODEL` (bonsai), 2 slots, `--token-budget 12000`.",
-      "`GRAPHIFY_MAX_OUTPUT_TOKENS` must stay at 16000: a lower cap truncates,",
-      "splits and retries forever. The server has `-np 2`, so a second client on",
-      "the same port (a Merovingen `acceptance_run.py` did this) holds both slots",
-      "with long generations and this pass blocks as the deferred request -- that,",
-      "not a config fault, is why a few chunks can take minutes. Check",
-      "`llamacpp:requests_deferred` and that no other job owns the slots before",
-      "blaming the backend. Coverage and yield in 'Semantic extraction'"
+      "Measured on this box: it never finishes a document. One 18.6 KB doc took",
+      "692 s, 6449 prompt tokens and 16000 output tokens, `finish=length`,",
+      "unfinished; the head is valid JSON but the node ids degenerate",
+      "(`..._final_final`), and output grows with document length at 31 tok/s, so",
+      "`ROADMAP.md` would need ~46 min of generation per cycle. The thinking knob",
+      "is exonerated: a 76-token probe answers clean JSON in 5.5 s with and",
+      "without it. No per-file semantic skip and no output cap exist",
+      "(`--token-budget` is prompt-side, `GRAPHIFY_MAX_OUTPUT_TOKENS` a global",
+      "ceiling). So: routine rebuilds use `graphify update .` (code-only); the",
+      "semantic pass is a deliberate, rare event, not a step. Coverage and yield",
+      "in 'Semantic extraction'"
     )
   ),
   rows(

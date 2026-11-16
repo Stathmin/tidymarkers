@@ -119,11 +119,31 @@ if (length(cids_arg)) {
 }
 if (is.finite(limit)) targets <- head(targets, limit)
 
+# .graphify_labels.json is only the sidecar; explain/query read
+# `community_name` cached on each node, which keeps the pre-curation hub name
+# otherwise.  Run on every path, including "nothing to rename", so a graph
+# rebuilt without a relabel still picks up names curated in an earlier pass.
+propagate <- function() {
+  if (!file.exists(GRAPH)) return(invisible())
+  g <- jsonlite::fromJSON(GRAPH, simplifyVector = FALSE)
+  for (i in seq_along(g$nodes)) {
+    cid <- as.character(g$nodes[[i]]$community %||% NA)
+    if (is.na(cid)) next
+    nm <- if (cid %in% names(labels)) labels[[cid]] else NULL
+    if (!is.null(nm) && nzchar(nm)) {
+      g$nodes[[i]]$community_name <- nm
+    }
+  }
+  jsonlite::write_json(g, GRAPH, auto_unbox = TRUE, null = "null", pretty = FALSE)
+  invisible()
+}
+
 if (!length(targets)) {
   message(
     "no communities need a label (",
     paste(names(table(status)), as.integer(table(status)), sep = "=", collapse = ", "), ")"
   )
+  propagate()
   quit(status = 0L)
 }
 
@@ -373,24 +393,6 @@ if (length(dup_rej)) {
 }
 
 kept <- setdiff(as.character(targets), names(final))
-
-# .graphify_labels.json is only the sidecar; explain/query read
-# `community_name` cached on each node, which keeps the pre-curation hub name
-# otherwise.  Run on every path, including "nothing to rename", so a graph
-# rebuilt without a relabel still picks up names curated in an earlier pass.
-propagate <- function() {
-  if (!file.exists(GRAPH)) return(invisible())
-  g <- jsonlite::fromJSON(GRAPH, simplifyVector = FALSE)
-  for (i in seq_along(g$nodes)) {
-    cid <- as.character(g$nodes[[i]]$community %||% NA)
-    nm <- labels[[cid]]
-    if (!is.na(cid) && !is.null(nm) && nzchar(nm)) {
-      g$nodes[[i]]$community_name <- nm
-    }
-  }
-  jsonlite::write_json(g, GRAPH, auto_unbox = TRUE, null = "null", pretty = FALSE)
-  invisible()
-}
 
 if (!length(final)) {
   message("no label accepted; nothing written")
