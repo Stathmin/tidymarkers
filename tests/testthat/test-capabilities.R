@@ -82,6 +82,37 @@ test_that("a machine without OligoArrayAux cannot grade SNaPshot structure", {
   expect_null(m)
 })
 
+test_that("a per-call engines override decides the gate, not the session registry", {
+  off <- marker_engines()
+  off$thermo$capabilities$duplex_dg <- FALSE
+  # the session registry claims the capability, so only the supplied adapter
+  # can make these gates answer FALSE
+  local_mocked_bindings(has_oligoarrayaux = function() TRUE, .package = "tidymarkers")
+  on <- marker_engines()
+  on$thermo$capabilities$duplex_dg <- TRUE
+  # Sanger pair screen: with the capability off the pair is not graded at all
+  # (honest TRUE, the readers are never reached); with it on, a failing dG fails -
+  # both dG routines answer what OligoArrayAux would downgrade below -9
+  local_mocked_bindings(
+    oligo_dg_vec = function(...) rep(-20, 2L),
+    thermo_duplex_dg = function(...) -20,
+    .package = "tidymarkers"
+  )
+  pair <- c("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC")
+  expect_true(pair_structure_ok(pair[1L], pair[2L], engines = off))
+  expect_false(pair_structure_ok(pair[1L], pair[2L], engines = on))
+  expect_identical(pair_structure_ok(pair[1L], pair[2L]), pair_structure_ok(pair[1L], pair[2L], engines = on))
+
+  f <- snp_fixture(n = 800L, seed = 1L, pos = 400L)
+  # same override through the public designer: the structure gate becomes
+  # unevaluable and is reported by name, never passed
+  expect_message(
+    m <- suppressWarnings(design_snapshot_marker(f$genome, f$snp, flank = 250L, engines = off)),
+    "gate_snapshot_structure"
+  )
+  expect_null(m)
+})
+
 test_that("generic checks report NA, never TRUE, without the structure engine", {
   f <- snp_fixture()
   local_mocked_bindings(has_oligoarrayaux = function() FALSE, .package = "tidymarkers")

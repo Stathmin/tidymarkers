@@ -17,7 +17,8 @@ design_sanger_marker(
   gc_range = KASP_SANGER_LIMITS$gc,
   check_unique = TRUE,
   population = NULL,
-  ...
+  ...,
+  engines = NULL
 )
 }
 \arguments{
@@ -51,6 +52,9 @@ passed silently.  When absent the design still returns, but
 \verb{$allele_dropout_risk} is \code{NA} and a warning says the check was not run.}
 
 \item{...}{passed to \code{\link[=in_silico_pcr]{in_silico_pcr()}} (e.g. \code{BPPARAM}).}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the pair structure screen.}
 }
 \value{
 a \code{marker_sanger} list (\code{snp}, \code{primers}, \code{amplicon}, \code{seq_primers},

@@ -16,7 +16,8 @@ design_snapshot_marker(
   ext_lengths = SNAPSHOT_EXT_LENGTHS,
   ext_tm = SNAPSHOT_EXT_TM,
   ext_gc = SNAPSHOT_EXT_GC,
-  limits = KASP_LIMITS
+  limits = KASP_LIMITS,
+  engines = NULL
 )
 }
 \arguments{
@@ -41,6 +42,9 @@ candidate clears it (see the file header).}
 
 \item{limits}{thresholds list (see \code{KASP_LIMITS}); its \code{hairpin_dg} /
 \code{homodimer_dg} floor the structure gate.}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the extension primer's structure.}
 }
 \value{
 a \code{marker_snapshot} list (\code{snp}, \code{amplification}, \code{extension},

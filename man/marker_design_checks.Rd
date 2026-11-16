@@ -4,7 +4,12 @@
 \alias{marker_design_checks}
 \title{Check an assembled assay against the KASP acceptance criteria}
 \usage{
-marker_design_checks(assay, limits = KASP_LIMITS, scheme = NULL)
+marker_design_checks(
+  assay,
+  limits = KASP_LIMITS,
+  scheme = NULL,
+  engines = NULL
+)
 }
 \arguments{
 \item{assay}{result of \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
@@ -14,6 +19,9 @@ marker_design_checks(assay, limits = KASP_LIMITS, scheme = NULL)
 \item{scheme}{the marker chemistry the assay is graded as (see
 \code{\link[=marker_schemes]{marker_schemes()}}); \code{NULL} (the default) uses \code{assay$scheme}, falling back to
 \code{"snp"}.}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the generic thermo screen.}
 }
 \value{
 tibble with \code{stage}, \code{criterion}, \code{observed}, \code{limit}, \code{pass},

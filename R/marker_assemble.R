@@ -615,6 +615,9 @@ marker_as_warnings <- function(best_as, snp, clean_3p, min_disc, link_pos) {
 #'   [marker_schemes()]): stored on the object, and used to build the matching
 #'   decision graph and to grade the acceptance checks, so a scheme never shows
 #'   (or is graded by) another chemistry's tree (C12).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the degenerate-primer efficiency
+#'   screen (and the fixed-primer `assemble_primer_assay()` it delegates to).
 #' @family design
 #' @export
 assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
@@ -632,7 +635,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 as_tm_target = AS_TM_TARGET,
                                 com_tm_target = COM_TM_TARGET,
                                 com_tm_range = NULL, com_gaps = 18:80,
-                                as_lengths = KASP_AS_LENGTHS) {
+                                as_lengths = KASP_AS_LENGTHS, engines = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
   mask <- normalise_diagnostic_positions(diagnostic_positions)
   # the scheme's own reaction conditions, so every dG this assay reports is
@@ -680,7 +683,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
 
   # one service for both critical zones (AS 3' window, COM footprint): DECIPHER
   # turns a footprint variant into an expected dropout (NA without it / on error)
-  use_eff <- engine_has("pcr_efficiency")
+  use_eff <- engine_has("pcr_efficiency", engines)
   batch_or_safe <- marker_dropout_batch(tmpl, off, vpos, valt, vweight, use_eff, BPPARAM)
 
   # co-segregating substitutions to bake into the ALT primer (see design_as_primers)
@@ -1178,6 +1181,8 @@ normalise_fixed_primers <- function(primers) {
 #' @param diagnostic_positions the subgenome-diagnostic mask (roadmap Y3.1):
 #'   `NULL`, a data frame / list with `chrom` and `pos`, a `GRanges`, or a named
 #'   list `chrom -> integer positions`.  See [assemble_kasp_assay()].
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the footprint-dropout screen.
 #' @return a `marker_assay`.
 #' @examples
 #' \dontrun{
@@ -1195,7 +1200,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
                                   salt_method = TM_SALT_METHOD,
                                   cores = getOption("tidymarkers.cores", 1L),
                                   BPPARAM = NULL,
-                                  diagnostic_positions = NULL) {
+                                  diagnostic_positions = NULL, engines = NULL) {
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
   mask <- normalise_diagnostic_positions(diagnostic_positions)
   conditions <- scheme_conditions(scheme)
@@ -1327,7 +1332,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     vc <- marker_variant_alleles(variants, snp, tmpl$seq, off)
     vpos <- vc$vpos
     vblock <- snp$pos
-    use_eff <- engine_has("pcr_efficiency")
+    use_eff <- engine_has("pcr_efficiency", engines)
     batch_or_safe <- marker_dropout_batch(tmpl, off, vpos, vc$valt, vc$vweight, use_eff, BPPARAM)
     as_n_3p <- count_variants_in(win3p, vpos, vblock)
     as_n_var <- count_variants_in(IRanges::IRanges(as_start, as_end), vpos, vblock)
@@ -1396,20 +1401,26 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     }
   )
 
+  # the engine only decides the dropout gate below, never the evaluation
+  # (declared here so lintr sees `engines` used on this path)
+  pcr_efficiency <- engine_has("pcr_efficiency", engines)
   # grade the assay with the same registry the designer uses
-  out$evaluation <- tryCatch(marker_design_checks(out, scheme = scheme), error = function(e) {
-    cli::cli_warn(c(
-      gettext("The acceptance checks could not be evaluated: {conditionMessage(e)}"),
-      i = gettext("assay$evaluation is NULL; the verdict is unknown, not usable.")
-    ))
-    NULL
-  })
+  out$evaluation <- tryCatch(
+    marker_design_checks(out, scheme = scheme, engines = engines),
+    error = function(e) {
+      cli::cli_warn(c(
+        gettext("The acceptance checks could not be evaluated: {conditionMessage(e)}"),
+        i = gettext("assay$evaluation is NULL; the verdict is unknown, not usable.")
+      ))
+      NULL
+    }
+  )
   if (!is.null(out$evaluation)) {
     # a check that could not be computed must never read as a pass (an NA
     # dropout would otherwise satisfy `is.na(dropout) | ...`)
     unknown <- if (is.null(variants)) {
       FIXED_PRIMER_NO_VARIANTS
-    } else if (!engine_has("pcr_efficiency")) {
+    } else if (!pcr_efficiency) {
       FIXED_PRIMER_DROPOUTS
     } else {
       character(0)

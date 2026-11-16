@@ -253,11 +253,13 @@ seed_margin <- function(primer_f, primer_r, genome, k = SEED_K) {
 #' with only one, a missing dG would read as a pass through `na.rm = TRUE`.
 #' @param primer_f,primer_r the pair's oligos.
 #' @param limits thresholds (see `KASP_LIMITS`).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default; it gates the pair structure screen.
 #' @return a single logical.
 #' @keywords internal
 #' @noRd
-pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS) {
-  if (!(engine_has("hairpin_dg") && engine_has("duplex_dg"))) {
+pair_structure_ok <- function(primer_f, primer_r, limits = KASP_LIMITS, engines = NULL) {
+  if (!(engine_has("hairpin_dg", engines) && engine_has("duplex_dg", engines))) {
     return(TRUE)
   }
   p <- c(primer_f, primer_r)
@@ -479,6 +481,8 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #'   passed silently.  When absent the design still returns, but
 #'   `$allele_dropout_risk` is `NA` and a warning says the check was not run.
 #' @param ... passed to [in_silico_pcr()] (e.g. `BPPARAM`).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the pair structure screen.
 #' @return a `marker_sanger` list (`snp`, `primers`, `amplicon`, `seq_primers`,
 #'   `selection`, `readout`, `allele_dropout`, `allele_dropout_risk`), or `NULL`
 #'   (with a message) when no unique pair passes the gates.  `readout` is the
@@ -499,7 +503,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
                                  max_product = KASP_SANGER_LIMITS$amplicon[2L],
                                  lengths = 18:25, tm_range = KASP_SANGER_LIMITS$tm,
                                  gc_range = KASP_SANGER_LIMITS$gc,
-                                 check_unique = TRUE, population = NULL, ...) {
+                                 check_unique = TRUE, population = NULL, ..., engines = NULL) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   amp_pad <- KASP_SANGER_FLOOR$amplicon
@@ -535,7 +539,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     if (check_unique && nrow(in_silico_pcr(b$primer_f, b$primer_r, genome, ...)) != 1L) {
       return(FALSE)
     }
-    pair_structure_ok(b$primer_f, b$primer_r)
+    pair_structure_ok(b$primer_f, b$primer_r, engines = engines)
   }
   # the second pass (roadmap X): a ladder with no winner has no clean leading
   # pairing, and its reason is the screening one - never the rejected candidate's

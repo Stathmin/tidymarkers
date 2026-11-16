@@ -14,7 +14,8 @@ assemble_primer_assay(
   salt_method = TM_SALT_METHOD,
   cores = getOption("tidymarkers.cores", 1L),
   BPPARAM = NULL,
-  diagnostic_positions = NULL
+  diagnostic_positions = NULL,
+  engines = NULL
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ printed Primer3 panel (ROADMAP \code{ZW3.5}, \code{ZW3.10}).}
 \item{diagnostic_positions}{the subgenome-diagnostic mask (roadmap Y3.1):
 \code{NULL}, a data frame / list with \code{chrom} and \code{pos}, a \code{GRanges}, or a named
 list \verb{chrom -> integer positions}.  See \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the footprint-dropout screen.}
 }
 \value{
 a \code{marker_assay}.

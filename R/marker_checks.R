@@ -259,6 +259,8 @@ marker_dosage_gate <- function(marker) {
 #' @param scheme the marker chemistry the assay is graded as (see
 #'   [marker_schemes()]); `NULL` (the default) uses `assay$scheme`, falling back to
 #'   `"snp"`.
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the generic thermo screen.
 #' @return tibble with `stage`, `criterion`, `observed`, `limit`, `pass`,
 #'   `status`, `detail` and `level`.  `status` is a factor (`pass`, `fail`,
 #'   `unknown`, `not_applicable`); `pass` is its logical view
@@ -274,7 +276,7 @@ marker_dosage_gate <- function(marker) {
 #' }
 #' @family checks
 #' @export
-marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
+marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL, engines = NULL) {
   scheme <- scheme %||% assay$scheme %||% if (inherits(assay, "marker_assay")) {
     "snp"
   } else {
@@ -290,7 +292,7 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   if (!inherits(assay, "marker_assay") && grepl("^marker_", class(assay)[1L])) {
     # the generic evaluator is display-agnostic, so the population layer is
     # appended here, where every chemistry's table passes through (Z6)
-    out <- marker_generic_checks(assay, scheme, limits = limits)
+    out <- marker_generic_checks(assay, scheme, limits = limits, engines = engines)
     # HRM's own decided criterion: a bimorphism with a measured dTm is graded
     # against it, so "designable" always says whether there is a curve to read
     if (identical(scheme, "hrm")) {
@@ -726,9 +728,14 @@ evaluation_evidence <- function(x, criteria = criterion_spec(KASP_LIMITS),
   out
 }
 
-# Full criterion table for a non-KASP marker.  This is the evaluator behind
-# `marker_design_checks()` and the decision graph for every non-KASP family.
-marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_LIMITS) {
+#' Full criterion table for a non-KASP marker.  This is the evaluator behind
+#' `marker_design_checks()` and the decision graph for every non-KASP family.
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default; it gates the generic thermo screen.
+#' @keywords internal
+#' @noRd
+marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_LIMITS,
+                                  engines = NULL) {
   primers <- tryCatch(marker_primers(marker), error = function(e) character(0))
   primers <- primers[!is.na(primers) & nzchar(primers)]
   dna <- primers[grepl("^[ACGT]+$", primers)]
@@ -759,12 +766,12 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     field(a1$assay, "amplicon"), amp_span(a1$amplicon)
   )
   win <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
-  thermo <- if (length(dna) && engine_has("hairpin_dg")) {
+  thermo <- if (length(dna) && engine_has("hairpin_dg", engines)) {
     tryCatch(primer_thermo(dna), error = function(e) NULL)
   } else {
     NULL
   }
-  dimers <- if (length(dna) > 1L && engine_has("duplex_dg")) {
+  dimers <- if (length(dna) > 1L && engine_has("duplex_dg", engines)) {
     tryCatch(dimer_thermo(dna), error = function(e) NULL)
   } else {
     NULL

@@ -401,6 +401,8 @@ lamp_bip <- function(seq, after, arm_lengths, tm_range, gc_range, target_tm, min
 #' @param fip,bip inner-primer records (`primer`, `arm5`, `arm3`; plus-strand
 #'   template coordinates).
 #' @param max_product amplicon ceiling; the F2-B2 span cannot exceed it.
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default; it gates the inner primers' 3'-end dG.
 #' @return a named list with the observed values and their `*_ok` flags (see the
 #'   body), plus `ok`, `failed` and `messages` summarising the failed checks.
 #' @keywords internal
@@ -410,7 +412,7 @@ lamp_bip <- function(seq, after, arm_lengths, tm_range, gc_range, target_tm, min
 # =============================================================================
 #  The F2-B2 distance, the single-stranded loops and the inner primers' 3' ends
 #  are reported here; `design_lamp_marker()` warns when any of them fails.
-lamp_geometry <- function(fip, bip, max_product = 300L) {
+lamp_geometry <- function(fip, bip, max_product = 300L, engines = NULL) {
   # F2 and B2 are the inner primers' displacement (3') arms; their 3' termini
   # bound the amplifiable core.
   f2_b2 <- bip$arm3[2L] - fip$arm3[2L] + 1L
@@ -427,7 +429,7 @@ lamp_geometry <- function(fip, bip, max_product = 300L) {
   )
   # terminal_dg() is the package's 3'-stability (GC-clamp) diagnostic.  Report it
   # when the external engine is available; absence is unknown, not a failure.
-  dg <- if (engine_has("duplex_dg")) {
+  dg <- if (engine_has("duplex_dg", engines)) {
     rlang::set_names(
       terminal_dg(c(fip$primer, bip$primer), n = LAMP_3P_BASES),
       c("FIP", "BIP")
@@ -623,6 +625,8 @@ lamp_variant_gate <- function(fip, alt, pos) {
 #' @param min_product,max_product accepted amplicon window (bp).
 #' @param loop_primers also place the optional LF/LB loop primers (default
 #'   `TRUE`).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the inner primers' 3'-end dG.
 #' @return a `marker_lamp` list (`snp`, `primers`, `amplicon`, `loop`, `tm`,
 #'   `variant_primer`, `gates`, `relaxed`, `compatibility` - the joint
 #'   dimer/hairpin screen over the whole primer set), or `NULL` (with a message)
@@ -639,7 +643,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
                                outer_tm = c(55, 62), inner_tm = c(55, 65),
                                gc_range = KASP_LIMITS$gc,
                                min_product = 120L, max_product = 300L,
-                               loop_primers = TRUE) {
+                               loop_primers = TRUE, engines = NULL) {
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   q <- tmpl$snp_i
   target_tm <- mean(inner_tm)
@@ -754,7 +758,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
   # surfaced (warning + `geometry$ok = FALSE`) rather than silently accepted; it
   # is not folded into the ladder because FIP's 3'-terminal base is the ALT allele
   # and cannot always be an ideal G/C clamp.
-  geo <- lamp_geometry(fip, bip, max_product = max_product)
+  geo <- lamp_geometry(fip, bip, max_product = max_product, engines = engines)
   if (isFALSE(geo$ok)) {
     cli::cli_warn(c(
       gettext("LAMP primer-set geometry check failed."),

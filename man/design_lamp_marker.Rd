@@ -15,7 +15,8 @@ design_lamp_marker(
   gc_range = KASP_LIMITS$gc,
   min_product = 120L,
   max_product = 300L,
-  loop_primers = TRUE
+  loop_primers = TRUE,
+  engines = NULL
 )
 }
 \arguments{
@@ -41,6 +42,9 @@ published inner window is 45-49 nt), and widens only with \code{flank}.}
 
 \item{loop_primers}{also place the optional LF/LB loop primers (default
 \code{TRUE}).}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the inner primers' 3'-end dG.}
 }
 \value{
 a \code{marker_lamp} list (\code{snp}, \code{primers}, \code{amplicon}, \code{loop}, \code{tm},

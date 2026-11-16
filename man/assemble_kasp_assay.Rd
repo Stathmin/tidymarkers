@@ -32,7 +32,8 @@ assemble_kasp_assay(
   com_tm_target = COM_TM_TARGET,
   com_tm_range = NULL,
   com_gaps = 18:80,
-  as_lengths = KASP_AS_LENGTHS
+  as_lengths = KASP_AS_LENGTHS,
+  engines = NULL
 )
 }
 \arguments{
@@ -139,6 +140,10 @@ that the search tries; passed to \code{\link[=design_common_primers]{design_comm
 \item{as_lengths}{AS-primer lengths to try (passed to
 \code{\link[=design_as_primers]{design_as_primers()}}'s \code{lengths}; ASQ needs longer primers than KASP's
 20-27 nt to reach its Tm window).}
+
+\item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
+\code{NULL} reads the session default.  It gates the degenerate-primer efficiency
+screen (and the fixed-primer \code{assemble_primer_assay()} it delegates to).}
 }
 \value{
 a \code{marker_assay} object: a list holding the \code{snp}, the template, the

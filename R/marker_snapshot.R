@@ -96,6 +96,8 @@ SNAPSHOT_STRUCT_RELAX <- 3
 #' @param ext_gc accepted extension-primer GC window (fraction).
 #' @param limits thresholds list (see `KASP_LIMITS`); its `hairpin_dg` /
 #'   `homodimer_dg` floor the structure gate.
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default.  It gates the extension primer's structure.
 #' @return a `marker_snapshot` list (`snp`, `amplification`, `extension`,
 #'   `amplicon`, `compatibility` - the joint dimer/hairpin screen over the pair
 #'   and the extension primer), or `NULL` (with a message) when no pair/primer
@@ -116,7 +118,7 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
                                    ext_lengths = SNAPSHOT_EXT_LENGTHS,
                                    ext_tm = SNAPSHOT_EXT_TM,
                                    ext_gc = SNAPSHOT_EXT_GC,
-                                   limits = KASP_LIMITS) {
+                                   limits = KASP_LIMITS, engines = NULL) {
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) != 1L || nchar(alt) != 1L) {
@@ -142,14 +144,16 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
   inner_lo <- amp$start + nchar(amp$forward)
   inner_hi <- amp$end - nchar(amp$reverse)
   ext <- design_extension_primer(
-    tmpl$seq, si, ext_lengths, ext_tm, ext_gc, limits, inner_lo, inner_hi
+    tmpl$seq, si, ext_lengths, ext_tm, ext_gc, limits, inner_lo, inner_hi,
+    engines = engines
   )
   if (is.null(ext)) {
     # the tm rung: the same documented relaxation, declared as the gate's floor
     ext <- design_extension_primer(
       tmpl$seq, si, ext_lengths,
       ext_tm + c(-SNAPSHOT_TM_RELAX, SNAPSHOT_TM_RELAX),
-      ext_gc, limits, inner_lo, inner_hi
+      ext_gc, limits, inner_lo, inner_hi,
+      engines = engines
     )
   }
   if (is.null(ext)) {
@@ -259,10 +263,12 @@ print.marker_snapshot <- function(x, ...) {
 #' the amplicon between the flanking primers' 3' ends.
 #' @param inner_lo,inner_hi plus-strand span the extension primer must fit
 #'   between (the amplicon's inner bases).
+#' @param engines optional `marker_engines` adapter list (see `engine_has()`);
+#'   `NULL` reads the session default; it gates the extension primer's structure.
 #' @keywords internal
 #' @noRd
 design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits,
-                                    inner_lo = -Inf, inner_hi = Inf) {
+                                    inner_lo = -Inf, inner_hi = Inf, engines = NULL) {
   s <- as.character(seq)
   n <- nchar(s)
   short <- min(lengths)
@@ -301,7 +307,7 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
   }
   # the body reads a hairpin fold and a duplex (homodimer) dG: both, or the
   # stored flag would grade a dG nobody could compute
-  if (engine_has("hairpin_dg") && engine_has("duplex_dg")) {
+  if (engine_has("hairpin_dg", engines) && engine_has("duplex_dg", engines)) {
     cand$hairpin_dg <- oligo_dg_vec(cand$primer)
     cand$homodimer_dg <- oligo_dg_vec(cand$primer, cand$primer)
     cand$structure_ok <- cand$hairpin_dg >= limits$hairpin_dg &
