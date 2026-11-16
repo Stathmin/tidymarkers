@@ -22,6 +22,10 @@ jobs:
     R-CMD-check:
         name: ${{ matrix.config.os }} (${{ matrix.config.r }})
         runs-on: ${{ matrix.config.os }}
+        # Bounds a hang to the job rather than the runner. See ROADMAP D8: the
+        # devel leg was killed at 63m55s with no failing assertion, so install
+        # cost and test cost could not be told apart.
+        timeout-minutes: 120
         env:
             GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
             R_KEEP_PKG_SOURCE: yes
@@ -44,6 +48,7 @@ jobs:
                   use-public-rspm: true
 
             - uses: r-lib/actions/setup-r-dependencies@v2
+              timeout-minutes: 75
               with:
                   extra-packages: any::rcmdcheck
                   needs: check
@@ -67,6 +72,7 @@ jobs:
               run: brew install blast
 
             - uses: r-lib/actions/check-r-package@v2
+              timeout-minutes: 40
               with:
                   args: 'c("--no-manual", "--as-cran")'
                   error-on: '"warning"'
