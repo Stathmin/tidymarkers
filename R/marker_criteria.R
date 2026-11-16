@@ -1284,7 +1284,7 @@ criterion_spec <- function(limits = KASP_LIMITS) {
   )
 }
 
-#' The criterion registry, built (the uncached body of [criterion_spec()])
+#' The criterion registry, built (the uncached body of `criterion_spec()`)
 #' @param limits thresholds.
 #' @keywords internal
 #' @noRd

@@ -58,12 +58,18 @@ to check the idiom, not to lengthen the code.
 - **`load_all()` defaults to `helpers = TRUE`**, which sources
   `tests/testthat/helper-oligoarrayaux.R` and prepends `.tools/bin` to `PATH`;
   `oligoarrayaux_paths()` also walks up from `getwd()`. A test for the
-  *absent*-tool branch therefore needs `helpers = FALSE` **and** a cwd outside
+  _absent_-tool branch therefore needs `helpers = FALSE` **and** a cwd outside
   the repo, or the tool is found and the branch never runs.
 - **`BSgenome` sequence-cache entries are weakly linked.** A mock written into
   `@.seqs_cache` with a bare `assign()` records no link, so GC evicts it
   mid-proof and the test silently reports "no collision". Pin
   `link_counts[[name]] <- 1e6L`.
+- **`roxygenise(load_code = "source")` drops S3 method attribution.** It rewrites
+  every `\method{plot}{marker_assay}(...)` usage in `man/` to a plain
+  `plot.marker_assay(...)`, so an audit run leaves eleven changed `.Rd` files that
+  are worse than `HEAD`. Audit links with plain `roxygenise()`. Note the gate
+  compares `man/` before/after, not against `HEAD`, so that drift passes
+  `dev/check.R` — revert it rather than committing it.
 
 Then the usual commands:
 
@@ -105,7 +111,7 @@ Rscript -e 'summaryRprof("x.out")'
 - A grid search multiplies every axis. Count the objects a call builds (strands x
   lengths x positions x bases) before optimising any one of them.
 - Fix the cheap doomed path first: when the whole grid is built and then
-discarded, answer the discard condition before the grid exists.
+  discarded, answer the discard condition before the grid exists.
 - RDF export is not an R debugging standard (it is an interchange format, and R's
   call graph knows nothing about it). `Rprof` is the standard here.
 

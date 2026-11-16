@@ -130,7 +130,7 @@ internal_duplex_dg_one <- function(seq1, seq2, na, temp) {
 }
 
 #' dH and dS of a perfect duplex (kcal/mol, cal/K/mol) after the salt
-#' term, i.e. exactly what [internal_duplex_dg_one()] integrates over `temp`.
+#' term, i.e. exactly what `internal_duplex_dg_one()` integrates over `temp`.
 #' @keywords internal
 #' @noRd
 internal_duplex_terms <- function(s, na) {

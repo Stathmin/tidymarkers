@@ -63,7 +63,7 @@ scheme_label <- function(field, ids) {
 
 #' Discovered schemes as `marker_schemes()` rows
 #'
-#' Memoised alongside [extra_scheme_defs()]: one `tibble` per scheme is not free
+#' Memoised alongside `extra_scheme_defs()`: one `tibble` per scheme is not free
 #' and `marker_schemes()` is called from the design path.
 #' @keywords internal
 #' @noRd

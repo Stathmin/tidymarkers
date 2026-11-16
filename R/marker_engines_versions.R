@@ -199,7 +199,7 @@ marker_with_stamp <- function(x, stamp = NULL, from = NULL) {
 #' a zero-length `engine` column rather than fail.
 #'
 #' @param x a specificity tibble; `NULL` is passed through.
-#' @param engine the engine name from [marker_engine_names()].
+#' @param engine the engine name from `marker_engine_names`.
 #' @param stamp a stamp from [marker_engine_stamp()]; computed when `NULL`.
 #' @keywords internal
 #' @noRd

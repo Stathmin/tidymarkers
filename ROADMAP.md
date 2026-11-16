@@ -541,7 +541,7 @@
       нечитаемом FASTA; при неполном наборе хромосом кеш удаляется и
       перекачивается **один** раз. `@section Caching:` описывает это поведение. 7. Все три ubuntu-ноги падали на шаге установки OligoArrayAux: прогон
       `43857228030`, шаг `Install OligoArrayAux (Linux)` → `conda: command not
-  found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
+found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
       вызывал `conda install -c bioconda oligoarrayaux`. macOS прошёл, потому что
       на нём ставится только BLAST+, Windows — потому что `engines: none`.
       Правка: распаковать закреплённый tarball bioconda
@@ -697,6 +697,24 @@ manually started runner is canceled.` → `Process completed with exit code
       процессе с воркерами не разделяет файлы), а Δ кучи в параллельной фазе
       не измеряется — это записано в `dev/README.md`, а не выдаётся за замер.
     - блокер: нет.
+
+- [x] **D10. Четыре roxygen-ссылки вели на `@noRd`-темы.** `roxygenise()` писал
+      `Could not resolve link to topic` для `[criterion_spec()]`
+      (`R/marker_criteria.R`), `[internal_duplex_dg_one()]`
+      (`R/marker_dg_internal.R`), `[marker_engine_names()]`
+      (`R/marker_engines_versions.R`) и `[extra_scheme_defs()]`
+      (`R/marker_scheme_registry.R`). Все четыре символа внутренние: alias в
+      `man/` у них не появится, ссылка не разрешится ни при каком состоянии
+      документации. Ловушка аудита: `roxygenise()` проверяет `man/` до/после, а
+      не против `HEAD`, поэтому устаревшая запись переживает гейт.
+    - правка: `[...]` → обратные кавычки в четырёх файлах; поведение не менялось.
+    - проверка: `roxygen2::roxygenise()` — 0 строк `Could not resolve`;
+      `git status` после него не показывает изменённых `man/*.Rd` и `NAMESPACE`.
+    - блокер: нет.
+    - следствие: `R CMD check` больше не сообщает о неразрешимых ссылках. Отдельно
+      записано в `AGENTS.md`: `roxygenise(roclets = "rd", load_code = "source")`
+      теряет привязку S3-методов и переписывает `\method{plot}{...}` в
+      `plot.marker_...` — для аудита ссылок `load_code` не задаётся.
 
 Пределы контракта — проверены, приняты, правки не требуют:
 
@@ -1557,8 +1575,8 @@ FALSE)`, цена — одна хромосома RAM на просмотрен�
       плюс `unlink`) записана в `README.md` §Reproducibility, `?marker_bowtie_index`
       §Index location и перекрёстно в `?marker_fm_index`.
       проверка: `grep -n "path_temp" R/marker_bowtie.R R/marker_fm.R
-  R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
-  --no-render` (roxygen sync).
+R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
+--no-render` (roxygen sync).
       блокер: нет.
       следствие: умолчание безопасно для диска, но пшеничный индекс
       перестраивается заново каждую сессию (~1.4x FASTA, ~3-4 мин на 16 Гб), пока
@@ -1601,7 +1619,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       проверка: `test-engine-stamp.R` (метка адаптера, штамп, ручная таблица без
       штампа, проба версий мемоизирована), `test-scan.R`, `test-bowtie.R` —
       `FAIL 0 | WARN 0 | PASS 30331` на `dev/test.R --scheme`; `dev/check.R
-  --no-render` — `all checks passed`.
+--no-render` — `all checks passed`.
       блокер: нет.
       следствие: метку несут все четыре адаптера специфичности; `Rsubread`
       2.26.0 на этом хосте стоит, его версия видна в штампе. FM остаётся read
@@ -1657,7 +1675,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       конструкция поперёк структурного аллеля по-прежнему невозможна — это
       сказано в сообщении и в `@return`, а не в тишине.
 - [ ] **Документация ↔ код.** Часть сверки уже в гейте: шаг `hand-roll graph
-  edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
+edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
       из `dev/graphify-handrolled.R`, шаг `docs/artifacts` (`dev/check.R:177`)
       гоняет `dev/graphify-health.R --check`. Метки на 2026-11-16: 428 `named`,
       0 `missing`, 0 `duplicate`, 0 `echo-stale`
