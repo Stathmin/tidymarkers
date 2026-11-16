@@ -181,9 +181,11 @@ txdb_seqname_map <- function(chrom, txdb) {
 
 #' Annotate variants with a `TxDb` transcript model
 #'
-#' Fills (or replaces) the `consequence` column with the annotation the
-#' transcript model itself gives, instead of the string that came in with the
-#' record.  `VariantAnnotation::locateVariants()` always runs (region of the gene
+#' Fills the `consequence` column from the transcript model: a codon-level term
+#' wins over the region term, and the string that came in with the record is kept
+#' only where the model gives neither.
+#'
+#' `VariantAnnotation::locateVariants()` always runs (region of the gene
 #' model); when a `seqsource` reference is supplied,
 #' `VariantAnnotation::predictCoding()` also runs and provides the codon-level
 #' term (`stop_gained`, `missense_variant`, `synonymous_variant`, ...), which is

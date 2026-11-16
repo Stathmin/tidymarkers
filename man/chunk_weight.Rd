@@ -18,6 +18,8 @@ the chunk with weighted \code{variants}.
 \description{
 Overrides the derived \code{pop_freq} of the matching variants (MAF-style), so a
 chunk's weights can come from a real panel rather than the haplotype counts.
+A chunk built from \code{haplotypes} has its \code{variants} rebuilt from those
+haplotypes under \code{maf}, so edits made to \code{variants} directly are replaced.
 }
 \examples{
 \dontrun{

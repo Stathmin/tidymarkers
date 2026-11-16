@@ -23,15 +23,17 @@ annotation to one locus.}
 \code{codon_change} when \code{seqsource} is supplied).
 }
 \description{
-Fills (or replaces) the \code{consequence} column with the annotation the
-transcript model itself gives, instead of the string that came in with the
-record.  \code{VariantAnnotation::locateVariants()} always runs (region of the gene
+Fills the \code{consequence} column from the transcript model: a codon-level term
+wins over the region term, and the string that came in with the record is kept
+only where the model gives neither.
+}
+\details{
+\code{VariantAnnotation::locateVariants()} always runs (region of the gene
 model); when a \code{seqsource} reference is supplied,
 \code{VariantAnnotation::predictCoding()} also runs and provides the codon-level
 term (\code{stop_gained}, \code{missense_variant}, \code{synonymous_variant}, ...), which is
 the most discriminating thing \code{pick_target_snp()} can rank on.
-}
-\details{
+
 The input and output are the tidy variant table used across the package
 (\code{chrom}, \code{pos}, \code{ref_genome} list-column of \code{c(ref, alt)}), so annotation is
 just another step in the pipe:

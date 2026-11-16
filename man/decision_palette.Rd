@@ -7,7 +7,8 @@
 decision_palette()
 }
 \value{
-a list with \code{kind}, \code{status}, \code{edge}, \code{edge_lty}, \code{band}.
+a list with \code{kind}, \code{status}, \code{edge}, \code{edge_lty}, \code{band}, and the
+ink colours \code{text} and \code{band_text}.
 }
 \description{
 Palette of a decision figure: fill by kind, border by status, line by edge

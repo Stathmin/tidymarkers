@@ -571,7 +571,8 @@ get_region <- function(genome, chrom, start, end) genome_seq(genome, chrom, star
 #'
 #' `role = "AS"` = allele-specific primer (3'-terminal base at the SNP);
 #' `role = "COM"` = the common primer, `gap` bases away on the other side.
-#' @param snp_pos plus-strand coordinate of the primer's 3'-terminal base.
+#' @param snp_pos plus-strand SNP coordinate; the primer's 3'-terminal base is
+#'   at `snp_pos` for `"AS"` and `gap + length` away for `"COM"`.
 #' @param strand binding strand, `"+"` or `"-"`.
 #' @param length primer length in nt.
 #' @param gap distance from `snp_pos` to the near edge of a common primer.

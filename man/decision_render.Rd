@@ -31,7 +31,7 @@ figures of the decision graphs are drawn outside a KASP run.
 
 The page is sized from the solved drawing, so it keeps the solver's near
 square aspect rather than a fixed canvas.  When the layout engine is missing
-or fails, a warning names why and a simple top-down placement is used (boxes
+or fails, a message names why and a simple top-down placement is used (boxes
 still measured, edges drawn as rails between rows): a render never errors.
 }
 \examples{

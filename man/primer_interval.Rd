@@ -7,7 +7,8 @@
 primer_interval(snp_pos, strand, length, gap = 0L, role = c("AS", "COM"))
 }
 \arguments{
-\item{snp_pos}{plus-strand coordinate of the primer's 3'-terminal base.}
+\item{snp_pos}{plus-strand SNP coordinate; the primer's 3'-terminal base is
+at \code{snp_pos} for \code{"AS"} and \code{gap + length} away for \code{"COM"}.}
 
 \item{strand}{binding strand, \code{"+"} or \code{"-"}.}
 

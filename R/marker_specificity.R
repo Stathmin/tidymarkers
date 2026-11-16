@@ -1785,7 +1785,7 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' Grade in-silico PCR products against a scheme's mismatch policy
 #'
 #' The structured answer to "is this specific enough?": `pass` when at least one
-#' product is tolerated *and* it is the only tolerated product on its chromosome;
+#' product is tolerated *and* it is the only tolerated product;
 #' `fail` when every product breaks the policy (including a changed PAM),
 #' more than one tolerated product exists, or the backend is primer-level; `unknown`
 #' when there is no genome-wide engine - a missing backend is never a silent pass.

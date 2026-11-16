@@ -13,6 +13,8 @@
 #    match        every claim the prose makes is in the code
 #    partial      true but silent about something a caller must know
 #    contradicts  the prose states something the code does not do
+#    unverifiable the body is past the elision threshold: recorded without a
+#                 model call, so a long body is never scored on a hidden tail
 #
 #  Results are appended to graphify-out/.graphify_faithfulness.jsonl, so a
 #  re-run resumes where it stopped; the summary goes to
@@ -97,12 +99,15 @@ read_export <- function(file) {
     txt <- trimws(txt[nzchar(trimws(txt))])
     body <- dlines[seq.int(as.integer(sr[[1L]]), as.integer(sr[[3L]]))]
     # a 300-line body costs prompt tokens and buys no verdict a caller needs;
-    # the head and the return statement carry the contract
-    if (length(body) > 70L) {
-      body <- c(body[seq_len(45L)], "  # ... body elided ...", utils::tail(body, 20L))
+    # the head and the return statement carry the contract.  What is dropped is
+    # recorded, and the run loop answers "unverifiable" without a model call:
+    # asking the model about code it cannot see produced the false `partial`s.
+    elided <- length(body) > 200L
+    if (elided) {
+      body <- c(body[seq_len(45L)], "  # ... body elided ...", utils::tail(body, 40L))
     }
     out[[nm]] <- list(
-      file = file, prose = txt, body = body,
+      file = file, prose = txt, body = body, elided = elided,
       topic = if (length(rd)) rd[[1L]] else nm
     )
   }
@@ -139,9 +144,11 @@ SYSTEM <- paste0(
   "that a caller must know.\n",
   "- \"contradicts\": the prose states something the code does not do, or the ",
   "code does the opposite.\n",
+  "- \"unverifiable\": the body you were given is visibly incomplete, so neither ",
+  "of the above can be established from it.\n",
   "Only say \"contradicts\" when the code shown directly refutes the prose. When the ",
-  "body delegates to another function, or carries a `# ... body elided ...` line, the ",
-  "evidence may sit in code you were not given: answer \"partial\" instead.\n",
+  "body delegates to another function, the evidence may sit in code you were not ",
+  "given: answer \"partial\" instead.\n",
   "Reply with ONE JSON object and nothing else:\n",
   '{"verdict": "match", "evidence": "the prose claim and the code fact"}\n',
   "Keep evidence under 30 words. Judge only the text you are given; do not ",
@@ -169,13 +176,13 @@ if (dry_run) {
 }
 
 # --- ask ----------------------------------------------------------------------
-verdicts <- c("match", "partial", "contradicts")
+verdicts <- c("match", "partial", "contradicts", "unverifiable")
 
 salvage <- function(text) {
   text <- gsub("```(?:json)?", "", text)
   v <- regmatches(
     text,
-    regexpr("(match|partial|contradicts)", text, ignore.case = TRUE)
+    regexpr("(match|partial|contradicts|unverifiable)", text, ignore.case = TRUE)
   )
   ev <- regmatches(
     text,
@@ -268,11 +275,15 @@ failed <- character()
 for (k in seq_along(todo)) {
   nm <- todo[[k]]
   t0 <- Sys.time()
-  r <- tryCatch(ask(nm), error = function(e) {
-    failed <<- c(failed, nm)
-    message(sprintf("  %-28s error: %s", nm, conditionMessage(e)))
-    NULL
-  })
+  r <- if (isTRUE(targets[[nm]]$elided)) {
+    list(verdict = "unverifiable", evidence = "body elided; not sent to the model")
+  } else {
+    tryCatch(ask(nm), error = function(e) {
+      failed <<- c(failed, nm)
+      message(sprintf("  %-28s error: %s", nm, conditionMessage(e)))
+      NULL
+    })
+  }
   if (is.null(r)) next
   if (is.na(r$verdict)) {
     failed <- c(failed, nm)
@@ -316,7 +327,8 @@ md <- c(
 )
 writeLines(md, REPORT)
 cat(sprintf(
-  "done: %d match, %d partial, %d contradicts of %d (%s)\n",
-  tbl[["match"]], tbl[["partial"]], tbl[["contradicts"]], nrow(res), REPORT
+  "done: %d match, %d partial, %d contradicts, %d unverifiable of %d (%s)\n",
+  tbl[["match"]], tbl[["partial"]], tbl[["contradicts"]], tbl[["unverifiable"]],
+  nrow(res), REPORT
 ))
 if (length(failed)) cat("failed: ", paste(failed, collapse = ", "), "\n", sep = "")

@@ -65,7 +65,8 @@ decision_style <- function(palette = decision_palette(),
 }
 
 #' Palette of a decision figure: fill by kind, border by status, line by edge
-#' @return a list with `kind`, `status`, `edge`, `edge_lty`, `band`.
+#' @return a list with `kind`, `status`, `edge`, `edge_lty`, `band`, and the
+#'   ink colours `text` and `band_text`.
 #' @examples
 #' decision_palette()$kind # fill colour per node kind
 #' decision_palette()$status["violated"] # border colour of a failing check
@@ -117,7 +118,7 @@ pal_colour <- function(pal, key, default = "#57534E") {
 #'
 #' The page is sized from the solved drawing, so it keeps the solver's near
 #' square aspect rather than a fixed canvas.  When the layout engine is missing
-#' or fails, a warning names why and a simple top-down placement is used (boxes
+#' or fails, a message names why and a simple top-down placement is used (boxes
 #' still measured, edges drawn as rails between rows): a render never errors.
 #' @param graph a `tbl_graph` from [marker_decision_graph()].
 #' @param style a [decision_style()].

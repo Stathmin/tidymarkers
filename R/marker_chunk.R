@@ -224,6 +224,8 @@ check_chunk <- function(chunk) {
 #'
 #' Overrides the derived `pop_freq` of the matching variants (MAF-style), so a
 #' chunk's weights can come from a real panel rather than the haplotype counts.
+#' A chunk built from `haplotypes` has its `variants` rebuilt from those
+#' haplotypes under `maf`, so edits made to `variants` directly are replaced.
 #' @param chunk a `marker_chunk`.
 #' @param maf a per-variant table (`pos`, `ref`, `alt`, and `maf`/`freq`) in the
 #'   chunk's window-local coordinates.
