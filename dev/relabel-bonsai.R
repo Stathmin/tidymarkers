@@ -14,6 +14,8 @@
 #    --dry-run    list the targets and exit (the self-check)
 #    --limit=N    cap the batch (smoke-test the model before a long run)
 #    --cids=1,2,3 repair specific communities the status classifier cannot see
+#    --set=1=Name,2=Name  the manual lever: name a community yourself when the
+#                         model keeps colliding; recorded with model "manual"
 #
 #  The model is OpenAI-compatible and local:
 #    OPENAI_BASE_URL (default http://127.0.0.1:8000/v1)
@@ -50,6 +52,7 @@ dry_run <- "--dry-run" %in% args
 limit_arg <- grep("^--limit=", args, value = TRUE)
 limit <- if (length(limit_arg)) as.integer(sub("^--limit=", "", limit_arg[[1L]])) else Inf
 cids_arg <- grep("^--cids=", args, value = TRUE)
+set_arg <- grep("^--set=", args, value = TRUE)
 
 base <- Sys.getenv("OPENAI_BASE_URL", "http://127.0.0.1:8000/v1")
 model <- Sys.getenv("OPENAI_MODEL", "Ternary-Bonsai-2-27B-tight")
@@ -118,6 +121,21 @@ if (length(cids_arg)) {
   ))
 }
 if (is.finite(limit)) targets <- head(targets, limit)
+
+# a one-node community gives the model no context to reason from, so it keeps
+# proposing a name that collides; a human names it and the pass says so
+manual <- NULL
+if (length(set_arg)) {
+  pairs <- strsplit(sub("^--set=", "", set_arg[[1L]]), ",", fixed = TRUE)[[1L]]
+  pairs <- strsplit(pairs, "=", fixed = TRUE)
+  manual <- stats::setNames(
+    vapply(pairs, function(p) paste(p[-1L], collapse = "="), ""),
+    vapply(pairs, function(p) p[[1L]], "")
+  )
+  manual <- manual[names(manual) %in% names(status)]
+  model <- "manual"
+}
+batch_targets <- if (is.null(manual)) targets else setdiff(targets, as.integer(names(manual)))
 
 # .graphify_labels.json is only the sidecar; explain/query read
 # `community_name` cached on each node, which keeps the pre-curation hub name
@@ -294,9 +312,20 @@ bad <- function(cid, name, c) {
 
 accepted <- list()
 rejected <- list()
+if (!is.null(manual)) {
+  for (cid in names(manual)) {
+    why <- bad(as.integer(cid), manual[[cid]], ctx(as.integer(cid)))
+    if (is.null(why)) {
+      accepted[[cid]] <- clean(manual[[cid]])
+    } else {
+      rejected[[cid]] <- list(name = manual[[cid]], why = why)
+    }
+  }
+}
 BATCH <- 12L
-for (i in seq(1L, length(targets), by = BATCH)) {
-  batch <- targets[i:min(i + BATCH - 1L, length(targets))]
+starts <- if (length(batch_targets)) seq(1L, length(batch_targets), by = BATCH) else integer(0)
+for (i in starts) {
+  batch <- batch_targets[i:min(i + BATCH - 1L, length(batch_targets))]
   out <- tryCatch(
     ask(batch),
     error = function(e) {
@@ -316,7 +345,7 @@ for (i in seq(1L, length(targets), by = BATCH)) {
   }
   message(sprintf(
     "batch %d/%d: %d accepted, %d rejected",
-    (i - 1L) %/% BATCH + 1L, ceiling(length(targets) / BATCH),
+    (i - 1L) %/% BATCH + 1L, ceiling(length(batch_targets) / BATCH),
     length(accepted), length(rejected)
   ))
 }
@@ -425,6 +454,7 @@ passes[[length(passes) + 1L]] <- list(
   date = format(Sys.Date()),
   model = model,
   prompt = "strict-purpose: Title Case, 2-5 words, no file/symbol/heading echoes",
+  manual = !is.null(manual),
   requested = length(targets),
   relabelled = length(final),
   kept_previous = length(kept),
