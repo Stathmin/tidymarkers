@@ -27,9 +27,9 @@
 #  Every run is teed to dev/logs/test-<mode>-<stamp>.log (dev/logs/latest.log
 #  points at the newest one) and leaves machine-readable timings beside it:
 #
-#    dev/logs/test-<mode>-<stamp>-files.csv   per test file: start/end wall
-#                                             clock, duration, counts, lobstr
-#                                             heap delta
+#    dev/logs/test-<mode>-<stamp>-files.csv   per test file: phase, start/end
+#                                             wall clock, duration, counts,
+#                                             lobstr heap delta
 #    dev/logs/test-<mode>-<stamp>-tests.csv   per test: start wall clock,
 #                                             duration (serial only)
 #    dev/logs/test-<mode>-<stamp>-summary.md  started/finished/wall, top-N
@@ -43,9 +43,11 @@
 #  never enter docs/artifacts.yml (whose hashes gate the committed figures).
 #  `--profile` additionally writes a summaryRprof() profile (costs ~20%).
 #
-#  Timings are real for files that run serially (the SOCK phase of `--full`).
-#  In parallel phases testthat replays a file's events when the file finishes,
-#  so per-test/per-file wall times are written as NA instead of a silent zero.
+#  Timings are real in both phases: the reporter asks testthat to stream a
+#  worker's events (`capabilities$parallel_updates`), so a file's clock is its
+#  own, not a replay timestamp.  If a build ever falls back to the chunked loop,
+#  the missing values are written as NA in the CSVs and printed as `n/a` in the
+#  summary, never as a silent zero -- and the summary says how many are missing.
 #
 #  Tests never install.  Install once with `Rscript dev/install-deps.R`
 #  (`--with-suggests` for the full external checks).
@@ -225,6 +227,7 @@ state$started_at <- wall_stamp()
 state$done <- FALSE
 state$completed <- FALSE
 state$any_parallel <- FALSE
+state$phase <- "serial"
 
 # Same console look as before (ProgressReporter), plus timing bookkeeping.
 TimingReporter <- R6::R6Class("TimingReporter",
@@ -238,7 +241,7 @@ TimingReporter <- R6::R6Class("TimingReporter",
       key <- basename(filename)
       if (is.null(state$files[[key]])) {
         state$files[[key]] <- list(
-          file = key, started_at = wall_stamp(), started = now(),
+          file = key, phase = state$phase, started_at = wall_stamp(), started = now(),
           duration_s = NA_real_, ended_at = NA_character_, pass = 0L,
           fail = 0L, warn = 0L, skip = 0L, error = 0L, mem_delta_mb = NA_real_
         )
@@ -347,7 +350,7 @@ write_outputs <- function() {
 
 fmt_seconds <- function(s) {
   if (is.na(s)) {
-    return("NA")
+    return("n/a")
   }
   if (s < 60) sprintf("%.1fs", s) else sprintf("%dm %02ds", floor(s / 60), round(s) %% 60)
 }
@@ -402,7 +405,7 @@ summary_lines <- function(status) {
     out <- c(
       out, "## Slowest files", "",
       if (has_mem) {
-        "| file | started | duration | pass | fail | mem delta (MB) |"
+        "| file | started | duration | pass | fail | mem delta (MB, serial phase) |"
       } else {
         "| file | started | duration | pass | fail |"
       },
@@ -410,13 +413,14 @@ summary_lines <- function(status) {
     )
     out <- c(out, vapply(slow_files, function(r) {
       head <- sprintf(
-        "| %s | %s | %s | %d | %d", r$file, r$started_at, fmt_seconds(r$duration_s),
+        "| %s | %s | %s | %d | %d", r$file,
+        if (is.na(r$started_at)) "n/a" else r$started_at, fmt_seconds(r$duration_s),
         r$pass, r$fail
       )
       if (!has_mem) {
         paste0(head, " |")
       } else {
-        paste0(head, sprintf(" | %s |", if (is.na(r$mem_delta_mb)) "NA" else sprintf("%+.1f", r$mem_delta_mb)))
+        paste0(head, sprintf(" | %s |", if (is.na(r$mem_delta_mb)) "—" else sprintf("%+.1f", r$mem_delta_mb)))
       }
     }, character(1)))
     out <- c(out, "")
@@ -424,13 +428,19 @@ summary_lines <- function(status) {
   if (length(test_rows)) {
     out <- c(out, "## Slowest tests", "", "| file | test | started | duration |", "|---|---|---|---|")
     out <- c(out, vapply(test_rows, function(r) {
-      start_at <- if (is.null(r$started_at)) "NA" else r$started_at
       sprintf(
         "| %s | %s | %s | %s |", r$file, gsub("|", "\\|", r$test, fixed = TRUE),
-        start_at, fmt_seconds(r$duration_s)
+        if (is.na(r$started_at)) "n/a" else r$started_at, fmt_seconds(r$duration_s)
       )
     }, character(1)))
     out <- c(out, "")
+  }
+  gaps <- sum(vapply(rows, function(r) is.na(r$duration_s) || is.na(r$started_at), logical(1)))
+  if (gaps > 0L) {
+    out <- c(out, sprintf(
+      "- timing gaps: %d of %d file(s) have no start/duration (events were not streamed)",
+      gaps, length(rows)
+    ), "")
   }
   out <- c(
     out, sprintf("- log: `%s`", file.path("dev", "logs", basename(log_path))),
@@ -504,6 +514,7 @@ run_phase <- function(label, phase_files, go_parallel) {
   # the reporter reads these from the enclosing environment
   parallel <<- isTRUE(go_parallel) && length(phase_files) > 1L
   state$any_parallel <- state$any_parallel || parallel
+  state$phase <- if (parallel) "parallel" else "serial"
   state$mem_prev <- if (have_lobstr && !parallel) mem_used_mb() else NA_real_
   if (parallel && !nzchar(Sys.getenv("TESTTHAT_CPUS"))) {
     jobs <- max(2L, min(8L, parallel::detectCores() - 1L, length(phase_files)))
