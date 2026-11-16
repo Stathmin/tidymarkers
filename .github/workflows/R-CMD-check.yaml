@@ -52,6 +52,8 @@ jobs:
             GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
             R_KEEP_PKG_SOURCE: yes
             _R_CHECK_FORCE_SUGGESTS_: false
+            # testthat reads the worker count from this, not from DESCRIPTION
+            TESTTHAT_CPUS: 4
         strategy:
             fail-fast: false
             matrix:
