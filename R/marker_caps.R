@@ -197,6 +197,14 @@ caps_operative_enzymes <- function(enzymes) {
 #' @family CAPS
 #' @export
 caps_fragments <- function(seq, enzymes = restriction_enzymes()) {
+  # a list column reaches `matchPattern()` as its width, which gives 0 hits for
+  # every site and a silent "no sites" for a hand-built table
+  if (!is.character(enzymes$site)) {
+    cli::cli_abort(c(
+      "`enzymes$site` must be a character vector of IUPAC recognition sites.",
+      "x" = "It is {.cls {class(enzymes$site)}}."
+    ))
+  }
   s <- Biostrings::DNAString(as.character(seq))
   n <- length(s)
   purrr::pmap(enzymes[c("enzyme", "site", "cut")], function(enzyme, site, cut) {

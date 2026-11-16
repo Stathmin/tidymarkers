@@ -24,6 +24,17 @@ test_that("caps_fragments cuts at the enzyme site, or leaves one uncut band", {
   expect_equal(caps_fragments("AAAAAAAAAA")$fragments[[1L]], 10L)
 })
 
+test_that("caps_fragments names a non-character `site` column instead of reading 0 hits", {
+  # a hand-built table with a list column silently digested to "no sites"
+  bad <- tibble::tibble(
+    enzyme = "EcoRI", site = list("GAATTC"), cut = 1L, isoforms = ""
+  )
+  expect_error(
+    caps_fragments("AAAAAGAATTCTTTTT", bad),
+    "enzymes\\$site.*character"
+  )
+})
+
 test_that("find_caps_enzymes flags the enzyme the variant turns on or off", {
   withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 400L, TRUE), collapse = ""))
   substr(w, 200L, 205L) <- "GAATTC" # a unique EcoRI site at 200
