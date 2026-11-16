@@ -242,7 +242,10 @@ bad <- function(cid, name, c) {
   if (!nzchar(s)) {
     return("empty")
   }
-  if (grepl("::", s, fixed = TRUE) || grepl("\u00a7", s, fixed = TRUE) || grepl("/", s, fixed = TRUE)) {
+  # "I/O" is a legitimate word (cid 174 lost its honest name to a blanket ban);
+  # a slash marks a path only when it names a file or nests a directory
+  if (grepl("::", s, fixed = TRUE) || grepl("\u00a7", s, fixed = TRUE) ||
+    grepl("/[^/]*\\.[A-Za-z]{1,5}$", s) || grepl("/.*/", s)) {
     return("punctuation")
   }
   if (isTRUE(is_file_echo(s))) {
