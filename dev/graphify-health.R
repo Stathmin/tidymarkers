@@ -184,6 +184,37 @@ god <- head(god, 10L)
 # file's `contains` edge.  A leaf adds no seam, so the leaf ratio is the
 # entity-multiplication signal, not the raw node count.
 node_file <- vapply(nodes, function(n) n$source_file %||% "", character(1))
+
+# --- cross-file calls: the seam the AST cannot see ----------------------------
+# The AST pass resolves a `calls` edge only inside one file, so a community is a
+# file island and `explain` under-reports. `dev/graphify-calls.R` (run by
+# dev/check.R) adds the missing edges with `_origin == "calls-pass"`; a zero here
+# after a rebuild means the post-pass has not run, not that there are no calls.
+call_edge <- rel == "calls"
+src_file <- node_file[match(src, ids)]
+tgt_file <- node_file[match(tgt, ids)]
+has_file <- function(x) !is.na(x) & nzchar(x)
+cross_file_calls <- sum(
+  call_edge & has_file(src_file) & has_file(tgt_file) & src_file != tgt_file,
+  na.rm = TRUE
+)
+calls_pass_edges <- sum(vapply(
+  links, function(e) identical(origin_of(e), "calls-pass"), logical(1)
+))
+
+# --- internal seams: cross-file fan-out, measured -----------------------------
+# A seam is a function that many *files* must know. Only `R/` callers count: a
+# test fixture, a roxygen example or a demo is not a caller that must be kept
+# working, and an external `pkg::fn()` is not this package's interface. Counting
+# distinct caller files (not calls) stops one churny file from inventing a hub.
+in_r <- function(x) !is.na(x) & startsWith(x, "R/")
+seam_ok <- call_edge & in_r(src_file) & in_r(tgt_file) & src_file != tgt_file
+seam_label <- labels[match(tgt, ids)][seam_ok]
+seam_pair <- cbind(seam_label, src_file[seam_ok])
+seam_pair <- seam_pair[!is.na(seam_pair[, 1L]) & nzchar(seam_pair[, 1L]), , drop = FALSE]
+seam_pair <- seam_pair[!duplicated(seam_pair), , drop = FALSE]
+seam_fanout <- sort(table(seam_pair[, 1L]), decreasing = TRUE)
+seam_top <- head(seam_fanout, 12L)
 deg <- table(c(src, tgt))
 node_deg <- as.integer(deg[ids])
 node_deg[is.na(node_deg)] <- 0L
@@ -710,18 +741,12 @@ report <- c(
   paste(
     "Read this as the **third-party plumbing this package leans on**, not as the",
     "package's own interfaces. The R resolver resolves `pkg::fn()` calls to an",
-    "`external_function` node but a bare internal call only inside one file (see",
-    "'cross-file call resolution' below), so no internal helper can accumulate the",
-    "in-degree a `tibble::tibble()` does. The real internal seams are the R-only",
-    "cross-file fan-out measured from source (comments stripped, only `R/`",
-    "callers, test fixtures and roxygen examples excluded): `snp_template`",
-    "(16 files), `spec_row` (12), `map_spec` (13), `scheme_conditions` (10),",
-    "`gc_frac` (10), `primer_candidates` (9), `primer_tm` (9), `has_palindrome`",
-    "(7), `ath_chrom` (5) -- broad and shallow, with no hub, not this table.",
-    "A function called only from tests, `@examples` or a demo is not a seam at",
-    "all: `ath_genome()` has 0 `R/` callers and is a TAIR10 demo fixture, not an",
-    "interface. This list is hand-maintained and drifts; compute it in the script",
-    "from the same stripped source scan before trusting the counts."
+    "`external_function` node but a bare internal call only inside one file, so",
+    "this table is in-degree from one file at a time, and the internal helpers",
+    "below (which `dev/graphify-calls.R` links across files) are under-counted",
+    "here. A function called only from tests, `@examples` or a demo is not a",
+    "seam at all: `ath_genome()` has 0 `R/` callers and is a TAIR10 demo",
+    "fixture, not an interface."
   ),
   "",
   rows("node", "callers"),
@@ -729,6 +754,23 @@ report <- c(
   vapply(
     names(god),
     function(n) rows(paste0("`", labels[match(n, ids)], "`"), fmt(as.integer(god[[n]]))),
+    character(1)
+  ),
+  "",
+  "### Internal seams",
+  "",
+  paste(
+    "The package's own interfaces, measured: distinct files under `R/` that call",
+    "each function, from the cross-file pass. Broad and shallow is the house",
+    "style (many small helpers, no hub), so the list is long-tailed rather than",
+    "headed by one god node."
+  ),
+  "",
+  rows("function", "calling files"),
+  rows("---", "---:"),
+  vapply(
+    names(seam_top),
+    function(n) rows(paste0("`", n, "()`"), fmt(as.integer(seam_top[[n]]))),
     character(1)
   ),
   "",
@@ -772,8 +814,9 @@ report <- c(
     paste(
       "`.graphifyrc` maps `.Rmd` to markdown, so `vignettes/*.Rmd` **are** indexed",
       "(91 `document` nodes). `man/*.Rd` is not, and `.graphifyrc` leaves it",
-      "unmapped on purpose (174 files would dominate a semantic run); export plain",
-      "`.md` stubs via `dev/graphify-docs.R` if the manuals must be graph concepts"
+      "unmapped on purpose: mapping it measures as a net loss (189 `document`",
+      "nodes but communities 432 -> 600, 218 singletons, every curated label",
+      "renumbered). Read `man/*.Rd` as text for doc<->code faithfulness instead"
     )
   ),
   rows(
@@ -815,20 +858,18 @@ report <- c(
     )
   ),
   rows(
-    "cross-file call resolution", "gap",
+    "cross-file call resolution", "shipped",
     paste(
       "The R resolver binds a bare call only inside the caller's own file, and",
       "resolves a cross-file call only through an `imports_from` edge, which it",
       "creates from an explicit `source()` call. An R package has neither: it",
-      "declares dependencies in `NAMESPACE`/`Collate`, not with `source()`, so of",
-      "747 `calls` edges whose ends both have a `source_file`, **0 cross a file**.",
-      "`pkg::fn()` targets do resolve cross-file because they name the package.",
-      "Consequence: `explain`/`affected` under-report impact, communities are",
-      "file islands, and a source-scan (not the graph) is the only way to see the",
-      "real seams. Fix: a deterministic post-pass keyed on a package-wide unique",
-      "function name (skip ambiguous names, shadowed locals and test fixtures),",
-      "emitting INFERRED `calls` edges -- the same pattern",
-      "`dev/graphify-handrolled.R` uses for `supersedes`."
+      "declares dependencies in `NAMESPACE`/`Collate`, not with `source()`, so the",
+      "AST alone left **0 cross-file** `calls` edges and every community a file",
+      "island. `dev/graphify-calls.R` closes it with ",
+      fmt(cross_file_calls),
+      "INFERRED edges keyed on a package-wide unique function name (ambiguous",
+      "names, shadowed locals and test fixtures are skipped, never guessed). Run",
+      "it after every rebuild: a rebuild is AST-only and drops the pass."
     )
   ),
   rows(
@@ -857,7 +898,8 @@ report <- c(
   "",
   paste(
     "What is wired into graphify here, and what is deliberately not. `open` is",
-    "usable in the installed build but not adopted; `skipped` has no consumer."
+    "usable in the installed build but not adopted; `skipped` has no consumer;",
+    "`rejected` was tried and measured to lose more than it gains."
   ),
   "",
   rows("lever", "status", "note"),
@@ -949,11 +991,39 @@ report <- c(
     )
   ),
   rows(
+    "`dev/graphify-calls.R`", "shipped",
+    paste(
+      "the AST pass resolves `calls` only inside one file, so every community was",
+      "a file island; this deterministic post-pass re-reads `R/` with srcref",
+      "attribution and adds ", fmt(cross_file_calls), " cross-file edges (",
+      fmt(calls_pass_edges), " carry `_origin = calls-pass`)"
+    )
+  ),
+  rows(
+    "`language.rd=markdown` (man/ in the graph)", "rejected",
+    paste(
+      "adds 189 `document` nodes, but takes communities 432 -> 600 with 218",
+      "singletons (one island per man page) and renumbers every curated label.",
+      "A gitignored `.md` mirror cannot work either: graphify honours",
+      ".gitignore, so the stubs never enter the graph. Doc<->code faithfulness",
+      "reads `man/*.Rd` as text instead"
+    )
+  ),
+  rows(
+    "`graphify-mcp`", "shipped",
+    paste(
+      "0.9.92 does ship an MCP server (`graphify-mcp`, module `graphify.serve`):",
+      "stdio or Streamable HTTP over the same `graph.json`, with `--graph`,",
+      "`--port` and `--stateless`. Verified by `graphify-mcp --help`; register it",
+      "in the editor's `context_servers` to query the graph without a shell-out"
+    )
+  ),
+  rows(
     "`query` / `path` / `explain` / `affected`", "shipped",
     paste(
       "verified from the shell: `explain \"Biostrings::complement\"` resolves one",
       "node and shows its `supersedes` edge, `affected \"normalise_allele()\"`",
-      "lists its caller. 0.9.92 has no MCP server, so agents use this CLI"
+      "lists its caller; the same four are reachable over MCP (see the row above)"
     )
   ),
   rows(

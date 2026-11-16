@@ -24,8 +24,9 @@
 #  that subtree in the manifest.
 #
 #  NOTE: `vignettes/*.Rmd` **are** indexed -- `.graphifyrc` maps `.Rmd` to
-#  markdown.  `man/*.Rd` is not: use `dev/graphify-docs.R` to export plain `.md`
-#  stubs first if the manuals must enter this pass.
+#  markdown.  `man/*.Rd` is not: mapping it takes communities 432 -> 600 with
+#  218 singletons and renumbers the curated labels, so the manuals stay out of
+#  the graph (read `man/*.Rd` as text for doc<->code faithfulness).
 #
 #  Run:  dev/graphify-semantic.sh [PATH]   (default: .)
 # =============================================================================

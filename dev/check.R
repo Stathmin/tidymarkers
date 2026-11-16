@@ -174,6 +174,21 @@ step("hand-roll graph edges", function() {
   ok("hand-roll replacements are in the graph as `supersedes` edges")
 })
 
+step("cross-file call edges", function() {
+  # the AST pass resolves `calls` only inside one file (0 of 747 crossed a file),
+  # so every community was a file island. This deterministic post-pass re-reads
+  # R/ with srcref attribution and adds the missing edges. Same artifact as the
+  # step above: it mutates the gitignored graph and self-skips without it.
+  if (!file.exists("graphify-out/graph.json")) {
+    return(message("  skip (no graphify-out/graph.json - CI has no graph)"))
+  }
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/graphify-calls.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/graphify-calls.R failed (status ", status, ")")
+  }
+  ok("cross-file `calls` edges are in the graph")
+})
+
 step("docs/artifacts", function() {
   # the code graph's limits are part of the docs contract; this self-skips when
   # graphify-out/ is absent (CI has no graph, and it is a developer tool)

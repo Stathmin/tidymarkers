@@ -5,5 +5,8 @@ language.rmd=markdown
 
 # man/*.Rd is deliberately NOT mapped. 174 files / 393 KB of prose that repeats
 # the roxygen comments in R/ and would dominate a semantic run for little new
-# structure. Map `language.rd=markdown` only for a scoped `man` pass if the
-# descriptions must enter the graph.
+# structure. Measured: `language.rd=markdown` adds 189 document nodes but takes
+# communities 432 -> 600 with 218 singletons (one island per man page) and
+# renumbers every curated label. A gitignored `.md` mirror cannot work either:
+# graphify honours .gitignore, so the stubs never enter the graph. Doc<->code
+# faithfulness reads man/*.Rd as text; it does not need graph nodes.
