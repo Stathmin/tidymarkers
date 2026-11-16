@@ -72,6 +72,28 @@ test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   expect_true(all(v$chrom == "Chr4")) # names normalised
 })
 
+test_that("read_variants_vcf names the symbolic alleles it drops (1602)", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "4\t100\t.\tA\tG\t.\t.\t.",
+    "4\t400\t.\tA\t<DEL>\t.\t.\t.",
+    "4\t500\t.\tA\t*\t.\t.\t."
+  ), vcf)
+  expect_message(v <- read_variants_vcf(vcf), "2 VCF records")
+  expect_setequal(v$pos, 100L) # the designable record survives untouched
+
+  clean <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "4\t100\t.\tA\tG\t.\t.\t."
+  ), clean)
+  expect_message(read_variants_vcf(clean), NA) # quiet when nothing is dropped
+})
+
 test_that("read_variants_vcf handles empty, mixed and long-header VCFs (Y5)", {
   skip_if_not_installed("vroom")
   hdr <- c("##fileformat=VCFv4.2", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO")

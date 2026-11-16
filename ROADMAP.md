@@ -254,7 +254,7 @@
       Тест `ZW0 M5` этого не показывал: в его 37 ячейках тай-брейк не
       срабатывал.
 12. [x] **Сетка `com_gaps` привязана к позиции AS** (из №7). `com_gaps =
-        18:80` (`R/marker_design.R`) считается от AS, поэтому на вырожденном
+    18:80` (`R/marker_design.R`) считается от AS, поэтому на вырожденном
         шаблоне (modulo-100) кандидат входит в сетку или выходит из неё при
         сдвиге рамки. Считалось единственной наблюдённой причиной расхождения
         seed 7 / `loc` 40 в `ZW0 M5`.
@@ -298,10 +298,10 @@
     - блокер: нет.
     - следствие: «106 unknown» больше не читается как 106 провалов.
 16. [—] **`marker_assay$assay` — не дефект** (проверено в этой волне).
-        `$assay` — это `tbl_df` (`R/marker_assemble.R:917`, `:1043`); список
-        `$assays` содержит только `marker_duplex`/`marker_lax`.
-        `marker_generic_checks()` (`R/marker_checks.R:750-754`) обрабатывает обе
-        формы. Правки не требует.
+    `$assay` — это `tbl_df` (`R/marker_assemble.R:917`, `:1043`); список
+    `$assays` содержит только `marker_duplex`/`marker_lax`.
+    `marker_generic_checks()` (`R/marker_checks.R:750-754`) обрабатывает обе
+    формы. Правки не требует.
 17. [x] **Репродьюсер `ZW0 M5` был вырожден: пад в 100 оснований равнялся
         периоду тайлинга.** `test-invariants.R` строил `pad` из 100 оснований и
         сдвиги `c(0L, 17L, 43L, 100L)`; при `sh = 100` префикс равен всему паду,
@@ -345,8 +345,8 @@
       `na == nrow - 10`; 288 из 348 = 82.8 % на `marker_example()`; один экран —
       медиана 0.814 с, полный ≈ 71 с ≈ 2.7 с на таргет. Победители AS после
       удаления `as_start` — 13 из 13 те же: `351728, 398591, 550104, 710331,
-      998455, 1043429, 1239684, 1310353, 1326504, 1361930, 1609312, 1822498,
-      1832693`.
+998455, 1043429, 1239684, 1310353, 1326504, 1361930, 1609312, 1822498,
+1832693`.
     - проверка: `dev/test.R selection` — 124 pass / 0 fail; новый тест
       закрепляет, что непроскринированная строка не может обойти
       проскринированную.
@@ -512,43 +512,36 @@
       (7 и 7a ниже): две ноги, две независимые причины. Все семь исправлены; прогон
       `43860991124` — первый после них: четыре ноги зелёные, devel убит сигналом
       раннера (причина 8, отказ среды, а не пакета). `[ ]` держится на отсутствии
-      полностью зелёного прогона, а не на открытом коде.
-      1. Три ubuntu-ноги: `test-plan.R:457` — `setdiff(marker_schemes()$scheme, tp)`
+      полностью зелёного прогона, а не на открытом коде. 1. Три ubuntu-ноги: `test-plan.R:457` — `setdiff(marker_schemes()$scheme, tp)`
       видит 9 схем вместо 8, лишняя `mcp_smoke`. `tests/testthat/test-mcp.R`
       регистрирует её без снятия; исправление — `1587294` (`on.exit` со снятием
-      регистрации плюс `session_memo_clear()`), предок `main`.
-      2. macOS и Windows падают раньше тестов: `* creating vignettes ... ERROR`,
+      регистрации плюс `session_memo_clear()`), предок `main`. 2. macOS и Windows падают раньше тестов: `* creating vignettes ... ERROR`,
       `OligoArrayAux ('hybrid-min') is required for PCR efficiencies` в
       `kasp-intro.Rmd` (и та же ошибка в `reading-results.Rmd`). На ubuntu
       инструмент собирается, на этих ногах его нет. Выбрано (б): снять зависимость
       виньеток от инструмента, а не собирать его в CI — чанки с PCR efficiency
-      получили `eval = has_oligoarrayaux()` (`137ae6c`), предок `main`.
-      3. Ubuntu-ноги (все пять): `BSgenome.Athaliana.TAIR.TAIR9` используется
+      получили `eval = has_oligoarrayaux()` (`137ae6c`), предок `main`. 3. Ubuntu-ноги (все пять): `BSgenome.Athaliana.TAIR.TAIR9` используется
       тестами, но не объявлен в `Suggests:`. Ноги идут с
       `error-on: '"warning"'`, поэтому обращение к необъявленному пакету — не
-      NOTE, а падение. Правка: пакет добавлен в `DESCRIPTION` (`Suggests:`).
-      4. macOS и Windows: OligoArrayAux там отсутствует, и любой тест, который
+      NOTE, а падение. Правка: пакет добавлен в `DESCRIPTION` (`Suggests:`). 4. macOS и Windows: OligoArrayAux там отсутствует, и любой тест, который
       строит олиго, падал на `hybrid-min`/`hybrid-ss-min`. Правка: 20 блочных
       `skip_if_no_oligoarrayaux()` в 13 файлах `tests/testthat/`. В `test-mcp.R`
       вместо блочного skip — построчный фильтр инструментов (снят только
       `pcr_efficiency`): блочный skip удалил бы все проверки реестра. В
       `test-annotate.R` пути сравниваются через
-      `normalizePath(..., winslash = "/", mustWork = FALSE)`.
-      5. `test-engine-stamp.R` строил фикстуру через `ath_genome()`, то есть
+      `normalizePath(..., winslash = "/", mustWork = FALSE)`. 5. `test-engine-stamp.R` строил фикстуру через `ath_genome()`, то есть
       **скачивал** TAIR10 внутри теста: на ноге без сети — падение, на ноге с
       сетью — 35 МБ на каждый прогон. Правка: фикстура на офлайновом
       `snp_fixture()` (`flank = 150L`, `run_blast = FALSE`), результат
       мемоизирован; воспроизводит 27 строк `evaluation` и 8 имён движков без
-      изменения утверждений.
-      6. `ath_genome()`: `file_exists()` на обрезанном кеше остаётся `TRUE`
+      изменения утверждений. 6. `ath_genome()`: `file_exists()` на обрезанном кеше остаётся `TRUE`
       навсегда, поэтому повторный вызов не мог себя вылечить. Правка: загрузка
       пишется в `<fa>.part` и переносится `fs::file_move()` только после
       успешной проверки статуса/размера; `parse()` возвращает `NULL` на
       нечитаемом FASTA; при неполном наборе хромосом кеш удаляется и
-      перекачивается **один** раз. `@section Caching:` описывает это поведение.
-      7. Все три ubuntu-ноги падали на шаге установки OligoArrayAux: прогон
+      перекачивается **один** раз. `@section Caching:` описывает это поведение. 7. Все три ubuntu-ноги падали на шаге установки OligoArrayAux: прогон
       `43857228030`, шаг `Install OligoArrayAux (Linux)` → `conda: command not
-      found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
+    found` (exit 127). `ubuntu-latest` больше не поставляет miniconda, а шаг
       вызывал `conda install -c bioconda oligoarrayaux`. macOS прошёл, потому что
       на нём ставится только BLAST+, Windows — потому что `engines: none`.
       Правка: распаковать закреплённый tarball bioconda
@@ -565,22 +558,21 @@
       `/tmp`, `load_all(helpers = FALSE)` → `oligoarrayaux_paths()` возвращает
       `exe=/tmp/cisim/bin/hybrid-min`, `dat=/tmp/cisim/share/oligoarrayaux`,
       `engine_has("duplex_dg")` → `TRUE`, `oligo_dg()` → `-18.585`.
-      - проверка (причина 7, прогон `43860991124`): шаг
-      `Install OligoArrayAux (Linux)` — `success` на обеих ubuntu-ногах.
-      **Причина 7 закрыта.**
-      7a. Windows: `test-genome-bsgenome.R:29` — `Expected file.mtime(path) to
-      equal mtime - 3600`, фактически `mtime`. Открытый `Rsamtools::FaFile`
-      держит `.fa` и `.fai` через htslib, и на Windows этот дескриптор откатывает
-      обратный `Sys.setFileTime`; тест менял mtime уже после открытия ручки и
-      читал собственный артефакт. Правка: блок проверки переиспользования
-      перенесён выше `indexFa()`/`FaFile()`.
+        - проверка (причина 7, прогон `43860991124`): шаг
+          `Install OligoArrayAux (Linux)` — `success` на обеих ubuntu-ногах.
+          **Причина 7 закрыта.**
+          7a. Windows: `test-genome-bsgenome.R:29` — `Expected file.mtime(path) to
+equal mtime - 3600`, фактически `mtime`. Открытый `Rsamtools::FaFile`
+          держит `.fa` и `.fai` через htslib, и на Windows этот дескриптор откатывает
+          обратный `Sys.setFileTime`; тест менял mtime уже после открытия ручки и
+          читал собственный артефакт. Правка: блок проверки переиспользования
+          перенесён выше `indexFa()`/`FaFile()`.
     - проверка (7a, прогон `43860991124`): `windows-latest (release)` зелёная,
-      `test-genome-bsgenome.R` проходит. **Причина 7a закрыта.**
-      8. ubuntu-devel, прогон `43860991124`, job `133277446913`: шаг
+      `test-genome-bsgenome.R` проходит. **Причина 7a закрыта.** 8. ubuntu-devel, прогон `43860991124`, job `133277446913`: шаг
       `check-r-package` шёл 11m31s и был убит — `##[error]The runner has received
-      a shutdown signal. This can happen when the runner service is stopped, or a
-      manually started runner is canceled.` → `Process completed with exit code
-      143`. Ни одной строки testthat до сигнала: шаг прошёл установку пакета
+a shutdown signal. This can happen when the runner service is stopped, or a
+manually started runner is canceled.` → `Process completed with exit code
+143`. Ни одной строки testthat до сигнала: шаг прошёл установку пакета
       (18s), `checking R code for possible problems` (35s), `checking examples`
       (81s) и все Rd-проверки, и умер на 8m23s внутри `Running 'testthat.R'`.
       Release-нога того же прогона проходит весь `check` за 13m04s, то есть
@@ -617,8 +609,7 @@
       `43474397492`, job `132054279747`: `Duration: 63m55s`, `exit code 143`,
       «the runner has received a shutdown signal», ни одной строки ассертов.
       Четыре остальные ноги доходят до тестов. Кандидата два, и они не
-      разделены: 1) зависание именно на devel (R-devel + Bioconductor devel);
-      2) бюджет раннера — установка на devel ~55 мин, и 10 мин тестов не
+      разделены: 1) зависание именно на devel (R-devel + Bioconductor devel); 2) бюджет раннера — установка на devel ~55 мин, и 10 мин тестов не
       влезают (release-ноги заканчиваются за 8–10 мин).
     - правка: `timeout-minutes` на шаг тестов и на job, чтобы отмена стала
       атрибутом шага, а не молчаливым убийством; замерить установку отдельно от
@@ -652,8 +643,8 @@
       для Bioconductor отдаёт 404, зависимости собираются из исходников),
       тесты укладываются в шаг с запасом.
     - [ ] остаётся: тёплое время установки после засеянного кеша не измерено;
-      следующий прогон его печатает. Ожидание — минуты; писать «минуты» как
-      факт нельзя.
+          следующий прогон его печатает. Ожидание — минуты; писать «минуты» как
+          факт нельзя.
     - блокер: нет.
     - следствие: `D6` закрывается зелёным прогоном, а не этим пунктом.
 
@@ -1516,8 +1507,8 @@ FALSE)`, цена — одна хромосома RAM на просмотрен�
       плюс `unlink`) записана в `README.md` §Reproducibility, `?marker_bowtie_index`
       §Index location и перекрёстно в `?marker_fm_index`.
       проверка: `grep -n "path_temp" R/marker_bowtie.R R/marker_fm.R
-      R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
-      --no-render` (roxygen sync).
+    R/marker_scan.R` — три умолчания, что и описано; `Rscript dev/check.R
+    --no-render` (roxygen sync).
       блокер: нет.
       следствие: умолчание безопасно для диска, но пшеничный индекс
       перестраивается заново каждую сессию (~1.4x FASTA, ~3-4 мин на 16 Гб), пока
@@ -1560,7 +1551,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       проверка: `test-engine-stamp.R` (метка адаптера, штамп, ручная таблица без
       штампа, проба версий мемоизирована), `test-scan.R`, `test-bowtie.R` —
       `FAIL 0 | WARN 0 | PASS 30331` на `dev/test.R --scheme`; `dev/check.R
-      --no-render` — `all checks passed`.
+    --no-render` — `all checks passed`.
       блокер: нет.
       следствие: метку несут все четыре адаптера специфичности; `Rsubread`
       2.26.0 на этом хосте стоит, его версия видна в штампе. FM остаётся read
@@ -1599,14 +1590,24 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       блокер: фикспур 16 Гб — не этот хост.
       следствие: один монолитный индекс упирается в диск и память хоста; без
       индекса пшеница остаётся на сканах (см. `ZX2`, на порядок хуже).
-- [ ] **Вариантные наборы с неоднозначностью.** Мультиаллельные, INDEL/CNV:
+- [x] **Вариантные наборы с неоднозначностью.** Мультиаллельные, INDEL/CNV:
       специфичность праймера и выбор цели (см. `Z9`, `Y5`).
-      правка: контракт варианта с несколькими аллелями и делецией.
-      проверка: специфичность на наборе с INDEL/CNV.
+      правка: `marker_targets()`/`target_rows()` принимают `alt2` — второй ALT
+      доходит до `marker_snp_alts()` как вырожденное 3'-основание;
+      `read_variants_vcf()` отбрасывает символические и отсутствующие аллели
+      (`<DEL>`, `<INS>`, `*`, `.`) и называет их число через `cli_inform`.
+      проверка: `test-plan.R` — цель с `alt2 = "C"` даёт у `marker_snp_alts()`
+      `degenerate = TRUE` над `{"A", "C"}`, одиночный аллель оставляет `NA`;
+      `test-io.R` — VCF из 1 SNP + `<DEL>` + `*` даёт
+      `2 VCF records ... dropped` и одну строку на выходе, чистый вход молчит.
+      Полный прогон: `[ FAIL 0 | WARN 0 | SKIP 25 | PASS 37317 ]`,
+      `dev/check.R --no-render` — all checks passed.
       блокер: нет.
-      следствие: на выходе GWAS INDEL/CNV отбрасываются вручную.
+      следствие: запись с символическим аллелем больше не теряется молча;
+      конструкция поперёк структурного аллеля по-прежнему невозможна — это
+      сказано в сообщении и в `@return`, а не в тишине.
 - [ ] **Документация ↔ код.** Часть сверки уже в гейте: шаг `hand-roll graph
-      edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
+    edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
       из `dev/graphify-handrolled.R`, шаг `docs/artifacts` (`dev/check.R:177`)
       гоняет `dev/graphify-health.R --check`. Метки на 2026-11-16: 428 `named`,
       0 `missing`, 0 `duplicate`, 0 `echo-stale`

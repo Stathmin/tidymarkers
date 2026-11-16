@@ -10,6 +10,7 @@ marker_targets(
   pos = NULL,
   ref = NULL,
   alt = NULL,
+  alt2 = NULL,
   type = NULL,
   label = NULL,
   strand = "+"
@@ -20,6 +21,10 @@ marker_targets(
 \code{type}, \code{alt2}, \code{strand}, \code{id}) used instead of the explicit columns.}
 
 \item{chrom, pos, ref, alt}{one or more loci (vectors, recycled).}
+
+\item{alt2}{optional second ALT for a multi-allelic site (\code{alt = "A"},
+\code{alt2 = "C"}).  The site is then degenerate: one ALT primer with an IUPAC
+3' base covers every ALT, so it is still one design.}
 
 \item{type}{optional free-text class per target (e.g. \code{"snp"}, \code{"indel"}).}
 

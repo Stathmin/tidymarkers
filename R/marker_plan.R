@@ -155,7 +155,8 @@ normalise_targets <- function(x) {
 #' One row (or a table) of target loci for [marker_targets()]
 #' @keywords internal
 #' @noRd
-target_rows <- function(chrom, pos, ref, alt, data, type, label, strand = "+") {
+target_rows <- function(chrom, pos, ref, alt, alt2 = NULL, data, type, label,
+                        strand = "+") {
   if (!is.null(data)) {
     return(normalise_targets(data))
   }
@@ -171,7 +172,7 @@ target_rows <- function(chrom, pos, ref, alt, data, type, label, strand = "+") {
   } else {
     as.character(label)
   }
-  out$alt2 <- NA_character_
+  out$alt2 <- if (is.null(alt2)) NA_character_ else toupper(as.character(alt2))
   out$type <- if (is.null(type)) NA_character_ else as.character(type)
   out$strand <- as.character(strand)
   out[, target_cols()]
@@ -239,6 +240,9 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' @param data a target table (`chrom`, `pos`, `ref`, `alt`; optional `label`,
 #'   `type`, `alt2`, `strand`, `id`) used instead of the explicit columns.
 #' @param chrom,pos,ref,alt one or more loci (vectors, recycled).
+#' @param alt2 optional second ALT for a multi-allelic site (`alt = "A"`,
+#'   `alt2 = "C"`).  The site is then degenerate: one ALT primer with an IUPAC
+#'   3' base covers every ALT, so it is still one design.
 #' @param type optional free-text class per target (e.g. `"snp"`, `"indel"`).
 #' @param label optional display label; derived from the coordinates otherwise.
 #' @param strand strand the `ref`/`alt` alleles are written on (`"+"` or
@@ -253,11 +257,13 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' @family plan
 #' @export
 marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
-                           alt = NULL, type = NULL, label = NULL, strand = "+") {
+                           alt = NULL, alt2 = NULL, type = NULL, label = NULL,
+                           strand = "+") {
   marker_layer(
     function(plan) {
       plan$targets <- dplyr::bind_rows(
-        plan$targets, target_rows(chrom, pos, ref, alt, data, type, label, strand)
+        plan$targets,
+        target_rows(chrom, pos, ref, alt, alt2, data, type, label, strand)
       )
       plan
     },

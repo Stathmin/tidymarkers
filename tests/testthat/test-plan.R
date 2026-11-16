@@ -60,6 +60,20 @@ test_that("the real example panel targets carry id labels and their alt2", {
   expect_false(is.na(p$targets$alt2[p$targets$label == multi]))
 })
 
+test_that("a multi-allelic site is declarable in the grammar form (1602)", {
+  p <- dummy_plan() +
+    marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "a", alt2 = "c")
+  expect_identical(p$targets$alt, "A")
+  expect_identical(p$targets$alt2, "C") # upper-cased like `alt`
+  alts <- marker_snp_alts(target_snp(p$targets[1L, ]))
+  expect_setequal(alts$alts_in, c("A", "C"))
+  expect_true(alts$degenerate)
+  # a single-allelic target leaves `alt2` absent, not filled with the REF
+  one <- dummy_plan() +
+    marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "A")
+  expect_true(is.na(one$targets$alt2))
+})
+
 test_that("a plan composes in layers with + and prints without solving", {
   p <- dummy_plan() +
     marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "A") +

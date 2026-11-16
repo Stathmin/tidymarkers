@@ -12,7 +12,9 @@
 #
 #  Variants are returned with REF/ALT as STRINGS, so SNP, MNP and InDel all
 #  survive; multi-allelic ALT fields are split into one row per allele and
-#  symbolic alleles (`<DEL>`, `*`, `.`) are dropped.
+#  symbolic alleles (`<DEL>`, `*`, `.`) are dropped - and counted, because a
+#  GWAS hitlist silently losing its CNV records is how INDEL/CNV get dropped
+#  by hand downstream.
 # =============================================================================
 
 #' Normalise an allele string to plain `ACGTN`
@@ -48,8 +50,11 @@ normalise_allele <- function(x) {
 #'   tabix-indexed file are given, `readVcf` streams just that region
 #'   (`ScanVcfParam(which=)`); both backends return the same tibble.
 #' @return a tibble with columns `chrom`, `pos`, `ref`, `alt`, one row per ALT
-#'   allele; symbolic/absent ALT alleles are dropped and the alleles are
-#'   normalised with [normalise_allele()].
+#'   allele; symbolic/absent ALT alleles (e.g. `<DEL>`, `*`, `.`) are dropped
+#'   with a message naming how many, and the kept alleles are normalised with
+#'   [normalise_allele()].  A short oligo cannot be designed across a
+#'   structural allele, so those records are unrepresentable rather than lost
+#'   in silence.
 #' @examples
 #' vcf <- withr::local_tempfile(fileext = ".vcf")
 #' writeLines(c(
@@ -74,13 +79,21 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
   if (!is.null(end)) v <- dplyr::filter(v, .data$pos <= end)
 
+  # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation, so
+  # they are not mangled into a fake `N` allele - and say how many went
+  drop_sym <- stringr::str_detect(v$ref, "^<|[*.]") |
+    stringr::str_detect(v$alt, "^<|[*.]")
+  n_dropped <- sum(drop_sym)
+  if (n_dropped > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_dropped} VCF record{?s} with a symbolic or absent ALT ",
+      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+      "across structural alleles."
+    )))
+  }
+
   v |>
-    # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation,
-    # so they are not mangled into a fake `N` allele
-    dplyr::filter(
-      !stringr::str_detect(.data$ref, "^<|[*.]"),
-      !stringr::str_detect(.data$alt, "^<|[*.]")
-    ) |>
+    dplyr::filter(!drop_sym) |>
     dplyr::mutate(
       ref = normalise_allele(.data$ref),
       alt = normalise_allele(.data$alt)
