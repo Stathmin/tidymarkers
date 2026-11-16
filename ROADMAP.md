@@ -148,26 +148,35 @@
       секунды из 40 с. Вспомогательная `hit_table_rows()` удалена. Повторно не
       открывать; масштаб пшеницы решает индексный путь (см. следствие выше).
       Замеры: `.tmp/probe/batch-probe{,2}.log`.
-5. [ ] **`caps_fragments()` — контракт таблицы ферментов** (найдено в этой
+5. [x] **`caps_fragments()` — контракт таблицы ферментов** (найдено в этой
        волне). `R/marker_caps.R`, `caps_fragments()` полагается на то, что
        `enzymes$site` — символьная колонка; таблица, где `site`/`isoforms` —
        list-колонны, молча читается как _ширина_, и каждый сайт даёт 0 хитов.
        На дефолтном пути это скрыто (`restriction_enzymes()` отдаёт `character`).
-    - правка: guard в `caps_fragments()` — названная ошибка на
-      не-символьном `site`.
-    - проверка: регрессионный тест на list-колонну в `test-caps.R`.
+    - сделано: `cli_abort()` в `caps_fragments()` называет колонку и её класс;
+      регрессия — `test-caps.R`, «a list-column site is refused, not read as a
+      width».
+    - проверка: `Rscript dev/test.R 'caps|capabilities'` — 194 pass / 0 fail.
     - блокер: нет.
     - следствие: без guard'а внешняя/собранная вручную таблица даёт тихий
       «нет сайтов» вместо ошибки.
-6. [ ] **Гейты движка не принимают `engines`** (продолжение `ZA2.1`, найдено в
+    - область: `isoforms` `caps_fragments()` не читает; `cut` валидируется
+      громко через `as.integer()` — тихий ноль невозможен.
+6. [x] **Гейты движка не принимают `engines`** (продолжение `ZA2.1`, найдено в
        этой волне). `marker_assemble.R`, `marker_checks.R`, `marker_lamp.R`,
        `marker_sanger.R`, `marker_snapshot.R` пере-пробуют сессионный реестр, поэтому
        per-call переопределение адаптера на этих гейтах не соблюдается.
-    - правка: передавать `engines` в `engine_has()` на этих call sites.
-    - проверка: `test-capabilities.R` — per-call `engines` меняет ответ гейта.
+    - сделано: `engines = NULL` у `assemble_kasp_assay()`,
+      `assemble_primer_assay()`, `marker_design_checks()`,
+      `marker_generic_checks()`, `design_lamp_marker()`, `lamp_geometry()`,
+      `design_sanger_marker()`, `design_snapshot_marker()` и его geometry;
+      каждый гейт зовёт `engine_has(<capability>, engines)`; `pcr_efficiency`
+      пробуется один раз и вне `tryCatch`.
+    - проверка: три теста per-call override в `test-capabilities.R`; гейты
+      capabilities 29 / engine 43 / caps 137 / sanger 98 / lamp 111 /
+      snapshot 76 / kasp-checks 44 / indel 93 — 0 fail.
     - блокер: нет.
-    - следствие: `marker_engines()` — единственный способ выбрать адаптер на
-      этих гейтах.
+    - следствие: три непроброшенных call site названы отдельно — №25, №26, №27.
 7. [x] **`ZW0` — поиск дизайна не инвариантен к рамке** (из `ZW0`). Закрытый
        набор инвариантов держит проверку-заглушку (`test-invariants.R`, «ZW0
        KNOWN GAP»): тело — один комментарий и `skip_*`, утверждений нет, то есть
@@ -429,6 +438,35 @@
     - блокер: первый зелёный ночной прогон.
     - следствие: пока число не названо, «тёплый кеш экономит минуты» — гипотеза,
       а не замер.
+
+25. [ ] **`confirm()` не пробрасывает `engines`** (из №6). `R/marker_indel_size.R`
+        (~L190) зовёт `pair_structure_ok(b$primer_f, b$primer_r)` без `engines`,
+        хотя сама `pair_structure_ok()` (`R/marker_sanger.R`) его принимает.
+    - правка: формал `engines = NULL` в `confirm()` и forward в
+      `pair_structure_ok()`.
+    - проверка: per-call адаптер меняет ответ indel-гейта в
+      `test-capabilities.R`; `Rscript dev/test.R indel` — 0 fail.
+    - блокер: нет.
+    - следствие: indel-гейт отвечает по сессионному реестру, а не по
+      переданному адаптеру.
+26. [ ] **`marker_primer_checks()` не пробрасывает `engines`** (из №6).
+        `R/marker_plot_methods.R` (~L133) зовёт `marker_generic_checks(marker,
+scheme, genome, limits)` без формала и без forward.
+    - правка: `engines = NULL` в `marker_primer_checks()` и forward в
+      `marker_generic_checks()`.
+    - проверка: per-call адаптер меняет ответ проверки; `Rscript dev/test.R
+plot` — 0 fail.
+    - блокер: нет.
+    - следствие: plot-путь зовёт старую сигнатуру и теряет per-call выбор.
+27. [ ] **`extra_scheme_designer()` не пробрасывает `engines`** (из №6).
+        `R/marker_scheme_registry.R` (~L167): обёртка `function(genome, snp, ...)`
+        не имеет формала `engines` и не передаёт его в `inner`.
+    - правка: формал `engines = NULL` в обёртке и явная передача в `inner`.
+    - проверка: адаптер доходит до `inner` в `test-capabilities.R`;
+      `Rscript dev/test.R scheme` — 0 fail.
+    - блокер: нет.
+    - следствие: пользовательская схема не может выбрать адаптер, хотя
+      остальные гейты это умеют.
 
 Запаркованные остатки (причина названа; отдельной правки не заводят, пока
 причина жива):

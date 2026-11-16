@@ -6,6 +6,35 @@
 
 ## 0.4.1 (в работе)
 
+### Гейты движка слышат per-call `engines` (2026-11-16)
+
+- **`engines = NULL` доведён до гейтов, а не только до дизайна.** `marker_engines()`
+  выбирал адаптер для дизайна, но гейты (`marker_design_checks()`,
+  `marker_generic_checks()`, `lamp_geometry()`, `design_sanger_marker()`,
+  geometry snapshot-маркера, сборка KASP и праймерных ассays) пере-пробовали
+  сессионный реестр. Поэтому per-call переопределение на гейте молча
+  игнорировалось — вердикт считался другим движком, чем дизайн.
+- **Проба одна и вне `tryCatch`.** `pcr_efficiency` спрашивается у `engine_has()`
+  один раз перед ветвлением; внутри `tryCatch` осталось только само вычисление.
+- **Три непроброшенных call site названы пунктами:** `confirm()`
+  (`R/marker_indel_size.R`), `marker_primer_checks()`
+  (`R/marker_plot_methods.R`), `extra_scheme_designer()`
+  (`R/marker_scheme_registry.R`) — roadmap №25–№27.
+- **Проверка:** три теста per-call override в `test-capabilities.R`;
+  `Rscript dev/test.R 'caps|capabilities|engine'` — 194 pass / 0 fail;
+  `Rscript dev/test.R 'sanger|lamp|snapshot|kasp|indel|checks'` — sanger 98 /
+  lamp 111 / snapshot 76 / kasp-checks 44 / indel-size 48 / indel 45 /
+  kasp-mismatch 38 / kasp-platforms 86 — 0 fail.
+
+### `caps_fragments()` отказывает не-символьному `site` (2026-11-16)
+
+- **Тихий «нет сайтов» заменён названной ошибкой.** `caps_fragments()` читал
+  `enzymes$site` как ширину, поэтому list-колонка (собранная вручную таблица)
+  давала ноль хитов на каждом сайте без единого предупреждения. Теперь
+  `cli_abort()` называет колонку и её класс.
+- **Проверка:** регрессия в `test-caps.R` — «a list-column site is refused, not
+  read as a width»; `Rscript dev/test.R caps` — 0 fail.
+
 ### Остаток в закрытом пункте roadmap ловит гейт (2026-11-16)
 
 - **`dev/audit-remainders.R`** проверяет закрытые (`[x]`) пункты `ROADMAP.md`
