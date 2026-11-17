@@ -273,9 +273,10 @@ gate (the per-locus 50–100 bp window is stricter). There is no separate check
 that the two amplicons do not overlap or share sequence, or that a pair of one
 locus does not amplify the other: in-silico PCR and off-target are computed per
 locus. Finally, `design_duplex()` defaults to `homologous = NA`, and with
-`readout = "co-dominant"` the `duplex targets` gate passes (`isFALSE(NA)` gives
-`FALSE`), even though `detail` marks "homology undeclared". Without an explicit
-`homologous` the topology check is vacuous.
+`readout = "co-dominant"` the pairing warns and cannot pass: the topology
+gate is `not_applicable`, the `duplex targets` margin is `NA`, and
+`select_with_ladder()` rejects an `NA` margin, so the verdict is `fail`. Declare
+`homologous` explicitly.
 
 **Recommendation.** Run multiplex in-silico PCR/BLAST over all pairs at once
 and test the pool in a wet experiment; where possible separate the amplicons by
@@ -399,15 +400,16 @@ all check nodes into one chain and connects the last to `assay:decision` ("all
 checks pass?"), from which two edges leave: `pass` to `assay:verdict` and `fail`
 to `DOOMED`. `evaluation_verdict()` counts the same way
 (`R/marker_checks.R`): any `status == "fail"` gives `"doomed"`.
-`marker_decision_graph()` only recolours the nodes by `evaluation`. In a single
+`marker_decision_graph()` stamps gate nodes ok/relaxed/violated from
+`assay$selection` and colours the check nodes from `evaluation`. In a single
 design `assemble_kasp_assay()` warns only about `KASP_UNGATED_CHECKS`, so a
 failure of, say, `AS GC`, `worst hairpin` or `worst cross-dimer` passes
 silently; in the batch `design_kasp_markers()` any FAIL gives `warn`, but not
 `fail`. That is, "all checks passed" is the condition for the verdict in the
 graph and in `evaluation_verdict()`, but not in `assemble_kasp_assay()` itself.
 
-**NA is a pass in selection and a green circle in acceptance.**
-`select_with_ladder()` skips an unknown margin: `is.na(m) | m >= bar`
+**An unknown margin fails selection; acceptance still passes an unknown value.**
+`select_with_ladder()` rejects an unknown margin: `!is.na(m) & m >= bar`
 (`R/marker_select.R`), for example `m_structure` without OligoArrayAux.
 `marker_design_checks()` treats dropout the same way (`is.na(obs) | obs <= tol`)
 and off-target the same way (`is.na(o) || o <= 1`). But with `use_eff = FALSE`
@@ -415,10 +417,10 @@ and off-target the same way (`is.na(o) || o <= 1`). But with `use_eff = FALSE`
 NA, so the acceptance dropout checks pass, while the gates `gate_as_window` /
 `gate_as_footprint` / `gate_com_footprint` fall back to the raw counter
 (`use_drop` / `use_foot_drop` = FALSE), i.e. to `n_3p` / `n_var`. In the figure,
-`plot_checks()` draws `status` straight from `pass` (`R/marker_plots.R`): an
-NA-pass is a green circle with a dash `-` instead of a value, and "measured and
-good" cannot be told from "not measured". This generalises the duplex case
-`homologous = NA` discussed above.
+`plot_checks()` maps `status` (`R/marker_plots.R`): `pass` is green, `fail` is
+red, and `unknown`/`not_applicable` is a neutral blue tile labelled `NA`, so a
+check that was not computed is told from one that measured good; an undeclared
+value now fails, as in the duplex `homologous = NA` case above.
 
 **A counting check does not count, and the gate and the acceptance check measure
 different things.** Three "variants (n)" checks have `limit = "0"`, but
@@ -443,9 +445,13 @@ the MAF tie-break is described correctly above, but in Ensembl Plants MAF =
 `null`. The population step stays outside.
 
 **The specificity 3' seed is a prefilter, not a check.** `specificity_seed()`
-(15 nt, 1 mismatch) is called in `pick_target_snp()` and `marker_pick_as()` and
-stored as `assay$specificity`; it has a fixed false-negative rate, so a zero
-count means "no site shares this seed", not "no site binds". The acceptance
+(15 nt, 1 mismatch – `SEED_K`/`SEED_MISMATCH` in `R/marker_core.R`) is called in
+`pick_target_snp()` and `marker_pick_as()` and kept as the ranking column
+`seed_hits` (`R/marker_target.R`), used only to break ties between otherwise
+comparable loci. `assay$specificity` is a different number: a whole-primer scan
+of the assembled set (`specificity_of()` in `R/marker_assemble.R`). The seed has a
+fixed false-negative rate, so a zero count means "no site shares this seed", not
+"no site binds". The acceptance
 check reads exact `ideogram` hits and allows ≤1 (`ot_pass`). For a genome-wide
 answer, `specificity_verdict()` grades the evidence tier and names it: pair-level
 `in_silico_pcr()` with product-size bounds, then a BLAST/FM scan, and `unknown`
@@ -453,13 +459,19 @@ answer, `specificity_verdict()` grades the evidence tier and names it: pair-leve
 so a paralogue with one mismatch has neither a gate nor a check node unless you
 ask for the genome-wide tier.
 
-**Lax and duplex: an empty set passes the gate, and the figure does not show
+**Lax: an empty set passes the gate; duplex: an undeclared relationship fails
 it.** `design_lax_marker(haplotypes = NULL)` calls `lax_stage_pick()` with
 zeros, `lax_ref_leakage()` returns 0 when there are no REF haplotypes and
-`lax_cross_priming_pairs()` returns 0 at <2 designs (`R/marker_lax.R`). In
-duplex `isFALSE(NA)` gives `tgt_pass = TRUE`, so the HARD node
-`duplex targets` is green at `observed = NA` (`duplex_metrics()`), and
-`duplex_selection()` has exactly one candidate, so neither tier can rank
+`lax_cross_priming_pairs()` returns 0 at <2 designs (`R/marker_lax.R`) – those
+gates are vacuous, not satisfied.
+
+Duplex is the opposite case: a missing
+`homologous` gives `tgt_status = "not_applicable"`, `tgt_pass = FALSE` and
+`m_targets = NA_real_` (`duplex_metrics()` in `R/marker_duplex.R`), and
+`select_with_ladder()` treats an `NA` margin as no evidence
+(`ok & !is.na(m) & m >= bars[[g]]`), so the pairing is rejected rather than
+passed and the HARD node `duplex targets` reads as a failed gate.
+`duplex_selection()` still has exactly one candidate, so neither tier can rank
 anything. The vacuous gates are noted above; the consequence for the figures is
 new: `vignettes/figures/duplex.svg` shows a per-primer checklist but not the
 four compatibility gates, and `lax.svg` is captioned "KASP assay" and has no

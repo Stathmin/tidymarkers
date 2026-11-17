@@ -99,8 +99,9 @@ cases. **In the package** – the check is actually computed or gated;
   [2018](https://doi.org/10.1126/science.aaq0179)).
 
 - Off-target cleavage.** **In the package:** `crispr_spacer_hits()` counts the
-  exact occurrences of the spacer and its reverse complement,
-  `off_target = hits - 1`; this is a hard gate (`specificity_max = 0`). It is not
+  exact occurrences of the spacer and its reverse complement;
+  `design_crispr_marker()` subtracts 1 (`off_target = hits - 1`) and hard-gates
+  `specificity_max = 0`. It is not
   an off-target prediction: the PAM of the found copies is not checked, mismatches
   are not scored, and collateral cleavage at off-targets is not modelled.
   **Recommendation:** for complex/repetitive genomes, use a mismatch-aware search
@@ -239,8 +240,8 @@ knitr::include_graphics("figures/decision-sanger.svg")
   first with a suitable RPA pair; `off-target count` with `specificity_max = 0`
   is always 0 (the tier is degenerate), and the amplicon length is not maximised.
 - **Partially executed.** The RPA node is `design_flanking_pair()`
-  (length/GC/product), not `design_rpa_marker()`: structure, probe and
-  preamplification uniqueness are not gated. The ideogram in `crispr.svg` may
+  (length/GC/product), not `design_rpa_marker()`: in this CRISPR flow, structure,
+  probe and preamplification uniqueness are not gated. The ideogram in `crispr.svg` may
   show a second product, but the design does not reject it; RPA as a method –
   [Piepenburg et al. (2006)](https://doi.org/10.1371/journal.pbio.0040204).
 - **In the figure.** The tumbler in `crispr.svg` is oligo QC, not gates: it
@@ -258,7 +259,7 @@ knitr::include_graphics("figures/decision-sanger.svg")
   A refinement to "variant in PAM": by construction the variant always lies in
   the spacer, so the PAM of the returned guide does not contain it; the variant
   can only eliminate an alternative candidate.
-- **Executed, but conservatively.** `crispr_spacer_hits()` subtracts 1 from the
+- **Executed, but conservatively.** `design_crispr_marker()` subtracts 1 from the
   sum of exact hits in both orientations: a palindromic spacer may give a false
   `off_target`, hits without a PAM are counted, and mismatches are not searched
   at all. This is a conservative count, not an off-target prediction; the `max <= 1`

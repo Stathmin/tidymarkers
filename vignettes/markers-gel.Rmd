@@ -362,10 +362,14 @@ population, and the product difference no longer equals the indel length.
 
 **The graph is stronger than the implementation.** In the assay block of
 CAPS/ARMS/HRM, `off-target exact primer hits (n)` is listed – this is the shared
-`KASP_CHECK_PRIMER`, but `design_caps_marker()`, `design_arms_marker()` and
-`design_hrm_marker()` do not compute it (no `in_silico_pcr()`/ideogram), and
-`marker_design_checks()` is not designed for `marker_caps`/`marker_arms`/
-`marker_hrm` objects. The node declares a policy, not a fact.
+`KASP_CHECK_PRIMER`, and no check row computes it: `design_caps_marker()`,
+`design_arms_marker()` and `design_hrm_marker()` do each run an `in_silico_pcr()`
+product screen on the pair they picked, but only as a pass/fail confirmation
+(`confirm` in `R/marker_caps.R` and `R/marker_arms.R`, `screen` in
+`R/marker_hrm.R` via `pair_screen_ok()`) – never as a reported hit count – and no
+ideogram is drawn. `marker_design_checks()` is not defined for
+`marker_caps`/`marker_arms`/`marker_hrm` objects. The node declares a policy, not
+a fact.
 
 | Scheme | Implemented (visible in graph/code) | No node — recommendation |
 |---|---|---|
