@@ -53,6 +53,9 @@ if (nzchar(Sys.which("hybrid-min"))) cases$oligo_dg <- function() oligo_dg(fx$pr
 
 # --- measure ----------------------------------------------------------------
 fmt_bytes <- function(b) {
+  if (!is.finite(b)) {
+    return("n/a")
+  }
   if (b < 1024) sprintf("%d B", round(b)) else if (b < 1024^2) sprintf("%.1f KB", b / 1024) else sprintf("%.1f MB", b / 1024^2)
 }
 tab <- do.call(rbind, lapply(names(cases), function(nm) {
