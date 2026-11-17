@@ -53,7 +53,9 @@ printed Primer3 panel (ROADMAP \code{ZW3.5}, \code{ZW3.10}).}
 list \verb{chrom -> integer positions}.  See \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.}
 
 \item{engines}{optional \code{marker_engines} adapter list (see \code{engine_has()});
-\code{NULL} reads the session default.  It gates the footprint-dropout screen.}
+\code{NULL} reads the session default.  It gates the footprint-dropout screen
+and the discrimination score, both of which report \code{"unknown"} without the
+PCR-efficiency engine.}
 }
 \value{
 a \code{marker_assay}.

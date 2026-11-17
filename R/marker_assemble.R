@@ -1214,7 +1214,9 @@ normalise_fixed_primers <- function(primers) {
 #'   `NULL`, a data frame / list with `chrom` and `pos`, a `GRanges`, or a named
 #'   list `chrom -> integer positions`.  See [assemble_kasp_assay()].
 #' @param engines optional `marker_engines` adapter list (see `engine_has()`);
-#'   `NULL` reads the session default.  It gates the footprint-dropout screen.
+#'   `NULL` reads the session default.  It gates the footprint-dropout screen
+#'   and the discrimination score, both of which report `"unknown"` without the
+#'   PCR-efficiency engine.
 #' @return a `marker_assay`.
 #' @examples
 #' \dontrun{
@@ -1345,11 +1347,19 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   substr(seg_alt, anchor_seg, anchor_seg) <- snp$alt
   t_ref <- as.character(as_target(Biostrings::DNAString(seg), strand))
   t_alt <- as.character(as_target(Biostrings::DNAString(seg_alt), strand))
-  eff <- pcr_efficiency(
-    c(as_ref, as_ref, as_alt, as_alt),
-    c(t_ref, t_alt, t_alt, t_ref)
-  )
-  discrimination <- ((eff[[1L]] - eff[[2L]]) + (eff[[3L]] - eff[[4L]])) / 2
+  # unknown, not a pass, when the engine is absent: pcr_efficiency() aborts
+  use_eff <- engine_has("pcr_efficiency", engines)
+  eff <- if (use_eff) {
+    pcr_efficiency(
+      c(as_ref, as_ref, as_alt, as_alt),
+      c(t_ref, t_alt, t_alt, t_ref)
+    )
+  }
+  discrimination <- if (use_eff) {
+    ((eff[[1L]] - eff[[2L]]) + (eff[[3L]] - eff[[4L]])) / 2
+  } else {
+    NA_real_
+  }
 
   # --- footprint / linkage metrics (unknown without a variant table) ----------
   if (is.null(variants)) {
@@ -1364,7 +1374,6 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     vc <- marker_variant_alleles(variants, snp, tmpl$seq, off)
     vpos <- vc$vpos
     vblock <- snp$pos
-    use_eff <- engine_has("pcr_efficiency", engines)
     batch_or_safe <- marker_dropout_batch(tmpl, off, vpos, vc$valt, vc$vweight, use_eff, BPPARAM)
     as_n_3p <- count_variants_in(win3p, vpos, vblock)
     as_n_var <- count_variants_in(IRanges::IRanges(as_start, as_end), vpos, vblock)
@@ -1433,9 +1442,6 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     }
   )
 
-  # the engine only decides the dropout gate below, never the evaluation
-  # (declared here so lintr sees `engines` used on this path)
-  pcr_efficiency <- engine_has("pcr_efficiency", engines)
   # grade the assay with the same registry the designer uses
   out$evaluation <- tryCatch(
     marker_design_checks(out, scheme = scheme, engines = engines),
@@ -1452,21 +1458,25 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     # dropout would otherwise satisfy `is.na(dropout) | ...`)
     unknown <- if (is.null(variants)) {
       FIXED_PRIMER_NO_VARIANTS
-    } else if (!pcr_efficiency) {
+    } else if (!use_eff) {
       FIXED_PRIMER_DROPOUTS
     } else {
       character(0)
     }
+    # an absent engine also leaves the discrimination unknown
+    if (!use_eff) unknown <- c(unknown, "discrimination")
     if (length(unknown)) {
       i <- out$evaluation$criterion %in% unknown
       out$evaluation$observed[i] <- NA_real_
-      out$evaluation$pass[i] <- NA
+      # `pass` is a view of `status` (marker_evaluation_table), so it is rebuilt,
+      # not set to NA here
+      out$evaluation$pass[i] <- FALSE
       out$evaluation$status[i] <- "unknown"
-      out$evaluation$detail[i] <- if (is.null(variants)) {
-        "not evaluated: no population variant table was supplied"
-      } else {
+      no_var <- out$evaluation$criterion %in% FIXED_PRIMER_NO_VARIANTS
+      out$evaluation$detail[i] <- ifelse(no_var[i],
+        "not evaluated: no population variant table was supplied",
         "not evaluated: OligoArrayAux is unavailable"
-      }
+      )
     }
   }
   # no selection ladder ran on a fixed primer set, so the graph is left neutral
