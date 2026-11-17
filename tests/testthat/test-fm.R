@@ -1,5 +1,26 @@
 # FM-index genome scan (Rsubread): an index-based alternative to BLAST.
 
+test_that("specificity_fm returns finite whole-primer counts on a small index", {
+  # one specificity_fm() call costs ~52 s regardless of genome size or primer
+  # count, so this stays out of the fast suite (measured on 1.8 kb)
+  skip_if_not_full()
+  skip_if_not_installed("Rsubread")
+  skip_if_not_installed("Rsamtools")
+  withr::local_seed(3)
+  motif <- paste(sample(c("A", "C", "G", "T"), 28L, TRUE), collapse = "")
+  filler <- paste(sample(c("A", "C", "G", "T"), 600L, TRUE), collapse = "")
+  genome <- Biostrings::DNAStringSet(c(chr1 = paste0(filler, motif, filler, motif, filler)))
+  idx <- marker_fm_index(genome, basename = fs::path(withr::local_tempdir(), "fast"))
+  res <- specificity_fm(
+    c(TWO = motif, ONE = substr(filler, 1L, 28L), ABSENT = strrep("ACGT", 7L)), idx
+  )
+  expect_equal(res$primer, c("TWO", "ONE", "ABSENT"))
+  expect_true(all(is.finite(res$hits)))
+  expect_true(all(res$hits >= 0L))
+  expect_equal(res$hits[res$primer == "TWO"], 2L)
+  expect_equal(unique(res$engine), "Rsubread")
+})
+
 test_that("marker_fm_index + specificity_fm count genome loci", {
   skip_if_not_full()
   skip_if_not_installed("Rsubread")
