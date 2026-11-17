@@ -73,7 +73,7 @@ jobs:
             - uses: r-lib/actions/setup-r-dependencies@v2
               timeout-minutes: 75
               with:
-                  extra-packages: any::rcmdcheck
+                  extra-packages: any::rcmdcheck, any::pkgload
                   needs: check
 
             # OligoArrayAux provides `hybrid-min`, which DECIPHER needs for dG/Tm.
@@ -101,6 +101,17 @@ jobs:
             - name: Install BLAST+ (macOS)
               if: matrix.config.engines == 'mac'
               run: brew install blast
+
+            # Warm the Atlas/TAIR10 demo cache before R CMD check so the
+            # arms/primer3/plan tests run instead of skipping on a cold cache.
+            # Best-effort: the skip helper exists so a network failure inside
+            # the suite never fails the job, so this step must keep that
+            # invariant -- on failure it degrades to those tests SKIP (visible
+            # in the test output and this step's warning), not to a red job.
+            - name: Warm demo cache (best-effort)
+              continue-on-error: true
+              run: |
+                  Rscript -e 'pkgload::load_all("."); invisible(ath_genome()); invisible(ensembl_variants("4", 1500000L, 1560000L)); invisible(ensembl_gene("AT4G00650"))'
 
             - uses: r-lib/actions/check-r-package@v2
               timeout-minutes: 40
