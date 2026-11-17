@@ -741,8 +741,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     conditions = conditions
   ) |>
     dplyr::mutate(
-      com_homodimer = oligo_dg_vec(.data$com, .data$com, BPPARAM = BPPARAM),
-      com_hairpin = oligo_dg_vec(.data$com, BPPARAM = BPPARAM)
+      com_homodimer = if (engine_has("duplex_dg", engines)) {
+        oligo_dg_vec(.data$com, .data$com, BPPARAM = BPPARAM)
+      } else {
+        NA_real_
+      },
+      com_hairpin = if (engine_has("hairpin_dg", engines)) {
+        oligo_dg_vec(.data$com, BPPARAM = BPPARAM)
+      } else {
+        NA_real_
+      }
     )
 
   as_tm_mean <- mean(best_as$tm)
@@ -791,14 +799,30 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # choose among the pairings: gate the grave sins, then rank lexicographically
   # on tier margins, relaxing gates one at a time only when nothing clears them
   graded <- grade_assay_pairs(assays, limits, as_tm_mean, com_tm_target = com_tm_target)
+  # name the gate(s) that could not be evaluated at all (all margins NA), so a
+  # missing engine is reported as unknown rather than as a plain gate failure
+  unknown <- names(graded$gate_margin)[vapply(graded$gate_margin, function(col) {
+    m <- graded$data[[col]]
+    length(m) > 0L && all(is.na(m))
+  }, logical(1))]
+  if (length(unknown)) {
+    cli::cli_inform(c(
+      gettext("The assay pairing could not be graded: {paste(unknown, collapse = ', ')} has no value."),
+      i = gettext("A gate whose margin is NA is unknown, not a pass; OligoArrayAux supplies the structure dG.")
+    ))
+  }
   pick <- select_with_ladder(
     graded$data, graded$gates, KASP_RELAX_PAIR, graded$tiers, graded$ties,
     graded$gate_margin, graded$gate_floor
   )
   if (is.null(pick$best)) {
-    return(marker_doomed(
-      gettext("No candidate assay survived even the relaxed constraints."), "pair", snp, tmpl, as_cand
-    ))
+    # the doom must carry the reason: an unevaluable gate is not a plain failure
+    reason <- if (length(unknown)) {
+      glue::glue(gettext("No candidate assay could be graded: {paste(unknown, collapse = ', ')} has no value."))
+    } else {
+      gettext("No candidate assay survived even the relaxed constraints.")
+    }
+    return(marker_doomed(reason, "pair", snp, tmpl, as_cand))
   }
   best <- pick$best
   # keep the chosen pairing first: the rest of the package (checks, plots) reads

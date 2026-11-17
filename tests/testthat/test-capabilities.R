@@ -243,14 +243,34 @@ test_that("the KASP designer's own evaluation honours a per-call engines overrid
   off <- marker_engines()
   off$thermo$capabilities$hairpin_dg <- FALSE
   off$thermo$capabilities$duplex_dg <- FALSE
-  a <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, flank = 150L, engines = off))
-  skip_if(is.null(a), "no KASP design at this fixture")
-  # the override must reach the numbers the evaluation grades, not just the gates
-  expect_true(all(is.na(a$thermo$hairpin_dg)))
-  expect_true(all(is.na(a$complementarity$dg)))
-  row <- a$evaluation[a$evaluation$criterion == "worst hairpin dG37", ]
-  expect_equal(nrow(row), 1L)
-  # unknown, not a silent pass: `pass` is the legacy view and reads FALSE here
-  expect_equal(as.character(row$status), "unknown")
-  expect_true(is.na(row$observed))
+  expect_message(
+    a <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, flank = 150L, engines = off)),
+    "gate_structure"
+  )
+  # an excluded structure engine dooms the pairing, and the doom names the gate
+  expect_s3_class(a, "marker_doomed")
+  expect_match(a$reason, "gate_structure")
+})
+
+test_that("an all-NA structure margin never wins the ladder and names the gate", {
+  d <- tibble::tibble(
+    discrimination = c(0.9, 0.9),
+    com_homodimer = c(NA, -1), com_hairpin = c(NA, -0.5),
+    com_tm = 60, amplicon = 80, n_var = 0L, as_n_3p = 0L,
+    run = 0L, ssr = 0L, com_start = 1:2, com_dg_3p = -1
+  )
+  g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
+  # NA is unknown: the gate does not reject it
+  expect_true(all(g$data$gate_structure))
+  pick <- select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)
+  # ...but the ladder never ranks it: the evaluated row wins and no gate was relaxed
+  expect_identical(pick$best$.row, 2L)
+  expect_false("gate_structure" %in% pick$violated)
+  # with no margin at all the pairing is doomed, never ranked
+  d$com_homodimer[] <- NA_real_
+  d$com_hairpin[] <- NA_real_
+  g <- grade_assay_pairs(d, KASP_LIMITS, as_tm_mean = 58)
+  expect_null(
+    select_with_ladder(g$data, g$gates, KASP_RELAX_PAIR, g$tiers, g$ties, g$gate_margin, g$gate_floor)$best
+  )
 })

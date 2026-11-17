@@ -47,7 +47,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 0f4f0d0da72f9035c475475a87ea6352
   docs: README.md
   code:
@@ -64,7 +64,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 21955ac22f435fc22b774438119a975d
   docs: README.md
   code:
@@ -81,7 +81,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 0f4f0d0da72f9035c475475a87ea6352
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -99,7 +99,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: afac663aada1fe5fb22884ebd4f12236
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -117,7 +117,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 8aa439d8a721992e3d71a6bbe8aec6e4
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -135,7 +135,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 21955ac22f435fc22b774438119a975d
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -152,7 +152,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 317807d1c21ba4090743aec804a94ef7
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -169,7 +169,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 0fbc41f741fb41fcd561040a39c75768
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -186,7 +186,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 7c7a4f18968bd2a9f70139876a3dd845
   docs: vignettes/markers-kasp.Rmd
   code:
@@ -204,7 +204,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 62f5efcd227194ef91f52de1fbee28c2
   docs: vignettes/markers-gel.Rmd
   code:
@@ -221,7 +221,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 394af74cc463853f360ae3af867bd878
   docs: vignettes/markers-gel.Rmd
   code:
@@ -238,7 +238,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 4b6b8f878ca672d775751a7bb9d6eb9a
   docs: vignettes/markers-gel.Rmd
   code:
@@ -255,7 +255,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 6e94100e4762ad7af7fd6ee23fb4fde7
   docs: vignettes/markers-gel.Rmd
   code:
@@ -272,7 +272,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 9baec29e2fb5bdadbaa4f6c87010526c
   docs: vignettes/markers-gel.Rmd
   code:
@@ -289,7 +289,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 759c6e16df367e5c5a18df4ebef1e1a1
   docs: vignettes/markers-probe.Rmd
   code:
@@ -306,7 +306,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: d949791fde491951a67c8d4ebb39b356
   docs: vignettes/markers-probe.Rmd
   code:
@@ -323,7 +323,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 80c3b735001ddda4d23535901df638e5
   docs: vignettes/markers-probe.Rmd
   code:
@@ -340,7 +340,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: f80aa3054d1ca994557a03a9acad6b0b
   docs: vignettes/markers-probe.Rmd
   code:
@@ -357,7 +357,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 9159591cdf66ea91780b386e3fc8bfb2
   docs: vignettes/markers-isothermal.Rmd
   code:
@@ -374,7 +374,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 18799c40d869e709808a5b496ca89892
   docs: vignettes/markers-isothermal.Rmd
   code:
@@ -391,7 +391,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: 77055cc31fa5157dc072c9bd9817d725
   docs: vignettes/markers-crispr-sequencing.Rmd
   code:
@@ -408,7 +408,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: b75ac3ba8781417b188a2edfad4d93dc
+  input_hash: 832b8cf8c91ce64994bdc6fbc9f8928f
   output_hash: da9195d39680b4f4919d81dbd471908e
   docs: vignettes/markers-crispr-sequencing.Rmd
   code:
@@ -433,7 +433,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: d155e16e7436a3db57c2a8a3f74efbb7
+  input_hash: 41e01dfb96f6aa38c1fda9a7bfc39a07
   output_hash: 62efd58b6518ff01f9abeaef3f8c9ee2
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -510,7 +510,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: d155e16e7436a3db57c2a8a3f74efbb7
+  input_hash: 41e01dfb96f6aa38c1fda9a7bfc39a07
   output_hash: f24f34da798365a3eb799f63f5d8b6bb
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -554,7 +554,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: d155e16e7436a3db57c2a8a3f74efbb7
+  input_hash: 41e01dfb96f6aa38c1fda9a7bfc39a07
   output_hash: 97a8b1c8f3db6134cde7a6be5dac58a4
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -565,7 +565,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: d155e16e7436a3db57c2a8a3f74efbb7
+  input_hash: 41e01dfb96f6aa38c1fda9a7bfc39a07
   output_hash: c1878e443230d2af08b12f69fa35426a
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -609,7 +609,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: d155e16e7436a3db57c2a8a3f74efbb7
+  input_hash: 41e01dfb96f6aa38c1fda9a7bfc39a07
   output_hash: a939021b91c15e27f55b987294f2d7ba
   docs: vignettes/markers-kasp.Rmd
   status: verified

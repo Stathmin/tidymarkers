@@ -285,7 +285,8 @@ grade_assay_pairs <- function(assays, limits, as_tm_mean, com_tm_target = COM_TM
       # weakest 3' end (closest to 0) wins.
       m_com_3p_weak = as.numeric(.data$com_dg_3p),
       gate_discrimination = .data$discrimination >= limits$discrimination,
-      gate_structure = .data$m_structure >= 0,
+      # an unevaluable structure margin is unknown, not a pass (and not a fail)
+      gate_structure = is.na(.data$m_structure) | .data$m_structure >= 0,
       gate_tm = .data$com_tm >= as_tm_mean,
       gate_amplicon = .data$amplicon >= limits$amplicon[1L] & .data$amplicon <= limits$amplicon[2L],
       gate_com_footprint = gate_foot,
