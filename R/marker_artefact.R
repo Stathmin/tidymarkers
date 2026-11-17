@@ -278,7 +278,7 @@ artefact_join <- function(x) {
 #' @return a one-row list.
 #' @keywords internal
 #' @noRd
-artefact_candidate <- function(m) {
+artefact_candidate <- function(m, cause = NA_character_) {
   out <- list(
     outcome = "rejected", verdict = NA_character_, risk = NA_character_,
     n_failed = NA_integer_, failed = NA_character_, relaxed = NA_character_,
@@ -286,6 +286,14 @@ artefact_candidate <- function(m) {
     discrimination = NA_real_
   )
   if (is.null(m)) {
+    # ZY2: the solve already knows why the designer gave nothing back; that
+    # message names the threshold, `artefact_candidate()` cannot recover it
+    if (!is.na(cause)) {
+      # one line: a CSV row is the contract, an error message may not be
+      out$reason <- gsub("[\r\n]+", " ", cause)
+      out$stage <- "design"
+      return(out)
+    }
     out$reason <- gettext("the designer returned no marker object")
     out$stage <- "design"
     return(out)
@@ -369,7 +377,8 @@ artefact_decisions <- function(solved) {
     i <- idx[[k]]
     is_chosen <- chosen[[k]]
     m <- artefact_lookup(solved, a$label[[k]], a$scheme[[k]])
-    d <- artefact_candidate(m)
+    cause <- if ("cause" %in% names(a)) a$cause[[k]] else NA_character_
+    d <- artefact_candidate(m, cause)
     # Z8.5: the decision names the analytical quantities that must be reported
     # separately for this chemistry (NA when the scheme declares none).
     aq <- names(scheme_analytical(a$scheme[[k]]))

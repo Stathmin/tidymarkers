@@ -58,6 +58,29 @@ marker_ok <- function(m) {
   TRUE
 }
 
+#' Why a scheme attempt did not design its target
+#'
+#' `solve_one()` keeps only the message, not the condition: the attempt table is
+#' written to disk, and a condition object carries an environment that must not
+#' travel with the report.
+#' @keywords internal
+#' @noRd
+attempt_cause <- function(m, ok) {
+  if (ok) {
+    return(NA_character_)
+  }
+  if (is.null(m)) {
+    return(gettext("the designer returned no marker object (it may have errored)"))
+  }
+  if (inherits(m, "marker_doomed")) {
+    return(paste(m$stage, m$reason, sep = ": "))
+  }
+  if (!is.null(m$verdict) && identical(m$verdict, "fail")) {
+    return(gettext("the designed marker carries a fail verdict"))
+  }
+  gettext("no designable marker was returned")
+}
+
 #' The cost of a (possibly unchosen) scheme
 #' @keywords internal
 #' @noRd
@@ -81,21 +104,39 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
   marker <- NULL
   for (sc in schemes) {
     ck <- paste(kk, sc, knobs_key(dots), sep = "||")
-    if (exists(ck, envir = cache, inherits = FALSE)) {
-      m <- get(ck, envir = cache, inherits = FALSE)
+    # ZY2: a design that errored is cached as NULL, so its message is kept beside
+    # it - otherwise a re-solve of the same target loses the one thing that says
+    # which threshold rejected the scheme
+    killed <- paste0(ck, "||cause")
+    known <- exists(ck, envir = cache, inherits = FALSE)
+    cause <- if (exists(killed, envir = cache, inherits = FALSE)) {
+      get(killed, envir = cache, inherits = FALSE)
     } else {
+      NULL
+    }
+    m <- if (known) get(ck, envir = cache, inherits = FALSE) else NULL
+    if (!known) {
       args <- c(list(plan$genome, snp, sc), dots)
       if (!is.null(plan$variants)) args$variants <- plan$variants
       if (!is.null(plan$haplotypes) && scheme_base(sc) %in% haplotype_schemes()) args$haplotypes <- plan$haplotypes
-      m <- tryCatch(
-        suppressWarnings(rlang::exec(marker_design_at, !!!args)),
-        error = function(e) NULL
+      # the error becomes a value, so `attempts` records it and the walk still
+      # reaches the next scheme; a warning is muffled, not caught, so it cannot
+      # change control flow
+      m <- withCallingHandlers(
+        tryCatch(rlang::exec(marker_design_at, !!!args), error = function(e) e),
+        warning = function(w) invokeRestart("muffleWarning")
       )
+      if (inherits(m, "error")) {
+        cause <- conditionMessage(m)
+        m <- NULL
+      }
       assign(ck, m, envir = cache)
+      if (!is.null(cause)) assign(killed, cause, envir = cache)
     }
     ok <- marker_ok(m)
+    if (is.null(cause)) cause <- attempt_cause(m, ok)
     attempts[[length(attempts) + 1L]] <- tibble::tibble(
-      scheme = sc, cost = scheme_cost(sc, costs), ok = ok
+      scheme = sc, cost = scheme_cost(sc, costs), ok = ok, cause = cause
     )
     if (ok && is.na(chosen)) {
       chosen <- sc
@@ -128,7 +169,8 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #'   that designs (a full attempt matrix; slower).
 #' @param progress show a progress bar (default: when interactive).
 #' @return a `marker_solved`: `report` (one row per target: `scheme`, `cost`, `ok`,
-#'   `tried`, `marker`), `attempts` (one row per target x tried scheme), the
+#'   `tried`, `marker`), `attempts` (one row per target x tried scheme, with
+#'   `cause` - why that scheme did not design the target, `NA` when it did), the
 #'   `plan`/`schemes`/`cache`, `knobs` - the `...` the design ran with, kept
 #'   so [marker_artefact()] can record them and [marker_replay()] can re-run the
 #'   same design instead of a similar one - and, for a plan with a `region`, a
@@ -189,7 +231,7 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
     function(lb, r) {
       a <- r$attempts
       a$label <- lb
-      a[, c("label", "scheme", "cost", "ok")]
+      a[, c("label", "scheme", "cost", "ok", "cause")]
     }
   ) |>
     purrr::list_rbind()

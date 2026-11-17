@@ -22,7 +22,8 @@ that designs (a full attempt matrix; slower).}
 }
 \value{
 a \code{marker_solved}: \code{report} (one row per target: \code{scheme}, \code{cost}, \code{ok},
-\code{tried}, \code{marker}), \code{attempts} (one row per target x tried scheme), the
+\code{tried}, \code{marker}), \code{attempts} (one row per target x tried scheme, with
+\code{cause} - why that scheme did not design the target, \code{NA} when it did), the
 \code{plan}/\code{schemes}/\code{cache}, \code{knobs} - the \code{...} the design ran with, kept
 so \code{\link[=marker_artefact]{marker_artefact()}} can record them and \code{\link[=marker_replay]{marker_replay()}} can re-run the
 same design instead of a similar one - and, for a plan with a \code{region}, a

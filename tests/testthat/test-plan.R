@@ -385,6 +385,67 @@ test_that("a decision row is chosen only for its own target's winner", {
   expect_true(all(dec$outcome != ""))
 })
 
+test_that("a scheme whose design errors is an attempt row that carries the cause (ZY2)", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
+  plan <- marker_plan(genome) +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G") +
+    marker_tech(schemes = c("snp", "caps"))
+  # the real snp designer runs (it rejects this tiny locus); the caps designer
+  # errors.  A faulty engine now reaches the report as a message instead of
+  # vanishing into a NULL
+  testthat::local_mocked_bindings(
+    design_caps_marker = function(...) stop("Tm engine exploded"),
+    .package = "tidymarkers"
+  )
+  solved <- suppressWarnings(marker_solve(plan, flank = 100L, progress = FALSE))
+  a <- solved$attempts
+  expect_equal(nrow(a), 2L)
+  # a rejected design is not an error: it carries its own cause, not the message
+  expect_false(a$ok[a$scheme == "snp"])
+  expect_false(is.na(a$cause[a$scheme == "snp"]))
+  caps <- a[a$scheme == "caps", , drop = FALSE]
+  expect_equal(nrow(caps), 1L)
+  expect_false(caps$ok)
+  expect_identical(caps$cause, "Tm engine exploded")
+  # re-solve off the same cache: the message survives, it is not lost with the NULL
+  again <- suppressWarnings(marker_solve(plan, flank = 100L, progress = FALSE, cache = solved$cache))
+  expect_identical(again$attempts$cause, a$cause)
+  # the message is written to the artefact too, as the rejection's reason
+  dec <- marker_artefact(solved, dir = withr::local_tempdir())$decisions
+  expect_identical(dec$reason[dec$scheme == "caps"], "Tm engine exploded")
+  expect_identical(dec$stage[dec$scheme == "caps"], "design")
+})
+
+test_that("a target where every scheme fails reports every reason, one per row (ZY2)", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("A", 600L)))
+  plan <- marker_plan(genome) +
+    marker_targets(chrom = "Chr1", pos = 300L, ref = "A", alt = "G") +
+    marker_tech(costs = marker_costs(snp = 1, caps = 2, hrm = 3)) +
+    marker_tech(schemes = c("snp", "caps", "hrm"))
+  msgs <- c(snp = "no AS primer met the Tm window", caps = "no dCAPS site", hrm = "no amplicon")
+  # the message is built at call time, not when the binding is created
+  fail_with <- function(scheme) {
+    function(...) stop(msgs[[scheme]], call. = FALSE)
+  }
+  testthat::local_mocked_bindings(
+    assemble_kasp_assay = fail_with("snp"),
+    design_caps_marker = fail_with("caps"),
+    design_hrm_marker = fail_with("hrm"),
+    .package = "tidymarkers"
+  )
+  solved <- suppressWarnings(marker_solve(plan, progress = FALSE))
+  a <- solved$attempts
+  # every scheme was tried, in the plan's cost order, and none was dropped
+  expect_identical(a$scheme, c("snp", "caps", "hrm"))
+  expect_equal(a$cost, c(1, 2, 3))
+  expect_false(any(a$ok))
+  expect_identical(a$cause, unname(msgs[a$scheme]))
+  expect_equal(length(unique(a$cause)), 3L)
+  expect_false(solved$report$ok)
+  dec <- marker_artefact(solved, dir = withr::local_tempdir())$decisions
+  expect_identical(dec$reason, unname(msgs[dec$scheme]))
+})
+
 test_that("marker_replay re-runs the design and compares the verdicts", {
   solved <- rejected_solve()
   art <- marker_artefact(solved, dir = withr::local_tempdir())
