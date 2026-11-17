@@ -99,13 +99,7 @@ design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
     ))
   }
   purrr::map(seq_len(nrow(loci)), function(i) {
-    r <- loci[i, , drop = FALSE]
-    snp <- tibble::tibble(
-      chrom = as.character(r$chrom), pos = as.integer(r$pos),
-      ref = as.character(r$ref), alt = as.character(r$alt),
-      alt2 = if ("alt2" %in% names(r)) as.character(r$alt2) else NA_character_,
-      strand = if ("strand" %in% names(r)) as.character(r$strand) else "+"
-    )
+    snp <- locus_row(loci[i, , drop = FALSE])
     if (is.null(scheme)) {
       d <- design_auto_marker(genome, snp, ..., context = context)
       chosen <- d$scheme
@@ -124,4 +118,22 @@ design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
     )
   }) |>
     purrr::list_rbind()
+}
+
+#' The canonical one-row `snp` input every locus designer reads
+#'
+#' One row of a locus table reduced to the shape a designer expects: `alt2` is
+#' `NA` and `strand` is `"+"` when the row does not name them.  The three entry
+#' points (`design_markers()`, `design_kasp_markers()`, `design_marker_batch()`)
+#' build this shape in one place so they cannot disagree on it.
+#' @param loc a one-row data frame/tibble with `chrom`, `pos`, `ref`, `alt`.
+#' @keywords internal
+#' @noRd
+locus_row <- function(loc) {
+  tibble::tibble(
+    chrom = as.character(loc$chrom), pos = as.integer(loc$pos),
+    ref = as.character(loc$ref), alt = as.character(loc$alt),
+    alt2 = if ("alt2" %in% names(loc)) as.character(loc$alt2) else NA_character_,
+    strand = if ("strand" %in% names(loc)) as.character(loc$strand) else "+"
+  )
 }

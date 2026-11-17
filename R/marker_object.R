@@ -166,10 +166,8 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     cli::cli_abort(gettext("`loci` is missing column(s): {paste(missing, collapse = ', ')}"))
   }
   one <- function(ch, pos, ref, alt, cores) {
-    snp <- tibble::tibble(
-      chrom = as.character(ch), pos = as.integer(pos),
-      ref = as.character(ref), alt = as.character(alt)
-    )
+    # the same canonical row `design_markers()` designs; only `ref`/`alt` are read
+    snp <- locus_row(tibble::tibble(chrom = ch, pos = pos, ref = ref, alt = alt))
     type <- variant_type(snp$ref, snp$alt)
     # one schema for every verdict, so the doomed/ok/error rows cannot drift
     row <- function(strand = NA_character_, amplicon = NA_integer_, discrimination = NA_real_,

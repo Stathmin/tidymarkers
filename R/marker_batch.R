@@ -141,12 +141,13 @@ marker_batch_design_one <- function(genome, loc, design, dots) {
   if (is.function(design)) {
     return(rlang::exec(design, loc))
   }
-  # the locus row goes through exactly as the caller wrote it: re-shaping it
-  # here (adding `alt2`/`strand`) would make the design differ from the same
-  # row passed to `design_markers()` by hand, and the row is the design's input
+  # the built-in designers get the same canonical row `design_markers()` builds
+  # (`alt2`/`strand` filled in); a caller's own `design` function above still gets
+  # its row untouched, because its input shape is the caller's contract
+  snp <- locus_row(loc)
   dots$cores <- 1L
   if (is.null(design)) {
-    return(rlang::exec(design_auto_marker, genome, loc, !!!dots))
+    return(rlang::exec(design_auto_marker, genome, snp, !!!dots))
   }
-  rlang::exec(marker_design_at, genome, loc, design, !!!dots)
+  rlang::exec(marker_design_at, genome, snp, design, !!!dots)
 }

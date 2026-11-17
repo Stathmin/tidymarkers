@@ -151,9 +151,10 @@ test_that("design_marker_batch equals the same calls run one by one", {
   shared <- batch_shared()
   fx <- shared$fx
   batch <- shared$batch
-  # the two good rows, run by hand
+  # the two good rows, run by hand on the canonical row the batch builds
   one_by_one <- lapply(c(1L, 3L), function(i) {
-    suppressWarnings(marker_design_at(fx$genome, shared$mixed[i, , drop = FALSE], "snp", flank = 100L, cores = 1L))
+    locus <- tidymarkers:::locus_row(shared$mixed[i, , drop = FALSE])
+    suppressWarnings(marker_design_at(fx$genome, locus, "snp", flank = 100L, cores = 1L))
   })
   expect_equal(batch_payload(batch$result[c(1L, 3L)]), batch_payload(one_by_one))
 })
@@ -163,10 +164,74 @@ test_that("the default ladder matches a hand-run ladder", {
   shared <- batch_shared()
   locus <- shared$loci[1L, , drop = FALSE]
   ladder <- design_marker_batch(shared$fx$genome, locus, flank = 100L)
-  hand <- suppressWarnings(design_auto_marker(shared$fx$genome, locus, flank = 100L, cores = 1L))
+  # the batch hands the designer a canonical row (`alt2`/`strand` filled in), so
+  # the hand run must start from the same row to be the same design
+  hand <- suppressWarnings(
+    design_auto_marker(shared$fx$genome, tidymarkers:::locus_row(locus), flank = 100L, cores = 1L)
+  )
   # a ladder answer is an answer, so the row is always ok and carries the scheme
   expect_equal(ladder$status, "ok")
   expect_equal(ladder$scheme, hand$scheme)
   expect_true(nzchar(ladder$scheme))
   expect_equal(batch_payload(ladder$result[[1L]]), batch_payload(hand))
+})
+
+# -- one locus shape for every entry point ----------------------------------
+# The multi-allelic row of the shipped panel: the one row whose `alt2` decides a
+# design, so a path that drops it cannot pass by luck.
+multi_locus <- function() {
+  ex <- marker_example()
+  ex[!is.na(ex$alt2), c("chrom", "pos", "ref", "alt", "alt2")][1L, ]
+}
+
+test_that("the batch and design_markers() design a multi-allelic locus the same", {
+  skip_if_no_oligoarrayaux()
+  genome <- ath_genome()
+  locus <- multi_locus()
+  batch <- design_marker_batch(genome, locus, design = "snp", flank = 150L)
+  ref <- design_markers(genome, locus, scheme = "snp", flank = 150L)
+  expect_equal(batch$status, "ok")
+  expect_equal(ref$ok, TRUE)
+  # the second ALT reaches the design as the degenerate site it is, in both
+  expect_equal(batch$result[[1L]]$site$class[1L], "degenerate")
+  expect_equal(batch$result[[1L]]$site$n_alt[1L], 2L)
+  expect_setequal(marker_snp_alts(locus)$alt_pass, c(locus$alt, locus$alt2))
+  expect_equal(ref$scheme, "snp")
+})
+
+test_that("a locus table without alt2/strand is the same as one that names them", {
+  skip_if_no_oligoarrayaux()
+  genome <- ath_genome()
+  bare <- multi_locus()[, c("chrom", "pos", "ref", "alt")]
+  named <- bare
+  named$alt2 <- NA_character_
+  named$strand <- "+"
+  expect_identical(design_markers(genome, bare, flank = 150L), design_markers(genome, named, flank = 150L))
+  # and the batch sees the same row either way
+  a <- design_marker_batch(genome, bare, flank = 150L)$result[[1L]]
+  b <- design_marker_batch(genome, named, flank = 150L)$result[[1L]]
+  expect_equal(batch_payload(a), batch_payload(b))
+})
+
+test_that("design_kasp_markers' verdict schema does not see alt2/strand", {
+  skip_if_no_oligoarrayaux()
+  fx <- snp_fixture()
+  res <- suppressWarnings(design_kasp_markers(fx$genome, fx$snp, flank = 150L))
+  # the verdict table is the one HEAD returns: same columns in the same order,
+  # one row, and the same values -- the canonical row adds `alt2`/`strand` for
+  # the designer, but neither reaches this output
+  expect_identical(
+    names(res),
+    c(
+      "chrom", "pos", "ref", "alt", "type", "strand", "amplicon",
+      "discrimination", "n_fail", "verdict", "note"
+    )
+  )
+  expect_equal(nrow(res), 1L)
+  expect_equal(res$chrom, fx$snp$chrom)
+  expect_equal(res$pos, fx$snp$pos)
+  expect_equal(res$type, "SNP")
+  expect_equal(res$strand, "+")
+  expect_equal(res$verdict, "warn")
+  expect_equal(res$n_fail, 1L)
 })
