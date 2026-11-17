@@ -76,8 +76,8 @@ test_that("a BiocParallel backend gives the same batch verdicts", {
 batch_payload <- function(x) {
   if (inherits(x, "tbl_graph")) {
     return(list(
-      v = as.data.frame(igraph::as_data_frame(x, "vertices")),
-      e = as.data.frame(igraph::as_data_frame(x, "edges"))
+      v = as.data.frame(tidygraph::as_tibble(x, active = "nodes")),
+      e = as.data.frame(tidygraph::as_tibble(x, active = "edges"))
     ))
   }
   if (is.list(x)) {
