@@ -41,6 +41,7 @@ Other design:
 \code{\link[=design_duplex]{design_duplex()}},
 \code{\link[=design_kasp_markers]{design_kasp_markers()}},
 \code{\link[=design_lax_marker]{design_lax_marker()}},
+\code{\link[=design_marker_batch]{design_marker_batch()}},
 \code{\link[=design_markers]{design_markers()}},
 \code{\link[=marker_readout]{marker_readout()}},
 \code{\link[=marker_site_class]{marker_site_class()}},
