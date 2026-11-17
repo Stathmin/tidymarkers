@@ -254,6 +254,15 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 }
 
 #' Does a primer contain an inverted repeat? (see [find_palindromes()])
+#'
+#' IUPAC ambiguity codes are wildcards: two arm positions pair when the base
+#' sets of their codes intersect (`N` pairs with anything, `R` with `Y`, ...).
+#' A degenerate oligo is a mixture of concrete oligos, so if any member of the
+#' mixture can form the inverted repeat the primer carries a real hairpin risk
+#' and the QC gate must see it.  Plain-ACGT input is unchanged: it keeps the
+#' exact substring fast path, and a wildcard comparison on ACGT is the same
+#' test.  Wildcard matching needs `max_mismatch = 0`; a degenerate oligo asked
+#' for mismatches is still screened by `findPalindromes()`, symbol-exactly.
 #' @param seq character vector of DNA sequences.
 #' @param min_armlength minimum arm length of a palindromic hit.
 #' @param max_looplength maximum loop (spacer) length.
@@ -261,14 +270,17 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 #' @return a logical vector, one per input sequence.
 #' @examples
 #' has_palindrome(c("ACGTACGT", "AACCGG"))
+#' # wildcard: the `N` arms can be completed to ACGT...ACGT
+#' has_palindrome("ACGTNNACGT")
 #' @family QC
 #' @export
 has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
   # `findPalindromes()` plus a tibble per sequence cost ~1.2 ms (measured); the
   # question is only "does any arm pair exist".  For a plain-ACGT oligo that is
-  # a few vectorised substring comparisons (~60 us).  Every other case (IUPAC
-  # code, mismatches, a non-default argument) takes the Biostrings path, so the
-  # fast path cannot change an answer it does not cover.
+  # a few vectorised substring comparisons (~60 us); an IUPAC one is the same
+  # scan on 4-bit base masks.  Mismatch tolerance, or a non-default argument,
+  # still takes the Biostrings path, so the fast path cannot change an answer
+  # it does not cover.
   seq <- as.character(seq)
   fast <- is.numeric(max_mismatch) && identical(as.integer(max_mismatch), 0L) &&
     is.numeric(min_armlength) && length(min_armlength) == 1L &&
@@ -280,14 +292,23 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
   # unname(): the old `map_int(...) > 0L` dropped names because a comparison
   # strips attributes; callers must not start seeing names on this vector
   unname(vapply(seq, function(s) {
-    if (fast && !is.na(s) && !grepl("[^ACGT]", s)) {
-      palindromic_arms(s, as.integer(min_armlength), as.integer(max_looplength))
-    } else {
-      length(Biostrings::findPalindromes(Biostrings::DNAString(s),
+    if (is.na(s)) {
+      # a missing sequence cannot form an inverted repeat; Biostrings aborts on it
+      return(FALSE)
+    }
+    if (!fast) {
+      found <- Biostrings::findPalindromes(
+        Biostrings::DNAString(s),
         min.armlength = min_armlength,
         max.looplength = max_looplength,
         max.mismatch = max_mismatch
-      )) > 0L
+      )
+      return(length(found) > 0L)
+    }
+    if (grepl("[^ACGT]", s)) {
+      wildcard_arms(s, as.integer(min_armlength), as.integer(max_looplength))
+    } else {
+      palindromic_arms(s, as.integer(min_armlength), as.integer(max_looplength))
     }
   }, logical(1)))
 }
@@ -323,6 +344,80 @@ palindromic_arms <- function(s, k, L) {
     # n - (i + k + d + k - 1) + 1 in the genome's reverse complement
     rs <- n - i - 2L * k - d + 2L
     if (any(left == substring(rc, rs, rs + k - 1L))) {
+      return(TRUE)
+    }
+  }
+  FALSE
+}
+
+# 4-bit base mask, A=1 C=2 G=4 T=8 (the bit order of `IUPAC_BASES`).  A code is
+# the union of its bases, so "the base sets intersect" is a bitwise AND.  Any
+# other character is -1, i.e. it pairs with nothing.  No names, so `[` lookup
+# does not warn on a character outside the table.
+IUPAC_MASKS <- c(
+  A = 1L, C = 2L, G = 4L, T = 8L,
+  R = 5L, Y = 10L, S = 6L, W = 9L, K = 12L, M = 3L,
+  B = 14L, D = 13L, H = 11L, V = 7L, N = 15L
+)
+
+#' Base masks of a sequence, one per position
+#' @param s a sequence of IUPAC codes, any case.
+#' @return an integer vector; any character outside the table pairs with nothing.
+#' @keywords internal
+#' @noRd
+iupac_masks <- function(s) {
+  IUPAC_MASKS[toupper(stringr::str_split(s, "")[[1L]])]
+}
+
+#' Complement a sequence of IUPAC codes (A<->T, C<->G, R<->Y, ...)
+#' @param s a sequence of IUPAC codes, any case.
+#' @return `s` with each code replaced by its complement; unknown characters
+#'   are left as they are.
+#' @keywords internal
+#' @noRd
+iupac_complement <- function(s) {
+  # `chartr` works on characters, so translate the upper form and keep case
+  ch <- stringr::str_to_upper(s)
+  comp <- chartr("ACGTRYSWKMBDHVN", "TGCAYRSWMKVHDBN", ch)
+  out <- ifelse(ch == s, comp, stringr::str_to_lower(comp))
+  paste0(out, collapse = "")
+}
+
+#' Does any wildcard-matched arm pair exist?
+#'
+#' Same offsets as `palindromic_arms()`: loop `d`, left arm `i..i+k-1`, right
+#' arm `i+k+d..i+2k+d-1`.  Position `p` of each pairs when the two masks
+#' intersect, i.e. some concrete base satisfies both codes.  The right arm is
+#' read through the reverse complement, as `palindromic_arms()` does.
+#' @param s a sequence containing at least one IUPAC code.
+#' @param k arm length.
+#' @param L maximum loop length.
+#' @return a single logical.
+#' @keywords internal
+#' @noRd
+wildcard_arms <- function(s, k, L) {
+  n <- nchar(s)
+  if (n < 2L * k) {
+    return(FALSE)
+  }
+  # integer arithmetic: with `2L * k` double-typed the offsets become double and
+  # `m[0 + p]` truncates to index 1, silently pairing the wrong positions
+  k <- as.integer(k)
+  m <- iupac_masks(s)
+  # mask of the reverse complement, read with the same mirrored coordinates as
+  # `palindromic_arms()`; `iupac_complement()` complements codes, not bases
+  mr <- iupac_masks(intToUtf8(rev(utf8ToInt(iupac_complement(s)))))
+  for (d in seq.int(0L, as.integer(L))) {
+    npos <- n - 2L * k - d + 1L
+    if (npos < 1L) break
+    i <- seq_len(npos)
+    ok <- rep(TRUE, npos)
+    for (p in seq.int(0L, k - 1L)) {
+      # left offset p against the reverse-complement arm start, rs above
+      ok <- ok & bitwAnd(m[i + p], mr[n - i - 2L * k - d + 2L + p]) > 0L
+      if (!any(ok)) break
+    }
+    if (any(ok)) {
       return(TRUE)
     }
   }

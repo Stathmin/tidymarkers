@@ -19,10 +19,19 @@ has_palindrome(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L)
 a logical vector, one per input sequence.
 }
 \description{
-Does a primer contain an inverted repeat? (see \code{\link[=find_palindromes]{find_palindromes()}})
+IUPAC ambiguity codes are wildcards: two arm positions pair when the base
+sets of their codes intersect (\code{N} pairs with anything, \code{R} with \code{Y}, ...).
+A degenerate oligo is a mixture of concrete oligos, so if any member of the
+mixture can form the inverted repeat the primer carries a real hairpin risk
+and the QC gate must see it.  Plain-ACGT input is unchanged: it keeps the
+exact substring fast path, and a wildcard comparison on ACGT is the same
+test.  Wildcard matching needs \code{max_mismatch = 0}; a degenerate oligo asked
+for mismatches is still screened by \code{findPalindromes()}, symbol-exactly.
 }
 \examples{
 has_palindrome(c("ACGTACGT", "AACCGG"))
+# wildcard: the `N` arms can be completed to ACGT...ACGT
+has_palindrome("ACGTNNACGT")
 }
 \seealso{
 Other QC:
