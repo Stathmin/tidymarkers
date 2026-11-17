@@ -643,8 +643,13 @@ exact_pattern_hits <- function(pattern, subject, max_mismatch) {
   }
   out <- pattern_hits_scan(pattern, subject, max_mismatch)
   if (length(out) <= HIT_CACHE_MAX) {
-    if (length(.marker_state$hits) > 256L) {
-      rm(list = ls(.marker_state$hits, all.names = TRUE), envir = .marker_state$hits)
+    keys <- ls(.marker_state$hits, all.names = TRUE)
+    # Evict half the cache, not all of it: flushing it whole would drop the
+    # answers the current design is still re-asking for.  `ls()` sorts rather
+    # than listing insertion order (an environment has none to expose), so which
+    # half goes is arbitrary; the point is that the cache survives the eviction.
+    if (length(keys) >= HIT_CACHE_SLOTS) {
+      rm(list = keys[seq_len(length(keys) %/% 2L)], envir = .marker_state$hits)
     }
     assign(key, out, envir = .marker_state$hits)
   }

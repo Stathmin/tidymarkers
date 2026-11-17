@@ -109,6 +109,13 @@ SEED_MISMATCH <- 1L
 # Largest pattern-hit set worth keeping in the per-session scan cache: a result
 # bigger than this costs more memory than the rescan it would save.
 HIT_CACHE_MAX <- 20000L
+# Entry bound of that cache.  It must clear a whole design's working set: a
+# 6-target design holds 357 distinct (pattern, chromosome, radius) answers, and
+# a bound below that made the run evict and rescan its own answers (at 256, the
+# last scans evicted the first and 26 of them were scanned twice).  The entries
+# themselves are small - the design's 383 results held 42 hit ranges in total -
+# so the bound is set for a multi-locus run rather than for memory.
+HIT_CACHE_SLOTS <- 4096L
 
 # Ensembl consequence wording -> design priority (lower = preferred)
 # Sequence-Ontology term -> design priority (lower = preferred).  These are the
