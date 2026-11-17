@@ -175,22 +175,35 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   # reproduces: design_as_primers() ranks on .policy_rank then desc(discrimination),
   # so a GC-window failure cannot win on length alone, and no frame-independent
   # cell below disagrees on a tie.  One frame-sensitive case remains (seed 7,
-  # core pos 40): the AS primers are identical in all four frames, but the COM
-  # primer lands 2 bp closer (gap 74 vs 76, Tm 60.69 vs 60.24) and the amplicon
-  # reads 100 bp instead of 91.  The cause of that 2 bp gap move is not proven;
-  # the com_gaps window is ruled out -- across 49 designs the KASP gap is 19-77
-  # (median 47, none at >= 78), and widening the grid to 18:120 moved exactly one
-  # design through the Tm tie-break (R/marker_design.R:86), never reachability.
-  # It is reported, not asserted away.
+  # core pos 40): the AS primers are identical in all four frames, but frame 1
+  # takes a 92 bp amplicon whose COM ring sits 2 bp closer (gap 53 vs 51,
+  # COM Tm 60.24 vs 60.69) while frames 2-4 take the 100 bp one.
   #
-  # Geometry: one shared 100-base pad, prefixed by 0/17/43/99 bases, so the same
+  # The cause is measured, not inferred: design_common_primers() runs on the WHOLE
+  # contig, not on a flank window, and keeps only rings with start >= 1
+  # (R/marker_design.R:60).  Swapping the lead-in therefore shifts which of the
+  # tiled COM rings carries the best Tm, and the rank flip is visible in the
+  # checks: at the 92 bp frame "COM Tm >= AS Tm" FAILS (-0.43) and at the 100 bp
+  # frames it PASSES (+0.02); every other row of the check table is identical
+  # (both fail "off-target exact primer hits (n) = 2 <= 1").  The com_gaps window
+  # is ruled out -- across 49 designs the KASP gap is 19-77 (median 47, none at
+  # >= 78), and widening the grid to 18:120 moved exactly one design through the
+  # Tm tie-break (R/marker_design.R:86), never reachability.  The divergence is
+  # asserted by name below, not reported away.
+  #
+  # Geometry: one shared 100-base pad, prefixed by 1/17/43/99 bases, so the same
   # core sits at four different absolute offsets.  Every shift is strictly smaller
-  # than the pad's period, so no frame can put the core within a design window of
-  # a contig end (a shift of 100 would equal the period and degenerate the test).
+  # than the pad's period, so no frame can reuse the whole pad (a shift of 100
+  # would equal the period and degenerate the test).  The smallest shift is 1, not
+  # 0, on purpose: with a zero shift the SNP sat ~140 bp into an otherwise
+  # unpadded contig and the divergence could be blamed on the left edge of the
+  # ranking window.  With a 1-base lead-in every frame's SNP is >= 141 bp from
+  # both contig ends, so what is left is the lead-in itself re-ranking the COM
+  # rings -- the behaviour this test exists to guard.
   set.seed(11L)
   pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
   pre <- substr(strrep(pad, 5L), 1L, 100L)
-  shifts <- c(0L, 17L, 43L, 99L)
+  shifts <- c(1L, 17L, 43L, 99L)
 
   # one indexed genome per (seed, shift); built once and reused across loci
   frame_genomes <- new.env(parent = emptyenv())
@@ -259,6 +272,46 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   }
   # a skip here would hide a broken fixture; the cells above are known designable
   expect_gte(covered, 1L)
+
+  # seed 7 / core pos 40 is the ONE frame-sensitive cell, and it is named here so
+  # the test guards the ranking instead of hiding the divergence.  The 1-base
+  # lead-in changes which COM ring carries the best Tm: frame 1 swaps the 92 bp /
+  # COM Tm 60.24 assay ("COM Tm >= AS Tm" fails) for the 100 bp / COM Tm 60.69 one
+  # the other three frames pick (that row passes).  If a change makes every frame
+  # agree here, the fixture has been flattened and no longer probes the edge; if
+  # the frames drift apart on AS, this is where the drift surfaces.
+  divergent <- lapply(design_frame(7L, 40L), chosen)
+  expect_false(any(vapply(divergent, is.null, logical(1))),
+    label = "seed 7 core pos 40 is designable in every frame"
+  )
+  if (!any(vapply(divergent, is.null, logical(1)))) {
+    expect_identical(
+      unique(vapply(divergent, function(x) x$as_ref[[1L]], character(1))),
+      divergent[[1L]]$as_ref[[1L]],
+      label = "seed 7 core pos 40 AS_ref agrees across frames"
+    )
+    expect_identical(
+      unique(vapply(divergent, function(x) x$as_alt[[1L]], character(1))),
+      divergent[[1L]]$as_alt[[1L]],
+      label = "seed 7 core pos 40 AS_alt agrees across frames"
+    )
+    expect_identical(divergent[[1L]]$com[[1L]], "TCTCACGAATGTCCATCCCACAGT",
+      label = "seed 7 core pos 40 frame 1 COM"
+    )
+    expect_identical(
+      vapply(divergent[2:4], function(x) x$com[[1L]], character(1)),
+      rep("TCACGAATGTCCATCCCACAGTGT", 3L),
+      label = "seed 7 core pos 40 frames 2-4 COM"
+    )
+    expect_identical(divergent[[1L]]$amplicon[[1L]], 92L,
+      label = "seed 7 core pos 40 frame 1 amplicon"
+    )
+    expect_identical(
+      vapply(divergent[2:4], function(x) x$amplicon[[1L]], integer(1)),
+      rep(100L, 3L),
+      label = "seed 7 core pos 40 frames 2-4 amplicon"
+    )
+  }
 })
 
 test_that("ZW0 M5 fixture: the shifts stay strictly inside the pad period", {
@@ -267,7 +320,7 @@ test_that("ZW0 M5 fixture: the shifts stay strictly inside the pad period", {
   # distinct frame.  Pin that here so a future edit cannot silently reintroduce it.
   set.seed(11L)
   pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
-  shifts <- c(0L, 17L, 43L, 99L)
+  shifts <- c(1L, 17L, 43L, 99L)
   expect_gt(nchar(pad), max(shifts), label = "largest shift stays inside the period")
   expect_true(any(shifts > 0L & shifts < nchar(pad)),
     label = "at least one shift lands strictly inside the period"
