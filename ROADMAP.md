@@ -28,7 +28,9 @@
 Порядок: `## Известные дефекты` (меняют вердикт при том же входе) → `ZX1`/`ZX2`
 (масштаб: индекс, параллель по локусам) → научная очередь `Z7` → `Z8`.
 Горизонт и то, что сознательно не делается, — `ZX3`/`ZX4`; там же единственный
-дом для планов «документация ↔ код» (граф).
+дом для планов «документация ↔ код» (граф). Категория-определяющая
+инфраструктура — `ZY`: очередь `ZY1`–`ZY17`, у каждого пункта есть четыре поля;
+внутри неё сначала разблокированное, потом внешне заблокированное.
 
 ## Приоритет
 
@@ -36,7 +38,9 @@
 (калибровка); `ZA6` шаги 1–4 — контракты данных, шаги 5–8 — после `Z8`.
 Дефекты `D1`–`D5` — раньше новой науки: они меняют вердикт на том же входе.
 Дисциплина «рефакторинг не сдвигает вердикт»: шаг принимается только с
-неизменными вердиктами на золотом наборе.
+неизменными вердиктами на золотом наборе. `ZY` — отдельная очередь: приоритет
+внутри неё задаёт порядок пунктов, а не шкала `P0`–`P2` из `Z`; гейты `ZX4`
+(Rust после замера R-адаптера) и `Z8` (калибровка) действуют и там.
 
 ## Остатки в закрытых пунктах
 
@@ -70,11 +74,12 @@
     - проверка: замер, не код.
     - следствие: остаток снят; повторно не открывать (см. ту же заметку в `§U`).
 2. [x] **`Z4.3` внутренний адаптер dG шпильки** (из `Z4.3`). Сделано.
-       `internal_hairpin_dg()` (`R/marker_thermo.R`); `hairpin_dg = TRUE` под
+       `internal_hairpin_dg()` (`R/marker_dg_internal.R:283`); `hairpin_dg = TRUE` под
        `thermo = "internal"`; `fold` остаётся `FALSE` (сам фолдинг — только
        OligoArrayAux); `oligo_dg_vec(seq2 = NULL)` идёт через него.
-    - проверка: оракул `hairpin_dg_thermo()` на 11 последовательностях, mean
-      |ΔdG| 0.54 / max 1.48 ккал/моль, стебель < 4 bp → 0; ложнопропускной гейт
+    - проверка: оракул `hairpin_dg_thermo()` на 11 последовательностях —
+      измерено mean |ΔdG| 0.54 / max 1.48 ккал/моль (тест держит mean ≤ 1.0 /
+      max ≤ 2.0), стебель < 4 bp → 0; ложнопропускной гейт
       `ours - una <= 2.0`; два ledger-входа (`internal_duplex_terms`,
       `hairpin_candidates`).
     - блокер: нет.
@@ -195,7 +200,7 @@
       ранжировании: `.policy_rank` от рамки не зависит, расходятся границы
       сетки `com_gaps` (№12). Верификатор берёт выбранную строку —
       `design_outcome()` совпадает во всех рамках.
-    - проверка: `test-invariants.R` — 122 pass / 0 fail / 1 skip, утверждения
+    - проверка: `test-invariants.R` — 127 pass / 0 fail / 1 skip, утверждения
       вместо `skip_*`; `test-design.R` 15/0, `test-checks.R` 44/0,
       `test-selection.R` 115/0.
     - блокер: нет.
@@ -472,7 +477,7 @@ scheme, genome, limits)` без формала и без forward.
     - блокер: нет.
     - следствие: пользовательская схема может выбрать адаптер, как остальные
       гейты.
-28. [ ] **Оценка KASP-дизайнера не чтила per-call `engines`** (из №6; найдено
+28. [x] **Оценка KASP-дизайнера не чтила per-call `engines`** (из №6; найдено
         при закрытии №25–№27). `assemble_kasp_assay()` передавал `engines` только
         в `marker_design_checks()`, а KASP-ветка этой функции
         (`R/marker_checks.R:313-314`) читает уже посчитанные `assay$thermo` /
@@ -618,8 +623,11 @@ scheme, genome, limits)` без формала и без forward.
       слияния PR — дал ещё четыре (3–6 ниже). Прогон `43857228030` дал седьмую
       (7 и 7a ниже): две ноги, две независимые причины. Все семь исправлены; прогон
       `43860991124` — первый после них: четыре ноги зелёные, devel убит сигналом
-      раннера (причина 8, отказ среды, а не пакета). `[ ]` держится на отсутствии
-      полностью зелёного прогона, а не на открытом коде. 1. Три ubuntu-ноги: `test-plan.R:457` — `setdiff(marker_schemes()$scheme, tp)`
+      раннера (причина 8, отказ среды, а не пакета). Прогон `44052428326` на
+      `e8f7c98` дал четыре зелёные ноги (ubuntu release / oldrel-1 / macos /
+      windows), а devel `skipped` по устройству — она ночная
+      (`.github/workflows/R-CMD-check.yaml:124`), поэтому прогона «все ноги
+      зелёные» не будет никогда, и держать статус на этом нельзя. 1. Три ubuntu-ноги: `test-plan.R:457` — `setdiff(marker_schemes()$scheme, tp)`
       видит 9 схем вместо 8, лишняя `mcp_smoke`. `tests/testthat/test-mcp.R`
       регистрирует её без снятия; исправление — `1587294` (`on.exit` со снятием
       регистрации плюс `session_memo_clear()`), предок `main`. 2. macOS и Windows падают раньше тестов: `* creating vignettes ... ERROR`,
@@ -932,8 +940,9 @@ manually started runner is canceled.` → `Process completed with exit code
       `test-snapshot*`. Провенанс — это rung, а не калибровка.
 - [x] **Провенанс порогов + термодинамическая сверка.** Лестница
       `CRITERION_EVIDENCE` (`ZW4.1`) и `inst/extdata/criterion_provenance.csv`
-      (212 строк: `id` → `source` + `reason_class` + причина; 41 названа, 171 —
-      `package assumption` с явным классом). `lobato2018` (RPA ×4) влит.
+      (212 строк: `id` → `source` + `reason_class` + причина; 149 с названным
+      источником, 63 — `package assumption` с явным классом). `lobato2018`
+      (RPA ×4) влит.
       Внешний Tm-якорь — литературный пробел (`ZW3.4`), не пробел провенанса.
 
 ### §V. Модели считывания (readout simulation)
@@ -1021,8 +1030,11 @@ manually started runner is canceled.` → `Process completed with exit code
       `matchPattern` по геному — реальная работа, а не накладные.
 - [x] **Быстрые переписывания с равным результатом.** `gc_frac()` 1.17 мс →
       17 мкс (`gsub`/`nchar` вместо `letterFrequency` S4), `has_palindrome()`
-      1.18 мс → 0.06 мс (быстрый путь `palindromic_arms()` для чисто-ACGT;
-      IUPAC и `max_mismatch > 0` идут в `findPalindromes`),
+      1.18 мс → 0.06 мс (IUPAC-коды теперь wildcard: 4-битные маски
+      `IUPAC_MASKS` + `wildcard_arms()`; 0.064 с на 2000 ACGT, 0.400 с на
+      вырожденных, 0.934 с у `findPalindromes`; wildcard-оракул ==
+      `expand()` + полный перебор на 550 случаях; `max_mismatch > 0` по-прежнему
+      идёт в `findPalindromes` — точное совпадение по символу, не достройка),
       `exact_pattern_hits()` 3.76 с → 0.29 с на TAIR10 для ACGT-праймера
       (`matchPattern(fixed = TRUE)`; попадания через N отбрасываются),
       `marker_engines()` 106 → 58 мкс (одна проба; `hybrid-ss-min` внутри кеша
@@ -1088,9 +1100,9 @@ sites. Детали — `NEWS.md`.
       только `fold` остаётся на OligoArrayAux. Оракул: `test-dg-internal.R` (dH
       против TmCalculator, dG против `hybrid-min`, ≤0.8 ккал/моль). Шпилька —
       тоже внутренняя (`internal_hairpin_dg()`, `hairpin_dg = TRUE`): оракул
-      против `hairpin_dg_thermo()` на 11 последовательностях, mean |ΔdG| 0.54 /
-      max 1.48 ккал/моль, стебель < 4 bp → 0 (`## Остатки в закрытых пунктах`,
-      №2).
+      против `hairpin_dg_thermo()` на 11 последовательностях — измерено mean
+      |ΔdG| 0.54 / max 1.48 ккал/моль (тест держит mean ≤ 1.0 / max ≤ 2.0),
+      стебель < 4 bp → 0 (`## Остатки в закрытых пунктах`, №2).
 
 ### Z5. Mismatch-tolerant specificity [P1]
 
@@ -1321,9 +1333,11 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
       каждой проверке; по умолчанию вывод прежний.
 - [x] **`ZW4.6` Источники названы построчно.** `criterion_provenance.csv`
       (212 строк) даёт `id` → `source` + `reason_class` + причина;
-      `test-criteria.R` сверяет с реестром. **Итог:** `rule_of_thumb` **71**,
-      `primary_literature` **128**, `vendor_guideline` **13**,
-      `package assumption` **63**, `fitted_here` **0**.
+      `test-criteria.R` сверяет с реестром. **Итог по `reason_class`:**
+      `rule_of_thumb` **71**, `primary_literature` **128**,
+      `vendor_guideline` **13**, `fitted_here` **0** (= 212). Вторая ось —
+      `source`: **149** строк с названным источником, **63** —
+      `package assumption`.
     - **Tier-разделение (фазы A и B):** tier-строка = `target` (печатная точка
       отсчёта, её называет источник) + политика агрегации (`limit` =
       «maximise (per-tier bottleneck min)», `CRITERION_TIER_POLICY_EVIDENCE =
@@ -1747,6 +1761,27 @@ R/marker_scan.R` — три умолчания, что и описано; `Rscri
       оператор не передаст `basename`; документированный opt-in — путь под кешем и
       очистка после.
 
+- [x] **Потолок кеша попаданий.** `HIT_CACHE_SLOTS = 4096L`
+      (`R/marker_core.R`) и вытеснение половины в `exact_pattern_hits()`
+      (`R/marker_specificity.R`): при переполнении сносятся первые
+      `length(keys) %/% 2L` ключей (`ls()` сортирует, поэтому какая половина —
+      произвольно; кеш хранит только повторы, ответ от порядка не зависит).
+      правка: `keys <- ls(...)` перед сносом, `rm()` до записи нового значения.
+      проверка: `test-specificity.R`, `test-batch.R`, `test-palindromes.R`.
+      блокер: нет.
+      следствие: сканов 383 → 357 на 6 SNP (повторов в замере не осталось),
+      дизайн 42.12 → 41.91 с; на пшенице это ≈2 мин на локус из ~15 —
+      кеш снимает повторы, стоимость прохода по геному не меняет (`ZX1` индекс).
+- [x] **Гигиена бенчмарка.** `fmt_bytes()` (`dev/bench.R`) падал на `NA`;
+      теперь ранний выход `"n/a"`.
+      правка: `if (!is.finite(b)) return("n/a")`.
+      проверка: `Rscript dev/bench.R` — падения на `NA` больше нет.
+      блокер: **не** запускать `--update` на этом хосте: `mem_alloc` пуст во
+      всех строках, обновление перепишет всю базу.
+      следствие: строка `in_silico_pcr x3.64` — устаревшая база (13.09 мс на
+      `bc492c0` против 47.70 мс сейчас; функция с тех пор только добавлялась,
+      это не регрессия), её надо обновить точечно или снять.
+
 ### ZX2. Следующее (масштаб популяции)
 
 - [x] **Скан в памяти называет свою цену.** `SEED_SCAN_WARN_BP = 1e9` и
@@ -1765,6 +1800,28 @@ R/marker_scan.R` — три умолчания, что и описано; `Rscri
       следствие: пшеничный прогон видит цену на первом локусе, а не на 383-м
       скане. Сама цена не изменилась — её снимает только индексный путь
       (`ZX1`, `ZX3`); арифметика в §ZX2 ниже остаётся верной.
+- [x] **Батч-режим по локам.** `design_marker_batch()` (`R/marker_batch.R`,
+      `man/design_marker_batch.Rd`, `@family design`): один вызов на таблицу
+      локусов, `BPPARAM` параметризует воркеров.
+      правка: серийно — 42.1 с холодный / 24.1 с тёплый; `MulticoreParam(2)` —
+      13.4 с (1.80x), `MulticoreParam(4)` — 9.7 с (2.44x); пик Ncells падает
+      527 → 318 → 306 МБ (fork + copy-on-write).
+      проверка: `test-batch.R` — 33 pass / 27.9 с; эквивалентность серийного
+      прогона и k = 1/2/4 — TRUE после нормализации графа (сырой `all.equal()`
+      на `tbl_graph` FALSE даже у двух серийных прогонов — артефакт адреса, не
+      вердикт); расхождения вердиктов нет.
+      блокер: пшеничный замер — `ZX3`.
+      следствие: популяцию локусов гоняют одним вызовом, а не шардами вручную.
+- [ ] **Один шов на таблице локусов.** `design_markers()` (сводка),
+      `design_kasp_markers()` (вердикт на локус) и `design_marker_batch()`
+      (полные результаты) — три сущности над одной таблицей. Видимая разница:
+      `design_markers()` переформовывает строку в строгий `snp`-tibble
+      (умолчания `alt2`/`strand`), батч передаёт строку как есть, поэтому для
+      мультиаллельного локуса «идентично `design_markers()`» — не буквально.
+      правка: один reshape-хелпер, который зовут все три.
+      проверка: мультиаллельный локус даёт один вердикт через все три входа.
+      блокер: нет; меняет поведение батча — отдельный коммит.
+      следствие: шов один, а не три; иначе третий вход повторит расхождение.
 - [~] **Параллель по локусам.** `design_kasp_markers(BPPARAM =
 MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре → 16.0 на 3
   → 8.0 на 6, вердикты те же.
@@ -1879,7 +1936,7 @@ Running 'testthat.R' [758s/414s]` (`13:28:42`→`13:35:36`), то есть 414 �
       следствие: запись с символическим аллелем больше не теряется молча;
       конструкция поперёк структурного аллеля по-прежнему невозможна — это
       сказано в сообщении и в `@return`, а не в тишине.
-- [ ] **Документация ↔ код.** Часть сверки уже в гейте: шаг `hand-roll graph
+- [x] **Документация ↔ код.** Часть сверки уже в гейте: шаг `hand-roll graph
 edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`-рёбра
       из `dev/graphify-handrolled.R`, шаг `docs/artifacts` (`dev/check.R:177`)
       гоняет `dev/graphify-health.R --check`. Метки на 2026-11-16: 428 `named`,
@@ -1888,14 +1945,19 @@ edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`
       правка: (а) **сделано** — докоммит `45d58ae` поменял `ROADMAP.md`, узел
       графа, Louvain перенумеровал сообщества и 104 метки стали `missing`;
       дефолтный строгий проход `dev/relabel-bonsai.R` (missing+duplicate+
-      echo-stale, 9 батчей) принял 103 из 104, остаток 3 (`144`, `266`, `416`)
+      echo-stale, 9 батчей) принял 103 из 104, оставшиеся 3 (`144`, `266`, `416`)
       добит целевым проходом; `--check` чист.
       (б) **отклонено замером** — `dev/graphify-semantic.sh` (проза `#` →
       concept-узлы) шёл 692 с и не дал потребителя; повторное использование
       меток по Jaccard ухудшало имена. Ребро «документация ↔ код» берётся
       дешевле — сверкой привязок, см. (г).
-      (в) сверка утверждений разделов с графом — остаётся; блокер: нет
-      (ручной проход по `docs/` и виньеткам), приоритет ниже (г).
+      (в) **сделано** — сверка утверждений с телом кода на 2026-11-17:
+      180 утверждений в 98 функциях (`graphify-out/claims.md`, медиана 2.7 с
+      на вызов): `supported` 110, `partial` 30, `contradicts` 6 (все шесть
+      исправлены), `unverifiable` 34. Разбор `partial` — 3 настоящих дефекта и
+      27 честных «проза тоньше тела»; `unverifiable` — 0 дефектов доки, причина
+      только в инструменте (обрезка тела на 200 строках — 17, неверная единица
+      привязки — 17).
       (г) **сделано** — сверка прозы с телом экспорта
       `dev/graphify-faithfulness.R`: один экспорт за вызов, привязка ищется в
       теле, не найдена → вердикт `unverifiable`, а не `partial`.
@@ -1936,6 +1998,327 @@ edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`
   ничего не добавляет.
 - `matchPDict`-батчинг: закрыт замером (см. item 4 в «Остатках»); потолок
   выигрыша — секунды из 40 с.
-- FM как счётчик специфичности: отклонён замером (счёт неверен, запрос ~53 с
-  независимо от параметров).
+- FM как счётчик специфичности: отклонён замером. Сборка TAIR10 — 107.3 с;
+  `tair10.00.b.tab` 1 457 829 243 Б + `.b.array` 29 921 157 Б = 1 487 750 400 Б
+  = 1.39 ГиБ (`12.43 Б` на основание генома), с копией `.fa` 121 163 641 Б —
+  `13.45 Б/бп`; экстраполяция на 16 Гб ≈ 200 ГБ (216 ГБ с FASTA). Запрос
+  54.35 с при `nthreads = 1` против 54.28 с при 4, один праймер — 54.81 с:
+  стоимость плоская, это накладные вызова, а не счёт. Тот же вопрос точным
+  путём: `specificity_of()` k = 15 mm = 1 — 0.831 с, `pattern_hits_scan()`,
+  3 праймера x 7 хромосом — 1.123 с; попадания совпадают до штуки.
+  `object.size()` на handle — 0 МБ: индекс это basename, данные на диске под
+  mmap.
 - Переписывание `specificity_fm()`: остаётся read mapper, счётчик — bowtie.
+
+## ZY. Категория-определяющая инфраструктура (очередь)
+
+Назначение: расширить текущую архитектуру (R-пакет marker design + QC: decision
+graph, criterion registry, evidence rungs, artefact export, MCP server, обратная
+связь через `marker_record_outcome()`) до категория-определяющей инфраструктуры
+для plant molecular breeding. Даты не фиксируются: разработка агентная.
+
+Это очередь: каждый `ZY1`–`ZY17` — один пункт с четырьмя полями, и порядок
+внутри секции и есть приоритет. Сначала разблокированное (`ZY2`, `ZY7`, `ZY16`),
+затем внутренняя работа (`ZY1`, `ZY4`, `ZY15`), затем внешне заблокированное
+(`ZY3`, `ZY5`, `ZY6`, `ZY8`, `ZY9`, `ZY10`, `ZY13`, `ZY17`); `ZY11`, `ZY12`,
+`ZY14` начинаются только после установки названного инструмента. `ZY18`
+(инварианты) и `ZY19` (единицы прогресса) — контекст, не пункты: отдельного
+гейта у них нет.
+
+### ZY0. Статус точки отсчёта
+
+Что уже есть и остаётся инвариантом:
+
+- Chemistry pluralism: `marker_schemes()` + criterion registry с per-scheme
+  tagging каждого check.
+- Decision graph (`assay$decision`) с per-node status `green`/`amber`/`red`.
+- `marker_artefact()`: `artefact.json` (hashed inputs, provenance, overrides),
+  `decisions.csv`, `checks.csv`, `why.csv`.
+- `marker_record_outcome()`: исход лабораторного результата, привязанный к `id`
+  артефакта.
+- Policy as data: `marker_decision_schema()` читает те же константы, что
+  исполнитель; graph не может дрейфовать от кода.
+- 132 registered sources и 143 extract tables в `inst/extdata/`; 212 ledger links
+  от extract к тесту, который его утверждает (46 test files); join проверяется
+  машиной, test не может claim extract, который не читает.
+- 212 criterion rows в `criterion_spec()`; rungs: 128 `primary_literature` +
+  13 `vendor_guideline` + 71 `rule_of_thumb` + 0 `fitted_here`; per-criterion
+  провенанс — `inst/extdata/criterion_provenance.csv`.
+- MCP server (`inst/mcp/tools.R`, 38 инструментов) для AI-агентов; контейнер
+  без порта, data read-only. README §Container and MCP server называет 37 —
+  устаревшая цифра, сверить при следующей правке README.
+- Honest limits как first-class output: measured и predicted различаются,
+  16.9 °C offset asserted, не corrected.
+- Graceful degradation `Suggests` через guarded calls.
+
+### ZY1–ZY17
+
+- [ ] **`ZY1` GWAS-to-panel end-to-end.** Один wrapper поверх существующих
+      кирпичей: вход — VCF + локальные haplotype-calls по популяции + список
+      доступных химий + targets/регионы; выход — panel `<marker_assay>` с
+      multiplex-планом, one-pot-оценкой и tolerance per marker; под капотом —
+      population-aware selection (phased haplotypes, не только allele
+      frequencies) и явный failure с cause chain, если не работает ни одна химия.
+      правка: новый `R/marker_panel.R` — `marker_design_panel(genome, variants,
+      haplotypes, chemistries, targets, ...)`, собирающий
+      `marker_plan(region = )` + `marker_solve()` + `marker_artefact()`.
+      проверка: новый `tests/testthat/test-panel.R` на закоммиченной фикстуре —
+      каждый target даёт либо assay с тремя полями, либо явную cause chain;
+      молчаливых выпадений нет; случай «ни одна химия не работает» падает,
+      перечисляя каждую причину.
+      блокер: нет закоммиченной фикстуры phased haplotypes (`Population` в
+      `ZA2` — «частично»); снимается детерминированной фикстурой.
+      следствие: пайплайн склеивается вручную, и регион без подходящей химии
+      теряется между вызовами, а не отчитывается причиной.
+- [~] **`ZY2` Automatic chemistry fallback cascade.** Каскад уже работает:
+  `marker_solve()`/`solve_one()` идут cheapest-first по `plan$costs` (по
+  умолчанию `KASP_TECH_COSTS`), пишут строку `attempts` на каждую пару
+  (target, scheme), останавливаются на первом успехе и мемоизируют;
+  `marker_artefact()` кладёт в `decisions.csv` строку на каждую пару с
+  причиной отказа, `rescue_strategy()` отдаёт лестницу схем, а
+  `design_markers(scheme = NULL)` идёт по ней на каждый локус. Остаток —
+  причина отказа на уровне попытки: `solve_one()` ловит ошибку дизайна
+  через `tryCatch(..., error = function(e) NULL)` и теряет её текст, в
+  `attempts` остаётся только `ok`.
+  правка: `R/marker_solve.R` — записывать сообщение ошибки в колонку `cause`
+  `attempts`/`report` и доводить её до `decisions.csv`; приоритет химий — из
+  плана/profile, а не только из `KASP_TECH_COSTS`.
+  проверка: в `tests/testthat/test-plan.R` схема, падающая в дизайне, —
+  строка попытки несёт `cause`, а target, где упали все схемы, сообщает
+  каждую причину.
+  блокер: нет.
+  следствие: отказ схемы виден только как `ok = FALSE`; пользователь не
+  узнаёт, какой порог сработал, и идёт смотреть код.
+- [ ] **`ZY3` One-pot cross-chemistry optimization.** Глубже multiplex: разные
+      химии в одной reaction mix. Матрица совместимости — annealing temps,
+      primer-dimer, amplicon size separation, fluorescence channels, reagent
+      compatibility, detection channel overlap; комбинаторный оптимизатор (ILP
+      или greedy с гарантиями); trade-off «максимум маркеров в multiplex»
+      против «минимум multiplex-групп».
+      правка: новый `R/marker_one_pot.R` — матрица совместимости как данные (в
+      духе `marker_decision_schema()`), а не константы внутри оптимизатора.
+      проверка: новый `tests/testthat/test-one-pot.R` — несовместимая пара
+      никогда не попадает в одну группу, и каждая группа проходит ту же
+      проверку, что заявила матрица.
+      блокер: нет wet-lab партнёра, исполняющего auto-designed panels, поэтому
+      one-pot предсказание остаётся помеченным `experimental`, пока нет эмпирики.
+      следствие: one-pot остаётся ручной работой, а числа совместимости —
+      непроверяемыми.
+- [ ] **`ZY4` External literature ingestion.** Пополнение chemistry performance
+      registry из внешнего structured источника (KG / RDS corpus со схемой
+      marker-domain).
+      правка: новый `R/marker_ingest.R` —
+      `marker_ingest_literature(path, min_evidence, min_confidence,
+      provenance_required)`: review queue candidate-обновлений с полным
+      провенансом, ничего не мёржится без approve maintainer'а.
+      проверка: новый `tests/testthat/test-ingest.R` — запись без provenance
+      chain до DOI в очередь не попадает; approve — единственный путь в registry.
+      блокер: внешнего корпуса в репозитории нет по правилу «external data не
+      ships»; снимается путём, скачанным в `marker_cache_dir()`.
+      следствие: registry растёт только руками, доля `primary_literature`
+      застревает.
+- [ ] **`ZY5` Community-wide RDS aggregation infrastructure.** Zenodo Community
+      «tidymarkers traces» для первичной публикации с DOI; ExperimentHub как
+      curated aggregation point с versioned snapshots; contribution guidelines,
+      schema versioning и migration path между версиями trace format; opt-in
+      только, authors retain ownership.
+      правка: version/migration helper рядом с `marker_artefact()`; правила
+      контрибуции — `CONTRIBUTING.md`.
+      проверка: новый `tests/testthat/test-trace-schema.R` — trace старой версии
+      после migration остаётся читаемым и не теряет поля.
+      блокер: `ExperimentHub` не установлен, публикация — внешнее действие
+      оператора (агент в библиотеку не пишет), накопленного корпуса нет.
+      следствие: Level 3 остаётся заявлением, а не работающей инфраструктурой.
+- [ ] **`ZY6` Meta-analysis package.** Отдельный пакет (`tidymarkers.meta` или
+      аналог): pooled RDS corpus, единый query API поверх unified trace schema,
+      statistical templates (chemistry failure rate by predictors),
+      visualization defaults, publication-ready outputs. Задача — pattern
+      discovery: hidden chemistry requirements, interaction effects,
+      taxon-specific patterns; каждый pattern — потенциально отдельная статья.
+      правка: пакет-сателлит вне этого дерева; схему читает из `ZY5`.
+      проверка: анализ фикстуры corpus даёт тот же результат при повторном
+      запуске (детерминизм шаблонов).
+      блокер: зависит от `ZY5`; без pooled corpus проверять нечего.
+      следствие: агрегированные traces остаются мёртвым грузом.
+- [ ] **`ZY7` Anonymized reprex.** `marker_reprex()` для bug-reporting из
+      proprietary окружений: trace minimum reproducer (позиции, варианты,
+      параметры, которые triggerят bug) + анонимизация по типу данных — VCF
+      (strip sample names, сдвиг координат внутри хромосомы с сохранением
+      linkage, variant types и genotype structure), BED (strip annotation,
+      координаты можно сдвигать), FASTA (синтетическая последовательность с
+      сохранёнными GC% и repeat classes либо публичная замена), genome slice
+      (только сегмент, нужный для bug); `preserve = c("gc_content",
+      "repeat_structure", "variant_type", ...)` — свойства, обязательные к
+      сохранению. Выход — self-contained R script для GitHub issue с
+      `##synthesized_by=tidymarkers_reprex/<version>` в header.
+      правка: новый `R/marker_reprex.R`.
+      проверка: property-тест «после анонимизации bug всё ещё срабатывает»; на
+      промахе — явное руководство пользователю, а не тихий пропуск.
+      блокер: нет.
+      следствие: bugs из закрытых данных либо не сообщаются, либо сообщаются с
+      утечкой. Анонимизация документируется как достаточная для bug report и
+      недостаточная для legal data sharing — это часть выхода, не сноска.
+- [ ] **`ZY8` Patent format export + defensive publication.**
+      `marker_patent_export(format = "st26", output =
+      "application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
+      Background, Summary of invention, Detailed description, Figures
+      reference, Sequence listing reference, Claims skeleton; английское
+      описание из структурных шаблонов (не LLM prose); disclaimer «draft
+      documents; patent filing requires qualified patent attorney review».
+      Параллельно `marker_defensive_publication()`: framing defensive
+      publication, не заявки, с формулировкой про prior art; destinations —
+      Zenodo DOI, IP.com, Research Disclosure. Шаблоны — `inst/templates/patent/`.
+      правка: новые `R/marker_patent.R` и `inst/templates/patent/`; `officer` в
+      `Suggests` под guarded call.
+      проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
+      XSD через `xml2`, обязательные секции docx на месте.
+      блокер: `officer` не установлен и не в `Suggests`; XSD не скачивается с
+      пакетом (правило «external data не ships») — нужен cache-путь.
+      следствие: форматов экспорта нет; обход — ручной docx вне пакета.
+- [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
+      пайплайны ожидаемы, интеграция с существующими пакетами, review
+      валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
+      правка: `_pkgdown.yml`/vignette structure под Bioconductor conventions,
+      `BiocCheck` в гейт, интеграция с `updog`/`polyRAD`/`BatchR` в целевом
+      кластере.
+      проверка: `BiocCheck` проходит на собранном пакете, и шаг падает при
+      регрессии.
+      блокер: `BiocCheck`, `updog`, `polyRAD`, `BatchR` не установлены; плюс
+      внешний review Bioconductor.
+      следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
+      cluster.
+- [ ] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
+      оптимизация, не реимплементация; гейт — property-тесты
+      `assert_eq!(rust_impl(x), reference_impl(x))` на любом входе; флаг
+      `use_rust_backend = FALSE` по умолчанию. Hot paths: primer thermodynamics
+      (первый, самый низкий риск — pure function, измеримый benchmark),
+      FM-index/BWT wrapper, specificity scoring batch, VCF streaming parser.
+      Инструменты: `extendr`/`rextendr`, `arrow` для zero-copy, `polars` где
+      уместно.
+      правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
+      проверка: equality-тест на замороженном наборе входов плюс benchmark, где
+      Rust обязан быть быстрее R-адаптера.
+      блокер: `ZX4` (сначала R-адаптер и замер) и отсутствие `cargo`/`rustc`;
+      `rextendr`, `arrow`, `polars` не установлены.
+      следствие: медленные пути остаются в R; ничего не ломается.
+- [ ] **`ZY11` Property-based testing.** Расширение examples-based тестов через
+      `hedgehog` (или аналог). Инварианты: specificity scoring — детерминизм
+      рейтинга, нет negative scores, транзитивный tier ordering; decision
+      graph — acyclic и terminating после любой последовательности relax steps;
+      artefact round-trip `saveRDS()`/`readRDS()`; chemistry fallback —
+      выбранная химия всегда в `available_chemistries`.
+      правка: `tests/testthat/helper-property.R` + тесты на эти четыре
+      инварианта.
+      проверка: сами property-тесты; падение даёт контрпример.
+      блокер: `hedgehog` не установлен и не в `Suggests`.
+      следствие: инварианты держатся только на примерах, которые кто-то
+      вспомнил.
+- [ ] **`ZY12` Design by contract для критических путей.** Pre/post-conditions
+      там, где нарушение инварианта должно падать сразу, а не downstream:
+      `pick_target_snp()` (post: у выбранного SNP есть designable AS window),
+      `assemble_kasp_assay()` (pre: input validity, post: assay completeness),
+      `marker_record_outcome()` (pre: artefact id существует, post: outcome
+      persisted и queryable). Контракты включены в dev mode и отключаются в
+      production для дорогих проверок.
+      правка: `checkmate`/`assertthat` в перечисленных функциях под флагом
+      dev-mode.
+      проверка: тест, который ломает предусловие и ждёт немедленной ошибки, а не
+      `NA` ниже по стеку.
+      блокер: ни `checkmate`, ни `assertthat` не установлены; политика пакета —
+      зависимость только под реальный вызов.
+      следствие: невалидный вход уходит вглубь и всплывает непонятной ошибкой.
+- [ ] **`ZY13` Formal verification одного инварианта.** Пилот — доказательство
+      корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
+      либо CrossHair на R-эквивалентной Python-реимплементации. Один
+      доказанный инвариант как reference для подхода.
+      правка: артефакт вне пакета, на него ссылается `VALIDATION.md`.
+      проверка: прогон тулчейна на артефакте завершается успешно (CI-шаг —
+      только когда тулчейн появится).
+      блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
+      следствие: инвариант остаётся проверенным примерами, не доказанным.
+- [ ] **`ZY14` Mutation testing критических subsystems.** Только policy decision
+      logic (classification, routing в decision graph), invariant enforcement
+      (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —
+      mutation score ≥ 80% для этих подсистем.
+      правка: mutators + раннер поверх `covr` (зрелого R-инструмента нет).
+      проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
+      блокер: `covr` не установлен; mutators — часть работы, не зависимость.
+      следствие: выжившие мутанты в policy-коде никто не видит.
+- [~] **`ZY15` Living documentation.** Виньетки уже исполняются при сборке
+  (`VignetteBuilder: knitr`, ни один chunk не выключен через `eval=FALSE`),
+  поэтому сломанный API ломает `R CMD check`. Не покрыт README quickstart:
+  он проверяется только как существующий документ в `dev/check-docs.R`,
+  но не исполняется.
+  правка: исполняемый quickstart — `knitr::knit` в `dev/check.R` либо
+  перенос сниппета в виньетку со ссылкой из README.
+  проверка: `Rscript dev/check.R --no-render` падает, если quickstart
+  перестал исполняться.
+  блокер: нет.
+  следствие: README может отстать от API и остаться зелёным.
+- [ ] **`ZY16` Three-level articulation в README.** В начале §Documentation —
+      фраза: «tidymarkers is three things at once: a marker design tool for a
+      single researcher (Level 1), a unified grammar for marker design across
+      chemistries (Level 2), and infrastructure for community-wide method
+      refinement through aggregated design traces (Level 3). Each level stands
+      on its own; together they define a new way to work.»
+      правка: `README.md` §Documentation + литеральная проверка этой фразы в
+      `dev/check-docs.R`.
+      проверка: `Rscript dev/check-docs.R` падает, если фразы нет.
+      блокер: нет.
+      следствие: casual reader видит «ещё один primer designer», не
+      архитектуру; это же слабое место paper framing.
+- [ ] **`ZY17` Paper strategy.** Три независимо supportable paper'а: tool paper
+      (Bioinformatics или Plant Methods; architecture + case study + crosscheck + validation evidence), methodology paper (RDS trace infrastructure как
+      отдельный вклад: самогенерирующиеся training data через normal use),
+      perspectives piece (Level 3 articulation как шаблон для CRISPR guide
+      design, drug target identification и прочих design-процессов с
+      several failing alternatives). Companion case study — только при наличии
+      scoped first deployment: cross-lingual chemistry corpus через external
+      literature-mining, ingested в registry, как data paper.
+      правка: evidence table в `VALIDATION.md`, на которую ссылается текст;
+      сам outline — вне дерева пакета.
+      проверка: claims, проверяемые кодом, покрыты существующими тестами
+      (`test-science-ledger.R`, `test-tm-mm2020.R`); непроверяемые перечислены
+      явно.
+      блокер: нет scoped case study и нет данных из `ZY4`/`ZY5`; письмо — не
+      агентская работа.
+      следствие: архитектура не опубликована, Level 3 не сформулирован для
+      внешнего читателя.
+
+### ZY18. Инварианты, не подлежащие ослаблению
+
+Это контекст, а не пункты: каждый `ZYn` выше обязан их соблюдать. Где инвариант
+уже покрыт машинной проверкой — назван тест.
+
+- **Fabrication refusal:** ни одна функция не возвращает invented data при
+  отсутствии provenance. `missing_api_key` / `not_configured` / explicit refusal
+  с cause chain — обязательны.
+- **Honest limits:** measured и predicted различаются явно и assert'ятся как
+  tested behaviour, не corrected away (`test-tm-mm2020.R` — 16.9 °C).
+- **Policy as data:** decision schema читается из тех же констант, что
+  исполняется; graph не может drift от кода (`marker_decision_schema()`).
+- **Commons licensing:** MIT, без weaponized license additions. Внешние
+  dependencies должны проверяться CI на forbidden licenses — **этой проверки в
+  CI сегодня нет** (в `.github/workflows/` такого шага нет); это дефект
+  инварианта, а не выполненное обещание.
+- **Attribution:** каждый rule в коде связан с конкретным extract'ом из
+  конкретного source; test не может claim extract, который не читает
+  (`test-science-ledger.R`).
+- **Reproducibility:** external data никогда не ships с пакетом; всё
+  downloadable или cached через `marker_cache_dir()`.
+- **Feature-level graceful degradation Suggests:** missing optional dep
+  деградирует одну feature, не ломает load.
+
+### ZY19. Единицы прогресса
+
+Контекст для оценки движения, не пункты и не гейт; первые две читаются с
+артефактов и реестра, остальные — из истории и CI.
+
+- Decision trace coverage (доля production designs с полным RDS artefact).
+- Criterion registry evidence rung distribution (стабильный или растущий
+  `primary_literature` share).
+- CI matrix green rate.
+- Named defects, закрытые в ROADMAP с honest remainders.
+- Cross-engine equivalence coverage (bowtie / BLAST / FM-index — каждая
+  specificity row attributes to engine).
+- Outcome data accumulation через `marker_record_outcome()`.
