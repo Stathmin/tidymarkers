@@ -507,20 +507,47 @@ scheme, genome, limits)` без формала и без forward.
     - блокер: нет.
     - следствие: пока фикстур не поправлен, `ZW0 M5` зелёный по причине,
       которую видно только в `.tmp/zw0-m5/`.
-30. [ ] **COM-колонки кандидатов намеренно не гейтятся `engines`** (из №28).
-        `com_homodimer` / `com_hairpin` (`R/marker_assemble.R:744-745`) считаются
-        всегда, потому что `gate_structure = m_structure >= 0`, а `NA` в
-        `m_structure` заставляет `dplyr::filter()` (`R/marker_select.R:270-272`)
-        выбросить всех кандидатов — дизайн не находится. Это семантика
-        дизайнера, не грейдера: «нет структурного движка» ≠ «структура идеальна».
-    - правка: решить и записать, что значит отсутствие движка для отбора
-      кандидатов: статус `unchecked` (не `pass`), предикат
-      `is.na(x) | x >= 0`, либо явный отказ в дизайне с названной причиной.
-    - проверка: тест, где `engines` без `duplex_dg` не даёт ни `NULL`-дизайна
-      без причины, ни молчаливого прохода; `Rscript dev/test.R 'kasp|selection'`.
+30. [x] **COM-колонки кандидатов больше не считаются в обход `engines`** (из №28).
+        Было: `com_homodimer` / `com_hairpin` (`R/marker_assemble.R:744-753`)
+        считались всегда, `gate_structure = m_structure >= 0`, а `NA` в
+        `m_structure` заставлял `dplyr::filter()` выбросить всех кандидатов —
+        дизайн не находился. «Нет структурного движка» читалось либо как
+        «структура идеальна», либо как «кандидатов нет».
+    - сделано: оба вызова за `engine_has("duplex_dg")` /
+      `engine_has("hairpin_dg")`, иначе `NA_real_`. Выбран предикатный вариант:
+      `gate_structure = is.na(m_structure) | m_structure >= 0`
+      (`R/marker_select.R:288`) — неизвестный margin не pass и не fail.
+      `passes()` (`:461`) требует `!is.na(m)`, `order_by_margins()` сортирует
+      `NA` в конец, поэтому неизвестный margin не выигрывает лестницу, а
+      сплошной `NA` гейт осуждает дизайн через `marker_doomed()` с названным
+      гейтом (`R/marker_snapshot.R:214-232`, схема и сообщение не менялись).
+    - проверка: `test-capabilities.R` — 14 тестов / 0 fail, два новых
+      (`expect_message(..., "gate_structure")` + `marker_doomed$reason`; второй —
+      лестница не берёт `NA`-margin); фигуры `dev/render-gallery.R` и
+      `dev/render-decision.R` побайтно те же (`md5sum -c`), в
+      `docs/artifacts.yml` сменились только 27 строк `input_hash`.
     - блокер: нет.
-    - следствие: отсутствие движка неотличимо от прохода на отборе COM, хотя на
-      оценке оно уже видно как `unknown`.
+    - следствие: отсутствие движка отличается от прохода на отборе COM, а не
+      только на оценке.
+31. [ ] **Путь с готовыми праймерами зовёт `pcr_efficiency()` в обход `engines`.**
+        `assemble_primer_assay()` (`R/marker_assemble.R:1348`) считает
+        `eff <- pcr_efficiency(...)` безусловно, а `pcr_efficiency()`
+        (`R/marker_thermo.R:925`) `cli_abort()`-ит без OligoArrayAux. При
+        отсутствующем `hybrid-min` экспортированный вход падает до оценки, и
+        семантика «неизвестно, а не pass» до него не доходит. Хуже: локальная
+        переменная `pcr_efficiency <- engine_has(...)` объявлена ниже (`:1437`) и
+        затеняет функцию в остатке тела — порядок держится только на том, что
+        вызов стоит выше.
+    - правка: `discrimination` считать только при
+      `engine_has("pcr_efficiency", engines)`, иначе `NA_real_`; переименовать
+      локальную переменную (`use_eff`), чтобы имя функции не затенялось; провести
+      `unknown`-путь `FIXED_PRIMER_DROPOUTS` (`:1455`) через этот вход.
+    - проверка: тест без `hybrid-min` в `PATH` (`load_all(helpers = FALSE)` и
+      cwd вне репозитория — иначе хелпер добавит `.tools/bin`) → ассей с
+      `discrimination = NA` и названной причиной, не ошибка.
+    - блокер: нет; приём тот же, что закрыл №30.
+    - следствие: пока не поправлено, opt-out от OligoArrayAux работает для
+      дизайна, но не для пути с готовыми праймерами.
 
 Запаркованные остатки (причина названа; отдельной правки не заводят, пока
 причина жива):
@@ -736,9 +763,9 @@ manually started runner is canceled.` → `Process completed with exit code
 
 - [x] **D7. CI предупреждает дважды; обе причины — чужой конфликт импортов.**
       Прогон `43919840667`, `ubuntu-latest (release)`: `[ FAIL 0 | WARN 2 |
-    SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
-    'S4Arrays::makeNindexFromArrayViewport' by
-    'DelayedArray::makeNindexFromArrayViewport'` при загрузке
+SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
+'S4Arrays::makeNindexFromArrayViewport' by
+'DelayedArray::makeNindexFromArrayViewport'` при загрузке
       `SummarizedExperiment`; `macOS`/`Windows` давали `WARN 69` другого класса
       (`OligoArrayAux` не установлен — `.github/workflows/R-CMD-check.yaml:84`).
       Класс дефекта: `quietly = TRUE` глушит сообщения, но не предупреждения,
@@ -1812,16 +1839,25 @@ R/marker_scan.R` — три умолчания, что и описано; `Rscri
       вердикт); расхождения вердиктов нет.
       блокер: пшеничный замер — `ZX3`.
       следствие: популяцию локусов гоняют одним вызовом, а не шардами вручную.
-- [ ] **Один шов на таблице локусов.** `design_markers()` (сводка),
+- [x] **Один шов на таблице локусов.** `design_markers()` (сводка),
       `design_kasp_markers()` (вердикт на локус) и `design_marker_batch()`
-      (полные результаты) — три сущности над одной таблицей. Видимая разница:
-      `design_markers()` переформовывает строку в строгий `snp`-tibble
-      (умолчания `alt2`/`strand`), батч передаёт строку как есть, поэтому для
-      мультиаллельного локуса «идентично `design_markers()`» — не буквально.
-      правка: один reshape-хелпер, который зовут все три.
-      проверка: мультиаллельный локус даёт один вердикт через все три входа.
-      блокер: нет; меняет поведение батча — отдельный коммит.
-      следствие: шов один, а не три; иначе третий вход повторит расхождение.
+      (полные результаты) — три сущности над одной таблицей. Разница была
+      видимой: `design_markers()` переформовывает строку в строгий
+      `snp`-tibble (умолчания `alt2`/`strand`), батч передавал строку как есть,
+      поэтому для мультиаллельного локуса «идентично `design_markers()`» — не
+      буквально.
+      сделано: `locus_row()` (`R/marker_strategy.R:132`) — один reshape-хелпер,
+      его зовут все три входа (`marker_strategy.R:102`, `marker_object.R:170`,
+      `marker_batch.R:147`). Побочно закрыт настоящий баг: строка со
+      `strand = "-"` в батче проектировалась как `"+"`, теперь
+      реверс-комплементируется, как в `design_markers()`.
+      проверка: `test-batch.R` — 10 тестов / 0 fail (`MulticoreParam` пропущен);
+      мультиаллельный локус даёт один вердикт через все три входа (два теста
+      эквивалентности стартуют с `tidymarkers:::locus_row(...)`).
+      блокер: нет.
+      следствие: шов один, а не три. Граница контракта: пользовательская функция
+      `design =` получает сырую строку вызывающего — это её контракт, не шов
+      батча.
 - [~] **Параллель по локусам.** `design_kasp_markers(BPPARAM =
 MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре → 16.0 на 3
   → 8.0 на 6, вердикты те же.
@@ -1971,10 +2007,10 @@ edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`
       Проверено чтением кода: `specificity_verdict()` считает
       `n_tol <- sum(products$tolerated)` по всем продуктам, а проза обещала
       «единственный на своей хромосоме»; `primer_interval()` для `role =
-      "COM"` ставит 3'-конец на `gap + length` от SNP, а `@param snp_pos` звал
+"COM"` ставит 3'-конец на `gap + length` от SNP, а `@param snp_pos` звал
       его 3'-концом праймера. Обе правки — проза, не код.
       проверка: `--check` без `missing`; `dev/graphify-faithfulness.R
-      --fresh` пишет `graphify-out/faithfulness.md` и
+--fresh` пишет `graphify-out/faithfulness.md` и
       `graphify-out/.graphify_faithfulness.jsonl`, `unverifiable` печатается в
       сводке.
       блокер: нет.
@@ -2060,7 +2096,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
       population-aware selection (phased haplotypes, не только allele
       frequencies) и явный failure с cause chain, если не работает ни одна химия.
       правка: новый `R/marker_panel.R` — `marker_design_panel(genome, variants,
-      haplotypes, chemistries, targets, ...)`, собирающий
+haplotypes, chemistries, targets, ...)`, собирающий
       `marker_plan(region = )` + `marker_solve()` + `marker_artefact()`.
       проверка: новый `tests/testthat/test-panel.R` на закоммиченной фикстуре —
       каждый target даёт либо assay с тремя полями, либо явную cause chain;
@@ -2109,7 +2145,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
       marker-domain).
       правка: новый `R/marker_ingest.R` —
       `marker_ingest_literature(path, min_evidence, min_confidence,
-      provenance_required)`: review queue candidate-обновлений с полным
+provenance_required)`: review queue candidate-обновлений с полным
       провенансом, ничего не мёржится без approve maintainer'а.
       проверка: новый `tests/testthat/test-ingest.R` — запись без provenance
       chain до DOI в очередь не попадает; approve — единственный путь в registry.
@@ -2148,7 +2184,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
       координаты можно сдвигать), FASTA (синтетическая последовательность с
       сохранёнными GC% и repeat classes либо публичная замена), genome slice
       (только сегмент, нужный для bug); `preserve = c("gc_content",
-      "repeat_structure", "variant_type", ...)` — свойства, обязательные к
+"repeat_structure", "variant_type", ...)` — свойства, обязательные к
       сохранению. Выход — self-contained R script для GitHub issue с
       `##synthesized_by=tidymarkers_reprex/<version>` в header.
       правка: новый `R/marker_reprex.R`.
@@ -2160,7 +2196,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
       недостаточная для legal data sharing — это часть выхода, не сноска.
 - [ ] **`ZY8` Patent format export + defensive publication.**
       `marker_patent_export(format = "st26", output =
-      "application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
+"application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
       Background, Summary of invention, Detailed description, Figures
       reference, Sequence listing reference, Claims skeleton; английское
       описание из структурных шаблонов (не LLM prose); disclaimer «draft
