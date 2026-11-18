@@ -1,0 +1,7 @@
+record_id,doi,metric,value,evidence,confidence,notes
+lit-001,10.1000/aaa001,LoD,0.85,3,0.9,clean row
+lit-002,,LoD,0.95,2,0.8,no doi
+lit-003,10.1000/aaa003,LoD,0.75,0,0.7,evidence zero
+lit-004,10.1000/aaa004,LoD,0.65,2,0.1,confidence low
+lit-005,10.1000/aaa005,LoD,0.55,2,0.8,first of a duplicate pair
+lit-005,10.1000/aaa006,LoD,0.45,2,0.7,second of a duplicate pair

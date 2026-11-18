@@ -270,6 +270,26 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
                             specificity_candidates = 10L, BPPARAM = NULL,
                             scheme = NULL, max_tries = 10L) {
+  call <- sys.call()
+  if (contracts_enabled()) {
+    # checked before the first dereference below (`ref_genome`/`chrom` are read
+    # immediately, so a malformed table would otherwise fail downstream)
+    marker_contract(
+      is.data.frame(variants) && all(c("chrom", "pos", "ref_genome") %in% names(variants)),
+      gettext("Contract violated in pick_target_snp: `variants` is not a variant table with chrom/pos/ref_genome"),
+      call = call
+    )
+    marker_contract(
+      !is.null(gene) && !is.null(gene$chrom),
+      gettext("Contract violated in pick_target_snp: `gene` names no chromosome"),
+      call = call
+    )
+    marker_contract(
+      !is.null(genome),
+      gettext("Contract violated in pick_target_snp: no genome supplied"),
+      call = call
+    )
+  }
   if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
 
   # REF length comes from the VCF (its first allele); the reference bases are
@@ -376,7 +396,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     dplyr::slice(1L) |>
     dplyr::select(-"rank", -"ref_genome", -"maf", -"candidate")
   if (is.null(scheme)) {
-    return(best)
+    return(contract_target_row(best, call))
   }
   # "doomed" depends on the marker type: walk the ranked candidates until the
   # scheme can actually design one (an assay, a CAPS or an ARMS marker each have
@@ -393,14 +413,14 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     if (is_target_designable(marker)) {
       out <- dplyr::select(cand[i, ], -"rank", -"ref_genome", -"maf", -"candidate")
       attr(out, "marker") <- marker
-      return(out)
+      return(contract_target_row(out, call))
     }
   }
   cli::cli_warn(c(
     gettext("No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."),
     i = gettext("returning the best-ranked target, whose design may be doomed.")
   ))
-  best
+  contract_target_row(best, call)
 }
 
 # =============================================================================

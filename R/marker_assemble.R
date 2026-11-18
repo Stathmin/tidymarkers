@@ -636,6 +636,8 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 com_tm_target = COM_TM_TARGET,
                                 com_tm_range = NULL, com_gaps = 18:80,
                                 as_lengths = KASP_AS_LENGTHS, engines = NULL) {
+  call <- sys.call()
+  if (contracts_enabled()) contract_assay_input(genome, snp, call)
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
   mask <- normalise_diagnostic_positions(diagnostic_positions)
   # the scheme's own reaction conditions, so every dG this assay reports is
@@ -1135,7 +1137,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # filled); the subgenome axis is read against the caller-supplied mask and is
   # never guessed from the one genome.
   out <- set_homeolog_axes(out, mask)
-  structure(out, class = "marker_assay")
+  contract_assay_output(structure(out, class = "marker_assay"), call)
 }
 
 # =============================================================================

@@ -102,9 +102,19 @@ marker_record_outcome <- function(artefact,
                                   result = c("works", "fails", "unknown"),
                                   target = NULL,
                                   notes = NULL) {
+  call <- sys.call()
   result <- match.arg(result)
   dir <- artefact_dir(artefact)
   manifest <- artefact_manifest(dir)
+  if (contracts_enabled()) {
+    # a real strengthening: `id` was silently `NA` before, so the outcome could
+    # not be bound back to the artefact it claims to describe
+    marker_contract(
+      is.character(manifest$id) && length(manifest$id) == 1L && !is.na(manifest$id) && nzchar(manifest$id),
+      gettext("Contract violated in marker_record_outcome: the artefact id resolves to no existing artefact"),
+      call = call
+    )
+  }
 
   if (!is.null(notes) && !(is.character(notes) && length(notes) == 1L)) {
     cli::cli_abort(gettext("`notes` must be a single string."))
@@ -156,7 +166,20 @@ marker_record_outcome <- function(artefact,
     readr::write_csv(row, path, col_names = TRUE)
   }
 
-  invisible(marker_outcomes(dir))
+  out <- marker_outcomes(dir)
+  if (contracts_enabled()) {
+    # `NA` target means "the whole artefact", so it must match as `NA`, not as a
+    # string, or a whole-artefact call would look unreadable
+    target_same <- (is.na(out$target) & is.na(row$target)) |
+      (!is.na(out$target) & !is.na(row$target) & out$target == row$target)
+    hit <- out$id == row$id & out$result == row$result & target_same & !out$calibrated
+    marker_contract(
+      isTRUE(any(hit)),
+      gettext("Contract violated in marker_record_outcome: the outcome is not readable back by marker_outcomes()"),
+      call = call
+    )
+  }
+  invisible(out)
 }
 
 #' The outcomes recorded for an artefact
