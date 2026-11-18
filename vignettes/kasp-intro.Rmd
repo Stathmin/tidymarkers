@@ -76,22 +76,25 @@ assay <- assemble_kasp_assay(genome, snp,
   strands = c("+", "-"), tm_range = c(58, 64)
 )
 assay # prints a summary
-passes_all(assay) # TRUE / FALSE
+passes_all(assay) # TRUE when all criteria pass
 marker_design_checks(assay) # row by row, what and why
 ```
 
-Your own FASTA/VCF - same way, but through the input readers. The chunk reads a
-small FASTA that ships with the package, so it needs no genome; it does need the
-Tm engine (`has_oligoarrayaux()`) and is skipped when that is absent. For a
-VCF of your own, `read_variants_vcf("my.vcf.gz", chrom = "chr1")` streams the
-variants with `vroom`:
+Your own FASTA/VCF - same way, but through the input readers. The `quickstart`
+chunk below reads a small FASTA that ships with the package, so it needs no
+genome; it does need the Tm engine (`has_oligoarrayaux()`) and is skipped when
+that is absent. For a VCF of your own,
+`read_variants_vcf("my.vcf.gz", chrom = "chr1")` streams the variants with
+`vroom`:
 
-```{r, warning = FALSE, eval = has_oligoarrayaux()}
+```{r quickstart, warning = FALSE, eval = has_oligoarrayaux()}
 fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 genome <- read_genome_fasta(fa) # Rsamtools index
 snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
 assay <- assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L)
 assay # prints a summary
+marker_design_checks(assay) # row by row, what and why
+passes_all(assay) # TRUE when all criteria pass
 ```
 
 ## Batch design

@@ -995,7 +995,10 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
   % геля, вольтажом и временем).
     - **правка:** код начинается только когда есть набор «условия → исход»,
       который модель обязана воспроизвести; иначе `simulated = TRUE` — ложь.
-    - **проверка:** тот же набор, что читает `test-readout-physics.R`.
+    - **проверка:** тот же набор, что читает `test-readout-physics.R`; строка
+      `hm2025` в `inst/extdata/science_ledger.csv` держит причину по HRM:
+      набор несёт абсолютный Tm без соли и Mg, а заявка модели — дискриминация
+      по ΔTm, поэтому `R/marker_readout.R` даёт `simulated = FALSE`.
     - **блокер:** `Q1` — наборы «условия → исход» в открытом доступе; отсутствие
       подтверждено поиском (`v-readout-conditions.md`), это не доказательство
       несуществования.
@@ -1687,7 +1690,14 @@ merge без gate; удаление worktree до merge; новые worktree о�
       проверка: `test-plan.R` (область и haplotype→signal).
 - [~] **Y3.** Специфичность как политика технологии: `marker_technology(specificity=)`
   и `homeolog_axes()`/`subgenome` есть; порог по гексаплоиду (A/B/D) не
-  калиброван. блокер: `Z5.2`/`Z8`. следствие: порог чужой физики.
+  калиброван. Единственный набор в репозитории —
+  `inst/extdata/kasp_homeolog_axes.csv` (3 строки: ось, источник, verbatim),
+  калибровочных пар «праймер × подгеном → исход» нет;
+  `calibration_evidence` жёстко `rule_of_thumb`
+  (`R/marker_technology.R:124`), поэтому проводка уже честная.
+  блокер: `Z5.2`/`Z8` — нужны новые открытые статьи с негативными примерами.
+  следствие: порог чужой физики; разблокируется появлением A/B/D-пар с
+  известным исходом.
 - [x] **Y4.** Ранжирование и Парето-фронт: `marker_pareto()` (критерий отбора) +
       `marker_informativeness()`; `linkage_risk` — `rule_of_thumb` (`Z8`).
       Тесты `test-pareto.R`, `test-informativeness.R`.
@@ -1887,11 +1897,18 @@ R/marker_scan.R` — три умолчания, что и описано; `Rscri
 - [~] **Параллель по локусам.** `design_kasp_markers(BPPARAM =
 MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре → 16.0 на 3
   → 8.0 на 6, вердикты те же.
-  правка: батч-режим «много локусов × много признаков» и политика памяти
-  (21.5 ГБ индекс разделяется воркерами).
-  проверка: артефакт времени и пика памяти на золотом наборе.
-  блокер: код — нет; пшеничный замер — нужен фикспур 16 Гб (см. `ZX3`).
-  следствие: популяцию из сотен локусов гоняют шардами вручную. Арифметика
+  правка: политика памяти сформулирована по коду — индекс генома строит
+  вызывающая сторона один раз, `bp_lapply()` отдаёт `MulticoreParam` в
+  `bplapply`, форкнутые воркеры наследуют его copy-on-write
+  (`R/marker_thermo.R`; пересборки на воркер нет). Оценка 21.5 ГБ —
+  экстраполяция 1.34 Б/п.н. с Chr1 TAIR10 (`NEWS.md:621`,
+  `R/marker_bowtie.R:16`), не замер.
+  проверка: `test-batch.R`; тайминги 6 SNP выше.
+  блокер: код — нет; пик памяти на этом хосте не снимается (`bench`
+  `mem_alloc` пуст), пшеничный замер сборки и запроса — фикспур 16 Гб,
+  он же `ZX3`.
+  следствие: очередь из сотен локусов идёт одним батч-вызовом на k ядрах
+  (тот же отдельный пункт выше). Арифметика
   масштаба, из уже измеренного: 40.5 с на локус (TAIR10, 1 ядро) = индексный
   путь 34.2 с + остальная не-скановая работа, они от генома не зависят, и ~6 с
   геномных сканов — единственный член, растущий с геномом. Сканов 383 на 6 SNP
@@ -2320,26 +2337,33 @@ provenance_required)`: review queue candidate-обновлений с полны
       проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
       блокер: `covr` не установлен; mutators — часть работы, не зависимость.
       следствие: выжившие мутанты в policy-коде никто не видит.
-- [~] **`ZY15` Living documentation.** Виньетки уже исполняются при сборке
-  (`VignetteBuilder: knitr`, ни один chunk не выключен через `eval=FALSE`),
-  поэтому сломанный API ломает `R CMD check`. Не покрыт README quickstart:
-  он проверяется только как существующий документ в `dev/check-docs.R`,
-  но не исполняется.
-  правка: исполняемый quickstart — `knitr::knit` в `dev/check.R` либо
-  перенос сниппета в виньетку со ссылкой из README.
-  проверка: `Rscript dev/check.R --no-render` падает, если quickstart
-  перестал исполняться.
-  блокер: нет.
-  следствие: README может отстать от API и остаться зелёным.
-- [ ] **`ZY16` Three-level articulation в README.** В начале §Documentation —
+- [x] **`ZY15` Living documentation.** Виньетки исполняются при сборке
+      (`VignetteBuilder: knitr`), а README quickstart держится исполняемым:
+      его текст — это chunk `quickstart` в `kasp-intro.Rmd`
+      (`eval = has_oligoarrayaux()`, не `eval = FALSE`), и `dev/check-docs.R`
+      (секция 7) сравнивает тело чанка с телом README-фенса.
+      правка: секция 7 в `dev/check-docs.R` (`fence_body()` срезает фенс,
+      сравнение `identical()`, отдельный note на изменённый текст, на
+      `eval = FALSE` и на потерянный ярлык); в `README.md` §Quick start —
+      оффлайн-сниппет на `sat2_transcripts.fa` (без сети).
+      проверка: `Rscript dev/check-docs.R` — exit 0; три мутации возвращают
+      exit 1 со своим note: `cores = 1L`→`2L` в README (текст),
+      `eval = FALSE` (выключенный chunk), ярлык `quickstart`→`qs` (чанка нет);
+      файлы восстановлены. `knitr::knit("vignettes/kasp-intro.Rmd")` — exit 0,
+      в выводе реальные `#>` строки assay.
+      блокер: нет.
+      следствие: README не может молча отстать от API, который собирается.
+- [x] **`ZY16` Three-level articulation в README.** В начале §Documentation —
       фраза: «tidymarkers is three things at once: a marker design tool for a
       single researcher (Level 1), a unified grammar for marker design across
       chemistries (Level 2), and infrastructure for community-wide method
       refinement through aggregated design traces (Level 3). Each level stands
       on its own; together they define a new way to work.»
-      правка: `README.md` §Documentation + литеральная проверка этой фразы в
-      `dev/check-docs.R`.
-      проверка: `Rscript dev/check-docs.R` падает, если фразы нет.
+      правка: `README.md` §Documentation + литеральная проверка фразы в
+      `dev/check-docs.R` (секция 6: пробелы README схлопнуты, сравнение
+      `fixed = TRUE`, поэтому перенос строки фразу не ломает).
+      проверка: `Rscript dev/check-docs.R` падает, если фразы нет; проверено в
+      обе стороны (фраза изменена → exit 1 и note, восстановлена → exit 0).
       блокер: нет.
       следствие: casual reader видит «ещё один primer designer», не
       архитектуру; это же слабое место paper framing.

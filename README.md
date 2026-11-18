@@ -67,6 +67,21 @@ marker_design_checks(assay)                             # criterion / observed /
 passes_all(assay)                                       # one TRUE/FALSE
 ```
 
+The same calls, offline, against a reference that ships with the package. This
+snippet is the executable `quickstart` chunk of `vignette("kasp-intro")`, line
+for line, so it runs on every build where the Tm engine is present rather than
+being prose that merely looks right (`dev/check-docs.R` compares the two):
+
+```r
+fa <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+genome <- read_genome_fasta(fa) # Rsamtools index
+snp <- tibble::tibble(chrom = names(genome)[[1L]], pos = 600L, ref = "G", alt = "A")
+assay <- assemble_kasp_assay(genome, snp, flank = 150L, cores = 1L)
+assay # prints a summary
+marker_design_checks(assay) # row by row, what and why
+passes_all(assay) # TRUE when all criteria pass
+```
+
 The bundled example targets every marker type, so the same call works without a
 network download once a local reference is supplied:
 
@@ -169,6 +184,12 @@ primer pair" (composition, structure, repeats, off-target).
 | `marker_primers()`         | the oligos of any marker, as a named vector or tidy table                                               |
 
 ## Documentation
+
+tidymarkers is three things at once: a marker design tool for a single
+researcher (Level 1), a unified grammar for marker design across chemistries
+(Level 2), and infrastructure for community-wide method refinement through
+aggregated design traces (Level 3). Each level stands on its own; together they
+define a new way to work.
 
 The chemistry vignettes are the manual; each one states its biology, its gates
 and its failures:

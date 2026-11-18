@@ -188,6 +188,63 @@ if (!file.exists(health)) {
   ok("the code graph's limitation is named")
 }
 
+# 6. the three-level articulation is stated (ZY16) ---------------------------
+#  The README must say what the package is beyond "a primer designer"; the
+#  sentence is checked literally so a rewrite cannot drop the framing silently.
+levels <- paste(
+  "tidymarkers is three things at once: a marker design tool for a single",
+  "researcher (Level 1), a unified grammar for marker design across chemistries",
+  "(Level 2), and infrastructure for community-wide method refinement through",
+  "aggregated design traces (Level 3). Each level stands on its own; together",
+  "they define a new way to work."
+)
+readme <- gsub("[[:space:]]+", " ", doc_text("README.md"))
+if (!grepl(levels, readme, fixed = TRUE)) {
+  note("README.md: does not state the three-level articulation (ZY16)")
+} else {
+  ok("README.md states the three-level articulation")
+}
+
+# 7. the README quickstart is executed on every build (ZY15) ------------------
+#  A snippet that only exists can rot; the same body is an eval-enabled chunk in
+#  a vignette, so the build runs it and this check keeps the two copies equal.
+fence_body <- function(lines, open) {
+  if (open >= length(lines)) {
+    return(NULL)
+  }
+  rest <- lines[seq.int(open + 1L, length(lines))]
+  close <- which(grepl("^```\\s*$", rest))
+  if (!length(close)) {
+    return(NULL)
+  }
+  body <- rest[seq_len(close[[1L]] - 1L)]
+  body <- sub("[[:space:]]+$", "", body)
+  while (length(body) && !nzchar(body[[1L]])) body <- body[-1L]
+  while (length(body) && !nzchar(body[[length(body)]])) body <- body[-length(body)]
+  body
+}
+
+vig_lines <- readLines("vignettes/kasp-intro.Rmd", warn = FALSE, encoding = "UTF-8")
+quick <- grep("^```\\{r +quickstart[ ,}]", vig_lines)
+quick_body <- if (length(quick) == 1L) fence_body(vig_lines, quick) else NULL
+
+readme_lines <- readLines("README.md", warn = FALSE, encoding = "UTF-8")
+snippets <- lapply(grep("^```r\\s*$", readme_lines), function(i) {
+  fence_body(readme_lines, i)
+})
+matched <- length(quick_body) > 0L &&
+  any(vapply(snippets, function(b) identical(b, quick_body), logical(1)))
+
+if (length(quick) != 1L) {
+  note("vignettes/kasp-intro.Rmd: no single chunk labelled 'quickstart' (ZY15)")
+} else if (grepl("eval\\s*=\\s*FALSE", vig_lines[[quick]])) {
+  note("vignettes/kasp-intro.Rmd: the quickstart chunk is eval = FALSE (ZY15)")
+} else if (!matched) {
+  note("README.md: no ```r snippet is identical to the vignette quickstart (ZY15)")
+} else {
+  ok("README.md quickstart is the executed vignette chunk")
+}
+
 if (length(failures)) {
   message("docs check FAILED:")
   for (f in failures) message("  - ", f)
