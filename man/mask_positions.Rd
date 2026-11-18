@@ -35,6 +35,7 @@ Other input:
 \code{\link[=marker_cache_dir]{marker_cache_dir()}},
 \code{\link[=marker_example]{marker_example()}},
 \code{\link[=marker_genome]{marker_genome()}},
+\code{\link[=marker_reprex]{marker_reprex()}},
 \code{\link[=normalise_allele]{normalise_allele()}},
 \code{\link[=print.marker_genome]{print.marker_genome()}},
 \code{\link[=read_genbank]{read_genbank()}},

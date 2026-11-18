@@ -29,6 +29,7 @@ Other input:
 \code{\link[=marker_as_granges]{marker_as_granges()}},
 \code{\link[=marker_example]{marker_example()}},
 \code{\link[=marker_genome]{marker_genome()}},
+\code{\link[=marker_reprex]{marker_reprex()}},
 \code{\link[=mask_positions]{mask_positions()}},
 \code{\link[=normalise_allele]{normalise_allele()}},
 \code{\link[=print.marker_genome]{print.marker_genome()}},
