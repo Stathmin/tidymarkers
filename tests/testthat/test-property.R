@@ -3,12 +3,18 @@
 # =============================================================================
 #  Each property runs over hedgehog-generated cheap inputs and asserts a
 #  contract read from the package's own code.  No property designs a marker,
-#  scans a genome or assembles an assay: every target is a pure function, so a
-#  case costs microseconds.
+#  scans a genome or assembles an assay: every target is a pure function.  The
+#  case itself is cheap, but hedgehog builds a report tibble per case
+#  (`snapshot_rule_spec` / `tibble_quos`), which measured ~3 ms each, so the
+#  100-case default spent ~7 s here on scaffolding rather than on the
+#  properties.  40 cases keeps the shrinking coverage that matters.
 #
 #  `hedgehog` lives in Suggests only, so this file loads it itself:
 #  `library(hedgehog)` otherwise trips a testthat check.
 # =============================================================================
+
+old_hedgehog_tests <- options(hedgehog.tests = 40)
+withr::defer(options(old_hedgehog_tests), teardown_env())
 
 forall <- hedgehog::forall
 

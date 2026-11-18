@@ -82,6 +82,22 @@ marker_decision_stages <- function(scheme = "snp") {
 #' @keywords internal
 #' @noRd
 marker_decision_schema <- function(scheme = "snp") {
+  # ~38 ms to build, and `marker_decision_graph()` asks for it once per assembled
+  # marker, so a design run rebuilt the same schema for every candidate.  The
+  # answer is a pure function of the scheme and of the discovered schemes, and
+  # both are in the key (the same shape `marker_criteria()` uses) - so composing
+  # or removing a scheme changes the key rather than only clearing the cache.
+  session_memo(
+    paste0("decision_schema|", scheme_registry_token(), "|", scheme),
+    marker_decision_schema_build(scheme)
+  )
+}
+
+#' The decision schema, built (the uncached body of `marker_decision_schema()`)
+#' @param scheme a scheme id (see [marker_schemes()]).
+#' @keywords internal
+#' @noRd
+marker_decision_schema_build <- function(scheme = "snp") {
   info <- marker_scheme(scheme)
   crit <- marker_criteria(scheme = scheme)
   stages <- marker_decision_stages(scheme)
