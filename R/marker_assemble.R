@@ -838,28 +838,75 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # screened; the first clean one wins (the ranked winner is kept when none is).
   if (!is.null(genome) && pair_screen > 1L && nrow(assays) > 1L) {
     n_screen <- min(as.integer(pair_screen), nrow(assays))
-    # the AS primers are shared by every pairing, so their exact hits are scanned
-    # once; only the COM primer (which varies) is rescanned per candidate
+    # The screen costs one genome pass per pairing (its COM primer, and the two
+    # alleles of its virtual PCR); `pair_screen` pairings therefore cost
+    # `pair_screen` passes of the same radius.  Each pass is per primer, not per
+    # pattern, so the whole screen is scanned once up front instead: every COM
+    # primer and every AVS pattern of the screened pairings (`as_hits` included,
+    # which is scanned below anyway) is searched in one grouped pass, and
+    # `primer_hit_table_from_hits()` profiles the hits per primer.  The screen
+    # then reads the hits instead of rescanning, and the `in_silico_pcr()` calls
+    # it replaces are not re-issued.
     as_primers <- c(AS_ref = assays$as_ref[1L], AS_alt = assays$as_alt[1L])
-    as_hits <- tryCatch(primer_hits(as_primers, genome, BPPARAM = BPPARAM), error = function(e) NULL)
+    screened <- assays[seq_len(n_screen), , drop = FALSE]
+    screen_template <- function(i, side) {
+      row <- screened[i, ]
+      # the same pairs `as_pcr_pairs()` builds, so the scan covers what the PCR asks
+      fr <- as_pcr_pairs(list(assay = row, template = tmpl, snp = snp))
+      vapply(fr, function(x) x[[side]], character(1))
+    }
+    screen_patterns <- c(
+      as_primers,
+      vapply(seq_len(n_screen), function(i) screened$com[[i]], character(1)),
+      unlist(lapply(seq_len(n_screen), function(i) screen_template(i, "F")), use.names = FALSE),
+      # the reverse primers are searched as their reverse complements
+      unlist(lapply(seq_len(n_screen), function(i) screen_template(i, "R")), use.names = FALSE) |>
+        lapply(function(p) as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))) |>
+        unlist(use.names = FALSE)
+    )
+    screen_hits <- tryCatch(
+      pattern_hits_batch(screen_patterns, genome, 0L),
+      error = function(e) NULL
+    )
+    hit_count <- function(primers) {
+      # one exact hit table per primer, from the one grouped scan (`as_hits`
+      # semantics: both strands, one entry per locus)
+      if (is.null(screen_hits)) {
+        return(tryCatch(primer_hits(primers, genome, BPPARAM = BPPARAM), error = function(e) NULL))
+      }
+      purrr::imap(primers, function(p, nm) {
+        sub <- primer_hit_table_from_hits(
+          p, screen_hits[[p]], genome, 0L, "pcr",
+          side = "f"
+        )
+        if (!nrow(sub)) NULL else sub
+      }) |> purrr::list_rbind()
+    }
+    as_hits <- hit_count(as_primers)
     as_bad <- !is.null(as_hits) && nrow(as_hits) && max(table(as_hits$primer)) > 1L
+    # the virtual PCR of every screened pairing is one scan of their pooled
+    # patterns (`in_silico_pcr_pool()`), not one per pairing
+    screen_pcr <- tryCatch(
+      lapply(seq_len(n_screen), function(i) {
+        list(assay = screened[i, ], template = tmpl, snp = snp)
+      }) |>
+        lapply(as_pcr_pairs) |>
+        unlist(recursive = FALSE) |>
+        stats::setNames(paste0(rep(c("AS_ref", "AS_alt"), n_screen), "_", rep(seq_len(n_screen), each = 2L))) |>
+        in_silico_pcr_pool(genome, near = TRUE),
+      error = function(e) NULL
+    )
     screen_pair <- function(i) {
-      row <- assays[i, ]
+      row <- screened[i, ]
       if (as_bad || any(has_palindrome(c(as_primers, row$com)))) {
         return(FALSE)
       }
-      com_hits <- tryCatch(
-        primer_hits(c(COM = row$com), genome, BPPARAM = BPPARAM),
-        error = function(e) NULL
-      )
+      com_hits <- hit_count(c(COM = row$com))
       if (!is.null(com_hits) && nrow(com_hits) && max(table(com_hits$primer)) > 1L) {
         return(FALSE)
       }
-      prod <- tryCatch(
-        assay_pcr_products(list(assay = row, template = tmpl, snp = snp), genome, BPPARAM = BPPARAM),
-        error = function(e) NULL
-      )
-      if (is.null(prod)) {
+      prod <- if (is.null(screen_pcr)) NULL else screen_pcr[paste0(c("AS_ref", "AS_alt"), "_", i)]
+      if (is.null(prod) || any(vapply(prod, is.null, logical(1)))) {
         return(TRUE) # unknown -> do not block
       }
       cnt <- assay_amplicon_counts(prod)
@@ -988,8 +1035,15 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     )
   )
   # precompute the whole-genome ideogram inputs once, so plotting only reads the
-  # object instead of rescanning the genome
-  out$ideogram <- tryCatch(assay_ideogram_data(out, genome, BPPARAM = BPPARAM, products = pcr_products),
+  # object instead of rescanning the genome.  `primer_hits()` would scan each
+  # primer and its reverse complement on its own genome pass; batching them into
+  # one pass cuts the ideogram's six passes to one.
+  ideogram_hits <- tryCatch(
+    batch_primer_hits(primers, genome),
+    error = function(e) NULL
+  )
+  out$ideogram <- tryCatch(
+    assay_ideogram_data(out, genome, BPPARAM = BPPARAM, hits = ideogram_hits, products = pcr_products),
     error = function(e) {
       cli::cli_warn(gettext("genome ideogram failed: {conditionMessage(e)}"))
       NULL

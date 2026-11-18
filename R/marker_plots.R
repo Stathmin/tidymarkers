@@ -460,6 +460,48 @@ assay_ideogram_data <- function(assay, genome, BPPARAM = NULL, hits = NULL, prod
   list(bars = bars, hits = hits, products = prods)
 }
 
+#' Where every primer matches the genome, from one grouped scan
+#'
+#' `assay_ideogram_data()` asks `primer_hits()` for the exact hits of every
+#' primer.  Searching them one at a time is one genome pass per (primer,
+#' strand) - six for a three-primer assay, and the two allele-specific primers
+#' are still two patterns, so the scan is one pass per distinct pattern.
+#' This searches them in one go (`pattern_hits_batch()`), then shapes the hits
+#' as `primer_hits()` returns them: one row per (primer, chromosome) with the
+#' sorted, de-duplicated hit starts of that primer on either strand.
+#' @param primers named character vector of oligos.
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @return a tibble `primer`, `chrom`, `pos`, or `NULL` when no primer hits.
+#' @keywords internal
+#' @noRd
+batch_primer_hits <- function(primers, genome) {
+  if (!length(primers)) {
+    return(NULL)
+  }
+  chroms <- genome_chroms(genome)
+  # a primer binds either strand: search every primer and its reverse complement
+  # (both strands of both), as `primer_hits()` does
+  fwd <- c(primers, stats::setNames(
+    as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(unname(primers)))),
+    paste0(names(primers), "_rc")
+  ))
+  hits <- pattern_hits_batch(unname(fwd), genome, 0L)
+  res <- purrr::imap(primers, function(p, nm) {
+    back <- fwd[[paste0(nm, "_rc")]]
+    purrr::map(chroms, function(ch) {
+      pos <- c(
+        IRanges::start(hits[[p]][[ch]] %||% IRanges::IRanges()),
+        IRanges::start(hits[[back]][[ch]] %||% IRanges::IRanges())
+      )
+      if (!length(pos)) {
+        return(NULL)
+      }
+      tibble::tibble(primer = nm, chrom = ch, pos = sort(unique(pos)))
+    }) |> purrr::list_rbind()
+  })
+  purrr::list_rbind(res)
+}
+
 #' Where every primer matches the genome (positions), for the ideogram
 #'
 #' The scan is split by chromosome when a `BPPARAM` is given.

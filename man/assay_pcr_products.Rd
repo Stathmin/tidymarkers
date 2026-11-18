@@ -4,7 +4,13 @@
 \alias{assay_pcr_products}
 \title{Every in-silico PCR product of an assay's two allele-specific pairings}
 \usage{
-assay_pcr_products(assay, genome, max_mismatch = 0L, BPPARAM = NULL)
+assay_pcr_products(
+  assay,
+  genome,
+  max_mismatch = 0L,
+  BPPARAM = NULL,
+  near = FALSE
+)
 }
 \description{
 One virtual-PCR pass per AS primer (\code{as_pcr_pairs()}); computed once at design

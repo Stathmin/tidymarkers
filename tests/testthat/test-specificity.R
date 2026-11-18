@@ -193,6 +193,42 @@ test_that("a middle primer mismatch with a far second primer is detected and rep
   expect_equal(prods$width, 60L)
 })
 
+test_that("the pooled PCR equals one `in_silico_pcr()` per pair, near pass included", {
+  # one pair with a clean product, one whose primer carries a middle mismatch: the
+  # exact pool finds only the first, the radius-1 pool finds both
+  pairs <- list(keep = c(F = z5_f, R = z5_r), dirty = c(F = z5_f, R = z5_r))
+  genome <- z5_genome(f = z5_mutate(z5_f, 10L))
+  pool <- in_silico_pcr_pool(pairs, z5_genome())
+  expect_identical(pool$keep, in_silico_pcr(z5_f, z5_r, z5_genome()))
+  expect_identical(pool$dirty, in_silico_pcr(z5_f, z5_r, z5_genome()))
+  near <- in_silico_pcr_pool(pairs, genome, max_mismatch = 1L)
+  expect_identical(near$keep, in_silico_pcr(z5_f, z5_r, genome, max_mismatch = 1L))
+  expect_identical(near$dirty, in_silico_pcr(z5_f, z5_r, genome, max_mismatch = 1L))
+  expect_equal(nrow(near$dirty), 1L)
+})
+
+test_that("a pooled near pass warns once per pair and skips a degenerate one", {
+  # two pairs whose products the exact mode misses; one extra pair with an IUPAC
+  # primer, which is searched exactly only and so has no near scan
+  genome <- z5_genome(f = z5_mutate(z5_f, 10L))
+  degen <- c(F = sub("^A", "R", z5_f), R = z5_r)
+  pairs <- list(a = c(F = z5_f, R = z5_r), degen = degen, b = c(F = z5_f, R = z5_r))
+  warns <- character()
+  withCallingHandlers(
+    out <- in_silico_pcr_pool(pairs, genome, near = TRUE),
+    warning = function(w) {
+      warns <<- c(warns, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  # per-pair `in_silico_pcr()`: the degenerate pair scans exactly only, silently
+  expect_length(warns, 2L)
+  expect_true(all(grepl("near-match", warns)))
+  expect_identical(unname(out["a"]), unname(out["b"]))
+  # `near = FALSE` stays the historical silent pool
+  expect_silent(in_silico_pcr_pool(pairs, genome))
+})
+
 test_that("a 3'-end mismatch is weighted harder than the same middle mismatch", {
   mid <- in_silico_pcr(z5_f, z5_r, z5_genome(f = z5_mutate(z5_f, 10L)), max_mismatch = 1L)
   term <- in_silico_pcr(z5_f, z5_r, z5_genome(f = z5_mutate(z5_f, 20L)), max_mismatch = 1L)

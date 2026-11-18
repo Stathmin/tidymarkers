@@ -211,6 +211,15 @@ PCR_MISMATCH_COLUMNS <- c(
   "seed_mismatch", "three_prime_terminal", "penalty"
 )
 
+# Bases of one chromosome scanned per grouped `matchPattern()` call.  A wheat
+# chromosome is 700 Mb and a batch holds every primer of a candidate pool, so an
+# unbounded pass would copy the whole chromosome once per width group; windowing
+# it bounds the per-copy memory at this many bases.  The genome passes become
+# `n_chrom * n_widths * ceil(chrom_len / HIT_BATCH_MAX)` rather than one per
+# primer.  (Declared here rather than next to the hit cache in `marker_core.R`
+# because the grouped search is the only reader.)
+HIT_BATCH_MAX <- 1e7L
+
 # The seven profile fields a single-primer hit table carries (a locus, not a
 # product): one `mismatch_positions` and a `terminal_mismatch`, unlike the
 # per-primer f/r split of PCR_MISMATCH_COLUMNS.
@@ -755,6 +764,159 @@ hit_profile <- function(pattern, footprints, scheme, seed_len = NA_integer_,
 }
 
 
+#' Scan several plus-strand patterns over several chromosomes in one pass each
+#'
+#' The cost of a specificity scan is the number of passes over the genome, not the
+#' number of patterns in a pass: one `matchPattern()` call on a whole 30 Mb
+#' chromosome is 0.27 s whether it is handed one 27-mer or forty of them.  A
+#' caller that needs the hits of several primers (the two allele-specific
+#' pairings of an assay, the `pair_screen` candidates of an assembly) therefore
+#' collects every pattern it will ask for, and this answers all of them with one
+#' grouped search per chromosome per radius.
+#'
+#' The result is identical to calling `pattern_hits_scan()` once per pattern:
+#' * equal-width patterns are joined into one string and searched in one
+#'   `matchPattern()` call, and a hit of the joined string is `nchar(joined)`
+#'   wide, so its pattern and its offset are arithmetic, not a second search;
+#' * the join is plain-ACGT exactly when every part is, and `fixed` follows that
+#'   (the same `fixed = TRUE` fast path `pattern_hits_scan()` takes);
+#' * the unambiguous-block split is the same one, with the same per-pattern
+#'   width filter, so no hit straddles an ambiguity code.
+#'
+#' The radius stays base-space.  Moving it into the pattern set (the 46 Hamming
+#' neighbours `near_seed_counts()` uses) is 15-19x slower for a primer of this
+#' length, and a `PDict` refuses a mixed width - both measured, see ROADMAP.
+#'
+#' A wheat chromosome is 700 Mb, so a batch is scanned in blocks bounded by
+#' `HIT_BATCH_MAX` bases rather than one copy of the whole chromosome per width
+#' group.
+#' @param patterns plus-strand patterns to search (IUPAC-aware); a repeat is
+#'   scanned once.
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param max_mismatch search radius.
+#' @return a named list per *unique* pattern, each a list named by chromosome
+#'   holding the `IRanges` of hits in that chromosome's coordinates, so a caller
+#'   reads `hits[[pattern]][[chrom]]`.
+#' @keywords internal
+#' @noRd
+pattern_hits_batch <- function(patterns, genome, max_mismatch) {
+  pats <- unique(patterns)
+  out <- stats::setNames(
+    lapply(pats, function(p) stats::setNames(vector("list", length(genome_chroms(genome))), genome_chroms(genome))),
+    pats
+  )
+  if (!length(pats)) {
+    return(out)
+  }
+  # one search per (chromosome, width): `matchPattern()` needs equal widths
+  widths <- sort(unique(nchar(pats)))
+  for (chrom in genome_chroms(genome)) {
+    worker_biostrings()
+    subject <- genome_seq(genome, chrom)
+    bl <- unambiguous_blocks(subject)
+    bl_len <- bl$end - bl$start + 1L
+    for (w in widths) {
+      group <- pats[nchar(pats) == w]
+      found <- batch_probe(group, subject, bl, bl_len, w, max_mismatch)
+      for (p in group) {
+        out[[p]][[chrom]] <- found[[p]]
+      }
+    }
+  }
+  out
+}
+
+#' Search one width group over one chromosome in one grouped `PDict()` pass
+#'
+#' The blocks of the subject are walked in windows of `HIT_BATCH_MAX` bases (the
+#' window is a whole count of blocks), which is one search per window per group
+#' and keeps the memory of a wheat chromosome flat.  A plain-ACGT group is
+#' searched with one `matchPDict()` over the whole group (which is what makes a
+#' batch cost less than a scan per pattern); a group holding an IUPAC pattern has
+#' no `PDict`, so each pattern is searched on its own with the same block walk.
+#' @param group equal-width patterns.
+#' @param subject the genomic sequence.
+#' @param bl,bl_len the unambiguous blocks (`start`, `end`, length).
+#' @param w the pattern width.
+#' @param max_mismatch search radius.
+#' @return a named list of `IRanges` per pattern, in `subject` coordinates.
+#' @keywords internal
+#' @noRd
+batch_probe <- function(group, subject, bl, bl_len, w, max_mismatch) {
+  n <- length(group)
+  fixed <- !any(grepl("[^ACGT]", group))
+  # `PDict` only takes a mismatch radius from width 6 up; a shorter pattern group
+  # falls back to a `matchPattern()` per pattern inside the same block walk.
+  pdict <- if (fixed && (max_mismatch == 0L || w >= 6L)) {
+    Biostrings::PDict(Biostrings::DNAStringSet(group), max.mismatch = max_mismatch)
+  } else {
+    NULL
+  }
+  single_block <- length(bl$start) == 1L && bl$start[[1L]] == 1L &&
+    bl$end[[1L]] == length(subject)
+  if (!is.null(pdict) && max_mismatch == 0L && single_block) {
+    # An exact search of a gapless subject needs no block walk.  The walk exists so
+    # a hit cannot straddle an ambiguity code or make the subseq copy of a whole
+    # wheat chromosome; with one block holding the whole subject neither applies,
+    # and a `PDict` already answers the group, so ONE pass replaces one per
+    # `HIT_BATCH_MAX` window (measured on a 30 Mb subject, five primers: 0.24 s
+    # for the walk vs 0.03 s for this pass, identical hits).
+    found <- lapply(
+      Biostrings::matchPDict(pdict, subject, max.mismatch = 0L),
+      function(h) if (length(h)) IRanges::IRanges(IRanges::start(h), width = w) else IRanges::IRanges()
+    )
+    names(found) <- group
+    return(found)
+  }
+  # a block must hold a whole pattern, or no hit can start in it
+  keep <- which(bl_len >= w)
+  starts <- vector("list", n)
+  if (length(keep)) {
+    # Every pattern is searched inside ONE unambiguous block.  The blocks are
+    # packed into `HIT_BATCH_MAX` windows to bound the memory of a subseq copy, and
+    # each block of a window is searched on its own: a search over a whole window
+    # would let a hit start in the last `w - 1` bases of a block and run on into
+    # the ambiguity code after it, which the per-block search of
+    # `pattern_hits_scan()` never reports.  (Measured: 6,046 vs 4,595 hits for an
+    # IUPAC pattern on TAIR10 Chr2.)
+    grp <- cumsum(c(TRUE, diff(cumsum(bl_len[keep])) > HIT_BATCH_MAX))
+    for (win in split(keep, grp[seq_along(keep)])) {
+      s <- bl$start[[win[[1L]]]]
+      e <- bl$end[[win[[length(win)]]]]
+      sub <- if (s == 1L && e == length(subject)) subject else Biostrings::subseq(subject, s, e)
+      off <- s - 1L
+      for (i in win) {
+        bs <- bl$start[[i]]
+        be <- bl$end[[i]]
+        if (bs == s && be == e) {
+          piece <- sub
+          rel0 <- 0L
+        } else {
+          piece <- Biostrings::subseq(sub, bs - off, be - off)
+          rel0 <- bs - s
+        }
+        # one hit set per pattern, in the block's own coordinates
+        v <- if (!is.null(pdict)) {
+          Biostrings::matchPDict(pdict, piece, max.mismatch = max_mismatch)
+        } else {
+          lapply(group, function(p) Biostrings::matchPattern(p, piece, max.mismatch = max_mismatch, fixed = fixed))
+        }
+        for (j in seq_len(n)) {
+          if (length(v[[j]])) {
+            starts[[j]] <- c(starts[[j]], IRanges::start(v[[j]]) + rel0 + off)
+          }
+        }
+      }
+    }
+  }
+  found <- lapply(seq_len(n), function(i) {
+    s <- starts[[i]]
+    if (length(s)) IRanges::IRanges(s, width = w) else IRanges::IRanges()
+  })
+  names(found) <- group
+  found
+}
+
 #' Per-primer hit table for one primer against every chromosome
 #'
 #' One `matchPattern()` pass per primer (plain-ACGT patterns are scanned with
@@ -789,22 +951,77 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
     )), class = "tidymarkers_degenerate_exact")
   }
   side <- match.arg(side)
+  hit_tables_per_chrom(
+    pattern, genome, genome_chroms(genome), max_mismatch, scheme, seed_len, side,
+    hits = NULL
+  )
+}
+
+#' Hit table of one primer from hits already found (the unsearched half of
+#' `primer_hit_table()`)
+#'
+#' `primer_hit_table()` is "one search per chromosome, then profile every hit".
+#' A caller that searched several primers in one pass (`pattern_hits_batch()`)
+#' has the second half to do only: this profiles the hits it was handed.
+#' @param pattern the plus-strand pattern searched (IUPAC-aware).
+#' @param hits the per-chromosome hits from `pattern_hits_batch()`, named by
+#'   chromosome.
+#' @param genome `DNAStringSet` / `marker_genome`, read for the hit footprints.
+#' @param max_mismatch search radius the hits were found at (for the degenerate
+#'   warning, so the batch and the per-primer path complain alike).
+#' @param scheme chemistry.
+#' @param seed_len seed length override (`NA` = the policy's).
+#' @param side `"f"` or `"r"` (see `primer_hit_table()`).
+#' @keywords internal
+#' @noRd
+primer_hit_table_from_hits <- function(pattern, hits, genome, max_mismatch, scheme,
+                                       seed_len = NA_integer_, side = c("f", "r")) {
+  if (max_mismatch > 0L && grepl("[^ACGT]", pattern)) {
+    rlang::warn(gettext(paste(
+      "A degenerate primer cannot be scanned with `max_mismatch > 0`;",
+      "only its exact (IUPAC-aware) matches are scored."
+    )), class = "tidymarkers_degenerate_exact")
+  }
+  side <- match.arg(side)
+  hit_tables_per_chrom(
+    pattern, genome, names(hits), max_mismatch, scheme, seed_len, side,
+    hits = hits
+  )
+}
+
+#' Build one primer's hit table, searching only the chromosomes it was not given
+#' @param pattern the plus-strand pattern.
+#' @param genome `DNAStringSet` / `marker_genome`.
+#' @param chroms chromosomes to report, in order.
+#' @param max_mismatch search radius.
+#' @param scheme chemistry.
+#' @param seed_len seed length override.
+#' @param side `"f"` or `"r"`.
+#' @param hits per-chromosome hits already found, or `NULL` to search them.
+#' @keywords internal
+#' @noRd
+hit_tables_per_chrom <- function(pattern, genome, chroms, max_mismatch, scheme, seed_len, side,
+                                 hits = NULL) {
   scan_one <- function(nm) {
     worker_biostrings()
     subject <- genome_seq(genome, nm)
-    hits <- exact_pattern_hits(pattern, subject, max_mismatch)
-    if (length(hits) == 0L) {
+    found <- if (is.null(hits)) {
+      exact_pattern_hits(pattern, subject, max_mismatch)
+    } else {
+      hits[[nm]] %||% IRanges::IRanges()
+    }
+    if (length(found) == 0L) {
       return(NULL)
     }
     # `exact_pattern_hits()` returns an `XStringViews` on the no-N path and a
     # plain `IRanges` on the N path, so `as.character(hits)` was the DNA in one
     # case and "start-end" in the other; take the bases from the subject.
-    footprint <- as.character(Biostrings::extractAt(subject, hits))
+    footprint <- as.character(Biostrings::extractAt(subject, found))
     prof <- hit_profile(pattern, footprint, scheme, seed_len, side == "r")
     tibble::tibble(
       chrom = nm,
-      start = IRanges::start(hits),
-      end = IRanges::end(hits),
+      start = IRanges::start(found),
+      end = IRanges::end(found),
       n_mismatch = prof$n_mismatch,
       mismatch_positions = prof$mismatch_positions,
       three_prime_mismatch = prof$three_prime_mismatch,
@@ -814,7 +1031,7 @@ primer_hit_table <- function(pattern, genome, max_mismatch, scheme, seed_len = N
       penalty = prof$penalty
     )
   }
-  res <- lapply(genome_chroms(genome), scan_one)
+  res <- lapply(chroms, scan_one)
   out <- purrr::list_rbind(res)
   if (is.null(out)) {
     out <- tibble::tibble(
@@ -1198,7 +1415,6 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   # the score ladder is the scheme's; without a scheme it is pcr's (the
   # historical weights), so the bare call keeps its scoring
   scoring <- policy$mode %||% "pcr"
-  min_width <- max(nchar(f_primer), nchar(r_primer))
   chroms <- genome_chroms(genome)
   # The whole genome goes in once.  `primer_hit_table()` already loops over
   # `genome_chroms()`, so calling it inside the per-chromosome loop below
@@ -1208,6 +1424,30 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   # answer and caught it: one real product came back as twelve.
   fh_all <- primer_hit_table(f_primer, genome, radius, scoring, side = "f")
   rh_all <- primer_hit_table(rev, genome, radius, scoring, side = "r")
+  out <- pcr_products_from_hits(fh_all, rh_all, chroms, f_primer, r_primer, BPPARAM)
+  out <- finish_pcr_products(out, policy)
+  warn_near_products(f_primer, r_primer, genome, radius, out, BPPARAM)
+  out
+}
+
+#' Pair forward and reverse hit tables into in-silico PCR products
+#'
+#' The pairing half of [in_silico_pcr()], factored out so a caller that scanned
+#' several primers in one pass can pair each pair from its slice of that one
+#' table ([pcr_products_batch()]).
+#' @param fh_all forward-primer hit table (`primer_hit_table(side = "f")` on the
+#'   primer itself).
+#' @param rh_all reverse-primer hit table, searched side (`side = "r"` on the
+#'   reverse complement).
+#' @param chroms genome sequence names to scan.
+#' @param f_primer,r_primer the primers, for the minimum product width.
+#' @param BPPARAM optional `BiocParallel` backend.
+#' @return the product tibble without `score`/scheme columns (see
+#'   `finish_pcr_products()`).
+#' @keywords internal
+#' @noRd
+pcr_products_from_hits <- function(fh_all, rh_all, chroms, f_primer, r_primer, BPPARAM = NULL) {
+  min_width <- max(nchar(f_primer), nchar(r_primer))
   scan_one <- function(nm) {
     worker_biostrings()
     fh <- fh_all[fh_all$chrom == nm, , drop = FALSE]
@@ -1276,7 +1516,84 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   } else {
     bp_lapply(chroms, scan_one, BPPARAM)
   }
-  out <- purrr::list_rbind(res)
+  purrr::list_rbind(res) %||% empty_pcr_products()
+}
+
+#' Virtual PCR for many primer pairs with one genome pass per radius
+#'
+#' The cost of a scan is the number of passes over the genome, not the number of
+#' primers in a pass (see `pattern_hits_batch()`), and a design asks for several
+#' pairs at the same radius - the two allele-specific pairings of an assay, the
+#' `pair_screen` candidates of an assembly, and one near pass per pair.  So every
+#' pattern of the pool is searched once (both plus-strand halves: the forward
+#' primers as themselves, the reverse primers as their reverse complements), and
+#' each pair is then paired from its own slice of the shared table.
+#'
+#' The result is `in_silico_pcr()`'s, pair for pair and in pool order.  The search
+#' is one pattern, and the miss counts come from `pattern_hits_scan()`'s
+#' `unambiguous_blocks()` only.  Two properties are needed for that:
+#' * a pair is paired only from the hits of its own two primers, so the pairing
+#'   is unchanged (a hit of another pair's primer is not a candidate);
+#' * the near pass of `warn_near_products()` is skipped here, since it would
+#'   issue a scan per pair.  `in_silico_pcr_pool()` does not warn; its callers
+#'   scan the whole pool once at radius 1 instead, or ask for `near = TRUE`,
+#'   which takes that radius-1 pass over every pattern of the pool in one go.
+#' @param pairs named list of `c(F = , R = )` primer pairs.
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param max_mismatch search radius.
+#' @param scheme chemistry policy name, or `NULL` for none.
+#' @param near with `max_mismatch = 0`, warn for every pair whose products miss
+#'   a <= 1-mismatch product (`warn_near_products()`), from one radius-1 pass
+#'   over the whole pool.  `FALSE` is the historical silent pool.
+#' @return a named list per pair, each an `in_silico_pcr()` product table.
+#' @keywords internal
+#' @noRd
+in_silico_pcr_pool <- function(pairs, genome, max_mismatch = 0L, scheme = NULL, near = FALSE) {
+  if (!length(pairs)) {
+    return(list())
+  }
+  policy <- if (is.null(scheme)) NULL else specificity_policy(scheme)
+  scoring <- policy$mode %||% "pcr"
+  radius <- as.integer(max_mismatch)
+  fwd <- vapply(pairs, function(x) x[["F"]], character(1))
+  # the reverse primer binds the minus strand, so its reverse complement is the
+  # plus-strand pattern to search (as in `in_silico_pcr()`)
+  rev <- vapply(pairs, function(x) x[["R"]], character(1)) |>
+    lapply(function(x) as.character(Biostrings::reverseComplement(Biostrings::DNAString(x)))) |>
+    unlist(use.names = FALSE)
+  hits <- pattern_hits_batch(c(fwd, rev), genome, radius)
+  # one hit table per *unique* primer, then the per-pair slice is its own
+  tables <- new.env(parent = emptyenv())
+  primer_table <- function(pattern, side) {
+    key <- paste(side, pattern, sep = "\r")
+    if (!exists(key, envir = tables, inherits = FALSE)) {
+      tbl <- primer_hit_table_from_hits(pattern, hits[[pattern]], genome, radius, scoring, side = side)
+      assign(key, tbl, envir = tables)
+    }
+    get(key, envir = tables, inherits = FALSE)
+  }
+  chroms <- genome_chroms(genome)
+  out <- stats::setNames(
+    lapply(seq_along(pairs), function(i) {
+      fh <- primer_table(fwd[[i]], "f")
+      rh <- primer_table(rev[[i]], "r")
+      out <- pcr_products_from_hits(fh, rh, chroms, fwd[[i]], pairs[[i]][["R"]])
+      finish_pcr_products(out, policy)
+    }),
+    names(pairs)
+  )
+  if (near && radius == 0L) {
+    warn_near_pool(pairs, out, genome, fwd, rev)
+  }
+  out
+}
+
+#' Add the score (and the scheme columns) to a product table
+#' @param out product table from `pcr_products_from_hits()`.
+#' @param policy the scheme policy, or `NULL`.
+#' @keywords internal
+#' @noRd
+finish_pcr_products <- function(out, policy) {
   if (is.null(out)) {
     out <- empty_pcr_products()
   }
@@ -1298,30 +1615,93 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
     out$scheme <- policy$mode
     out$tolerated <- pcr_products_tolerated(out, policy)
   }
-  # Exact mode must not silently hide a one-mismatch primer product.  Scan one
-  # mismatch and warn; callers who want those products in the table pass
-  # max_mismatch = 1 explicitly.  The near scan is unscored (no scheme): every
-  # product of it that is not in `out` is a mismatch product.  An IUPAC primer is
-  # searched exactly only, so it has no near scan (and must not reach the
-  # unambiguous-primer guard of `primer_hit_table()`).
-  if (radius == 0L && !grepl("[^ACGT]", f_primer) && !grepl("[^ACGT]", r_primer)) {
-    near <- in_silico_pcr(
-      f_primer, r_primer, genome,
-      max_mismatch = 1L, BPPARAM = BPPARAM
-    )
-    extra <- dplyr::anti_join(
-      near, out,
-      by = c("chrom", "start", "end")
-    )
-    if (nrow(extra)) {
-      msg <- gettext(paste0(
-        "%d near-match in-silico PCR product(s) with <= 1 primer mismatch ",
-        "were found; exact mode ignores them. Set max_mismatch = 1 to include them."
-      ))
-      cli::cli_warn(sprintf(msg, nrow(extra)))
-    }
-  }
   out
+}
+
+#' Warn when exact mode hides a one-mismatch product
+#'
+#' Exact mode must not silently hide a one-mismatch primer product.  Scan one
+#' mismatch and warn; callers who want those products in the table pass
+#' `max_mismatch = 1` explicitly.  The near scan is unscored (no scheme): every
+#' product of it that is not in `out` is a mismatch product.  An IUPAC primer is
+#' searched exactly only, so it has no near scan (and must not reach the
+#' unambiguous-primer guard of `primer_hit_table()`).
+#' @param f_primer,r_primer the pair.
+#' @param genome the genome.
+#' @param radius the radius `out` was scanned at.
+#' @param out the exact-mode product table.
+#' @param BPPARAM optional `BiocParallel` backend.
+#' @keywords internal
+#' @noRd
+warn_near_products <- function(f_primer, r_primer, genome, radius, out, BPPARAM = NULL) {
+  if (radius != 0L) {
+    return(invisible(NULL))
+  }
+  near <- near_products(f_primer, r_primer, genome, BPPARAM)
+  warn_near_extra(near, out)
+  invisible(NULL)
+}
+
+#' The near pass of one pair (`NULL` when the pair cannot take one)
+#'
+#' An IUPAC primer is searched exactly only, so it has no near scan (and must not
+#' reach the unambiguous-primer guard of `primer_hit_table()`).
+#' @param f_primer,r_primer the pair.
+#' @param genome the genome.
+#' @param BPPARAM optional `BiocParallel` backend.
+#' @return the radius-1 product table, or `NULL` for a degenerate pair.
+#' @keywords internal
+#' @noRd
+near_products <- function(f_primer, r_primer, genome, BPPARAM = NULL) {
+  if (grepl("[^ACGT]", f_primer) || grepl("[^ACGT]", r_primer)) {
+    return(NULL)
+  }
+  in_silico_pcr(f_primer, r_primer, genome, max_mismatch = 1L, BPPARAM = BPPARAM)
+}
+
+#' Warn when a pair's near pass found a product the exact table does not hold
+#' @param near the radius-1 product table, or `NULL`.
+#' @param out the exact-mode product table.
+#' @keywords internal
+#' @noRd
+warn_near_extra <- function(near, out) {
+  if (is.null(near)) {
+    return(invisible(NULL))
+  }
+  extra <- dplyr::anti_join(near, out, by = c("chrom", "start", "end"))
+  if (nrow(extra)) {
+    msg <- gettext(paste0(
+      "%d near-match in-silico PCR product(s) with <= 1 primer mismatch ",
+      "were found; exact mode ignores them. Set max_mismatch = 1 to include them."
+    ))
+    cli::cli_warn(sprintf(msg, nrow(extra)))
+  }
+  invisible(NULL)
+}
+
+#' The near pass of `warn_near_products()` for every pair of a pool, in one pass
+#'
+#' One radius-1 scan of the whole pool replaces the per-pair
+#' `in_silico_pcr()` each `warn_near_products()` would issue, and the warnings
+#' come out pair by pair, in pool order.
+#' @param pairs the pool's pairs.
+#' @param out the pool's exact-mode product tables.
+#' @param genome the genome.
+#' @param fwd,rev the pool's plus-strand patterns (see `in_silico_pcr_pool()`).
+#' @keywords internal
+#' @noRd
+warn_near_pool <- function(pairs, out, genome, fwd, rev) {
+  searchable <- vapply(seq_along(pairs), function(i) {
+    !grepl("[^ACGT]", fwd[[i]]) && !grepl("[^ACGT]", pairs[[i]][["R"]])
+  }, logical(1), USE.NAMES = FALSE)
+  if (!any(searchable)) {
+    return(invisible(NULL))
+  }
+  near <- in_silico_pcr_pool(pairs[searchable], genome, max_mismatch = 1L)
+  for (k in seq_along(which(searchable))) {
+    warn_near_extra(near[[k]], out[[which(searchable)[[k]]]])
+  }
+  invisible(NULL)
 }
 
 #' Zero-row in-silico PCR table with the full (stable) column contract
@@ -1434,12 +1814,10 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, pr
 #' assay_pcr_products(assay, genome)
 #' }
 #' @keywords internal
-assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL) {
-  purrr::imap(as_pcr_pairs(assay), function(fr, nm) {
-    in_silico_pcr(fr[["F"]], fr[["R"]], genome,
-      max_mismatch = max_mismatch, BPPARAM = BPPARAM
-    )
-  })
+assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, near = FALSE) {
+  # both allele-specific pairings share the COM primer and differ only in the AS
+  # one, so one grouped scan answers both (two genome passes instead of four)
+  in_silico_pcr_pool(as_pcr_pairs(assay), genome, max_mismatch = max_mismatch, near = near)
 }
 
 #' Turn per-primer product tables into the amplicon summary
