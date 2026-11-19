@@ -2363,8 +2363,7 @@ provenance_required)`: review queue candidate-обновлений с полны
   `Suggests` под guarded call.
   проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
   XSD через `xml2`, обязательные секции docx на месте.
-  блокер: `officer` не установлен и не в `Suggests`; XSD не скачивается с
-  пакетом (правило «external data не ships») — нужен cache-путь.
+  блокер (на момент планирования): `officer` не в `Suggests`, кеша XSD нет.
   следствие: форматов экспорта нет; обход — ручной docx вне пакета.
   закрыто 2026-11-19: `R/marker_patent.R` (509 строк) —
   `marker_patent_export()`, `marker_defensive_publication()`,
@@ -2372,8 +2371,10 @@ provenance_required)`: review queue candidate-обновлений с полны
   `inst/templates/patent/{application.md,defensive_publication.md}`;
   `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
   коммит `5a5a29e`. ST.26 XML и markdown-шаблоны есть; `.docx` — остаток.
-  блокер: `.docx` требует suggested-пакет `officer` (на этом хосте его нет)
-  и кеш XSD для валидации схемы.
+  блокер: `.docx` требует `officer` и его зависимости `zip`/`uuid`/`gdtools`/
+  `fontquiver`. На этом хосте `officer` лежит только в `/usr/lib/R/site-library`
+  (вне `.libPaths()` R 4.6.1), зависимостей нет, сети нет (`http=000` к CRAN).
+  Валидация по XSD возможна только при файле в кеше: XSD не едет с пакетом.
 - [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
       валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
