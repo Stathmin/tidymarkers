@@ -14,11 +14,13 @@
 # between your commits. See ROADMAP D8.
 #
 # OligoArrayAux (`hybrid-min`/`hybrid-ss-min`) and BLAST+ are *optional*
-# engines: the suite skips an assertion when an engine is absent. The Linux legs
-# unpack a pinned bioconda tarball for OligoArrayAux (the runner images no longer
-# ship conda) and apt-install BLAST+; macOS brew-installs BLAST+ only; Windows
-# installs neither. The genome, variation and indexes are never needed -- every
-# network example is wrapped in \dontrun{} and tests use fixtures.
+# engines: the suite skips an assertion when an engine is absent. Which leg gets
+# what is the `engines` matrix key: `unix` (both Linux legs) unpacks a pinned
+# bioconda tarball for OligoArrayAux (the runner images no longer ship conda) and
+# apt-installs BLAST+; `mac` brew-installs BLAST+ only; `win` has no BLAST+, but
+# compiles OligoArrayAux from the pinned sources with the gcc Rtools ships. The
+# genome, variation and indexes are never needed -- every network example is
+# wrapped in \dontrun{} and tests use fixtures.
 name: R-CMD-check
 
 on:
@@ -61,7 +63,7 @@ jobs:
                     - { os: ubuntu-latest, r: "release", engines: unix }
                     - { os: ubuntu-latest, r: "oldrel-1", engines: unix }
                     - { os: macos-latest, r: "release", engines: mac }
-                    - { os: windows-latest, r: "release", engines: none }
+                    - { os: windows-latest, r: "release", engines: win }
         steps: &steps
             - uses: actions/checkout@v4
 
@@ -112,6 +114,22 @@ jobs:
             - name: Install BLAST+ (macOS)
               if: matrix.config.engines == 'mac'
               run: brew install blast
+
+            # Windows builds OligoArrayAux from the pinned sources with the gcc
+            # Rtools ships: there is no make on the runner, so the script compiles
+            # the five C units directly. Locating gcc goes through pkgbuild, which
+            # is what setup-r-dependencies already installed and what knits
+            # Rtools' PATH in.
+            - name: Install OligoArrayAux (Windows)
+              if: matrix.config.engines == 'win'
+              shell: bash
+              run: |
+                  export PATH="$(dirname "$(Rscript -e 'cat(pkgbuild::with_build_tools(Sys.which("gcc")))')"):$PATH"
+                  Rscript data-raw/install-oligoarrayaux.R
+                  cygpath -w "$GITHUB_WORKSPACE/.tools/bin" >> "$GITHUB_PATH"
+                  UNAFOLDDAT="$(cygpath -w "$GITHUB_WORKSPACE/.tools/share/oligoarrayaux")" \
+                    "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
+                    -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT
 
             # Warm the Atlas/TAIR10 demo cache before R CMD check so the
             # arms/primer3/plan tests run instead of skipping on a cold cache.

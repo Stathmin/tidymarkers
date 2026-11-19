@@ -53,3 +53,15 @@ status <- system2(
 if (!identical(as.integer(status), 0L)) {
   stop("R CMD INSTALL failed (status ", status, ")")
 }
+
+# OligoArrayAux is an optional engine, but a machine with a C compiler should
+# get it without a second command. Best-effort, so the absence of a toolchain
+# installs the R packages and skips the engine (the suite then SKIPs it).
+oaa <- file.path("data-raw", "install-oligoarrayaux.R")
+if (file.exists(oaa)) {
+  message("building OligoArrayAux (optional engine)")
+  status <- system2(file.path(R.home("bin"), "Rscript"), oaa, stdout = TRUE, stderr = TRUE)
+  if (!is.null(attr(status, "status"))) {
+    message("OligoArrayAux not built (no C toolchain?); engine-dependent tests will SKIP")
+  }
+}

@@ -35,7 +35,7 @@ say <- function(...) message("oligoarrayaux: ", ...)
 
 # A working install runs hybrid-min on a known duplex and prints one number.
 smoke <- function() {
-  exe <- file.path(bin, "hybrid-min")
+  exe <- file.path(bin, exe_name("hybrid-min"))
   if (!file.exists(exe)) {
     return(FALSE)
   }
@@ -62,6 +62,64 @@ with_dir <- function(dir, code) {
   force(code)
 }
 
+exe_name <- function(program) {
+  if (.Platform$OS.type == "windows") paste0(program, ".exe") else program
+}
+
+compiler <- function() {
+  cc <- Sys.which(c("cc", "gcc", "clang"))
+  cc <- unname(cc[nzchar(cc)])
+  if (!length(cc)) stop("no C compiler (cc/gcc/clang) found on PATH (Windows: install Rtools)", call. = FALSE)
+  cc[[1L]]
+}
+
+# A string-valued -D: the quotes are part of the macro, and system2() runs the
+# arguments through a shell, so the value is wrapped in a quoted group whose
+# inner quotes are escaped for that shell (and for the Windows CRT).
+define <- function(name, value) {
+  sprintf("-D%s=\"\\\"%s\\\"\"", name, value)
+}
+
+# The units and flags are what autotools compiled for each program, plus the
+# macros configure wrote into config.h (the tarball ships only config.in):
+# without <stdlib.h>/<string.h>, gcc >= 14 rejects the implicit declarations.
+build <- function(cc, program) {
+  datadir <- normalizePath(dat, winslash = "/", mustWork = FALSE)
+  run(cc, c(
+    "-g", "-O2", "-DENERGY=int", "-DINTEGER", "-DPRECISION=1000",
+    "-DHAVE_STDLIB_H=1", "-DHAVE_STRING_H=1", "-DHAVE_FCNTL_H=1",
+    define("PACKAGE_NAME", "OligoArrayAux"),
+    define("PACKAGE_VERSION", version),
+    define("PACKAGE_BUGREPORT", "markham@alum.rpi.edu"),
+    # energy.c's openFile() concatenates PKGDATADIR with the file name.
+    define("PKGDATADIR", paste0(datadir, "/")),
+    "-o", file.path(bin, exe_name(program)),
+    "energy.c", paste0(program, ".c"), "getopt.c", "getopt1.c", "xmalloc.c", "-lm"
+  ))
+}
+
+# The tarball ships no tables: autotools generates the files in data/ from
+# data/rules with machine.pl, and data/Makefile.am records the flags for each
+# target ($(INFINITY) where a missing pair is forbidden, 0 for enthalpies).
+# 999999 is what configure's infinity probe fell back to, and what every
+# published OligoArrayAux install carries, so the output does not depend on
+# which compiler ran the probe.
+tables <- function(perl) {
+  makefile <- readLines(file.path(src, "data", "Makefile.am"))
+  lists <- grep("^[a-z]+ = ", makefile, value = TRUE)
+  targets <- unique(unlist(strsplit(sub("^[a-z]+ = ", "", lists), " +")))
+  for (target in targets) {
+    at <- which(startsWith(makefile, paste0(target, " : ")))
+    if (!length(at)) next
+    rule <- makefile[[at[[1L]]]]
+    tokens <- strsplit(trimws(makefile[[at[[1L]] + 1L]]), " +")[[1L]]
+    args <- tokens[-c(1L, 2L, length(tokens) - 1L, length(tokens))]
+    args[args == "$(INFINITY)"] <- "999999"
+    input <- sub("^\\$\\(srcdir\\)/", "", sub("^[^ ]+ : ", "", rule))
+    run(perl, c(file.path(src, "machine.pl"), args, file.path(src, "data", input), file.path(dat, target)))
+  }
+}
+
 # Try the usual sha256 tools: sha256sum (coreutils), shasum (macOS),
 # openssl dgst -sha256 (fallback).  Returns NA when none is available.
 sha256_of <- function(path) {
@@ -78,7 +136,9 @@ sha256_of <- function(path) {
     ))
     # sha256sum/shasum print "<hex>  path"; openssl prints "SHA2-256(path)= <hex>"
     tok <- unlist(regmatches(out, gregexpr("[0-9a-f]{64}", out)))
-    if (length(tok)) return(tok[[1L]])
+    if (length(tok)) {
+      return(tok[[1L]])
+    }
   }
   NA_character_
 }
@@ -89,11 +149,10 @@ main <- function() {
     return(invisible())
   }
 
-  if (!nzchar(Sys.which("make"))) {
-    stop("'make' not found on PATH (Windows: install Rtools)", call. = FALSE)
-  }
-  if (!any(nzchar(Sys.which(c("cc", "gcc", "clang"))))) {
-    stop("no C compiler (cc/gcc/clang) found on PATH (Windows: install Rtools)", call. = FALSE)
+  cc <- compiler()
+  perl <- unname(Sys.which("perl"))
+  if (!nzchar(perl)) {
+    stop("no perl found on PATH (needed to generate the OligoArrayAux data tables)", call. = FALSE)
   }
 
   dir.create(tools, showWarnings = FALSE, recursive = TRUE)
@@ -117,11 +176,16 @@ main <- function() {
     utils::untar(tar, exdir = tools)
   }
 
-  say("configuring + building (this takes a minute)")
-  with_dir(src, {
-    run("./configure", sprintf("--prefix=%s", shQuote(tools)))
-    run("make")
-    run("make", "install")
+  dir.create(bin, recursive = TRUE, showWarnings = FALSE)
+  dir.create(dat, recursive = TRUE, showWarnings = FALSE)
+
+  say("generating the data tables with machine.pl")
+  tables(perl)
+
+  say("compiling with ", cc, " (this takes a minute)")
+  with_dir(file.path(src, "src"), {
+    build(cc, "hybrid-min")
+    build(cc, "hybrid-ss-min")
   })
 
   if (!smoke()) stop("build finished but hybrid-min did not return a dG", call. = FALSE)
