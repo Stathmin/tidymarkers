@@ -174,35 +174,37 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   # moves the pick to row 1).  For (a), the 23-mer/22-mer case no longer
   # reproduces: design_as_primers() ranks on .policy_rank then desc(discrimination),
   # so a GC-window failure cannot win on length alone, and no frame-independent
-  # cell below disagrees on a tie.  One frame-sensitive case remains (seed 7,
-  # core pos 40): the AS primers are identical in all four frames, but frame 1
-  # takes a 92 bp amplicon whose COM ring sits 2 bp closer (gap 53 vs 51,
-  # COM Tm 60.24 vs 60.69) while frames 2-4 take the 100 bp one.
+  # cell below disagrees on a tie.
   #
-  # The cause is measured, not inferred: design_common_primers() runs on the WHOLE
-  # contig, not on a flank window, and keeps only rings with start >= 1
-  # (R/marker_design.R:60).  Swapping the lead-in therefore shifts which of the
-  # tiled COM rings carries the best Tm, and the rank flip is visible in the
-  # checks: at the 92 bp frame "COM Tm >= AS Tm" FAILS (-0.43) and at the 100 bp
-  # frames it PASSES (+0.02); every other row of the check table is identical
-  # (both fail "off-target exact primer hits (n) = 2 <= 1").  The com_gaps window
-  # is ruled out -- across 49 designs the KASP gap is 19-77 (median 47, none at
-  # >= 78), and widening the grid to 18:120 moved exactly one design through the
-  # Tm tie-break (R/marker_design.R:86), never reachability.  The divergence is
-  # asserted by name below, not reported away.
+  # ROADMAP №29: the fixture, not the ranking, used to move one cell.  The design
+  # window is the SNP +/- 150 bases (snp_template()), so a frame whose SNP sat
+  # nearer than 150 bases to the contig start got a CLIPPED window: with the old
+  # 100-base left flank the 1-base frame's SNP sat 140 bases in, its upstream
+  # flank was 10 bases short, and design_common_primers() -- which tiles the whole
+  # template and keeps rings with start >= 1 (R/marker_design.R:60) -- saw a
+  # different ring set there.  Measured, not inferred: seed 7 / core pos 40 took a
+  # 92 bp amplicon with COM TCTCACGAATGTCCATCCCACAGT in frame 1 and a 100 bp
+  # amplicon with COM TCACGAATGTCCATCCCACAGTGT in frames 2-4 (the check tables
+  # differed on "COM Tm >= AS Tm": -0.43 against +0.02).  The left flank is 400
+  # bases now, so every frame's SNP sits at least 400 + loc bases from the contig
+  # start (441 for core pos 40) and all four frames hand the design an unclipped,
+  # identical 150-base context around the same physical locus; only the absolute
+  # coordinates differ.  That cell agrees in all four frames now.
   #
-  # Geometry: one shared 100-base pad, prefixed by 1/17/43/99 bases, so the same
-  # core sits at four different absolute offsets.  Every shift is strictly smaller
-  # than the pad's period, so no frame can reuse the whole pad (a shift of 100
-  # would equal the period and degenerate the test).  The smallest shift is 1, not
-  # 0, on purpose: with a zero shift the SNP sat ~140 bp into an otherwise
-  # unpadded contig and the divergence could be blamed on the left edge of the
-  # ranking window.  With a 1-base lead-in every frame's SNP is >= 141 bp from
-  # both contig ends, so what is left is the lead-in itself re-ranking the COM
-  # rings -- the behaviour this test exists to guard.
+  # Agreement alone cannot catch a regression that moves all four frames the same
+  # way, so the named block below pins the exact as_ref / as_alt / COM / amplicon
+  # of that cell: a ranking change in design_as_primers() or
+  # design_common_primers() fails it even while every frame still agrees.
+  #
+  # Geometry: one shared 400-base flank with its first `sh` bases repeated in
+  # front of it, so the same core sits at four distinct absolute offsets
+  # (400 + sh).  Every shift is strictly smaller than the pad's 100-base period,
+  # so the repeated prefix never becomes a whole extra period (a shift of 100
+  # would equal the period and degenerate the frames); the second block guards
+  # that.
   set.seed(11L)
   pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
-  pre <- substr(strrep(pad, 5L), 1L, 100L)
+  pre <- substr(strrep(pad, 5L), 1L, 400L)
   shifts <- c(1L, 17L, 43L, 99L)
 
   # one indexed genome per (seed, shift); built once and reused across loci
@@ -211,7 +213,9 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
     key <- paste0(seed, "_", sh)
     if (is.null(frame_genomes[[key]])) {
       core <- syn_genome(seed = seed, n = 240L)$seq
-      contig <- paste0(substr(pre, 1L, sh), pad, core, pad)
+      # 400 + sh bases of left flank: longer than snp_template()'s 150-base
+      # window from every frame, so no frame reads a clipped window
+      contig <- paste0(substr(pre, 1L, sh), pre, core, pad)
       f <- tempfile("m5", fileext = ".fa")
       write_fasta(f, contig)
       frame_genomes[[key]] <- list(
@@ -224,9 +228,9 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
   design_frame <- function(seed, loc) {
     frames <- lapply(shifts, function(sh) frame_for(seed, sh))
     lapply(frames, function(fr) {
-      # the core base `loc` sits at contig position loc + 100 + sh
+      # the core base `loc` sits at contig position loc + 400 + sh
       suppressWarnings(tryCatch(
-        marker_design_at(fr$g, locus_at(fr$contig, loc + 100L + fr$sh), "snp"),
+        marker_design_at(fr$g, locus_at(fr$contig, loc + 400L + fr$sh), "snp"),
         error = function(e) e
       ))
     })
@@ -242,9 +246,10 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
     a[1L, ]
   }
 
-  # Cells measured by the widening sweep (4 seeds x 21 loci x 4 frames): 37 cells
-  # designed in all four frames, 36 identical, 1 divergent (seed 7, loc 40).
-  # A representative six are asserted here to keep the test cheap.
+  # Cells re-measured under the 400-base flank (7 cells x 4 frames, the six below
+  # plus seed 7 / loc 40 in the pinned block): every cell designs in all four
+  # frames and all four frames agree.  The six below stay as the cheap sweep; the
+  # pinned cell below is what guards the ranking itself.
   cells <- list(
     c(4L, 70L), c(6L, 110L), c(7L, 30L),
     c(7L, 80L), c(10L, 40L), c(10L, 100L)
@@ -267,57 +272,63 @@ test_that("ZW0 M5: the design search picks the same primers in any coordinate fr
       expect_identical(rows[[i]]$as_ref[[1L]], first$as_ref[[1L]], label = paste(label, "AS_ref"))
       expect_identical(rows[[i]]$as_alt[[1L]], first$as_alt[[1L]], label = paste(label, "AS_alt"))
       expect_identical(rows[[i]]$com[[1L]], first$com[[1L]], label = paste(label, "COM"))
+      # the amplicon length is what moved first under the old 100-base flank
+      # (core pos 30: 96 vs 76; core pos 40: 52 vs 62), so compare it too
+      expect_identical(
+        rows[[i]]$amplicon[[1L]], first$amplicon[[1L]],
+        label = paste(label, "amplicon")
+      )
       expect_equal(design_outcome(res[[i]]), design_outcome(res[[1L]]), label = label)
     }
   }
-  # a skip here would hide a broken fixture; the cells above are known designable
-  expect_gte(covered, 1L)
+  # a skip here would hide a broken fixture; every cell above was measured
+  # designable in all four frames, so a cell that stops designing fails here
+  # instead of silently dropping out of the comparison
+  expect_equal(covered, length(cells))
 
-  # seed 7 / core pos 40 is the ONE frame-sensitive cell, and it is named here so
-  # the test guards the ranking instead of hiding the divergence.  The 1-base
-  # lead-in changes which COM ring carries the best Tm: frame 1 swaps the 92 bp /
-  # COM Tm 60.24 assay ("COM Tm >= AS Tm" fails) for the 100 bp / COM Tm 60.69 one
-  # the other three frames pick (that row passes).  If a change makes every frame
-  # agree here, the fixture has been flattened and no longer probes the edge; if
-  # the frames drift apart on AS, this is where the drift surfaces.
-  divergent <- lapply(design_frame(7L, 40L), chosen)
-  expect_false(any(vapply(divergent, is.null, logical(1))),
+  # seed 7 / core pos 40 was the ONE frame-sensitive cell before №29 (its frame 1
+  # read a clipped 140-base left flank); it agrees in all four frames now.  Its
+  # exact pick is pinned per frame, so a ranking regression that moves all four
+  # frames together -- which cross-frame agreement cannot see -- still fails here.
+  res7 <- design_frame(7L, 40L)
+  pinned <- lapply(res7, chosen)
+  expect_false(any(vapply(pinned, is.null, logical(1))),
     label = "seed 7 core pos 40 is designable in every frame"
   )
-  if (!any(vapply(divergent, is.null, logical(1)))) {
+  if (!any(vapply(pinned, is.null, logical(1)))) {
     expect_identical(
-      unique(vapply(divergent, function(x) x$as_ref[[1L]], character(1))),
-      divergent[[1L]]$as_ref[[1L]],
-      label = "seed 7 core pos 40 AS_ref agrees across frames"
-    )
-    expect_identical(
-      unique(vapply(divergent, function(x) x$as_alt[[1L]], character(1))),
-      divergent[[1L]]$as_alt[[1L]],
-      label = "seed 7 core pos 40 AS_alt agrees across frames"
-    )
-    expect_identical(divergent[[1L]]$com[[1L]], "TCTCACGAATGTCCATCCCACAGT",
-      label = "seed 7 core pos 40 frame 1 COM"
+      vapply(pinned, function(x) x$as_ref[[1L]], character(1)),
+      rep("TAGTCTGCATTATACGAGACGCACGA", 4L),
+      label = "seed 7 core pos 40 AS_ref in every frame"
     )
     expect_identical(
-      vapply(divergent[2:4], function(x) x$com[[1L]], character(1)),
-      rep("TCACGAATGTCCATCCCACAGTGT", 3L),
-      label = "seed 7 core pos 40 frames 2-4 COM"
-    )
-    expect_identical(divergent[[1L]]$amplicon[[1L]], 92L,
-      label = "seed 7 core pos 40 frame 1 amplicon"
+      vapply(pinned, function(x) x$as_alt[[1L]], character(1)),
+      rep("TAGTCTGCATTATACGAGACGCACGC", 4L),
+      label = "seed 7 core pos 40 AS_alt in every frame"
     )
     expect_identical(
-      vapply(divergent[2:4], function(x) x$amplicon[[1L]], integer(1)),
-      rep(100L, 3L),
-      label = "seed 7 core pos 40 frames 2-4 amplicon"
+      vapply(pinned, function(x) x$com[[1L]], character(1)),
+      rep("TCACGAATGTCCATCCCACAGTGT", 4L),
+      label = "seed 7 core pos 40 COM in every frame"
+    )
+    expect_identical(
+      vapply(pinned, function(x) x$amplicon[[1L]], integer(1)),
+      rep(100L, 4L),
+      label = "seed 7 core pos 40 amplicon in every frame"
+    )
+    expect_identical(
+      vapply(res7, design_outcome, character(1)),
+      rep("doomed", 4L),
+      label = "seed 7 core pos 40 design outcome in every frame"
     )
   }
 })
 
 test_that("ZW0 M5 fixture: the shifts stay strictly inside the pad period", {
   # The M5 geometry above is non-degenerate only while every shift is smaller than
-  # the pad length; a shift equal to the period reuses the whole pad and drops a
-  # distinct frame.  Pin that here so a future edit cannot silently reintroduce it.
+  # the pad length; a shift equal to the period makes the repeated prefix a whole
+  # extra period and the frames stop being distinct offsets.  Pin that here so a
+  # future edit cannot silently reintroduce it.
   set.seed(11L)
   pad <- paste0(sample(c("A", "C", "G", "T"), 100L, TRUE), collapse = "")
   shifts <- c(1L, 17L, 43L, 99L)
