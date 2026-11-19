@@ -390,6 +390,89 @@ test_that("a relaxed structure floor still passes the structure checks (C5)", {
   }
 })
 
+# ---- C5: the shared bar, once -----------------------------------------------
+# marker_gate_relaxed_bar() reads the single shared KASP_GATE_FLOOR_PAIR, so the
+# bar is identical for every scheme that maps onto it.  Asserted once, for the
+# default scheme, rather than re-running the same bytes per scheme.
+test_that("the shared KASP bar relaxes for the default scheme (C5)", {
+  fp <- KASP_GATE_FLOOR_PAIR
+  tol <- KASP_LIMITS$footprint_dropout %||% 0.05
+  probe <- function(label) {
+    switch(label,
+      "amplicon length (bp)" = {
+        bp <- -fp[["gate_amplicon"]]
+        list(
+          at = c(KASP_LIMITS$amplicon[2L] + bp, KASP_LIMITS$amplicon[1L] - bp),
+          past = c(KASP_LIMITS$amplicon[2L] + bp + 1, KASP_LIMITS$amplicon[1L] - bp - 1)
+        )
+      },
+      "COM Tm >= AS Tm" = list(at = fp[["gate_tm"]], past = fp[["gate_tm"]] - 1),
+      "worst hairpin dG37" = {
+        d <- -fp[["gate_structure"]]
+        list(at = KASP_LIMITS$hairpin_dg - d, past = KASP_LIMITS$hairpin_dg - d - 1)
+      },
+      "worst homodimer dG37" = {
+        d <- -fp[["gate_structure"]]
+        list(at = KASP_LIMITS$homodimer_dg - d, past = KASP_LIMITS$homodimer_dg - d - 1)
+      },
+      "AS footprint dropout" = list(at = 2 * tol, past = 2 * tol + 1),
+      "COM footprint dropout" = list(at = 2 * tol, past = 2 * tol + 1)
+    )
+  }
+  relax <- lapply(marker_decision_stages("snp"), `[[`, "relax")
+  mapped <- intersect(unique(unname(unlist(relax))), names(KASP_GATE_CHECK))
+  # every relaxable snp gate has an acceptance bar: otherwise a relaxed winner is
+  # reported as an acceptance failure
+  expect_setequal(mapped, c(
+    "gate_structure", "gate_tm", "gate_amplicon",
+    "gate_as_footprint", "gate_com_footprint"
+  ))
+  for (gid in mapped) {
+    for (lab in KASP_GATE_CHECK[[gid]]) {
+      bar <- marker_gate_relaxed_bar(lab, KASP_LIMITS)
+      p <- probe(lab)
+      expect_true(grepl("relaxed", bar$limit), info = lab)
+      expect_true(all(bar$test(p$at)), info = paste0(lab, " at the floor"))
+      expect_false(any(bar$test(p$past)), info = paste0(lab, " past it"))
+    }
+  }
+})
+
+# ---- C5 across every scheme: which floors a scheme may read ----------------
+test_that("every scheme reads only its own floors, strictly negative (C5)", {
+  # a floor is the margin a soft gate may relax to.  Each scheme must read only
+  # floors keyed to its own gates (a shared constant that names another scheme's
+  # gate is a cross-scheme copy), each key must have one value, a hard gate keeps
+  # the 0 convention, and a soft gate's floor is finite and strictly negative.
+  for (sc in marker_schemes()$scheme) {
+    gn <- marker_decision_schema(sc)$nodes
+    gn <- gn[gn$kind == "gate", ]
+    ids <- sub("^[^:]+:gate:", "", gn$name)
+    fl <- dag_scheme_floors(sc, ids)
+    if (!length(fl$values) && !length(fl$stray)) next
+    expect_true(!length(fl$stray), info = paste0(
+      sc, ": floors for gates it does not own: ", paste(fl$stray, collapse = "; ")
+    ))
+    expect_true(!length(fl$conflict), info = paste0(
+      sc, ": conflicting floors: ", paste(fl$conflict, collapse = "; ")
+    ))
+    hard <- ids[gn$hard]
+    for (gid in names(fl$values)) {
+      margin <- unname(fl$values[[gid]])
+      if (gid %in% hard) {
+        expect_equal(margin, 0, info = paste0(sc, ": hard gate '", gid, "' not 0"))
+      } else {
+        expect_true(
+          is.finite(margin) && (margin < 0 || gid %in% DAG_FLOOR_ZERO_OK),
+          info = paste0(
+            sc, ": soft gate '", gid, "' floor must be finite and strictly negative"
+          )
+        )
+      }
+    }
+  }
+})
+
 # ---- the snp DAG, explicitly (gate set, order, hardness) --------------------
 test_that("the snp DAG obeys the contract and declares its gates and hardness", {
   expect_dag_invariants("snp")

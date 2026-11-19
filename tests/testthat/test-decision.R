@@ -235,9 +235,19 @@ test_that("site-level checks read the assay's site and linked skips", {
 # declared data.  Each scheme agent still adds its own explicit assertions; this
 # is the foundation's regression guard over all 20 at once.
 
-test_that("every scheme's DAG obeys the static contract (C1-C11)", {
+test_that("every scheme's DAG obeys the static contract (C1-C11, C14)", {
   for (sc in marker_schemes()$scheme) {
     expect_dag_invariants(sc)
+  }
+})
+
+test_that("every per-locus scheme is designable (C13)", {
+  # per_locus_schemes() feeds the single-locus ladder, so every id it lists must
+  # resolve to a designer; the registry declares no documentation-only escape
+  # hatch, so a ladder entry without one is a bug, not a documented exception
+  at <- function(x) paste0("per_locus_schemes(): ", x)
+  for (sc in per_locus_schemes()) {
+    expect_false(is.null(scheme_designer(sc)), info = at(sc))
   }
 })
 

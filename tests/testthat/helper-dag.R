@@ -1,7 +1,7 @@
 # =============================================================================
 #  helper-dag.R  --  the shared contract check for one scheme's decision DAG
 # =============================================================================
-#  One line asserts the statically checkable invariants C1-C11 of
+#  One line asserts the statically checkable invariants C1-C11, C14 of
 #  dev/dag-rebuild-plan.md section 3 for a scheme, so a scheme agent tests its
 #  own DAG by calling the helper inside a test whose single expression is that
 #  call, with the scheme id as the argument.
@@ -12,9 +12,10 @@
 #
 #  Scope: the invariants that are *statically* visible from the declared data are
 #  enforced here.  A few are only partly visible without running the designer
-#  (C5 floors vs KASP_LIMITS, C7 "actually evaluated", C8 hardness justified);
-#  those are checked where determinable and left to the scheme agent's explicit
-#  assertions, exactly as dev/dag-rebuild-plan.md section 6d requires.
+#  (C5 floors vs KASP_LIMITS, C7 "actually evaluated"); those are checked where
+#  determinable and left to the scheme agent's explicit assertions, exactly as
+#  dev/dag-rebuild-plan.md section 6d requires.  C13 (every per-locus scheme is
+#  designable) is asserted in test-decision.R, where the ladder is exercised.
 # =============================================================================
 
 # A scheme's declared stages, in pipeline order (built-in + discovered).
@@ -43,12 +44,87 @@ dag_ungated <- function(scheme) {
   }
 }
 
+# The soft gates whose declared floor is legitimately the placeholder 0: the
+# footprint margin depends on the limits/backend, so grade_assay_pairs() fills it
+# in at run time (R/marker_select.R) and the static constant must stay 0.
+DAG_FLOOR_ZERO_OK <- "gate_com_footprint"
+
+# The numeric `KASP_GATE_FLOOR_*` constant each scheme owns, spelled out rather
+# than derived from the scheme id: the two disagree often enough (snp -> _PAIR,
+# asq -> _AS, indel_size -> _INDEL_SIZE) that a derived name matches nothing and
+# a wholly mis-keyed constant would be filtered out instead of surfacing as
+# `stray`.  The `_LABEL*` constants are character and are not floors.  The C8
+# block checks that every value exists in the namespace and every key is a
+# registered scheme.
+DAG_SCHEME_FLOOR_CONSTANTS <- c(
+  snp = "KASP_GATE_FLOOR_PAIR",
+  asq = "KASP_GATE_FLOOR_AS",
+  indel_size = "KASP_GATE_FLOOR_INDEL_SIZE",
+  duplex = "KASP_GATE_FLOOR_DUPLEX",
+  lax = "KASP_GATE_FLOOR_LAX",
+  arms = "KASP_GATE_FLOOR_ARMS",
+  caps = "KASP_GATE_FLOOR_CAPS"
+)
+
+# The relaxed floors that apply to one scheme, keyed by gate id.  The scheme's
+# own sources are always read - the constant DAG_SCHEME_FLOOR_CONSTANTS names for
+# it (plus a derived `KASP_GATE_FLOOR_<SCHEME>` fallback that matches nothing
+# today) and the `gate_floor` map in its discovered spec - and so is every other
+# `KASP_GATE_FLOOR_*` numeric vector that names at least one of the scheme's
+# gates (a shared constant applies to whoever owns that gate; a per-scheme
+# constant must not be read by a scheme that does not own it).  Reading the own
+# sources even when every key is wrong is what makes a mistyped key visible as
+# `stray` instead of silently filtered out.
+# `stray` names declared keys that are not this scheme's gates, `conflict` names
+# keys two sources disagree about, and `counts` says how many sources declare
+# each key.
+dag_scheme_floors <- function(scheme, gate_ids) {
+  ns <- asNamespace("tidymarkers")
+  nms <- grep("^KASP_GATE_FLOOR_", ls(ns, all.names = TRUE), value = TRUE)
+  raw <- stats::setNames(lapply(nms, get, envir = ns), nms)
+  is_keyed_num <- function(x) {
+    is.numeric(x) && length(x) > 0L && length(names(x)) == length(x)
+  }
+  srcs <- c(raw, lapply(extra_scheme_defs(), `[[`, "gate_floor"))
+  srcs <- srcs[vapply(srcs, is_keyed_num, logical(1))]
+  own <- c(
+    unname(DAG_SCHEME_FLOOR_CONSTANTS[scheme]),
+    paste0("KASP_GATE_FLOOR_", gsub("[^A-Za-z0-9]", "", toupper(scheme))),
+    scheme
+  )
+  own <- own[!is.na(own)]
+  shared <- vapply(srcs, function(x) any(names(x) %in% gate_ids), logical(1))
+  srcs <- srcs[shared | names(srcs) %in% own]
+  empty <- list(
+    values = stats::setNames(numeric(0), character(0)),
+    stray = character(0), conflict = character(0),
+    counts = stats::setNames(integer(0), character(0))
+  )
+  if (!length(srcs)) {
+    return(empty)
+  }
+  flat <- unlist(unname(srcs), use.names = TRUE)
+  stray <- setdiff(unique(names(flat)), gate_ids)
+  flat <- flat[names(flat) %in% gate_ids]
+  # `counts` is the number of *sources* declaring a key (a repeat is a copy),
+  # while `conflict` is the number of distinct values (a disagreement).
+  counts <- table(names(flat))
+  spread <- tapply(unname(flat), names(flat), function(v) length(unique(v)))
+  list(
+    values = flat[!duplicated(names(flat))],
+    stray = stray,
+    conflict = names(spread)[spread > 1L],
+    counts = counts
+  )
+}
+
 #' Assert the statically checkable DAG invariants for one scheme
 #'
 #' Checks C1 (one criterion, one node), C2 (family-correct check membership),
 #' C4 (a failed hard gate dooms), C6 (both orders declared), C7 (declared gates
-#' are emitted), C9 (no `[lo, hi]` placeholder), C10 (the ungated list is honest)
-#' and C11 (acyclic, strictly downward, every endpoint known, a verdict).
+#' are emitted), C8 (hardness justified, soft gates floored), C9 (no `[lo, hi]`
+#' placeholder), C10 (the ungated list is honest), C11 (acyclic, strictly
+#' downward, every endpoint known, a verdict) and C14 (a tier is not a hard gate).
 #' @param scheme a scheme id (see [marker_schemes()]).
 #' @return the scheme id, invisibly.
 #' @keywords internal
@@ -143,6 +219,88 @@ expect_dag_invariants <- function(scheme) {
   })))
   if (is.null(declared)) declared <- character(0)
   expect_setequal(n$name[n$kind == "gate"], declared)
+
+  # ---- C8: hardness is justified ---------------------------------------------
+  # a hard gate must say why it cannot be relaxed; a soft gate must declare a
+  # floor, and a numeric floor is finite and strictly negative (a floor of 0
+  # would mean "never relaxed", i.e. hard) unless it is the run-time placeholder
+  # named in DAG_FLOOR_ZERO_OK.  A scheme with no soft gate passes trivially.
+  gate_nodes <- n[n$kind == "gate", ]
+  gate_ids <- sub("^[^:]+:gate:", "", gate_nodes$name)
+  hard_ids <- gate_ids[gate_nodes$hard]
+  soft_ids <- gate_ids[!gate_nodes$hard]
+  hard_lbl <- scheme_label("hard", hard_ids)
+  bad <- is.na(hard_lbl) | !nzchar(hard_lbl) # is.na first: nzchar(NA) is TRUE
+  expect_false(any(bad), info = at(paste0(
+    "hard gate without a reason: ", paste(hard_ids[bad], collapse = "; ")
+  )))
+  # the floor map must name real constants and real schemes: a typo would turn
+  # the `own` safety net into a name that reads nothing, so a wholly mis-keyed
+  # constant would be dropped instead of surfacing as `stray`
+  ns_names <- ls(asNamespace("tidymarkers"), all.names = TRUE)
+  missing_const <- DAG_SCHEME_FLOOR_CONSTANTS[
+    !(DAG_SCHEME_FLOOR_CONSTANTS %in% ns_names)
+  ]
+  expect_true(!length(missing_const), info = at(paste0(
+    "DAG_SCHEME_FLOOR_CONSTANTS names a missing constant: ",
+    paste(unname(missing_const), collapse = "; ")
+  )))
+  expect_true(
+    all(names(DAG_SCHEME_FLOOR_CONSTANTS) %in% marker_schemes()$scheme),
+    info = at("DAG_SCHEME_FLOOR_CONSTANTS names an unknown scheme")
+  )
+  fl <- dag_scheme_floors(scheme, gate_ids)
+  # a floor keyed to a gate the scheme does not own is a copy from another
+  # scheme: it would relax a gate this DAG never evaluates
+  expect_true(!length(fl$stray), info = at(paste0(
+    "floors for gates the scheme does not own: ", paste(fl$stray, collapse = "; ")
+  )))
+  # two applicable maps disagreeing about one gate is a bug: the ladder would
+  # relax to whichever constant the design path happened to read
+  expect_true(!length(fl$conflict), info = at(paste0(
+    "conflicting floors for: ", paste(fl$conflict, collapse = "; ")
+  )))
+  # one declaration per soft gate (a hard gate repeats the 0 convention in each
+  # stage's map, so only soft ids are tested here)
+  soft_multi <- intersect(names(fl$counts)[fl$counts > 1L], soft_ids)
+  expect_true(!length(soft_multi), info = at(paste0(
+    "soft gate declared a floor twice: ", paste(soft_multi, collapse = "; ")
+  )))
+  soft_lbl <- scheme_label("floor", soft_ids)
+  for (i in seq_along(soft_ids)) {
+    gid <- soft_ids[i]
+    hit <- match(gid, names(fl$values))
+    has_lbl <- !is.na(soft_lbl[i]) && nzchar(soft_lbl[i])
+    expect_true(
+      !is.na(hit) || has_lbl,
+      info = at(paste0("soft gate '", gid, "' declares no floor"))
+    )
+    if (!is.na(hit)) {
+      margin <- unname(fl$values[hit])
+      expect_true(
+        is.finite(margin) && (margin < 0 || gid %in% DAG_FLOOR_ZERO_OK),
+        info = at(paste0(
+          "soft gate '", gid, "' floor must be finite and strictly negative"
+        ))
+      )
+    }
+  }
+
+  # ---- C14: a tier label never collides with a hard gate ----------------------
+  # a tier is a rung that may be traded off; restating a hard gate as a tier
+  # advertises a choice the DAG does not have
+  tier_lbl <- n$label[n$kind == "tier"]
+  tier_lbl <- tier_lbl[!is.na(tier_lbl)]
+  hard_display <- c(hard_ids, unname(hard_lbl))
+  hard_display <- hard_display[!is.na(hard_display)]
+  keys <- dag_norm(hard_display)
+  hit <- dag_norm(tier_lbl) %in% keys
+  expect_false(any(hit), info = at(paste0(
+    "tier restates a hard gate: ",
+    paste0(tier_lbl[hit], " ~ ", hard_display[match(dag_norm(tier_lbl[hit]), keys)],
+      collapse = "; "
+    )
+  )))
 
   # ---- C9: no `[lo, hi]` placeholders ----------------------------------------
   placeholder <- grepl("\\[lo, ?hi\\]", c(crit$limit, n$detail))
