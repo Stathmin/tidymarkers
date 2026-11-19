@@ -53,6 +53,7 @@ edges:
   check   worst cross-dimer dG37             >= -9
   check   worst homodimer dG37               >= -9
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   check   probe spans variant                yes
   check   probe Tm - primer Tm (C)           >= 5 C
   check   ASP 3' discrimination              > 0
@@ -68,7 +69,8 @@ edges:
   worst hairpin dG37       -check -> worst cross-dimer dG37
   worst cross-dimer dG37   -check -> worst homodimer dG37
   worst homodimer dG37     -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> probe spans variant
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> probe spans variant
   probe spans variant      -check -> probe Tm - primer Tm (C)
   probe Tm - primer Tm (C) -check -> ASP 3' discrimination
   ASP 3' discrimination    -check -> extension 3' at variant

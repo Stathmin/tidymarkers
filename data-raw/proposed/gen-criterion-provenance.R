@@ -32,7 +32,8 @@ scheme_constant <- c(
 # thresholds applied to a number the package itself simulates
 simulator_threshold <- c(
   "discrimination", "as_dropout", "as_foot_dropout", "com_dropout",
-  "offtarget_hits", "in_silico_pcr", "family_crispr_offtarget",
+  "offtarget_hits", "in_silico_pcr", "in_silico_product_count",
+  "family_crispr_offtarget",
   "ssr:gate:gate_ssr_offtarget", "family_probe_asp_discrimination",
   "taqman:gate:gate_taqman_discrimination", "taqman:tier:tier1",
   "duplex:gate:gate_duplex_targets", "duplex:gate:gate_duplex_complement",

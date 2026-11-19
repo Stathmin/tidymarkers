@@ -45,6 +45,7 @@ edges:
   check   worst cross-dimer dG37             >= -9
   check   worst homodimer dG37               >= -9
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   check   restriction site defined           present
   check   restriction site separates alleles REF != ALT
   check   band gap (bp)                      >= 20 bp
@@ -61,7 +62,8 @@ edges:
   worst hairpin dG37       -check -> worst cross-dimer dG37
   worst cross-dimer dG37   -check -> worst homodimer dG37
   worst homodimer dG37     -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> restriction site defined
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> restriction site defined
   restriction site defined -check -> restriction site separates alleles
   restriction site separates alleles -check -> band gap (bp)
   band gap (bp)            -check -> digest sums to amplicon

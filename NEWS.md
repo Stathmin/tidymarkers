@@ -6,6 +6,31 @@
 
 ## 0.4.1 (в работе)
 
+### Вход в DAG-проверку числа продуктов in-silico ПЦР (`primer`) (2026-11-19)
+
+- **Класс изменения: `feat`.** В реестр критериев добавлена строка
+  `in_silico_product_count` («in-silico PCR products (n)», уровень
+  `specificity`, единицы `count`, границы `c(NA, 1)`): проходит только ровно
+  один продукт). Проверка `R/marker_checks.R`переиспользует уже
+  закешированный`amp_obs()` (`max(a$n_products)`), поэтому второй проход по
+  ампликонам не появляется; при отсутствии `$readout`наблюдаемое значение
+  не конечно, и`marker_evaluation_table()`штампует`unknown`, а не `pass`.
+- **Гейта и стадии у схемы нет.** Ярлык добавлен девятым элементом
+  `KASP_CHECK_PRIMER` (`R/marker_schemes.R`), но ни `stage`, ни `gate` для
+  него не заведены (инварианты C1/C7/C13): у схем без `$readout` проверка
+  навсегда остаётся `unknown` и не может двигать вердикт.
+- Регрессионный тест `test-criteria.R` («two in-silico products fail the
+  product-count check») падает и при удалении строки критерия, и при
+  удалении записи в `marker_design_checks()`. Счётчики разделения классов
+  обновлены: `KASP_CHECK_PRIMER` 8 → 9, всего ярлыков 57 → 58.
+- Провенанс: строка `inst/extdata/criterion_provenance.csv` с классом
+  `simulator_threshold`; генератор
+  `data-raw/proposed/gen-criterion-provenance.R` пополнен тем же `id`, поэтому
+  перегенерация воспроизводит строку байт в байт. Критерий читает весь контиг,
+  поэтому ярлык добавлен в список `contig_wide` инварианта M3
+  (`test-invariants.R`) и в таблицу `docs/decision-audit.md` («three
+  contig-wide criteria»).
+
 ### Мутационное покрытие трёх подсистем доведено до цели `ZY14` (2026-11-19)
 
 - **Класс изменения: `test` — `R/` не менялся.** Выжившие мутанты первого

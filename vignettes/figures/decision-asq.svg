@@ -85,21 +85,22 @@
 <path d="M223.656 959.44 L223.656 984.93" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
 <path d="M223.656 1001.91 L223.656 1017.4" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
 <path d="M223.656 1045.36 L223.656 1065.36" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M223.656 1082.34 L223.656 1102.34" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M223.656 1119.32 L223.656 1129.32" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M223.656 1082.34 L223.656 1092.34" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M223.656 1109.32 L223.656 1129.32" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
 <path d="M223.656 1146.3 L223.656 1156.3" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
 <path d="M280.259 1164.79 L303.276 1164.79 L303.276 789.07 L331 789.07" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 797.56 L381.719 807.56" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 824.54 L381.719 834.54" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 851.52 L381.719 861.52" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 878.5 L381.719 888.5" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 905.48 L381.719 915.48" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 932.46 L381.719 942.46" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 959.44 L381.719 979.44" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 1007.4 L381.719 1017.4" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 1045.36 L381.719 1065.36" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
-<path d="M381.719 1082.34 L381.719 1102.34" fill="none" stroke="#15803D" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-pass)"/>
-<path d="M421.032 1073.85 L424.032 1073.85 L424.032 1092.34 L420 1092.34 L420 1110.83 L423 1110.83" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
+<path d="M381.827 797.56 L381.827 807.56" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 824.54 L381.827 834.54" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 851.52 L381.827 861.52" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 878.5 L381.827 888.5" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 905.48 L381.827 915.48" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 932.46 L381.827 942.46" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 959.44 L381.827 979.44" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 1007.4 L381.827 1017.4" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 1045.36 L381.827 1065.36" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 1082.34 L381.827 1092.34" fill="none" stroke="#78716C" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-check)"/>
+<path d="M381.827 1109.32 L381.827 1129.32" fill="none" stroke="#15803D" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" marker-end="url(#arrow-pass)"/>
+<path d="M421.032 1100.83 L424.032 1100.83 L424.032 1119.32 L420 1119.32 L420 1137.81 L423 1137.81" fill="none" stroke="#B45409" stroke-width="0.75" stroke-linejoin="miter" stroke-linecap="butt" stroke-dasharray="3 2" marker-end="url(#arrow-fail)"/>
 <rect x="60" y="60" width="49.032" height="16.98" rx="2" fill="#F5F5F4" stroke="#57534E" stroke-width="0.8"/>
 <text x="65" y="71.64" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="65" y="71.64">candidate</tspan></text>
 <rect x="49" y="86.98" width="72.525" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
@@ -200,8 +201,8 @@
 <text x="172" y="1029.04" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="172" y="1029.04">inverted repeat (arms&gt;=4,</tspan><tspan x="172" y="1040.02">loop&lt;=6)</tspan></text>
 <rect x="182" y="1065.36" width="85.538" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
 <text x="187" y="1077" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="187" y="1077">worst hairpin dG37</tspan></text>
-<rect x="172" y="1102.34" width="105.524" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
-<text x="177" y="1113.98" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="177" y="1113.98">worst cross-dimer dG37</tspan></text>
+<rect x="172" y="1092.34" width="105.524" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="177" y="1103.98" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="177" y="1103.98">worst cross-dimer dG37</tspan></text>
 <rect x="173" y="1129.32" width="103.538" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
 <text x="178" y="1140.96" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="178" y="1140.96">worst homodimer dG37</tspan></text>
 <rect x="169" y="1156.3" width="111.259" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
@@ -224,12 +225,14 @@
 <text x="345" y="991.08" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="345" y="991.08">in-silico PCR (REF</tspan><tspan x="345" y="1002.06">1 / ALT 0)</tspan></text>
 <rect x="348" y="1017.4" width="70.029" height="27.96" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
 <text x="353" y="1029.04" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="353" y="1029.04">off-target exact</tspan><tspan x="353" y="1040.02">primer hits (n)</tspan></text>
-<rect x="345" y="1065.36" width="76.032" height="16.98" rx="2" fill="#DDD6FE" stroke="#57534E" stroke-width="0.8"/>
-<text x="350" y="1077" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="350" y="1077">all checks pass?</tspan></text>
-<rect x="328" y="1102.34" width="84.039" height="16.98" rx="2" fill="#BBF7D0" stroke="#57534E" stroke-width="0.8"/>
-<text x="333" y="1113.98" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="333" y="1113.98">usable ASQ assay</tspan></text>
-<rect x="423" y="1102.34" width="50.5" height="16.98" rx="2" fill="#FCA5A5" stroke="#57534E" stroke-width="0.8"/>
-<text x="428" y="1113.98" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="428" y="1113.98">DOOMED</tspan></text>
+<rect x="327" y="1065.36" width="112.028" height="16.98" rx="2" fill="#F3F4F6" stroke="#57534E" stroke-width="0.8"/>
+<text x="332" y="1077" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="332" y="1077">in-silico PCR products (n)</tspan></text>
+<rect x="345" y="1092.34" width="76.032" height="16.98" rx="2" fill="#DDD6FE" stroke="#57534E" stroke-width="0.8"/>
+<text x="350" y="1103.98" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="350" y="1103.98">all checks pass?</tspan></text>
+<rect x="328" y="1129.32" width="84.039" height="16.98" rx="2" fill="#BBF7D0" stroke="#57534E" stroke-width="0.8"/>
+<text x="333" y="1140.96" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="333" y="1140.96">usable ASQ assay</tspan></text>
+<rect x="423" y="1129.32" width="50.5" height="16.98" rx="2" fill="#FCA5A5" stroke="#57534E" stroke-width="0.8"/>
+<text x="428" y="1140.96" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="9" fill="#1C1917"><tspan x="428" y="1140.96">DOOMED</tspan></text>
 <rect x="14" y="1215.455" width="9" height="8" rx="1.5" fill="#F5F5F4" stroke="#78716C" stroke-width="0.8"/>
 <text x="27" y="1221.73" text-anchor="start" font-family="Liberation Sans, Arial, Helvetica, sans-serif" font-size="6.5" fill="#44403C"><tspan x="27" y="1221.73">start</tspan></text>
 <rect x="50.9" y="1215.455" width="9" height="8" rx="1.5" fill="#F3F4F6" stroke="#78716C" stroke-width="0.8"/>

@@ -389,7 +389,9 @@ marker_check_ways <- function() {
     "in_silico_pcr", "in-silico PCR (REF 1 / ALT 0)", "alignment", "boolean",
     "REF=1, ALT=0", NA, "package assumption", "in_silico_pcr", NA,
     "offtarget_hits", "off-target exact primer hits (n)", "specificity", "numeric", NULL,
-    "count", "package assumption", "ideogram_hits", NA
+    "count", "package assumption", "ideogram_hits", NA,
+    "in_silico_product_count", "in-silico PCR products (n)", "specificity", "numeric", NULL,
+    "count", "package assumption", "assay_amplicons", NA
   )
 }
 
@@ -940,7 +942,8 @@ marker_check_bounds <- function(limits) {
     discrimination = c(limits$discrimination, NA),
     # a categorical check: the allowed levels ARE the bound (Z0.4)
     as_mismatch_type = c("strong", "medium", "weak"),
-    offtarget_hits = c(NA, 1)
+    offtarget_hits = c(NA, 1),
+    in_silico_product_count = c(NA, 1)
   )
 }
 

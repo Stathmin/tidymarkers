@@ -173,6 +173,7 @@ CHECK_SHORT_MAP <- c(
   "COM footprint dropout" = "COM drop",
   "discrimination" = "discrim.",
   "in-silico PCR (REF 1 / ALT 0)" = "PCR",
+  "in-silico PCR products (n)" = "PCR products",
   "restriction site defined" = "site present",
   "restriction site separates alleles" = "site discrim.",
   "band gap (bp)" = "band gap",

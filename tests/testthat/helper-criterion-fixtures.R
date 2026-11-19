@@ -60,6 +60,7 @@ zw1_fail_fixtures <- function() {
   dpcr <- "test-dpcr.R"
   isz <- "test-indel-size.R"
   lax <- "test-lax.R"
+  crit <- "test-criteria.R"
   out <- list(
     zw1_fixture(
       "site_class", kasp,
@@ -162,6 +163,10 @@ zw1_fail_fixtures <- function() {
     zw1_fixture(
       "in_silico_pcr", kasp,
       "::each broken criterion flips the verdict to fail"
+    ),
+    zw1_fixture(
+      "in_silico_product_count", crit,
+      "::two in-silico products fail the product-count check"
     ),
     zw1_fixture(
       "offtarget_hits", kasp,

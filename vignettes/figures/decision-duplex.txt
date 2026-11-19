@@ -137,6 +137,7 @@ edges:
   check   AS 3' mismatch base pair           strong / medium / weak
   check   in-silico PCR (REF 1 / ALT 0)      REF=1, ALT=0
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   (reported, not re-selecting: a failed check flags the chosen marker)
 
 edges:
@@ -161,7 +162,8 @@ edges:
   discrimination           -check -> AS 3' mismatch base pair
   AS 3' mismatch base pair -check -> in-silico PCR (REF 1 / ALT 0)
   in-silico PCR (REF 1 / ALT 0) -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> all checks pass?
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> all checks pass?
   all checks pass?         -pass  -> usable duplex assay
   all checks pass?         -fail  -> DOOMED
 

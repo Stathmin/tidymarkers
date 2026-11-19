@@ -561,10 +561,7 @@ marker_design_at <- function(genome, snp, scheme, variants = NULL, haplotypes = 
   # locus-level designer and is documentation-only (C13).  Its criteria remain
   # evaluable - marker_design_checks(assay, scheme = "primer") and
   # marker_decision_graph(scheme = "primer") work on any assembled pair - they just
-  # are not a marker the rescue ladder can return.  The one check it still lacks
-  # is a pair-level "in-silico PCR: exactly one product" node; registering it
-  # belongs in marker_criteria.R/marker_schemes.R (a requested serial slot, not this
-  # file).
+  # are not a marker the rescue ladder can return.
   # one resolver for the built-in and discovered designers (see
   # scheme_designer()); the shared context is passed only to a designer that
   # declares it, so an existing scheme's designer never sees an extra argument

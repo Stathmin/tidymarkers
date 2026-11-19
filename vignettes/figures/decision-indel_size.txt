@@ -47,6 +47,7 @@ edges:
   check   worst cross-dimer dG37             >= -9
   check   worst homodimer dG37               >= -9
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   check   repeat unit (nt)                   2-4 nt
   check   repeat copies                      >= 5
   check   REF/ALT size difference (bp)       >= 3 bp
@@ -61,7 +62,8 @@ edges:
   worst hairpin dG37       -check -> worst cross-dimer dG37
   worst cross-dimer dG37   -check -> worst homodimer dG37
   worst homodimer dG37     -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> repeat unit (nt)
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> repeat unit (nt)
   repeat unit (nt)         -check -> repeat copies
   repeat copies            -check -> REF/ALT size difference (bp)
   REF/ALT size difference (bp) -check -> fragment size (bp)

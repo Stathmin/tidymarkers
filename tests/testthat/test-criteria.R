@@ -163,14 +163,14 @@ test_that("the check classes partition the registered checks", {
   expect_setequal(
     c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS, family_labels), labels
   )
-  # 8 marker-agnostic + 5 site + 14 allele-specific + 30 family-specific = 57
+  # 9 marker-agnostic + 5 site + 14 allele-specific + 30 family-specific = 58
   # (the 14th is `as_mismatch_type`, Z0.4: the terminal mismatch's Kwok class;
   # the 30th family check is `family_single_base`, §W)
-  expect_length(KASP_CHECK_PRIMER, 8L)
+  expect_length(KASP_CHECK_PRIMER, 9L)
   expect_length(KASP_CHECK_SITE, 5L)
   expect_length(KASP_CHECK_AS, 14L)
   expect_length(family_labels, 30L)
-  expect_length(labels, 57L)
+  expect_length(labels, 58L)
   # distinct classes: a base check is never also family-specific
   expect_length(intersect(c(KASP_CHECK_PRIMER, KASP_CHECK_SITE, KASP_CHECK_AS), family_labels), 0L)
   expect_length(intersect(KASP_CHECK_PRIMER, KASP_CHECK_SITE), 0L)
@@ -223,6 +223,16 @@ test_that("marker_design_checks returns exactly the registry's checks, in order"
     expect_true(all(ch$pass[ch$status == "pass"]), info = sc)
     expect_equal(ch$pass, ch$status == "pass", info = sc)
   }
+})
+
+test_that("two in-silico products fail the product-count check", {
+  mock <- crit_mock("primer")
+  mock$amplicons$n_products <- c(2L, 0L)
+  ch <- marker_design_checks(mock, scheme = "primer")
+  row <- ch[ch$criterion == "in-silico PCR products (n)", ]
+  expect_equal(row$observed, 2)
+  expect_equal(as.character(row$status), "fail")
+  expect_equal(row$limit, "<= 1")
 })
 
 test_that("a criterion's threshold and its rendered limit cannot diverge (Z2)", {

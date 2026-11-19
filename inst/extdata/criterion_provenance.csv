@@ -126,6 +126,7 @@
 "hrm:tier:tier1","jsbbs2018","named_source","source states the target."
 "hrm:tier:tier2","vavilov2024","named_source","source states the target."
 "in_silico_pcr","package assumption","simulator_threshold","the in-silico PCR (REF 1 / ALT 0) tolerance thresholds a number the package simulates, so no wet-lab paper can state it."
+"in_silico_product_count","package assumption","simulator_threshold","the in-silico PCR products (n) tolerance thresholds a number the package simulates, so no wet-lab paper can state it."
 "indel_size:gate:gate_indel_size_amplicon","indel_melon2025","named_source","source states the bar."
 "indel_size:gate:gate_indel_size_gap","ssr_gel2026","named_source","source states the bar."
 "indel_size:gate:gate_indel_size_structure","degenprime2024","named_source","source states the bar."

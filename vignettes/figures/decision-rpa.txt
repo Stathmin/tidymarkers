@@ -49,6 +49,7 @@ edges:
   check   worst cross-dimer dG37             >= -9
   check   worst homodimer dG37               >= -9
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   check   primer length (nt)                 30-35 nt
   check   THF off variant                    yes
   check   RPA probe spans variant            yes
@@ -64,7 +65,8 @@ edges:
   worst hairpin dG37       -check -> worst cross-dimer dG37
   worst cross-dimer dG37   -check -> worst homodimer dG37
   worst homodimer dG37     -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> primer length (nt)
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> primer length (nt)
   primer length (nt)       -check -> THF off variant
   THF off variant          -check -> RPA probe spans variant
   RPA probe spans variant  -check -> variant under primer/probe

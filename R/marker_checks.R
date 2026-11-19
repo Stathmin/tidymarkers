@@ -509,6 +509,9 @@ marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL, eng
     },
     "off-target exact primer hits (n)" = function() {
       list(observed = ot_obs(), pass = ot_pass())
+    },
+    "in-silico PCR products (n)" = function() {
+      list(observed = amp_obs(), pass = isTRUE(amp_obs() == 1L))
     }
   )
 

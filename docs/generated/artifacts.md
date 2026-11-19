@@ -38,7 +38,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `0f4f0d0da72f9035c475475a87ea6352`
+- output_hash: `60d5c2df0179d439f5d4782d92fd80b0`
 
 ## man/figures/decision-multiplex.svg
 
@@ -49,7 +49,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [README.md](../../README.md)
-- output_hash: `21955ac22f435fc22b774438119a975d`
+- output_hash: `41e3f342625258aad8e42d51832a819a`
 
 ## vignettes/figures/decision-snp.svg
 
@@ -60,7 +60,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `0f4f0d0da72f9035c475475a87ea6352`
+- output_hash: `60d5c2df0179d439f5d4782d92fd80b0`
 
 ## vignettes/figures/decision-indel.svg
 
@@ -71,7 +71,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `afac663aada1fe5fb22884ebd4f12236`
+- output_hash: `a91ac354227c44d141c981710f43d481`
 
 ## vignettes/figures/decision-multi.svg
 
@@ -82,7 +82,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `8aa439d8a721992e3d71a6bbe8aec6e4`
+- output_hash: `a97040921843954b64bbfa6c32b8a370`
 
 ## vignettes/figures/decision-duplex.svg
 
@@ -93,7 +93,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_duplex.R](../../R/marker_duplex.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `21955ac22f435fc22b774438119a975d`
+- output_hash: `41e3f342625258aad8e42d51832a819a`
 
 ## vignettes/figures/decision-lax.svg
 
@@ -104,7 +104,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_lax.R](../../R/marker_lax.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `317807d1c21ba4090743aec804a94ef7`
+- output_hash: `3497759bfe843839467521ef04d3786b`
 
 ## vignettes/figures/decision-asq.svg
 
@@ -115,7 +115,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_asq.R](../../R/marker_asq.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `0fbc41f741fb41fcd561040a39c75768`
+- output_hash: `553b745dc23e7b1fdc68c9bba9bf7ec6`
 
 ## vignettes/figures/decision-primer.svg
 
@@ -126,7 +126,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-kasp.Rmd](../../vignettes/markers-kasp.Rmd)
-- output_hash: `7c7a4f18968bd2a9f70139876a3dd845`
+- output_hash: `6e8737b860575948688ee7a91f4ee87b`
 
 ## vignettes/figures/decision-caps.svg
 
@@ -137,7 +137,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_caps.R](../../R/marker_caps.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `62f5efcd227194ef91f52de1fbee28c2`
+- output_hash: `ff5a6f24177d482ae8d24c491b799802`
 
 ## vignettes/figures/decision-arms.svg
 
@@ -148,7 +148,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_arms.R](../../R/marker_arms.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `394af74cc463853f360ae3af867bd878`
+- output_hash: `b652006b5b2fa353c7963dfb1d1f5764`
 
 ## vignettes/figures/decision-hrm.svg
 
@@ -159,7 +159,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_hrm.R](../../R/marker_hrm.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `4b6b8f878ca672d775751a7bb9d6eb9a`
+- output_hash: `5f86342e9780a856d23dfda22ec50f0b`
 
 ## vignettes/figures/decision-ssr.svg
 
@@ -170,7 +170,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_ssr.R](../../R/marker_ssr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `6e94100e4762ad7af7fd6ee23fb4fde7`
+- output_hash: `e5453a55e38979c4c2948c59749a323f`
 
 ## vignettes/figures/decision-indel_size.svg
 
@@ -181,7 +181,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_indel_size.R](../../R/marker_indel_size.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-gel.Rmd](../../vignettes/markers-gel.Rmd)
-- output_hash: `9baec29e2fb5bdadbaa4f6c87010526c`
+- output_hash: `86646668dcd815668f824e894125eeca`
 
 ## vignettes/figures/decision-taqman.svg
 
@@ -192,7 +192,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_taqman.R](../../R/marker_taqman.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `759c6e16df367e5c5a18df4ebef1e1a1`
+- output_hash: `ade2e6a60fe152af5b48e859fe42b940`
 
 ## vignettes/figures/decision-dpcr.svg
 
@@ -203,7 +203,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_dpcr.R](../../R/marker_dpcr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `d949791fde491951a67c8d4ebb39b356`
+- output_hash: `310f8bceb0cf2d05a8441f9882249b10`
 
 ## vignettes/figures/decision-snapshot.svg
 
@@ -214,7 +214,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_snapshot.R](../../R/marker_snapshot.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `80c3b735001ddda4d23535901df638e5`
+- output_hash: `fa1123e93b538a5d203ba7ac5ba8f573`
 
 ## vignettes/figures/decision-castpcr.svg
 
@@ -225,7 +225,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_castpcr.R](../../R/marker_castpcr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `f80aa3054d1ca994557a03a9acad6b0b`
+- output_hash: `bece7518d18def2766eb579dfb1d2399`
 
 ## vignettes/figures/decision-lamp.svg
 
@@ -236,7 +236,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_lamp.R](../../R/marker_lamp.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
-- output_hash: `9159591cdf66ea91780b386e3fc8bfb2`
+- output_hash: `516fee6ea44e8639c591103a04190589`
 
 ## vignettes/figures/decision-rpa.svg
 
@@ -247,7 +247,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_rpa.R](../../R/marker_rpa.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
-- output_hash: `18799c40d869e709808a5b496ca89892`
+- output_hash: `674f16fe9eb779952c1a791a9248d865`
 
 ## vignettes/figures/decision-crispr.svg
 
@@ -258,7 +258,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_crispr.R](../../R/marker_crispr.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
-- output_hash: `77055cc31fa5157dc072c9bd9817d725`
+- output_hash: `5049f1e930692763ee84be5de30db075`
 
 ## vignettes/figures/decision-sanger.svg
 
@@ -269,7 +269,7 @@ consumers.
 - code: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_sanger.R](../../R/marker_sanger.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - inputs: [R/marker_decision.R](../../R/marker_decision.R), [R/marker_select.R](../../R/marker_select.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_schemes.R](../../R/marker_schemes.R), [R/marker_scheme_registry.R](../../R/marker_scheme_registry.R)
 - docs: [vignettes/markers-crispr-sequencing.Rmd](../../vignettes/markers-crispr-sequencing.Rmd)
-- output_hash: `da9195d39680b4f4919d81dbd471908e`
+- output_hash: `2172856fd46932ce7680733397fa3a77`
 
 ## vignettes/figures/arms.svg
 

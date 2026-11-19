@@ -121,7 +121,10 @@ test_that("ZW0 M3: shifting the coordinate frame does not change a design verdic
 
   # Contig-wide criteria legitimately differ (different contig length); they are
   # named, not silently dropped.
-  contig_wide <- c("in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)")
+  contig_wide <- c(
+    "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)",
+    "in-silico PCR products (n)"
+  )
   keep <- setdiff(names(found$m1$evaluation), character())
   e1 <- found$m1$evaluation[!found$m1$evaluation$criterion %in% contig_wide, ]
   e2 <- found$m2$evaluation[!found$m2$evaluation$criterion %in% contig_wide, ]

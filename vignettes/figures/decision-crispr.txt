@@ -51,6 +51,7 @@ edges:
   check   worst cross-dimer dG37             >= -9
   check   worst homodimer dG37               >= -9
   check   off-target exact primer hits (n)   <= 1
+  check   in-silico PCR products (n)         <= 1
   check   PAM valid                          TTTV
   check   variant in seed                    yes
   check   guide spans variant                yes
@@ -66,7 +67,8 @@ edges:
   worst hairpin dG37       -check -> worst cross-dimer dG37
   worst cross-dimer dG37   -check -> worst homodimer dG37
   worst homodimer dG37     -check -> off-target exact primer hits (n)
-  off-target exact primer hits (n) -check -> PAM valid
+  off-target exact primer hits (n) -check -> in-silico PCR products (n)
+  in-silico PCR products (n) -check -> PAM valid
   PAM valid                -check -> variant in seed
   variant in seed          -check -> guide spans variant
   guide spans variant      -check -> guide/PAM conserved (population)

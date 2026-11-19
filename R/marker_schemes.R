@@ -49,7 +49,7 @@ KASP_CHECK_PRIMER <- c(
   "amplicon length (bp)", "longest homopolymer (bp)", "SSR (2-4 nt, >=3 copies)",
   "inverted repeat (arms>=4, loop<=6)", "worst hairpin dG37",
   "worst cross-dimer dG37", "worst homodimer dG37",
-  "off-target exact primer hits (n)"
+  "off-target exact primer hits (n)", "in-silico PCR products (n)"
 )
 
 # The 5 target-*site* checks: the KASP *selector* notions - the ALT-allele set,
