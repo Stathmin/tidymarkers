@@ -26,6 +26,7 @@ KASP_AGP10_branch_chr6_13.303311Mb,assay,discrimination,0.868,>= 0.5,pass,TRUE,D
 KASP_AGP10_branch_chr6_13.303311Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGP10_branch_chr6_13.303311Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGP10_branch_chr6_13.303311Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP10_branch_chr6_13.303311Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGP10_height_chr18_58.02Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGP10_height_chr18_58.02Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGP10_height_chr18_58.02Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -53,6 +54,7 @@ KASP_AGP10_height_chr18_58.02Mb,assay,discrimination,0.966,>= 0.5,pass,TRUE,DECI
 KASP_AGP10_height_chr18_58.02Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,unknown,FALSE,substitution pair not in Kwok 1990's table (no published class),feature
 KASP_AGP10_height_chr18_58.02Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGP10_height_chr18_58.02Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP10_height_chr18_58.02Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGP9_habit_chr19_44.43Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGP9_habit_chr19_44.43Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGP9_habit_chr19_44.43Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -80,6 +82,7 @@ KASP_AGP9_habit_chr19_44.43Mb,assay,discrimination,0.929,>= 0.5,pass,TRUE,DECIPH
 KASP_AGP9_habit_chr19_44.43Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGP9_habit_chr19_44.43Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGP9_habit_chr19_44.43Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP9_habit_chr19_44.43Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGP9_height_chr19_46.10Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGP9_height_chr19_46.10Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGP9_height_chr19_46.10Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -107,6 +110,7 @@ KASP_AGP9_height_chr19_46.10Mb,assay,discrimination,0.389,>= 0.5,fail,FALSE,DECI
 KASP_AGP9_height_chr19_46.10Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGP9_height_chr19_46.10Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGP9_height_chr19_46.10Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGP9_height_chr19_46.10Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGPO2_height2_chr19_51.07Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGPO2_height2_chr19_51.07Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGPO2_height2_chr19_51.07Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -134,6 +138,7 @@ KASP_AGPO2_height2_chr19_51.07Mb,assay,discrimination,0.976,>= 0.5,pass,TRUE,DEC
 KASP_AGPO2_height2_chr19_51.07Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,unknown,FALSE,substitution pair not in Kwok 1990's table (no published class),feature
 KASP_AGPO2_height2_chr19_51.07Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGPO2_height2_chr19_51.07Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_height2_chr19_51.07Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGPO2_height_chr19_49.74Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGPO2_height_chr19_49.74Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGPO2_height_chr19_49.74Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -161,6 +166,7 @@ KASP_AGPO2_height_chr19_49.74Mb,assay,discrimination,0.362,>= 0.5,fail,FALSE,DEC
 KASP_AGPO2_height_chr19_49.74Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGPO2_height_chr19_49.74Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGPO2_height_chr19_49.74Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_height_chr19_49.74Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGPO2_nodes_chr19_49.65Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGPO2_nodes_chr19_49.65Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGPO2_nodes_chr19_49.65Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -188,6 +194,7 @@ KASP_AGPO2_nodes_chr19_49.65Mb,assay,discrimination,0.374,>= 0.5,fail,FALSE,DECI
 KASP_AGPO2_nodes_chr19_49.65Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGPO2_nodes_chr19_49.65Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGPO2_nodes_chr19_49.65Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_nodes_chr19_49.65Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGPO2_seed_chr19_48.03Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGPO2_seed_chr19_48.03Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGPO2_seed_chr19_48.03Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -215,6 +222,7 @@ KASP_AGPO2_seed_chr19_48.03Mb,assay,discrimination,0.464,>= 0.5,fail,FALSE,DECIP
 KASP_AGPO2_seed_chr19_48.03Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGPO2_seed_chr19_48.03Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGPO2_seed_chr19_48.03Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO2_seed_chr19_48.03Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_AGPO8_protein_chr15_10.93Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_AGPO8_protein_chr15_10.93Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_AGPO8_protein_chr15_10.93Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -242,6 +250,7 @@ KASP_AGPO8_protein_chr15_10.93Mb,assay,discrimination,0.38,>= 0.5,fail,FALSE,DEC
 KASP_AGPO8_protein_chr15_10.93Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_AGPO8_protein_chr15_10.93Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_AGPO8_protein_chr15_10.93Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_AGPO8_protein_chr15_10.93Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_JOINT_protein_chr15_11.28Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_JOINT_protein_chr15_11.28Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_JOINT_protein_chr15_11.28Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -269,6 +278,7 @@ KASP_JOINT_protein_chr15_11.28Mb,assay,discrimination,0.868,>= 0.5,pass,TRUE,DEC
 KASP_JOINT_protein_chr15_11.28Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_JOINT_protein_chr15_11.28Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_JOINT_protein_chr15_11.28Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_JOINT_protein_chr15_11.28Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_DT2_flank_high_chr18_56.61Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_DT2_flank_high_chr18_56.61Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_DT2_flank_high_chr18_56.61Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -296,6 +306,7 @@ KASP_DT2_flank_high_chr18_56.61Mb,assay,discrimination,0.986,>= 0.5,pass,TRUE,DE
 KASP_DT2_flank_high_chr18_56.61Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"minimal terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_DT2_flank_high_chr18_56.61Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_DT2_flank_high_chr18_56.61Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_flank_high_chr18_56.61Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_DT2_flank_low_chr18_55.26Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_DT2_flank_low_chr18_55.26Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_DT2_flank_low_chr18_55.26Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -323,6 +334,7 @@ KASP_DT2_flank_low_chr18_55.26Mb,assay,discrimination,0.809,>= 0.5,pass,TRUE,DEC
 KASP_DT2_flank_low_chr18_55.26Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_DT2_flank_low_chr18_55.26Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_DT2_flank_low_chr18_55.26Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_flank_low_chr18_55.26Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity
 KASP_DT2_near_chr18_56.14Mb,site,target site class,,discriminable,pass,TRUE,biallelic,site
 KASP_DT2_near_chr18_56.14Mb,site,ALT alleles (n),1,>= 1,pass,TRUE,,site
 KASP_DT2_near_chr18_56.14Mb,site,linked variants skipped (n),,<= 0,unknown,,not evaluated: the panel carries no population variant table,site
@@ -350,3 +362,4 @@ KASP_DT2_near_chr18_56.14Mb,assay,discrimination,0.866,>= 0.5,pass,TRUE,DECIPHER
 KASP_DT2_near_chr18_56.14Mb,assay,AS 3' mismatch base pair,,strong / medium / weak,pass,TRUE,"severe terminal mismatch (Kwok 1990); discrimination is kinetics, not a binary",feature
 KASP_DT2_near_chr18_56.14Mb,assay,in-silico PCR (REF 1 / ALT 0),1,"REF=1, ALT=0",pass,TRUE,REF pair gives one exact product; ALT pair gives none,alignment
 KASP_DT2_near_chr18_56.14Mb,assay,off-target exact primer hits (n),1,<= 1,pass,TRUE,every primer has at most one exact genome hit,specificity
+KASP_DT2_near_chr18_56.14Mb,assay,in-silico PCR products (n),1,<= 1,pass,TRUE,,specificity

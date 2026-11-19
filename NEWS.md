@@ -6,6 +6,19 @@
 
 ## 0.4.1 (в работе)
 
+### Соевая панель догоняет реестр критериев (2026-11-19)
+
+- **Класс изменения: фикстура и тест; `R/` не менялся.** `c014fd7` добавил 28-й
+  критерий `role == "check"` (`in_silico_product_count`), поэтому
+  `inst/extdata/soybean_worked_panel_kasp_gates.csv` пересобран движком
+  (`data-raw/soybean_worked_panel.R`): 13 наборов × 28 = 364 строки, по одной
+  `in-silico PCR products (n)` на набор; прочие вердикты не изменились
+  (диф — только +13 строк). `test-plot-methods.R` больше не пинует число
+  строк: `n_check` берётся из `marker_criteria(scheme = "caps")`.
+- Проверка: `test-plot-methods.R`, `test-soybean-worked-panel.R`,
+  `test-criteria.R`, `test-z8-outcomes.R` — `[ FAIL 0 ]`; `styler` и `lintr`
+  чисты.
+
 ### Экспорт `.docx` стал проверяемым: `officer` поставлен (`ZY8`) (2026-11-19)
 
 - **Класс изменения: окружение и доказательство; `R/` не менялся.**
@@ -1643,7 +1656,7 @@ NULL)` идёт через новый адаптер, поэтому флаг н
   ориентация REF/ALT — из точного хита A1 и основания генома, on/off-цели — из
   окна AS, in-silico PCR — из точного продукта) и прогнаны через
   `marker_design_checks(scheme = "snp")`; Tm — по `SantaLucia1998-2`, модели,
-  которой соответствует напечатанный Tm. Результат — 351 строка
+  которой соответствует напечатанный Tm. Результат — 364 строки
   `soybean_worked_panel_kasp_gates.csv`. Off-target и in-silico PCR проходят
   все 13; провалы: `COM Tm >= AS Tm` 11/13, дискриминация < 0.5 у 5,
   ампликон > 100 п.н. у 4, AS GC и гомополимер — по 4, SSR и инвертированные

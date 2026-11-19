@@ -97,8 +97,10 @@ test_that("marker_design_checks evaluates a non-KASP marker", {
     class = "marker_caps"
   )
   ch <- marker_design_checks(x, scheme = "caps")
-  # 13 generic/restriction rows + the §W `target is a single-base substitution`
-  expect_equal(nrow(ch), 14L)
+  # the row set is the registry's check rows for the scheme; deriving it keeps a
+  # newly registered criterion from silently reddening this test
+  n_check <- sum(marker_criteria(scheme = "caps")$role == "check")
+  expect_equal(nrow(ch), n_check)
   expect_true(all(c("criterion", "observed", "limit", "pass", "level") %in% names(ch)))
   expect_true("amplicon length (bp)" %in% ch$criterion)
   expect_s3_class(marker_decision_graph(x, scheme = "caps"), "tbl_graph")
