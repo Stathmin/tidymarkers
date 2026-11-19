@@ -38,8 +38,23 @@ outcome_fixture <- function(dir) {
   dir
 }
 
-test_that("contracts are on under load_all() and the option overrides both ways", {
+# `R CMD check` runs this file against an installed build, where the dev-mode
+# default is off (testthat does not put `pkgload` on `loadedNamespaces()`), so
+# nothing would be checked.  The option is the documented escape hatch: each
+# block that needs the contracts opens the gate for its own body.
+contracts_on <- function() {
+  # `.local_envir` is the caller's frame: the default would restore the option
+  # as soon as this helper returns.
+  withr::local_options(tidymarkers.contracts = TRUE, .local_envir = parent.frame())
+}
+
+test_that("the contracts option overrides the dev-mode default both ways", {
+  contracts_on()
   expect_true(contracts_enabled())
+  expect_identical(
+    withr::with_options(list(tidymarkers.contracts = NULL), contracts_enabled()),
+    in_dev_mode()
+  )
   expect_false(withr::with_options(list(tidymarkers.contracts = FALSE), contracts_enabled()))
   expect_true(withr::with_options(list(tidymarkers.contracts = TRUE), contracts_enabled()))
 })
@@ -63,6 +78,7 @@ test_that("marker_contract names its caller, not itself, in the error call", {
 })
 
 test_that("pick_target_snp fails its own precondition, not downstream", {
+  contracts_on()
   f <- target_fixture()
   broken <- f$variants[, c("id", "chrom", "pos")]
   err <- expect_contract_error(
@@ -81,6 +97,7 @@ test_that("pick_target_snp fails its own precondition, not downstream", {
 })
 
 test_that("assemble_kasp_assay fails its own precondition, not downstream", {
+  contracts_on()
   f <- snp_fixture()
   bad <- f$snp
   bad$pos <- 0L
@@ -94,6 +111,7 @@ test_that("assemble_kasp_assay fails its own precondition, not downstream", {
 })
 
 test_that("marker_record_outcome fails its own precondition, not downstream", {
+  contracts_on()
   dir <- withr::local_tempdir()
   writeLines('{"schema": "tidymarkers/artefact@1"}', fs::path(dir, "artefact.json"))
   err <- expect_contract_error(marker_record_outcome(dir, "works"), "marker_record_outcome")
@@ -107,6 +125,7 @@ test_that("marker_record_outcome fails its own precondition, not downstream", {
 })
 
 test_that("the contracts do not fire on a scheme that legitimately designs nothing", {
+  contracts_on()
   withr::local_envvar(LANGUAGE = "en")
   f <- target_fixture()
   expect_warning(
@@ -119,6 +138,7 @@ test_that("the contracts do not fire on a scheme that legitimately designs nothi
 })
 
 test_that("a valid pick_target_snp keeps its return shape", {
+  contracts_on()
   f <- target_fixture()
   tgt <- pick_target_snp(f$variants, f$genome, f$gene, specificity_candidates = 0L)
   expect_s3_class(tgt, "tbl_df")
@@ -132,6 +152,7 @@ test_that("a valid pick_target_snp keeps its return shape", {
 })
 
 test_that("a valid assay keeps the completeness fields the contract checks", {
+  contracts_on()
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   a <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, flank = 150L))
@@ -144,6 +165,7 @@ test_that("a valid assay keeps the completeness fields the contract checks", {
 })
 
 test_that("a recorded outcome is readable back through marker_outcomes()", {
+  contracts_on()
   dir <- withr::local_tempdir()
   dir <- outcome_fixture(dir)
   out <- marker_record_outcome(dir, "works")

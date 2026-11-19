@@ -73,6 +73,7 @@ Suggests:
     Rbowtie,
     Rsamtools,
     hedgehog,
+    igraph,
     ensembldb,
     rBLAST,
     systemfonts,
