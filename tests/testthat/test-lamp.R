@@ -276,10 +276,14 @@ test_that("loop primers are designed by default and LB starts one base past B2",
   # still place it (the default is TRUE), and it is the window one base past the
   # B2 arm's genomic end.
   f <- snp_fixture(pos = 350L, seed = 86L)
-  m <- suppressWarnings(design_lamp_marker(f$genome, f$snp, flank = 150L))
-  m_true <- suppressWarnings(
-    design_lamp_marker(f$genome, f$snp, flank = 150L, loop_primers = TRUE)
+  w <- capture_warnings(m <- design_lamp_marker(f$genome, f$snp, flank = 150L))
+  expect_length(w, 1L)
+  expect_match(w[[1L]], "LAMP primer-set geometry check failed", fixed = TRUE)
+  w_true <- capture_warnings(
+    m_true <- design_lamp_marker(f$genome, f$snp, flank = 150L, loop_primers = TRUE)
   )
+  expect_length(w_true, 1L)
+  expect_match(w_true[[1L]], "LAMP primer-set geometry check failed", fixed = TRUE)
   expect_true("LB" %in% names(m$primers))
   expect_identical(m$primers, m_true$primers)
   expect_identical(m$primers$LB, "AATTAGCTACAGGCGTGGGATC")
@@ -301,7 +305,9 @@ test_that("the strict dimer rung keeps zero slack and is reported as relaxed", {
   # is returned by the last rung and `relaxed` names both lowered soft gates.
   # A rung that widened the strict screen would accept a different outer pair.
   f <- snp_fixture(seed = 25L)
-  m <- suppressWarnings(design_lamp_marker(f$genome, f$snp, flank = 150L))
+  w <- capture_warnings(m <- design_lamp_marker(f$genome, f$snp, flank = 150L))
+  expect_length(w, 1L)
+  expect_match(w[[1L]], "3' end folds back on an internal region", fixed = TRUE)
   expect_identical(unname(m$relaxed), c("gate_lamp_outer_tm", "gate_lamp_cross_dimer"))
   expect_identical(unname(m$amplicon$start), 213L)
 })

@@ -197,7 +197,10 @@ test_that("a below-floor design reaches the second pass instead of being doomed"
     discrimination = 0.1
   )
   local_mocked_bindings(design_as_primers = function(...) low, .package = "tidymarkers")
-  m <- suppressWarnings(design_arms_marker(genome, snp, flank = 250L))
+  w <- capture_warnings(m <- design_arms_marker(genome, snp, flank = 250L))
+  expect_length(w, 2L)
+  expect_match(w[[1L]], "No tetra-primer set's outer pair gives a single in-silico PCR product", fixed = TRUE)
+  expect_match(w[[2L]], "least-bad", fixed = TRUE)
   expect_s3_class(m, "marker_arms")
   expect_true("gate_arms_disc" %in% m$selection$violated)
 })
