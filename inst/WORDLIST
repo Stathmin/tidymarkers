@@ -17,6 +17,8 @@ ALTs
 amplicon
 amplicon's
 amplicons
+anonymisation
+Anonymised
 antepenultimate
 arabidopsis
 artefact
@@ -30,6 +32,7 @@ ASQ's
 athaliana
 ausubel
 aut
+BAM
 barbano
 bcf
 behaviour
@@ -39,12 +42,14 @@ biallelic
 biocparallel
 biomart
 bionet
+Biopython
 biostrings
 bip
 blanco
 blast's
 BLAST's
 botstein's
+bowtie
 bp
 breakends
 breslauer
@@ -103,6 +108,7 @@ ddNTP
 de
 decipher's
 DECIPHER's
+defline
 deflines
 designable
 destabilises
@@ -112,8 +118,10 @@ deterministically
 dg
 dG
 dieffenbach
+dimerisation
 dimerise
 dimers
+dinucleotide
 dinucleotides
 dkasp
 dKASP
@@ -126,6 +134,7 @@ dnastringset
 DNAStringSet
 dntp
 dNTP
+docx
 dow
 downloader
 dpcr
@@ -138,6 +147,7 @@ dUTP
 dx
 easykasp
 EasyKASP
+effector's
 electropherogram
 electropherograms
 empts
@@ -147,6 +157,7 @@ ensembldb
 et
 exo
 exonuclease
+ExperimentHub
 extendability
 fam
 fanis
@@ -163,6 +174,7 @@ forcats
 fq
 fs
 gaudet
+Gb
 gc
 genbank
 GenBank
@@ -209,6 +221,7 @@ homozygote
 homozygotes
 honoured
 honours
+hostname
 hotzone
 hrm
 https
@@ -249,6 +262,7 @@ kutyavin
 kwok
 kwok's
 labelled
+LbuCas
 len
 lexicographically
 lf
@@ -263,6 +277,7 @@ LwaCas
 macleod
 MacLeod
 maf
+maintainer's
 materialised
 maths
 maximise
@@ -270,6 +285,7 @@ maximised
 maximising
 mcol
 mcols
+MCP
 medrano
 meilink
 memoise
@@ -309,6 +325,7 @@ neighbour
 neighbouring
 nei's
 nfo
+nM
 nn
 nna
 normalisation
@@ -332,6 +349,7 @@ orcid
 orderable
 o'sullivan
 O'Sullivan
+os
 owczarzy
 pam
 pams
@@ -356,6 +374,7 @@ plantsmart
 plex
 plexity
 pmc
+polyline
 polymarker
 PolyMarker
 polymelt
@@ -381,6 +400,7 @@ qpcr
 qPCR
 quan
 ragg
+RAS
 rblast
 rBLAST
 rdf
@@ -402,6 +422,7 @@ roxygen
 rpa
 rpa's
 RPA's
+RPC
 rprimer
 rsamtools
 rsqlite
@@ -411,6 +432,7 @@ runnable
 sanger
 santalucia
 SantaLucia
+schema's
 schildkraut
 screener
 sd
@@ -443,6 +465,7 @@ stabilise
 stabiliser
 stabilising
 stathmin
+stdin
 stringr
 subgenome
 subgenomes
@@ -450,7 +473,9 @@ subprocess
 subprocesses
 subread
 sugimoto
+summarises
 summarizedexperiment
+synthesised
 systemfonts
 systemrequirements
 tabix
@@ -499,6 +524,8 @@ ungapped
 ungated
 unparsable
 unphased
+unrepresentable
+unscreened
 unsourced
 utr
 uvsx
@@ -511,11 +538,14 @@ vep
 vignettebuilder
 VNIISB
 vroom
+WIPO
 withr
 wittwer
+XSD
 Zenodo
 zhang
 zw
+ZY
 zygosity
 δ
 δct

@@ -6,6 +6,43 @@
 
 ## 0.4.1 (в работе)
 
+### Пик RSS снимается из `/proc` в dev-скриптах (2026-11-19)
+
+- **Класс изменения: `dev` — `R/` не менялся.**
+  `capabilities("profmem")` на `/opt/R-4.6.1` = `FALSE`, поэтому
+  `bench::mark()$mem_alloc` = `NA` и прежний замер памяти ничего не
+  показывал. Новый `dev/proc-mem.R` читает `VmHWM` из
+  `/proc/self/status` (`proc_peak_rss_kb()`, `NA_real_`, когда строки нет) и
+  форматирует `"n/a"` или `"X.Y MB"` (`fmt_peak_rss()`).
+- `dev/bench.R` печатает `peak RSS: <MB>` после таблицы и до
+  `object sizes`; при пустом `mem_alloc` печатает одну строку-оговорку и
+  берёт `bytes` из разницы `lobstr::mem_used()` (прирост кучи за кейс, не
+  `mem_alloc`). CSV остаётся `fn,ms,bytes`, `dev/bench-baseline.csv` намеренно не
+  пересчитан.
+- `dev/test.R` печатает `- peak RSS: <MB>` сразу после `- memory delta:`; в
+  параллельном прогоне строка получает суффикс ` (driver process only)`, как у
+  соседних `- memory delta:`/`- timings:`.
+- Проверка: пробный прогон — `dev/bench.R` → `peak RSS: 684.7 MB` (включает
+  `load_all` и TAIR10-фикстуру), `dev/test.R dev-reporter` → `- peak RSS: 478.6 MB`;
+  обе цифры сняты на TAIR10, не на пшенице. Коммит `ad2629b`.
+
+### Гейт мисматчей CRISPR по длине спейсера (`Z5.2`) (2026-11-19)
+
+- **Класс изменения: `feat`.** `SPECIFICITY_POLICIES$crispr`
+  (`R/marker_specificity.R`) получает две ключевые величины:
+  `spacer_len_max_mismatch` (`16` → 0, `20` → 1, `23` → 2, `28` → 0 мисматчей)
+  и `spacer_len_central` (`20` → `c(7, 9)`).
+- `specificity_policy()` и `specificity_verdict()` принимают `spacer_len =
+  NULL`; незнакомая длина не угадывается, а падает на общий `max_mismatch = 5`
+  с `spacer_len_known = FALSE`. `central_violated()` свёрнут в
+  `pcr_products_tolerated()`.
+- RPA/KASP/LAMP/HRM остаются на общей шкале: пер-семейной
+  предсказуемой величины у них нет (блокер `Z5.2` в `ROADMAP.md`),
+  поэтому «модель на семейство» закрыта там, где её даёт
+  физика.
+- Проверка: `test-specificity.R` +136 строк; `Rscript dev/test.R specificity` —
+  pass 346, fail 0. Коммит `669161b`.
+
 ### Вход в DAG-проверку числа продуктов in-silico ПЦР (`primer`) (2026-11-19)
 
 - **Класс изменения: `feat`.** В реестр критериев добавлена строка

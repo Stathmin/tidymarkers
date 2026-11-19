@@ -238,10 +238,12 @@ declarative-only). Already done relative to this document:
 | Agent 2 task 3      | per-scheme stage constants already live in their own files (`R/marker_caps.R:42`, `R/marker_arms.R:38`, `R/marker_hrm.R:50`, `R/marker_duplex.R:49`, `R/marker_sanger.R:93`, `R/marker_asq.R:139`), and `R/marker_stages.R` is the single built-in stage table |
 | C1, C7, C9          | no duplicate labels, every scheme's gates are emitted, no placeholder limits                                                                                                                                                                                   |
 
-The static helper does **not** cover C5 (relaxed winner still passes), C8 (hardness
+The static helper did **not** cover C5 (relaxed winner still passes), C8 (hardness
 justified), C13 (reachability and status stamping beyond `as`/`pair`) or C14 (non-vacuous
-tiers). Those are the real remaining work. Re-audit each scheme before briefing Agents 3–10
-and do not hand them §8's defect list as if it were current.
+tiers) when this was written. All four are enforced now: commit `4be0b7c` widened
+`tests/testthat/helper-dag.R` (C8 at `:223`, C14 at `:289`) and added the C5 row to
+`test-selection.R` and the C13 loop to `test-decision.R:244`; see “Status — §8 closed”
+below. Do not hand §8's defect list to a new agent as if it were current.
 
 ---
 
@@ -427,6 +429,46 @@ also in `KASP_UNGATED_CHECKS` (C10). `indel_size`: `gate_indel_size_gap` is soft
 designer hard-rejects `< min_gap` (unreachable rung); both hard gates (`structure`,
 `unique`) are never enforced; `gate_indel_size_unique` conflicts with `KASP_UNGATED_CHECKS`
 (C10).
+
+### Status — §8 closed (2026-11-19)
+
+The briefs above are the static audit's *pre-rebuild* view. They are kept as the
+record of what was wrong, not as a task list: every row is now either fixed in
+`R/` or pinned by a test that fails if it regresses. The end-to-end guard is
+`tests/testthat/test-decision.R:238`, which runs `expect_dag_invariants()` over
+`marker_schemes()` (all 20) for C1–C11 and C14, and `:244`, which checks C13
+(`scheme_designer()` resolves) over `per_locus_schemes()`. C12 is pinned by the
+constructor signature row in the status delta above. Each scheme also carries
+its own explicit call, so a failure names the scheme:
+
+| Scheme | Own assertion |
+| --- | --- |
+| `snp` | `test-selection.R:478` |
+| `indel` | `test-indel.R:74` |
+| `multi` | `test-mnp.R:70` |
+| `primer` | `test-decision.R:100` |
+| `duplex` | `test-duplex.R:182` |
+| `asq` | `test-asq.R:10` |
+| `lax` | `test-lax.R:248` |
+| `caps` | `test-caps.R:171` |
+| `arms` | `test-arms.R:130` |
+| `hrm` | `test-hrm.R:91` |
+| `castpcr` | `test-castpcr.R:152` |
+| `crispr` | `test-crispr.R:213` |
+| `rpa` | `test-rpa.R:147` |
+| `lamp` | `test-lamp.R:236` |
+| `dpcr` | `test-dpcr.R:145` |
+| `taqman` | `test-taqman.R:147` |
+| `snapshot` | `test-snapshot.R:129` |
+| `sanger` | `test-sanger.R:226` |
+| `ssr` | `test-ssr.R:130` |
+| `indel_size` | `test-indel-size.R:113` |
+
+C5, C8, C13 and C14 — the four the delta table called “the real remaining work” —
+landed as test-only changes in `4be0b7c`, with no `R/` edit, because the tree had
+already converged on the contract; the commit only made the silent half
+enforced. Anything still listed as a “blocker” in a brief above is therefore a
+property of the host or of the underlying physics, not an open code defect.
 
 ---
 

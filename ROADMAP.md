@@ -1216,15 +1216,26 @@ sites. Детали — `NEWS.md`.
 - [x] **`Z5.1` Position-aware off-target.** `primer_hit_table()` →
       `mismatch_profile()` + `plus_to_primer()`; 3′-терминальный промах штраф
       **12**, серединный — **1**; `test-specificity-orientation.R` (36 pass).
-- [ ] **`Z5.2` Family-specific mismatch models.** RPA (несколько мисматчей),
+- [x] **`Z5.2` Family-specific mismatch models.** RPA (несколько мисматчей),
       CRISPR (seed) и KASP (3′-якорь) сведены к одной политике.
     - правка: `specificity_policy()` — модель на семейство.
     - проверка: `test-specificity.R` по семействам.
-    - блокер: нет пер-семейной предсказуемой величины. CRISPR — гейт по числу
-      мисматчей/длине спейсера (3 мисматча в 23-nt → 11.0 % WT; 28-nt не
-      различает одиночный), не fold-сигнал. RPA — только бинарная вероятность
-      0.59–0.984. LAMP — бинарно + Tt. HRM — dTm локус-специфичен. CAPS — оси нет.
+    - блокер (на момент планирования): нет пер-семейной предсказуемой величины.
+      CRISPR — гейт по числу мисматчей/длине спейсера (3 мисматча в 23-nt →
+      11.0 % WT; 28-nt не различает одиночный), не fold-сигнал. RPA — только
+      бинарная вероятность 0.59–0.984. LAMP — бинарно + Tt. HRM — dTm
+      локус-специфичен. CAPS — оси нет.
     - следствие: `specificity_verdict()` отвечает одной шкалой на разной физике.
+    - закрыто 2026-11-19: CRISPR-ветка — `SPECIFICITY_POLICIES$crispr`
+      (`R/marker_specificity.R`): `spacer_len_max_mismatch` (16/20/23/28 →
+      0/1/2/0 мисматчей) и `spacer_len_central` (`20` = c(7, 9)); незнакомая
+      длина падает на `max_mismatch = 5` с `spacer_len_known = FALSE`, а не
+      угадывает. `specificity_policy()`/`specificity_verdict()` принимают
+      `spacer_len = NULL`. RPA/KASP/LAMP/HRM остаются на общей шкале —
+      пер-семейной предсказуемой величины у них нет (блокер выше), поэтому
+      «модель на семейство» закрыта там, где физика её даёт. Коммит `669161b`;
+      `test-specificity.R` +136 строк; `dev/test.R specificity` — pass 346,
+      fail 0.
 
 ### Z6. Популяционный слой [P1]
 
@@ -1970,9 +1981,15 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
   экстраполяция 1.34 Б/п.н. с Chr1 TAIR10 (`NEWS.md:692`,
   `R/marker_bowtie.R:16`), не замер.
   проверка: `test-batch.R`; тайминги 6 SNP выше.
-  блокер: код — нет; пик памяти на этом хосте не снимается (`bench`
-  `mem_alloc` пуст), пшеничный замер сборки и запроса — фикспур 16 Гб,
-  он же `ZX3`.
+  блокер: код — нет; пшеничный замер сборки и запроса — фикспур 16 Гб, он же
+  `ZX3`. Пик памяти теперь снимается: `capabilities("profmem")` на
+  `/opt/R-4.6.1` = `FALSE`, поэтому `bench::mark()$mem_alloc` = `NA`, и
+  `dev/bench.R`/`dev/test.R` читают `VmHWM` из `/proc/self/status`
+  (`dev/proc-mem.R`, коммит `ad2629b`). На пробном прогоне `dev/bench.R`
+  печатает `peak RSS: 684.7 MB`, `dev/test.R` — `peak RSS: 478.6 MB`; обе
+  цифры на TAIR10-фикстуре, не на 16 Гб пшенице. `dev/bench-baseline.csv`
+  не пересчитывался: без `profmem` колонка `bytes` — прирост кучи за кейс,
+  а не `mem_alloc`.
   следствие: очередь из сотен локусов идёт одним батч-вызовом на k ядрах
   (тот же отдельный пункт выше). Арифметика
   масштаба, из уже измеренного: 40.5 с на локус (TAIR10, 1 ядро) = индексный
@@ -2372,12 +2389,21 @@ provenance_required)`: review queue candidate-обновлений с полны
   `marker_patent_validate()`; шаблоны
   `inst/templates/patent/{application.md,defensive_publication.md}`;
   `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
-  коммит `5a5a29e`. ST.26 XML и markdown-шаблоны есть; `.docx` — остаток.
+  коммит `5a5a29e`. ST.26 XML, markdown-шаблоны и `.docx` есть:
+  `marker_patent_export(format = "docx")` → `patent_docx_write()`
+  (`R/marker_patent.R:495`, через `officer::read_docx()`), покрыт
+  `test-patent.R:237` (обязательные секции docx) и `:255` (аборт без
+  `officer`); оба теста под `skip_if_not_installed("officer")` и на этом хосте
+  пропускаются, а не падают.
   блокер: `.docx` требует `officer` и его зависимости `zip`/`uuid`/`gdtools`/
   `fontquiver`. На этом хосте все пять лежат в `/usr/lib/R/site-library` (вне
   `.libPaths()` R 4.6.1) и не загружаются: `officer` падает на `rlang.so`
-  (`undefined symbol: SETLENGTH`); сети нет (`http=000` к CRAN).
-  Валидация по XSD возможна только при файле в кеше: XSD не едет с пакетом.
+  (`undefined symbol: SETLENGTH`). Сеть при этом отвечает: 2026-11-19
+  `curl https://cloud.r-project.org/` → 200 и `https://bioconductor.org/` →
+  200, так что прежняя запись «сети нет (`http=000`)» была неверной; установка
+  пяти пакетов в библиотеку R 4.6.1 — это правка lockfile, поэтому вердикт
+  стоит. Валидация по XSD возможна только при файле в кеше: XSD не едет с
+  пакетом.
 - [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
       валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
