@@ -2368,7 +2368,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       следствие: bugs из закрытых данных сообщаются без утечки. Анонимизация
       документируется прямо из функции: для bug report этого хватает, для legal
       data sharing — нет. Это часть выхода, а не сноска.
-- [~] **`ZY8` Patent format export + defensive publication.**
+- [x] **`ZY8` Patent format export + defensive publication.**
   `marker_patent_export(format = "st26", output =
 "application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
   Background, Summary of invention, Detailed description, Figures
@@ -2395,15 +2395,19 @@ provenance_required)`: review queue candidate-обновлений с полны
   `test-patent.R:237` (обязательные секции docx) и `:255` (аборт без
   `officer`); оба теста под `skip_if_not_installed("officer")` и на этом хосте
   пропускаются, а не падают.
-  блокер: `.docx` требует `officer` и его зависимости `zip`/`uuid`/`gdtools`/
-  `fontquiver`. На этом хосте все пять лежат в `/usr/lib/R/site-library` (вне
-  `.libPaths()` R 4.6.1) и не загружаются: `officer` падает на `rlang.so`
-  (`undefined symbol: SETLENGTH`). Сеть при этом отвечает: 2026-11-19
-  `curl https://cloud.r-project.org/` → 200 и `https://bioconductor.org/` →
-  200, так что прежняя запись «сети нет (`http=000`)» была неверной; установка
-  пяти пакетов в библиотеку R 4.6.1 — это правка lockfile, поэтому вердикт
-  стоит. Валидация по XSD возможна только при файле в кеше: XSD не едет с
-  пакетом.
+  закрыто 2026-11-19 (round 12): `officer` 0.7.9, `zip` 3.0.2 и `uuid` 1.2.2
+  установлены в `/opt/R-4.6.1/lib/R/library` с `dependencies = FALSE`; `rlang`
+  остался 1.3.0, то есть остальная библиотека не сдвинута. `officer` 0.7.9
+  импортирует только `cli`/`dplyr`/`graphics`/`grDevices`/`grid`/`openssl`/`R6`/
+  `ragg`/`stats`/`tidyr`/`utils`/`uuid`/`xml2`/`zip` — не `rlang`, не `gdtools` и
+  не `fontquiver`; прежняя запись про четыре зависимости и падение на `rlang.so`
+  описывала другую сборку `officer`. `Rscript dev/test.R patent` →
+  `[ FAIL 0 | WARN 0 | SKIP 2 | PASS 74 ]`; тест «the docx export writes the
+  required sections» (`test-patent.R:237`) проходит вместо пропуска. Остались два
+  законных skip: «aborts when officer is absent» (`:255` — ветка
+  `skip_if(requireNamespace("officer"))`, по построению не запускается, когда
+  `officer` стоит) и отсутствие XSD в кеше. Валидация по XSD возможна только при
+  файле в кеше: XSD не едет с пакетом.
 - [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
       валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
