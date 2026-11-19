@@ -48,6 +48,18 @@ test_that("marker_contract treats NA and a vector condition as violations", {
   expect_contract_error(marker_contract(NA, "Contract violated in f: unset"), "f")
   expect_contract_error(marker_contract(c(TRUE, FALSE), "Contract violated in f: vector"), "f")
   expect_invisible(marker_contract(TRUE, "not used"))
+  # invisibility is kept by `identical()`, so this pins the returned value too
+  expect_identical(marker_contract(TRUE, "ok"), TRUE)
+})
+
+test_that("marker_contract names its caller, not itself, in the error call", {
+  # a direct caller whose own call is `wrapper()`: under a `sys.call(0)` default
+  # the reported call would be `marker_contract(FALSE, "boom")` instead
+  wrapper <- function() marker_contract(FALSE, "boom")
+  err <- tryCatch(wrapper(), error = identity)
+
+  expect_s3_class(err, "tidymarkers_contract_error")
+  expect_identical(conditionCall(err), quote(wrapper()))
 })
 
 test_that("pick_target_snp fails its own precondition, not downstream", {

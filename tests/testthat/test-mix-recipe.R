@@ -26,3 +26,17 @@ test_that("a too-concentrated working mix is rejected", {
   withr::local_envvar(LANGUAGE = "en")
   expect_error(kasp_mix_recipe(stock_uM = 40, as_uM = 12, com_uM = 30), "stock")
 })
+
+test_that("a mix and a reaction that need no water are accepted", {
+  # shares that sum to the stock leave no water: water_share is exactly 0, and
+  # 0 is a valid amount - only a negative one is impossible
+  mix <- kasp_mix_recipe(stock_uM = 64, as_uM = 8, com_uM = 48)
+  pm <- dplyr::filter(mix, .data$stage == "primer mix")
+  expect_equal(pm$total_uL[pm$component == "nuclease-free water"], 0)
+  expect_equal(sum(pm$total_uL), 100)
+  # the same boundary per reaction: water_per_rxn == 0 is not an abort
+  dna_uL <- 10 - 10 / 2 - round(0.014 * 10, 3)
+  r <- kasp_mix_recipe(reaction_uL = 10, master_mix_conc = 2, dna_uL = dna_uL)
+  rx <- dplyr::filter(r, .data$stage == "reaction")
+  expect_equal(rx$per_rxn_uL[rx$component == "nuclease-free water"], 0)
+})

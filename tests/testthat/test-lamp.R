@@ -269,3 +269,39 @@ test_that("the pair says why it could not be built instead of failing silently",
   expect_match(p$note, "single-base")
   expect_true(is.na(p$ref_fip))
 })
+
+test_that("loop primers are designed by default and LB starts one base past B2", {
+  skip_if_no_oligoarrayaux()
+  # this fixture yields an LB in the B1c/B2 loop; omitting `loop_primers` must
+  # still place it (the default is TRUE), and it is the window one base past the
+  # B2 arm's genomic end.
+  f <- snp_fixture(pos = 350L, seed = 86L)
+  m <- suppressWarnings(design_lamp_marker(f$genome, f$snp, flank = 150L))
+  m_true <- suppressWarnings(
+    design_lamp_marker(f$genome, f$snp, flank = 150L, loop_primers = TRUE)
+  )
+  expect_true("LB" %in% names(m$primers))
+  expect_identical(m$primers, m_true$primers)
+  expect_identical(m$primers$LB, "AATTAGCTACAGGCGTGGGATC")
+})
+
+test_that("the reported loop starts one base past FIP's 3' arm", {
+  skip_if_no_oligoarrayaux()
+  # FIP's 3' arm ends at the variant (300), so the F2-B2 loop opens at 301; the
+  # end is one base short of BIP's 5' arm start.
+  f <- snp_fixture()
+  m <- design_lamp_marker(f$genome, f$snp, flank = 150L)
+  expect_identical(m$loop$start, 301L)
+  expect_identical(m$loop$end, 323L)
+})
+
+test_that("the strict dimer rung keeps zero slack and is reported as relaxed", {
+  skip_if_no_oligoarrayaux()
+  # this fixture only clears the cross-dimer screen with LAMP_DIMER_SLACK, so it
+  # is returned by the last rung and `relaxed` names both lowered soft gates.
+  # A rung that widened the strict screen would accept a different outer pair.
+  f <- snp_fixture(seed = 25L)
+  m <- suppressWarnings(design_lamp_marker(f$genome, f$snp, flank = 150L))
+  expect_identical(unname(m$relaxed), c("gate_lamp_outer_tm", "gate_lamp_cross_dimer"))
+  expect_identical(unname(m$amplicon$start), 213L)
+})

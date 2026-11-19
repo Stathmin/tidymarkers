@@ -88,6 +88,14 @@ test_that("a caller who asks for another position gets it, marked as not-policy"
   expect_true(all(out$stab_at == 4L))
 })
 
+test_that("a vector or a lone NA is no mismatch, not \"other\"", {
+  # the guard is `length != 1L || is.na()`; a `&&` there lets a vector fall
+  # through to the position comparisons and label it "other"
+  expect_identical(arms_stab_policy(c(3L, 2L)), "none")
+  expect_identical(arms_stab_policy(NA_integer_), "none")
+  expect_identical(arms_stab_policy(3L), "default")
+})
+
 test_that("the signed policy constant is not a stab_ats distance", {
   # ARMS_EXTRA_MISMATCH_POSITION is a signed 3'-relative offset (-3); the
   # designer's `stab_ats` are positive distances from the 3' end (3).  Passing

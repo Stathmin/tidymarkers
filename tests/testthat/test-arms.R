@@ -78,6 +78,54 @@ test_that("design_arms_marker refuses a signed mismatch position (Z7.1)", {
   )
 })
 
+test_that("design_arms_marker tolerates a missing stab_ats entry (Z7.1)", {
+  skip_if_no_oligoarrayaux()
+  withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 800L, TRUE), collapse = ""))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  ref <- substr(w, 400L, 400L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 400L, ref = ref,
+    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # NA is "no extra mismatch", not a negative distance: it is ignored, not an abort
+  expect_s3_class(
+    design_arms_marker(genome, snp, flank = 250L, stab_ats = NA_integer_),
+    "marker_arms"
+  )
+})
+
+test_that("an inner primer on only one strand returns NULL, with a message", {
+  withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 800L, TRUE), collapse = ""))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  ref <- substr(w, 400L, 400L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 400L, ref = ref,
+    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # the designer returns inner primers for the "+" strand only
+  inner <- tibble::tibble(
+    strand = "+",
+    ref_primer = "AAAACCCCGGGGTTTTACGT", alt_primer = "AAAACCCCGGGGTTTTACGA",
+    stab_at = NA_integer_, weak_terminal = FALSE,
+    tmpl_start = 390L, tmpl_end = 405L, tm = 55, discrimination = 0.9
+  )
+  outer <- tibble::tibble(
+    forward = "ACGTACGTACGTACGTACGT", reverse = "ACGTACGTACGTACGTACGT",
+    start = 1L, end = 480L, product = 480L, tm_f = 55, tm_r = 55, dtm = 0
+  )
+  local_mocked_bindings(
+    arms_outer_pairs = function(...) outer,
+    design_as_primers = function(...) inner,
+    .package = "tidymarkers"
+  )
+  res <- NULL
+  expect_message(
+    res <- design_arms_marker(genome, snp, flank = 250L),
+    "An inner primer is missing on one strand."
+  )
+  expect_null(res)
+})
+
 test_that("the arms DAG obeys the contract", {
   expect_dag_invariants("arms")
 })
@@ -120,7 +168,36 @@ test_that("design_arms_marker evaluates the arms gates and gives a resolvable ge
   ref_size <- b$size[b$band == "REF"]
   alt_size <- b$size[b$band == "ALT"]
   expect_gt(ctrl, max(ref_size, alt_size))
+  # the band sizes are inclusive spans of the template coordinates (Z7)
+  expect_equal(ref_size, m$outer$end - m$inner$ref$start + 1L)
+  expect_equal(alt_size, m$inner$alt$end - m$outer$start + 1L)
   expect_gte(min(abs(ref_size - alt_size), ctrl - max(ref_size, alt_size)), KASP_ARMS_WINDOW$band_gap)
   expect_gte(m$outer$product, KASP_ARMS_WINDOW$control[1L])
   expect_lte(m$outer$product, KASP_ARMS_WINDOW$control[2L])
+})
+
+test_that("a below-floor design reaches the second pass instead of being doomed", {
+  skip_if_no_oligoarrayaux()
+  withr::with_seed(1L, w <- paste(sample(c("A", "C", "G", "T"), 800L, TRUE), collapse = ""))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  ref <- substr(w, 400L, 400L)
+  snp <- tibble::tibble(
+    chrom = "Chr1", pos = 400L, ref = ref,
+    alt = setdiff(c("A", "C", "G", "T"), ref)[1L]
+  )
+  # every inner primer is below the hard discrimination floor, so no candidate
+  # clears the gates: the ladder hands the least-bad one to the second pass, which
+  # accepts it (the scheme is tolerant), instead of dooming the target
+  low <- tibble::tibble(
+    strand = c("+", "-"),
+    ref_primer = c("AAAACCCCGGGGTTTTACGT", "TTTTGGGGCCCCAATGCA"),
+    alt_primer = c("AAAACCCCGGGGTTTTACGA", "TTTTGGGGCCCCAATGCG"),
+    stab_at = NA_integer_, weak_terminal = FALSE,
+    tmpl_start = c(390L, 410L), tmpl_end = c(405L, 425L), tm = 55,
+    discrimination = 0.1
+  )
+  local_mocked_bindings(design_as_primers = function(...) low, .package = "tidymarkers")
+  m <- suppressWarnings(design_arms_marker(genome, snp, flank = 250L))
+  expect_s3_class(m, "marker_arms")
+  expect_true("gate_arms_disc" %in% m$selection$violated)
 })

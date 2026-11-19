@@ -101,6 +101,31 @@ test_that("an artefact manifest names the trace version it maps to", {
   expect_identical(tidymarkers:::artefact_id(without), art$manifest$id)
 })
 
+# The id pins the serialisation, not just its self-consistency: a change to
+# `auto_unbox`/`null`/`digits` in `artefact_id()` renumbers every artefact.
+test_that("the artefact id is a frozen hash of the decision core", {
+  # a hand-built core: `artefact_id()` keeps these seven fields and drops the
+  # rest, so this needs no solve, no genome and no temp dir
+  core <- list(
+    schema = "tidymarkers/artefact@1",
+    package = "tidymarkers",
+    engine_stamp = list(tidymarkers = "0.0.0.9000", primer3 = NA),
+    inputs = list(list(role = "reference", name = "ref.fa", sha256 = "abc", bytes = 600L)),
+    plan = list(targets = "one SNP"),
+    parameters = list(min_disc = 0.4),
+    overrides = list()
+  )
+
+  # a frozen hash, not a value to update casually: it is only renumbered when the
+  # decision core or its exact JSON serialisation changes on purpose
+  expect_identical(
+    tidymarkers:::artefact_id(core),
+    "a5a78bef0d3761a0ed905ffe3031818689624a2368a05ed36b895dc31db73b3c"
+  )
+  # an unnamed extra field is not part of the core, so it cannot renumber the id
+  expect_identical(tidymarkers:::artefact_id(c(list(noise = TRUE), core)), tidymarkers:::artefact_id(core))
+})
+
 test_that("a solved plan gives the same trace without writing an artefact", {
   solved <- trace_fixture_solve()
   art <- new_artefact()

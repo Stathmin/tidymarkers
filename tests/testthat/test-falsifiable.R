@@ -453,3 +453,50 @@ test_that("unknown and not_applicable are reachable, and neither is a pass", {
   expect_true(all(lm$status[fam] == "not_applicable"))
   expect_false(any(lm$pass[fam]))
 })
+
+test_that("the decision graph stamps only what the assay's selection says", {
+  # a population block on a schema with no population node is warned about, not
+  # silently ignored: the warning is the only signal those gaps are unenforced
+  expect_warning(
+    marker_decision_graph(list(scheme = "snp", population = list(alt_freq = 0.3))),
+    "population/haplotype node"
+  )
+  # no assay (or one without `$selection`) stamps nothing: every node keeps the
+  # neutral default, so a gate is not green without evidence
+  bare <- tibble::as_tibble(marker_decision_graph())
+  expect_true(all(bare$status == "neutral"))
+  expect_no_error(marker_decision_graph(list(scheme = "snp")))
+  expect_equal(
+    tibble::as_tibble(marker_decision_graph(list(scheme = "snp")))$status,
+    bare$status
+  )
+  # mixed statuses: only the failing check is violated, the passing one is ok
+  ev <- tibble::tibble(
+    criterion = c("AS GC", "COM GC"),
+    pass = c(TRUE, FALSE),
+    status = marker_check_status(c("pass", "fail"))
+  )
+  nd <- tibble::as_tibble(
+    marker_decision_graph(list(scheme = "snp", selection = list(), evaluation = ev))
+  )
+  st <- function(lab) nd$status[match(lab, nd$label)]
+  expect_equal(st("AS GC"), "ok")
+  expect_equal(st("COM GC"), "violated")
+  # a not_applicable check is neutral, and that stamp is for check nodes only:
+  # `multi`'s tier node shares the label "discrimination" and must stay ok
+  ev2 <- tibble::tibble(
+    criterion = c("discrimination", "AS GC"),
+    pass = c(FALSE, FALSE),
+    status = marker_check_status(c("not_applicable", "not_applicable"))
+  )
+  nd2 <- tibble::as_tibble(
+    marker_decision_graph(list(scheme = "multi", selection = list(), evaluation = ev2))
+  )
+  expect_equal(nd2$status[nd2$name == "as:tier:tier1"], "ok")
+  expect_equal(
+    nd2$status[nd2$label == "discrimination" & nd2$kind == "check"],
+    "neutral"
+  )
+  # the DAG has a direction
+  expect_true(igraph::is_directed(marker_decision_graph()))
+})
