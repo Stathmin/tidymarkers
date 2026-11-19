@@ -4,7 +4,13 @@
 \alias{specificity_verdict}
 \title{Grade in-silico PCR products against a scheme's mismatch policy}
 \usage{
-specificity_verdict(hits, scheme = "pcr", genome = NULL, pam = NULL)
+specificity_verdict(
+  hits,
+  scheme = "pcr",
+  genome = NULL,
+  pam = NULL,
+  spacer_len = NULL
+)
 }
 \arguments{
 \item{hits}{in-silico PCR products (\code{\link[=in_silico_pcr]{in_silico_pcr()}}, as a tibble: one row
@@ -19,12 +25,17 @@ An optional \code{scheme}/\code{tolerated} pair is recomputed here, so a table f
 answer into \code{unknown} (see \code{specificity_backend()}).}
 
 \item{pam}{optional PAM/PFS observation for \code{"crispr"} (see \code{pam_state()}).}
+
+\item{spacer_len}{optional spacer (guide) length in nt for \code{"crispr"}; a
+length in the published series sets the mismatch budget and, for \code{20}, the
+intolerant middle window (see \code{\link[=specificity_policy]{specificity_policy()}}).}
 }
 \value{
 a \code{specificity_verdict} list: \code{verdict} (\code{"pass"}/\code{"fail"}/
-\code{"unknown"}), \code{reason} (an English sentence), \code{scheme}, \code{policy},
-\code{n_products}, \code{n_tolerated}, \code{n_mismatch} (best product), \code{best} (one-row
-product tibble), \code{products} (the graded tibble), \code{pam} (state),
+\code{"unknown"}), \code{reason} (an English sentence), \code{scheme}, \code{policy} (the policy
+graded against, carrying \code{spacer_len}/\code{spacer_len_known} for a CRISPR
+guide), \code{n_products}, \code{n_tolerated}, \code{n_mismatch} (best product), \code{best}
+(one-row product tibble), \code{products} (the graded tibble), \code{pam} (state),
 \code{backend} (the capability list, or \code{NA} when no genome was supplied) and
 \code{tier} (\code{"pair"}/\code{"blast"}/\code{"fm"}/\code{"none"}).
 }

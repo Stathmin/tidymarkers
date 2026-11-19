@@ -1731,7 +1731,9 @@ empty_pcr_products <- function() {
 #' `THREE_PRIME_WINDOW` nt of either primer.  A 3'-terminal mismatch is a hard
 #' failure (the primer cannot be extended) for every mode.  The PAM is *not*
 #' graded here: it is a licensing element, not a mismatch, so
-#' `specificity_verdict()` applies it once to the whole guide.
+#' `specificity_verdict()` applies it once to the whole guide.  A policy that
+#' carries a central window (a CRISPR guide length whose middle is intolerant)
+#' makes a mismatch inside that window the `"central"` violation.
 #' @keywords internal
 #' @noRd
 pcr_products_tolerated <- function(products, policy) {
@@ -1742,7 +1744,40 @@ pcr_products_tolerated <- function(products, policy) {
     products$seed_mismatch <= policy$seed_max &
     products$three_prime_mismatch <= policy$three_prime_max &
     !products$three_prime_terminal
+  ok <- ok & !central_violated(products, policy)
   ok
+}
+
+#' Do a product's mismatches fall in the policy's intolerant central window?
+#'
+#' Some CRISPR guide lengths tolerate a mismatch only away from the middle of
+#' the spacer (`spacer_len_central`).  The window is graded on
+#' `f_mismatch_positions` -- the guide's own 5'->3' frame, 1-based from the
+#' spacer's 5' end, exactly what `mismatch_profile()` reports.  The untyped
+#' `mismatch_positions` column is the union of the forward and reverse primer
+#' positions and mirrors one guide mismatch `p` to `21 - p`, so grading it
+#' would also flag the guide positions past the middle; it is only a fallback
+#' for a table without the per-primer columns.  A policy without a resolved
+#' window (any non-CRISPR scheme, an unlisted guide length, or the unresolved
+#' policy table) tolerates every position.
+#' @keywords internal
+#' @noRd
+central_violated <- function(products, policy) {
+  window <- policy[["spacer_len_central"]]
+  has_window <- is.numeric(window) && length(window) == 2L
+  guide_pos <- if ("f_mismatch_positions" %in% names(products)) {
+    products$f_mismatch_positions
+  } else {
+    products[["mismatch_positions"]]
+  }
+  if (!has_window || is.null(guide_pos)) {
+    return(rep(FALSE, nrow(products)))
+  }
+  vapply(
+    guide_pos,
+    function(pos) any(pos >= window[[1L]] & pos <= window[[2L]]),
+    logical(1)
+  )
 }
 
 #' Forward/reverse primer pairs for the two allele-specific virtual PCRs
@@ -1938,7 +1973,9 @@ SPECIFICITY_POLICIES <- list(
     mode = "crispr", max_mismatch = 5L, seed_len = 8L, seed_max = 1L,
     three_prime_max = 2L, requires_pam = TRUE, pam = "TTTV", pfs = "weak",
     critical_from = 1L, critical_to = 8L,
-    weight_middle = 1, weight_seed = 4, weight_three_prime = 8, weight_terminal = 12
+    weight_middle = 1, weight_seed = 4, weight_three_prime = 8, weight_terminal = 12,
+    spacer_len_max_mismatch = c(`16` = 0L, `20` = 1L, `23` = 2L, `28` = 0L),
+    spacer_len_central = list(`20` = c(7L, 9L))
   ),
   paralog = list(
     mode = "paralog", max_mismatch = 4L, seed_len = 8L, seed_max = 1L,
@@ -1978,6 +2015,24 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #' | `crispr` (Cas9/Cas12/Cas13) | 5 | 8 | 1 | 2 | yes (Cas12a `TTTV`) |
 #' | `paralog` (homeolog/homolog) | 4 | 8 | 1 | 1 | no |
 #'
+#' ## CRISPR spacer length
+#'
+#' The `crispr` count above is spacer-independent and stays the fallback: an
+#' effector's mismatch budget also depends on the guide's length, and the
+#' published series gives an endpoint per length.
+#'
+#' | spacer_len (nt) | max_mismatch | evidence |
+#' |---|---|---|
+#' | 16 | 0 | a 16-nt LbuCas13a spacer still required a perfect match (PMC10810210) |
+#' | 20 | 1 | a single middle mismatch (positions +7 to +9) costs up to 70 % activity (PMC10810210) |
+#' | 23 | 2 | 2 central mismatches still silence the K-RAS G12D transcript 54.8 %; 3 leave 11 % (PMC11654686) |
+#' | 28 | 0 | a 28-nt LbuCas13a spacer has no single-mismatch discriminatory capacity (PMC10810210) |
+#'
+#' The 20-nt row is stricter than "anywhere": its one tolerated mismatch must
+#' sit outside spacer positions 7-9 (1-based from the 5' end), the middle window
+#' the paper measured.  These numbers stay heuristics (`calibrated = FALSE`):
+#' they are published endpoints, not a fit.
+#'
 #' Position ladder (per-position weight of a mismatch, 5'->3' of the primer):
 #'
 #' | scheme | `weight_middle` | `weight_seed` | `weight_three_prime` | `weight_terminal` |
@@ -2016,11 +2071,19 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #'   chemistry alias (`"kasp"`, `"lamp"`, `"cas12a"`, `"homeolog"`, ...).
 #' @param length optional target-site length; when given, the returned object
 #'   carries a named `weight` vector with the per-position ladder (5'->3').
+#' @param spacer_len spacer (guide) length in nt for `"crispr"`; one of the
+#'   published series (`16`, `20`, `23`, `28`) sets the mismatch budget and, for
+#'   `20`, an intolerant middle window.  An unlisted length keeps the scheme's
+#'   `max_mismatch` and reports `spacer_len_known = FALSE`; `NULL` keeps the
+#'   length-independent policy.
 #' @return a `specificity_policy` list: `mode`, `max_mismatch`, `seed_len`,
 #'   `seed_max`, `three_prime_max`, `three_prime_window`, `requires_pam`, `pam`,
 #'   `pfs`, `critical_from`/`critical_to` (CRISPR), the position ladder
 #'   (`weight_middle`, `weight_seed`, `weight_three_prime`, `weight_terminal`),
 #'   `priors` (the tolerance row as a one-row tibble) and `calibrated` (`FALSE`).
+#'   A CRISPR policy given a `spacer_len` also carries `spacer_len`,
+#'   `spacer_len_known` and `spacer_len_central` (the intolerant middle window,
+#'   or `NULL` when that length has none).
 #' @examples
 #' specificity_policy("kasp")$max_mismatch
 #' specificity_policy("rpa")$max_mismatch
@@ -2028,12 +2091,22 @@ SPECIFICITY_SCHEME_ALIASES <- c(
 #' specificity_policy("homeolog")$mode
 #' @family specificity
 #' @export
-specificity_policy <- function(scheme = "pcr", length = NULL) {
+specificity_policy <- function(scheme = "pcr", length = NULL, spacer_len = NULL) {
   if (is.null(scheme)) {
     scheme <- "pcr"
   }
   if (!is.character(scheme) || length(scheme) != 1L) {
     cli::cli_abort(gettext("`scheme` must be a single scheme name."))
+  }
+  if (!is.null(spacer_len)) {
+    n <- if (is.numeric(spacer_len)) spacer_len else NA_real_
+    whole <- length(n) == 1L && is.finite(n) && n >= 1 &&
+      n <= .Machine$integer.max && n == round(n)
+    if (!whole) {
+      cli::cli_abort(gettext(
+        "`spacer_len` must be a single positive whole number of nucleotides."
+      ))
+    }
   }
   key <- gsub("[-_ ]", "", tolower(scheme))
   alias <- match(key, names(SPECIFICITY_SCHEME_ALIASES))
@@ -2051,6 +2124,24 @@ specificity_policy <- function(scheme = "pcr", length = NULL) {
     ))
   }
   pol <- SPECIFICITY_POLICIES[[key]]
+  # a published spacer length overrides the scheme budget; an unlisted length
+  # keeps it and says so, so a length the evidence does not cover is never
+  # guessed at, and `priors` below then carries the overriding number
+  if (identical(key, "crispr") && !is.null(spacer_len)) {
+    pol$spacer_len <- as.integer(spacer_len)
+    name <- as.character(pol$spacer_len)
+    if (name %in% names(pol[["spacer_len_max_mismatch"]])) {
+      pol$max_mismatch <- pol[["spacer_len_max_mismatch"]][[name]]
+      pol$spacer_len_known <- TRUE
+    } else {
+      pol$spacer_len_known <- FALSE
+    }
+    pol$spacer_len_central <- if (!is.null(pol[["spacer_len_central"]])) {
+      pol[["spacer_len_central"]][[name]]
+    } else {
+      NULL
+    }
+  }
   pol$scheme <- scheme
   pol$three_prime_window <- THREE_PRIME_WINDOW
   pol$calibrated <- FALSE
@@ -2077,6 +2168,18 @@ print.specificity_policy <- function(x, ...) {
     "| terminal", x$weight_terminal, "\n",
     sep = " "
   )
+  if (!is.null(x[["spacer_len"]])) {
+    cat("  spacer", x[["spacer_len"]], "nt | max mismatch", x$max_mismatch,
+      if (!is.null(x[["spacer_len_central"]])) {
+        c(
+          "| no mismatch in positions",
+          paste0(x[["spacer_len_central"]], collapse = "-")
+        )
+      },
+      "\n",
+      sep = " "
+    )
+  }
   if (x$requires_pam) cat("  PAM", x$pam, "required (a changed PAM = loss of target)\n")
   if (!is.na(x$pfs)) cat("  PFS preference:", x$pfs, "\n")
   invisible(x)
@@ -2194,10 +2297,14 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' @param genome optional genome; when supplied, a missing engine turns the
 #'   answer into `unknown` (see `specificity_backend()`).
 #' @param pam optional PAM/PFS observation for `"crispr"` (see `pam_state()`).
+#' @param spacer_len optional spacer (guide) length in nt for `"crispr"`; a
+#'   length in the published series sets the mismatch budget and, for `20`, the
+#'   intolerant middle window (see [specificity_policy()]).
 #' @return a `specificity_verdict` list: `verdict` (`"pass"`/`"fail"`/
-#'   `"unknown"`), `reason` (an English sentence), `scheme`, `policy`,
-#'   `n_products`, `n_tolerated`, `n_mismatch` (best product), `best` (one-row
-#'   product tibble), `products` (the graded tibble), `pam` (state),
+#'   `"unknown"`), `reason` (an English sentence), `scheme`, `policy` (the policy
+#'   graded against, carrying `spacer_len`/`spacer_len_known` for a CRISPR
+#'   guide), `n_products`, `n_tolerated`, `n_mismatch` (best product), `best`
+#'   (one-row product tibble), `products` (the graded tibble), `pam` (state),
 #'   `backend` (the capability list, or `NA` when no genome was supplied) and
 #'   `tier` (`"pair"`/`"blast"`/`"fm"`/`"none"`).
 #' @examples
@@ -2211,8 +2318,9 @@ pam_state <- function(observed, pattern = "TTTV") {
 #' specificity_verdict(hits, "kasp", genome = NULL)$tier
 #' @family specificity
 #' @export
-specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL) {
-  pol <- specificity_policy(scheme)
+specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL,
+                                spacer_len = NULL) {
+  pol <- specificity_policy(scheme, spacer_len = spacer_len)
   backend <- if (is.null(genome)) NA else specificity_backend(genome, scheme)
   products <- if (is.null(hits)) {
     empty_pcr_products()
@@ -2235,13 +2343,19 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL)
   } else {
     NA_character_
   }
-  products$tolerated <- pcr_products_tolerated(products, pol)
+  central_bad <- central_violated(products, pol)
+  products$tolerated <- pcr_products_tolerated(products, pol) & !central_bad
   products$violations <- mapply(pcr_violations,
     n_mismatch = products$n_mismatch, seed_mismatch = products$seed_mismatch,
     three_prime_mismatch = products$three_prime_mismatch,
     three_prime_terminal = products$three_prime_terminal,
     MoreArgs = list(policy = pol), USE.NAMES = FALSE
   )
+  if (any(central_bad)) {
+    products$violations[central_bad] <- lapply(
+      products$violations[central_bad], function(v) union(v, "central")
+    )
+  }
   if (identical(pam_val, "pam_loss")) {
     products$tolerated <- rep(FALSE, nrow(products))
     products$violations <- lapply(products$violations, function(v) union(v, "pam"))

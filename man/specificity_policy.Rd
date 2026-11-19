@@ -4,7 +4,7 @@
 \alias{specificity_policy}
 \title{Mismatch tolerance for a specificity scheme}
 \usage{
-specificity_policy(scheme = "pcr", length = NULL)
+specificity_policy(scheme = "pcr", length = NULL, spacer_len = NULL)
 }
 \arguments{
 \item{scheme}{a scheme name (\code{"pcr"}, \code{"rpa"}, \code{"crispr"}, \code{"paralog"}) or a
@@ -12,6 +12,12 @@ chemistry alias (\code{"kasp"}, \code{"lamp"}, \code{"cas12a"}, \code{"homeolog"
 
 \item{length}{optional target-site length; when given, the returned object
 carries a named \code{weight} vector with the per-position ladder (5'->3').}
+
+\item{spacer_len}{spacer (guide) length in nt for \code{"crispr"}; one of the
+published series (\code{16}, \code{20}, \code{23}, \code{28}) sets the mismatch budget and, for
+\code{20}, an intolerant middle window.  An unlisted length keeps the scheme's
+\code{max_mismatch} and reports \code{spacer_len_known = FALSE}; \code{NULL} keeps the
+length-independent policy.}
 }
 \value{
 a \code{specificity_policy} list: \code{mode}, \code{max_mismatch}, \code{seed_len},
@@ -19,6 +25,9 @@ a \code{specificity_policy} list: \code{mode}, \code{max_mismatch}, \code{seed_l
 \code{pfs}, \code{critical_from}/\code{critical_to} (CRISPR), the position ladder
 (\code{weight_middle}, \code{weight_seed}, \code{weight_three_prime}, \code{weight_terminal}),
 \code{priors} (the tolerance row as a one-row tibble) and \code{calibrated} (\code{FALSE}).
+A CRISPR policy given a \code{spacer_len} also carries \code{spacer_len},
+\code{spacer_len_known} and \code{spacer_len_central} (the intolerant middle window,
+or \code{NULL} when that length has none).
 }
 \description{
 Encodes the \emph{known biology} each chemistry imposes on a target site: how many
@@ -36,6 +45,23 @@ literature states, they are not fitted to an assay dataset.
    \code{paralog} (homeolog/homolog) \tab 4 \tab 8 \tab 1 \tab 1 \tab no \cr
 }
 
+\subsection{CRISPR spacer length}{
+
+The \code{crispr} count above is spacer-independent and stays the fallback: an
+effector's mismatch budget also depends on the guide's length, and the
+published series gives an endpoint per length.\tabular{lll}{
+   spacer_len (nt) \tab max_mismatch \tab evidence \cr
+   16 \tab 0 \tab a 16-nt LbuCas13a spacer still required a perfect match (PMC10810210) \cr
+   20 \tab 1 \tab a single middle mismatch (positions +7 to +9) costs up to 70 \% activity (PMC10810210) \cr
+   23 \tab 2 \tab 2 central mismatches still silence the K-RAS G12D transcript 54.8 \%; 3 leave 11 \% (PMC11654686) \cr
+   28 \tab 0 \tab a 28-nt LbuCas13a spacer has no single-mismatch discriminatory capacity (PMC10810210) \cr
+}
+
+
+The 20-nt row is stricter than "anywhere": its one tolerated mismatch must
+sit outside spacer positions 7-9 (1-based from the 5' end), the middle window
+the paper measured.  These numbers stay heuristics (\code{calibrated = FALSE}):
+they are published endpoints, not a fit.
 
 Position ladder (per-position weight of a mismatch, 5'->3' of the primer):\tabular{lllll}{
    scheme \tab \code{weight_middle} \tab \code{weight_seed} \tab \code{weight_three_prime} \tab \code{weight_terminal} \cr
@@ -73,6 +99,7 @@ in \code{pfs = "weak"} - Cas13 is never PAM-free.
 \item \strong{paralog/homeolog} - mismatch-aware by construction: a homeolog differs
 from the assayed copy by several bases and still cross-hybridises, so an
 exact-hit assumption understates off-targets.
+}
 }
 }
 \examples{

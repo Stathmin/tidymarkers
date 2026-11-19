@@ -159,6 +159,21 @@ z5_mutate <- function(x, pos) {
   paste(bases, collapse = "")
 }
 
+# one product whose mismatches sit at guide positions `pos`: the union column
+# stays faithful to a real product, so a window graded on it would also see
+# the mirrored 21 - pos in the reverse primer's frame
+z5_one_product <- function(pos, n_mismatch = length(pos)) {
+  f <- as.integer(pos)
+  r <- 21L - f
+  out <- empty_pcr_products()
+  out[1L, ] <- list(
+    "chr1", 1L, 20L, 20L, as.integer(n_mismatch),
+    list(sort(unique(c(f, r)))), list(f), list(r),
+    0L, 0L, FALSE, 0, 0, 0
+  )
+  out
+}
+
 test_that("a perfect product reports zero mismatches and the legacy columns", {
   prods <- in_silico_pcr(z5_f, z5_r, z5_genome())
   expect_equal(nrow(prods), 1L)
@@ -627,4 +642,125 @@ test_that("specificity_seed stays silent on a genome under the warning size", {
   genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTT"))
   primers <- c(P = "TTTTTTAAACCCGGG")
   expect_no_warning(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L))
+})
+
+test_that("a CRISPR spacer length sets the mismatch budget from the published series", {
+  # 16/20/23/28 nt are the published endpoints; 22 is unlisted, so it keeps the
+  # scheme's fallback rather than an interpolated guess
+  published <- c(`16` = 0L, `20` = 1L, `23` = 2L, `28` = 0L)
+  for (nt in names(published)) {
+    pol <- specificity_policy("cas13a", spacer_len = as.integer(nt))
+    expect_equal(pol$max_mismatch, published[[nt]])
+    expect_true(pol$spacer_len_known)
+    expect_equal(pol$spacer_len, as.integer(nt))
+    expect_equal(pol$priors$max_mismatch, published[[nt]])
+  }
+  unlisted <- specificity_policy("cas13a", spacer_len = 22L)
+  expect_equal(unlisted$max_mismatch, 5L)
+  expect_false(unlisted$spacer_len_known)
+  # no length is the length-independent policy, unchanged
+  plain <- specificity_policy("cas13a", spacer_len = NULL)
+  expect_equal(plain$max_mismatch, 5L)
+  expect_null(plain$spacer_len)
+  # only the published series is documented, and only 20 has a middle window
+  expect_equal(
+    specificity_policy("crispr", spacer_len = 20L)$spacer_len_central,
+    c(7L, 9L)
+  )
+  expect_null(specificity_policy("crispr", spacer_len = 23L)$spacer_len_central)
+  expect_error(
+    specificity_policy("crispr", spacer_len = 0),
+    "single positive whole number"
+  )
+  expect_error(
+    specificity_policy("crispr", spacer_len = c(20L, 21L)),
+    "single positive whole number"
+  )
+  expect_error(
+    specificity_policy("crispr", spacer_len = NA_integer_),
+    "single positive whole number"
+  )
+  expect_error(
+    specificity_policy("crispr", spacer_len = 20.5),
+    "single positive whole number"
+  )
+  expect_error(
+    specificity_policy("crispr", spacer_len = "20"),
+    "single positive whole number"
+  )
+  # a value that as.integer() would turn into NA is refused, not silently lost
+  expect_error(
+    specificity_policy("crispr", spacer_len = .Machine$integer.max + 1),
+    "single positive whole number"
+  )
+})
+
+test_that("the 20-nt spacer refuses a mismatch in the middle", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = strrep("A", 40L)))
+  # position 8 is inside the paper's +7 to +9 middle window: the one tolerated
+  # mismatch is refused there, and the violation says which cap it broke
+  middle <- specificity_verdict(z5_one_product(8L), "cas12a",
+    genome = genome, spacer_len = 20L
+  )
+  expect_false(middle$products$tolerated)
+  expect_true("central" %in% middle$products$violations[[1L]])
+  expect_equal(middle$n_tolerated, 0L)
+  # the same single mismatch outside the window still amplifies
+  edge <- specificity_verdict(z5_one_product(2L), "cas12a",
+    genome = genome, spacer_len = 20L
+  )
+  expect_true(edge$products$tolerated)
+  expect_false("central" %in% edge$products$violations[[1L]])
+  expect_equal(edge$n_tolerated, 1L)
+  # guide position 13 is outside +7 to +9; only its reverse-frame mirror (8)
+  # lands in the union column, so grading the union would wrongly refuse it
+  mirrored <- specificity_verdict(z5_one_product(13L), "cas12a",
+    genome = genome, spacer_len = 20L
+  )
+  expect_true(mirrored$products$tolerated)
+  expect_false("central" %in% mirrored$products$violations[[1L]])
+  expect_equal(mirrored$n_tolerated, 1L)
+})
+
+test_that("an unresolved CRISPR policy tolerates every spacer position", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = strrep("A", 40L)))
+  v <- specificity_verdict(z5_one_product(8L), "crispr", genome = genome)
+  expect_true(v$products$tolerated)
+  expect_false("central" %in% v$products$violations[[1L]])
+  expect_equal(v$n_tolerated, 1L)
+  expect_null(v$policy$spacer_len)
+})
+
+test_that("an unlisted spacer length falls back to the scheme budget and says so", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = strrep("A", 40L)))
+  v <- specificity_verdict(z5_one_product(c(2L, 8L, 14L)), "cas12a",
+    genome = genome, spacer_len = 22L
+  )
+  expect_true(v$products$tolerated)
+  expect_equal(v$n_tolerated, 1L)
+  expect_false(v$policy$spacer_len_known)
+  expect_equal(v$policy$max_mismatch, 5L)
+})
+
+test_that("the spacer length does not change the pcr, rpa or paralog policy", {
+  for (s in c("kasp", "rpa", "paralog")) {
+    expect_identical(
+      specificity_policy(s, spacer_len = 20L),
+      specificity_policy(s)
+    )
+  }
+  expect_equal(specificity_policy("kasp")$max_mismatch, 1L)
+  expect_equal(specificity_policy("rpa")$max_mismatch, 4L)
+  expect_equal(specificity_policy("paralog")$max_mismatch, 4L)
+})
+
+test_that("the CRISPR mismatch evidence ships with the package", {
+  csv <- utils::read.csv(system.file(
+    "extdata", "mismatch_family_crispr.csv",
+    package = "tidymarkers"
+  ))
+  expect_equal(nrow(csv), 11L)
+  expect_true(all(csv$family == "crispr"))
+  # the 20-nt middle window's provenance: the fixed match for "+7 to +9"
+  expect_true(any(grepl("+7 to +9", csv$mismatch_position, fixed = TRUE)))
 })
