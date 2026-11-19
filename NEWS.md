@@ -6,6 +6,37 @@
 
 ## 0.4.1 (в работе)
 
+### Панель, one-pot, ingestion, контракты, экспорт, trace-схема (2026-11-19)
+
+- **Класс изменения: `feat` + `dev`.** Шесть поверхностей из очереди ROADMAP
+  доехали до `main` с тестами: `R/marker_panel.R` (280 строк,
+  `marker_design_panel()`, коммит `5a5a29e`), `R/marker_one_pot.R` (339,
+  `one_pot_compatible()` / `one_pot_matrix()`, `e7025a2`), `R/marker_ingest.R`
+  (479, `marker_ingest_literature()` / `_registry()` / `_approve()`,
+  `e7025a2`), `R/marker_contracts.R` (175, `marker_contract()` на base R,
+  `e7025a2`), `R/marker_patent.R` (509, `marker_patent_export()` /
+  `marker_defensive_publication()` / `marker_patent_validate()`, `5a5a29e`) и
+  `R/marker_trace_schema.R` (387, `5a5a29e`).
+- Тесты: `test-panel.R` (38 `expect_`-утверждений), `test-one-pot.R` (49),
+  `test-ingest.R` (72), `test-contracts.R` (38), `test-patent.R` (61; здесь
+  68 pass / 2 skip) и `test-trace-schema.R` (74).
+- **Экспорт патента.** ST.26 XML и markdown-шаблоны
+  `inst/templates/patent/{application.md,defensive_publication.md}` есть;
+  `.docx` ждёт suggested-пакет `officer` и кеш XSD.
+- **`dev/check-licenses.R` — 181 строка** (`47a3ea7`): лицензионный гейт в
+  `dev/check.R`.
+- **`VALIDATION.md` — таблица `Claim → test` на 35 строк** (`47a3ea7`): 24
+  `code`, 4 `measured`, 2 `literature`, 1 not-checkable, 4 `gap`, плюс 8 правок
+  устаревших счётчиков.
+- **`marker_bowtie_index()` режет пангеном по последовательностям** — одна
+  под-индекс на последовательность, `tests/testthat/test-bowtie-subset.R` (137
+  строк; 25 pass в полном режиме, `47a3ea7`). Замер 16 ГБ пшеницы всё ещё за
+  фикспуром.
+- **`dev/mutation-test.R` — 417 строк** (`4e56134`): текст-уровневые мутаторы на
+  одноразовой копии пакета, без `covr`. Замер на дефолтном потолке: policy
+  5/11 = 55.5 %, invariants 9/12 = 75.0 %, chemistry 7/18 = 38.9 % — все ниже
+  цели 80 %, раннер честно завершается с кодом 1.
+
 ### README quickstart исполняется при сборке (2026-11-18)
 
 - **Класс изменения: `docs` + `dev` — поведение пакета не меняется.** README

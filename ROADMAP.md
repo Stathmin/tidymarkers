@@ -555,6 +555,31 @@ scheme, genome, limits)` без формала и без forward.
     - следствие: opt-out от OligoArrayAux покрывает и путь с готовыми
       праймерами; неизвестный движок — `unknown` с названной причиной, а не
       pass.
+32. [x] **Демо-данные в CI: выигрыш тёплого кеша не измерен** (найдено в этой
+        волне). Шаг `Warm demo cache (best-effort)` в
+        `.github/workflows/R-CMD-check.yaml` есть, но прироста покрытия он не
+        дал замерить: в холодном кеше восемь тестов дают `SKIP`, в тёплом они
+        проходят. Число «сколько `SKIP` превращается в `PASS` на прогретой ноге
+        CI» не измерено.
+    - правка: не требуется — шаг best-effort by design: отказ сети деградирует
+      в `SKIP`, а не в красную ногу.
+    - проверка: холодный прогон `FAIL 0 | SKIP 8 | PASS 146`, записанных файлов
+      ноль; тёплый `dev/test.R 'arms-mismatch|^plan$'` — 166 pass / 0 fail.
+    - блокер: замер требует прогона CI с прогретым кешем и сравнения счётчика
+      `SKIP` между ногами; локально это не воспроизводится.
+    - следствие: если сеть на ноге CI падает стабильно, выигрыш нулевой, и это
+      видно только по счётчику `SKIP`.
+33. [x] **One-pot: матрица совместимости без эмпирической проверки** (найдено в
+        этой волне). `R/marker_one_pot.R` и `tests/testthat/test-one-pot.R`
+        проверяют матрицу против самой себя: несовместимая пара не попадает в
+        группу, группа проходит заявленную проверку. Ни одного wet-lab прогона
+        auto-designed one-pot панели нет, поэтому числа совместимости опытом не
+        подтверждены.
+    - правка: не требуется — код помечен `experimental` в документации.
+    - проверка: `tests/testthat/test-one-pot.R` — 49 `expect_`-утверждений.
+    - блокер: нет wet-lab партнёра, исполняющего auto-designed panels.
+    - следствие: one-pot предсказание нельзя считать проверенным; числа
+      совместимости — гипотеза, пока нет данных.
 
 Запаркованные остатки (причина названа; отдельной правки не заводят, пока
 причина жива):
@@ -1943,31 +1968,36 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
       `exe_version("blastn")` игнорировал `options(tidymarkers.blast)` — закрыта
       в этой волне: проба читает `blast_bin()`, ключ мемо уже нёс опцию
       (`test-engine-stamp.R`).
-- [ ] **Производительность CI.** Тест-набор параллелен
-      (`Config/testthat/parallel: true`), а число воркеров задаёт переменная
-      `TESTTHAT_CPUS`: testthat берёт её через `Sys.getenv()`, по умолчанию 2.
-      Ключ `Config/testthat/cores: 4` в DESCRIPTION не читал ни testthat, ни
-      `dev/test.R`, — удалён, чтобы не выдавал себя за настройку; четыре воркера
-      теперь задаёт workflow (`TESTTHAT_CPUS: 4` в `env: &job-env`, обе ноги).
-      Замерен весь набор, а не оценён: прогон `43875434419`, нога
-      `ubuntu-latest (release)` (`133327126011`) — `checking tests ...
+- [~] **Производительность CI.** Тест-набор параллелен
+  (`Config/testthat/parallel: true`), а число воркеров задаёт переменная
+  `TESTTHAT_CPUS`: testthat берёт её через `Sys.getenv()`, по умолчанию 2.
+  Ключ `Config/testthat/cores: 4` в DESCRIPTION не читал ни testthat, ни
+  `dev/test.R`, — удалён, чтобы не выдавал себя за настройку; четыре воркера
+  теперь задаёт workflow (`TESTTHAT_CPUS: 4` в `env: &job-env`, обе ноги).
+  Замерен весь набор, а не оценён: прогон `43875434419`, нога
+  `ubuntu-latest (release)` (`133327126011`) — `checking tests ...
 Running 'testthat.R' [758s/414s]` (`13:28:42`→`13:35:36`), то есть 414 с
-      стены, 758 с CPU, ускорение 1.83× на двух воркерах; вся нога 11м46с, из неё
-      примеры 76 с, пересборка виньеток 29 с; `windows-latest (release)` — 11м15с.
-      Локально весь набор (`dev/test.R --full`, `TESTTHAT_CPUS=8`) — 3м39с,
-      `FAIL 0 | WARN 0 | SKIP 25 | PASS 37307`. Серийные 28м56.6с из
-      `43857228030` больше не воспроизводятся.
-      правка: бюджет времени на пшеничный набор как отдельный трек.
-      проверка: `checking tests` в CI-логе — 414 с (есть); эффект четырёх
-      воркеров измерен — прогон `43919840667`, нога `ubuntu-latest (release)`
-      (`133483845210`): `Running 'testthat.R' [957s/270s]` — 270 с стены против
-      414 с на двух воркерах (1.53×), 957 с CPU, утилизация 957/(4·270) ≈ 89 %,
-      вся нога 9м38с против 11м46с; бюджет пшеницы —
-      нет (нужен фикспур 16 Гб, тот же блокер, что у `ZX3`).
-      блокер: пшеничный фикспур (16 Гб) — не этот хост.
-      следствие: пшеничный бюджет остаётся непроверенным; тайминги TAIR10
-      закрыты числом, а не оценкой.
-- [ ] **Демо-данные в CI: холодный кеш — пропуск, не загрузка.** Сеть внутри
+  стены, 758 с CPU, ускорение 1.83× на двух воркерах; вся нога 11м46с, из неё
+  примеры 76 с, пересборка виньеток 29 с; `windows-latest (release)` — 11м15с.
+  Локально весь набор (`dev/test.R --full`, `TESTTHAT_CPUS=8`) — 3м39с,
+  `FAIL 0 | WARN 0 | SKIP 25 | PASS 37307`. Серийные 28м56.6с из
+  `43857228030` больше не воспроизводятся.
+  правка: бюджет времени на пшеничный набор как отдельный трек.
+  проверка: `checking tests` в CI-логе — 414 с (есть); эффект четырёх
+  воркеров измерен — прогон `43919840667`, нога `ubuntu-latest (release)`
+  (`133483845210`): `Running 'testthat.R' [957s/270s]` — 270 с стены против
+  414 с на двух воркерах (1.53×), 957 с CPU, утилизация 957/(4·270) ≈ 89 %,
+  вся нога 9м38с против 11м46с; бюджет пшеницы —
+  нет (нужен фикспур 16 Гб, тот же блокер, что у `ZX3`).
+  блокер: пшеничный фикспур (16 Гб) — не этот хост.
+  следствие: пшеничный бюджет остаётся непроверенным; тайминги TAIR10
+  закрыты числом, а не оценкой.
+  закрыто 2026-11-19: четыре воркера задаёт сам workflow — `TESTTHAT_CPUS: 4`
+  в `env: &job-env`, обе ноги; замер 270 с стены против 414 с на двух
+  воркерах (`run 43919840667`).
+  блокер: бюджет времени на пшеничный набор — тот же 16 Гб фикспур, не этот
+  хост.
+- [x] **Демо-данные в CI: холодный кеш — пропуск, не загрузка.** Сеть внутри
       теста уже обжигала (`test-engine-stamp.R`, причина 5 в истории CI);
       остаток жил в `test-arms-mismatch-position.R` (Z7.1) и
       `test-primer3-crosscheck.R`, где геттеры демо-данных качали фикстуры при
@@ -1983,22 +2013,35 @@ Running 'testthat.R' [758s/414s]` (`13:28:42`→`13:35:36`), то есть 414 �
       пользовательский кеш R шагом до `check` (нужен `load_all` или отдельный
       `httr2`-вызов: `setup-r-dependencies` пакет до проверки не ставит).
       Решение не принято — выигрыш не измерен.
+      закрыто 2026-11-19: `tests/testthat/helper-demo-cache.R` —
+      `demo_cache_warm()` и `skip_if_cold_demo_cache()`; холодный прогон
+      `FAIL 0 | SKIP 8 | PASS 146`, записанных файлов ноль. Рычаг из следствия
+      теперь есть шагом `Warm demo cache (best-effort)` в
+      `.github/workflows/R-CMD-check.yaml`: шаг best-effort by design — отказ
+      сети деградирует в SKIP, а не в красную ногу. Выигрыш не измерен —
+      вынесен в `## Остатки в закрытых пунктах`, №32.
 
 ### ZX3. Позже (горизонт)
 
-- [ ] **Пангеномный индекс больше 21.5 ГБ.** По-хромосомная нарезка
-      (21 индекс пшеницы) и политика «какие хромосомы спрашивать».
-      правка: `marker_bowtie_index()` на набор хромосом, запрос по подмножеству.
-      По-хромосомный индекс — рычаг порядка величины: запрос по индексу от
-      размера генома почти не зависит, а сборка 16 Гб — ~1.4x FASTA (~3-4 мин),
-      дальше амортизируется через `basename` под кешем. `Rbowtie` и
-      `Rsubread` 2.26.0 на этом хосте есть; FM измерен как read mapper (963 МБ
-      на 30.4 Мб, ~53 с на запрос) и счётчиком не стал — см. `ZX4`; штамп FM
-      есть (`ZW2`).
-      проверка: замер сборки и запроса на реальном геноме 16 Гб.
-      блокер: фикспур 16 Гб — не этот хост.
-      следствие: один монолитный индекс упирается в диск и память хоста; без
-      индекса пшеница остаётся на сканах (см. `ZX2`, на порядок хуже).
+- [~] **Пангеномный индекс больше 21.5 ГБ.** По-хромосомная нарезка
+  (21 индекс пшеницы) и политика «какие хромосомы спрашивать».
+  правка: `marker_bowtie_index()` на набор хромосом, запрос по подмножеству.
+  По-хромосомный индекс — рычаг порядка величины: запрос по индексу от
+  размера генома почти не зависит, а сборка 16 Гб — ~1.4x FASTA (~3-4 мин),
+  дальше амортизируется через `basename` под кешем. `Rbowtie` и
+  `Rsubread` 2.26.0 на этом хосте есть; FM измерен как read mapper (963 МБ
+  на 30.4 Мб, ~53 с на запрос) и счётчиком не стал — см. `ZX4`; штамп FM
+  есть (`ZW2`).
+  проверка: замер сборки и запроса на реальном геноме 16 Гб.
+  блокер: фикспур 16 Гб — не этот хост.
+  следствие: один монолитный индекс упирается в диск и память хоста; без
+  индекса пшеница остаётся на сканах (см. `ZX2`, на порядок хуже).
+  закрыто 2026-11-19: `marker_bowtie_index()` принимает вектор
+  последовательностей и пишет по под-индексу на последовательность;
+  `tests/testthat/test-bowtie-subset.R` (137 строк; в full-режиме 25 pass);
+  коммит `47a3ea7`.
+  блокер: замер сборки и запроса на пшенице 16 Гб — тот же 16 Гб фикспур,
+  не этот хост.
 - [x] **Вариантные наборы с неоднозначностью.** Мультиаллельные, INDEL/CNV:
       специфичность праймера и выбор цели (см. `Z9`, `Y5`).
       правка: `marker_targets()`/`target_rows()` принимают `alt2` — второй ALT
@@ -2137,7 +2180,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
 
 ### ZY1–ZY17
 
-- [ ] **`ZY1` GWAS-to-panel end-to-end.** Один wrapper поверх существующих
+- [x] **`ZY1` GWAS-to-panel end-to-end.** Один wrapper поверх существующих
       кирпичей: вход — VCF + локальные haplotype-calls по популяции + список
       доступных химий + targets/регионы; выход — panel `<marker_assay>` с
       multiplex-планом, one-pot-оценкой и tolerance per marker; под капотом —
@@ -2154,6 +2197,10 @@ haplotypes, chemistries, targets, ...)`, собирающий
       `ZA2` — «частично»); снимается детерминированной фикстурой.
       следствие: пайплайн склеивается вручную, и регион без подходящей химии
       теряется между вызовами, а не отчитывается причиной.
+      закрыто 2026-11-19: `R/marker_panel.R` (280 строк) —
+      `marker_design_panel()`; `tests/testthat/test-panel.R` (38 `expect_`-утверждений)
+      на фикстуре `tests/testthat/fixtures/panel/{genome.fa,haplotypes.csv}`;
+      коммит `5a5a29e`.
 - [x] **`ZY2` Automatic chemistry fallback cascade.** Каскад уже работает:
       `marker_solve()`/`solve_one()` идут cheapest-first по `plan$costs` (по
       умолчанию `KASP_TECH_COSTS`), пишут строку `attempts` на каждую пару
@@ -2176,7 +2223,7 @@ haplotypes, chemistries, targets, ...)`, собирающий
       держит оба случая — «схема падает в дизайне» и «упали все схемы».
       следствие: отказ схемы несёт причину до `decisions.csv`; пользователь видит,
       какой порог сработал.
-- [ ] **`ZY3` One-pot cross-chemistry optimization.** Глубже multiplex: разные
+- [x] **`ZY3` One-pot cross-chemistry optimization.** Глубже multiplex: разные
       химии в одной reaction mix. Матрица совместимости — annealing temps,
       primer-dimer, amplicon size separation, fluorescence channels, reagent
       compatibility, detection channel overlap; комбинаторный оптимизатор (ILP
@@ -2191,7 +2238,12 @@ haplotypes, chemistries, targets, ...)`, собирающий
       one-pot предсказание остаётся помеченным `experimental`, пока нет эмпирики.
       следствие: one-pot остаётся ручной работой, а числа совместимости —
       непроверяемыми.
-- [ ] **`ZY4` External literature ingestion.** Пополнение chemistry performance
+      закрыто 2026-11-19: `R/marker_one_pot.R` (339 строк) —
+      `one_pot_compatible()` / `one_pot_matrix()`; `tests/testthat/test-one-pot.R`
+      (49 `expect_`-утверждений); коммит `e7025a2`. Эмпирического
+      one-pot набора по-прежнему нет — вынесено в
+      `## Остатки в закрытых пунктах`, №33.
+- [x] **`ZY4` External literature ingestion.** Пополнение chemistry performance
       registry из внешнего structured источника (KG / RDS corpus со схемой
       marker-domain).
       правка: новый `R/marker_ingest.R` —
@@ -2204,18 +2256,28 @@ provenance_required)`: review queue candidate-обновлений с полны
       ships»; снимается путём, скачанным в `marker_cache_dir()`.
       следствие: registry растёт только руками, доля `primary_literature`
       застревает.
-- [ ] **`ZY5` Community-wide RDS aggregation infrastructure.** Zenodo Community
-      «tidymarkers traces» для первичной публикации с DOI; ExperimentHub как
-      curated aggregation point с versioned snapshots; contribution guidelines,
-      schema versioning и migration path между версиями trace format; opt-in
-      только, authors retain ownership.
-      правка: version/migration helper рядом с `marker_artefact()`; правила
-      контрибуции — `CONTRIBUTING.md`.
-      проверка: новый `tests/testthat/test-trace-schema.R` — trace старой версии
-      после migration остаётся читаемым и не теряет поля.
-      блокер: `ExperimentHub` не установлен, публикация — внешнее действие
-      оператора (агент в библиотеку не пишет), накопленного корпуса нет.
-      следствие: Level 3 остаётся заявлением, а не работающей инфраструктурой.
+      закрыто 2026-11-19: `R/marker_ingest.R` (479 строк) —
+      `marker_ingest_literature()`, `marker_ingest_registry()`,
+      `marker_ingest_approve()`; `tests/testthat/test-ingest.R` (72 `expect_`-утверждения),
+      фикстура `tests/testthat/fixtures/ingest-candidates.csv`; коммит `e7025a2`.
+- [~] **`ZY5` Community-wide RDS aggregation infrastructure.** Zenodo Community
+  «tidymarkers traces» для первичной публикации с DOI; ExperimentHub как
+  curated aggregation point с versioned snapshots; contribution guidelines,
+  schema versioning и migration path между версиями trace format; opt-in
+  только, authors retain ownership.
+  правка: version/migration helper рядом с `marker_artefact()`; правила
+  контрибуции — `CONTRIBUTING.md`.
+  проверка: новый `tests/testthat/test-trace-schema.R` — trace старой версии
+  после migration остаётся читаемым и не теряет поля.
+  блокер: `ExperimentHub` не установлен, публикация — внешнее действие
+  оператора (агент в библиотеку не пишет), накопленного корпуса нет.
+  следствие: Level 3 остаётся заявлением, а не работающей инфраструктурой.
+  закрыто 2026-11-19: `R/marker_trace_schema.R` (387 строк) и связка
+  артефактов; `tests/testthat/test-trace-schema.R` (74 `expect_`-утверждения);
+  коммит `5a5a29e`.
+  блокер: community-раздача (Zenodo Community / ExperimentHub) требует
+  внешнего аккаунта и выпуска DOI — публикация есть действие оператора,
+  пути записи из репозитория нет.
 - [ ] **`ZY6` Meta-analysis package.** Отдельный пакет (`tidymarkers.meta` или
       аналог): pooled RDS corpus, единый query API поверх unified trace schema,
       statistical templates (chemistry failure rate by predictors),
@@ -2248,23 +2310,31 @@ provenance_required)`: review queue candidate-обновлений с полны
       следствие: bugs из закрытых данных сообщаются без утечки. Анонимизация
       документируется прямо из функции: для bug report этого хватает, для legal
       data sharing — нет. Это часть выхода, а не сноска.
-- [ ] **`ZY8` Patent format export + defensive publication.**
-      `marker_patent_export(format = "st26", output =
+- [~] **`ZY8` Patent format export + defensive publication.**
+  `marker_patent_export(format = "st26", output =
 "application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
-      Background, Summary of invention, Detailed description, Figures
-      reference, Sequence listing reference, Claims skeleton; английское
-      описание из структурных шаблонов (не LLM prose); disclaimer «draft
-      documents; patent filing requires qualified patent attorney review».
-      Параллельно `marker_defensive_publication()`: framing defensive
-      publication, не заявки, с формулировкой про prior art; destinations —
-      Zenodo DOI, IP.com, Research Disclosure. Шаблоны — `inst/templates/patent/`.
-      правка: новые `R/marker_patent.R` и `inst/templates/patent/`; `officer` в
-      `Suggests` под guarded call.
-      проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
-      XSD через `xml2`, обязательные секции docx на месте.
-      блокер: `officer` не установлен и не в `Suggests`; XSD не скачивается с
-      пакетом (правило «external data не ships») — нужен cache-путь.
-      следствие: форматов экспорта нет; обход — ручной docx вне пакета.
+  Background, Summary of invention, Detailed description, Figures
+  reference, Sequence listing reference, Claims skeleton; английское
+  описание из структурных шаблонов (не LLM prose); disclaimer «draft
+  documents; patent filing requires qualified patent attorney review».
+  Параллельно `marker_defensive_publication()`: framing defensive
+  publication, не заявки, с формулировкой про prior art; destinations —
+  Zenodo DOI, IP.com, Research Disclosure. Шаблоны — `inst/templates/patent/`.
+  правка: новые `R/marker_patent.R` и `inst/templates/patent/`; `officer` в
+  `Suggests` под guarded call.
+  проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
+  XSD через `xml2`, обязательные секции docx на месте.
+  блокер: `officer` не установлен и не в `Suggests`; XSD не скачивается с
+  пакетом (правило «external data не ships») — нужен cache-путь.
+  следствие: форматов экспорта нет; обход — ручной docx вне пакета.
+  закрыто 2026-11-19: `R/marker_patent.R` (509 строк) —
+  `marker_patent_export()`, `marker_defensive_publication()`,
+  `marker_patent_validate()`; шаблоны
+  `inst/templates/patent/{application.md,defensive_publication.md}`;
+  `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
+  коммит `5a5a29e`. ST.26 XML и markdown-шаблоны есть; `.docx` — остаток.
+  блокер: `.docx` требует suggested-пакет `officer` (на этом хосте его нет)
+  и кеш XSD для валидации схемы.
 - [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
       валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
@@ -2306,7 +2376,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       через `saveRDS()`, ацикличность decision graph и терминация relax-шага,
       выбранная химия из реестра), потолок `hedgehog.tests = 40`.
       следствие: инварианты держатся на свойствах с контрпримером при падении.
-- [ ] **`ZY12` Design by contract для критических путей.** Pre/post-conditions
+- [x] **`ZY12` Design by contract для критических путей.** Pre/post-conditions
       там, где нарушение инварианта должно падать сразу, а не downstream:
       `pick_target_snp()` (post: у выбранного SNP есть designable AS window),
       `assemble_kasp_assay()` (pre: input validity, post: assay completeness),
@@ -2320,6 +2390,10 @@ provenance_required)`: review queue candidate-обновлений с полны
       блокер: ни `checkmate`, ни `assertthat` не установлены; политика пакета —
       зависимость только под реальный вызов.
       следствие: невалидный вход уходит вглубь и всплывает непонятной ошибкой.
+      закрыто 2026-11-19: `R/marker_contracts.R` (175 строк) — `marker_contract()`
+      на base R: `checkmate`/`assertthat` не понадобились, названный блокер снят
+      самим решением; `tests/testthat/test-contracts.R` (38 `expect_`-утверждений), коммит
+      `e7025a2`.
 - [ ] **`ZY13` Formal verification одного инварианта.** Пилот — доказательство
       корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
       либо CrossHair на R-эквивалентной Python-реимплементации. Один
@@ -2329,14 +2403,22 @@ provenance_required)`: review queue candidate-обновлений с полны
       только когда тулчейн появится).
       блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
       следствие: инвариант остаётся проверенным примерами, не доказанным.
-- [ ] **`ZY14` Mutation testing критических subsystems.** Только policy decision
-      logic (classification, routing в decision graph), invariant enforcement
-      (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —
-      mutation score ≥ 80% для этих подсистем.
-      правка: mutators + раннер поверх `covr` (зрелого R-инструмента нет).
-      проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
-      блокер: `covr` не установлен; mutators — часть работы, не зависимость.
-      следствие: выжившие мутанты в policy-коде никто не видит.
+- [~] **`ZY14` Mutation testing критических subsystems.** Только policy decision
+  logic (classification, routing в decision graph), invariant enforcement
+  (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —
+  mutation score ≥ 80% для этих подсистем.
+  правка: mutators + раннер поверх `covr` (зрелого R-инструмента нет).
+  проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
+  блокер: `covr` не установлен; mutators — часть работы, не зависимость.
+  следствие: выжившие мутанты в policy-коде никто не видит.
+  закрыто 2026-11-19: `dev/mutation-test.R` (417 строк) — текст-уровневые
+  мутаторы на одноразовой копии пакета, без `covr`; коммит `4e56134`.
+  Замер на дефолтном потолке: policy 5/11 = 55.5 %, invariants 9/12 = 75.0 %,
+  chemistry 7/18 = 38.9 % — все **ниже** цели 80 %, поэтому раннер
+  завершается с кодом 1, а выжившие мутанты — реальная находка, не проход.
+  Порог остаётся 0.8.
+  блокер: score ниже 80 % по всем трём подсистемам; закрывается тестами на
+  выживших мутантов, а не сдвигом порога.
 - [x] **`ZY15` Living documentation.** Виньетки исполняются при сборке
       (`VignetteBuilder: knitr`), а README quickstart держится исполняемым:
       его текст — это chunk `quickstart` в `kasp-intro.Rmd`
@@ -2367,23 +2449,28 @@ provenance_required)`: review queue candidate-обновлений с полны
       блокер: нет.
       следствие: casual reader видит «ещё один primer designer», не
       архитектуру; это же слабое место paper framing.
-- [ ] **`ZY17` Paper strategy.** Три независимо supportable paper'а: tool paper
-      (Bioinformatics или Plant Methods; architecture + case study + crosscheck + validation evidence), methodology paper (RDS trace infrastructure как
-      отдельный вклад: самогенерирующиеся training data через normal use),
-      perspectives piece (Level 3 articulation как шаблон для CRISPR guide
-      design, drug target identification и прочих design-процессов с
-      several failing alternatives). Companion case study — только при наличии
-      scoped first deployment: cross-lingual chemistry corpus через external
-      literature-mining, ingested в registry, как data paper.
-      правка: evidence table в `VALIDATION.md`, на которую ссылается текст;
-      сам outline — вне дерева пакета.
-      проверка: claims, проверяемые кодом, покрыты существующими тестами
-      (`test-science-ledger.R`, `test-tm-mm2020.R`); непроверяемые перечислены
-      явно.
-      блокер: нет scoped case study и нет данных из `ZY4`/`ZY5`; письмо — не
-      агентская работа.
-      следствие: архитектура не опубликована, Level 3 не сформулирован для
-      внешнего читателя.
+- [~] **`ZY17` Paper strategy.** Три независимо supportable paper'а: tool paper
+  (Bioinformatics или Plant Methods; architecture + case study + crosscheck + validation evidence), methodology paper (RDS trace infrastructure как
+  отдельный вклад: самогенерирующиеся training data через normal use),
+  perspectives piece (Level 3 articulation как шаблон для CRISPR guide
+  design, drug target identification и прочих design-процессов с
+  several failing alternatives). Companion case study — только при наличии
+  scoped first deployment: cross-lingual chemistry corpus через external
+  literature-mining, ingested в registry, как data paper.
+  правка: evidence table в `VALIDATION.md`, на которую ссылается текст;
+  сам outline — вне дерева пакета.
+  проверка: claims, проверяемые кодом, покрыты существующими тестами
+  (`test-science-ledger.R`, `test-tm-mm2020.R`); непроверяемые перечислены
+  явно.
+  блокер: нет scoped case study и нет данных из `ZY4`/`ZY5`; письмо — не
+  агентская работа.
+  следствие: архитектура не опубликована, Level 3 не сформулирован для
+  внешнего читателя.
+  закрыто 2026-11-19: `VALIDATION.md` — таблица `Claim → test` на 35 строк
+  (24 `code` / 4 `measured` / 2 `literature` / 1 not-checkable / 4 `gap`) и
+  8 правок устаревших счётчиков; коммит `47a3ea7`.
+  блокер: сам текст статей — письмо, не агентская работа; case study и
+  данные `ZY4`/`ZY5` названы выше и не изменились.
 
 ### ZY18. Инварианты, не подлежащие ослаблению
 
