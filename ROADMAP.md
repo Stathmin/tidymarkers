@@ -1048,9 +1048,11 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
 - [~] **HRM — плавление; dPCR — пуассоновское разбиение; CRISPR-Dx —
   коллатеральное расщепление; ARMS/CAPS/indel/SSR — виртуальный гель;
   LAMP/RPA — изотермическая кинетика.** `marker_readout()`
-  (`R/marker_readout.R`) возвращает `simulated = TRUE` только для dPCR
+  (`R/marker_readout.R`) возвращает `simulated = TRUE` для любой схемы, чей
+  маркер несёт `$readout` — гидролизный пробный ридаут: dPCR
   (`poisson_lambda()`, `poisson_positive_fraction()`, `dpcr_partition_table()`;
-  `test-readout-dpcr.R` воспроизводит λ Dong и разведение MPS). У остальных
+  `test-readout-dpcr.R` воспроизводит λ Dong и разведение MPS) и TaqMan
+  (`probe_discrimination()`, `test-readout.R`). У остальных
   четырёх химий — `FALSE` с причиной: HRM есть набор из 28 ампликонов, но нет
   Mg/соли (**partial**); LAMP есть Tp × температура, но `copies_per_reaction`
   = `NA` (**partial**, `Q1` не закрыт); CRISPR-Dx — Nalefski 2024 печатает
@@ -1965,7 +1967,7 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
   вызывающая сторона один раз, `bp_lapply()` отдаёт `MulticoreParam` в
   `bplapply`, форкнутые воркеры наследуют его copy-on-write
   (`R/marker_thermo.R`; пересборки на воркер нет). Оценка 21.5 ГБ —
-  экстраполяция 1.34 Б/п.н. с Chr1 TAIR10 (`NEWS.md:621`,
+  экстраполяция 1.34 Б/п.н. с Chr1 TAIR10 (`NEWS.md:692`,
   `R/marker_bowtie.R:16`), не замер.
   проверка: `test-batch.R`; тайминги 6 SNP выше.
   блокер: код — нет; пик памяти на этом хосте не снимается (`bench`
@@ -2312,7 +2314,7 @@ provenance_required)`: review queue candidate-обновлений с полны
   оператора (агент в библиотеку не пишет), накопленного корпуса нет.
   следствие: Level 3 остаётся заявлением, а не работающей инфраструктурой.
   закрыто 2026-11-19: `R/marker_trace_schema.R` (387 строк) и связка
-  артефактов; `tests/testthat/test-trace-schema.R` (74 `expect_`-утверждения);
+  артефактов; `tests/testthat/test-trace-schema.R` (76 `expect_`-утверждений);
   коммит `5a5a29e`.
   блокер: community-раздача (Zenodo Community / ExperimentHub) требует
   внешнего аккаунта и выпуска DOI — публикация есть действие оператора,
@@ -2372,8 +2374,9 @@ provenance_required)`: review queue candidate-обновлений с полны
   `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
   коммит `5a5a29e`. ST.26 XML и markdown-шаблоны есть; `.docx` — остаток.
   блокер: `.docx` требует `officer` и его зависимости `zip`/`uuid`/`gdtools`/
-  `fontquiver`. На этом хосте `officer` лежит только в `/usr/lib/R/site-library`
-  (вне `.libPaths()` R 4.6.1), зависимостей нет, сети нет (`http=000` к CRAN).
+  `fontquiver`. На этом хосте все пять лежат в `/usr/lib/R/site-library` (вне
+  `.libPaths()` R 4.6.1) и не загружаются: `officer` падает на `rlang.so`
+  (`undefined symbol: SETLENGTH`); сети нет (`http=000` к CRAN).
   Валидация по XSD возможна только при файле в кеше: XSD не едет с пакетом.
 - [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
