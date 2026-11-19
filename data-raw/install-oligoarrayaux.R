@@ -85,8 +85,11 @@ define <- function(name, value) {
 # without <stdlib.h>/<string.h>, gcc >= 14 rejects the implicit declarations.
 build <- function(cc, program) {
   datadir <- normalizePath(dat, winslash = "/", mustWork = FALSE)
+  # The tarball is K&R C: `extern int getopt ();` means "any arguments" there.
+  # A compiler defaulting to C23 reads `()` as `(void)`, colliding with mingw's
+  # real getopt/getenv prototypes.
   run(cc, c(
-    "-g", "-O2", "-DENERGY=int", "-DINTEGER", "-DPRECISION=1000",
+    "-std=gnu17", "-g", "-O2", "-DENERGY=int", "-DINTEGER", "-DPRECISION=1000",
     "-DHAVE_STDLIB_H=1", "-DHAVE_STRING_H=1", "-DHAVE_FCNTL_H=1",
     define("PACKAGE_NAME", "OligoArrayAux"),
     define("PACKAGE_VERSION", version),
