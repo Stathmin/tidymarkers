@@ -1111,12 +1111,18 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
       технические), `punctuation` → 0, `negation` (397) прочитан целиком,
       оставлен; гейт `encoding` (невалидный UTF-8, U+FFFD, мойбейк, zero-width,
       управляющие — 0); 14 WARN «Could not resolve link» исправлены причиной.
-- [ ] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI.**
+- [x] **Windows/R-hub: сборка OligoArrayAux; бейджи/CI.**
       правка: `data-raw/install-oligoarrayaux.R` (unix-only) +
       `.github/workflows/R-CMD-check.yaml`. проверка: сборка на чистой машине;
       `dev/install-deps.R` ставит всё без ручных шагов. блокер: нет локального
       Windows. следствие: в CI движок недоступен → `capabilities()` = `unknown`
       (честно), но ни один внешний тест не исполняется.
+      закрыто 2026-11-19: шаг `Install OligoArrayAux (Windows)` в прогоне
+      `44588448692` — `success`, mingw-сборка под `-std=gnu17` (`c0973dc`),
+      и шаг сам исполняет движок на месте: `hybrid-min.exe` вернул `-18.585`.
+      Доказательство — исполнение инструмента на Windows-раннере, а не
+      `unknown`; полный прогон сьюта на этой ноге отдельно висит (см. пункт
+      ниже).
 - [x] **Скорость.** `dev/test.R --full` двухфазный: 126 файлов параллельно
       (`TESTTHAT_CPUS` = 8), затем 4 SOCK-файла серийно; список SOCK-файлов
       защищён grep-guard. Замер 2026-11-06: **8m 10s**, 131 файл, 36894 pass,
