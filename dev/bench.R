@@ -24,6 +24,7 @@ for (pkg in c("bench", "lobstr")) {
   if (!requireNamespace(pkg, quietly = TRUE)) stop("dev/bench.R needs '", pkg, "'; run renv::restore()")
 }
 suppressMessages(pkgload::load_all(root, quiet = TRUE))
+source(file.path(root, "dev", "proc-mem.R"))
 
 # --- fixture ----------------------------------------------------------------
 mk_fixture <- function(seed = 7L, n = 2000L) {
@@ -58,15 +59,27 @@ fmt_bytes <- function(b) {
   }
   if (b < 1024) sprintf("%d B", round(b)) else if (b < 1024^2) sprintf("%.1f KB", b / 1024) else sprintf("%.1f MB", b / 1024^2)
 }
-tab <- do.call(rbind, lapply(names(cases), function(nm) {
+# mem_alloc is NA on an R build without memory profiling, so that case falls
+# back to the case's heap delta (retained, not peak).
+rows <- lapply(names(cases), function(nm) {
+  gc()
+  before <- lobstr::mem_used()
   res <- bench::mark(cases[[nm]](), iterations = 20L, check = FALSE, filter_gc = FALSE)
-  data.frame(fn = nm, ms = as.numeric(res$median) * 1000, bytes = as.numeric(res$mem_alloc))
-}))
+  after <- lobstr::mem_used()
+  bytes <- as.numeric(res$mem_alloc)
+  fallback <- !is.finite(bytes)
+  if (fallback) bytes <- max(0, after - before)
+  data.frame(fn = nm, ms = as.numeric(res$median) * 1000, bytes = bytes, fallback = fallback)
+})
+tab <- do.call(rbind, rows)
 tab <- tab[order(tab$fn), ]
+used_fallback <- tab$fallback
+tab <- tab[, c("fn", "ms", "bytes")]
 
 # --- report -----------------------------------------------------------------
 cat("tidymarkers function benchmark (bench)\n")
 if (!nzchar(Sys.which("hybrid-min"))) cat("note: OligoArrayAux not on PATH - thermodynamic rows skipped\n")
+if (any(used_fallback)) cat("note: bench mem_alloc is unavailable on this R build - bytes are the case's heap delta (retained, not peak)\n")
 cat("\n")
 
 baseline <- file.path(root, "dev", "bench-baseline.csv")
@@ -85,6 +98,8 @@ if (!update && file.exists(baseline)) {
   }
   if (update) cat("\nbaseline written to dev/bench-baseline.csv\n")
 }
+
+cat(sprintf("peak RSS: %s\n", fmt_peak_rss(proc_peak_rss_kb())))
 
 cat("\nobject sizes (lobstr):\n")
 objects <- list(

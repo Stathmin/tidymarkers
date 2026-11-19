@@ -216,6 +216,10 @@ hms_elapsed <- function() {
   }
 }
 
+# the peak RSS of this process comes from /proc/self/status, because bench's
+# mem_alloc is NA on a build without memory profiling (see dev/proc-mem.R)
+source(file.path(root, "dev", "proc-mem.R"))
+
 # lobstr::mem_used() forces a GC, so it is sampled once per file boundary, not
 # around every test.  A missing lobstr only costs the memory column.
 have_lobstr <- requireNamespace("lobstr", quietly = TRUE)
@@ -397,6 +401,11 @@ summary_lines <- function(status) {
       } else {
         "measured"
       }
+    ),
+    sprintf(
+      "- peak RSS: %s%s",
+      fmt_peak_rss(proc_peak_rss_kb()),
+      if (isTRUE(state$any_parallel)) " (driver process only)" else ""
     ),
     ""
   )
