@@ -31,11 +31,10 @@ test_that("one KASP design issues a fixed, batched number of genome passes", {
   f <- snp_fixture()
   # the first design warms the per-pattern hit cache, so the counted one is the
   # steady state (a cold run issues more passes, never fewer)
-  m <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp))
-  n <- with_pass_counter(suppressWarnings(assemble_kasp_assay(f$genome, f$snp)))
-  # the pair screen (exact, then one near pool), the final assay PCR's exact
-  # pool and the ideogram's one grouped scan; one pass per pairing would be far
-  # more.
+  m <- assemble_kasp_assay(f$genome, f$snp)
+  n <- with_pass_counter(assemble_kasp_assay(f$genome, f$snp))
+  # the pair screen's exact pool, the final assay PCR's exact pool and the
+  # ideogram's one grouped scan; one pass per pairing would be far more.
   expect_lte(n, 8L)
 })
 

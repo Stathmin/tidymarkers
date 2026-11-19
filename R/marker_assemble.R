@@ -896,7 +896,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     as_hits <- hit_count(as_primers)
     as_bad <- !is.null(as_hits) && nrow(as_hits) && max(table(as_hits$primer)) > 1L
     # the virtual PCR of every screened pairing is one scan of their pooled
-    # patterns (`in_silico_pcr_pool()`), not one per pairing
+    # patterns (`in_silico_pcr_pool()`), not one per pairing.  the pool is scanned
+    # exactly: `near = TRUE` adds a genome-wide radius-1 pass (measured 193 s vs
+    # 4.6 s for the exact pass on 120 Mb) that only feeds a warning this screen
+    # does not need
     screen_pcr <- tryCatch(
       lapply(seq_len(n_screen), function(i) {
         list(assay = screened[i, ], template = tmpl, snp = snp)
@@ -904,7 +907,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
         lapply(as_pcr_pairs) |>
         unlist(recursive = FALSE) |>
         stats::setNames(paste0(rep(c("AS_ref", "AS_alt"), n_screen), "_", rep(seq_len(n_screen), each = 2L))) |>
-        in_silico_pcr_pool(genome, near = TRUE),
+        in_silico_pcr_pool(genome),
       error = function(e) NULL
     )
     screen_pair <- function(i) {

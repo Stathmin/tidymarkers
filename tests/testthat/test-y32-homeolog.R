@@ -225,21 +225,13 @@ test_that("Y3.1: a diagnostic mask hit reports unique", {
 test_that("Y3.1: a diagnostic mask miss warns and reports multicopy", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
-  m0 <- suppressWarnings(assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L))
+  m0 <- assemble_kasp_assay(f$genome, f$snp, pair_screen = 0L, cores = 1L)
   ap <- homeolog_axes(m0)$anchor_pos
   expect_warning(
-    m <- withCallingHandlers(
-      assemble_kasp_assay(
-        f$genome, f$snp,
-        pair_screen = 0L, cores = 1L,
-        diagnostic_positions = data.frame(chrom = "Chr1", pos = ap + 1000L)
-      ),
-      warning = function(w) {
-        # the synthetic template also raises an unrelated near-match PCR warning
-        if (grepl("near-match in-silico PCR", conditionMessage(w), fixed = TRUE)) {
-          invokeRestart("muffleWarning")
-        }
-      }
+    m <- assemble_kasp_assay(
+      f$genome, f$snp,
+      pair_screen = 0L, cores = 1L,
+      diagnostic_positions = data.frame(chrom = "Chr1", pos = ap + 1000L)
     ),
     "does not localise"
   )

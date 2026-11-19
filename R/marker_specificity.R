@@ -1524,20 +1524,21 @@ pcr_products_from_hits <- function(fh_all, rh_all, chroms, f_primer, r_primer, B
 #' The cost of a scan is the number of passes over the genome, not the number of
 #' primers in a pass (see `pattern_hits_batch()`), and a design asks for several
 #' pairs at the same radius - the two allele-specific pairings of an assay, the
-#' `pair_screen` candidates of an assembly, and one near pass per pair.  So every
-#' pattern of the pool is searched once (both plus-strand halves: the forward
-#' primers as themselves, the reverse primers as their reverse complements), and
-#' each pair is then paired from its own slice of the shared table.
+#' `pair_screen` candidates of an assembly.  So every pattern of the pool is
+#' searched once (both plus-strand halves: the forward primers as themselves,
+#' the reverse primers as their reverse complements), and each pair is then
+#' paired from its own slice of the shared table.
 #'
 #' The result is `in_silico_pcr()`'s, pair for pair and in pool order.  The search
 #' is one pattern, and the miss counts come from `pattern_hits_scan()`'s
-#' `unambiguous_blocks()` only.  Two properties are needed for that:
+#' `unambiguous_blocks()` only.  Two things matter here:
 #' * a pair is paired only from the hits of its own two primers, so the pairing
 #'   is unchanged (a hit of another pair's primer is not a candidate);
-#' * the near pass of `warn_near_products()` is skipped here, since it would
-#'   issue a scan per pair.  `in_silico_pcr_pool()` does not warn; its callers
-#'   scan the whole pool once at radius 1 instead, or ask for `near = TRUE`,
-#'   which takes that radius-1 pass over every pattern of the pool in one go.
+#' * `in_silico_pcr_pool()` does not warn by default.  `near = TRUE` takes one
+#'   radius-1 pass over every pattern of the pool and warns, which is opt-in
+#'   because that pass costs an order of magnitude more than the exact one
+#'   (measured 4.6 s exact vs 193 s radius-1 for one pair on a 120 Mb genome),
+#'   and the internal assembly screen does not ask for it.
 #' @param pairs named list of `c(F = , R = )` primer pairs.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param max_mismatch search radius.
