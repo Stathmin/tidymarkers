@@ -2416,8 +2416,18 @@ provenance_required)`: review queue candidate-обновлений с полны
       кластере.
       проверка: `BiocCheck` проходит на собранном пакете, и шаг падает при
       регрессии.
-      блокер: `BiocCheck`, `updog`, `polyRAD`, `BatchR` не установлены; плюс
-      внешний review Bioconductor.
+      блокер (измерено 2026-11-19): `BiocCheck(".")` даёт
+      `2 ERROR | 3 WARNING | 15 NOTE`. E1 — примеры: 104 из 195 man-страниц
+      целиком `\dontrun{}` (нужны движки, сеть или `BSgenome`); чтобы пройти,
+      не меньше 65 из них должны стать исполняемыми. E2 — адрес мейнтейнера не
+      найден на support.bioconductor.org (`HTTP 404`), это действие оператора.
+      WARNING про 5 MB — артефакт рабочего каталога (`.git/objects/pack`,
+      `.tmp`, `dev/logs`, `graphify-out`), на собранном тарболе исчезает.
+      `BiocCheck` 1.48.1 поставлен с `dependencies = FALSE` (девять пакетов,
+      библиотека 282 → 291, `rlang` 1.3.0 не сдвинут), но в `dev/check.R` он
+      не вшит: шаг гейта, который не может пройти, — это неправда.
+      `updog`/`polyRAD`/`BatchR` по-прежнему не установлены; плюс внешний
+      review Bioconductor.
       следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
       cluster.
 - [ ] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
