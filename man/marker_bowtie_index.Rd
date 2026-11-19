@@ -7,7 +7,8 @@
 marker_bowtie_index(
   genome,
   basename = fs::path(fs::path_temp(), "marker_bowtie"),
-  threads = 4L
+  threads = 4L,
+  chroms = NULL
 )
 }
 \arguments{
@@ -17,9 +18,18 @@ marker_bowtie_index(
 under \code{\link[=tempdir]{tempdir()}} (see \emph{Index location}).}
 
 \item{threads}{threads for \code{bowtie_build()}.}
+
+\item{chroms}{optional character vector of sequence names (see
+\code{\link[=genome_chroms]{genome_chroms()}}).  When given, one index per chromosome is built at
+\code{paste0(basename, "_", chrom)} and a named \code{marker_bowtie_index_set} is
+returned, which \code{\link[=specificity_bowtie]{specificity_bowtie()}} sums hits over; an existing
+per-chromosome index is reused like the whole-genome one.  \code{NULL} (the
+default) builds the one whole-genome index.}
 }
 \value{
-the index basename, for \code{\link[=specificity_bowtie]{specificity_bowtie()}}.
+the index basename, for \code{\link[=specificity_bowtie]{specificity_bowtie()}}.  With \code{chroms}, a
+named \code{marker_bowtie_index_set} of basenames, one per chromosome; subset it
+(\code{idx[c("chr1")]}) to query fewer chromosomes.
 }
 \description{
 Writes a compact FM index next to \code{basename} in one pass.  Idempotent: if

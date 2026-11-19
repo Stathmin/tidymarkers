@@ -76,6 +76,17 @@ jobs:
                   extra-packages: any::rcmdcheck, any::pkgload
                   needs: check
 
+            # ROADMAP ZY18, the Commons licensing invariant: MIT, no weaponized
+            # licence additions. dev/check-licenses.R scans the dependencies
+            # DESCRIPTION declares (never the whole library) and fails on AGPL,
+            # NonCommercial, Commons Clause, SSPL, Elastic or BUSL -- including
+            # the dual-licence form `AGPL-3 | MIT`. No `if:` guard and no
+            # continue-on-error: it reads what setup-r-dependencies just
+            # installed, so every leg runs it, and a forbidden licence must red
+            # the job.
+            - name: Licence gate (Commons licensing invariant)
+              run: Rscript dev/check-licenses.R
+
             # OligoArrayAux provides `hybrid-min`, which DECIPHER needs for dG/Tm.
             # `ubuntu-latest` no longer ships conda, and the bioconda package is
             # just `bin/` + `share/oligoarrayaux/` -- the layout

@@ -148,6 +148,17 @@ step("hand-roll registry", function() {
   ok("every hand-rolled sequence primitive is registered or replaced")
 })
 
+# 2c. licence invariant ------------------------------------------------------
+step("licences", function() {
+  # FOSS-only: a declared dependency whose licence is not permissive must fail
+  # the gate here, not at the first install attempt on a fresh machine.
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-licenses.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-licenses.R failed (status ", status, ")")
+  }
+  ok("every installed dependency has a permissive licence")
+})
+
 # 3. criterion fixtures + docs/artifacts graph ------------------------------
 step("criterion fixtures", function() {
   # ZW1: a criterion without a fail fixture (or an exemption with a reason) must

@@ -9,7 +9,10 @@ specificity_bowtie(primers, index, max_mismatches = 0L, nthreads = 4L)
 \arguments{
 \item{primers}{named character vector of oligos (5'->3').}
 
-\item{index}{index basename from \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}.}
+\item{index}{index basename from \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}, or the
+per-chromosome set it returns (any vector of two or more basenames).  With a
+set, every index is queried and the hits are summed per primer, so a
+chromosome that lacks a primer contributes \code{0}.}
 
 \item{max_mismatches}{mismatches tolerated over the whole primer (bowtie1
 allows at most 3).}
@@ -19,7 +22,9 @@ allows at most 3).}
 \value{
 tibble \code{primer}, \code{seed} (the primer itself) and \code{hits} (both-strand
 genome-wide alignment count; more than one = a potential off-target), plus
-\code{engine} (\code{"Rbowtie"}) and an \code{engine_stamp} attribute.
+\code{engine} (\code{"Rbowtie"}) and an \code{engine_stamp} attribute.  Hits are summed
+over every index in \code{index}, so a per-chromosome set gives the whole-genome
+count in one row per primer.
 }
 \description{
 Maps each primer to the index with \code{Rbowtie::bowtie()} (\code{a = TRUE}, so every

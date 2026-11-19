@@ -15,6 +15,12 @@
 #  1.34 bytes per genome base (wheat 16 Gb ~ 21.5 GB), and the build is a
 #  one-off.  This is why `specificity_of()` prefers it over the Subread FM index
 #  (31.7 bytes/bp, and its BAM carries no mismatch tags to filter on).
+#
+#  A monolithic index is the lever's limit: wheat is 16 Gb, so one index is about
+#  21.5 GB and no single build fits a small host.  `marker_bowtie_index(chroms =)`
+#  slices the genome into one index per chromosome, and
+#  `specificity_bowtie()` sums the hits over the set.  The wheat build-and-query
+#  measurement is still owed: no 16 Gb fixpured reference on this host.
 # =============================================================================
 
 #' Is the bowtie1 scan available (`Rbowtie`)?
@@ -53,7 +59,15 @@ has_bowtie <- function() {
 #' @param basename index basename to create (no extension); defaults to a name
 #'   under [tempdir()] (see *Index location*).
 #' @param threads threads for `bowtie_build()`.
-#' @return the index basename, for [specificity_bowtie()].
+#' @param chroms optional character vector of sequence names (see
+#'   [genome_chroms()]).  When given, one index per chromosome is built at
+#'   `paste0(basename, "_", chrom)` and a named `marker_bowtie_index_set` is
+#'   returned, which [specificity_bowtie()] sums hits over; an existing
+#'   per-chromosome index is reused like the whole-genome one.  `NULL` (the
+#'   default) builds the one whole-genome index.
+#' @return the index basename, for [specificity_bowtie()].  With `chroms`, a
+#'   named `marker_bowtie_index_set` of basenames, one per chromosome; subset it
+#'   (`idx[c("chr1")]`) to query fewer chromosomes.
 #' @examples
 #' \dontrun{
 #' idx <- marker_bowtie_index(marker_genome("genome.fa"))
@@ -61,12 +75,39 @@ has_bowtie <- function() {
 #' @family specificity
 #' @export
 marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_bowtie"),
-                                threads = 4L) {
+                                threads = 4L, chroms = NULL) {
   # the genome check comes first, so without Rbowtie a BSgenome genome still says so
   src <- genome_fasta_source(genome, "marker_bowtie_index")
   genome <- src$genome
   rlang::check_installed("Rbowtie", reason = gettext("for the bowtie genome scan"))
   basename <- as.character(basename)
+  if (is.null(chroms)) {
+    return(bowtie_index_build(genome, basename, threads))
+  }
+  if (length(chroms) == 0L) {
+    cli::cli_abort(gettext(
+      "`chroms` must name at least one sequence, or be `NULL` for one whole-genome index."
+    ))
+  }
+  bowtie_index_set(genome, src$fasta, basename, as.character(chroms), threads)
+}
+
+# bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
+# in-memory set are named `seq1`, `seq2`, ... on the way out
+bowtie_name_seqs <- function(gs) {
+  nm <- names(gs)
+  if (is.null(nm)) nm <- rep("", length(gs))
+  blank <- is.na(nm) | !nzchar(nm)
+  if (any(blank)) {
+    # an empty defline leaves the index with unusable reference names
+    nm[blank] <- paste0("seq", which(blank))
+    names(gs) <- nm
+  }
+  gs
+}
+
+# one index at `basename`, reusing an existing build (the one-off cost)
+bowtie_index_build <- function(genome, basename, threads) {
   if (fs::file_exists(paste0(basename, ".1.ebwt"))) {
     cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {basename}}."))
     return(basename)
@@ -76,16 +117,7 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
   } else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))
-    gs <- genome
-    nm <- names(gs)
-    if (is.null(nm)) nm <- rep("", length(gs))
-    blank <- is.na(nm) | !nzchar(nm)
-    if (any(blank)) {
-      # an empty defline leaves the index with unusable reference names
-      nm[blank] <- paste0("seq", which(blank))
-      names(gs) <- nm
-    }
-    Biostrings::writeXStringSet(gs, p)
+    Biostrings::writeXStringSet(bowtie_name_seqs(genome), p)
     p
   }
   cli::cli_alert_info(gettext("Building a bowtie index at {.path {basename}} (one-off)."))
@@ -101,6 +133,29 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
   basename
 }
 
+# one index per chromosome, so no single build has to hold the whole genome
+bowtie_index_set <- function(genome, fasta, basename, chroms, threads) {
+  # shortcut: this reads the whole FASTA to slice it, as the single-index path
+  # does; upgrade to a streaming reader if a genome outgrows RAM
+  seqs <- if (inherits(genome, "marker_genome")) Biostrings::readDNAStringSet(fasta) else bowtie_name_seqs(genome)
+  # `seqnames` maps the requested name to the FASTA defline (`chrom_map`)
+  defline <- if (inherits(genome, "marker_genome")) genome$seqnames else rlang::set_names(names(seqs))
+  unknown <- chroms[is.na(match(chroms, names(defline)))]
+  if (length(unknown) > 0L) {
+    cli::cli_abort(c(
+      gettext("{.arg chroms} asks for sequence{?s} {.val {unknown}}, which {.arg genome} does not have."),
+      i = gettext("Available: {.val {names(defline)}}.")
+    ))
+  }
+  seqs <- seqs[unname(defline[chroms])]
+  names(seqs) <- chroms
+  bases <- rlang::set_names(paste0(basename, "_", chroms), chroms)
+  for (chr in chroms) {
+    bowtie_index_build(seqs[chr], bases[[chr]], threads)
+  }
+  structure(bases, class = c("marker_bowtie_index_set", "character"), chroms = chroms)
+}
+
 #' Count genome hits of whole primers with a bowtie1 index (`Rbowtie`)
 #'
 #' Maps each primer to the index with `Rbowtie::bowtie()` (`a = TRUE`, so every
@@ -110,13 +165,18 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
 #' primer reports `0`; the count includes the reverse-complement strand.
 #'
 #' @param primers named character vector of oligos (5'->3').
-#' @param index index basename from [marker_bowtie_index()].
+#' @param index index basename from [marker_bowtie_index()], or the
+#'   per-chromosome set it returns (any vector of two or more basenames).  With a
+#'   set, every index is queried and the hits are summed per primer, so a
+#'   chromosome that lacks a primer contributes `0`.
 #' @param max_mismatches mismatches tolerated over the whole primer (bowtie1
 #'   allows at most 3).
 #' @param nthreads threads for `Rbowtie::bowtie()`.
 #' @return tibble `primer`, `seed` (the primer itself) and `hits` (both-strand
 #'   genome-wide alignment count; more than one = a potential off-target), plus
-#'   `engine` (`"Rbowtie"`) and an `engine_stamp` attribute.
+#'   `engine` (`"Rbowtie"`) and an `engine_stamp` attribute.  Hits are summed
+#'   over every index in `index`, so a per-chromosome set gives the whole-genome
+#'   count in one row per primer.
 #' @examples
 #' \dontrun{
 #' idx <- marker_bowtie_index(marker_genome("genome.fa"))
@@ -130,7 +190,25 @@ specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4
   if (max_mismatches > 3L) {
     cli::cli_abort(gettext("bowtie1 allows at most 3 mismatches (`max_mismatches` is {max_mismatches})."))
   }
+  # `as.character()` drops the set's names but keeps its length, which is the
+  # only thing a set is told by: two or more basenames are summed
   index <- as.character(index)
+  hits <- if (length(index) > 1L) {
+    rows <- lapply(unname(index), function(one) {
+      bowtie_primer_hits(primers, one, max_mismatches, nthreads)
+    })
+    Reduce(`+`, rows)
+  } else {
+    bowtie_primer_hits(primers, index, max_mismatches, nthreads)
+  }
+  marker_with_engine(
+    tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits),
+    "Rbowtie"
+  )
+}
+
+# one index queried, as integer hits in `primers` order
+bowtie_primer_hits <- function(primers, index, max_mismatches, nthreads) {
   td <- as.character(withr::local_tempdir())
   reads <- file.path(td, "reads.fa")
   sam <- file.path(td, "hits.sam")
@@ -159,8 +237,5 @@ specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4
   }
   hits <- as.integer(cnt[names(primers)])
   hits[is.na(hits)] <- 0L
-  marker_with_engine(
-    tibble::tibble(primer = names(primers), seed = as.character(primers), hits = hits),
-    "Rbowtie"
-  )
+  hits
 }
