@@ -82,6 +82,7 @@ Suggests:
     DBI,
     RSQLite,
     xml2,
+    officer,
     crisprVerse,
     parallelly,
     spelling

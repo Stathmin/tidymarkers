@@ -33,6 +33,7 @@ Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
+\code{\link[=marker_design_panel]{marker_design_panel()}},
 \code{\link[=marker_export]{marker_export()}},
 \code{\link[=marker_outcomes]{marker_outcomes()}},
 \code{\link[=marker_plan]{marker_plan()}},
@@ -43,6 +44,11 @@ Other plan:
 \code{\link[=marker_solve]{marker_solve()}},
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_tech]{marker_tech()}},
+\code{\link[=marker_trace_from_artefact]{marker_trace_from_artefact()}},
+\code{\link[=marker_trace_migrate]{marker_trace_migrate()}},
+\code{\link[=marker_trace_read]{marker_trace_read()}},
+\code{\link[=marker_trace_schema]{marker_trace_schema()}},
+\code{\link[=marker_trace_write]{marker_trace_write()}},
 \code{\link[=marker_tubes]{marker_tubes()}}
 }
 \concept{plan}

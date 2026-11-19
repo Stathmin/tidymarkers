@@ -140,6 +140,15 @@ test_that("the pair screen swaps a top pairing with an off-target duplicate for 
     Chr1 = W,
     Chr2 = paste0(strrep("A", 60L), com0, strrep("A", 60L))
   ))
+  # regression: the screen's grouped scan must search a primer's reverse
+  # complement too.  Here the plus strand carries only the Chr2 duplicate and the
+  # reverse complement the real Chr1 site, so a plus-only batch hides one of the
+  # two and the pairing then reads clean (which is the bug this test guards).
+  rc0 <- as.character(Biostrings::reverseComplement(Biostrings::DNAString(com0)))
+  hits <- pattern_hits_batch(c(com0, rc0), genome2, 0L)
+  hit_chroms <- function(p) names(Filter(length, hits[[p]]))
+  expect_identical(hit_chroms(com0), "Chr2")
+  expect_identical(hit_chroms(rc0), "Chr1")
   msgs <- character()
   a <- withCallingHandlers(
     assemble_kasp_assay(genome2, snp, flank = 150L, cores = 1L, pair_screen = 3L),

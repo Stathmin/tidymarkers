@@ -844,13 +844,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     # alleles of its virtual PCR); `pair_screen` pairings therefore cost
     # `pair_screen` passes of the same radius.  Each pass is per primer, not per
     # pattern, so the whole screen is scanned once up front instead: every COM
-    # primer and every AVS pattern of the screened pairings (`as_hits` included,
-    # which is scanned below anyway) is searched in one grouped pass, and
-    # `primer_hit_table_from_hits()` profiles the hits per primer.  The screen
-    # then reads the hits instead of rescanning, and the `in_silico_pcr()` calls
-    # it replaces are not re-issued.
+    # primer, every AVS pattern of the screened pairings (`as_hits` included,
+    # which is scanned below anyway) and the reverse complement of each (a primer
+    # binds either strand) is searched in one grouped pass, and `hit_count()`
+    # reads that scan instead of rescanning; the `in_silico_pcr()` calls it
+    # replaces are not re-issued.
     as_primers <- c(AS_ref = assays$as_ref[1L], AS_alt = assays$as_alt[1L])
     screened <- assays[seq_len(n_screen), , drop = FALSE]
+    rc_pattern <- function(p) {
+      as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))
+    }
     screen_template <- function(i, side) {
       row <- screened[i, ]
       # the same pairs `as_pcr_pairs()` builds, so the scan covers what the PCR asks
@@ -859,11 +862,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
     }
     screen_patterns <- c(
       as_primers,
-      vapply(seq_len(n_screen), function(i) screened$com[[i]], character(1)),
+      vapply(as_primers, rc_pattern, character(1)),
+      screened$com,
+      vapply(screened$com, rc_pattern, character(1)),
       unlist(lapply(seq_len(n_screen), function(i) screen_template(i, "F")), use.names = FALSE),
       # the reverse primers are searched as their reverse complements
       unlist(lapply(seq_len(n_screen), function(i) screen_template(i, "R")), use.names = FALSE) |>
-        lapply(function(p) as.character(Biostrings::reverseComplement(Biostrings::DNAString(p)))) |>
+        lapply(rc_pattern) |>
         unlist(use.names = FALSE)
     )
     screen_hits <- tryCatch(
@@ -871,18 +876,22 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       error = function(e) NULL
     )
     hit_count <- function(primers) {
-      # one exact hit table per primer, from the one grouped scan (`as_hits`
-      # semantics: both strands, one entry per locus)
+      # One row per (primer, chromosome) that holds an exact hit on either strand:
+      # the shape `primer_hits()` returns and the only thing the guards below read
+      # (`table(hits$primer)`).  A table without the `primer` column made that
+      # count NULL at every guard, so the screen kept an off-target pairing.
       if (is.null(screen_hits)) {
         return(tryCatch(primer_hits(primers, genome, BPPARAM = BPPARAM), error = function(e) NULL))
       }
       purrr::imap(primers, function(p, nm) {
-        sub <- primer_hit_table_from_hits(
-          p, screen_hits[[p]], genome, 0L, "pcr",
-          side = "f"
-        )
-        if (!nrow(sub)) NULL else sub
-      }) |> purrr::list_rbind()
+        back <- rc_pattern(p)
+        purrr::map(names(screen_hits[[p]]), function(ch) {
+          n <- length(screen_hits[[p]][[ch]]) + length(screen_hits[[back]][[ch]])
+          if (!n) NULL else tibble::tibble(primer = nm, chrom = ch, n_hits = n)
+        }) |>
+          purrr::list_rbind()
+      }) |>
+        purrr::list_rbind()
     }
     as_hits <- hit_count(as_primers)
     as_bad <- !is.null(as_hits) && nrow(as_hits) && max(table(as_hits$primer)) > 1L
@@ -907,7 +916,16 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
       if (!is.null(com_hits) && nrow(com_hits) && max(table(com_hits$primer)) > 1L) {
         return(FALSE)
       }
-      prod <- if (is.null(screen_pcr)) NULL else screen_pcr[paste0(c("AS_ref", "AS_alt"), "_", i)]
+      # the pool names each pair's products by its pool position; rename the slice
+      # back to the AS primers `assay_amplicon_counts()` reports
+      prod <- if (is.null(screen_pcr)) {
+        NULL
+      } else {
+        stats::setNames(
+          screen_pcr[paste0(c("AS_ref", "AS_alt"), "_", i)],
+          c("AS_ref", "AS_alt")
+        )
+      }
       if (is.null(prod) || any(vapply(prod, is.null, logical(1)))) {
         return(TRUE) # unknown -> do not block
       }

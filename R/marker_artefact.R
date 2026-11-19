@@ -550,6 +550,7 @@ marker_artefact <- function(solved, dir = tempdir()) {
 
   manifest <- list(
     schema = "tidymarkers/artefact@1",
+    trace_schema = marker_trace_schema(),
     created = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     package = list(
       name = "tidymarkers",

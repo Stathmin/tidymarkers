@@ -10,12 +10,12 @@ This repository does not value volume. It values a claim that can be checked.
 Before you write code, know which of four kinds of change you are making,
 because each has a different gate:
 
-| Kind | Example | What proves it |
-|---|---|---|
-| **Rule** — a design or acceptance rule | a new mismatch severity, a changed Tm window | a measurement read from a source you opened, and a `data-raw/<paper>.R` script that re-derives it and fails on disagreement |
-| **Fixture** — an input the suite runs against | a panel, a haplotypes table, a reference slice | the file plus the id in `dev/check-criteria.R` that names a real test driving it |
-| **Wiring** — existing code reaches a caller | an exported function that nothing calls | a call site, or the function is unexported and its `@keywords internal` says why |
-| **Prose** — README, vignette, roadmap | a corrected sentence | it matches what the code and the tests now do |
+| Kind                                          | Example                                        | What proves it                                                                                                              |
+| --------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Rule** — a design or acceptance rule        | a new mismatch severity, a changed Tm window   | a measurement read from a source you opened, and a `data-raw/<paper>.R` script that re-derives it and fails on disagreement |
+| **Fixture** — an input the suite runs against | a panel, a haplotypes table, a reference slice | the file plus the id in `dev/check-criteria.R` that names a real test driving it                                            |
+| **Wiring** — existing code reaches a caller   | an exported function that nothing calls        | a call site, or the function is unexported and its `@keywords internal` says why                                            |
+| **Prose** — README, vignette, roadmap         | a corrected sentence                           | it matches what the code and the tests now do                                                                               |
 
 A rule with no measurement is a default. Say so in the roxygen comment and in
 `NEWS.md`; a default written down honestly is welcome, a default dressed as a
@@ -97,14 +97,27 @@ are internal working documents and stay Russian.
 Only the files R needs actually ship. Everything below is development material
 and is excluded from the tarball by `.Rbuildignore`:
 
-| Path | What it is |
-|---|---|
-| `R/`, `man/`, `vignettes/`, `tests/` | the package |
-| `data-raw/` | generators for `inst/extdata/` and the source reads behind the rules (e.g. `polymarker-source.R`) |
-| `dev/` | the gate (`check.R`, `test.R`), renderers, benchmarks, `dev/lecture/` slides, and the vendored ELK/libavoid layout engine in `.tools/elk` |
-| `docs/` | `INDEX.md`, `artifacts.yml` (figure manifest), generated artifact graph, `decision-audit.md` |
-| `.agents/`, `.cursor/` | agent instructions and repo skills; not part of the product |
-| `VALIDATION.md` | the evidence accounting behind the design rules |
+| Path                                 | What it is                                                                                                                                |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `R/`, `man/`, `vignettes/`, `tests/` | the package                                                                                                                               |
+| `data-raw/`                          | generators for `inst/extdata/` and the source reads behind the rules (e.g. `polymarker-source.R`)                                         |
+| `dev/`                               | the gate (`check.R`, `test.R`), renderers, benchmarks, `dev/lecture/` slides, and the vendored ELK/libavoid layout engine in `.tools/elk` |
+| `docs/`                              | `INDEX.md`, `artifacts.yml` (figure manifest), generated artifact graph, `decision-audit.md`                                              |
+| `.agents/`, `.cursor/`               | agent instructions and repo skills; not part of the product                                                                               |
+| `VALIDATION.md`                      | the evidence accounting behind the design rules                                                                                           |
+
+## Contributing a trace (opt-in)
+
+A _trace_ is the flattened projection of one design artefact: provenance, plan,
+counts, overrides, limitations and the decision table, without sample names, a
+hostname or an absolute path (`marker_trace_from_artefact()`). A pooled corpus
+would be made of traces; nothing is published today.
+
+Contribution is opt-in, and the author keeps ownership of the record. To offer
+one, write it with `marker_trace_write()` (a written trace is always at the
+current `marker_trace_schema()`) and send it to the maintainer. An agent cites
+and collects; it does not add records to any archive. Publication is an operator
+action, and the archive path is still an open `ZY5` item.
 
 ## Code review
 
