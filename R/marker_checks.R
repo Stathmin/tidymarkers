@@ -768,6 +768,9 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     field(a1$amplicon, "product"), field(a1$primers, "product"),
     field(a1$assay, "amplicon"), amp_span(a1$amplicon)
   )
+  prod <- first_num(
+    field(marker$amplicons, "n_products"), field(a1$amplicons, "n_products")
+  )
   win <- marker_amplicon_window(marker_scheme(scheme)$family, limits)
   thermo <- if (length(dna) && engine_has("hairpin_dg", engines)) {
     tryCatch(primer_thermo(dna), error = function(e) NULL)
@@ -1046,16 +1049,26 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
     } else if (identical(lab, "fragment size (bp)")) {
       observed[i] <- amp
       pass[i] <- is.finite(amp) && dplyr::between(amp, win[1L], win[2L])
+    } else if (identical(lab, "in-silico PCR products (n)")) {
+      if (is.finite(prod)) {
+        observed[i] <- prod
+        pass[i] <- prod <= 1
+      }
     }
   }
   # Family checks belong only to their own marker class; elsewhere they are not
   # applicable, so they neither pass nor doom.  A check with no observed value
   # (missing data or an engine that was not run) is unknown, never a pass.
+  # A class whose design never paired its primers onto a genome has no product
+  # count to grade, so that row is not_applicable - the same reading as the
+  # duplex pairing in `R/marker_duplex.R` - not an unknown that poisons the
+  # verdict.
   fam_labs <- marker_family_check_labels(family)
   out <- marker_evaluation_table(
     stage = checks$stage, criterion = checks$label, observed = observed,
     limit = checks$limit, pass = pass, level = checks$level,
-    not_applicable = checks$label %in% fam_labs & !native
+    not_applicable = (checks$label %in% fam_labs & !native) |
+      (checks$label == "in-silico PCR products (n)" & !is.finite(prod))
   )
   # internal hand-off for the display adapter; not part of the public table
   attr(out, "thermo") <- thermo

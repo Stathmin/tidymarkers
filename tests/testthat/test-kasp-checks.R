@@ -128,6 +128,33 @@ test_that("family checks are not_applicable to another marker class", {
   expect_equal(evaluation_verdict(ch), "usable")
 })
 
+test_that("the generic ladder grades the in-silico product count", {
+  skip_if_no_oligoarrayaux()
+  p <- kasp_primers()
+  x <- structure(
+    list(
+      snp = tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G"),
+      amplicon = tibble::tibble(start = 200L, end = 350L),
+      primers = list(forward = p[["AS_ref"]], reverse = p[["COM"]]),
+      ideogram = list(hits = tibble::tibble(
+        primer = c("forward", "reverse")
+      ))
+    ),
+    class = "marker_caps"
+  )
+  # no product count on the object: the row is not applicable, not unknown
+  ch <- marker_design_checks(x, scheme = "lamp")
+  i <- ch$criterion == "in-silico PCR products (n)"
+  expect_equal(as.character(ch$status[i]), "not_applicable")
+  # a count of two products is more than the one allele-specific product
+  x$amplicons <- tibble::tibble(n_products = 2L)
+  ch <- marker_design_checks(x, scheme = "lamp")
+  i <- ch$criterion == "in-silico PCR products (n)"
+  expect_equal(ch$observed[i], 2)
+  expect_equal(as.character(ch$status[i]), "fail")
+  expect_equal(evaluation_verdict(ch), "doomed")
+})
+
 test_that("each broken criterion flips the verdict to fail", {
   mutators <- list(
     function(a) {
