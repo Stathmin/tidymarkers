@@ -388,7 +388,10 @@ reprex_read_lines <- function(path) {
       con <- if (grepl("\\.gz$", path, ignore.case = TRUE)) gzfile(path) else file(path, open = "rb")
       on.exit(close(con))
       # a raw read keeps a missing final newline, unlike readLines()
-      strsplit(rawToChar(readBin(con, "raw", file.size(path))), "\n", fixed = TRUE)[[1L]]
+      text <- strsplit(rawToChar(readBin(con, "raw", file.size(path))), "\n", fixed = TRUE)[[1L]]
+      # a file written in text mode on Windows ends every line with CRLF; the
+      # carriage return is not part of the record and is not a DNA base
+      sub("\r$", "", text)
     },
     error = function(e) cli::cli_abort(gettext("Cannot read {.path {path}}."))
   )

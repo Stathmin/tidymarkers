@@ -140,6 +140,16 @@ test_that("a FASTA path is read by hand and anonymised", {
   expect_identical(env$nm, "s1")
 })
 
+test_that("a CRLF FASTA is read without the carriage return", {
+  fasta <- file.path(withr::local_tempdir(), "g.fa")
+  writeBin(charToRaw(">chrA\r\nACGTACGTTGCAAGGCTTAA\r\n"), fasta)
+  path <- file.path(withr::local_tempdir(), "reprex.R")
+  reprex_write(fasta, path)
+  env <- reprex_env(path)
+  expect_identical(nchar(env$syn), 20L)
+  expect_identical(env$nm, "s1")
+})
+
 test_that("a marker_genome is anonymised through its FASTA path", {
   fasta <- file.path(withr::local_tempdir(), "g.fa")
   writeLines(c(">chrA", "ACGTACGTTGCAAGGCTTAACGTACGTTGCAAGGCTTAACGTACGTACGT"), fasta)

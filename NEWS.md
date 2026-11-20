@@ -6,6 +6,20 @@
 
 ## 0.4.1 (в работе)
 
+### Чтение FASTA/ VCF/BED снимает CRLF (2026-11-20)
+
+- **Класс изменения: исправление; `R/` менялся.**
+  `reprex_read_lines()` (`R/marker_reprex.R`) теперь снимает завершающий `\r`
+  с каждой строки — тем же идиомом `sub("\r$", "", ...)`, что уже стоял в
+  `read_lines_with_offsets()` для GenBank. Файл, записанный текстовым
+  соединением на Windows, заканчивает строку CRLF, и `\r` попадал в
+  последовательность как невалидное основание (`new_XString_from_CHARACTER …
+key 13`) — `test-reprex.R` падал на `windows-latest` в двух тестах. VCF и
+  BED получают тот же сдвиг: строка без `\r` и без хвостового мусора.
+- Проверка: новый тест «a CRLF FASTA is read without the carriage return»
+  пишет FASTA через `writeBin()` с `\r\n` и требует `nchar(env$syn) == 20`;
+  `dev/test.R reprex` — `[ FAIL 0 | PASS 42 ]`.
+
 ### Артефактный гейт хеширует код отрисовки (2026-11-20)
 
 - **Класс изменения: инфраструктура гейта; `R/` не менялся.**
@@ -105,7 +119,7 @@
   `spacer_len_max_mismatch` (`16` → 0, `20` → 1, `23` → 2, `28` → 0 мисматчей)
   и `spacer_len_central` (`20` → `c(7, 9)`).
 - `specificity_policy()` и `specificity_verdict()` принимают `spacer_len =
-  NULL`; незнакомая длина не угадывается, а падает на общий `max_mismatch = 5`
+NULL`; незнакомая длина не угадывается, а падает на общий `max_mismatch = 5`
   с `spacer_len_known = FALSE`. `central_violated()` свёрнут в
   `pcr_products_tolerated()`.
 - RPA/KASP/LAMP/HRM остаются на общей шкале: пер-семейной
