@@ -5,7 +5,7 @@
 #
 #    1. every manifest path, generator, input, code and doc exists
 #    2. every committed artifact is in the manifest (no orphan)
-#    3. the input hash is unchanged (generator + inputs)
+#    3. the input hash is unchanged (generator + inputs + code)
 #    4. the output hash matches the artifact on disk
 #    5. docs/generated/artifacts.md is current (the projection is not stale)
 #
@@ -96,7 +96,7 @@ for (a in artifacts) {
     )
   }
   if (!identical(in_now, a$input_hash)) {
-    note(a$path, ": input hash mismatch (generator/inputs changed; stale)")
+    note(a$path, ": input hash mismatch (generator/inputs/code changed; stale)")
   }
 }
 if (!length(failures)) ok(paste0(length(artifacts), " artifacts have matching input and output hashes"))

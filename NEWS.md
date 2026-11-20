@@ -6,6 +6,25 @@
 
 ## 0.4.1 (в работе)
 
+### Артефактный гейт хеширует код отрисовки (2026-11-20)
+
+- **Класс изменения: инфраструктура гейта; `R/` не менялся.**
+  `artifact_input_hash()` (`dev/artifacts.R`) теперь хеширует
+  `c(generator, inputs, code)`, поэтому правка `R/marker_plots.R`,
+  `R/marker_plot_methods.R`, `R/marker_checks.R` или `R/marker_criteria.R`
+  помечает фигуры устаревшими. Все 20 записей галереи
+  (`generator: dev/render-gallery.R`) получили один и тот же список `code:`
+  (общий контур отрисовки и проверок), хеши пересчитаны
+  `Rscript dev/artifacts.R --write`. Записи логотипа и деревьев решений не
+  правились: их `code` теперь входит в хеш, и там, где он уже был подмножеством
+  `inputs`/`generator`, хеш не сдвинулся.
+- Доказательство дыры: перерисовка `Rscript dev/render-gallery.R` изменила
+  `vignettes/figures/duplex.svg` — ячейка `in-silico PCR products (n)` сменилась
+  с `NA` на `1` после `642eb59`, но хеш не сдвинулся.
+- Проверка: `test-artifact-hash.R` (падает на до-фиксовом
+  `artifact_input_hash()`), `dev/check-artifacts.R` — `ok`; `styler` и `lintr`
+  чисты.
+
 ### Общая лестница проверок оценивает число in-silico продуктов (2026-11-20)
 
 - **Класс изменения: исправление; `R/` менялся.**

@@ -12,7 +12,8 @@
 #    kind         figure | decision | table | benchmark
 #    generator    the script that writes it
 #    inputs       repo-relative source/data paths the generator reads
-#    input_hash   md5 over the generator + inputs (content, not mtime)
+#    input_hash   md5 over the generator, its inputs and its code sources
+#                 (content, not mtime)
 #    output_hash  md5 of the artifact itself
 #    docs         the docs that embed the artifact (the backlinks)
 #    code         the package source the artifact is derived from
@@ -76,7 +77,7 @@ hash_paths <- function(paths) {
 artifact_inputs <- function(a) as.character(unlist(a$inputs, use.names = FALSE))
 
 artifact_input_hash <- function(a) {
-  hash_paths(c(a$generator, artifact_inputs(a)))
+  hash_paths(c(a$generator, artifact_inputs(a), a$code))
 }
 
 artifact_output_hash <- function(a) md5_file(a$path)
@@ -108,7 +109,8 @@ manifest_header <- c(
   "#",
   "# Fields: path, kind, generator, inputs, input_hash, output_hash, docs, code,",
   "# status.",
-  "#   input_hash  md5 over the generator and its inputs (content, not mtime)",
+  "#   input_hash  md5 over the generator, its inputs and its code sources",
+  "#               (content, not mtime)",
   "#   output_hash md5 of the artifact itself",
   "#   docs        the docs that embed the artifact (the backlinks)",
   "#   code        the package source the artifact is derived from",
@@ -250,7 +252,7 @@ cmd_check <- function() {
         note(a$path, ": output hash changed (artifact edited or lost)")
       }
       if (file.exists(a$generator) && !identical(artifact_input_hash(a), a$input_hash)) {
-        note(a$path, ": input hash changed (generator/inputs edited) - stale")
+        note(a$path, ": input hash changed (generator/inputs/code edited) - stale")
       }
     }
   }
