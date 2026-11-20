@@ -131,6 +131,27 @@ jobs:
                     "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
                     -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT
 
+            # Round 12 diagnosis: the engine is fine when the shell exports
+            # UNAFOLDDAT, so the defect is in how R hands the variable to the
+            # child.  Print the resolved paths, the oligo_dg() answers and the
+            # raw system2() stdout, including the old `env=` shape.  Best-effort:
+            # the log is the deliverable, never a red job.
+            - name: Diagnose OligoArrayAux dG (Windows, best-effort)
+              if: matrix.config.engines == 'win'
+              continue-on-error: true
+              shell: bash
+              run: |
+                  echo "UNAFOLDDAT (shell) = ${UNAFOLDDAT-<unset>}"
+                  echo "workspace = $GITHUB_WORKSPACE"
+                  echo "--- direct: UNAFOLDDAT exported by the shell (expect -18.585) ---"
+                  UNAFOLDDAT="$(cygpath -w "$GITHUB_WORKSPACE/.tools/share/oligoarrayaux")" \
+                    "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
+                    -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT 2>&1
+                  echo "direct status = $?"
+                  echo "--- R: resolved paths, oligo_dg(), raw system2() stdout ---"
+                  Rscript -e 'pkgload::load_all(".", helpers = FALSE, quiet = TRUE); p <- tidymarkers:::oligoarrayaux_paths(); str(p); cat("UNAFOLDDAT (R) =", Sys.getenv("UNAFOLDDAT"), "\n"); a <- "ACGTACGTACGTACGTACGT"; b <- "TTTTGGGGCCCCAAAATTTT"; args <- c("-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q", a, b); cat("argv =", paste(c(fs::path(p$bin, "hybrid-min.exe"), args), collapse = " "), "\n"); print(c(dg_rc = oligo_dg(a, a), dg_unrelated = oligo_dg(a, rep("T", 20L)), dg_ab = oligo_dg(a, b), dg_ba = oligo_dg(b, a))); raw <- suppressWarnings(system2(fs::path(p$bin, "hybrid-min.exe"), args, stdout = TRUE, stderr = TRUE)); cat("system2 raw: [", paste(raw, collapse = " | "), "] status =", attr(raw, "status"), "\n"); old <- suppressWarnings(system2(fs::path(p$bin, "hybrid-min.exe"), args, env = paste0("UNAFOLDDAT=", p$dat), stdout = TRUE, stderr = TRUE)); cat("system2 env= (the defect shape): [", paste(old, collapse = " | "), "] status =", attr(old, "status"), "\n")'
+                  echo "r status = $?"
+
             # Warm the Atlas/TAIR10 demo cache before R CMD check so the
             # arms/primer3/plan tests run instead of skipping on a cold cache.
             # Best-effort: the skip helper exists so a network failure inside
