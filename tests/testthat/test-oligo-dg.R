@@ -80,6 +80,31 @@ test_that("oligo_dg() hands UNAFOLDDAT to the child as an environment variable",
   expect_true(tidymarkers:::oligoarrayaux_works(bin, dat))
 })
 
+test_that("no 'tables missing' warning when the ambient UNAFOLDDAT supplies them", {
+  skip_on_os("windows")
+  skip_if(!nzchar(Sys.which("sh")), "no POSIX shell for the stub executable")
+  if (exists("oaa_dat_missing", envir = tidymarkers:::.marker_state$hints)) {
+    rm(list = "oaa_dat_missing", envir = tidymarkers:::.marker_state$hints)
+  }
+  root <- withr::local_tempdir()
+  bin <- fs::path(root, "bin")
+  fs::dir_create(bin)
+  exe <- fs::path(bin, "hybrid-min")
+  writeLines(c("#!/bin/sh", "echo -18.585"), exe)
+  Sys.chmod(exe, "0755")
+  withr::local_options(tidymarkers.oligoarrayaux = root)
+  # with_envvar(character(0), ...) leaves the ambient value in place, so the
+  # child has working tables even though the resolver saw no share/ directory
+  withr::local_envvar(c(UNAFOLDDAT = tempdir()))
+  expect_no_warning(oligo_dg("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"))
+  # the plain missing-tables case must still warn (the point of dd2a214)
+  withr::local_envvar(c(UNAFOLDDAT = NA))
+  expect_warning(
+    oligo_dg("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"),
+    "no UNAFold data tables"
+  )
+})
+
 # Conditions / engines seam ---------------------------------------------------
 
 test_that("reaction_conditions() defaults are the historical conditions", {

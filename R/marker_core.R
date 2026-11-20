@@ -519,7 +519,9 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   # reads the data path as a sequence and ignores the second oligo.  Set the
   # variable in the child's environment on every platform instead.
   dat <- if (is.null(paths)) NA_character_ else paths$dat
-  if (!is.null(paths) && is.na(paths$dat)) {
+  # the resolver only knows its own prefix: an ambient UNAFOLDDAT still reaches
+  # the child, so a missing share/ directory is not the same as missing tables
+  if (!is.null(paths) && is.na(paths$dat) && !nzchar(Sys.getenv("UNAFOLDDAT"))) {
     # a run without the tables still returns a number, so name the gap once
     expected <- as.character(fs::path(fs::path_dir(paths$bin), "share", "oligoarrayaux"))
     session_once("oaa_dat_missing", {
