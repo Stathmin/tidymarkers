@@ -3,10 +3,9 @@
 
 test_that("fold_amplicon() folds a GC-rich target and returns dG and structure", {
   skip_if_no_oligoarrayaux()
-  skip_if_not(
-    fs::file_exists(fs::path(tidymarkers:::oligoarrayaux_paths()$bin, "hybrid-ss-min")),
-    "hybrid-ss-min not installed"
-  )
+  # `$ss` is the probe oligoarrayaux_paths() already made, including the ".exe"
+  # suffix Windows needs; spelling the file name here skipped this test there
+  skip_if_not(isTRUE(tidymarkers:::oligoarrayaux_paths()$ss), "hybrid-ss-min not installed")
   # a two-helix GC-rich target, as HRM/LAMP amplicons are
   res <- fold_amplicon(paste0("GCGCGCGCGCGGGGCCCCCAATT", "GCGCGCGCGCGGGGCCCCCAATT"))
   expect_identical(res$status, "ok")

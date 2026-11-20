@@ -39,14 +39,26 @@ smoke <- function() {
   if (!file.exists(exe)) {
     return(FALSE)
   }
+  # system2(env=) is not usable: on Windows it appends "NAME=value" to the
+  # command line instead of setting the variable (R's system2.Rd), and the
+  # program then reads the data path as a sequence.  Set it for the child.
+  old <- Sys.getenv("UNAFOLDDAT", unset = NA_character_)
+  Sys.setenv(UNAFOLDDAT = dat)
+  on.exit(
+    if (is.na(old)) Sys.unsetenv("UNAFOLDDAT") else Sys.setenv(UNAFOLDDAT = old),
+    add = TRUE
+  )
   out <- suppressWarnings(system2(
     exe, c(
       "-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q",
       "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"
     ),
-    env = sprintf("UNAFOLDDAT=%s", shQuote(dat)), stdout = TRUE, stderr = FALSE
+    stdout = TRUE, stderr = FALSE
   ))
-  length(out) == 1L && is.finite(suppressWarnings(as.numeric(out)))
+  dg <- suppressWarnings(as.numeric(out))
+  # a perfect 20-mer homoduplex is stabilising; a positive number means the
+  # tables never reached the program (this is what hid the Windows bug)
+  length(out) == 1L && is.finite(dg) && dg < 0
 }
 
 run <- function(command, args = character()) {

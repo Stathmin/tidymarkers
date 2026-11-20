@@ -35,6 +35,18 @@ test_that("a self-complementary oligo folds into a hairpin; poly-A cannot", {
   expect_identical(oligo_dg("A", "A"), 0)
 })
 
+test_that("the UNAFold data directory is passed as an environment variable", {
+  # system2(env=) turns a "UNAFOLDDAT=..." string into an argv element on
+  # Windows, where the program reads it as a sequence; with_envvar() needs the
+  # named vector this helper returns.
+  expect_identical(tidymarkers:::oligoarrayaux_env(NA_character_), character(0))
+  expect_identical(tidymarkers:::oligoarrayaux_env(NULL), character(0))
+  expect_identical(
+    tidymarkers:::oligoarrayaux_env("/opt/oaa/share/oligoarrayaux"),
+    c(UNAFOLDDAT = "/opt/oaa/share/oligoarrayaux")
+  )
+})
+
 # Conditions / engines seam ---------------------------------------------------
 
 test_that("reaction_conditions() defaults are the historical conditions", {

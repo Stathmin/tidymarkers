@@ -184,6 +184,23 @@ sha256_of <- function(path) {
   NA_character_
 }
 
+#' The environment entry that points UNAFold at its data tables
+#'
+#' `system2(env = ...)` cannot carry this on Windows: it appends a literal
+#' `NAME=value` argument after the program name (R's `system2.Rd`), and the C
+#' program reads the data path as an input sequence.  Callers pass the result to
+#' `withr::with_envvar()` instead.
+#' @return a named character vector, empty when `dat` is unknown.
+#' @keywords internal
+#' @noRd
+oligoarrayaux_env <- function(dat) {
+  if (length(dat) != 1L || is.na(dat) || !nzchar(dat)) {
+    character(0)
+  } else {
+    c(UNAFOLDDAT = as.character(dat))
+  }
+}
+
 #' Smoke-test an OligoArrayAux `bin`/`dat` pair (one duplex, one number)
 #' @keywords internal
 #' @noRd
@@ -192,15 +209,21 @@ oligoarrayaux_works <- function(bin, dat) {
   if (!fs::file_exists(exe)) {
     return(FALSE)
   }
-  out <- suppressWarnings(system2(
-    exe,
-    c(
-      "-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q",
-      "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"
-    ),
-    env = sprintf("UNAFOLDDAT=%s", shQuote(dat)), stdout = TRUE, stderr = FALSE
+  out <- suppressWarnings(withr::with_envvar(
+    oligoarrayaux_env(dat),
+    system2(
+      exe,
+      c(
+        "-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q",
+        "ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"
+      ),
+      stdout = TRUE, stderr = FALSE
+    )
   ))
-  length(out) == 1L && is.finite(suppressWarnings(as.numeric(out)))
+  dg <- suppressWarnings(as.numeric(out))
+  # a perfect 20-mer homoduplex is stabilising: a positive number here means the
+  # data tables never reached the program (the Windows `env=` bug read +1.75)
+  length(out) == 1L && is.finite(dg) && dg < 0
 }
 
 #' @keywords internal

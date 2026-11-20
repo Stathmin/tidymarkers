@@ -514,13 +514,16 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   args <- if (is.null(seq2)) c(args, seq1) else c(args, seq1, seq2)
   # -q makes UNAFold print a single number.  system2() is ~2x cheaper than a
   # processx object per oligo, and this is the hottest loop in design.
-  env <- if (!is.null(paths) && !is.na(paths$dat)) {
-    paste0("UNAFOLDDAT=", as.character(paths$dat))
-  } else {
-    character(0)
-  }
+  # `env=` is not usable here: on Windows system2() appends "NAME=value" to the
+  # command line instead of setting the variable (R's system2.Rd), so hybrid-min
+  # reads the data path as a sequence and ignores the second oligo.  Set the
+  # variable in the child's environment on every platform instead.
+  dat <- if (is.null(paths)) NA_character_ else paths$dat
   out <- tryCatch(
-    suppressWarnings(system2(exe, args, env = env, stdout = TRUE, stderr = TRUE)),
+    withr::with_envvar(
+      oligoarrayaux_env(dat),
+      suppressWarnings(system2(exe, args, stdout = TRUE, stderr = TRUE))
+    ),
     error = function(e) e
   )
   if (inherits(out, "error")) {
