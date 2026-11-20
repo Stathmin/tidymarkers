@@ -47,6 +47,39 @@ test_that("the UNAFold data directory is passed as an environment variable", {
   )
 })
 
+test_that("oligo_dg() hands UNAFOLDDAT to the child as an environment variable", {
+  # a stub executable proves the variable reaches the child's environment and
+  # not its argv (where the old system2(env=) put it on Windows), and the
+  # `dg < 0` smoke gate rejects the +1.75 that bug produced
+  skip_on_os("windows")
+  skip_if(!nzchar(Sys.which("sh")), "no POSIX shell for the stub executable")
+  root <- withr::local_tempdir()
+  bin <- fs::path(root, "bin")
+  dat <- fs::path(root, "share", "oligoarrayaux")
+  fs::dir_create(c(bin, dat))
+  exe <- fs::path(bin, "hybrid-min")
+  writeLines(
+    c(
+      "#!/bin/sh",
+      'printf "%s\\n" "${UNAFOLDDAT-<unset>}" > "$STUB_OUT/env"',
+      'printf "%s\\n" "$@" > "$STUB_OUT/argv"',
+      'cat "$STUB_OUT/value"'
+    ),
+    exe
+  )
+  Sys.chmod(exe, "0755")
+  out <- withr::local_tempdir()
+  withr::local_envvar(c(STUB_OUT = out))
+  withr::local_options(tidymarkers.oligoarrayaux = root)
+  writeLines("1.75", fs::path(out, "value"))
+  expect_equal(oligo_dg("ACGTACGTACGTACGTACGT", "ACGTACGTACGTACGTACGT"), 1.75)
+  expect_identical(readLines(fs::path(out, "env")), as.character(dat))
+  expect_false(any(grepl("UNAFOLDDAT", readLines(fs::path(out, "argv")))))
+  expect_false(tidymarkers:::oligoarrayaux_works(bin, dat))
+  writeLines("-18.585", fs::path(out, "value"))
+  expect_true(tidymarkers:::oligoarrayaux_works(bin, dat))
+})
+
 # Conditions / engines seam ---------------------------------------------------
 
 test_that("reaction_conditions() defaults are the historical conditions", {

@@ -519,6 +519,16 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   # reads the data path as a sequence and ignores the second oligo.  Set the
   # variable in the child's environment on every platform instead.
   dat <- if (is.null(paths)) NA_character_ else paths$dat
+  if (!is.null(paths) && is.na(paths$dat)) {
+    # a run without the tables still returns a number, so name the gap once
+    expected <- as.character(fs::path(fs::path_dir(paths$bin), "share", "oligoarrayaux"))
+    session_once("oaa_dat_missing", {
+      cli::cli_warn(gettextf(
+        "OligoArrayAux ('%s') has no UNAFold data tables: expected '%s'. dG may be meaningless.",
+        bin, expected
+      ))
+    })
+  }
   out <- tryCatch(
     withr::with_envvar(
       oligoarrayaux_env(dat),
