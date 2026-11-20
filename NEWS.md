@@ -23,17 +23,20 @@
   (`data-raw/install-oligoarrayaux.R`) теперь требуют, чтобы идеальный
   20-мерный гомодуплекс давал отрицательную dG, а не любое конечное число.
   `oligoarrayaux_env()` отдаёт именованный вектор для `with_envvar()`.
-- Если каталога таблиц рядом с `hybrid-min` нет, `oligo_dg()` больше не молчит:
+- Если каталога таблиц рядом с `hybrid-min` нет и `UNAFOLDDAT` не задан в
+  окружении, `oligo_dg()` больше не молчит:
   один раз за сессию выводится предупреждение с ожидаемым путём
   `share/oligoarrayaux`. Прогон без таблиц всё равно возвращает число, поэтому
   правдоподобная, но неверная dG иначе проходит незамеченной.
 - Зонд `hybrid-ss-min` в `test-thermo.R` использует готовое поле
   `oligoarrayaux_paths()$ss` (с `.exe`), поэтому тест `fold_amplicon()` больше
   не пропускается на Windows.
-- Проверка: новый тест «the UNAFold data directory is passed as an environment
-  variable»; `dev/test.R oligo-dg` — `[ FAIL 0 | PASS 91 ]`, полный быстрый
-  набор — `[ FAIL 0 | PASS 31308 ]`. На Linux `oligo_dg()` по-прежнему даёт
-  `-18.585`, `0`, `0.463`, `0.463`, `oligoarrayaux_works()` — `TRUE`.
+- Проверка: тесты «the UNAFold data directory is passed as an environment
+  variable» и «no 'tables missing' warning when the ambient UNAFOLDDAT supplies
+  them»; `dev/test.R oligo-dg` — `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 98 ]`, полный
+  быстрый набор — `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 31308 ]`. На Linux
+  `oligo_dg()` по-прежнему даёт `-18.585`, `0`, `0.463`, `0.463`,
+  `oligoarrayaux_works()` — `TRUE`.
 
 ### Чтение FASTA/ VCF/BED снимает CRLF (2026-11-20)
 
