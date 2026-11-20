@@ -254,7 +254,7 @@ test_that("scientific_backlog: verified means an extract was written", {
 # claim for every row - a registry entry with no claim anchors nothing.
 test_that("scientific_sources is a closed registry with one claim per key", {
   s <- ext("scientific_sources.csv")
-  expect_equal(nrow(s), 132L)
+  expect_equal(nrow(s), 133L)
   expect_identical(anyDuplicated(s$key), 0L)
   expect_false(any(is.na(s$key) | !nzchar(s$key)))
   expect_true(all(nzchar(s$citation)))

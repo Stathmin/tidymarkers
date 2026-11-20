@@ -69,7 +69,9 @@ for (i in seq_len(nrow(s))) {
   mine <- if (!is.na(doi) && grepl("^10\\.", doi)) {
     names(ext_doi)[vapply(ext_doi, function(d) doi %in% d, logical(1))]
   } else character(0)
-  mine <- setdiff(mine, l$extract)
+  # no setdiff against l$extract here: a source reaching this point has no
+  # ledger row of its own, so dropping extracts another row already names
+  # would mislabel every source that shares a landed file as "blocked".
   anchor <- s$what_it_anchors[[i]] %or% ""
   claim_kind <- s$claim_kind[[i]] %or% ""
 
@@ -127,14 +129,23 @@ for (f in left) {
   r <- reader(f)
   use <- if (is.na(r)) "blocked" else "test"
   seed[[length(seed) + 1L]] <- mk(
-    if (length(cands)) cands[[1L]] else paste0("shared_", stem), f, use, r,
+    if (length(cands)) cands[[1L]] else "corpus_shared", f, use, r,
     if (is.na(r)) "nothing moved" else paste0("what ", f, " measures, asserted by ", r),
     if (is.na(r)) paste0("no test reads ", f, ", and no single paper owns it: it is on disk but moves no verdict") else NA_character_)
 }
 
-new <- do.call(rbind, seed)
+new <- if (length(seed)) do.call(rbind, seed) else l[0L, names(l), drop = FALSE]
 key <- function(d) paste(d$source_key, d$extract)
 fresh <- new[!key(new) %in% key(l), ]
 l <- rbind(l, fresh[, names(l), drop = FALSE])
-utils::write.csv(l, led_path, row.names = FALSE, na = "")
+# append the fresh rows only: a whole-file rewrite restyles every committed
+# row (mixed "" / NA quoting) and buries the one real change in churn.
+fmt_field <- function(x) {
+  ifelse(is.na(x), "NA", paste0('"', gsub('"', '""', x, fixed = TRUE), '"'))
+}
+if (nrow(fresh)) {
+  cat(do.call(paste, c(lapply(fresh, fmt_field), sep = ",")),
+    file = led_path, sep = "\n", append = TRUE
+  )
+}
 message("wave5 ledger classify: ", nrow(fresh), " row(s) added; ", nrow(l), " total")

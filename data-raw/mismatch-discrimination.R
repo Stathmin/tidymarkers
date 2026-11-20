@@ -224,6 +224,20 @@ sources <- tibble::tribble(
         "paper does not say why the other fifteen 3DL assays did not cluster"),
   "full-text counts; failures not decomposed",
 
+  "steele2025_rice_kasp",
+  paste("Steele K, Quinton-Tulloch M, Vyas D, Witcombe J. Thousands of",
+        "trait-specific KASP markers designed for diverse breeding applications in",
+        "rice (Oryza sativa)"),
+  "G3 (Bethesda)", 2025L, "10.1093/g3journal/jkae251", "39486028", "PMC11708223",
+  "fulltext", TRUE, "2026-11-20",
+  "KASP conversion with a printed denominator (4,000 designs -> 3,366 validated)",
+  paste("Of the 4,000 trait-specific KASP designs tested, 3,371 passed provider",
+        "wet-lab validation, and 3,366 gave successful genotype calls in more than",
+        "90% of samples; 635 designs (15.9%) failed in all samples. The counts do",
+        "not reconcile (3,366 + 635 = 4,001) and failure is described by correlates",
+        "rather than named classes"),
+  "full-text counts; failures not decomposed",
+
   "kutyavin2000",
   paste("Kutyavin IV, Afonina IA, Mills A, et al. 3'-minor groove binder-DNA",
         "probes increase sequence specificity at PCR extension temperatures"),
@@ -631,7 +645,12 @@ conv_rows <- tibble::tribble(
   21L, 6L,
   NA_integer_, NA_integer_, 15L,
   "6 of 21 showed distinct cluster patterns; the paper does not state why the other fifteen did not (a separate 2-3 SNP-per-chromosome trial also gave none polymorphic, but its denominator is not printed)",
-  "10.1038/s41598-025-99077-7"
+  "10.1038/s41598-025-99077-7",
+  "steele2025_rice_kasp", "Oryza sativa L.", "4,000 trait-specific KASP designs carrying ambiguous bases, up to 5 per 1,024 breeder-selected loci, run on 178 diverse rice varieties",
+  4000L, 3366L,
+  NA_integer_, NA_integer_, 634L,
+  "3,371 of the 4,000 designs passed the service provider's wet-lab validation, and 3,366 then gave genotype calls in more than 90% of samples (hence validated); 635 designs (15.9%) failed in all samples. The printed counts do not reconcile (3,366 + 635 = 4,001), and the paper names correlates of failure (Table 2 Wilcoxon tests) rather than per-assay failure classes, so the 634 residual is bookkeeping and not a decomposition",
+  "10.1093/g3journal/jkae251"
 )
 # the extra named classes join the row they belong to; every other row gets NA
 conv_rows <- dplyr::left_join(conv_rows, conv_extra, by = "study")
@@ -658,7 +677,8 @@ conversion_kind <- c(
   jsbbs2018_exp3 = "usable",
   shen2026_jujube = "work",
   thakur2026_bittergourd = "usable",
-  bai2025_aegilops = "work"
+  bai2025_aegilops = "work",
+  steele2025_rice_kasp = "work"
 )
 stopifnot(
   # every row is classified, and only with the shared vocabulary
@@ -775,6 +795,10 @@ stopifnot(nrow(bg) == 1L, bg$n_designed == 11L, bg$n_success == 5L,
 ae <- conversion[conversion$study == "bai2025_aegilops", ]
 stopifnot(nrow(ae) == 1L, ae$n_designed == 21L, ae$n_success == 6L,
           ae$n_failed == 15L, !isTRUE(ae$fully_decomposed))
+# the rice panel prints a denominator but names correlates, not failure classes
+ric <- conversion[conversion$study == "steele2025_rice_kasp", ]
+stopifnot(nrow(ric) == 1L, ric$n_designed == 4000L, ric$n_success == 3366L,
+          ric$n_failed == 634L, !isTRUE(ric$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(

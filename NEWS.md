@@ -6,6 +6,27 @@
 
 ## 0.4.1 (в работе)
 
+### Steele 2025 входит в реестр конверсий счётной строкой (2026-11-20)
+
+- **Класс изменения: данные и тест; `R/` не менялся.**
+  `inst/extdata/conversion_rates.csv` получает строку `steele2025_rice_kasp`
+  (G3, `10.1093/g3journal/jkae251`): 4 000 KASP-дизайнов риса, 3 366
+  валидированы (успешный вызов в >90 % образцов), 635 провалились во всех
+  образцах. Строка **счётная**: классов провалов статья не называет — только
+  корреляты (Table 2), поэтому `n_fail_pcr`/`n_fail_no_allele` = `NA`,
+  `n_fail_other = 634`, а 635 живёт только в `failure_note`;
+  `decomposes = FALSE`. 3 366 + 635 = 4 001 не сходится — расхождение записано
+  в `failure_note`, не подогнано. `scientific_sources.csv` получает строку с
+  `claim_kind = "full-text counts; failures not decomposed"`, `science_ledger.csv`
+  — одну `test`-строку на `test-z8-outcomes.R`.
+- `data-raw/wave5-ledger-classify.R` чинится от трёх дефектов: ложный `blocked`
+  из-за `setdiff()` против всего `extract`, синтетический ключ `shared_*`
+  (единственный разрешённый — `corpus_shared`) и `write.csv()` вместо
+  append-only записи, переписывавший все строки реестра.
+- Проверка: `dev/test.R z8` — `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 160 ]`;
+  `test-scientific-data.R` и `test-science-ledger.R` зелёные, полный быстрый
+  набор — 31 308 pass.
+
 ### UNAFold получает таблицы через окружение, а не через argv (2026-11-20)
 
 - **Класс изменения: исправление; `R/` менялся.**
