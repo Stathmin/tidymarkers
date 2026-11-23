@@ -1088,7 +1088,7 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
 
 ### §V. Модели считывания (readout simulation)
 
-- [~] **HRM — плавление; dPCR — пуассоновское разбиение; CRISPR-Dx —
+- [—] **HRM — плавление; dPCR — пуассоновское разбиение; CRISPR-Dx —
   коллатеральное расщепление; ARMS/CAPS/indel/SSR — виртуальный гель;
   LAMP/RPA — изотермическая кинетика.** `marker_readout()`
   (`R/marker_readout.R`) возвращает `simulated = TRUE` для любой схемы, чей
@@ -1347,22 +1347,32 @@ Liu 2012 (3-е от 3′-конца; offset −2), Lefever 2019 (4-е; offset �
 
 Провалы собраны, вероятности — нет. `inst/extdata/conversion_rates.csv` несёт
 долю конверсии **вместе с провалами** (`n_failed`, `n_fail_*`, `decomposes`).
-Полностью разложены **4** строки: Makhoul S3, Yamagata Exp. 3 (24 → 18),
-Grewal 2022 (363 = 698 − 335), Yang 2020 (268 → 258). Плюс Ayalew (TaqMan 39/50, KASP 49/50,
+Полностью разложены **5** строк: Makhoul S3, Yamagata Exp. 3 (24 → 18),
+Grewal 2022 (363 = 698 − 335), Yang 2020 (268 → 258), Mariyamma 2020
+(100 → 71; 8 без сигнала + 21 составной класс «monomorphic and/or
+heterozygous», не делится). Плюс Ayalew (TaqMan 39/50, KASP 49/50,
 rhAmp 49/50; причины качественные), CAPS watermelon (532 → 271), soybean
 EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR JAK2
 (LoB 0.002 % / LoD 0.005 % / LoQ 0.01 %). Выход пока **порядковый**.
 
-- [ ] **`Z8.1` Отрицательные примеры — достаточно ли их?** Сейчас нет
-      (4 разложенные строки); `yardstick`-метрики — только после этого.
+- [—] **`Z8.1` Отрицательные примеры — достаточно ли их?** Сейчас нет
+      (5 разложенных строк); `yardstick`-метрики — только после этого.
     - правка: `conversion_rates.csv` + `data-raw/<paper>.R` с `outcome = failed`
       и разложенными провалами.
     - проверка: `test-z8-outcomes.R` — число `fully_decomposed` названо в отчёте.
-    - блокер: **новые статьи** (открытого доступа мало найдено).
-    - ближайший шаг (в репозитории): влить `mariyamma2020_maize_kasp` из
+    - блокер: **новые статьи** вне этого дерева — открытого доступа с
+      напечатанным разложением провалов мало; остальные кандидаты из
+      `data-raw/proposed/z8.1-new-rows.csv` влиты или не раскладываются
+      (`steele2025_rice_kasp` — только корреляты, `decomposes = FALSE`).
+    - сделано (2026-11-23): `mariyamma2020_maize_kasp` влит из
       `data-raw/proposed/z8.1-new-rows.csv` — 100 → 71 успешных, 21 + 8 = 29
       провалов (`21` — составной класс «monomorphic and/or heterozygous», не
-      делить), счёт полностью разложенных 4 → 5.
+      делить), счёт полностью разложенных 4 → 5. Генератор
+      `data-raw/mismatch-discrimination.R` знает строку и воспроизводит её
+      байт-в-байт (`c73b87d`, `d34204e`, `c527a41`).
+    - вход для закрытия: новая статья с напечатанными классами провалов →
+      строка в `conversion_rates.csv`, `data-raw/<paper>.R`, счёт в преамбуле
+      `Z8`, литерал в `test-z8-outcomes.R`.
     - следствие: любая вероятность конверсии сегодня — одно наблюдение.
     - **Steele 2025** (G3, `10.1093/g3journal/jkae251`): 4 000 KASP-дизайнов
       риса → 3 366 валидированы (успешный вызов в >90 % образцов), 635
@@ -1491,7 +1501,7 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
 - [x] **`ZW3.9` Фиксированные праймеры и аннотация — общий интерфейс.**
       `assemble_primer_assay()` (`R/marker_assemble.R`), `marker_features()`
       (`R/marker_annotate.R`); 13 наборов пересобраны и нарисованы.
-- [ ] **`ZW3.10` Пере-якорение Tm-координаты (flip на `SantaLucia1998-2`).**
+- [—] **`ZW3.10` Пере-якорение Tm-координаты (flip на `SantaLucia1998-2`).**
       Дефолт `TM_SALT_METHOD` (`R/marker_core.R`) — `"Schildkraut2010"`; окна
       KASP (`KASP_LIMITS$as_tm` 55–65, `com_tm` 58–63) и dPCR `tm_range` (44–50)
       выписаны на этой координате. `ZW3.5`: NN-консистентный
@@ -1729,8 +1739,8 @@ adapter (deletion test).
 7. [ ] `Readout` + `yardstick`/`targets` — **только после `Z8`**: пока есть лишь
        положительные примеры, `yardstick`-метрики будут мерить смещение.
        Разблокирует `Z8.1`: сейчас `inst/extdata/z8_gate_outcomes.csv` — 36
-       строк, все `worked` (0 `failed`), а `conversion_rates.csv` несёт 4
-       полностью разложенные строки, поэтому метрикам не на чем учиться.
+       строк, все `worked` (0 `failed`), а `conversion_rates.csv` несёт 5
+       полностью разложенных строк, поэтому метрикам не на чем учиться.
 8. [ ] `yaml` export; затем optional `fitPoly`/`crispr*`.
 
 Правило перехода: шаги 5–6 не начинаются, пока нет хотя бы одной внешней
@@ -2748,7 +2758,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       блокер: нет.
       следствие: casual reader видит «ещё один primer designer», не
       архитектуру; это же слабое место paper framing.
-- [~] **`ZY17` Paper strategy.** Три независимо supportable paper'а: tool paper
+- [—] **`ZY17` Paper strategy.** Три независимо supportable paper'а: tool paper
   (Bioinformatics или Plant Methods; architecture + case study + crosscheck + validation evidence), methodology paper (RDS trace infrastructure как
   отдельный вклад: самогенерирующиеся training data через normal use),
   perspectives piece (Level 3 articulation как шаблон для CRISPR guide
