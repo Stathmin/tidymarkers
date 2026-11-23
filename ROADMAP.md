@@ -1296,14 +1296,14 @@ Liu 2012 (3-е от 3′-конца; offset −2), Lefever 2019 (4-е; offset �
 
 Провалы собраны, вероятности — нет. `inst/extdata/conversion_rates.csv` несёт
 долю конверсии **вместе с провалами** (`n_failed`, `n_fail_*`, `decomposes`).
-Полностью разложены **3** строки: Makhoul S3, Yamagata Exp. 3 (24 → 18),
-Grewal 2022 (363 = 698 − 335). Плюс Ayalew (TaqMan 39/50, KASP 49/50,
+Полностью разложены **4** строки: Makhoul S3, Yamagata Exp. 3 (24 → 18),
+Grewal 2022 (363 = 698 − 335), Yang 2020 (268 → 258). Плюс Ayalew (TaqMan 39/50, KASP 49/50,
 rhAmp 49/50; причины качественные), CAPS watermelon (532 → 271), soybean
 EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR JAK2
 (LoB 0.002 % / LoD 0.005 % / LoQ 0.01 %). Выход пока **порядковый**.
 
 - [ ] **`Z8.1` Отрицательные примеры — достаточно ли их?** Сейчас нет
-      (3 разложенные строки); `yardstick`-метрики — только после этого.
+      (4 разложенные строки); `yardstick`-метрики — только после этого.
     - правка: `conversion_rates.csv` + `data-raw/<paper>.R` с `outcome = failed`
       и разложенными провалами.
     - проверка: `test-z8-outcomes.R` — число `fully_decomposed` названо в отчёте.
@@ -1315,8 +1315,16 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
       разложены только коррелятами (Wilcoxon, Table 2), классов с числами нет,
       поэтому строка `steele2025_rice_kasp` входит **счётной**
       (`n_fail_other = 634`, 635 — только в `failure_note`,
-      `decomposes = FALSE`), не разложенной: счёт «**3** полностью разложенные
-      строки» в преамбуле `Z8` не меняется. Потребитель — `test-z8-outcomes.R`.
+      `decomposes = FALSE`), не разложенной: счёт «полностью разложенные» в преамбуле `Z8`
+      эта строка не меняет. Потребитель — `test-z8-outcomes.R`.
+    - **Yang 2020** (PLoS ONE 15(10):e0240042, `10.1371/journal.pone.0240042`):
+      268 SNP-локусов китайской капусты (*Brassica rapa* ssp. *pekinensis*)
+      отобраны под KASP-дизайн, 258 (96,27 %) дали полиморфизм и разбили четыре
+      секвенированных генотипа на два кластера, остальные 10 праймеров не дали
+      сигнала. Класс провала назван одним числом (`n_fail_pcr = 10`, остаток 0),
+      поэтому строка `yang2020_brassica_kasp` входит **разложенной**
+      (`decomposes = fully_decomposed = TRUE`) и поднимает счёт преамбулы `Z8`
+      до 4. Потребитель — `test-z8-outcomes.R`.
 - [x] **`Z8.2` Harness/`targets`.** `dev/targets/_targets.R` (`panel_outcomes()`)
       пишет `inst/extdata/z8_gate_outcomes.csv`; 36 строк, `tar_make()`
       байт-в-байт. Все 36 — `worked` (0 `failed`), поэтому `z8_gate_rate()`

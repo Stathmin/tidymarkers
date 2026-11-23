@@ -238,6 +238,18 @@ sources <- tibble::tribble(
         "rather than named classes"),
   "full-text counts; failures not decomposed",
 
+  "yang2020_brassica_kasp",
+  paste("Yang S, Yu W, Wei X, Wang Z, Zhao Y, Zhao X, Tian B, Yuan Y, Zhang X.",
+        "An extended KASP-SNP resource for molecular breeding in Chinese",
+        "cabbage (Brassica rapa L. ssp. pekinensis)"),
+  "PLoS One", 2020L, "10.1371/journal.pone.0240042", "33007009", "PMC7531813",
+  "fulltext", TRUE, "2026-11-20",
+  "KASP conversion with a printed denominator (268 designs -> 258 polymorphic) and a named single failure class",
+  paste("In total, 258 (96.27%) worked well and gave rise to polymorphisms, which",
+        "categorized the four sequenced genotypes into two clusters, while the",
+        "other ten primers produced no signal."),
+  "full-text counts; failures decomposed into one named class (no amplification)",
+
   "kutyavin2000",
   paste("Kutyavin IV, Afonina IA, Mills A, et al. 3'-minor groove binder-DNA",
         "probes increase sequence specificity at PCR extension temperatures"),
@@ -650,7 +662,12 @@ conv_rows <- tibble::tribble(
   4000L, 3366L,
   NA_integer_, NA_integer_, 634L,
   "3,371 of the 4,000 designs passed the service provider's wet-lab validation, and 3,366 then gave genotype calls in more than 90% of samples (hence validated); 635 designs (15.9%) failed in all samples. The printed counts do not reconcile (3,366 + 635 = 4,001), and the paper names correlates of failure (Table 2 Wilcoxon tests) rather than per-assay failure classes, so the 634 residual is bookkeeping and not a decomposition",
-  "10.1093/g3journal/jkae251"
+  "10.1093/g3journal/jkae251",
+  "yang2020_brassica_kasp", "Brassica rapa ssp. pekinensis", "268 SNP loci selected for KASP design from a published SNP resource, run on four sequenced genotypes",
+  268L, 258L,
+  10L, NA_integer_, NA_integer_,
+  "258 of 268 (96.27%) worked well and gave rise to polymorphisms that split the four sequenced genotypes into two clusters; the other ten primers produced no signal, so every failure is the no-amplification class and no residual is left",
+  "10.1371/journal.pone.0240042"
 )
 # the extra named classes join the row they belong to; every other row gets NA
 conv_rows <- dplyr::left_join(conv_rows, conv_extra, by = "study")
@@ -678,7 +695,8 @@ conversion_kind <- c(
   shen2026_jujube = "work",
   thakur2026_bittergourd = "usable",
   bai2025_aegilops = "work",
-  steele2025_rice_kasp = "work"
+  steele2025_rice_kasp = "work",
+  yang2020_brassica_kasp = "work"
 )
 stopifnot(
   # every row is classified, and only with the shared vocabulary
@@ -718,17 +736,18 @@ conversion <- dplyr::mutate(
       dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
       dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
       dplyr::coalesce(.data$n_fail_heterozygote, 0L) == .data$n_failed,
-  # TRUE only when every failure reason is named in the schema above.  Three rows
+  # TRUE only when every failure reason is named in the schema above.  Four rows
   # do that today: Makhoul's multi-assembly arm (Table S4 names each failure as
   # 'Wrong cluster' or 'Locus-specific design not possible'), Yamagata Exp. 3
-  # (3 no polymorphism + 3 dominant segregation) and Grewal 2022 (its five
-  # classes sum to the 363 failures).  The whitelist is deliberate: arithmetic
-  # that happens to balance is not the same as a source naming every failure, so
-  # a new row is added only after its text is read.
+  # (3 no polymorphism + 3 dominant segregation), Grewal 2022 (its five classes
+  # sum to the 363 failures) and Yang 2020 (ten primers gave no signal, which is
+  # its whole failure total).  The whitelist is deliberate: arithmetic that
+  # happens to balance is not the same as a source naming every failure, so a
+  # new row is added only after its text is read.
   fully_decomposed = .data$decomposes &
     .data$study %in% c(
       "makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3",
-      "grewal2022_amblyopyrum"
+      "grewal2022_amblyopyrum", "yang2020_brassica_kasp"
     ),
   # the reviewer's point made mechanical: a probability is withheld until the
   # failures decompose, so the output stays ordinal ("usable") by design
@@ -747,7 +766,7 @@ stopifnot(
         dplyr::coalesce(conversion$n_fail_heterozygote, 0L) <= conversion$n_failed),
   # a probability is withheld from EVERY row: an ordinal 'usable' until a source
   # decomposes ITS OWN failures into the categories here and a wet-lab anchor
-  # exists.  Today that is two rows from two studies, still too few to estimate
+  # exists.  Today that is four rows from four studies, still too few to estimate
   # anything, so nothing may be calibrated.
   all(!conversion$calibrated),
   # every row must report a failure count that matches its own denominator: this
@@ -799,6 +818,10 @@ stopifnot(nrow(ae) == 1L, ae$n_designed == 21L, ae$n_success == 6L,
 ric <- conversion[conversion$study == "steele2025_rice_kasp", ]
 stopifnot(nrow(ric) == 1L, ric$n_designed == 4000L, ric$n_success == 3366L,
           ric$n_failed == 634L, !isTRUE(ric$fully_decomposed))
+# Yang 2020 names its single failing class: ten primers gave no signal
+yn <- conversion[conversion$study == "yang2020_brassica_kasp", ]
+stopifnot(nrow(yn) == 1L, yn$n_designed == 268L, yn$n_success == 258L,
+          yn$n_failed == 10L, yn$n_fail_pcr == 10L, isTRUE(yn$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(

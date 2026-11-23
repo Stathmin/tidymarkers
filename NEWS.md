@@ -6,6 +6,24 @@
 
 ## 0.4.1 (в работе)
 
+### Yang 2020 входит в реестр конверсий разложенной строкой (2026-11-20)
+
+- **Класс изменения: данные и тест; `R/` не менялся.**
+  `inst/extdata/conversion_rates.csv` получает строку `yang2020_brassica_kasp`
+  (PLoS ONE 15(10):e0240042, `10.1371/journal.pone.0240042`): 268 SNP-локусов
+  китайской капусты (*Brassica rapa* ssp. *pekinensis*) отобраны под
+  KASP-дизайн, 258 (96,27 %) дали полиморфизм, десять праймеров не дали сигнала.
+  Все 10 провалов — один названный класс, поэтому `n_fail_pcr = 10`, остаток 0,
+  `decomposes = fully_decomposed = TRUE`. Это **четвёртая** полностью
+  разложенная строка; `test-z8-outcomes.R` переведён с `sum(...) == 3L` на
+  `4L` и называет `yang2020_brassica_kasp` в `expect_setequal`.
+  `scientific_sources.csv` получает строку с
+  `claim_kind = "full-text counts; failures decomposed into one named class (no amplification)"`,
+  `science_ledger.csv` — одну `test`-строку; `test-scientific-data.R` ждёт
+  134 строки реестра.
+- Проверка: `dev/test.R z8` — 161 pass; `dev/test.R scientific` — 92;
+  `dev/test.R ledger` — 838; полный быстрый набор — 31 308 pass.
+
 ### Steele 2025 входит в реестр конверсий счётной строкой (2026-11-20)
 
 - **Класс изменения: данные и тест; `R/` не менялся.**

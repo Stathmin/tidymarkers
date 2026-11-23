@@ -371,3 +371,4 @@
 "steele2025_rice_kasp","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 4,000 rice KASP designs -> 3,366 validated in >90% of samples; 635 failed in all samples, 4,001 does not reconcile",NA
 "corpus_shared","criterion_provenance.csv","test","test-criteria.R","what criterion_provenance.csv measures, asserted by test-criteria.R",NA
 "corpus_shared","z8_gate_outcomes.csv","blocked",NA,"nothing moved","no test reads z8_gate_outcomes.csv, and no single paper owns it: it is on disk but moves no verdict"
+"yang2020_brassica_kasp","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 268 Chinese cabbage KASP designs -> 258 polymorphic (96.27%); ten primers produced no signal, so all 10 failures are the no-amplification class",NA
