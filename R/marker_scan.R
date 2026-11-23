@@ -221,7 +221,10 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #'   Given a **named** list, one row per primer **per genome**, with a `genome`
 #'   column first and the rows in list order then primer order; `scan` is a named
 #'   vector with one entry per genome, so a mixed set (some seeds, some whole
-#'   primers) stays readable instead of being averaged.
+#'   primers) stays readable instead of being averaged.  `engine_stamp` is still
+#'   present but holds one stamp carried over from the bound parts — they all
+#'   share the package-wide engine set — so it is not a per-genome record; the
+#'   `engine` column names the adapter that answered each row.
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
