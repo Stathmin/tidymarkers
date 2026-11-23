@@ -211,8 +211,7 @@ reprex_from_seq <- function(x, preserve) {
   if (!length(seqs)) {
     cli::cli_abort(gettext("`x` holds no sequence."))
   }
-  set.seed(1L)
-  syn <- lapply(seqs, reprex_synthetic, preserve)
+  syn <- withr::with_seed(1L, lapply(seqs, reprex_synthetic, preserve))
   stuck <- sum(vapply(syn, `[[`, integer(1), "kept"))
   if (stuck) {
     cli::cli_warn(c(
