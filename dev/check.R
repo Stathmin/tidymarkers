@@ -23,7 +23,11 @@
 #       also redraws the heavy panels (target panel - needs genome
 #       data/OligoArrayAux).  Skip the step with `--no-render`.
 #    6. install smoke -- R CMD INSTALL must succeed
-#    7. R CMD check -- only with `--full`: dev/test.R --full (parallel, ~7 min)
+#    7. BiocCheck -- only with `--full`: the Bioconductor gate on the built
+#       tarball.  Rule E1 (`checkExportsAreDocumented`) demands runnable examples
+#       on >= 80 % of the pages that export an object; the support-site check is
+#       the maintainer's operator action and is the one allowed ERROR
+#    8. R CMD check -- only with `--full`: dev/test.R --full (parallel, ~7 min)
 #       runs the complete suite, then the tarball is built and checked as CI does
 #       (`R CMD build` applies .Rbuildignore and prebuilds + indexes the
 #       vignettes; a source-directory check does neither and fails on .tmp/)
@@ -313,7 +317,53 @@ step("install (smoke)", function() {
   ok("the package installs cleanly")
 })
 
-# 7. R CMD check ------------------------------------------------------------
+# 7. BiocCheck --------------------------------------------------------------
+step("BiocCheck", function() {
+  if (!full) return(message("  skip (pass --full to run the Bioconductor gate)"))
+  if (!requireNamespace("BiocCheck", quietly = TRUE)) {
+    return(message("  skip (install it with BiocManager::install(\"BiocCheck\"))"))
+  }
+  work <- tempfile("tm-bioc-")
+  dir.create(work)
+  on.exit(unlink(work, recursive = TRUE), add = TRUE)
+  # Judge the tarball, not the dirty tree: a source-directory run also scores
+  # .git/, .tmp/ and its own output folder (see ZY9 in ROADMAP.md).
+  expr <- paste0(
+    "setwd(", shQuote(work), "); ",
+    "system2(\"R\", c(\"CMD\", \"build\", \"--no-manual\", ",
+    "\"--no-build-vignettes\", ", shQuote(root), ")); ",
+    "f <- Sys.glob(\"tidymarkers_*.tar.gz\"); ",
+    "if (!length(f)) stop(\"R CMD build failed\"); ",
+    "BiocCheck::BiocCheck(f[[1L]], checkDir = tempfile(), verbose = FALSE)"
+  )
+  out <- suppressWarnings(system2(
+    file.path(R.home("bin"), "Rscript"), c("-e", shQuote(expr)),
+    stdout = TRUE, stderr = TRUE
+  ))
+  if (!any(grepl("BiocCheck v[0-9]", out))) {
+    cat(out, sep = "\n")
+    stop("BiocCheck did not run to completion")
+  }
+  errs <- grep("ERROR:", out, value = TRUE)
+  warns <- grep("WARNING:", out, value = TRUE)
+  # The support-site check needs the maintainer's address registered at
+  # support.bioconductor.org -- an operator action (it answers HTTP 429 under
+  # load), so it is the one allowed ERROR.  `.Deprecated()` is how this package
+  # retires an argument, so BiocCheck's "no .Deprecated usage" warning is a
+  # false positive; both exceptions are named, nothing else is.
+  errs_bad <- errs[!grepl("Support Site", errs, fixed = TRUE)]
+  warns_bad <- warns[!grepl(".Deprecated", warns, fixed = TRUE)]
+  if (length(errs_bad) || length(warns_bad)) {
+    cat(out, sep = "\n")
+    stop(
+      "BiocCheck regressed: ", length(errs_bad), " unexpected ERROR(s), ",
+      length(warns_bad), " unexpected WARNING(s)"
+    )
+  }
+  ok("BiocCheck clean apart from the operator-run support-site check")
+})
+
+# 8. R CMD check ------------------------------------------------------------
 step("R CMD check", function() {
   if (!full) return(message("  skip (pass --full to build and check)"))
   # Run the suite through the parallel runner once (the SOCK files are sequenced
