@@ -5,6 +5,17 @@
 #  1. Sequence retrieval
 # =============================================================================
 
+#' Which Ensembl refusals a retry can clear
+#'
+#' Ensembl answers `403` when a client exceeds its rate limit ("overuse of the
+#' service"), not only `429`, so a retry set that omits it turns a throttle into
+#' a hard failure. `httr2`'s default set is `429`/`503` only, and passing a
+#' predicate *replaces* that default, hence the explicit transient codes.
+#' @noRd
+ensembl_transient <- function(resp) {
+  httr2::resp_status(resp) %in% c(403L, 408L, 429L, 500L, 502L, 503L, 504L)
+}
+
 #' Perform an Ensembl REST request (JSON, retry, throttle, user agent)
 #'
 #' Ensembl asks for a descriptive `User-Agent` and enforces roughly 15 requests
@@ -15,7 +26,9 @@ ensembl_perform <- function(req) {
     httr2::req_headers(`Content-Type` = "application/json") |>
     httr2::req_user_agent("tidymarkers") |>
     httr2::req_throttle(rate = 15) |>
-    httr2::req_retry(max_tries = 5L, backoff = ~3) |>
+    httr2::req_retry(
+      max_tries = 5L, backoff = ~3, is_transient = ensembl_transient
+    ) |>
     httr2::req_perform()
 }
 

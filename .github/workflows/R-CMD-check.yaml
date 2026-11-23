@@ -54,16 +54,34 @@ jobs:
             GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
             R_KEEP_PKG_SOURCE: yes
             _R_CHECK_FORCE_SUGGESTS_: false
-            # testthat reads the worker count from this, not from DESCRIPTION
-            TESTTHAT_CPUS: 4
+            # testthat reads the worker count from this, not from DESCRIPTION.
+            # Per-leg, not shared: the devel job runs half the workers (see the
+            # devel matrix) because R-devel + Bioc-devel are source-compiled, so
+            # its runner has less headroom than a release leg's.
+            TESTTHAT_CPUS: ${{ matrix.config.cpus }}
         strategy:
             fail-fast: false
             matrix:
                 config:
-                    - { os: ubuntu-latest, r: "release", engines: unix }
-                    - { os: ubuntu-latest, r: "oldrel-1", engines: unix }
-                    - { os: macos-latest, r: "release", engines: mac }
-                    - { os: windows-latest, r: "release", engines: win }
+                    - {
+                          os: ubuntu-latest,
+                          r: "release",
+                          engines: unix,
+                          cpus: 4,
+                      }
+                    - {
+                          os: ubuntu-latest,
+                          r: "oldrel-1",
+                          engines: unix,
+                          cpus: 4,
+                      }
+                    - { os: macos-latest, r: "release", engines: mac, cpus: 4 }
+                    - {
+                          os: windows-latest,
+                          r: "release",
+                          engines: win,
+                          cpus: 4,
+                      }
         steps: &steps
             - uses: actions/checkout@v4
 
@@ -131,27 +149,6 @@ jobs:
                     "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
                     -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT
 
-            # Round 12 diagnosis: the engine is fine when the shell exports
-            # UNAFOLDDAT, so the defect is in how R hands the variable to the
-            # child.  Print the resolved paths, the oligo_dg() answers and the
-            # raw system2() stdout, including the old `env=` shape.  Best-effort:
-            # the log is the deliverable, never a red job.
-            - name: Diagnose OligoArrayAux dG (Windows, best-effort)
-              if: matrix.config.engines == 'win'
-              continue-on-error: true
-              shell: bash
-              run: |
-                  echo "UNAFOLDDAT (shell) = ${UNAFOLDDAT-<unset>}"
-                  echo "workspace = $GITHUB_WORKSPACE"
-                  echo "--- direct: UNAFOLDDAT exported by the shell (expect -18.585) ---"
-                  UNAFOLDDAT="$(cygpath -w "$GITHUB_WORKSPACE/.tools/share/oligoarrayaux")" \
-                    "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
-                    -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT 2>&1
-                  echo "direct status = $?"
-                  echo "--- R: resolved paths, oligo_dg(), raw system2() stdout ---"
-                  Rscript -e 'pkgload::load_all(".", helpers = FALSE, quiet = TRUE); p <- tidymarkers:::oligoarrayaux_paths(); str(p); cat("UNAFOLDDAT (R) =", Sys.getenv("UNAFOLDDAT"), "\n"); a <- "ACGTACGTACGTACGTACGT"; b <- "TTTTGGGGCCCCAAAATTTT"; args <- c("-n", "DNA", "-t", "37", "-T", "37", "-N", "0.05", "-E", "-q", a, b); cat("argv =", paste(c(fs::path(p$bin, "hybrid-min.exe"), args), collapse = " "), "\n"); print(c(dg_rc = oligo_dg(a, a), dg_unrelated = oligo_dg(a, rep("T", 20L)), dg_ab = oligo_dg(a, b), dg_ba = oligo_dg(b, a))); raw <- suppressWarnings(system2(fs::path(p$bin, "hybrid-min.exe"), args, stdout = TRUE, stderr = TRUE)); cat("system2 raw: [", paste(raw, collapse = " | "), "] status =", attr(raw, "status"), "\n"); old <- suppressWarnings(system2(fs::path(p$bin, "hybrid-min.exe"), args, env = paste0("UNAFOLDDAT=", p$dat), stdout = TRUE, stderr = TRUE)); cat("system2 env= (the defect shape): [", paste(old, collapse = " | "), "] status =", attr(old, "status"), "\n")'
-                  echo "r status = $?"
-
             # Warm the Atlas/TAIR10 demo cache before R CMD check so the
             # arms/primer3/plan tests run instead of skipping on a cold cache.
             # Best-effort: the skip helper exists so a network failure inside
@@ -161,7 +158,27 @@ jobs:
             - name: Warm demo cache (best-effort)
               continue-on-error: true
               run: |
-                  Rscript -e 'pkgload::load_all("."); invisible(ath_genome()); invisible(ensembl_variants("4", 1500000L, 1560000L)); invisible(ensembl_gene("AT4G00650"))'
+                  Rscript -e '
+                  pkgload::load_all(".")
+                  warm <- list(
+                    genome = function() ath_genome(),
+                    variants = function() ensembl_variants("4", 1500000L, 1560000L),
+                    gene = function() ensembl_gene("AT4G00650")
+                  )
+                  failed <- character()
+                  for (nm in names(warm)) {
+                    msg <- tryCatch(
+                      { invisible(warm[[nm]]()); NULL },
+                      error = function(e) conditionMessage(e)
+                    )
+                    if (!is.null(msg)) {
+                      failed <- c(failed, nm)
+                      cat("::warning title=Demo cache warm failed::", nm, ": ",
+                        gsub("[\\r\\n]+", " ", msg), "\n", sep = "")
+                    }
+                  }
+                  quit(status = as.integer(length(failed) > 0L))
+                  '
 
             - uses: r-lib/actions/check-r-package@v2
               timeout-minutes: 40
@@ -169,6 +186,35 @@ jobs:
                   args: 'c("--no-manual", "--as-cran")'
                   error-on: '"warning"'
                   upload-snapshots: true
+
+            # The devel leg dies inside `* checking tests ...` on a SIGTERM
+            # (exit 143) roughly 13-16 minutes in, and the sender is *not*
+            # established: no elapsed-time limit, no OOM killer message, and no
+            # rcmdcheck timeout is configured. Whatever kills it kills the
+            # process group before R writes the failing test's output, so the
+            # check directory is the only record of where it stopped -- and
+            # `check-r-package`'s own upload step is skipped when the check
+            # fails. Capture it ungated by success.
+            - name: Upload check results on failure
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: check-failure-${{ matrix.config.os }}-${{ matrix.config.r }}
+                  path: |
+                      check/**
+                      **/*.Rout*
+                  if-no-files-found: ignore
+                  retention-days: 7
+
+            # Same evidence question, other side: was the runner under memory or
+            # disk pressure when it sent the signal? Best-effort, Linux only.
+            - name: Runner pressure on failure (best-effort)
+              if: failure() && runner.os == 'Linux'
+              continue-on-error: true
+              run: |
+                  free -m
+                  df -h "$RUNNER_TEMP"
+                  sudo dmesg --ctime | tail -30
 
     R-CMD-check-devel:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -180,5 +226,5 @@ jobs:
             fail-fast: false
             matrix:
                 config:
-                    - { os: ubuntu-latest, r: "devel", engines: unix }
+                    - { os: ubuntu-latest, r: "devel", engines: unix, cpus: 2 }
         steps: *steps

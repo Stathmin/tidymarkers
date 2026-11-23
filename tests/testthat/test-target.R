@@ -84,3 +84,17 @@ test_that("a plan layer cannot masquerade as a design context", {
     "marker_run_context\\(genome"
   )
 })
+
+# Ensembl answers 403, not only 429, when a client exceeds its rate limit; a
+# retry set that omits it turns a throttle into a hard failure. Offline: the
+# predicate reads only the status code, so a bare response object suffices.
+test_that("ensembl_transient retries the statuses Ensembl refuses a client with", {
+  expect_true(ensembl_transient(httr2::response(403L)))
+  expect_true(ensembl_transient(httr2::response(408L)))
+  expect_true(ensembl_transient(httr2::response(429L)))
+  expect_true(ensembl_transient(httr2::response(500L)))
+  expect_true(ensembl_transient(httr2::response(503L)))
+  expect_false(ensembl_transient(httr2::response(200L)))
+  expect_false(ensembl_transient(httr2::response(404L)))
+  expect_false(ensembl_transient(httr2::response(400L)))
+})
