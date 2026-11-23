@@ -3,11 +3,14 @@
 # =============================================================================
 #  The exact-mode call `in_silico_pcr()` warns when a <= 1-mismatch product
 #  exists, and `in_silico_pcr_pool(near = TRUE)` does the same for a pool.  Both
-#  pay for one genome-wide radius-1 scan.  This script times that scan against
-#  the radius-0 call it accompanies, so the residual cost is a number:
+#  pay for one genome-wide radius-1 scan.  This script prints ABSOLUTE totals for
+#  every call it times; it does not subtract one call from another to invent a
+#  "pass" cost, because the near pool call runs the exact pass first and so its
+#  total is always >= the exact total.
 #
-#    per-pair near pass   = in_silico_pcr(r = 1) - in_silico_pcr(r = 0)
-#    pool near pass       = in_silico_pcr_pool(near = TRUE) - (near = FALSE)
+#  The exact pool call is timed twice: `cold` is the first pool call in the
+#  process and pays its setup, `warm` is the one to compare with the near call
+#  that is timed after it.  The per-pair lines are absolute too.
 #
 #  Needs the TAIR10 cache of `ath_genome()` (120 Mb, seven sequences); when it
 #  is neither cached nor downloadable the script says so and exits 0.  Run:
@@ -54,20 +57,21 @@ clear_hits()
 t1 <- timed(out1 <- in_silico_pcr(f, r, genome, max_mismatch = 1L))
 cat(sprintf("  radius 0: %7.2f s  (%d products)\n", t0, nrow(out0)))
 cat(sprintf("  radius 1: %7.2f s  (%d products)\n", t1, nrow(out1)))
-cat(sprintf("  near pass: %6.2f s\n", max(0, t1 - t0)))
 
 cat("\npool path (in_silico_pcr_pool(), one pair)\n")
 clear_hits()
-p0 <- timed(pool0 <- in_silico_pcr_pool(pair, genome))
+p0a <- timed(pool0a <- in_silico_pcr_pool(pair, genome))
+clear_hits()
+p0b <- timed(pool0b <- in_silico_pcr_pool(pair, genome))
 clear_hits()
 p1 <- timed(pool1 <- in_silico_pcr_pool(pair, genome, near = TRUE))
-cat(sprintf("  exact:     %7.2f s  (%d products)\n", p0, nrow(pool0[[1L]])))
-cat(sprintf("  near:      %7.2f s  (%d products)\n", p1, nrow(pool1[[1L]])))
-cat(sprintf("  near pass: %6.2f s\n", max(0, p1 - p0)))
+cat(sprintf("  exact cold (first pool call): %7.2f s  (%d products)\n", p0a, nrow(pool0a[[1L]])))
+cat(sprintf("  exact warm:                   %7.2f s  (%d products)\n", p0b, nrow(pool0b[[1L]])))
+cat(sprintf("  near (after the warm exact):   %7.2f s  (%d products)\n", p1, nrow(pool1[[1L]])))
 
 cat("\nsame exact verdict across the two paths: ",
   identical(
-    as.data.frame(pool0[[1L]][, c("chrom", "start", "end", "width")]),
+    as.data.frame(pool0b[[1L]][, c("chrom", "start", "end", "width")]),
     as.data.frame(out0[, c("chrom", "start", "end", "width")])
   ), "\n",
   sep = ""

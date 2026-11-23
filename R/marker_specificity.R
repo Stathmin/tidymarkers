@@ -833,11 +833,10 @@ pattern_hits_batch <- function(patterns, genome, max_mismatch) {
 #' and keeps the memory of a wheat chromosome flat.  An exact plain-ACGT group is
 #' searched with one `matchPDict()` over the whole group (which is what makes a
 #' batch cost less than a scan per pattern); at a mismatch radius a `PDict()` is
-#' no help - its trusted-band tree is rebuilt per block and Biostrings spends
-#' most of the search collecting garbage (92.7 % of a 193 s radius-1 pool pass
-#' was `gc()` inside `.match.MTB_PDict`) - so every pattern is searched with the
-#' `matchPattern()` engine of `pattern_hits_scan()`, whose hit set is identical
-#' (measured on TAIR10: same starts, 0.07 s vs 1.2 s per pattern per chromosome).
+#' no help - its trusted-band tree is rebuilt per block - so every pattern is
+#' searched with the `matchPattern()` engine of `pattern_hits_scan()`, whose hit
+#' set is identical (measured on TAIR10: same starts, 0.07 s vs 1.2 s per
+#' pattern per chromosome).
 #' A group holding an IUPAC pattern has no `PDict`, so each pattern is searched
 #' on its own with the same block walk.
 #' @param group equal-width patterns.
@@ -861,7 +860,7 @@ batch_probe <- function(group, subject, bl, bl_len, w, max_mismatch) {
   }
   single_block <- length(bl$start) == 1L && bl$start[[1L]] == 1L &&
     bl$end[[1L]] == length(subject)
-  if (!is.null(pdict) && max_mismatch == 0L && single_block) {
+  if (!is.null(pdict) && single_block) {
     # An exact search of a gapless subject needs no block walk.  The walk exists so
     # a hit cannot straddle an ambiguity code or make the subseq copy of a whole
     # wheat chromosome; with one block holding the whole subject neither applies,
@@ -1545,9 +1544,10 @@ pcr_products_from_hits <- function(fh_all, rh_all, chroms, f_primer, r_primer, B
 #'   radius-1 pass over every pattern of the pool and warns, which is opt-in
 #'   because that pass used to cost an order of magnitude more than the exact one
 #'   (measured 4.6 s exact vs 193 s radius-1 for one pair on a 120 Mb genome,
-#'   before the radius-1 batch stopped building a `PDict`; with that fix the near
-#'   pass measured 2.0 s against 3.6 s exact, same hits), and the internal
-#'   assembly screen does not ask for it.
+#'   before the radius-1 batch stopped building a `PDict`; with that fix the whole
+#'   `near = TRUE` call is 1.99 s on TAIR10, against 1.14 s for the warm exact
+#'   call it repeats - the exact call is 3.63 s when it is the first pool call in
+#'   a process), and the internal assembly screen does not ask for it.
 #' @param pairs named list of `c(F = , R = )` primer pairs.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param max_mismatch search radius.
