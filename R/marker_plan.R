@@ -206,13 +206,12 @@ marker_layer <- function(apply, label) {
 #'   sequencing depth, so low-confidence calls are dropped before design (Y5.3).
 #' @return a `marker_plan`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) +
-#'   marker_targets(marker_example("snp")) +
+#'   marker_targets(loci) +
 #'   marker_tech(preset = "lab")
 #' plan
-#' }
 #' @family plan
 #' @export
 marker_plan <- function(genome, targets = NULL, region = NULL) {
@@ -249,11 +248,11 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #'   `"-"`); a minus-strand locus is reverse-complemented before design.
 #' @return a plan layer (add it with `+`).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' marker_plan(genome) + marker_targets(marker_example())
-#' marker_plan(genome) + marker_targets(chrom = "Chr4", pos = 269116, ref = "G", alt = "A")
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' marker_plan(genome) + marker_targets(loci)
+#' marker_plan(genome) +
+#'   marker_targets(chrom = loci$chrom, pos = as.integer(loci$pos), ref = loci$ref, alt = loci$alt)
 #' @family plan
 #' @export
 marker_targets <- function(data = NULL, chrom = NULL, pos = NULL, ref = NULL,
@@ -340,10 +339,8 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' @param exclude scheme ids to drop from the allowed set.
 #' @return a plan layer (add it with `+`).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
-#' }
 #' @family plan
 #' @export
 marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL) {

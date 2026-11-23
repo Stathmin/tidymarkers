@@ -176,14 +176,14 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #'   same design instead of a similar one - and, for a plan with a `region`, a
 #'   `signals` table naming each haplotype's readout (`within_phased_block`).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' solved <- marker_plan(genome) +
-#'   marker_targets(marker_example("snp")) +
-#'   marker_tech(preset = "lab") |>
-#'   marker_solve()
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' # `+` binds tighter than `|>`, so solve the whole plan in one call
+#' solved <- marker_solve(
+#'   marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+#' )
 #' solved
-#' }
 #' @family plan
 #' @export
 marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = interactive()) {
@@ -262,9 +262,13 @@ print.marker_solved <- function(x, ...) {
 #' @param ... reserved for future options.
 #' @return a `ggplot`.
 #' @examples
-#' \dontrun{
-#' marker_plot(marker_solve(plan))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' solved <- marker_solve(
+#'   marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+#' )
+#' marker_plot(solved)
 #' @family plan
 #' @export
 marker_plot <- function(solved, ...) {
@@ -302,9 +306,13 @@ marker_plot <- function(solved, ...) {
 #'   (default `TRUE`).
 #' @return `dir`, invisibly.
 #' @examples
-#' \dontrun{
-#' marker_export(marker_solve(plan), dir = "results")
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' solved <- marker_solve(
+#'   marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+#' )
+#' marker_export(solved)
 #' @family plan
 #' @export
 marker_export <- function(solved, dir = tempdir(), artefact = TRUE) {

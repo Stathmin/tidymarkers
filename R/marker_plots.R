@@ -813,14 +813,15 @@ haplotype_layers <- function(assay, snp, span) {
 #'   sharing an x axis) beside the tumbler list from [plot_checks()].  For a
 #'   `marker_doomed` target, a single context plot with the reason instead.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-#' plot_primers(assay, variants, snp)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
+#' variants <- tibble::tibble(
+#'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
+#'   consequence = "synonymous_variant"
+#' )
+#' plot_primers(assay, variants, loci)
 #' @family plots
 #' @export
 plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
@@ -1165,12 +1166,11 @@ tumbler_plot <- function(chk) {
 #'   apply) is drawn neutral and shows `NA`; the prose explanation is kept in
 #'   `assay$evaluation$detail`, not in the figure.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_hrm_marker(genome, loci)
 #' plot_checks(assay)
-#' }
 #' @family plots
 #' @export
 plot_checks <- function(assay, limits = KASP_LIMITS) {
@@ -1230,12 +1230,11 @@ bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
 #' @param min_armlength,max_looplength passed to [find_palindromes()].
 #' @return a `ggplot` faceted by oligo.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
 #' plot_oligo_structure(assay)
-#' }
 #' @family plots
 #' @export
 plot_oligo_structure <- function(assay, min_armlength = 4L, max_looplength = 6L) {
@@ -1358,14 +1357,18 @@ plot_self_complementarity <- function(seq) {
 #' @return a `ggplot` object: the gene model and variant track, faceted by
 #'   `ggforce::facet_zoom()` into the full view and a zoom on the design window.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-#' plot_variant_landscape(gene, variants, snp, assay)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
+#' # a gene record over this slice; ensembl_gene("AT4G05320") fetches the real one
+#' # over the network
+#' gene <- list(symbol = "AT4G05320", chrom = "Chr4", start = 2400L, end = 3200L, strand = "+")
+#' variants <- tibble::tibble(
+#'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
+#'   consequence = "synonymous_variant"
+#' )
+#' plot_variant_landscape(gene, variants, loci, assay)
 #' @family plots
 #' @export
 plot_variant_landscape <- function(gene, variants, snp, assay) {
@@ -1438,13 +1441,12 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' @param gene gene record (used for the file base name).
 #' @param dir output directory.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' write_marker_results(assay, gene, dir = tempdir())
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
+#' gene <- list(symbol = "AT4G05320")
+#' basename(write_marker_results(assay, gene, dir = tempdir()))
 #' @family output
 #' @export
 write_marker_results <- function(assay, gene, dir = tempdir()) {
@@ -1506,13 +1508,12 @@ write_kasp_results <- function(...) {
 #'   `tail`, `tm`, `gc`, `length`) with the three assay oligos and their KASP
 #'   tails.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
+#' gene <- list(symbol = "AT4G05320")
 #' marker_primer_table(assay, gene)
-#' }
 #' @family output
 #' @export
 marker_primer_table <- function(assay, gene) {
@@ -1553,13 +1554,12 @@ marker_primer_table <- function(assay, gene) {
 #' @return the tidy primer table (see [marker_primer_table()]), invisibly; called
 #'   for its side effect of writing the IDT/LGC/tidy order sheets.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' export_primers(assay, gene, dir = tempdir())
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci)
+#' gene <- list(symbol = "AT4G05320")
+#' head(export_primers(assay, gene, dir = tempdir()))
 #' @family output
 #' @export
 export_primers <- function(assay, gene, dir = tempdir()) {
