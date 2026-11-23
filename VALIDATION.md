@@ -17,9 +17,9 @@ check is enforced, and what has not been validated at all.
   TAIR10 the correct answer to "how many places does this primer bind" is
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
   are checked against the enumeration, with BLAST+ as a speed/recall baseline.
-- **What does exist** is a literature-anchored evidence layer: 132 registered
-  sources, 143 extracted tables in `inst/extdata/`, and a ledger that binds 205
-  `test` rows to the 45 test files that consume them. Each link from a source,
+- **What does exist** is a literature-anchored evidence layer: 134 registered
+  sources, 146 extracted tables in `inst/extdata/`, and a ledger that binds 208
+  `test` rows to the 46 test files that consume them. Each link from a source,
   to the exact table read from it, to the test that asserts a property of it is
   machine-checked.
 - **Agreement between models is not evidence about a real duplex.** That
@@ -31,21 +31,22 @@ Three tables carry the provenance, and three tests keep them honest.
 
 | File                                  | Rows | What it holds                                                                                                                           |
 | ------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `inst/extdata/scientific_sources.csv` | 132  | One row per paper or software source: citation, DOI/PMIM, **how much was read** (`access`), `what_it_anchors`, and the verbatim `claim` |
+| `inst/extdata/scientific_sources.csv` | 134  | One row per paper or software source: citation, DOI/PMIM, **how much was read** (`access`), `what_it_anchors`, and the verbatim `claim` |
 | `inst/extdata/science_ledger.csv`     | 369  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
 | `inst/extdata/scientific_backlog.csv` | 45   | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched`                                                     |
 
-`access` is a closed vocabulary and it is load-bearing: 101 sources were read in
+`access` is a closed vocabulary and it is load-bearing: 103 sources were read in
 full text, 11 through a supplement, 4 as an abstract only, 7 are closed access,
-3 are source code, 2 are stubs, 1 was transcribed, 3 were not found. 126 of the
-132 rows are marked `verified`, each with the date it was checked. A source read
+3 are source code, 2 are stubs, 1 was transcribed, 3 were not found. 128 of the
+134 rows are marked `verified`, each with the date it was checked. A source read
 only as an abstract may not calibrate anything, and the tests enforce that.
 
-Ledger rows by use: 205 `test`, 132 `report` (a claim the paper makes, kept for
-comparison), 23 `blocked` (read, extracted, consumed by nothing yet — each says
+Ledger rows by use: 208 `test`, 132 `report` (a claim the paper makes, kept for
+comparison), 20 `blocked` (read, extracted, consumed by nothing yet — each says
 why), 3 `rule`, 4 `artefact`, 2 `config`. Every extract the ledger names has at
-least one test reading it; the 14 remaining `blocked` rows name no extract
-(`extract = none`) and say which paper could not be landed.
+least one test reading it; 10 remaining `blocked` rows name no extract
+(`extract = none`) and say which paper could not be landed, while 10 name a real
+extract that no test consumes.
 
 The gates:
 
@@ -217,12 +218,12 @@ and are the right place to start once per-assay outcomes are landed.
 
 ## Published outcomes: design → working assay
 
-`inst/extdata/conversion_rates.csv` records six studies that report both a
+`inst/extdata/conversion_rates.csv` records fifteen rows from eleven publications that report both a
 denominator and its failures, for example 730/1000 (Grewal 2020) and 335/698
 (Grewal 2022). Every row keeps `n_fail_pcr`, `n_fail_no_allele`,
 `n_fail_other` and (for Grewal 2022) the three further named classes
 `n_fail_wheat_polymorphic`, `n_fail_monomorphic`, `n_fail_heterozygote`
-separate; three rows reconstruct their failure total exactly, every row is
+separate; four rows reconstruct their failure total exactly, every row is
 `calibrated = FALSE`, and no two studies
 are pooled into one rate. "Success" means a different thing in each paper, so
 the definition travels with the count: `conversion_definition` names which of
@@ -260,12 +261,12 @@ Counts are ledger rows whose consumer is a test.
 | Polyploid dosage                            | 4    | cotton negative control, durum, sugarcane                                                                                                                                          | `test-polyploid-*.R`                                                                            |
 | Tm oracles                                  | 2    | 4096 measured duplex Tm; HRM amplicon Tm                                                                                                                                           | `test-tm-mm2020.R`, `test-tm-hm2025.R`                                                          |
 | CAPS                                        | 4    | 1236 palindromic enzymes with their cut offsets, 26 soybean primer pairs, SNP2CAPS predicted-vs-observed patterns, Liu 2016's within-family SNP composition                        | `test-caps.R`                                                                                   |
-| Registry and IO                             | 3    | the 132-row source registry, the 45-entry backlog's three statuses, the example locus table's transition chemistry                                                                 | `test-scientific-data.R`, `test-lamp-status.R`, `test-io.R`                                     |
+| Registry and IO                             | 3    | the 134-row source registry, the 45-entry backlog's three statuses, the example locus table's transition chemistry                                                                 | `test-scientific-data.R`, `test-lamp-status.R`, `test-io.R`                                     |
 
 The table sums to 196 `test` rows, the state when it was last recomputed: each
 row is assigned to the first pattern in the last column that matches its
-`test_file`, so no row is counted twice. The ledger held 205 `test` rows on
-2026-11-19, so 9 rows postdate this snapshot and the per-area split is not
+`test_file`, so no row is counted twice. The ledger held 208 `test` rows on
+2026-11-23, so 12 rows postdate this snapshot and the per-area split is not
 recomputed here. `test-science-ledger.R` and `test-scientific-data.R` themselves
 are the data-integrity gates rather than marker-family tests, and are counted
 under _Registry and IO_.

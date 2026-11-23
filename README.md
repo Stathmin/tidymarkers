@@ -223,7 +223,7 @@ packages, and the optional demo downloads its genome on first use). The
 artefact's decision log carries `outcome`, `verdict`, `relaxed`, `violated` and
 `risk` as typed columns, so an agent reads a field instead of parsing a sentence.
 
-The registry (`inst/mcp/tools.R`, 37 tools) follows the vignette workflow: read
+The registry (`inst/mcp/tools.R`, 38 tools) follows the vignette workflow: read
 a genome/VCF, classify and screen variants, run the thermodynamics and QC
 helpers, check specificity, design one marker (`design_scheme`) or a batch
 (`design_markers`), and read the verdict (`marker_decision_text`,
@@ -284,11 +284,11 @@ short answer is published measurements, not a bench run by the maintainers:
 - **Specificity scored against ground truth, not against PolyMarker**: on TAIR10
   the answer is enumerated (3′-seed screen 8/8 equal; exact in-silico PCR 3/3
   equal), with BLAST+ as a speed/recall baseline. `dev/specificity-oracle.R`.
-- **A literature-anchored evidence layer instead**: 132 registered sources, 143
-  extract tables in `inst/extdata/`, and 212 ledger links from an extract to the
+- **A literature-anchored evidence layer instead**: 134 registered sources, 146
+  extract tables in `inst/extdata/`, and 208 ledger links from an extract to the
   test file that asserts it (46 distinct test files). The join is machine-checked,
-  so a test cannot claim an extract it does not read. Across the 212 criterion
-  rows the rungs are 128 `primary_literature`, 13 `vendor_guideline` and 71
+  so a test cannot claim an extract it does not read. Across the 213 criterion
+  rows the rungs are 128 `primary_literature`, 13 `vendor_guideline` and 72
   `rule_of_thumb`; `fitted_here` is **0**, so nothing is calibrated to this
   package's own measurements. Of the 54 tier rows, 36 cite a printed target; the
   other 18 rank a computed quantity (a mismatch ranking, a simulator output, a
@@ -385,7 +385,7 @@ GitHub and Zenodo), so a release can be cited by DOI once it is archived. The
 author's ORCID is [0000-0002-5880-5931](https://orcid.org/0000-0002-5880-5931).
 
 Beyond the package itself, `tidymarkers` rests on published measurements:
-132 sources, every one with a DOI and 110 also with a PubMed Central id, in
+134 sources, every one with a DOI and 132 also with a PubMed Central id, in
 [`inst/extdata/scientific_sources.csv`](inst/extdata/scientific_sources.csv).
 Cite the primary source for any rule that shaped your design, not the package
 alone; the rule-to-source mapping is in
