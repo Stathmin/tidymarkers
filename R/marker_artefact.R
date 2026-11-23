@@ -630,6 +630,77 @@ print.marker_artefact <- function(x, ...) {
   invisible(x)
 }
 
+# A sidecar is named by the manifest and may be absent (`NA` in `files`); a
+# missing file is an empty table, never an error -- a solve that produced no row
+# still wrote a record.
+artefact_sidecar <- function(dir, file, empty) {
+  if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
+    return(empty())
+  }
+  path <- fs::path(dir, file)
+  if (!fs::file_exists(path)) {
+    return(empty())
+  }
+  readr::read_csv(path, show_col_types = FALSE)
+}
+
+#' Read a persisted artefact back
+#'
+#' [marker_artefact()] writes its decision rows to `decisions.csv` beside the
+#' manifest, so a bare `artefact.json` cannot carry them.  Reading the directory
+#' back is what lets [marker_trace_from_artefact()] migrate a persisted
+#' `artefact@1` record without losing its decisions and signals.
+#'
+#' A record from a newer tidymarkers is refused and names its version: the reader
+#' is too old, not the record wrong.
+#' @param path the directory [marker_artefact()] wrote to, or the `artefact.json`
+#'   inside it.
+#' @return a `marker_artefact`: `id`, `dir`, `manifest`, `decisions`.
+#' @examples
+#' \dontrun{
+#' solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
+#' dir <- tempfile("artefact")
+#' marker_artefact(solved, dir = dir)
+#' marker_artefact_read(dir)
+#' }
+#' @family plan
+#' @export
+marker_artefact_read <- function(path) {
+  if (!is.character(path) || length(path) != 1L || is.na(path)) {
+    cli::cli_abort(gettext("`path` must be one directory or artefact.json path."))
+  }
+  dir <- if (fs::is_dir(path)) path else fs::path_dir(path)
+  manifest <- artefact_manifest(dir)
+  parts <- trace_schema_parts(manifest$schema)
+  if (is.null(parts) || parts$kind != "artefact") {
+    cli::cli_abort(c(
+      gettext("Not an artefact: `schema` is {.val {trace_schema_label(manifest$schema)}}."),
+      i = gettext("Expected a {.val {'tidymarkers/artefact'}} record.")
+    ))
+  }
+  current <- TRACE_FORMATS[["artefact"]]
+  if (parts$version > current) {
+    cli::cli_abort(c(
+      gettext("This artefact is {.val {manifest$schema}}: newer than this reader's artefact schema."),
+      i = gettext("Update tidymarkers to read it.")
+    ))
+  }
+  if (parts$version < current) {
+    # no such version was ever written; treating it as current would guess
+    trace_abort_unknown(manifest$schema)
+  }
+  files <- manifest$files %||% list()
+  structure(
+    list(
+      id = manifest$id,
+      dir = as.character(dir),
+      manifest = manifest,
+      decisions = artefact_sidecar(dir, files$decisions, trace_empty_decisions)
+    ),
+    class = "marker_artefact"
+  )
+}
+
 # --- replay ------------------------------------------------------------------
 
 #' The directory an artefact lives in

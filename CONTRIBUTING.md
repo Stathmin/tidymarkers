@@ -119,6 +119,16 @@ current `marker_trace_schema()`) and send it to the maintainer. An agent cites
 and collects; it does not add records to any archive. Publication is an operator
 action, and the archive path is still an open `ZY5` item.
 
+The record names its own version: `marker_trace_schema()` is the only schema
+`marker_trace_write()` accepts, and a hand-edited `schema` field is a
+corruption, not an upgrade - migrate with `marker_trace_migrate()` instead.
+Migration happens on read: `marker_trace_read()` migrates a record written by
+an older tidymarkers and validates it before returning, an `artefact@1`
+manifest is mapped field by field, and an artefact directory keeps the rows its
+`decisions.csv` and `signals.csv` sidecars carry through
+`marker_artefact_read()`. A record from a newer tidymarkers is refused and names
+its version: update the package, do not edit the record.
+
 ## Code review
 
 No independent human code review is recorded in this repository. What actually

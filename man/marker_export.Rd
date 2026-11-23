@@ -37,6 +37,7 @@ marker_export(marker_solve(plan), dir = "results")
 \seealso{
 Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
+\code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_design_panel]{marker_design_panel()}},

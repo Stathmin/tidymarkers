@@ -7,8 +7,9 @@
 marker_trace_from_artefact(x)
 }
 \arguments{
-\item{x}{a \code{marker_artefact} (see \code{\link[=marker_artefact]{marker_artefact()}}) or a \code{marker_solved}
-(see \code{\link[=marker_solve]{marker_solve()}}).}
+\item{x}{a \code{marker_artefact} (see \code{\link[=marker_artefact]{marker_artefact()}}), the directory it was
+written to (or the \code{artefact.json} inside it), or a \code{marker_solved} (see
+\code{\link[=marker_solve]{marker_solve()}}).}
 }
 \value{
 a \code{marker_trace}: a plain list of class \code{c("marker_trace", "list")}.
@@ -24,6 +25,10 @@ reduced to their file name, and only the fields listed below travel.
 The fields are \code{schema}, \code{created}, \code{package} (name, version), \code{platform}
 (r, os), \code{engine_stamp}, \code{inputs}, \code{plan}, \code{parameters}, \code{overrides},
 \code{limitations}, \code{counts}, \code{files}, \code{id}, \code{decisions} and \code{signals}.
+
+An artefact directory (or its \code{artefact.json}) is read with
+\code{\link[=marker_artefact_read]{marker_artefact_read()}}, so the \code{decisions} and \code{signals} rows the sidecars
+carry travel with the trace; a bare manifest in memory arrived without them.
 }
 \examples{
 \dontrun{
@@ -36,6 +41,7 @@ marker_trace_from_artefact(solved)
 \seealso{
 Other plan:
 \code{\link[=marker_artefact]{marker_artefact()}},
+\code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_design_panel]{marker_design_panel()}},

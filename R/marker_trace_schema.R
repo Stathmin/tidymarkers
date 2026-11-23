@@ -255,8 +255,13 @@ marker_trace_schema <- function() {
 #' The fields are `schema`, `created`, `package` (name, version), `platform`
 #' (r, os), `engine_stamp`, `inputs`, `plan`, `parameters`, `overrides`,
 #' `limitations`, `counts`, `files`, `id`, `decisions` and `signals`.
-#' @param x a `marker_artefact` (see [marker_artefact()]) or a `marker_solved`
-#'   (see [marker_solve()]).
+#'
+#' An artefact directory (or its `artefact.json`) is read with
+#' [marker_artefact_read()], so the `decisions` and `signals` rows the sidecars
+#' carry travel with the trace; a bare manifest in memory arrived without them.
+#' @param x a `marker_artefact` (see [marker_artefact()]), the directory it was
+#'   written to (or the `artefact.json` inside it), or a `marker_solved` (see
+#'   [marker_solve()]).
 #' @return a `marker_trace`: a plain list of class `c("marker_trace", "list")`.
 #' @examples
 #' \dontrun{
@@ -268,13 +273,20 @@ marker_trace_schema <- function() {
 #' @family plan
 #' @export
 marker_trace_from_artefact <- function(x) {
+  if (is.character(x) && length(x) == 1L) {
+    x <- marker_artefact_read(x)
+  }
   if (inherits(x, "marker_artefact")) {
-    return(trace_from_manifest(x$manifest, decisions = x$decisions))
+    files <- x$manifest$files %||% list()
+    signals <- artefact_sidecar(x$dir, files$signals, function() NULL)
+    return(trace_from_manifest(x$manifest, decisions = x$decisions, signals = signals))
   }
   if (inherits(x, "marker_solved")) {
     return(trace_from_solved(x))
   }
-  cli::cli_abort(gettext("`x` must be a marker_artefact or a marker_solved."))
+  cli::cli_abort(gettext(
+    "`x` must be a marker_artefact, an artefact directory or a marker_solved."
+  ))
 }
 
 #' Migrate a record to the current trace schema

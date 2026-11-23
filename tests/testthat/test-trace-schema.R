@@ -216,6 +216,71 @@ test_that("a legacy record is written back at the current schema", {
   expect_identical(back$schema, marker_trace_schema())
 })
 
+# An artefact directory is the package's own on-disk record: `artefact@1` kept its
+# decision rows in `decisions.csv` beside the manifest, so reading the directory
+# back is what lets a migrated trace keep them instead of arriving empty.
+legacy_artefact_dir <- function(art, dir) {
+  manifest <- art$manifest
+  manifest$schema <- "tidymarkers/artefact@1"
+  manifest$trace_schema <- NULL
+  manifest$inputs[[1L]]$path <- "/home/someone/ref.fa"
+  writeLines(
+    jsonlite::toJSON(
+      manifest,
+      auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA
+    ),
+    fs::path(dir, "artefact.json")
+  )
+  readr::write_csv(art$decisions, fs::path(dir, manifest$files$decisions))
+  dir
+}
+
+test_that("an artefact directory migrates to a trace without losing its decisions", {
+  art <- new_artefact()
+  dir <- legacy_artefact_dir(art, withr::local_tempdir("legacy-artefact-"))
+
+  back <- marker_artefact_read(dir)
+  expect_s3_class(back, "marker_artefact")
+  expect_named(back, c("id", "dir", "manifest", "decisions"))
+  expect_identical(back$id, art$manifest$id)
+  expect_identical(names(back$decisions), DECISION_COLUMNS)
+  expect_identical(nrow(back$decisions), nrow(art$decisions))
+  expect_true(nrow(back$decisions) > 0L)
+
+  tr <- marker_trace_from_artefact(dir)
+  expect_s3_class(tr, "marker_trace")
+  expect_named(tr, TRACE_NAMES)
+  expect_identical(tr$schema, marker_trace_schema())
+  expect_identical(tr$id, art$manifest$id)
+  # a bare manifest would give the empty table; the sidecar gives the rows back
+  expect_identical(tr$decisions, back$decisions)
+  expect_identical(tr$decisions$outcome, art$decisions$outcome)
+  expect_identical(tr$inputs[[1L]]$path, "ref.fa")
+  expect_length(tr$limitations, length(art$manifest$limitations))
+
+  # the manifest file itself is accepted where the directory is
+  expect_identical(marker_trace_from_artefact(fs::path(dir, "artefact.json")), tr)
+})
+
+test_that("an artefact reader refuses a schema it does not know and names it", {
+  dir <- withr::local_tempdir("future-artefact-")
+  writeLines('{"schema": "tidymarkers/artefact@2"}', fs::path(dir, "artefact.json"))
+
+  err <- tryCatch(marker_artefact_read(dir), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "tidymarkers/artefact@2", fixed = TRUE)
+  expect_match(conditionMessage(err), "Update tidymarkers", fixed = TRUE)
+
+  err <- tryCatch(marker_trace_from_artefact(dir), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "tidymarkers/artefact@2", fixed = TRUE)
+
+  empty <- withr::local_tempdir("empty-artefact-")
+  err <- tryCatch(marker_artefact_read(empty), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "No artefact.json", fixed = TRUE)
+})
+
 test_that("migrating a trace@1 is identity and idempotent", {
   tr <- marker_trace_from_artefact(new_artefact())
 
