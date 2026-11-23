@@ -25,8 +25,9 @@
 #     and calibrates nothing.
 #
 #  2. No success-only denominators.  `conversion_rates.csv` carries the failures
-#     the paper describes.  No source's failures currently decompose, and the
-#     file says so; nothing here is allowed to yield a probability.
+#     the paper describes; where a source decomposes its own failures, they
+#     decompose only into the classes the paper printed, and nothing here is
+#     allowed to yield a probability.
 #
 #  Run:  Rscript data-raw/mismatch-discrimination.R
 # =============================================================================
@@ -667,7 +668,16 @@ conv_rows <- tibble::tribble(
   268L, 258L,
   10L, NA_integer_, NA_integer_,
   "258 of 268 (96.27%) worked well and gave rise to polymorphisms that split the four sequenced genotypes into two clusters; the other ten primers produced no signal, so every failure is the no-amplification class and no residual is left",
-  "10.1371/journal.pone.0240042"
+  "10.1371/journal.pone.0240042",
+  # Mariyamma 2020 prints its 29 failures as two classes: 8 gave no useful
+  # amplification (n_fail_pcr) and 21 a compound class the paper does not split
+  # ("monomorphic and/or heterozygous type"), so the 21 stay whole in
+  # n_fail_other and the two split columns stay NA -- no invented division.
+  "mariyamma2020_maize_kasp", "Zea mays", "KASP across 100 SNP loci; validated on two parental inbreds",
+  100L, 71L,
+  8L, NA_integer_, 21L,
+  "21 (21%) were a compound printed class, \"monomorphic and/or heterozygous type\", and are not split here; the remaining 8 (8%) failed to generate a useful amplification signal (Jagtap et al. 2020, Results 2.3, Figure 5). Assays were validated on the two parental inbreds only.",
+  "10.3390/ijms21197386"
 )
 # the extra named classes join the row they belong to; every other row gets NA
 conv_rows <- dplyr::left_join(conv_rows, conv_extra, by = "study")
@@ -696,7 +706,8 @@ conversion_kind <- c(
   thakur2026_bittergourd = "usable",
   bai2025_aegilops = "work",
   steele2025_rice_kasp = "work",
-  yang2020_brassica_kasp = "work"
+  yang2020_brassica_kasp = "work",
+  mariyamma2020_maize_kasp = "usable"
 )
 stopifnot(
   # every row is classified, and only with the shared vocabulary
@@ -722,7 +733,13 @@ conversion <- dplyr::mutate(
     dplyr::coalesce(.data$n_fail_no_allele, 0L) +
     dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
     dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
-    dplyr::coalesce(.data$n_fail_heterozygote, 0L),
+    dplyr::coalesce(.data$n_fail_heterozygote, 0L) +
+    # `n_fail_other` is the residual bucket, except for Mariyamma 2020: its 21
+    # are a printed compound class ('monomorphic and/or heterozygous type'), so
+    # they are a named reason and count as known even though the schema has no
+    # column to split them into
+    dplyr::if_else(.data$study == "mariyamma2020_maize_kasp",
+                   dplyr::coalesce(.data$n_fail_other, 0L), 0L),
   # residual consistency: the measured failure `total` must equal the counted
   # reasons plus the residual bucket.  Nothing here is verified as a *finding*
   # -- it only shows the table is internally coherent.  Rows with no counted
@@ -736,18 +753,20 @@ conversion <- dplyr::mutate(
       dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
       dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
       dplyr::coalesce(.data$n_fail_heterozygote, 0L) == .data$n_failed,
-  # TRUE only when every failure reason is named in the schema above.  Four rows
+  # TRUE only when every failure reason is named in the schema above.  Five rows
   # do that today: Makhoul's multi-assembly arm (Table S4 names each failure as
   # 'Wrong cluster' or 'Locus-specific design not possible'), Yamagata Exp. 3
   # (3 no polymorphism + 3 dominant segregation), Grewal 2022 (its five classes
-  # sum to the 363 failures) and Yang 2020 (ten primers gave no signal, which is
-  # its whole failure total).  The whitelist is deliberate: arithmetic that
-  # happens to balance is not the same as a source naming every failure, so a
-  # new row is added only after its text is read.
+  # sum to the 363 failures), Yang 2020 (ten primers gave no signal, which is
+  # its whole failure total) and Mariyamma 2020 (8 no signal + 21 of a compound
+  # printed class, which is its whole failure total).  The whitelist is
+  # deliberate: arithmetic that happens to balance is not the same as a source
+  # naming every failure, so a new row is added only after its text is read.
   fully_decomposed = .data$decomposes &
     .data$study %in% c(
       "makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3",
-      "grewal2022_amblyopyrum", "yang2020_brassica_kasp"
+      "grewal2022_amblyopyrum", "yang2020_brassica_kasp",
+      "mariyamma2020_maize_kasp"
     ),
   # the reviewer's point made mechanical: a probability is withheld until the
   # failures decompose, so the output stays ordinal ("usable") by design
@@ -766,7 +785,7 @@ stopifnot(
         dplyr::coalesce(conversion$n_fail_heterozygote, 0L) <= conversion$n_failed),
   # a probability is withheld from EVERY row: an ordinal 'usable' until a source
   # decomposes ITS OWN failures into the categories here and a wet-lab anchor
-  # exists.  Today that is four rows from four studies, still too few to estimate
+  # exists.  Today that is five rows from five studies, still too few to estimate
   # anything, so nothing may be calibrated.
   all(!conversion$calibrated),
   # every row must report a failure count that matches its own denominator: this
@@ -822,6 +841,11 @@ stopifnot(nrow(ric) == 1L, ric$n_designed == 4000L, ric$n_success == 3366L,
 yn <- conversion[conversion$study == "yang2020_brassica_kasp", ]
 stopifnot(nrow(yn) == 1L, yn$n_designed == 268L, yn$n_success == 258L,
           yn$n_failed == 10L, yn$n_fail_pcr == 10L, isTRUE(yn$fully_decomposed))
+# Mariyamma 2020: 8 no-signal failures plus 21 of a compound printed class
+mm <- conversion[conversion$study == "mariyamma2020_maize_kasp", ]
+stopifnot(nrow(mm) == 1L, mm$n_designed == 100L, mm$n_success == 71L,
+          mm$n_fail_pcr == 8L, mm$n_fail_other == 21L,
+          mm$n_fail_known == 29L, isTRUE(mm$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(
