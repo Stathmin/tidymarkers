@@ -513,7 +513,10 @@ artefact_id <- function(manifest) {
 #' @return a `marker_artefact`: `id`, `dir`, `manifest`, `decisions`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 #' solved <- marker_solve(plan)
 #' art <- marker_artefact(solved, dir = tempfile("artefact"))
@@ -658,7 +661,10 @@ artefact_sidecar <- function(dir, file, empty) {
 #' @return a `marker_artefact`: `id`, `dir`, `manifest`, `decisions`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 #' dir <- tempfile("artefact")
 #' marker_artefact(marker_solve(plan), dir = dir)
@@ -797,7 +803,10 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #'   `recorded_verdict`, `replayed_verdict`, `match`).
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 #' art <- marker_artefact(marker_solve(plan), dir = tempfile("artefact"))
 #' marker_replay(art)$match

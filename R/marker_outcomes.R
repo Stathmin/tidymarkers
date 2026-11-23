@@ -88,7 +88,10 @@ artefact_targets <- function(dir) {
 #'   [marker_outcomes()]).
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 #' art <- marker_artefact(solved, dir = tempfile("artefact"))
 #' marker_record_outcome(art, "works")
@@ -195,7 +198,10 @@ marker_record_outcome <- function(artefact,
 #'   `calibrated`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 #' art <- marker_artefact(solved, dir = tempfile("artefact"))
 #' marker_record_outcome(art, "works")

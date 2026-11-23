@@ -18,7 +18,10 @@ is_marker_assay <- function(x) inherits(x, "marker_assay")
 #' @return a single logical, `TRUE` when every check passes.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_hrm_marker(genome, loci)
 #' # FALSE here: the off-target checks are `unknown` without a BLAST index
@@ -52,7 +55,10 @@ as_alt_sequence <- function(assay) {
 #' @return `x`, invisibly.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' print(assay)
@@ -79,7 +85,10 @@ print.marker_assay <- function(x, ...) {
 #' @return `x`, invisibly.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' # no candidate KASP pair survives this AT-rich window, so the target comes
 #' # back doomed rather than as an error: the design is returned, not thrown away

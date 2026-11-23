@@ -814,7 +814,10 @@ haplotype_layers <- function(assay, snp, span) {
 #'   `marker_doomed` target, a single context plot with the reason instead.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' variants <- tibble::tibble(
@@ -1167,7 +1170,10 @@ tumbler_plot <- function(chk) {
 #'   `assay$evaluation$detail`, not in the figure.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_hrm_marker(genome, loci)
 #' plot_checks(assay)
@@ -1231,7 +1237,10 @@ bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
 #' @return a `ggplot` faceted by oligo.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' plot_oligo_structure(assay)
@@ -1358,7 +1367,10 @@ plot_self_complementarity <- function(seq) {
 #'   `ggforce::facet_zoom()` into the full view and a zoom on the design window.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' # a gene record over this slice; ensembl_gene("AT4G05320") fetches the real one
@@ -1442,7 +1454,10 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #' @param dir output directory.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")
@@ -1509,7 +1524,10 @@ write_kasp_results <- function(...) {
 #'   tails.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")
@@ -1555,7 +1573,10 @@ marker_primer_table <- function(assay, gene) {
 #'   for its side effect of writing the IDT/LGC/tidy order sheets.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")

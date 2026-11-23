@@ -157,7 +157,10 @@ marker_engine_stamp <- function() {
 #' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' assay <- design_hrm_marker(genome, loci[1, ])
 #' marker_evaluation_stamp(marker_design_checks(assay))

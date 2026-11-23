@@ -143,7 +143,10 @@ readout_assumption <- function(scheme) {
 #'   for a simulated `dpcr` marker also `partition`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
 #' marker <- design_hrm_marker(genome, loci[1, ])
 #' str(marker_readout(marker), max.level = 1)

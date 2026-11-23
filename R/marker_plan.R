@@ -207,7 +207,10 @@ marker_layer <- function(apply, label) {
 #' @return a `marker_plan`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) +
 #'   marker_targets(loci) +
 #'   marker_tech(preset = "lab")
@@ -249,7 +252,10 @@ marker_plan <- function(genome, targets = NULL, region = NULL) {
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' marker_plan(genome) + marker_targets(loci)
 #' marker_plan(genome) +
 #'   marker_targets(chrom = loci$chrom, pos = as.integer(loci$pos), ref = loci$ref, alt = loci$alt)

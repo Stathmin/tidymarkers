@@ -265,7 +265,10 @@ marker_trace_schema <- function() {
 #' @return a `marker_trace`: a plain list of class `c("marker_trace", "list")`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 #' solved <- marker_solve(plan)
 #' trace <- marker_trace_from_artefact(marker_artefact(solved, dir = tempfile("artefact")))
@@ -351,7 +354,10 @@ marker_trace_migrate <- function(x) {
 #' @return a `marker_trace`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 #' path <- tempfile(fileext = ".rds")
 #' marker_trace_write(marker_trace_from_artefact(solved), path)
@@ -384,7 +390,10 @@ marker_trace_read <- function(path) {
 #' @return `path`, invisibly.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
 #' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 #' path <- tempfile(fileext = ".rds")
 #' marker_trace_write(marker_trace_from_artefact(solved), path)
