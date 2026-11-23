@@ -1,0 +1,2 @@
+id,chrom,pos,ref,alt,alt2,type,consequence,transition,gene,source,note
+ENSVATH08233738,Chr4,2844,T,C,,SNP,synonymous_variant,TRUE,AT4G05320,Chr4:2718843 TAIR10,pos is relative to example_region.fa

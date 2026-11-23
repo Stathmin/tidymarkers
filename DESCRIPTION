@@ -88,6 +88,7 @@ Suggests:
     parallelly,
     spelling
 VignetteBuilder: knitr
+biocViews: Software, Genetics, GenomicVariation, SNP, VariantDetection, IndelDetection, qPCR, CRISPR, ReportWriting, Visualization
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Roxygen: list(markdown = TRUE)
