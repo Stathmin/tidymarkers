@@ -19,11 +19,13 @@
 #' @param ... unused.
 #' @return a named character vector of oligos (may be empty).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' marker_primers(assemble_kasp_assay(genome, snp))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' marker_primers(design_asq_marker(genome, loci[1, ]))
 #' @family plan
 #' @export
 marker_primers <- function(marker, ...) UseMethod("marker_primers")
@@ -173,9 +175,20 @@ marker_primers.marker_sanger <- function(marker, ...) {
 #'   oligo pairs checked), `worst_run` (the longest inter-primer complementary
 #'   stretch) and `pass`.
 #' @examples
-#' \dontrun{
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' # the bundled region holds one target, so list it twice: the shared oligos
+#' # are screened for cross-dimerisation, and identical sets fail
+#' targets <- dplyr::bind_rows(loci, loci)
+#' targets$id <- c("t1", "t2")
+#' plan <- marker_plan(genome) +
+#'   marker_targets(data = targets) +
+#'   marker_tech(schemes = "hrm")
 #' marker_tubes(marker_solve(plan))
-#' }
 #' @family plan
 #' @export
 marker_tubes <- function(solved, min_cross_run = 6L, max_selfcomp = 5L) {

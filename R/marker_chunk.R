@@ -31,12 +31,10 @@
 #' @param ... passed to the method (e.g. `from`/`to`/`chrom`, or `reference`).
 #' @return a `marker_chunk`.
 #' @examples
-#' \dontrun{
 #' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 #' hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
 #' ch <- marker_chunk(hp, from = 350, to = 550) # a 200 bp local chunk
 #' chunk_variants(ch)
-#' }
 #' @family haplotypes
 #' @export
 marker_chunk <- function(x, ...) UseMethod("marker_chunk")
@@ -174,9 +172,10 @@ print.marker_chunk <- function(x, ...) {
 #'   latter `NULL` when the source was unphased); `chunk_alignment()` a
 #'   `DNAMultipleAlignment` (or `NULL`).
 #' @examples
-#' \dontrun{
-#' chunk_variants(marker_chunk(hp, from = 350, to = 550))
-#' }
+#' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+#' hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
+#' ch <- marker_chunk(hp, from = 350, to = 550)
+#' chunk_variants(ch)
 #' @family haplotypes
 #' @export
 chunk_reference <- function(chunk) {
@@ -231,9 +230,12 @@ check_chunk <- function(chunk) {
 #'   chunk's window-local coordinates.
 #' @return the chunk with weighted `variants`.
 #' @examples
-#' \dontrun{
-#' chunk_weight(ch, tibble::tibble(pos = 81, ref = "C", alt = "T", maf = 0.02))
-#' }
+#' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+#' hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
+#' ch <- marker_chunk(hp, from = 350, to = 550)
+#' v <- chunk_variants(ch)[1L, ]
+#' w <- chunk_weight(ch, tibble::tibble(pos = v$pos, ref = v$ref, alt = v$alt, maf = 0.02))
+#' chunk_variants(w)
 #' @family haplotypes
 #' @export
 chunk_weight <- function(chunk, maf) {

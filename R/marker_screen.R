@@ -41,9 +41,13 @@
 #'   (see [marker_site_class()]), `n_tried`, `n_ok`, `score` (`"7/8"`), `verdict`
 #'   and `reasons`.
 #' @examples
-#' \dontrun{
-#' screen_snp_targets(ensembl_variants("Chr4", 268901, 271503), ath_genome())
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' screen_snp_targets(loci, genome)
 #' @family design
 #' @export
 screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+", "-"),
@@ -195,11 +199,13 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
 #' @param threshold draw a line at this `n_ok` (default 1).
 #' @return a `ggplot`.
 #' @examples
-#' \dontrun{
-#' gene <- ensembl_gene("AT4G00650")
-#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-#' plot_snp_screen(screen_snp_targets(variants, ath_genome()), ensembl_gene("AT4G00650"))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' plot_snp_screen(screen_snp_targets(loci, genome))
 #' @family plots
 #' @export
 plot_snp_screen <- function(screen, gene = NULL, threshold = 1L) {

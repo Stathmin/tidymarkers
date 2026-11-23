@@ -28,14 +28,18 @@
 #'   (one row per step: headline, detail and verdict), `track`, `snp` and `win`
 #'   (the design window).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-#' design_search_frames(assay, variants, snp)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci[1, ])
+#' variants <- tibble::tibble(
+#'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
+#'   consequence = "synonymous_variant"
+#' )
+#' design_search_frames(assay, variants, loci[1, ])
 #' @family plots
 #' @export
 design_search_frames <- function(assay, variants, snp) {
@@ -187,15 +191,19 @@ design_search_frames <- function(assay, variants, snp) {
 #' @param step frame index.
 #' @return a `ggplot` object for one frame of the animation.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' gene <- ensembl_gene("AT4G00650")
-#' variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-#' frames <- design_search_frames(assay, variants, snp)
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci[1, ])
+#' variants <- tibble::tibble(
+#'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
+#'   consequence = "synonymous_variant"
+#' )
+#' frames <- design_search_frames(assay, variants, loci[1, ])
 #' plot_design_search_step(frames, 1)
-#' }
 #' @family plots
 #' @export
 plot_design_search_step <- function(frames, step) {

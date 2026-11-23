@@ -94,10 +94,9 @@ seed_scan_cost_warn <- function(bp, n_primers) {
 #'   the call delegates to) and an `engine_stamp` attribute (see
 #'   [marker_engine_stamp()]).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' specificity_seed(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' primer <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+#' specificity_seed(c(AS = primer), genome)
 #' @family specificity
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
@@ -1084,10 +1083,9 @@ hit_tables_per_chrom <- function(pattern, genome, chroms, max_mismatch, scheme, 
 #'   `start`/`end` are 1-based inclusive genomic coordinates in the genome's own
 #'   forward orientation.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' exact_hit_table(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' primer <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+#' exact_hit_table(c(AS = primer), genome)
 #' @family specificity
 #' @export
 exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL,
@@ -1399,13 +1397,11 @@ offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed
 #'   `three_prime_mismatch`, `seed_mismatch`, `three_prime_terminal`, `penalty`,
 #'   `f_penalty`, `r_penalty`, `score` (one row per product).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome)
-#' in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome,
-#'   scheme = "rpa"
-#' )
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' f <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+#' r <- as.character(Biostrings::reverseComplement(Biostrings::subseq(genome[["Chr4"]], 1180, 1199)))
+#' in_silico_pcr(f, r, genome)
+#' in_silico_pcr(f, r, genome, scheme = "rpa")
 #' @family specificity
 #' @export
 in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPARAM = NULL,
@@ -1833,12 +1829,14 @@ as_pcr_pairs <- function(assay) {
 #'   one virtual PCR).
 #' @return a tibble `primer`, `n_products`, `width`, one row per AS primer.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci[1, ])
 #' assay_amplicons(assay, genome)
-#' }
 #' @family specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, products = NULL) {
@@ -1853,12 +1851,14 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, pr
 #' time and reused for both the amplicon counts and the genome ideogram, so the
 #' genome is scanned once instead of twice.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci[1, ])
 #' assay_pcr_products(assay, genome)
-#' }
 #' @keywords internal
 assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, near = FALSE) {
   # both allele-specific pairings share the COM primer and differ only in the AS

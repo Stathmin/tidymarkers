@@ -256,11 +256,13 @@ digest_gap <- function(a, b) {
 #'   `resolvable`, sorted by
 #'   decreasing `resolvable` then `gap`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, ]
-#' find_caps_enzymes(genome, snp, flank = 250)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' find_caps_enzymes(genome, loci[1, ], flank = 250)
 #' @family CAPS
 #' @export
 find_caps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
@@ -326,10 +328,13 @@ site_mismatches <- function(window, site) {
 #'   `mm_offset` (0-based, the base the primer introduces), `fix_base`, the two
 #'   digest `fragments_*`, `gap` and `resolvable`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' find_dcaps_enzymes(genome, marker_example("SNP")[1, ], flank = 250)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' find_dcaps_enzymes(genome, loci[1, ], flank = 250)
 #' @family CAPS
 #' @export
 find_dcaps_enzymes <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),
@@ -691,10 +696,14 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors, genome = NULL
 #'   `start`/`end`, `motif`, `cut` offset and whether it is primer-introduced
 #'   (`dcaps`).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_caps_marker(genome, marker_example("SNP")[1, ], flank = 250)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' caps <- design_caps_marker(genome, loci[1, ], flank = 250)
+#' caps$enzyme
 #' @family CAPS
 #' @export
 design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_enzymes(),

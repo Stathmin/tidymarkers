@@ -271,13 +271,20 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`);
 #'   with `scheme`, the designed marker is attached as the `"marker"` attribute.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' v <- ensembl_variants("Chr4", 268901, 271503)
-#' pick_target_snp(v, genome, ensembl_gene("AT4G00650"))
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' variants <- tibble::tibble(
+#'   id = "v1", chrom = loci$chrom, pos = loci$pos,
+#'   ref_genome = list(c(loci$ref, loci$alt)), consequence = "synonymous_variant"
+#' )
+#' gene <- tibble::tibble(chrom = loci$chrom)
+#' pick_target_snp(variants, genome, gene, specificity_candidates = 0L)
 #' # a target that designs specifically as a CAPS marker:
-#' pick_target_snp(v, genome, ensembl_gene("AT4G00650"), scheme = "caps")
-#' }
+#' pick_target_snp(variants, genome, gene, scheme = "caps")
 #' @family design
 #' @export
 pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p = 5L,
@@ -633,10 +640,13 @@ is_target_designable <- function(marker) {
 #'   table of loci and a one-row-per-locus summary, use [design_markers()]; for the
 #'   KASP batch with full per-locus verdicts, use [design_kasp_markers()].
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_auto_marker(genome, marker_example("SNP")[1, ])
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' design_auto_marker(genome, loci[1, ])$tried
 #' @family design
 #' @export
 design_auto_marker <- function(genome, snp, strategy = NULL, schemes = NULL, ...,
