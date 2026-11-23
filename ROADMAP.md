@@ -509,7 +509,7 @@ scheme, genome, limits)` без формала и без forward.
       четырёх рамках, сравнение ампликона добавлено и в шесть клеток свипа, а
       `covered` теперь равен длине `cells`.
     - проверка: `Rscript dev/test.R invariants` — `FAIL 0 | WARN 0 | SKIP 1 |
-      PASS 151`, 5м36с. До правки frame 1 брал 92 bp ампликон (COM Tm 60.24,
+PASS 151`, 5м36с. До правки frame 1 брал 92 bp ампликон (COM Tm 60.24,
       `TCTCACGAATGTCCATCCCACAGT`) против 100 bp (60.69) в рамках 2-4;
       ампликон расходился и в клетках 7/30 (96 против 76) и 10/40 (52 против 62) без всякого утверждения о нём.
     - блокер: нет.
@@ -597,21 +597,21 @@ scheme, genome, limits)` без формала и без forward.
         опирается на семь клеток, а не на 37.
     - правка: не требуется — фикстур утверждает семь названных клеток.
     - проверка: `Rscript dev/test.R invariants` — `FAIL 0 | WARN 0 | SKIP 1 |
-      PASS 151`; все семь клеток дизайнятся во всех четырёх рамках
+PASS 151`; все семь клеток дизайнятся во всех четырёх рамках
       (`covered` равен длине `cells`).
     - блокер: полный свип — 336 дизайнов, около часа на этом хосте, без
       гарантии находки.
     - следствие: комментарий теста больше не заявляет 37 клеток; он говорит о
       семи проверенных.
 35. [!] **`ZY14`: единственный выживший мутант эквивалентен** (из `ZY14`).
-        В chemistry-подсистеме выживал один мутант: `R/marker_lamp.R:684`,
-        `max(1L, lo - 1L)` → `max(0L, lo - 1L)` в выборе окна внешнего
-        forward-праймера. Проверено и опровергнуто как дефект: при `lo == 1L`
-        wild-type строит кандидатов от базы 1 (`seq_len(1L)`), но фильтр
-        `dplyr::filter(.data$end < lo, ...)` снимает всех, у кого `end ≥ 1`;
-        мутант даёт `seq_len(0L)` и пустой кадр. Обе ветки приводят к пустому
-        `fwd`, затем к `pick_primer_pair()` → `NULL`; тест, различающий их,
-        утверждал бы о несуществующем различии.
+    В chemistry-подсистеме выживал один мутант: `R/marker_lamp.R:684`,
+    `max(1L, lo - 1L)` → `max(0L, lo - 1L)` в выборе окна внешнего
+    forward-праймера. Проверено и опровергнуто как дефект: при `lo == 1L`
+    wild-type строит кандидатов от базы 1 (`seq_len(1L)`), но фильтр
+    `dplyr::filter(.data$end < lo, ...)` снимает всех, у кого `end ≥ 1`;
+    мутант даёт `seq_len(0L)` и пустой кадр. Обе ветки приводят к пустому
+    `fwd`, затем к `pick_primer_pair()` → `NULL`; тест, различающий их,
+    утверждал бы о несуществующем различии.
     - правка: не требуется.
     - проверка: `Rscript dev/mutation-test.R` — chemistry 17/18 = 94.4 %,
       выживший назван по файлу и строке; эквивалентность выведена из чтения
@@ -647,13 +647,13 @@ scheme, genome, limits)` без формала и без forward.
     - следствие: снижение воркеров — смягчение, а не доказанная причина;
       devel-нога считается зелёной только после прогона с артефактом.
 37. [!] **`in_silico_pcr()` — цена per-pair near-скана остаётся** (из
-        «Остаточная стоимость near-предупреждения в точном режиме
-        `in_silico_pcr()`»). Пул near-прохода снят (130.05 с → 1.99 с), но
-        собственный near-проход `in_silico_pcr()` идёт через
-        `matchPattern(fixed = TRUE)` и стоит ~0.6 с на пару на TAIR10
-        (119,667,750 bp) — это цена одного геномного скана, а не накладные.
-        Проверено и принято как остаток: удалить его нельзя, не сломав пять
-        утверждаемых поведений.
+    «Остаточная стоимость near-предупреждения в точном режиме
+    `in_silico_pcr()`»). Пул near-прохода снят (130.05 с → 1.99 с), но
+    собственный near-проход `in_silico_pcr()` идёт через
+    `matchPattern(fixed = TRUE)` и стоит ~0.6 с на пару на TAIR10
+    (119,667,750 bp) — это цена одного геномного скана, а не накладные.
+    Проверено и принято как остаток: удалить его нельзя, не сломав пять
+    утверждаемых поведений.
     - правка: не требуется.
     - проверка: `Rscript dev/bench-near-pcr.R` — per-pair радиус 1
       0.61 с → 0.61 с (движок не менялся); эквивалентность закреплена
@@ -1216,7 +1216,7 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
       спейсера — параметр; `test-crispr*` 181 pass. `crisprBase` PFS не
       описывает — поле своё.
 - [—] **`Z0.2` dPCR Tm-шкала — калибровочный долг, не норма.** Стандарт:
-      праймеры 58–62 °C, проба +8–10 °C; текущий default 44–50 °C.
+  праймеры 58–62 °C, проба +8–10 °C; текущий default 44–50 °C.
     - правка: **окно не менять**, пока `ZW3.4` не объяснён (иначе подгонка под
       смещение); `@param tm_range` в `R/marker_dpcr.R` называет default
       калибровочным долгом.
@@ -1356,7 +1356,7 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
 (LoB 0.002 % / LoD 0.005 % / LoQ 0.01 %). Выход пока **порядковый**.
 
 - [—] **`Z8.1` Отрицательные примеры — достаточно ли их?** Сейчас нет
-      (5 разложенных строк); `yardstick`-метрики — только после этого.
+  (5 разложенных строк); `yardstick`-метрики — только после этого.
     - правка: `conversion_rates.csv` + `data-raw/<paper>.R` с `outcome = failed`
       и разложенными провалами.
     - проверка: `test-z8-outcomes.R` — число `fully_decomposed` названо в отчёте.
@@ -1383,7 +1383,7 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
       `decomposes = FALSE`), не разложенной: счёт «полностью разложенные» в преамбуле `Z8`
       эта строка не меняет. Потребитель — `test-z8-outcomes.R`.
     - **Yang 2020** (PLoS ONE 15(10):e0240042, `10.1371/journal.pone.0240042`):
-      268 SNP-локусов китайской капусты (*Brassica rapa* ssp. *pekinensis*)
+      268 SNP-локусов китайской капусты (_Brassica rapa_ ssp. _pekinensis_)
       отобраны под KASP-дизайн, 258 (96,27 %) дали полиморфизм и разбили четыре
       секвенированных генотипа на два кластера, остальные 10 праймеров не дали
       сигнала. Класс провала назван одним числом (`n_fail_pcr = 10`, остаток 0),
@@ -1502,54 +1502,54 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
       `assemble_primer_assay()` (`R/marker_assemble.R`), `marker_features()`
       (`R/marker_annotate.R`); 13 наборов пересобраны и нарисованы.
 - [—] **`ZW3.10` Пере-якорение Tm-координаты (flip на `SantaLucia1998-2`).**
-      Дефолт `TM_SALT_METHOD` (`R/marker_core.R`) — `"Schildkraut2010"`; окна
-      KASP (`KASP_LIMITS$as_tm` 55–65, `com_tm` 58–63) и dPCR `tm_range` (44–50)
-      выписаны на этой координате. `ZW3.5`: NN-консистентный
-      `SantaLucia1998-2` — пара к `DNA_NN_SantaLucia_2004` (Primer3/oligotm,
-      Biopython), воспроизводит печатную сою до 0.08 °C и лежит в основе `ZW3.4`.
-      правка: сменить дефолт **одновременно** с пере-якорением окон (вывести из
-      SL2-шкалы, не «подогнать под биас»), пере-пин `tm_tolerances()`
-      (`helper-tm-tolerance.R` — таблица снята на Schildkraut) и фикстур
-      `test-taqman.R` (центральность), `test-selection.R`,
-      `test-plot-methods.R`; обновить ожидания биаса `test-tm-mm2020.R` /
-      `test-tm-oracle.R`.
-      проверка: `dev/test.R --full`; `ZW0` — ни один вердикт не сдвигается молча
-      (любой сдвиг фиксируется в `NEWS.md`).
-      блокер: нет внешнего измеренного якоря на KASP/dPCR-условиях; пере-якорение
-      переносит координату на SL2, а не калибрует (`fitted_here` остаётся 0).
-      следствие: без flip 13 тестов держат старую координату; наивный flip без
-      пере-якорения роняет `snp_fixture()` в doom на стадии pair (AS 55.3–63.8,
-      COM ≤ 63, `COM ≥ AS`), то есть молча сдвигает дизайн.
-      вправлено (2026-11-10): `assemble_primer_assay()` был единственным
-      сборщиком с дефолтом `"SantaLucia1998-2"`; теперь дефолт —
-      `TM_SALT_METHOD`, как у `assemble_kasp_assay()`. SL2-воспроизведение
-      печатной панели остаётся явным аргументом (`test-tm-oracle.R`).
-      измерено (2026-11-23, `dev/tm-reanchor-measure.R`): SL2−Schild на реальных
-      популяциях праймеров при Na 50 / Mg 1.5 / dNTPs 0.6 мМ, DMSO 0 %,
-      dnac 25 нМ (mon = 163.842 мМ = 0.163842 М) даёт Δ = +3.28…+4.25 °C
-      (n = 212 праймеров (228 плеч); среднее +3.67, медиана +3.62, sd 0.24).
-      Δ не константа: убывает
-      с длиной (по плечам: −0.063 °C/нт, R² = 0.59, остаток sd 0.15 °C) и зависит от ΔH
-      праймера. Механика точная: SL2 входит в ΔS до инверсии 1/Tm
-      (`ds + 0.368*(N−1)*ln(mon)`), identity-проверка 2.8e-13 °C на 456 Tm.
-      LAMP Tm несёт `SCHEME_UNMODELLED$lamp = "betaine"`, поэтому он помечен
-      как неполный.
-      blast radius наивного flip (доля сегодня дизайн-валидных, выпадающих из
-      окна): dPCR 44–50 — 47/48 (98 %), KASP COM 58–63 — 12/14 валидных
-      (86 %) из n = 17, 3 уже вне окна,
-      SNaPShot amp 58–63 — 22/54 (41 %), KASP AS 55–65 — 10/32 (31 %),
-      LAMP outer 55–62 — 4/13 (31 %), SNaPShot ext 50–60 — 1/27 (4 %),
-      LAMP inner 55–65 — 0/16; все выпадения вверх (SL2 горячее).
-      вердикт: координата пере-якоривается механически (Δ = f(ΔH, N), без
-      подгоночного параметра), но окна константным сдвигом не пере-якориваются —
-      их уровень на шкале SL2 всё ещё требует внешнего якоря ZW3.4
-      (`fitted_here` остаётся 0); dPCR 44–50 — долг калибровки ZW3.4, не
-      пере-якоря.
-      вход для flip: (1) внешний якорь ZW3.4 на KASP/dPCR-условиях зафиксирован;
-      (2) `dev/tm-reanchor-measure.R` воспроизводит identity ≤1e-6 (гейт скрипта; замерено 2.8e-13) и таблицу;
-      (3) окна/`tm_tolerances()` пере-пинены под SL2 по числам ниже, а не
-      подгонкой под биас; (4) `dev/check.R --full` зелёный и каждый сдвиг
-      вердикта записан в `NEWS.md`.
+  Дефолт `TM_SALT_METHOD` (`R/marker_core.R`) — `"Schildkraut2010"`; окна
+  KASP (`KASP_LIMITS$as_tm` 55–65, `com_tm` 58–63) и dPCR `tm_range` (44–50)
+  выписаны на этой координате. `ZW3.5`: NN-консистентный
+  `SantaLucia1998-2` — пара к `DNA_NN_SantaLucia_2004` (Primer3/oligotm,
+  Biopython), воспроизводит печатную сою до 0.08 °C и лежит в основе `ZW3.4`.
+  правка: сменить дефолт **одновременно** с пере-якорением окон (вывести из
+  SL2-шкалы, не «подогнать под биас»), пере-пин `tm_tolerances()`
+  (`helper-tm-tolerance.R` — таблица снята на Schildkraut) и фикстур
+  `test-taqman.R` (центральность), `test-selection.R`,
+  `test-plot-methods.R`; обновить ожидания биаса `test-tm-mm2020.R` /
+  `test-tm-oracle.R`.
+  проверка: `dev/test.R --full`; `ZW0` — ни один вердикт не сдвигается молча
+  (любой сдвиг фиксируется в `NEWS.md`).
+  блокер: нет внешнего измеренного якоря на KASP/dPCR-условиях; пере-якорение
+  переносит координату на SL2, а не калибрует (`fitted_here` остаётся 0).
+  следствие: без flip 13 тестов держат старую координату; наивный flip без
+  пере-якорения роняет `snp_fixture()` в doom на стадии pair (AS 55.3–63.8,
+  COM ≤ 63, `COM ≥ AS`), то есть молча сдвигает дизайн.
+  вправлено (2026-11-10): `assemble_primer_assay()` был единственным
+  сборщиком с дефолтом `"SantaLucia1998-2"`; теперь дефолт —
+  `TM_SALT_METHOD`, как у `assemble_kasp_assay()`. SL2-воспроизведение
+  печатной панели остаётся явным аргументом (`test-tm-oracle.R`).
+  измерено (2026-11-23, `dev/tm-reanchor-measure.R`): SL2−Schild на реальных
+  популяциях праймеров при Na 50 / Mg 1.5 / dNTPs 0.6 мМ, DMSO 0 %,
+  dnac 25 нМ (mon = 163.842 мМ = 0.163842 М) даёт Δ = +3.28…+4.25 °C
+  (n = 212 праймеров (228 плеч); среднее +3.67, медиана +3.62, sd 0.24).
+  Δ не константа: убывает
+  с длиной (по плечам: −0.063 °C/нт, R² = 0.59, остаток sd 0.15 °C) и зависит от ΔH
+  праймера. Механика точная: SL2 входит в ΔS до инверсии 1/Tm
+  (`ds + 0.368*(N−1)*ln(mon)`), identity-проверка 2.8e-13 °C на 456 Tm.
+  LAMP Tm несёт `SCHEME_UNMODELLED$lamp = "betaine"`, поэтому он помечен
+  как неполный.
+  blast radius наивного flip (доля сегодня дизайн-валидных, выпадающих из
+  окна): dPCR 44–50 — 47/48 (98 %), KASP COM 58–63 — 12/14 валидных
+  (86 %) из n = 17, 3 уже вне окна,
+  SNaPShot amp 58–63 — 22/54 (41 %), KASP AS 55–65 — 10/32 (31 %),
+  LAMP outer 55–62 — 4/13 (31 %), SNaPShot ext 50–60 — 1/27 (4 %),
+  LAMP inner 55–65 — 0/16; все выпадения вверх (SL2 горячее).
+  вердикт: координата пере-якоривается механически (Δ = f(ΔH, N), без
+  подгоночного параметра), но окна константным сдвигом не пере-якориваются —
+  их уровень на шкале SL2 всё ещё требует внешнего якоря ZW3.4
+  (`fitted_here` остаётся 0); dPCR 44–50 — долг калибровки ZW3.4, не
+  пере-якоря.
+  вход для flip: (1) внешний якорь ZW3.4 на KASP/dPCR-условиях зафиксирован;
+  (2) `dev/tm-reanchor-measure.R` воспроизводит identity ≤1e-6 (гейт скрипта; замерено 2.8e-13) и таблицу;
+  (3) окна/`tm_tolerances()` пере-пинены под SL2 по числам ниже, а не
+  подгонкой под биас; (4) `dev/check.R --full` зелёный и каждый сдвиг
+  вердикта записан в `NEWS.md`.
 
 #### ZW4. Уровень доказательности вместо `calibrated`-флага
 
@@ -1910,18 +1910,18 @@ merge без gate; удаление worktree до merge; новые worktree о�
       мультиаллельный расщеплён, `#CHROM` без 1000-строчного лимита, заголовок
       без CHROM/POS/REF/ALT — читаемая ошибка. проверка: `test-io.R`.
 - [—] **Y6.** Валидация и обратная задача. Набор найден, но не загружен:
-      Steele 2025 (G3) — 3 366 валидированных KASP на панели 178 сортов риса,
-      по-маркерные доли вызовов в Supplementary File S2 (таблицы I/J). В реестр
-      вошла только счётная строка `steele2025_rice_kasp` (`conversion_rates.csv`),
-      потребитель — `test-z8-outcomes.R`; ингест самих долей и обратная задача
-      не начаты. блокер: нет загруженного набора по-маркерных исходов.
-      следствие: предсказательная проверка не начата.
-      проверено (2026-11-23): `find / -iname "*steele*"` и `grep steele` —
-      на хосте только Steele **2018** (PDF в хранилище Zotero), S2 нет.
-      Блокер: Steele 2025 Supplementary File S2 — по-маркерные доли вызовов
-      (таблицы I/J), файла нет на этом хосте.
-      Ворота возврата: S2 скачан в `marker_cache_dir()` или `data-raw/` и
-      ингест по-маркерных исходов начат.
+  Steele 2025 (G3) — 3 366 валидированных KASP на панели 178 сортов риса,
+  по-маркерные доли вызовов в Supplementary File S2 (таблицы I/J). В реестр
+  вошла только счётная строка `steele2025_rice_kasp` (`conversion_rates.csv`),
+  потребитель — `test-z8-outcomes.R`; ингест самих долей и обратная задача
+  не начаты. блокер: нет загруженного набора по-маркерных исходов.
+  следствие: предсказательная проверка не начата.
+  проверено (2026-11-23): `find / -iname "*steele*"` и `grep steele` —
+  на хосте только Steele **2018** (PDF в хранилище Zotero), S2 нет.
+  Блокер: Steele 2025 Supplementary File S2 — по-маркерные доли вызовов
+  (таблицы I/J), файла нет на этом хосте.
+  Ворота возврата: S2 скачан в `marker_cache_dir()` или `data-raw/` и
+  ингест по-маркерных исходов начат.
 - [x] **Y7.** Артефакт «почему этот маркер» — слой объяснения поверх `§X`.
       `marker_explain()`: проверки как упорядоченные причины (fail/unknown
       первыми) + `why.csv` в артефакте. проверка: `test-plan.R` (артефакт).
@@ -2147,18 +2147,22 @@ MulticoreParam(k))` уже есть; замер 6 SNP: 40.5 с на 1 ядре �
   остаток: пшеничный замер (геном 16 Гб) — не этот хост.
   вход: тот же гейт, что `ZX3`, — `fixpure` с 16 Гб; прогнать полный набор и
   `dev/bench.R`, записать wall time и `peak RSS` сюда, затем поставить `[x]`.
-- [ ] **Популяционная специфичность.** Пангеном и гомеологи A/B/D (см. `Z6`,
-      `Y3`); один TAIR10-индекс отвечает не на тот вопрос.
-      правка: `specificity_of()` на мультигеномном индексе.
-      проверка: калибровка на гомеологичных парах.
-      блокер: `Z5.2`/`Z8` — порог не калиброван; мультигеномного фикспура
-      (16 Гб x гомеологи A/B/D) нет на этом хосте.
-      следствие: специфичность остаётся `rule_of_thumb` на гексаплоиде.
-      ближайший шаг (в репозитории): `specificity_of()` (`R/marker_scan.R:224`)
-      принимает один `marker_genome`, мультигеномного входа в `R/` нет
-      (`grep pangenome|multi_genome` → 0), поэтому сначала шов «список
-      геномов», затем калибровка на гомеологичных парах; фикспур 16 Гб x A/B/D
-      остаётся внешним.
+- [—] **Популяционная специфичность.** Пангеном и гомеологи A/B/D (см. `Z6`,
+  `Y3`); один TAIR10-индекс отвечает не на тот вопрос.
+  правка: `specificity_of()` на мультигеномном индексе.
+  проверка: калибровка на гомеологичных парах.
+  блокер: `Z5.2`/`Z8` — порог не калиброван; мультигеномного фикспура
+  (16 Гб x гомеологи A/B/D) нет на этом хосте.
+  следствие: специфичность остаётся `rule_of_thumb` на гексаплоиде.
+  сделано (2026-11-23): шов «список геномов» — `specificity_of()` принимает
+  именованный список геномов и отдаёт строку на праймер на геном, колонка
+  `genome` первой, `scan` — именованный вектор по геномам (`ae31d9b`,
+  `44e686f`); контракт одного генома не изменился; имя каждого генома
+  обязательно, смешанный набор (индекс + срез в памяти) разрешён.
+  остаток: калибровка на гомеологичных парах не выполнена — числа порога
+  для гексаплоида в репозитории отсутствуют.
+  вход для закрытия: фикспур 16 Гб x A/B/D на `fixpure`-хосте, числа
+  калибровки гомеологичных пар вписаны сюда, затем `[x]`.
 - [x] **Провенанс движка в каждом числе.** Индекс, версия `Rbowtie`/`bowtie`,
       время сборки (см. `ZW2`).
       правка: `marker_with_engine()` (`R/marker_engines_versions.R`) пишет
@@ -2523,18 +2527,18 @@ provenance_required)`: review queue candidate-обновлений с полны
   Ворота возврата: оператор публикует community-запись с DOI, либо
   ExperimentHub принимает data-пакет, читающий артефакты этого пакета.
 - [—] **`ZY6` Meta-analysis package.** Отдельный пакет (`tidymarkers.meta` или
-      аналог): pooled RDS corpus, единый query API поверх unified trace schema,
-      statistical templates (chemistry failure rate by predictors),
-      visualization defaults, publication-ready outputs. Задача — pattern
-      discovery: hidden chemistry requirements, interaction effects,
-      taxon-specific patterns; каждый pattern — потенциально отдельная статья.
-      правка: пакет-сателлит вне этого дерева; схему читает из `ZY5`.
-      проверка: анализ фикстуры corpus даёт тот же результат при повторном
-      запуске (детерминизм шаблонов).
-      блокер: зависит от `ZY5`; без pooled corpus проверять нечего.
-      следствие: агрегированные traces остаются мёртвым грузом.
-      Блокер: результат — сателлитный пакет вне этого дерева. Ворота возврата:
-      репозиторий этого пакета существует и импортирует этот пакет.
+  аналог): pooled RDS corpus, единый query API поверх unified trace schema,
+  statistical templates (chemistry failure rate by predictors),
+  visualization defaults, publication-ready outputs. Задача — pattern
+  discovery: hidden chemistry requirements, interaction effects,
+  taxon-specific patterns; каждый pattern — потенциально отдельная статья.
+  правка: пакет-сателлит вне этого дерева; схему читает из `ZY5`.
+  проверка: анализ фикстуры corpus даёт тот же результат при повторном
+  запуске (детерминизм шаблонов).
+  блокер: зависит от `ZY5`; без pooled corpus проверять нечего.
+  следствие: агрегированные traces остаются мёртвым грузом.
+  Блокер: результат — сателлитный пакет вне этого дерева. Ворота возврата:
+  репозиторий этого пакета существует и импортирует этот пакет.
 - [x] **`ZY7` Anonymized reprex.** `marker_reprex()` для bug-reporting из
       proprietary окружений: trace minimum reproducer (позиции, варианты,
       параметры, которые triggerят bug) + анонимизация по типу данных — VCF
@@ -2557,104 +2561,104 @@ provenance_required)`: review queue candidate-обновлений с полны
       документируется прямо из функции: для bug report этого хватает, для legal
       data sharing — нет. Это часть выхода, а не сноска.
 - [x] **`ZY8` Patent format export + defensive publication.**
-  `marker_patent_export(format = "st26", output =
+      `marker_patent_export(format = "st26", output =
 "application_draft.docx")`: WIPO ST.26 XML sequence listing; секции docx
-  Background, Summary of invention, Detailed description, Figures
-  reference, Sequence listing reference, Claims skeleton; английское
-  описание из структурных шаблонов (не LLM prose); disclaimer «draft
-  documents; patent filing requires qualified patent attorney review».
-  Параллельно `marker_defensive_publication()`: framing defensive
-  publication, не заявки, с формулировкой про prior art; destinations —
-  Zenodo DOI, IP.com, Research Disclosure. Шаблоны — `inst/templates/patent/`.
-  правка: новые `R/marker_patent.R` и `inst/templates/patent/`; `officer` в
-  `Suggests` под guarded call.
-  проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
-  XSD через `xml2`, обязательные секции docx на месте.
-  блокер (на момент планирования): `officer` не в `Suggests`, кеша XSD нет.
-  следствие: форматов экспорта нет; обход — ручной docx вне пакета.
-  закрыто 2026-11-19: `R/marker_patent.R` (509 строк) —
-  `marker_patent_export()`, `marker_defensive_publication()`,
-  `marker_patent_validate()`; шаблоны
-  `inst/templates/patent/{application.md,defensive_publication.md}`;
-  `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
-  коммит `5a5a29e`. ST.26 XML, markdown-шаблоны и `.docx` есть:
-  `marker_patent_export(format = "docx")` → `patent_docx_write()`
-  (`R/marker_patent.R:495`, через `officer::read_docx()`), покрыт
-  `test-patent.R:237` (обязательные секции docx) и `:255` (аборт без
-  `officer`); оба теста под `skip_if_not_installed("officer")` и на этом хосте
-  пропускаются, а не падают.
-  закрыто 2026-11-19 (round 12): `officer` 0.7.9, `zip` 3.0.2 и `uuid` 1.2.2
-  установлены в `/opt/R-4.6.1/lib/R/library` с `dependencies = FALSE`; `rlang`
-  остался 1.3.0, то есть остальная библиотека не сдвинута. `officer` 0.7.9
-  импортирует только `cli`/`dplyr`/`graphics`/`grDevices`/`grid`/`openssl`/`R6`/
-  `ragg`/`stats`/`tidyr`/`utils`/`uuid`/`xml2`/`zip` — не `rlang`, не `gdtools` и
-  не `fontquiver`; прежняя запись про четыре зависимости и падение на `rlang.so`
-  описывала другую сборку `officer`. `Rscript dev/test.R patent` →
-  `[ FAIL 0 | WARN 0 | SKIP 2 | PASS 74 ]`; тест «the docx export writes the
-  required sections» (`test-patent.R:237`) проходит вместо пропуска. Остались два
-  законных skip: «aborts when officer is absent» (`:255` — ветка
-  `skip_if(requireNamespace("officer"))`, по построению не запускается, когда
-  `officer` стоит) и отсутствие XSD в кеше. Валидация по XSD возможна только при
-  файле в кеше: XSD не едет с пакетом.
+      Background, Summary of invention, Detailed description, Figures
+      reference, Sequence listing reference, Claims skeleton; английское
+      описание из структурных шаблонов (не LLM prose); disclaimer «draft
+      documents; patent filing requires qualified patent attorney review».
+      Параллельно `marker_defensive_publication()`: framing defensive
+      publication, не заявки, с формулировкой про prior art; destinations —
+      Zenodo DOI, IP.com, Research Disclosure. Шаблоны — `inst/templates/patent/`.
+      правка: новые `R/marker_patent.R` и `inst/templates/patent/`; `officer` в
+      `Suggests` под guarded call.
+      проверка: новый `tests/testthat/test-patent.R` — ST.26 XML валидируется по
+      XSD через `xml2`, обязательные секции docx на месте.
+      блокер (на момент планирования): `officer` не в `Suggests`, кеша XSD нет.
+      следствие: форматов экспорта нет; обход — ручной docx вне пакета.
+      закрыто 2026-11-19: `R/marker_patent.R` (509 строк) —
+      `marker_patent_export()`, `marker_defensive_publication()`,
+      `marker_patent_validate()`; шаблоны
+      `inst/templates/patent/{application.md,defensive_publication.md}`;
+      `tests/testthat/test-patent.R` (61 `expect_`-утверждение, здесь 68 pass / 2 skip);
+      коммит `5a5a29e`. ST.26 XML, markdown-шаблоны и `.docx` есть:
+      `marker_patent_export(format = "docx")` → `patent_docx_write()`
+      (`R/marker_patent.R:495`, через `officer::read_docx()`), покрыт
+      `test-patent.R:237` (обязательные секции docx) и `:255` (аборт без
+      `officer`); оба теста под `skip_if_not_installed("officer")` и на этом хосте
+      пропускаются, а не падают.
+      закрыто 2026-11-19 (round 12): `officer` 0.7.9, `zip` 3.0.2 и `uuid` 1.2.2
+      установлены в `/opt/R-4.6.1/lib/R/library` с `dependencies = FALSE`; `rlang`
+      остался 1.3.0, то есть остальная библиотека не сдвинута. `officer` 0.7.9
+      импортирует только `cli`/`dplyr`/`graphics`/`grDevices`/`grid`/`openssl`/`R6`/
+      `ragg`/`stats`/`tidyr`/`utils`/`uuid`/`xml2`/`zip` — не `rlang`, не `gdtools` и
+      не `fontquiver`; прежняя запись про четыре зависимости и падение на `rlang.so`
+      описывала другую сборку `officer`. `Rscript dev/test.R patent` →
+      `[ FAIL 0 | WARN 0 | SKIP 2 | PASS 74 ]`; тест «the docx export writes the
+      required sections» (`test-patent.R:237`) проходит вместо пропуска. Остались два
+      законных skip: «aborts when officer is absent» (`:255` — ветка
+      `skip_if(requireNamespace("officer"))`, по построению не запускается, когда
+      `officer` стоит) и отсутствие XSD в кеше. Валидация по XSD возможна только при
+      файле в кеше: XSD не едет с пакетом.
 - [—] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
-      пайплайны ожидаемы, интеграция с существующими пакетами, review
-      валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
-      правка: `_pkgdown.yml`/vignette structure под Bioconductor conventions,
-      `BiocCheck` в гейт, интеграция с `updog`/`polyRAD`/`BatchR` в целевом
-      кластере.
-      проверка: `BiocCheck` проходит на собранном пакете, и шаг падает при
-      регрессии.
-      блокер (измерено 2026-11-23): связывающее правило — E1
-      (`BiocCheck:::checkExportsAreDocumented`): доля man-страниц с исполняемым
-      примером среди «экспортирующих» должна быть ≥ 80 %. Страница
-      экспортирует, если её `\name` или любой `\alias` есть в
-      `getNamespaceExports()`. Исходная точка — 191 экспортирующая страница,
-      39 без исполняемого примера, 0.796 — порог не взят. Волна ZY9 перевела
-      большинство в исполняемые на переиспользуемом срезе
-      `inst/extdata/example_region.fa` (8001 bp, `Chr4:2716000-2724000`) плюс
-      `example_region_targets.csv`: 191 / 37 = 0.806. `\dontrun` остался
-      только там, где примеру нужна сеть (`ath_genome`, `ensembl_*`,
-      `marker_*_index`, `build_blast_db`, `blast_primers`, `specificity_*`),
-      движок (`primer_thermo`, `terminal_dg`, `dimer_thermo`,
-      `duplex_dg_thermo`, `hairpin_dg_thermo`, `oligo_dg`, `fold_amplicon`,
-      `pcr_efficiency`), аннотационные пакеты (`marker_txdb`,
-      `marker_bsgenome`, `marker_ensdb`, `annotate_variants`), действие
-      оператора (`marker_patent_validate`, `rprimer_assays`,
-      `render_design_search`, `marker_install_tools`), плюс девять страниц
-      дизайнеров, чей пробный вход не даёт результата на этом срезе, и
-      `haplotype_cover`. E2 — адрес мейнтейнера не найден на
-      support.bioconductor.org (`HTTP 404`), это действие оператора. E3
-      закрыт: `biocViews:` внесён в `DESCRIPTION`. WARNING про 5 MB — артефакт
-      рабочего каталога (`.git/objects/pack`, `.tmp`, `dev/logs`,
-      `graphify-out`), на собранном тарболе исчезает; повтор в грязном дереве
-      даёт 4 ERROR, потому что BiocCheck считает свой
-      `tidymarkers.BiocCheck/`.
-      `updog`/`polyRAD`/`BatchR` по-прежнему не установлены; плюс внешний
-      review Bioconductor. Repo-side работа закрыта: `BiocCheck` вшит в
-      `dev/check.R` шагом 7 на собранном тарболе (`--full`) с allowlist ровно
-      для E2 и предупреждения о `.Deprecated()`; `_pkgdown.yml` и
-      `VignetteIndexEntry` во всех девяти виньетках на месте. Возврат в `[ ]`
-      — когда оператор зарегистрирует адрес на support.bioconductor.org,
-      поставит `updog`/`polyRAD`/`BatchR` и будет подан external review.
-      следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
-      cluster.
+  пайплайны ожидаемы, интеграция с существующими пакетами, review
+  валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
+  правка: `_pkgdown.yml`/vignette structure под Bioconductor conventions,
+  `BiocCheck` в гейт, интеграция с `updog`/`polyRAD`/`BatchR` в целевом
+  кластере.
+  проверка: `BiocCheck` проходит на собранном пакете, и шаг падает при
+  регрессии.
+  блокер (измерено 2026-11-23): связывающее правило — E1
+  (`BiocCheck:::checkExportsAreDocumented`): доля man-страниц с исполняемым
+  примером среди «экспортирующих» должна быть ≥ 80 %. Страница
+  экспортирует, если её `\name` или любой `\alias` есть в
+  `getNamespaceExports()`. Исходная точка — 191 экспортирующая страница,
+  39 без исполняемого примера, 0.796 — порог не взят. Волна ZY9 перевела
+  большинство в исполняемые на переиспользуемом срезе
+  `inst/extdata/example_region.fa` (8001 bp, `Chr4:2716000-2724000`) плюс
+  `example_region_targets.csv`: 191 / 37 = 0.806. `\dontrun` остался
+  только там, где примеру нужна сеть (`ath_genome`, `ensembl_*`,
+  `marker_*_index`, `build_blast_db`, `blast_primers`, `specificity_*`),
+  движок (`primer_thermo`, `terminal_dg`, `dimer_thermo`,
+  `duplex_dg_thermo`, `hairpin_dg_thermo`, `oligo_dg`, `fold_amplicon`,
+  `pcr_efficiency`), аннотационные пакеты (`marker_txdb`,
+  `marker_bsgenome`, `marker_ensdb`, `annotate_variants`), действие
+  оператора (`marker_patent_validate`, `rprimer_assays`,
+  `render_design_search`, `marker_install_tools`), плюс девять страниц
+  дизайнеров, чей пробный вход не даёт результата на этом срезе, и
+  `haplotype_cover`. E2 — адрес мейнтейнера не найден на
+  support.bioconductor.org (`HTTP 404`), это действие оператора. E3
+  закрыт: `biocViews:` внесён в `DESCRIPTION`. WARNING про 5 MB — артефакт
+  рабочего каталога (`.git/objects/pack`, `.tmp`, `dev/logs`,
+  `graphify-out`), на собранном тарболе исчезает; повтор в грязном дереве
+  даёт 4 ERROR, потому что BiocCheck считает свой
+  `tidymarkers.BiocCheck/`.
+  `updog`/`polyRAD`/`BatchR` по-прежнему не установлены; плюс внешний
+  review Bioconductor. Repo-side работа закрыта: `BiocCheck` вшит в
+  `dev/check.R` шагом 7 на собранном тарболе (`--full`) с allowlist ровно
+  для E2 и предупреждения о `.Deprecated()`; `_pkgdown.yml` и
+  `VignetteIndexEntry` во всех девяти виньетках на месте. Возврат в `[ ]`
+  — когда оператор зарегистрирует адрес на support.bioconductor.org,
+  поставит `updog`/`polyRAD`/`BatchR` и будет подан external review.
+  следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
+  cluster.
 - [—] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
-      оптимизация, не реимплементация; гейт — property-тесты
-      `assert_eq!(rust_impl(x), reference_impl(x))` на любом входе; флаг
-      `use_rust_backend = FALSE` по умолчанию. Hot paths: primer thermodynamics
-      (первый, самый низкий риск — pure function, измеримый benchmark),
-      FM-index/BWT wrapper, specificity scoring batch, VCF streaming parser.
-      Инструменты: `extendr`/`rextendr`, `arrow` для zero-copy, `polars` где
-      уместно.
-      правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
-      проверка: equality-тест на замороженном наборе входов плюс benchmark, где
-      Rust обязан быть быстрее R-адаптера.
-      блокер: `ZX4` (сначала R-адаптер и замер) и отсутствие `cargo`/`rustc`;
-      `rextendr`, `arrow`, `polars` не установлены.
-      следствие: медленные пути остаются в R; ничего не ломается.
-      Блокер: на этой машине нет тулчейна `cargo`/`rustc` (проверено
-      `command -v`: оба отсутствуют). Ворота возврата: тулчейн установлен,
-      затем портировать inner-loop ядро и прогнать R-vs-Rust equivalence-проверку.
+  оптимизация, не реимплементация; гейт — property-тесты
+  `assert_eq!(rust_impl(x), reference_impl(x))` на любом входе; флаг
+  `use_rust_backend = FALSE` по умолчанию. Hot paths: primer thermodynamics
+  (первый, самый низкий риск — pure function, измеримый benchmark),
+  FM-index/BWT wrapper, specificity scoring batch, VCF streaming parser.
+  Инструменты: `extendr`/`rextendr`, `arrow` для zero-copy, `polars` где
+  уместно.
+  правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
+  проверка: equality-тест на замороженном наборе входов плюс benchmark, где
+  Rust обязан быть быстрее R-адаптера.
+  блокер: `ZX4` (сначала R-адаптер и замер) и отсутствие `cargo`/`rustc`;
+  `rextendr`, `arrow`, `polars` не установлены.
+  следствие: медленные пути остаются в R; ничего не ломается.
+  Блокер: на этой машине нет тулчейна `cargo`/`rustc` (проверено
+  `command -v`: оба отсутствуют). Ворота возврата: тулчейн установлен,
+  затем портировать inner-loop ядро и прогнать R-vs-Rust equivalence-проверку.
 - [x] **`ZY11` Property-based testing.** Расширение examples-based тестов через
       `hedgehog` (или аналог). Инварианты: specificity scoring — детерминизм
       рейтинга, нет negative scores, транзитивный tier ordering; decision
@@ -2689,45 +2693,45 @@ provenance_required)`: review queue candidate-обновлений с полны
       самим решением; `tests/testthat/test-contracts.R` (38 `expect_`-утверждений), коммит
       `e7025a2`.
 - [—] **`ZY13` Formal verification одного инварианта.** Пилот — доказательство
-      корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
-      либо CrossHair на R-эквивалентной Python-реимплементации. Один
-      доказанный инвариант как reference для подхода.
-      правка: артефакт вне пакета, на него ссылается `VALIDATION.md`.
-      проверка: прогон тулчейна на артефакте завершается успешно (CI-шаг —
-      только когда тулчейн появится).
-      блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
-      следствие: инвариант остаётся проверенным примерами, не доказанным.
-      Блокер: нет тулчейна `lean`/`lake` (проверено `command -v`: `lean`,
-      `lake`, `crosshair` отсутствуют). Ворота возврата: тулчейн установлен,
-      затем доказательство identity арифметики Tm-смещения.
+  корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
+  либо CrossHair на R-эквивалентной Python-реимплементации. Один
+  доказанный инвариант как reference для подхода.
+  правка: артефакт вне пакета, на него ссылается `VALIDATION.md`.
+  проверка: прогон тулчейна на артефакте завершается успешно (CI-шаг —
+  только когда тулчейн появится).
+  блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
+  следствие: инвариант остаётся проверенным примерами, не доказанным.
+  Блокер: нет тулчейна `lean`/`lake` (проверено `command -v`: `lean`,
+  `lake`, `crosshair` отсутствуют). Ворота возврата: тулчейн установлен,
+  затем доказательство identity арифметики Tm-смещения.
 - [x] **`ZY14` Mutation testing критических subsystems.** Только policy decision
-  logic (classification, routing в decision graph), invariant enforcement
-  (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —
-  mutation score ≥ 80% для этих подсистем.
-  правка: mutators + раннер поверх `covr` (зрелого R-инструмента нет).
-  проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
-  блокер: `covr` не установлен; mutators — часть работы, не зависимость.
-  следствие: выжившие мутанты в policy-коде никто не видит.
-  закрыто 2026-11-19: `dev/mutation-test.R` (417 строк) — текст-уровневые
-  мутаторы на одноразовой копии пакета, без `covr`; коммит `4e56134`.
-  Замер (`TESTTHAT_CPUS=1 Rscript dev/mutation-test.R`, потолок 8 мутантов на
-  функцию): policy 11/11 = 100.0 %, invariants 12/12 = 100.0 %,
-  chemistry 17/18 = 94.4 % — все три выше цели 80 %, раннер выходит с кодом 0.
-  До волны тестов тот же замер давал policy 5/11 = 45.5 %,
-  invariants 9/12 = 75.0 %, chemistry 7/18 = 38.9 % и exit 1 при пороге 0.8,
-  поэтому ветка «ниже порога → падение» проверена измерением, а не чтением.
-  Правка волны — только тесты, `R/` не менялся: `test-arms.R` (+77 строк),
-  `test-falsifiable.R` (+47), `test-lamp.R` (+36), `test-trace-schema.R` (+24),
-  `test-mix-recipe.R` (+14), `test-contracts.R` (+12),
-  `test-arms-mismatch-position.R` (+8); 34 новых `expect_`, прогон схем
-  `FAIL 0 | WARN 0 | SKIP 0 | PASS 867`.
-  Единственный выживший мутант разобран в
-  (`## Остатки в закрытых пунктах`, №35). Кто тронет генераторы: точные
-  литералы праймеров в `test-lamp.R`/`test-arms.R` и замороженный хеш в
-  `test-trace-schema.R` привязаны к текущим генераторам, после изменения
-  алгоритма их надо пересчитать.
-  блокер: нет.
-  следствие: порог остаётся 0.8 и гейтит регрессию, а выживший мутант назван.
+      logic (classification, routing в decision graph), invariant enforcement
+      (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —
+      mutation score ≥ 80% для этих подсистем.
+      правка: mutators + раннер поверх `covr` (зрелого R-инструмента нет).
+      проверка: score по трём подсистемам ≥ 80%; раннер падает ниже порога.
+      блокер: `covr` не установлен; mutators — часть работы, не зависимость.
+      следствие: выжившие мутанты в policy-коде никто не видит.
+      закрыто 2026-11-19: `dev/mutation-test.R` (417 строк) — текст-уровневые
+      мутаторы на одноразовой копии пакета, без `covr`; коммит `4e56134`.
+      Замер (`TESTTHAT_CPUS=1 Rscript dev/mutation-test.R`, потолок 8 мутантов на
+      функцию): policy 11/11 = 100.0 %, invariants 12/12 = 100.0 %,
+      chemistry 17/18 = 94.4 % — все три выше цели 80 %, раннер выходит с кодом 0.
+      До волны тестов тот же замер давал policy 5/11 = 45.5 %,
+      invariants 9/12 = 75.0 %, chemistry 7/18 = 38.9 % и exit 1 при пороге 0.8,
+      поэтому ветка «ниже порога → падение» проверена измерением, а не чтением.
+      Правка волны — только тесты, `R/` не менялся: `test-arms.R` (+77 строк),
+      `test-falsifiable.R` (+47), `test-lamp.R` (+36), `test-trace-schema.R` (+24),
+      `test-mix-recipe.R` (+14), `test-contracts.R` (+12),
+      `test-arms-mismatch-position.R` (+8); 34 новых `expect_`, прогон схем
+      `FAIL 0 | WARN 0 | SKIP 0 | PASS 867`.
+      Единственный выживший мутант разобран в
+      (`## Остатки в закрытых пунктах`, №35). Кто тронет генераторы: точные
+      литералы праймеров в `test-lamp.R`/`test-arms.R` и замороженный хеш в
+      `test-trace-schema.R` привязаны к текущим генераторам, после изменения
+      алгоритма их надо пересчитать.
+      блокер: нет.
+      следствие: порог остаётся 0.8 и гейтит регрессию, а выживший мутант назван.
 - [x] **`ZY15` Living documentation.** Виньетки исполняются при сборке
       (`VignetteBuilder: knitr`), а README quickstart держится исполняемым:
       его текст — это chunk `quickstart` в `kasp-intro.Rmd`
@@ -2782,35 +2786,35 @@ provenance_required)`: review queue candidate-обновлений с полны
   данные `ZY4`/`ZY5` названы выше и не изменились.
 
 - [—] **`ZY20` Cross-tool sweep.** Head-to-head против опубликованных дизайнеров
-      на данных, которые уже есть в дереве: Primer-BLAST, BatchPrimer3,
-      MFEprimer-3.0 и EasyKASP на 85-праймерной соевой панели (`04` §3) и
-      TAIR10-оракуле, в той же форме, что `dev/primer3-crosscheck.R` уже задал
-      для Primer3 2.6.1. Закрывает claim 29 в `01` §5 и абзац `02` §10: сегодня
-      оба говорят «сравнения нет», потому что в реестре нет ни одной такой
-      строки.
-      правка: `dev/cross-tool-sweep.R` — один блок на инструмент; для каждого
-      печатает строку «tool | loci designed | pairs в окне 50–100 bp | runtime |
-      где разошёлся» и пишет CSV в `.tmp/`; в `VALIDATION.md`, раздел
-      `## Cross-tool comparison`, появляется по строке на инструмент рядом с
-      существующей таблицей Primer3.
-      проверка: строка существует и содержит числа для каждого инструмента либо
-      явный `not_run` с названной причиной (нет бинаря, нет сети, лицензия);
-      блок Primer3 воспроизводит уже записанные числа (Tm r 1.000, средняя
-      разница +3.92 °C, 17/20 пар в окне) — расхождение означает сломанный
-      харнесс, а не новый результат.
-      блокер: бинарей Primer-BLAST, BatchPrimer3 и MFEprimer на этой машине нет;
-      веб-форма требует сети и ручного ввода, а лицензии vendor-наборов не
-      допускают автоматический прогон. Неизмеримый инструмент закрывается
-      строкой `not_run` с причиной — не выдуманным числом.
-      следствие: `01` §5 и claim 29 могут сказать «сравнено на N локусах», а не
-      только «не сравнивалось»; литературные ссылки на сами инструменты
-      (Primer-BLAST, BatchPrimer3, MFEprimer-3.0, EasyKASP, dCAPS Finder, RO-Crate,
-      Snakemake, Nextflow) в реестр внесены отдельно от этого прогона, и без
-      строки в `VALIDATION.md` они не превращаются в измерение.
-      Блокер: внешние инструменты сравнения на этом хосте отсутствуют —
-      Primer-BLAST, BatchPrimer3, MFEprimer-3.0 и EasyKASP (проверено
-      `command -v`: ни одного нет). Ворота возврата: каждый названный
-      инструмент установлен, затем повторить sweep.
+  на данных, которые уже есть в дереве: Primer-BLAST, BatchPrimer3,
+  MFEprimer-3.0 и EasyKASP на 85-праймерной соевой панели (`04` §3) и
+  TAIR10-оракуле, в той же форме, что `dev/primer3-crosscheck.R` уже задал
+  для Primer3 2.6.1. Закрывает claim 29 в `01` §5 и абзац `02` §10: сегодня
+  оба говорят «сравнения нет», потому что в реестре нет ни одной такой
+  строки.
+  правка: `dev/cross-tool-sweep.R` — один блок на инструмент; для каждого
+  печатает строку «tool | loci designed | pairs в окне 50–100 bp | runtime |
+  где разошёлся» и пишет CSV в `.tmp/`; в `VALIDATION.md`, раздел
+  `## Cross-tool comparison`, появляется по строке на инструмент рядом с
+  существующей таблицей Primer3.
+  проверка: строка существует и содержит числа для каждого инструмента либо
+  явный `not_run` с названной причиной (нет бинаря, нет сети, лицензия);
+  блок Primer3 воспроизводит уже записанные числа (Tm r 1.000, средняя
+  разница +3.92 °C, 17/20 пар в окне) — расхождение означает сломанный
+  харнесс, а не новый результат.
+  блокер: бинарей Primer-BLAST, BatchPrimer3 и MFEprimer на этой машине нет;
+  веб-форма требует сети и ручного ввода, а лицензии vendor-наборов не
+  допускают автоматический прогон. Неизмеримый инструмент закрывается
+  строкой `not_run` с причиной — не выдуманным числом.
+  следствие: `01` §5 и claim 29 могут сказать «сравнено на N локусах», а не
+  только «не сравнивалось»; литературные ссылки на сами инструменты
+  (Primer-BLAST, BatchPrimer3, MFEprimer-3.0, EasyKASP, dCAPS Finder, RO-Crate,
+  Snakemake, Nextflow) в реестр внесены отдельно от этого прогона, и без
+  строки в `VALIDATION.md` они не превращаются в измерение.
+  Блокер: внешние инструменты сравнения на этом хосте отсутствуют —
+  Primer-BLAST, BatchPrimer3, MFEprimer-3.0 и EasyKASP (проверено
+  `command -v`: ни одного нет). Ворота возврата: каждый названный
+  инструмент установлен, затем повторить sweep.
 
 ### ZY18. Инварианты, не подлежащие ослаблению
 

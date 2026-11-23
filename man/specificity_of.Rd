@@ -16,7 +16,8 @@ specificity_of(
 \item{primers}{named character vector of oligos.}
 
 \item{genome}{a \code{marker_genome} (with \code{bowtie_index} or \code{blast_db}) or a
-\code{DNAStringSet}.}
+\code{DNAStringSet}, or a \strong{named} list of such genomes (a pangenome or a
+homoeolog set), answered one genome at a time.}
 
 \item{k}{3'-seed length.}
 
@@ -33,6 +34,14 @@ the in-memory and BLAST paths, \code{"whole-primer"} on the bowtie path.  The
 versions (see \code{\link[=marker_engine_versions]{marker_engine_versions()}}).  Dispatch is in-memory ->
 \code{\link[=specificity_seed]{specificity_seed()}}, \code{bowtie_index} -> \code{\link[=specificity_bowtie]{specificity_bowtie()}}, \code{blast_db}
 -> \code{\link[=specificity_blast]{specificity_blast()}}.
+
+Given a \strong{named} list, one row per primer \strong{per genome}, with a \code{genome}
+column first and the rows in list order then primer order; \code{scan} is a named
+vector with one entry per genome, so a mixed set (some seeds, some whole
+primers) stays readable instead of being averaged.  \code{engine_stamp} is still
+present but holds one stamp carried over from the bound parts — they all
+share the package-wide engine set — so it is not a per-genome record; the
+\code{engine} column names the adapter that answered each row.
 }
 \description{
 In-memory \code{DNAStringSet} -> \code{\link[=specificity_seed]{specificity_seed()}} (exact \code{PDict} path, or a
@@ -61,6 +70,11 @@ if you want the read mapper.
 \examples{
 genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 specificity_of(c(AS = "ACGTACGT"), genome)
+pangenome <- list(
+  A = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
+  B = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA"))
+)
+specificity_of(c(AS = "AAAACCCCGGGGTTTT"), pangenome)
 }
 \seealso{
 Other specificity:
