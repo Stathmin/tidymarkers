@@ -329,8 +329,8 @@
 <text x='633.15' y='68.53' text-anchor='middle' style='font-size: 7.40px;fill: #292524; font-family: "Nimbus Mono PS";' textLength='4.44px' lengthAdjust='spacingAndGlyphs'>A</text>
 <text x='192.80' y='125.22' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>49°C</text>
 <text x='543.28' y='181.93' text-anchor='end' style='font-size: 5.98px; font-family: "Liberation Sans";' textLength='13.33px' lengthAdjust='spacingAndGlyphs'>49°C</text>
-<circle cx='201.79' cy='123.17' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #D7301F;' />
-<circle cx='534.30' cy='179.88' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #D7301F;' />
+<circle cx='201.79' cy='123.17' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
+<circle cx='534.30' cy='179.88' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <text x='426.46' y='347.66' text-anchor='middle' style='font-size: 6.26px;fill: #B22222; font-family: "Liberation Sans";' textLength='11.64px' lengthAdjust='spacingAndGlyphs'>T&gt;A</text>
 <text x='466.90' y='217.31' text-anchor='middle' style='font-size: 5.69px; font-weight: bold;fill: #292524; font-family: "Liberation Sans";' textLength='28.73px' lengthAdjust='spacingAndGlyphs'>probe REF</text>
 <text x='466.90' y='274.03' text-anchor='middle' style='font-size: 5.69px; font-weight: bold;fill: #292524; font-family: "Liberation Sans";' textLength='27.77px' lengthAdjust='spacingAndGlyphs'>probe ALT</text>
@@ -421,10 +421,10 @@
 <rect x='741.37' y='142.87' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
 <rect x='741.37' y='100.53' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
 <rect x='741.37' y='185.21' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
-<rect x='741.37' y='354.57' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D7301F;' />
-<rect x='741.37' y='481.60' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D7301F;' />
+<rect x='741.37' y='354.57' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
+<rect x='741.37' y='481.60' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
 <rect x='741.37' y='439.26' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D7301F;' />
-<rect x='741.37' y='396.91' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #D7301F;' />
+<rect x='741.37' y='396.91' width='52.26' height='11.86' style='stroke-width: 0.27; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #1B7837;' />
 <text x='840.66' y='277.66' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='3.92px' lengthAdjust='spacingAndGlyphs'>3</text>
 <text x='840.66' y='320.00' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='3.92px' lengthAdjust='spacingAndGlyphs'>0</text>
 <text x='840.66' y='235.32' text-anchor='end' style='font-size: 6.54px; font-family: "Nimbus Mono PS";' textLength='3.92px' lengthAdjust='spacingAndGlyphs'>1</text>

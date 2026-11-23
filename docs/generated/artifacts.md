@@ -335,7 +335,7 @@ consumers.
 - code: [R/marker_checks.R](../../R/marker_checks.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_plot_methods.R](../../R/marker_plot_methods.R), [R/marker_plots.R](../../R/marker_plots.R)
 - inputs: [R/marker_dpcr.R](../../R/marker_dpcr.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `1da6b7775e1b2d9dada38e5a31c9f676`
+- output_hash: `b7fefb625629a3ddb2bd9a1023d64efe`
 
 ## vignettes/figures/duplex.svg
 
@@ -390,7 +390,7 @@ consumers.
 - code: [R/marker_checks.R](../../R/marker_checks.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_plot_methods.R](../../R/marker_plot_methods.R), [R/marker_plots.R](../../R/marker_plots.R)
 - inputs: [R/marker_lamp.R](../../R/marker_lamp.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-isothermal.Rmd](../../vignettes/markers-isothermal.Rmd)
-- output_hash: `ff1dde4b8a2440bcf96987e28a2595b4`
+- output_hash: `7e348f49173bdc0d47e09d636ebd244f`
 
 ## vignettes/figures/lax.svg
 
@@ -489,5 +489,5 @@ consumers.
 - code: [R/marker_checks.R](../../R/marker_checks.R), [R/marker_criteria.R](../../R/marker_criteria.R), [R/marker_plot_methods.R](../../R/marker_plot_methods.R), [R/marker_plots.R](../../R/marker_plots.R)
 - inputs: [R/marker_taqman.R](../../R/marker_taqman.R), [inst/extdata/sat2_transcripts.fa](../../inst/extdata/sat2_transcripts.fa)
 - docs: [vignettes/markers-probe.Rmd](../../vignettes/markers-probe.Rmd)
-- output_hash: `37016174fbd1d12d3b095d1114febc98`
+- output_hash: `4ebfba5b335a7ca0cc16e7b61c65e06a`
 

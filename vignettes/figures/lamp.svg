@@ -461,9 +461,9 @@
 <circle cx='170.43' cy='102.09' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='556.17' cy='146.41' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='162.40' cy='190.73' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
+<circle cx='360.62' cy='235.05' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='392.77' cy='279.36' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
 <circle cx='497.24' cy='323.68' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #1B7837;' />
-<circle cx='360.62' cy='235.05' r='2.61' style='stroke-width: 0.52; stroke: #666666; fill: #D7301F;' />
 <text x='344.55' y='365.64' text-anchor='middle' style='font-size: 6.26px;fill: #B22222; font-family: "Liberation Sans";' textLength='12.34px' lengthAdjust='spacingAndGlyphs'>A&gt;C</text>
 <polygon points='23.10,408.07 23.10,416.57 654.66,416.57 654.66,417.99 666.00,412.32 654.66,406.65 654.66,408.07 ' style='stroke-width: 0.64; stroke: #666666; fill: #B8B8B8;' />
 <text x='344.55' y='414.37' text-anchor='middle' style='font-size: 5.98px; font-weight: bold; font-family: "Liberation Sans";' textLength='16.56px' lengthAdjust='spacingAndGlyphs'>target</text>
