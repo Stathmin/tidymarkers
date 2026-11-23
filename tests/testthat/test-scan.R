@@ -125,3 +125,37 @@ test_that("marker_blast_index keys an in-memory genome by content (D4)", {
   expect_identical(build_blast_db(g1), db1)
   expect_identical(file.info(idx)$mtime, before)
 })
+
+test_that("specificity_of answers a named genome set one genome at a time", {
+  genomes <- list(
+    A = Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT")),
+    B = Biostrings::DNAStringSet(c(chr1 = strrep("G", 24L)))
+  )
+  primers <- c(P = "TTTTTTAAACCCGGG", Q = "GGGGGGGGGGGGGGGG")
+  res <- specificity_of(primers, genomes, k = 9L, max_mismatch = 0L)
+  expect_equal(nrow(res), 2L * length(primers))
+  expect_equal(names(res)[1], "genome")
+  expect_equal(res$genome, c("A", "A", "B", "B"))
+  expect_equal(attr(res, "scan"), c(A = "3'-seed", B = "3'-seed"))
+  # A carries P twice on both strands and no Q run; B is the mirror image
+  hits <- stats::setNames(res$hits, paste(res$genome, res$primer))
+  expect_equal(unname(hits[c("A P", "B P", "A Q", "B Q")]), c(4L, 0L, 0L, 16L))
+})
+
+test_that("a genome set must be named", {
+  genomes <- list(
+    Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT")),
+    Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGA"))
+  )
+  expect_error(specificity_of(c(AS = "ACGTACGT"), genomes), "Name every genome")
+  names(genomes) <- c("A", "")
+  expect_error(specificity_of(c(AS = "ACGTACGT"), genomes), "Name every genome")
+})
+
+test_that("a single DNAStringSet keeps the one-row-per-primer shape", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  res <- specificity_of(c(P = "TTTTTTAAACCCGGG"), genome, k = 9L, max_mismatch = 0L)
+  expect_equal(nrow(res), 1L)
+  expect_false("genome" %in% names(res))
+  expect_equal(attr(res, "scan"), "3'-seed")
+})

@@ -204,7 +204,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #'
 #' @param primers named character vector of oligos.
 #' @param genome a `marker_genome` (with `bowtie_index` or `blast_db`) or a
-#'   `DNAStringSet`.
+#'   `DNAStringSet`, or a **named** list of such genomes (a pangenome or a
+#'   homoeolog set), answered one genome at a time.
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
@@ -216,13 +217,46 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #'   versions (see [marker_engine_versions()]).  Dispatch is in-memory ->
 #'   [specificity_seed()], `bowtie_index` -> [specificity_bowtie()], `blast_db`
 #'   -> [specificity_blast()].
+#'
+#'   Given a **named** list, one row per primer **per genome**, with a `genome`
+#'   column first and the rows in list order then primer order; `scan` is a named
+#'   vector with one entry per genome, so a mixed set (some seeds, some whole
+#'   primers) stays readable instead of being averaged.
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
+#' pangenome <- list(
+#'   A = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
+#'   B = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA"))
+#' )
+#' specificity_of(c(AS = "AAAACCCCGGGGTTTT"), pangenome)
 #' @family specificity
 #' @export
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                            BPPARAM = NULL) {
+  # a plain list is a genome *set*; `is.object()` keeps the S4 genomes (and a
+  # `marker_genome`, itself a classed list) out of this branch
+  if (is.list(genome) && !is.object(genome)) {
+    if (is.null(names(genome)) || any(!nzchar(names(genome)))) {
+      cli::cli_abort(c(
+        gettext("`genome` must be a named list of genomes, one name per element."),
+        i = gettext("Name every genome, e.g. list(A = , B = , D = ).")
+      ))
+    }
+    parts <- vector("list", length(genome))
+    scans <- character(length(genome))
+    for (i in seq_along(genome)) {
+      part <- specificity_of(primers, genome[[i]],
+        k = k, max_mismatch = max_mismatch, BPPARAM = BPPARAM
+      )
+      scans[[i]] <- attr(part, "scan")
+      attr(part, "scan") <- NULL
+      parts[[i]] <- part
+    }
+    names(parts) <- names(genome)
+    names(scans) <- names(genome)
+    return(structure(dplyr::bind_rows(parts, .id = "genome"), scan = scans))
+  }
   if (!inherits(genome, "marker_genome")) {
     return(structure(
       specificity_seed(primers, genome,
