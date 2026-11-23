@@ -835,8 +835,9 @@ pattern_hits_batch <- function(patterns, genome, max_mismatch) {
 #' batch cost less than a scan per pattern); at a mismatch radius a `PDict()` is
 #' no help - its trusted-band tree is rebuilt per block - so every pattern is
 #' searched with the `matchPattern()` engine of `pattern_hits_scan()`, whose hit
-#' set is identical (measured on TAIR10: same starts, 0.07 s vs 1.2 s per
-#' pattern per chromosome).
+#' set is identical, which `tests/testthat/test-specificity.R` locks ("the
+#' radius-1 batch search keeps the per-pattern hit set on a block-walked
+#' subject").
 #' A group holding an IUPAC pattern has no `PDict`, so each pattern is searched
 #' on its own with the same block walk.
 #' @param group equal-width patterns.

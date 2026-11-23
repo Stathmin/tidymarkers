@@ -76,11 +76,11 @@ ssr_formula <- function(unit_seq, copies) {
   sprintf("(%s)%d", unit_seq, copies)
 }
 
-# The Tm window comes from the same scheme definition the designer scores
-# against (`extra_scheme_defs()`), so the plot cannot contradict the design.
-# The `switch` is only the fallback for the base KASP schemes, which have no
-# def.  Isothermal methods have no Tm gate, so their observed value is shown as
-# neutral.
+# The Tm window is the definition's declared (`extra_scheme_defs()`) window; for hydrolysis probes
+# it is a static proxy for the realised-primer-relative gate, so the status can differ from the gate.
+# The `switch` is the fallback when a scheme has no definition or its definition
+# declares no Tm window for this primer role (`sanger`, `crispr`).  Isothermal
+# methods have no Tm gate, so their observed value is shown as neutral.
 marker_tm_window <- function(scheme, primer = "") {
   def <- tryCatch(extra_scheme_defs()[[scheme]], error = function(e) NULL)
   family <- if (!is.null(def$family)) {

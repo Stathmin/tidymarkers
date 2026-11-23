@@ -49,7 +49,8 @@ pair <- list(near_pair = c(F = f, R = r))
 # warm the first-call setup (blocks, masks) outside the timed regions
 invisible(in_silico_pcr("GGCATGCATGCTAGCTAGCT", "AATTCCGGAATTCCGGAATT", genome))
 
-cat("tidymarkers near-pass benchmark (TAIR10, ", sum(Biostrings::width(genome)), " bp)\n", sep = "")
+genome_bp <- sum(vapply(chroms, genome_length, integer(1L), genome = genome))
+cat("tidymarkers near-pass benchmark (TAIR10, ", genome_bp, " bp)\n", sep = "")
 cat("\nper-pair path (in_silico_pcr())\n")
 clear_hits()
 t0 <- timed(out0 <- in_silico_pcr(f, r, genome))
