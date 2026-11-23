@@ -463,6 +463,8 @@ scheme_def_dpcr <- function() {
     # declared limits cannot drift)
     amplicon_window = amp,
     primer_tm_window = tm,
+    # the probe Tm gate declares only a floor (primer Tm + margin), no ceiling
+    probe_tm_floor = tm[2L] + pmar,
     probe_gc_window = gc,
     gate_floor_label = c(
       gate_dpcr_amplicon = glue::glue("widen the amplicon window by {DPCR_AMPLICON_RELAX} bp"),

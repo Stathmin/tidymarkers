@@ -520,6 +520,11 @@ scheme_def_castpcr <- function() {
     gates = KASP_GATES_CASTPCR,
     relax = KASP_RELAX_CASTPCR,
     tiers = KASP_TIERS_CASTPCR,
+    # the numeric windows the engine scores against: the ASP/primer Tm is two
+    # sided, the probe has a floor (ASP Tm + margin) and a declared ceiling
+    primer_tm_window = as_tm,
+    probe_tm_floor = as_tm[1L] + margin,
+    probe_tm_max = CASTPCR_PROBE_TM_MAX,
     gate_short = c(
       gate_castpcr_as3 = "ASP 3' base on variant",
       gate_castpcr_mismatch = "3' mismatch (ASP)",

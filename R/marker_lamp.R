@@ -198,6 +198,10 @@ scheme_def_lamp <- function() {
     gates = LAMP_GATES,
     relax = LAMP_RELAX,
     tiers = LAMP_TIERS,
+    # the windows the designer applies, read from its formals so the two cannot
+    # drift (formals() gives the *default expression*, hence eval())
+    primer_tm_window = eval(formals(design_lamp_marker)$inner_tm),
+    outer_tm_window = eval(formals(design_lamp_marker)$outer_tm),
     gate_short = c(
       gate_lamp_variant = "variant at a primer 3' end",
       gate_lamp_inner_tm = "FIP/BIP Tm",

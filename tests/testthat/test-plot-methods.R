@@ -123,9 +123,24 @@ test_that("a non-KASP check without an observation is unknown, not a pass", {
 })
 
 test_that("Tm guidelines are method-specific, not KASP gates", {
-  expect_equal(marker_tm_window("taqman", "probe_REF"), c(65, 72))
-  expect_equal(marker_tm_window("taqman", "forward"), c(58, 62))
-  expect_equal(marker_tm_window("lamp", "FIP"), c(58, 65))
+  # the plot reads the window the designer scores against (the scheme def)
+  expect_equal(marker_tm_window("dpcr", "forward"), c(44, 50))
+  expect_equal(marker_tm_window("dpcr", "probe_REF"), c(58, Inf))
+  expect_equal(marker_tm_window("taqman", "forward"), c(58, 63))
+  expect_equal(marker_tm_window("taqman", "probe_REF"), c(56, 72))
+  # LAMP: loop primers (LF/LB) belong to the inner window, F3/B3 to the outer
+  expect_equal(marker_tm_window("lamp", "FIP"), c(55, 65))
+  expect_equal(marker_tm_window("lamp", "LF"), c(55, 65))
+  expect_equal(marker_tm_window("lamp", "F3"), c(55, 62))
+  expect_equal(marker_tm_window("snapshot", "extension"), c(50, 60))
+  expect_equal(marker_tm_window("snapshot", "forward"), c(58, 63))
+  # castPCR's ASP is a primer; its probe declares a floor and a ceiling
+  expect_equal(marker_tm_window("castpcr", "AS"), c(55, 65))
+  expect_equal(marker_tm_window("castpcr", "probe"), c(63, 80))
+  # an unschemed KASP scheme still gets a finite two-sided window (fallback)
+  snp_win <- marker_tm_window("snp", "forward")
+  expect_length(snp_win, 2L)
+  expect_true(all(is.finite(snp_win)))
   expect_null(marker_tm_window("rpa", "forward"))
   expect_null(marker_tm_window("crispr", "guide"))
 })

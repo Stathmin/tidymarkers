@@ -76,20 +76,39 @@ ssr_formula <- function(unit_seq, copies) {
   sprintf("(%s)%d", unit_seq, copies)
 }
 
-# One thermal guideline table for the non-KASP families.  A probe has its own
-# window (usually 5-10 C above the primers); isothermal methods have no Tm gate,
-# so their observed value is shown as neutral.
+# The Tm window comes from the same scheme definition the designer scores
+# against (`extra_scheme_defs()`), so the plot cannot contradict the design.
+# The `switch` is only the fallback for the base KASP schemes, which have no
+# def.  Isothermal methods have no Tm gate, so their observed value is shown as
+# neutral.
 marker_tm_window <- function(scheme, primer = "") {
-  family <- tryCatch(marker_scheme(scheme)$family, error = function(e) NULL)
-  probe <- grepl("^probe", primer)
+  def <- tryCatch(extra_scheme_defs()[[scheme]], error = function(e) NULL)
+  family <- if (!is.null(def$family)) {
+    def$family
+  } else {
+    tryCatch(marker_scheme(scheme)$family, error = function(e) NULL)
+  }
   if (isTRUE(family == "rpa")) {
     return(NULL)
   }
   if (isTRUE(family == "crispr") && identical(primer, "guide")) {
     return(NULL)
   }
-  if (probe && family %in% c("taqman", "dpcr", "castpcr")) {
-    return(c(65, 72))
+  probe <- grepl("^probe", primer)
+  if (probe && !is.null(def$probe_tm_window)) {
+    return(def$probe_tm_window)
+  }
+  if (probe && !is.null(def$probe_tm_floor)) {
+    return(c(def$probe_tm_floor, def$probe_tm_max %||% Inf))
+  }
+  if (!is.null(def$ext_tm_window) && identical(primer, "extension")) {
+    return(def$ext_tm_window)
+  }
+  if (!is.null(def$outer_tm_window) && primer %in% c("F3", "B3")) {
+    return(def$outer_tm_window)
+  }
+  if (!is.null(def$primer_tm_window)) {
+    return(def$primer_tm_window)
   }
   switch(family,
     lamp = c(58, 65),

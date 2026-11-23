@@ -402,6 +402,7 @@ scheme_def_snapshot <- function() {
     # the numeric windows the engine scores against (so gate margins and the
     # declared limits cannot drift) and the ladder's floors in margin units
     amplicon_window = SNAPSHOT_AMPLICON,
+    primer_tm_window = eval(formals(design_snapshot_marker)$amp_tm),
     ext_tm_window = SNAPSHOT_EXT_TM,
     ext_gc_window = SNAPSHOT_EXT_GC,
     gate_floor = c(
