@@ -194,10 +194,14 @@ arms_outer_pairs <- function(seq, snp_i, limits, n_outer = 6L, spread = 50L) {
 #'   `compatibility` - the joint dimer/hairpin screen over all four primers), or
 #'   `NULL` (with a message) when a pair cannot be built.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_arms_marker(genome, marker_example("SNP")[1, ], flank = 300)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' arms <- design_arms_marker(genome, loci[1, ], flank = 300)
+#' names(arms)
 #' @family ARMS
 #' @export
 design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ...) {

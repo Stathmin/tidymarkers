@@ -83,11 +83,13 @@ rescue_strategy <- function(schemes = NULL) {
 #' @return a one-row-per-locus tibble: `chrom`, `pos`, `ref`, `alt`, `scheme` (the
 #'   winner, or `NA`) and `ok`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_markers(genome, marker_example()[1:3, ], scheme = "hrm")
-#' design_markers(genome, marker_example()[1:3, ], scheme = NULL) # the ladder
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' design_markers(genome, loci, scheme = "hrm")
 #' @family design
 #' @export
 design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {

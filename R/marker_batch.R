@@ -38,12 +38,14 @@
 #'   `scheme`, `message`, `elapsed` (s) and `result` (list-column of the
 #'   returned object, `NULL` when the locus failed).
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' loci <- marker_example()[1:6, c("chrom", "pos", "ref", "alt")]
-#' design_marker_batch(genome, loci)
-#' design_marker_batch(genome, loci, BPPARAM = BiocParallel::MulticoreParam(4))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' batch <- design_marker_batch(genome, loci)
+#' batch[, c("chrom", "pos", "status", "scheme")]
 #' @seealso [design_kasp_markers()], [design_markers()], [design_auto_marker()]
 #' @family design
 #' @export

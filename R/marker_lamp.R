@@ -636,10 +636,14 @@ lamp_variant_gate <- function(fip, alt, pos) {
 #'   dimer/hairpin screen over the whole primer set), or `NULL` (with a message)
 #'   when no primer set passes the filters.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_lamp_marker(genome, marker_example("SNP")[1, ])
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' lamp <- design_lamp_marker(genome, loci[1, ])
+#' lamp$primers
 #' @family LAMP
 #' @export
 design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,

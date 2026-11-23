@@ -307,11 +307,14 @@ hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
 #'   `selection`), or `NULL` (with a message) when no flanking pair passes the
 #'   filters.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' design_hrm_marker(genome, snp)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' hrm <- design_hrm_marker(genome, loci[1, ])
+#' hrm$primers
 #' @family HRM
 #' @export
 design_hrm_marker <- function(genome, snp, flank = 150L,

@@ -332,10 +332,15 @@ gff_attribute <- function(attributes) {
 #'   names to the genome's names, as in [marker_genome()].
 #' @return a tibble with `chrom`, `start`, `end`, `strand`, `name` and `type`.
 #' @examples
-#' \dontrun{
-#' features <- marker_features("feature_table.txt.gz")
-#' marker_features("genome.gff3", chrom = "1")
-#' }
+#' gff <- withr::local_tempfile(fileext = ".gff3")
+#' writeLines(
+#'   c(
+#'     "##gff-version 3",
+#'     "Chr4\ttidymarkers\tgene\t2801\t2900\t.\t+\t.\tID=AT4G05320;Name=AT4G05320"
+#'   ),
+#'   gff
+#' )
+#' marker_features(gff)
 #' @family annotation
 #' @export
 marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NULL) {

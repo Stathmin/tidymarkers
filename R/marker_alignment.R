@@ -268,10 +268,8 @@ apply_maf <- function(v, maf = NULL) {
 #' @param ... reserved for future options.
 #' @return a `ggplot`.
 #' @examples
-#' \dontrun{
 #' f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 #' plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
-#' }
 #' @family haplotypes
 #' @export
 plot_alignment <- function(hp, type = c("variants", "all"), features = NULL, ...) {

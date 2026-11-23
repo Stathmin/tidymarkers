@@ -635,10 +635,9 @@ allele_templates <- function(ref_tmpl, snp_i, ref, alt) {
 #'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
 #'   enter the nearest-neighbour Tm.
 #' @examples
-#' \dontrun{
-#' tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
-#' design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' tmpl <- snp_template(genome, "Chr4", 2844L, 200L)
+#' head(design_as_primers_indel(tmpl$seq, tmpl$snp_i, ref = "T", alt = "TAA"), 3)
 #' @family design
 #' @export
 design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,

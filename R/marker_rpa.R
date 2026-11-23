@@ -519,11 +519,14 @@ rpa_variant_gate <- function(under, pos, fwd_end = NA_real_, rev_start = NA_real
 #'   `gates` - the evaluated gate table - and `relaxed`, the soft gates it had to
 #'   lower), or `NULL` (with a message) when no pair or probe passes the filters.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_rpa_marker(genome, marker_example("SNP")[1, ])
-#' design_rpa_marker(genome, marker_example("SNP")[1, ], design_probe = TRUE)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' rpa <- design_rpa_marker(genome, loci[1, ])
+#' rpa$primers
 #' @family RPA
 #' @export
 design_rpa_marker <- function(genome, snp, flank = 200L,

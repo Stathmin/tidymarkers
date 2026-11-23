@@ -490,10 +490,14 @@ sanger_seq_primers <- function(seq, si, start_f, end_r, flank_f, flank_r, min_di
 #'   `status = "not_modelled"` because this package designs the amplicon, it does
 #'   not call the trace.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' sanger <- design_sanger_marker(genome, loci[1, ], flank = 500)
+#' sanger$primers
 #' @family Sanger
 #' @export
 design_sanger_marker <- function(genome, snp, flank = 500L,
