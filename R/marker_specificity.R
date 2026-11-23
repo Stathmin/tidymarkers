@@ -830,10 +830,16 @@ pattern_hits_batch <- function(patterns, genome, max_mismatch) {
 #'
 #' The blocks of the subject are walked in windows of `HIT_BATCH_MAX` bases (the
 #' window is a whole count of blocks), which is one search per window per group
-#' and keeps the memory of a wheat chromosome flat.  A plain-ACGT group is
+#' and keeps the memory of a wheat chromosome flat.  An exact plain-ACGT group is
 #' searched with one `matchPDict()` over the whole group (which is what makes a
-#' batch cost less than a scan per pattern); a group holding an IUPAC pattern has
-#' no `PDict`, so each pattern is searched on its own with the same block walk.
+#' batch cost less than a scan per pattern); at a mismatch radius a `PDict()` is
+#' no help - its trusted-band tree is rebuilt per block and Biostrings spends
+#' most of the search collecting garbage (92.7 % of a 193 s radius-1 pool pass
+#' was `gc()` inside `.match.MTB_PDict`) - so every pattern is searched with the
+#' `matchPattern()` engine of `pattern_hits_scan()`, whose hit set is identical
+#' (measured on TAIR10: same starts, 0.07 s vs 1.2 s per pattern per chromosome).
+#' A group holding an IUPAC pattern has no `PDict`, so each pattern is searched
+#' on its own with the same block walk.
 #' @param group equal-width patterns.
 #' @param subject the genomic sequence.
 #' @param bl,bl_len the unambiguous blocks (`start`, `end`, length).
@@ -845,10 +851,11 @@ pattern_hits_batch <- function(patterns, genome, max_mismatch) {
 batch_probe <- function(group, subject, bl, bl_len, w, max_mismatch) {
   n <- length(group)
   fixed <- !any(grepl("[^ACGT]", group))
-  # `PDict` only takes a mismatch radius from width 6 up; a shorter pattern group
-  # falls back to a `matchPattern()` per pattern inside the same block walk.
-  pdict <- if (fixed && (max_mismatch == 0L || w >= 6L)) {
-    Biostrings::PDict(Biostrings::DNAStringSet(group), max.mismatch = max_mismatch)
+  # `PDict()` only pays on an exact pass; a mismatch radius is searched with
+  # `matchPattern()` below (see the function's note).  A pattern shorter than 6
+  # nt is searched the same way on either engine.
+  pdict <- if (fixed && max_mismatch == 0L) {
+    Biostrings::PDict(Biostrings::DNAStringSet(group), max.mismatch = 0L)
   } else {
     NULL
   }
@@ -1536,9 +1543,11 @@ pcr_products_from_hits <- function(fh_all, rh_all, chroms, f_primer, r_primer, B
 #'   is unchanged (a hit of another pair's primer is not a candidate);
 #' * `in_silico_pcr_pool()` does not warn by default.  `near = TRUE` takes one
 #'   radius-1 pass over every pattern of the pool and warns, which is opt-in
-#'   because that pass costs an order of magnitude more than the exact one
-#'   (measured 4.6 s exact vs 193 s radius-1 for one pair on a 120 Mb genome),
-#'   and the internal assembly screen does not ask for it.
+#'   because that pass used to cost an order of magnitude more than the exact one
+#'   (measured 4.6 s exact vs 193 s radius-1 for one pair on a 120 Mb genome,
+#'   before the radius-1 batch stopped building a `PDict`; with that fix the near
+#'   pass measured 2.0 s against 3.6 s exact, same hits), and the internal
+#'   assembly screen does not ask for it.
 #' @param pairs named list of `c(F = , R = )` primer pairs.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param max_mismatch search radius.

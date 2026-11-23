@@ -222,6 +222,33 @@ test_that("the pooled PCR equals one `in_silico_pcr()` per pair, near pass inclu
   expect_equal(nrow(near$dirty), 1L)
 })
 
+test_that("the radius-1 batch search keeps the per-pattern hit set on a block-walked subject", {
+  # the batch answers a mismatch radius with `matchPattern()` per pattern, not a
+  # `PDict`; the hit set must stay that of the single-pattern scan, including the
+  # rule that no hit crosses an ambiguity code
+  pattern <- "CCCCGGGGTTTTAA"
+  near <- "CCCCGGGGTTTAAA" # one substitution away from `pattern`
+  subject <- paste0(
+    "AAAA", pattern, "AAAA", "NNNNNNNN",
+    "AAAA", pattern, "AAAA", "AAAA", near, "AAAA"
+  )
+  genome <- Biostrings::DNAStringSet(c(
+    chr1 = subject,
+    chr2 = paste0("GGGG", pattern, "GGGG")
+  ))
+  batch <- pattern_hits_batch(c(pattern, "TTTTTTTTTTTT"), genome, 1L)
+  for (chrom in genome_chroms(genome)) {
+    one <- exact_pattern_hits(pattern, genome[[chrom]], 1L)
+    expect_identical(IRanges::start(batch[[pattern]][[chrom]]), IRanges::start(one))
+    expect_identical(IRanges::width(batch[[pattern]][[chrom]]), IRanges::width(one))
+  }
+  # the near variant is a real radius-1 hit, so the equality above is not vacuous
+  expect_gt(
+    length(batch[[pattern]][["chr1"]]),
+    length(pattern_hits_batch(pattern, genome, 0L)[[pattern]][["chr1"]])
+  )
+})
+
 test_that("a pooled near pass warns once per pair and skips a degenerate one", {
   # two pairs whose products the exact mode misses; one extra pair with an IUPAC
   # primer, which is searched exactly only and so has no near scan
