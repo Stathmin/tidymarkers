@@ -2586,7 +2586,7 @@ provenance_required)`: review queue candidate-обновлений с полны
   `skip_if(requireNamespace("officer"))`, по построению не запускается, когда
   `officer` стоит) и отсутствие XSD в кеше. Валидация по XSD возможна только при
   файле в кеше: XSD не едет с пакетом.
-- [ ] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
+- [—] **`ZY9` CRAN / Bioconductor integration.** Цель — Bioconductor (сложные
       пайплайны ожидаемы, интеграция с существующими пакетами, review
       валидирует интеграцию); CRAN metadata уже внесена, Bioconductor — follow-up.
       правка: `_pkgdown.yml`/vignette structure под Bioconductor conventions,
@@ -2620,9 +2620,12 @@ provenance_required)`: review queue candidate-обновлений с полны
       даёт 4 ERROR, потому что BiocCheck считает свой
       `tidymarkers.BiocCheck/`.
       `updog`/`polyRAD`/`BatchR` по-прежнему не установлены; плюс внешний
-      review Bioconductor. Первый шаг в репозитории: вшить `BiocCheck` в
-      `dev/check.R` на собранном тарболе с allowlist для E2 и предупреждения
-      о `.Deprecated()`.
+      review Bioconductor. Repo-side работа закрыта: `BiocCheck` вшит в
+      `dev/check.R` шагом 7 на собранном тарболе (`--full`) с allowlist ровно
+      для E2 и предупреждения о `.Deprecated()`; `_pkgdown.yml` и
+      `VignetteIndexEntry` во всех девяти виньетках на месте. Возврат в `[ ]`
+      — когда оператор зарегистрирует адрес на support.bioconductor.org,
+      поставит `updog`/`polyRAD`/`BatchR` и будет подан external review.
       следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
       cluster.
 - [—] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
