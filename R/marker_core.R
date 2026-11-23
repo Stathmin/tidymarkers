@@ -94,6 +94,38 @@ SCHEME_TEMP_FAMILY <- c(
 #          open Tm window (R/marker_crispr.R screens its pre-pair with RPA_NO_TM)
 TM_INFORMATIONAL <- c("rpa", "crispr")
 
+# Buffer fields a scheme overrides, keyed by temperature family.  A field belongs
+# here only when BOTH hold: an engine in this package models it (TmCalculator's
+# tm_nn takes Na, K, Tris, Mg, dNTPs and DMSO; OligoArrayAux takes Na, Mg, dNTP
+# and temperature) AND a cited source states the value.  The rows are empty on
+# purpose: no scheme in the curated sources states a difference from PCR_COND,
+# so the merge in scheme_conditions() is the seam, not an invented recipe.  A
+# value added here moves every calibrated window (KASP 55-65 / 58-63 C, dPCR
+# 44-50 C), so it is a ZW-scale re-anchor like changing PCR_COND itself.
+SCHEME_BUFFER <- list(
+  pcr     = list(),
+  lamp    = list(),
+  rpa     = list(),
+  ambient = list()
+)
+
+# Additives a scheme actually uses that NO engine here can model, keyed by
+# scheme id with the temperature families as the fallback.  Naming them on the
+# returned object is the point: a Tm computed for that scheme is missing a term,
+# never silently complete.
+#   lamp    betaine is a common LAMP additive; it destabilises the duplex, so
+#           the real Tm is lower than the computed one
+#   rpa     the recombinase/SSB/crowding-agent buffer is not a PCR buffer
+#   crispr  its pre-amplification is RPA, hence the same gap
+# Neither TmCalculator nor OligoArrayAux takes a betaine or crowding term.
+SCHEME_UNMODELLED <- list(
+  pcr     = character(),
+  lamp    = "betaine",
+  rpa     = "crowding",
+  ambient = character(),
+  crispr  = "crowding"
+)
+
 # Ensembl Plants FASTA defline -> TAIR chromosome name; the only sequences kept.
 ATH_CHROM_MAP <- c(
   "1" = "Chr1", "2" = "Chr2", "3" = "Chr3", "4" = "Chr4",
@@ -237,10 +269,16 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
 #'
 #' The single place a scheme id becomes a [reaction_conditions()] object, so the
 #' dG engines can be evaluated at the temperature the chemistry actually runs at
-#' instead of a global 37 C.  This is a *temperature* seam, not a buffer recipe:
-#' the code models no additives (no betaine, PEG or crowding), so the salt, dNTP
-#' and DMSO fields are [reaction_conditions()]'s defaults (`PCR_COND`) for every
-#' scheme, and only `temperature` is scheme-specific.
+#' instead of a global 37 C.  Two things are per-scheme: `temperature` (below)
+#' and the buffer overrides in `SCHEME_BUFFER`.
+#'
+#' The buffer seam is deliberately thin.  A field is overridden only when an
+#' engine here models it (TmCalculator's `tm_nn` takes Na, K, Tris, Mg, dNTPs and
+#' DMSO; OligoArrayAux takes Na, Mg, dNTP and temperature) *and* a cited source
+#' states the value.  No scheme in the curated sources states such a difference,
+#' so every buffer field is `PCR_COND` today; the empty rows are the seam a
+#' stated value plugs into.  Additives no engine can model are named on the
+#' returned `unmodelled` attribute instead of being silently assumed absent.
 #'
 #' Encoded temperatures and their source:
 #' * PCR-style chemistries (`snp`, `indel`, `multi`, `duplex`, `primer`, `asq`,
@@ -272,8 +310,11 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
 #'   (`"pcr"`, `"lamp"`, `"rpa"`, `"ambient"`).  An unregistered id is treated as
 #'   PCR-style, matching the package's historical behaviour.
 #' @return a [reaction_conditions()] object with a `temperature_range` attribute
-#'   (C, the method's operating window) and a `tm_informational` attribute
-#'   (`TRUE` for RPA and CRISPR, whose Tm must not gate).
+#'   (C, the method's operating window), a `tm_informational` attribute
+#'   (`TRUE` for RPA and CRISPR, whose Tm must not gate) and an `unmodelled`
+#'   character vector naming the scheme's additives that no engine here
+#'   represents ("betaine" for LAMP, "crowding" for RPA and CRISPR, empty
+#'   elsewhere).
 #' @examples
 #' scheme_conditions("lamp")
 #' attr(scheme_conditions("rpa"), "temperature_range")
@@ -292,10 +333,18 @@ scheme_conditions <- function(scheme = "pcr") {
     "pcr"
   }
   window <- SCHEME_TEMPERATURE[[family]]
-  cond <- reaction_conditions(temperature = window[2L])
+  cond <- do.call(
+    reaction_conditions,
+    c(list(temperature = window[2L]), SCHEME_BUFFER[[family]])
+  )
+  unmodelled <- if (scheme %in% names(SCHEME_UNMODELLED)) {
+    SCHEME_UNMODELLED[[scheme]]
+  } else {
+    SCHEME_UNMODELLED[[family]]
+  }
   structure(cond,
     temperature_range = window, scheme = scheme, family = family,
-    tm_informational = scheme %in% TM_INFORMATIONAL
+    tm_informational = scheme %in% TM_INFORMATIONAL, unmodelled = unmodelled
   )
 }
 

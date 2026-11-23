@@ -13,18 +13,27 @@ PCR-style, matching the package's historical behaviour.}
 }
 \value{
 a \code{\link[=reaction_conditions]{reaction_conditions()}} object with a \code{temperature_range} attribute
-(C, the method's operating window) and a \code{tm_informational} attribute
-(\code{TRUE} for RPA and CRISPR, whose Tm must not gate).
+(C, the method's operating window), a \code{tm_informational} attribute
+(\code{TRUE} for RPA and CRISPR, whose Tm must not gate) and an \code{unmodelled}
+character vector naming the scheme's additives that no engine here
+represents ("betaine" for LAMP, "crowding" for RPA and CRISPR, empty
+elsewhere).
 }
 \description{
 The single place a scheme id becomes a \code{\link[=reaction_conditions]{reaction_conditions()}} object, so the
 dG engines can be evaluated at the temperature the chemistry actually runs at
-instead of a global 37 C.  This is a \emph{temperature} seam, not a buffer recipe:
-the code models no additives (no betaine, PEG or crowding), so the salt, dNTP
-and DMSO fields are \code{\link[=reaction_conditions]{reaction_conditions()}}'s defaults (\code{PCR_COND}) for every
-scheme, and only \code{temperature} is scheme-specific.
+instead of a global 37 C.  Two things are per-scheme: \code{temperature} (below)
+and the buffer overrides in \code{SCHEME_BUFFER}.
 }
 \details{
+The buffer seam is deliberately thin.  A field is overridden only when an
+engine here models it (TmCalculator's \code{tm_nn} takes Na, K, Tris, Mg, dNTPs and
+DMSO; OligoArrayAux takes Na, Mg, dNTP and temperature) \emph{and} a cited source
+states the value.  No scheme in the curated sources states such a difference,
+so every buffer field is \code{PCR_COND} today; the empty rows are the seam a
+stated value plugs into.  Additives no engine can model are named on the
+returned \code{unmodelled} attribute instead of being silently assumed absent.
+
 Encoded temperatures and their source:
 \itemize{
 \item PCR-style chemistries (\code{snp}, \code{indel}, \code{multi}, \code{duplex}, \code{primer}, \code{asq},

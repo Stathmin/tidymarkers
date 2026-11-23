@@ -225,6 +225,22 @@ test_that("scheme_conditions() keeps the historical buffer for every scheme", {
   expect_error(scheme_conditions(NA_character_), "single scheme id")
 })
 
+test_that("scheme_conditions() names the additives no engine models", {
+  # the buffer seam is empty today, so a scheme's conditions are the plain PCR
+  # buffer at that scheme's temperature - nothing is silently invented
+  lamp <- scheme_conditions("lamp")
+  expect_equal(
+    lamp[names(reaction_conditions())],
+    reaction_conditions(temperature = attr(lamp, "temperature_range")[2L])
+  )
+  # what no engine here can model is reported, not dropped
+  expect_equal(attr(scheme_conditions("lamp"), "unmodelled"), "betaine")
+  expect_equal(attr(scheme_conditions("rpa"), "unmodelled"), "crowding")
+  expect_equal(attr(scheme_conditions("crispr"), "unmodelled"), "crowding")
+  expect_length(attr(scheme_conditions("snp"), "unmodelled"), 0L)
+  expect_length(attr(scheme_conditions("not_a_scheme"), "unmodelled"), 0L)
+})
+
 test_that("RPA is not gated on a PCR-style Tm", {
   # RPA's Tm window is open by construction: the recombinase needs primer length,
   # not an annealing Tm, and its crowded buffer is not this NN model

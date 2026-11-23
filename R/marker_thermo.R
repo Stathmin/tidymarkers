@@ -432,14 +432,17 @@ wildcard_arms <- function(s, k, L) {
 #' Breslauer / Allawi / Sugimoto / Ghosh are available for an independent
 #' thermodynamic cross-check, see [thermo_crosscheck()]).
 #' @param seq oligo(s) 5'->3'.
-#' @param DMSO DMSO concentration (%), as in a KASP master mix; it lowers Tm.
-#'   `NULL` (the default) uses `conditions$DMSO`.
+#' @param DMSO DMSO concentration (%); it lowers Tm.  `NULL` (the default) uses
+#'   `conditions$DMSO`, which is 0 for every scheme here: no design path in this
+#'   package adds DMSO, including KASP.
 #' @param nn_table nearest-neighbour parameter table (see details).
 #' @param conditions reaction conditions from [reaction_conditions()] (or
 #'   [scheme_conditions()], or a partial named list); its `Na`, `Mg`, `dNTPs` and
 #'   `DMSO` fields are used.  `temperature` does not enter the nearest-neighbour
 #'   Tm calculation (the NN model gives Tm directly), so passing
-#'   `scheme_conditions("lamp")` shifts the Tm only through the buffer fields.
+#'   `scheme_conditions("lamp")` changes the Tm only if that scheme's buffer
+#'   differs from `PCR_COND`.  No scheme differs today, so it changes nothing;
+#'   its `unmodelled` attribute names the additives neither model contains.
 #'   `NULL` uses [reaction_conditions()].
 #'   For an isothermal method whose buffer this model does not represent (RPA's
 #'   crowded recombinase buffer) the Tm is informational, not a gate.

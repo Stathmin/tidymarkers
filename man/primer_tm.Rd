@@ -16,8 +16,9 @@ primer_tm(
 \arguments{
 \item{seq}{oligo(s) 5'->3'.}
 
-\item{DMSO}{DMSO concentration (\%), as in a KASP master mix; it lowers Tm.
-\code{NULL} (the default) uses \code{conditions$DMSO}.}
+\item{DMSO}{DMSO concentration (\%); it lowers Tm.  \code{NULL} (the default) uses
+\code{conditions$DMSO}, which is 0 for every scheme here: no design path in this
+package adds DMSO, including KASP.}
 
 \item{nn_table}{nearest-neighbour parameter table (see details).}
 
@@ -25,7 +26,9 @@ primer_tm(
 \code{\link[=scheme_conditions]{scheme_conditions()}}, or a partial named list); its \code{Na}, \code{Mg}, \code{dNTPs} and
 \code{DMSO} fields are used.  \code{temperature} does not enter the nearest-neighbour
 Tm calculation (the NN model gives Tm directly), so passing
-\code{scheme_conditions("lamp")} shifts the Tm only through the buffer fields.
+\code{scheme_conditions("lamp")} changes the Tm only if that scheme's buffer
+differs from \code{PCR_COND}.  No scheme differs today, so it changes nothing;
+its \code{unmodelled} attribute names the additives neither model contains.
 \code{NULL} uses \code{\link[=reaction_conditions]{reaction_conditions()}}.
 For an isothermal method whose buffer this model does not represent (RPA's
 crowded recombinase buffer) the Tm is informational, not a gate.}
