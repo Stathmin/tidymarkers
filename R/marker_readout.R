@@ -142,10 +142,11 @@ readout_assumption <- function(scheme) {
 #' @return a list: `scheme`, `simulated` (logical), `model`, `note`, `table`, and
 #'   for a simulated `dpcr` marker also `partition`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' marker_readout(design_taqman_marker(genome, marker_example("SNP")[1, ]))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' marker <- design_hrm_marker(genome, loci[1, ])
+#' str(marker_readout(marker), max.level = 1)
 #' @family design
 #' @export
 marker_readout <- function(marker) {

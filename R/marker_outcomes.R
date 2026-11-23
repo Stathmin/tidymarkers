@@ -87,15 +87,13 @@ artefact_targets <- function(dir) {
 #' @return the outcome table after the append, invisibly (see
 #'   [marker_outcomes()]).
 #' @examples
-#' \dontrun{
-#' art <- marker_export(marker_solve(plan), dir = "results/panel")
-#' marker_record_outcome(art, "works", target = "ENSVATH01332998")
-#' marker_record_outcome(art, "fails",
-#'   target = "ENSVATH02162468",
-#'   notes = "no amplification at 60 C"
-#' )
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+#' art <- marker_artefact(solved, dir = tempfile("artefact"))
+#' marker_record_outcome(art, "works")
+#' marker_record_outcome(art, "fails", notes = "no amplification at 60 C")
 #' marker_outcomes(art)
-#' }
 #' @family plan
 #' @export
 marker_record_outcome <- function(artefact,
@@ -196,9 +194,12 @@ marker_record_outcome <- function(artefact,
 #' @return a tibble with `id`, `recorded`, `target`, `result`, `notes`, and
 #'   `calibrated`.
 #' @examples
-#' \dontrun{
-#' marker_outcomes("results/panel")
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+#' art <- marker_artefact(solved, dir = tempfile("artefact"))
+#' marker_record_outcome(art, "works")
+#' marker_outcomes(art)
 #' @family plan
 #' @export
 marker_outcomes <- function(artefact) {

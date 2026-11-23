@@ -71,13 +71,11 @@ REPREX_NOT_LEGAL <- paste(
 #' @return the path to the script, invisibly, with class `"marker_reprex"`. The
 #'   script is standalone: it needs `tidymarkers` and base R only.
 #' @examples
-#' \dontrun{
 #' variants <- tibble::tibble(
 #'   chrom = c("Chr4", "Chr4"), pos = c(1710L, 2340L), ref = c("A", "C"), alt = c("G", "T")
 #' )
-#' path <- marker_reprex(variants, path = "reprex.R")
+#' path <- marker_reprex(variants, path = tempfile(fileext = ".R"))
 #' readLines(path)[[1L]]
-#' }
 #' @family input
 #' @export
 marker_reprex <- function(x, path = NULL, preserve = c("gc_content", "variant_type")) {

@@ -103,10 +103,10 @@ SNAPSHOT_STRUCT_RELAX <- 3
 #'   and the extension primer), or `NULL` (with a message) when no pair/primer
 #'   passes.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' design_snapshot_marker(genome, marker_example("SNP")[1, ])
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' design_snapshot_marker(genome, loci[1, ])
 #' @family SNaPshot
 #' @export
 design_snapshot_marker <- function(genome, snp, flank = 250L,

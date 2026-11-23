@@ -264,12 +264,13 @@ marker_trace_schema <- function() {
 #'   [marker_solve()]).
 #' @return a `marker_trace`: a plain list of class `c("marker_trace", "list")`.
 #' @examples
-#' \dontrun{
-#' plan <- marker_plan(ath_genome()) + marker_targets(marker_example())
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 #' solved <- marker_solve(plan)
-#' marker_trace_from_artefact(marker_artefact(solved))
-#' marker_trace_from_artefact(solved)
-#' }
+#' trace <- marker_trace_from_artefact(marker_artefact(solved, dir = tempfile("artefact")))
+#' names(trace)
+#' marker_trace_from_artefact(solved)$id
 #' @family plan
 #' @export
 marker_trace_from_artefact <- function(x) {
@@ -349,12 +350,12 @@ marker_trace_migrate <- function(x) {
 #'   reader.
 #' @return a `marker_trace`.
 #' @examples
-#' \dontrun{
-#' solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 #' path <- tempfile(fileext = ".rds")
 #' marker_trace_write(marker_trace_from_artefact(solved), path)
-#' marker_trace_read(path)
-#' }
+#' marker_trace_read(path)$id
 #' @family plan
 #' @export
 marker_trace_read <- function(path) {
@@ -382,10 +383,12 @@ marker_trace_read <- function(path) {
 #' @param path output file path; its directory must exist.
 #' @return `path`, invisibly.
 #' @examples
-#' \dontrun{
-#' solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
-#' marker_trace_write(marker_trace_from_artefact(solved), tempfile(fileext = ".rds"))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+#' path <- tempfile(fileext = ".rds")
+#' marker_trace_write(marker_trace_from_artefact(solved), path)
+#' file.exists(path)
 #' @family plan
 #' @export
 marker_trace_write <- function(trace, path) {

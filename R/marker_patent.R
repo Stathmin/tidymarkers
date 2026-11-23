@@ -66,11 +66,12 @@ PATENT_DISCLAIMER <- "draft documents; patent filing requires qualified patent a
 #' @param ... unused; reserved for future formats.
 #' @return the output path, invisibly.
 #' @examples
-#' \dontrun{
-#' assay <- assemble_kasp_assay(genome, snp = marker_example("snp")[1, ])
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_asq_marker(genome, loci[1, ])
 #' marker_patent_export(assay, format = "st26", output = tempfile(fileext = ".xml"))
 #' marker_patent_export(assay, format = "docx", output = tempfile(fileext = ".docx"))
-#' }
 #' @family patent
 #' @export
 marker_patent_export <- function(assay_or_solved, format = c("st26", "docx"), output = NULL, ...) {
@@ -173,10 +174,10 @@ marker_patent_validate <- function(path, schema = patent_schema_path()) {
 #'   design, or a list of either.
 #' @return a length-one character vector of markdown.
 #' @examples
-#' \dontrun{
-#' assay <- assemble_kasp_assay(genome, snp = marker_example("snp")[1, ])
-#' cat(marker_defensive_publication(assay))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' cat(marker_defensive_publication(design_asq_marker(genome, loci[1, ])))
 #' @family patent
 #' @export
 marker_defensive_publication <- function(assay_or_solved, ...) {

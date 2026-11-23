@@ -156,13 +156,11 @@ marker_engine_stamp <- function() {
 #'   specificity table (see [specificity_of()]).
 #' @return a named character vector (see [marker_engine_stamp()]), or `NULL`.
 #' @examples
-#' \dontrun{
-#' # needs the TAIR10 genome and Ensembl Plants variation (network on first use)
-#' g <- ath_genome()
-#' v <- ensembl_variants(ensembl_gene("AT4G00650")$chrom, 1e6, 2e6)
-#' snp <- pick_target_snp(v, g, ensembl_gene("AT4G00650"))
-#' marker_evaluation_stamp(marker_design_checks(snp))
-#' }
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(system.file("extdata", "example_region_targets.csv", package = "tidymarkers"), colClasses = "character")[, c("chrom", "pos", "ref", "alt")]
+#' loci$pos <- as.integer(loci$pos)
+#' assay <- design_hrm_marker(genome, loci[1, ])
+#' marker_evaluation_stamp(marker_design_checks(assay))
 #' @family utilities
 #' @export
 marker_evaluation_stamp <- function(x) {

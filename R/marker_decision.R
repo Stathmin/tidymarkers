@@ -294,12 +294,8 @@ marker_decision_schema_build <- function(scheme = "snp") {
 #' @return a `tidygraph::tbl_graph`; nodes carry `name`, `stage`, `kind`,
 #'   `label`, `x`, `y`, `hard`, `status`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' marker_decision_graph(assay)
-#' }
+#' graph <- marker_decision_graph(scheme = "hrm")
+#' head(tidygraph::as_tibble(graph))
 #' @family checks
 #' @export
 marker_decision_graph <- function(assay = NULL, scheme = NULL) {
@@ -404,14 +400,8 @@ decision_edges <- function(g) {
 #' @param style a [decision_style()] (palette, font size, page).
 #' @return the SVG markup as one string, or invisibly `out`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' assay <- assemble_kasp_assay(genome, snp)
-#' plot_decision_tree() # the schema
-#' plot_decision_tree(scheme = "duplex") # the multiplex policy
-#' plot_decision_tree(assay) # this assay's traversal
-#' }
+#' svg <- plot_decision_tree(scheme = "duplex") # the multiplex policy
+#' length(svg)
 #' @family checks
 #' @export
 plot_decision_tree <- function(x = NULL, scheme = NULL, out = NULL,
