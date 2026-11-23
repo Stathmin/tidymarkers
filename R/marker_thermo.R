@@ -518,11 +518,8 @@ has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 #' @param code expression to evaluate (e.g. `assemble_kasp_assay(...)`).
 #' @return the value of `code`, evaluated with `UNAFOLDDAT` set to `path`.
 #' @examples
-#' \dontrun{
-#' genome <- ath_genome()
-#' snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-#' with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
-#' }
+#' # the env var is restored when the expression finishes
+#' with_unafloddat(tempdir(), Sys.getenv("UNAFOLDDAT"))
 #' @family utilities
 #' @export
 with_unafloddat <- function(path, code) {
@@ -839,10 +836,8 @@ AMPLICON_FOLD_MIN_SS <- 0.5
 #'   (`"pass"`/`"warn"`/`"unknown"`), `mfe` (kcal/mol, `NA` unless scored),
 #'   `single_stranded`, `engine` and `note` (why it is `unknown`/`warn`).
 #' @examples
-#' \dontrun{
 #' amplicon_fold_check(paste0("GCGCGCGCGCGGGGCCCCCAATT", "GCGCGCGCGCGGGGCCCCCAATT"))
-#' amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA") # unknown
-#' }
+#' amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA")
 #' @seealso [fold_amplicon()], [hairpin_dg_thermo()], [capabilities()]
 #' @family thermodynamics
 #' @export

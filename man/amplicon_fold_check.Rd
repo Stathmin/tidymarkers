@@ -56,10 +56,8 @@ reported \code{unknown} rather than scored - LAMP (120-300 bp) is the longest
 chemistry that is scored here.
 }
 \examples{
-\dontrun{
 amplicon_fold_check(paste0("GCGCGCGCGCGGGGCCCCCAATT", "GCGCGCGCGCGGGGCCCCCAATT"))
-amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA") # unknown
-}
+amplicon_fold_check("ACGUACGUACGUGGCAUGCUAGC", kind = "RNA")
 }
 \seealso{
 \code{\link[=fold_amplicon]{fold_amplicon()}}, \code{\link[=hairpin_dg_thermo]{hairpin_dg_thermo()}}, \code{\link[=capabilities]{capabilities()}}

@@ -20,11 +20,8 @@ find its parameter tables.  This temporarily sets it, so you need not fiddle
 with the environment by hand.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-with_unafloddat("/path/to/oligoarrayaux", assemble_kasp_assay(genome, snp))
-}
+# the env var is restored when the expression finishes
+with_unafloddat(tempdir(), Sys.getenv("UNAFOLDDAT"))
 }
 \seealso{
 Other utilities:
