@@ -125,9 +125,10 @@ corruption, not an upgrade - migrate with `marker_trace_migrate()` instead.
 Migration happens on read: `marker_trace_read()` migrates a record written by
 an older tidymarkers and validates it before returning, an `artefact@1`
 manifest is mapped field by field, and an artefact directory keeps the rows its
-`decisions.csv` and `signals.csv` sidecars carry through
-`marker_artefact_read()`. A record from a newer tidymarkers is refused and names
-its version: update the package, do not edit the record.
+`decisions.csv` sidecar carries through `marker_artefact_read()` and its
+`signals.csv` sidecar through `marker_trace_from_artefact()`. A record from a
+newer tidymarkers is refused and names its version: update the package, do not
+edit the record.
 
 ## Code review
 
