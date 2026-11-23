@@ -194,8 +194,8 @@ design passed the package's own heuristics", not "these thresholds are validated
 
 Two things are worth reading plainly:
 
-- **No criterion is fitted to wet-lab data yet.** Of the 212 criterion rows,
-  `rule_of_thumb` covers 194, `vendor_guideline` 10 and `primary_literature` 8;
+- **No criterion is fitted to wet-lab data yet.** Of the 213 criterion rows,
+  `rule_of_thumb` covers 72, `vendor_guideline` 13 and `primary_literature` 128;
   none is calibrated.
 - **A named source does not, by itself, raise the rung.** The 3′-terminal
   mismatch ranking cites Kwok et al. 1990 and the ΔG numbers use SantaLucia

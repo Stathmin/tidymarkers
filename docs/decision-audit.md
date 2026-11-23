@@ -12,11 +12,11 @@ Every criterion row carries two different things: where the number comes from
 `CRITERION_EVIDENCE`). Counted through `criterion_spec()`, never by `grep` (the
 string is recycled by `criterion_tbl()`):
 
-| column             | value                                         | rows of 212 |
+| column             | value                                         | rows of 213 |
 | ------------------ | --------------------------------------------- | ----------- |
-| `source`           | `package assumption` — no printed source      | 63          |
-| `source`           | a named key of the source registry (132 rows) | 149         |
-| `evidence`         | `rule_of_thumb` (weakest rung)                | 71          |
+| `source`           | `package assumption` — no printed source      | 64          |
+| `source`           | a named key of the source registry (134 rows) | 149         |
+| `evidence`         | `rule_of_thumb` (weakest rung)                | 72          |
 | `evidence`         | `vendor_guideline`                            | 13          |
 | `evidence`         | `primary_literature`                          | 128         |
 | `evidence`         | `fitted_here`                                 | 0           |
@@ -25,7 +25,7 @@ string is recycled by `criterion_tbl()`):
 ### Reading the flags
 
 - **`source = package assumption`** — the bar is what this package chose. It is
-  not wrong, but it is not cited, and no paper should be implied. 63 of 212 rows
+  not wrong, but it is not cited, and no paper should be implied. 64 of 213 rows
   are in this class.
 - **A `*:tier:*` row carries two quantities, and only one is citable.** The
   `target` column is the reference point the tier ranks toward (an amplicon

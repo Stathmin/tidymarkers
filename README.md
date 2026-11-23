@@ -287,25 +287,44 @@ short answer is published measurements, not a bench run by the maintainers:
 - **A literature-anchored evidence layer instead**: 134 registered sources, 146
   extract tables in `inst/extdata/`, and 208 ledger links from an extract to the
   test file that asserts it (46 distinct test files). The join is machine-checked,
-  so a test cannot claim an extract it does not read. Across the 213 criterion
-  rows the rungs are 128 `primary_literature`, 13 `vendor_guideline` and 72
-  `rule_of_thumb`; `fitted_here` is **0**, so nothing is calibrated to this
-  package's own measurements. Of the 54 tier rows, 36 cite a printed target; the
-  other 18 rank a computed quantity (a mismatch ranking, a simulator output, a
-  population metric) and stay `rule_of_thumb`. Two CAPS family rows were raised
-  in phase E on a re-read full text; the other non-tier rows either name a
-  source that ranks rather than prints the bar, or their anchor has no readable
-  attachment in the collected library and stays `rule_of_thumb`.
+  so a test cannot claim an extract it does not read.
+
+  Across the 213 criterion rows the rungs are 128 `primary_literature`, 13
+  `vendor_guideline` and 72 `rule_of_thumb`; `fitted_here` is **0**, so nothing
+  is calibrated to this package's own measurements. Of the 54 tier rows, 36 cite
+  a printed target; of the other 18, 16 say in the target itself that they rank
+  a quantity the package computes or fixes as a scheme default (a mismatch
+  ranking, a simulator output, a population metric), and 2 (`crispr:tier:seed`,
+  `sanger:tier:tier1`) are positional booleans with no numeric bar. All 18 stay
+  `rule_of_thumb`. Two CAPS family rows were raised in phase E on a re-read full
+  text; the other non-tier rows either name a source that ranks rather than
+  prints the bar, or their anchor has no readable attachment in the collected
+  library and stays `rule_of_thumb`.
 - **Cross-engine where it is fair**: `thermo_crosscheck()` compares SantaLucia
   2004, Allawi 1998, Sugimoto 1996 and Breslauer 1986; Primer3's `oligotm` and
   `rprimer` join as external oracles when installed, and disagreement is
   reported, never averaged.
 - **Measured versus predicted is stated, not smoothed**: against 4096 measured
   19-mer Tm values, `primer_tm()` ranks correctly (r = 0.958) but sits about
-  16.9 °C below the measurement in that buffer; the offset is recorded and
-  asserted, not corrected away.
+  16.9 °C low in that buffer. Three steps account for that level and none of them
+  is a correction factor: the default Schildkraut salt term is the −16.9 °C, the
+  NN-consistent `SantaLucia1998-2` correction of the same paper leaves −9.6 °C,
+  and matching the set's own 1 µM total strand with `dnac = 500` leaves ≈ −5.4 °C,
+  which is the fluorescent-label / first-derivative reference state. The offset
+  is recorded and asserted, not corrected away.
 - **Agreement between models is not evidence about a duplex.** That sentence is
   what the thermodynamic tests are written to respect.
+
+The offsets this package reports sit on four different axes. Reading any two of
+`VALIDATION.md`'s numbers as two estimates of one quantity is the misreading to
+avoid:
+
+| Comparison                                                       | Offset                                                                       | Axis                                                                                                |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `primer_tm()` vs 4096 measured 19-mer Tm (Oliveira 2020)         | −16.9 → −9.6 → ≈ −5.4 °C                                                     | level against a **measurement**, at the three refinement steps above; ranking intact at each step   |
+| `primer_tm()` vs Primer3 2.6.1 `oligotm`, matched salt           | +3.92 °C (sd 0.25, ρ 0.999)                                                  | residual against another **computation**; ≤ 1.0 °C of it is the NN table, the rest the salt formula |
+| the same, package called at Mg = 0                               | +12.48 °C                                                                    | the package's **divalent term**, worth ≈ 8.5 °C on these oligos                                     |
+| Primer3 `ntthal` vs OligoArrayAux `hybrid-ss-min` / `hybrid-min` | −0.84 kcal/mol hairpin (ρ 0.67), −1.75 kcal/mol heterodimer (n = 4, ρ 1.000) | a **different quantity** — dG at 37 °C — on a different sample                                      |
 
 [`VALIDATION.md`](VALIDATION.md) has the full accounting: per-family counts, the
 three provenance gates, the published conversion rates (kept with their

@@ -32,9 +32,11 @@ design_dpcr_marker(
 
 \item{tm_range, gc_range}{accepted primer windows (the dPCR annealing window).
 The \code{tm_range} default \code{c(44, 50)} is a calibration debt, not a design norm:
-\code{primer_tm()} reads 16.86 C below a measured set (ZW3.4, bias -16.86 C, of
-which -9.34 C is unexplained), so the window stays centred on the model's
-own scale until ZW3.4 closes.  Do not widen or raise it.}
+\code{primer_tm()} reads 16.86 C below a measured set (ZW3.4), and that level
+decomposes into three recorded steps - the default salt term (-16.9 C), the
+NN-consistent table (-9.6 C) and the source's own 1 uM total strand
+(~-5.4 C) - none of which is a correction factor.  The window stays centred
+on the model's own scale until ZW3.4 closes.  Do not widen or raise it.}
 
 \item{probe_lengths}{probe lengths to try.}
 

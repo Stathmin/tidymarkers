@@ -245,6 +245,119 @@ if (length(quick) != 1L) {
   ok("README.md quickstart is the executed vignette chunk")
 }
 
+# 8. the counts quoted in prose are re-derived from the data (ZY17) ---------
+#  Each number below is computed from inst/extdata/ and then searched for in the
+#  document that quotes it, so a data change that the prose does not follow
+#  fails here. It is R and not `grep` because three ledger cells name several
+#  tables at once. Rung counts (primary_literature/vendor_guideline/
+#  rule_of_thumb) come from criterion_spec() and are gated by
+#  dev/check-criteria.R, which loads the package.
+read_ext <- function(name) {
+  utils::read.csv(file.path("inst/extdata", name), stringsAsFactors = FALSE)
+}
+flat <- function(path) {
+  text <- gsub(intToUtf8(0x2212), "-", doc_text(path), fixed = TRUE)
+  gsub("[[:space:]]+", " ", text)
+}
+sources <- read_ext("scientific_sources.csv")
+ledger <- read_ext("science_ledger.csv")
+prov <- read_ext("criterion_provenance.csv")
+extracts <- list.files("inst/extdata", pattern = "[.]csv$")
+extract_names <- function(rows) {
+  raw <- rows$extract[!is.na(rows$extract)]
+  names <- basename(trimws(unlist(strsplit(raw, ",", fixed = TRUE))))
+  unique(names[grepl("[.]csv$", names)])
+}
+named <- extract_names(ledger)
+tested <- extract_names(ledger[ledger$use == "test", , drop = FALSE])
+blocked_extract <- trimws(ifelse(is.na(ledger$extract), "", ledger$extract))
+blocked_extract <- blocked_extract[ledger$use == "blocked"]
+blocked_none <- sum(!nzchar(blocked_extract) | tolower(blocked_extract) == "none")
+counts <- c(
+  sources = nrow(sources),
+  extracts = length(extracts),
+  named = length(named),
+  tested = length(tested),
+  ledger = nrow(ledger),
+  test = sum(ledger$use == "test"),
+  report = sum(ledger$use == "report"),
+  blocked = sum(ledger$use == "blocked"),
+  rule = sum(ledger$use == "rule"),
+  artefact = sum(ledger$use == "artefact"),
+  config = sum(ledger$use == "config"),
+  blocked_none = blocked_none,
+  blocked_real = sum(ledger$use == "blocked") - blocked_none,
+  criteria = nrow(prov),
+  named_source = sum(prov$reason_class == "named_source"),
+  assumption = sum(prov$source == "package assumption")
+)
+
+must_quote <- function(path, snippets) {
+  text <- flat(path)
+  miss <- snippets[!vapply(snippets, grepl, logical(1), x = text, fixed = TRUE)]
+  if (length(miss)) {
+    for (m in miss) note(path, ": does not quote the derived count: '", m, "'")
+  } else {
+    ok(path, ": quotes ", length(snippets), " counts re-derived from inst/extdata/")
+  }
+}
+
+must_quote("VALIDATION.md", c(
+  paste0(counts[["sources"]], " registered sources"),
+  paste0(counts[["extracts"]], " extracted tables"),
+  paste0(counts[["named"]], " extract tables are named"),
+  paste0("the ", counts[["extracts"]], "th CSV"),
+  paste0(counts[["tested"]], " of them"),
+  paste0(
+    "Ledger rows by use: ", counts[["test"]], " `test`, ",
+    counts[["report"]], " `report`"
+  ),
+  paste0(
+    "Of the ", counts[["blocked"]], " `blocked` rows, ",
+    counts[["blocked_none"]], " name no extract"
+  ),
+  paste0(counts[["blocked_real"]], " name a real extract")
+))
+
+must_quote("ROADMAP.md", c(
+  paste0(counts[["sources"]], " registered sources"),
+  paste0(counts[["extracts"]], " extract tables"),
+  paste0(counts[["test"]], " `test` rows"),
+  paste0(counts[["ledger"]], " \u0441\u0442\u0440\u043e\u043a ledger"),
+  paste0(counts[["criteria"]], " criterion rows"),
+  paste0(counts[["named_source"]], " \u0441 \u043d\u0430\u0437\u0432\u0430\u043d\u043d\u044b\u043c")
+))
+
+must_quote("docs/decision-audit.md", c(
+  paste0("rows of ", counts[["criteria"]]),
+  paste0("source registry (", counts[["sources"]], " rows)"),
+  paste0("registry (", counts[["sources"]], " rows) | ", counts[["named_source"]]),
+  paste0(counts[["assumption"]], " of ", counts[["criteria"]], " rows")
+))
+
+must_quote("vignettes/reading-results.Rmd", c(
+  paste0(counts[["criteria"]], " criterion rows")
+))
+
+# The three-step Tm decomposition is one number set quoted in five places -----
+#  The steps are a chain (-16.9 -> -9.6 -> ~-5.4 C) and a reader who sees only
+#  one of them in one file cannot tell whether the others were updated.
+for (path in c(
+  "README.md", "VALIDATION.md", "R/marker_dpcr.R",
+  "man/design_dpcr_marker.Rd", "data-raw/mm2020.R"
+)) {
+  body <- sub("^\\s*#'?\\s?", "", readLines(path, warn = FALSE, encoding = "UTF-8"))
+  body <- gsub(intToUtf8(0x2212), "-", paste(body, collapse = " "), fixed = TRUE)
+  body <- gsub("[[:space:]]+", " ", body)
+  chain <- grepl("-16[.]9.*-9[.]6.*-5[.]4", body)
+  label <- grepl("three (recorded )?steps", body, ignore.case = TRUE)
+  if (chain && label) {
+    ok(path, ": carries the three-step Tm decomposition")
+  } else {
+    note(path, ": does not carry the three-step Tm decomposition (-16.9/-9.6/-5.4)")
+  }
+}
+
 if (length(failures)) {
   message("docs check FAILED:")
   for (f in failures) message("  - ", f)

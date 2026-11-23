@@ -66,10 +66,13 @@
 #       closes ~12 C and then OVERSHOOTS the mismatch classes, trading a level
 #       error for a class error.
 #
-#   The ~-9.3 C left by H1 is the blocker: it needs either a stated
-#   standard-state correction from the source (which is closed) or an
-#   independent 1 M measurement (which does not exist).  Absorbing it here is
-#   what STANCE forbids, and it is why Z0.2 (a dPCR Tm scale) stays blocked.
+#   SUPERSEDED BY ZW3.4.  The residual H1 leaves is no longer a blocker: it
+#   decomposes into three recorded steps - the default salt term (-16.9 C), the
+#   NN-consistent table SantaLucia1998-2 (-9.6 C) and the source's own 1.0 uM
+#   total strand (dnac = 500, ~-5.4 C, the fluorescent-label / first-derivative
+#   reference state).  Each step is asserted, not applied, in
+#   tests/testthat/test-tm-mm2020.R.  Absorbing the rest is what STANCE
+#   forbids, so Z0.2 keeps a named debt rather than a correction factor.
 #
 #  ASSERTIONS (all against the paper's own totals)
 #   * 4096 rows; `i` is exactly 1..4096 with no duplicates (paper: 4096

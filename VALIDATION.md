@@ -43,10 +43,11 @@ only as an abstract may not calibrate anything, and the tests enforce that.
 
 Ledger rows by use: 208 `test`, 132 `report` (a claim the paper makes, kept for
 comparison), 20 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 3 `rule`, 4 `artefact`, 2 `config`. Every extract the ledger names has at
-least one test reading it; 10 remaining `blocked` rows name no extract
-(`extract = none`) and say which paper could not be landed, while 10 name a real
-extract that no test consumes.
+why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 145 extract tables are named — the 146th CSV in
+`inst/extdata/` is the ledger itself — and `test` rows account for 129 of them.
+Of the 20 `blocked` rows, 10 name no extract (`extract = none`) and say which
+paper could not be landed, and 10 name a real extract that carries no verdict of
+its own yet.
 
 The gates:
 
@@ -296,9 +297,9 @@ the same cell. `Kind` is one of:
 | Tm rises with GC, rises with length and is strand-invariant                                                                                                                             | `tests/testthat/test-tm-oracle.R`                                                                                                                                                                                                                | code          |
 | Four parameter sets and three engines are reported as a matrix, never averaged                                                                                                          | `tests/testthat/test-tm-oracle.R` (`oligotm` column skippable without the binary)                                                                                                                                                                | code          |
 | The model ranks the 64 canonical mm2020 duplexes (r > 0.9, Spearman > 0.85) and separates perfect from triple mismatch                                                                  | `tests/testthat/test-tm-mm2020.R`                                                                                                                                                                                                                | code          |
-| The Mm2020 model reads about 16.9 °C below the measured Tm (sd 0.64 < 2); the −21.6 °C salt term and the +4.7 °C reference excess are recorded, not corrected away                      | `tests/testthat/test-tm-mm2020.R`                                                                                                                                                                                                                | measured      |
+| The Mm2020 model reads about 16.9 °C below the measured Tm (sd 0.64 < 2); three steps, −16.9 → −9.6 → ≈ −5.4 °C, are recorded, not corrected away                                       | `tests/testthat/test-tm-mm2020.R`                                                                                                                                                                                                                | measured      |
 | Every mm2020 row carries a `calibration_stance`, and calibration is forbidden                                                                                                           | `tests/testthat/test-tm-mm2020.R`                                                                                                                                                                                                                | code          |
-| Primer3 2.6.1: Tm r 1.000, ρ 0.999, mean +3.92 °C, sd 0.25, max 4.66; hairpin −0.84 °C/ρ 0.67; dimer ρ 1.000                                                                            | `dev/primer3-crosscheck.R` prints it (`results/primer3-crosscheck.log`); `tests/testthat/test-primer3-crosscheck.R` holds the bands                                                                                                              | measured      |
+| Primer3 2.6.1: Tm r 1.000, ρ 0.999, mean +3.92 °C, sd 0.25, max 4.66; hairpin dG −0.84 kcal/mol (ρ 0.67); heterodimer dG −1.75 kcal/mol (n = 4, ρ 1.000)                                | `dev/primer3-crosscheck.R` prints it (`results/primer3-crosscheck.log`); `tests/testthat/test-primer3-crosscheck.R` holds the bands                                                                                                              | measured      |
 | Primer3 design solves 17/20, 8/20 and 5/8 across the three loci, median +1 bp, 0.06 s against 9.5 s                                                                                     | `dev/primer3-crosscheck.R` prints it; `tests/testthat/test-primer3-crosscheck.R` (“design_kasp_markers and Primer3 both solve the same three loci”) holds the shape on three loci (full suite plus binaries)                                     | measured      |
 | `specificity_bowtie()` is a two-strand `countPattern` equal to a manual count, and an absent primer scores zero                                                                         | `tests/testthat/test-bowtie.R` (skippable without `Rbowtie`/full suite)                                                                                                                                                                          | code          |
 | Ground truth: 3′-seed 8/8, exact PCR 3/3, BLAST recall 1.000                                                                                                                            | `dev/specificity-oracle.R` prints it (`results/specificity-oracle.csv`); `tests/testthat/test-specificity.R` holds the equalities on fixtures                                                                                                    | measured      |
@@ -375,8 +376,9 @@ matching tests skip with a named reason when one is absent.
   denominators at study level, but the tables that carry primer triples do not
   carry both outcomes (maize 2020 has 100/100 `design_success = TRUE` and no
   `assay_outcome`).
-- 23 ledger rows are `blocked`: 9 name an extract no test reads yet, 14 name no
-  extract at all, and each says why the paper could not be landed.
+- 20 ledger rows are `blocked`: 10 name no extract at all, 10 name an extract
+  that carries no verdict of its own yet, and each says why the paper could not
+  be landed.
 - 7 sources are closed access; they exist so that the number they would have
   anchored is visibly absent rather than silently invented.
 - `DECIPHER`'s amplification efficiency is a model of hybridisation plus Taq

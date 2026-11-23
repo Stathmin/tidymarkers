@@ -1065,8 +1065,8 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
       `test-snapshot*`. Провенанс — это rung, а не калибровка.
 - [x] **Провенанс порогов + термодинамическая сверка.** Лестница
       `CRITERION_EVIDENCE` (`ZW4.1`) и `inst/extdata/criterion_provenance.csv`
-      (212 строк: `id` → `source` + `reason_class` + причина; 149 с названным
-      источником, 63 — `package assumption` с явным классом). `lobato2018`
+      (213 строк: `id` → `source` + `reason_class` + причина; 149 с названным
+      источником, 64 — `package assumption` с явным классом). `lobato2018`
       (RPA ×4) влит.
       Внешний Tm-якорь — литературный пробел (`ZW3.4`), не пробел провенанса.
 
@@ -1499,11 +1499,11 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
 - [x] **`ZW4.5`** `marker_decision_text(evidence = TRUE)` добавляет ступень к
       каждой проверке; по умолчанию вывод прежний.
 - [x] **`ZW4.6` Источники названы построчно.** `criterion_provenance.csv`
-      (212 строк) даёт `id` → `source` + `reason_class` + причина;
+      (213 строк) даёт `id` → `source` + `reason_class` + причина;
       `test-criteria.R` сверяет с реестром. **Итог по `reason_class`:**
-      `rule_of_thumb` **71**, `primary_literature` **128**,
-      `vendor_guideline` **13**, `fitted_here` **0** (= 212). Вторая ось —
-      `source`: **149** строк с названным источником, **63** —
+      `rule_of_thumb` **72**, `primary_literature` **128**,
+      `vendor_guideline` **13**, `fitted_here` **0** (= 213). Вторая ось —
+      `source`: **149** строк с названным источником, **64** —
       `package assumption`.
     - **Tier-разделение (фазы A и B):** tier-строка = `target` (печатная точка
       отсчёта, её называет источник) + политика агрегации (`limit` =
@@ -2281,11 +2281,12 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
   артефакта.
 - Policy as data: `marker_decision_schema()` читает те же константы, что
   исполнитель; graph не может дрейфовать от кода.
-- 132 registered sources и 143 extract tables в `inst/extdata/`; 212 ledger links
-  от extract к тесту, который его утверждает (46 test files); join проверяется
-  машиной, test не может claim extract, который не читает.
-- 212 criterion rows в `criterion_spec()`; rungs: 128 `primary_literature` +
-  13 `vendor_guideline` + 71 `rule_of_thumb` + 0 `fitted_here`; per-criterion
+- 134 registered sources и 146 extract tables в `inst/extdata/`; 208 `test` rows
+  из 369 строк ledger (132 `report`, 20 `blocked`, 3 `rule`, 4 `artefact`,
+  2 `config`) — join проверяется машиной, test не может claim extract, который
+  не читает; 46 test files.
+- 213 criterion rows в `criterion_spec()`; rungs: 128 `primary_literature` +
+  13 `vendor_guideline` + 72 `rule_of_thumb` + 0 `fitted_here`; per-criterion
   провенанс — `inst/extdata/criterion_provenance.csv`.
 - MCP server (`inst/mcp/tools.R`, 38 инструментов) для AI-агентов; контейнер
   без порта, data read-only. README §Container and MCP server называет 38 —
