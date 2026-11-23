@@ -39,14 +39,17 @@ with a deliberate mismatch), so the limit is recorded rather than discovered.
 two runs of the same plan share it and a changed input or parameter does not.
 }
 \examples{
-\dontrun{
-plan <- marker_plan(ath_genome()) + marker_targets(marker_example())
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 solved <- marker_solve(plan)
-art <- marker_artefact(solved, dir = "results/artefact")
+art <- marker_artefact(solved, dir = tempfile("artefact"))
 art
 # re-run the design from the artefact and check the verdicts agree
-marker_replay(art)
-}
+marker_replay(art)$match
 }
 \seealso{
 Other plan:

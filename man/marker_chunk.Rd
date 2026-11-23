@@ -23,12 +23,10 @@ positions start at 1, and \code{chunk_genome()} is a one-sequence \code{DNAStrin
 can hand to \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}}.
 }
 \examples{
-\dontrun{
 f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
 ch <- marker_chunk(hp, from = 350, to = 550) # a 200 bp local chunk
 chunk_variants(ch)
-}
 }
 \seealso{
 Other haplotypes:

@@ -18,12 +18,15 @@ Migration happens on read, so a file written by an older tidymarkers comes
 back at \code{\link[=marker_trace_schema]{marker_trace_schema()}} and is validated before it is returned.
 }
 \examples{
-\dontrun{
-solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
 path <- tempfile(fileext = ".rds")
 marker_trace_write(marker_trace_from_artefact(solved), path)
-marker_trace_read(path)
-}
+marker_trace_read(path)$id
 }
 \seealso{
 Other plan:

@@ -66,11 +66,15 @@ validated.
 }
 
 \examples{
-\dontrun{
-assay <- assemble_kasp_assay(genome, snp = marker_example("snp")[1, ])
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_asq_marker(genome, loci[1, ])
 marker_patent_export(assay, format = "st26", output = tempfile(fileext = ".xml"))
 marker_patent_export(assay, format = "docx", output = tempfile(fileext = ".docx"))
-}
 }
 \seealso{
 Other patent:

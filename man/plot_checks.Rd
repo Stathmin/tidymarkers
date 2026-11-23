@@ -25,12 +25,14 @@ one oligo on its own, the \emph{alignment} level is how the primers sit together
 the template.  Sits as a thin strip beside \code{\link[=plot_primers]{plot_primers()}}.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_hrm_marker(genome, loci)
 plot_checks(assay)
-}
 }
 \seealso{
 Other plots:

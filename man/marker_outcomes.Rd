@@ -25,9 +25,15 @@ mistake \href{https://github.com/Stathmin/tidymarkers/blob/main/tests/testthat/t
 exist to prevent.
 }
 \examples{
-\dontrun{
-marker_outcomes("results/panel")
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+art <- marker_artefact(solved, dir = tempfile("artefact"))
+marker_record_outcome(art, "works")
+marker_outcomes(art)
 }
 \seealso{
 Other plan:

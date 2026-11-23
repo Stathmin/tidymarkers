@@ -24,12 +24,15 @@ A record from a newer tidymarkers is refused and names its version: the reader
 is too old, not the record wrong.
 }
 \examples{
-\dontrun{
-solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 dir <- tempfile("artefact")
-marker_artefact(solved, dir = dir)
-marker_artefact_read(dir)
-}
+marker_artefact(marker_solve(plan), dir = dir)
+str(marker_artefact_read(dir), max.level = 1)
 }
 \seealso{
 Other plan:

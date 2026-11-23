@@ -37,10 +37,14 @@ as an engine change (\code{engine_match = FALSE}, \code{engines_changed}), rathe
 either being read as a model change.
 }
 \examples{
-\dontrun{
-art <- marker_artefact(marker_solve(plan), dir = "results/artefact")
-marker_replay(art) # $match
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
+art <- marker_artefact(marker_solve(plan), dir = tempfile("artefact"))
+marker_replay(art)$match
 }
 \seealso{
 Other plan:

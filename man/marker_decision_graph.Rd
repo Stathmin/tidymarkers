@@ -25,12 +25,8 @@ a \code{tidygraph::tbl_graph}; nodes carry \code{name}, \code{stage}, \code{kind
 The decision tree as a \code{tidygraph}, annotated with an assay's outcome
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
-marker_decision_graph(assay)
-}
+graph <- marker_decision_graph(scheme = "hrm")
+head(tidygraph::as_tibble(graph))
 }
 \seealso{
 Other checks:

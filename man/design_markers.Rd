@@ -37,11 +37,13 @@ come from \code{\link[=design_auto_marker]{design_auto_marker()}} (one locus) or
 KASP batch with per-locus verdicts).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_markers(genome, marker_example()[1:3, ], scheme = "hrm")
-design_markers(genome, marker_example()[1:3, ], scheme = NULL) # the ladder
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+design_markers(genome, loci, scheme = "hrm")
 }
 \seealso{
 Other design:

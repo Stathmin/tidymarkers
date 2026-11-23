@@ -31,12 +31,16 @@ An artefact directory (or its \code{artefact.json}) is read with
 carry travel with the trace; a bare manifest in memory arrived without them.
 }
 \examples{
-\dontrun{
-plan <- marker_plan(ath_genome()) + marker_targets(marker_example())
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
 solved <- marker_solve(plan)
-marker_trace_from_artefact(marker_artefact(solved))
-marker_trace_from_artefact(solved)
-}
+trace <- marker_trace_from_artefact(marker_artefact(solved, dir = tempfile("artefact")))
+names(trace)
+marker_trace_from_artefact(solved)$id
 }
 \seealso{
 Other plan:

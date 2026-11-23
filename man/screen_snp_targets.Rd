@@ -51,9 +51,13 @@ thermodynamics, no BLAST, no genome-wide scan: milliseconds per gene, so a
 gene scoring \code{0/n} can be skipped before the expensive steps.
 }
 \examples{
-\dontrun{
-screen_snp_targets(ensembl_variants("Chr4", 268901, 271503), ath_genome())
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+screen_snp_targets(loci, genome)
 }
 \seealso{
 Other design:

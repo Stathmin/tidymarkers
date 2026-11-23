@@ -39,11 +39,13 @@ pattern differs - i.e. a natural CAPS marker.  A pattern is reported as
 (\code{min_gap = 0} keeps everything that differs at all).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, ]
-find_caps_enzymes(genome, snp, flank = 250)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+find_caps_enzymes(genome, loci[1, ], flank = 250)
 }
 \seealso{
 Other CAPS:

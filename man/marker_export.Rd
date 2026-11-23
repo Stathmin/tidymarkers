@@ -30,9 +30,16 @@ hashed inputs, the engine versions and the overridden knobs, and
 \code{artefact = FALSE} for the bare tables.
 }
 \examples{
-\dontrun{
-marker_export(marker_solve(plan), dir = "results")
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+solved <- marker_solve(
+  marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+)
+marker_export(solved)
 }
 \seealso{
 Other plan:

@@ -39,14 +39,17 @@ designed marker objects (\code{report$marker}), which \code{\link[=marker_tubes]
 and \code{\link[=marker_export]{marker_export()}} consume.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-solved <- marker_plan(genome) +
-  marker_targets(marker_example("snp")) +
-  marker_tech(preset = "lab") |>
-  marker_solve()
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+# `+` binds tighter than `|>`, so solve the whole plan in one call
+solved <- marker_solve(
+  marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+)
 solved
-}
 }
 \seealso{
 Other plan:

@@ -82,13 +82,11 @@ CRISPR).  Without \code{scheme} the call behaves exactly as before: a search
 radius of \code{max_mismatch}, no chemistry filter.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome)
-in_silico_pcr("GAAGGTGACCAAGTTCATGCT", "AGCATGAACTTGGTCACCTTC", genome,
-  scheme = "rpa"
-)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+f <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+r <- as.character(Biostrings::reverseComplement(Biostrings::subseq(genome[["Chr4"]], 1180, 1199)))
+in_silico_pcr(f, r, genome)
+in_silico_pcr(f, r, genome, scheme = "rpa")
 }
 \seealso{
 Other specificity:

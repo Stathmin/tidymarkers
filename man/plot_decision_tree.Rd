@@ -39,14 +39,8 @@ One marker chemistry is drawn at a time (\code{\link[=marker_schemes]{marker_sch
 \code{\link[=marker_decision_text]{marker_decision_text()}} is the greppable double.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
-plot_decision_tree() # the schema
-plot_decision_tree(scheme = "duplex") # the multiplex policy
-plot_decision_tree(assay) # this assay's traversal
-}
+svg <- plot_decision_tree(scheme = "duplex") # the multiplex policy
+length(svg)
 }
 \seealso{
 Other checks:

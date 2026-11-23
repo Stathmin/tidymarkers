@@ -20,15 +20,19 @@ step's verdict as the subtitle.  Used by \code{\link[=render_design_search]{rend
 its own for a slide.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
-gene <- ensembl_gene("AT4G00650")
-variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-frames <- design_search_frames(assay, variants, snp)
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_asq_marker(genome, loci[1, ])
+variants <- tibble::tibble(
+  chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
+  consequence = "synonymous_variant"
+)
+frames <- design_search_frames(assay, variants, loci[1, ])
 plot_design_search_step(frames, 1)
-}
 }
 \seealso{
 Other plots:

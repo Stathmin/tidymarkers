@@ -22,9 +22,12 @@ A chunk built from \code{haplotypes} has its \code{variants} rebuilt from those
 haplotypes under \code{maf}, so edits made to \code{variants} directly are replaced.
 }
 \examples{
-\dontrun{
-chunk_weight(ch, tibble::tibble(pos = 81, ref = "C", alt = "T", maf = 0.02))
-}
+f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
+ch <- marker_chunk(hp, from = 350, to = 550)
+v <- chunk_variants(ch)[1L, ]
+w <- chunk_weight(ch, tibble::tibble(pos = v$pos, ref = v$ref, alt = v$alt, maf = 0.02))
+chunk_variants(w)
 }
 \seealso{
 Other haplotypes:

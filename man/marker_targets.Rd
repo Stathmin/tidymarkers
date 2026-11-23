@@ -42,11 +42,14 @@ or explicit columns.  Added twice, the rows accumulate (so several
 \code{\link[=marker_targets]{marker_targets()}} layers compose).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-marker_plan(genome) + marker_targets(marker_example())
-marker_plan(genome) + marker_targets(chrom = "Chr4", pos = 269116, ref = "G", alt = "A")
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+marker_plan(genome) + marker_targets(loci)
+marker_plan(genome) +
+  marker_targets(chrom = loci$chrom, pos = as.integer(loci$pos), ref = loci$ref, alt = loci$alt)
 }
 \seealso{
 Other plan:

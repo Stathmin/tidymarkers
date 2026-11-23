@@ -61,13 +61,11 @@ variants per chromosome, their relative spacing and every allele pair are kept
 on purpose, because the bug depends on them.
 }
 \examples{
-\dontrun{
 variants <- tibble::tibble(
   chrom = c("Chr4", "Chr4"), pos = c(1710L, 2340L), ref = c("A", "C"), alt = c("G", "T")
 )
-path <- marker_reprex(variants, path = "reprex.R")
+path <- marker_reprex(variants, path = tempfile(fileext = ".R"))
 readLines(path)[[1L]]
-}
 }
 \seealso{
 Other input:

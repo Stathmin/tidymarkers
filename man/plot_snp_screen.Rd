@@ -21,11 +21,13 @@ A compact per-variant view of \code{\link[=screen_snp_targets]{screen_snp_target
 per SNP, coloured promising (green) / doomed (red), over the gene model.
 }
 \examples{
-\dontrun{
-gene <- ensembl_gene("AT4G00650")
-variants <- ensembl_variants(gene$chrom, gene$start, gene$end)
-plot_snp_screen(screen_snp_targets(variants, ath_genome()), ensembl_gene("AT4G00650"))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+plot_snp_screen(screen_snp_targets(loci, genome))
 }
 \seealso{
 Other plots:

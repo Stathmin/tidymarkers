@@ -34,10 +34,15 @@ names sequences by accession (e.g. \code{NC_016088.4}) needs \code{chrom_map} to
 the genome's names.  Gzip is detected from the \code{.gz} suffix.
 }
 \examples{
-\dontrun{
-features <- marker_features("feature_table.txt.gz")
-marker_features("genome.gff3", chrom = "1")
-}
+gff <- withr::local_tempfile(fileext = ".gff3")
+writeLines(
+  c(
+    "##gff-version 3",
+    "Chr4\ttidymarkers\tgene\t2801\t2900\t.\t+\t.\tID=AT4G05320;Name=AT4G05320"
+  ),
+  gff
+)
+marker_features(gff)
 }
 \seealso{
 Other annotation:

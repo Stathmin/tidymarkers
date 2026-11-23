@@ -70,12 +70,14 @@ identical when nothing changed, and callers such as \code{evaluation_verdict()} 
 \code{\link[=marker_risk]{marker_risk()}} accept either.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
-marker_design_checks(assay)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_hrm_marker(genome, loci[1, ])
+table(marker_design_checks(assay)$status)
 }
 \seealso{
 Other checks:

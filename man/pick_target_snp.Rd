@@ -82,13 +82,20 @@ complete ranking key.
 }
 
 \examples{
-\dontrun{
-genome <- ath_genome()
-v <- ensembl_variants("Chr4", 268901, 271503)
-pick_target_snp(v, genome, ensembl_gene("AT4G00650"))
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+variants <- tibble::tibble(
+  id = "v1", chrom = loci$chrom, pos = loci$pos,
+  ref_genome = list(c(loci$ref, loci$alt)), consequence = "synonymous_variant"
+)
+gene <- tibble::tibble(chrom = loci$chrom)
+pick_target_snp(variants, genome, gene, specificity_candidates = 0L)
 # a target that designs specifically as a CAPS marker:
-pick_target_snp(v, genome, ensembl_gene("AT4G00650"), scheme = "caps")
-}
+pick_target_snp(variants, genome, gene, scheme = "caps")
 }
 \seealso{
 Other design:

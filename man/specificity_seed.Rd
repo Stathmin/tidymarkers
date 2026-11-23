@@ -61,10 +61,9 @@ count (that path keeps full-length exact hits only), i.e. a stricter screen
 than the in-memory one.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-specificity_seed(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+primer <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+specificity_seed(c(AS = primer), genome)
 }
 \seealso{
 Other specificity:

@@ -55,10 +55,9 @@ with \code{max_mismatch > 0} (the mismatch tree's minimum width), is searched wi
 \code{exact_pattern_hits()} instead; an ambiguous genomic base is never a hit.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-exact_hit_table(c(AS = "GAAGGTGACCAAGTTCATGCT"), genome)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+primer <- as.character(Biostrings::subseq(genome[["Chr4"]], 1000, 1019))
+exact_hit_table(c(AS = primer), genome)
 }
 \seealso{
 Other specificity:

@@ -31,9 +31,10 @@ latter \code{NULL} when the source was unphased); \code{chunk_alignment()} a
 The three representations (and the reference/genome) of a \code{\link[=marker_chunk]{marker_chunk()}}.
 }
 \examples{
-\dontrun{
-chunk_variants(marker_chunk(hp, from = 350, to = 550))
-}
+f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
+hp <- haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2")
+ch <- marker_chunk(hp, from = 350, to = 550)
+chunk_variants(ch)
 }
 \seealso{
 Other haplotypes:

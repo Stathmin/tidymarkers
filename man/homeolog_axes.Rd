@@ -25,12 +25,14 @@ common primer's plus-strand 3' base and its genomic coordinate), together with
 a verdict against the diagnostic mask the candidate was built with.
 }
 \examples{
-\dontrun{
-genome <- Biostrings::DNAStringSet(c(Chr1 = paste(rep("ACGT", 150), collapse = "")))
-snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "G")
-assay <- assemble_kasp_assay(genome, snp, pair_screen = 0L, cores = 1L)
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_asq_marker(genome, loci[1, ])
 homeolog_axes(assay)
-}
 }
 \seealso{
 Other specificity:

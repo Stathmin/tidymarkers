@@ -19,10 +19,15 @@ Migration and validation happen before the write, so a file this function
 returns can be read by any reader of \code{\link[=marker_trace_schema]{marker_trace_schema()}}.
 }
 \examples{
-\dontrun{
-solved <- marker_solve(marker_plan(ath_genome()) + marker_targets(marker_example()))
-marker_trace_write(marker_trace_from_artefact(solved), tempfile(fileext = ".rds"))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+path <- tempfile(fileext = ".rds")
+marker_trace_write(marker_trace_from_artefact(solved), path)
+file.exists(path)
 }
 \seealso{
 Other plan:

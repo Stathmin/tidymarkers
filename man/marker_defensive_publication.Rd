@@ -24,10 +24,13 @@ publication identifier is a placeholder -- this function performs no network
 call and minted nothing.
 }
 \examples{
-\dontrun{
-assay <- assemble_kasp_assay(genome, snp = marker_example("snp")[1, ])
-cat(marker_defensive_publication(assay))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+cat(marker_defensive_publication(design_asq_marker(genome, loci[1, ])))
 }
 \seealso{
 Other patent:

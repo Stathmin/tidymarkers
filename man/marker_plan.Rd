@@ -35,13 +35,15 @@ Add \code{\link[=marker_context]{marker_context()}} with \verb{depth =} to weigh
 sequencing depth, so low-confidence calls are dropped before design (Y5.3).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
 plan <- marker_plan(genome) +
-  marker_targets(marker_example("snp")) +
+  marker_targets(loci) +
   marker_tech(preset = "lab")
 plan
-}
 }
 \seealso{
 Other plan:

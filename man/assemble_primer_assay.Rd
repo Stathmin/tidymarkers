@@ -81,14 +81,19 @@ are reported \code{unknown} unless \code{variants} is supplied; they are never s
 passed.
 }
 \examples{
-\dontrun{
-genome <- marker_genome("genome.fa", chrom_map = c("NC_1" = "1"))
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+tmpl <- snp_template(genome, "Chr4", 2844L, 150L)
+as_ref <- as.character(Biostrings::subseq(tmpl$seq, tmpl$snp_i - 24L, tmpl$snp_i))
+com <- as.character(Biostrings::reverseComplement(
+  Biostrings::subseq(tmpl$seq, tmpl$snp_i + 60L, tmpl$snp_i + 84L)
+))
 p <- tibble::tibble(
   role = c("AS_ref", "AS_alt", "COM"),
-  sequence = c("ACGT...", "ACGT...", "ACGT...")
+  sequence = c(as_ref, paste0(substr(as_ref, 1L, 24L), "C"), com)
 )
-assemble_primer_assay(genome, tibble::tibble(chrom = "1", pos = 100L, ref = "A", alt = "G"), p)
-}
+snp <- tibble::tibble(chrom = "Chr4", pos = 2844L, ref = "T", alt = "C")
+assay <- assemble_primer_assay(genome, snp, p)
+assay$assay[, c("as_ref", "as_alt", "com", "amplicon")]
 }
 \seealso{
 Other design:

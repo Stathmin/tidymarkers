@@ -24,9 +24,20 @@ of them at once), so a pair whose primers cross-dimerise or hairpin is flagged
 before it reaches the bench.  Markers exposing no oligos are skipped.
 }
 \examples{
-\dontrun{
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+# the bundled region holds one target, so list it twice: the shared oligos
+# are screened for cross-dimerisation, and identical sets fail
+targets <- dplyr::bind_rows(loci, loci)
+targets$id <- c("t1", "t2")
+plan <- marker_plan(genome) +
+  marker_targets(data = targets) +
+  marker_tech(schemes = "hrm")
 marker_tubes(marker_solve(plan))
-}
 }
 \seealso{
 Other plan:

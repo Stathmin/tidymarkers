@@ -22,11 +22,13 @@ probes, the LAMP set, ...).  Returns a named character vector (empty when the
 marker exposes no oligos).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-marker_primers(assemble_kasp_assay(genome, snp))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+marker_primers(design_asq_marker(genome, loci[1, ]))
 }
 \seealso{
 Other plan:

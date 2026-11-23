@@ -47,10 +47,13 @@ every scheme it tried - "which chemistry takes this target", in one call.
 \code{design_marker()} is a deprecated alias that forwards here.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_auto_marker(genome, marker_example("SNP")[1, ])
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+design_auto_marker(genome, loci[1, ])$tried
 }
 \seealso{
 Other design:

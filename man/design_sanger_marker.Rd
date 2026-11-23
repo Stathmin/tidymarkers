@@ -85,9 +85,13 @@ A known population variant under a primer is flagged as allele dropout when
 \code{population} is supplied (\verb{$allele_dropout}, \verb{$allele_dropout_risk}).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_sanger_marker(genome, marker_example("SNP")[1, ], flank = 500)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+sanger <- design_sanger_marker(genome, loci[1, ], flank = 500)
+sanger$primers
 }
 \concept{Sanger}

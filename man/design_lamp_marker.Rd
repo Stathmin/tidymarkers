@@ -74,9 +74,13 @@ discrimination model: no allele gap, Ct or call probability is predicted (see
 \code{data-raw/proposed/lamp_status.decision.md}).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_lamp_marker(genome, marker_example("SNP")[1, ])
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+lamp <- design_lamp_marker(genome, loci[1, ])
+lamp$primers
 }
 \concept{LAMP}

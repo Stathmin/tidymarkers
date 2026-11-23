@@ -20,9 +20,16 @@ shaded by cost, labelled with the outcome - the cheapest chemistry that
 designs each target is the leftmost "solved" tile.
 }
 \examples{
-\dontrun{
-marker_plot(marker_solve(plan))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+solved <- marker_solve(
+  marker_plan(genome) + marker_targets(loci) + marker_tech(preset = "lab")
+)
+marker_plot(solved)
 }
 \seealso{
 Other plan:

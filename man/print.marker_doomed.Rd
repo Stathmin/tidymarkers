@@ -18,21 +18,15 @@
 Print a doomed target
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-# a variant inside every AS footprint dooms the target; the design is
-# returned, not thrown away
-variants <- tibble::tibble(
-  chrom = c("Chr1", "Chr1"), pos = c(18519402L, 18519414L),
-  ref = c("A", "A"), alt = c("C", "T")
-)
-doomed <- assemble_kasp_assay(
-  genome, snp,
-  variants = variants, max_footprint_variants = 0L
-)
-print(doomed)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+# no candidate KASP pair survives this AT-rich window, so the target comes
+# back doomed rather than as an error: the design is returned, not thrown away
+print(assemble_kasp_assay(genome, loci))
 }
 \seealso{
 Other utilities:

@@ -27,10 +27,8 @@ indels read at a glance.  \code{type = "variants"} (default) keeps only the colu
 that differ from the reference; \code{type = "all"} plots the whole alignment.
 }
 \examples{
-\dontrun{
 f <- system.file("extdata", "sat2_transcripts.fa", package = "tidymarkers")
 plot_alignment(haplotypes_from_alignment(read_transcripts(f), chrom = "SAT2"))
-}
 }
 \seealso{
 Other haplotypes:

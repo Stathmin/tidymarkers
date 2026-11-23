@@ -32,10 +32,8 @@ a custom chemistry you wrote as \verb{design_<name>_marker()} + \verb{scheme_def
 is discovered automatically and can be named here like any other.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
-}
 }
 \seealso{
 Other plan:

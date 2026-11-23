@@ -76,9 +76,13 @@ HONEST LIMIT: the blocker's suppression efficiency - and so the 0.1-1\% LOD the
 method papers report - is not simulated (see the file header).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_castpcr_marker(genome, marker_example("SNP")[1, ])
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+cast <- design_castpcr_marker(genome, loci[1, ])
+names(cast)
 }
 \concept{castPCR}

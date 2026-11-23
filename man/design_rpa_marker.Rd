@@ -67,10 +67,13 @@ well-formed probe geometry, not a predicted efficiency; the structure/dimer
 filter is skipped when OligoArrayAux is unavailable.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-design_rpa_marker(genome, marker_example("SNP")[1, ])
-design_rpa_marker(genome, marker_example("SNP")[1, ], design_probe = TRUE)
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+rpa <- design_rpa_marker(genome, loci[1, ])
+rpa$primers
 }
 \concept{RPA}

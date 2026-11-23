@@ -33,23 +33,25 @@ haplotype-aware engines such as \code{\link[=design_lax_marker]{design_lax_marke
 primer selection.
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+marker <- design_caps_marker(genome, loci[1, ], flank = 250)
 # one row per variant per haplotype; `freq` is the haplotype's frequency
 haplotypes <- dplyr::bind_rows(
   tibble::tibble(
-    haplotype = "H1", freq = 0.6, chrom = "Chr1",
-    pos = 18519400L, ref = "A", alt = "G"
+    haplotype = "H1", freq = 0.6, chrom = loci$chrom[1],
+    pos = loci$pos[1], ref = loci$ref[1], alt = loci$alt[1]
   ),
   tibble::tibble(
-    haplotype = "H2", freq = 0.4, chrom = "Chr1",
-    pos = 18519420L, ref = "C", alt = "T"
+    haplotype = "H2", freq = 0.4, chrom = loci$chrom[1],
+    pos = loci$pos[1] - 13L, ref = "A", alt = "G"
   )
 )
-marker_attach_haplotypes(assay, haplotypes, snp)$population
-}
+marker_attach_haplotypes(marker, haplotypes, loci[1, ])$population
 }
 \seealso{
 Other haplotypes:

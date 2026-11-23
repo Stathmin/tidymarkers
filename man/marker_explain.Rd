@@ -25,9 +25,14 @@ between the marker and acceptance; passing rows follow.  The \code{headline}
 attribute summarises the counts in one line.
 }
 \examples{
-\dontrun{
-marker_explain(assemble_kasp_assay(ath_genome(), marker_example("SNP")))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_hrm_marker(genome, loci[1, ])
+head(marker_explain(assay))
 }
 \seealso{
 \code{\link[=marker_design_checks]{marker_design_checks()}}, \code{\link[=marker_artefact]{marker_artefact()}}

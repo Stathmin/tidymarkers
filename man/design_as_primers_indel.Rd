@@ -56,10 +56,9 @@ DECIPHER (the same Taq-aware model used elsewhere).  The placement that
 actually discriminates is therefore chosen by the physics, not by a hand rule.
 }
 \examples{
-\dontrun{
-tmpl <- Biostrings::DNAString(paste(rep("ACGT", 20L), collapse = ""))
-design_as_primers_indel(tmpl, 40L, ref = "G", alt = "GTT")
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+tmpl <- snp_template(genome, "Chr4", 2844L, 200L)
+head(design_as_primers_indel(tmpl$seq, tmpl$snp_i, ref = "T", alt = "TAA"), 3)
 }
 \seealso{
 Other design:

@@ -22,10 +22,14 @@ the probe readout also carries \code{partition}, the Poisson projection of the
 counting law (\code{dpcr_partition_table()}).
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-marker_readout(design_taqman_marker(genome, marker_example("SNP")[1, ]))
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+marker <- design_hrm_marker(genome, loci[1, ])
+str(marker_readout(marker), max.level = 1)
 }
 \seealso{
 Other design:

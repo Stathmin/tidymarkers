@@ -25,13 +25,15 @@ for its side effect of writing the IDT/LGC/tidy order sheets.
 }
 }
 \examples{
-\dontrun{
-genome <- ath_genome()
-snp <- marker_example("SNP")[1, c("chrom", "pos", "ref", "alt")]
-assay <- assemble_kasp_assay(genome, snp)
-gene <- ensembl_gene("AT4G00650")
-export_primers(assay, gene, dir = tempdir())
-}
+genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+loci <- utils::read.csv(
+  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+  colClasses = "character"
+)[, c("chrom", "pos", "ref", "alt")]
+loci$pos <- as.integer(loci$pos)
+assay <- design_asq_marker(genome, loci)
+gene <- list(symbol = "AT4G05320")
+head(export_primers(assay, gene, dir = tempdir()))
 }
 \seealso{
 Other output:
