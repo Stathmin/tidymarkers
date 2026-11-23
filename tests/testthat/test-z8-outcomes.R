@@ -54,17 +54,19 @@ test_that("Z8: decomposition is claimed only where the named failures add up", {
   expect_equal(c$decomposes, c$fully_decomposed)
   expect_true(all(c$n_fail_known <= c$n_failed))
   expect_equal(c$fully_decomposed, c$decomposes)
-  # exactly four sources currently decompose: the multi-assembly + Sanger arm,
+  # exactly five sources currently decompose: the multi-assembly + Sanger arm,
   # the one that reports the reason per SNP; Yamagata Exp. 3, which names both
   # of its wet-lab failure classes; Grewal 2022, whose five classes sum to its
-  # 363 failures; and Yang 2020, whose ten no-signal primers are its whole
-  # failure total
-  expect_equal(sum(c$fully_decomposed), 4L)
+  # 363 failures; Yang 2020, whose ten no-signal primers are its whole failure
+  # total; and Jagtap 2020, whose 21 compound + 8 no-amplification classes sum
+  # to its 29 failures
+  expect_equal(sum(c$fully_decomposed), 5L)
   expect_setequal(
     c$study[c$fully_decomposed],
     c(
       "makhoul2020_multi_assembly_sanger", "jsbbs2018_exp3",
-      "grewal2022_amblyopyrum", "yang2020_brassica_kasp"
+      "grewal2022_amblyopyrum", "yang2020_brassica_kasp",
+      "mariyamma2020_maize_kasp"
     )
   )
 })
@@ -72,9 +74,9 @@ test_that("Z8: decomposition is claimed only where the named failures add up", {
 test_that("Z8.1: the decomposed-negative count is named, not implied", {
   c <- ext("conversion_rates.csv")
   # The whole point of Z8.1 is that the COUNT of fully decomposed rows is a
-  # fact someone can quote.  It is four today; a fifth source must change this
+  # fact someone can quote.  It is five today; a sixth source must change this
   # test rather than silently improve the denominator.
-  expect_equal(sum(c$fully_decomposed), 4L)
+  expect_equal(sum(c$fully_decomposed), 5L)
   # Grewal 2022's five named classes reconstruct its own failure total
   g <- c[c$study == "grewal2022_amblyopyrum", ]
   expect_equal(nrow(g), 1L)
