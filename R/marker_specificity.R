@@ -1542,12 +1542,12 @@ pcr_products_from_hits <- function(fh_all, rh_all, chroms, f_primer, r_primer, B
 #'   is unchanged (a hit of another pair's primer is not a candidate);
 #' * `in_silico_pcr_pool()` does not warn by default.  `near = TRUE` takes one
 #'   radius-1 pass over every pattern of the pool and warns, which is opt-in
-#'   because that pass used to cost an order of magnitude more than the exact one
-#'   (measured 4.6 s exact vs 193 s radius-1 for one pair on a 120 Mb genome,
-#'   before the radius-1 batch stopped building a `PDict`; with that fix the whole
-#'   `near = TRUE` call is 1.99 s on TAIR10, against 1.14 s for the warm exact
-#'   call it repeats - the exact call is 3.63 s when it is the first pool call in
-#'   a process), and the internal assembly screen does not ask for it.
+#'   because the pooled near call is expensive: 130.05 s on TAIR10 before the
+#'   radius-1 batch stopped building a `PDict` (now `matchPattern`), 1.99 s after
+#'   (193 s is the same pooled path on a differently loaded machine), against the
+#'   exact pool call it always includes at 4.75 s before, 3.63 s as a process's
+#'   first pool call and 1.14 s warm.  The per-pair radius-1 pass is ~0.61 s,
+#'   unchanged by the fix, and the internal assembly screen does not ask for it.
 #' @param pairs named list of `c(F = , R = )` primer pairs.
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param max_mismatch search radius.
