@@ -551,7 +551,8 @@ readr::write_csv(anchor, fs::path(out_dir, "mismatch_anchor.csv"))
 # The reviewer's survivorship-bias point: published markers are successes.  Only
 # sources that report a denominator AND describe their failures belong here.
 #  `decomposes` says whether a source's named failure reasons reconstitute its
-#  own failure total.  None currently does; that is the Z8 blocker, not a bug.
+#  own failure total.  Five rows do; that is still the Z8 blocker for
+#  calibration, because five rows from five studies cannot estimate a rate.
 #
 #  Table S4 of MOESM1 in Makhoul 2020 is the ONE row below that is not a count
 #  read from a sentence: every *failure* state is named per SNP (so the row has
@@ -729,24 +730,21 @@ conversion <- dplyr::mutate(
   # wheat_platform2019_platform_outcomes.csv with `scope = "assay_x_sample"`
   scope = "study",
   n_failed = .data$n_designed - .data$n_success,
+  # `n_fail_known` counts the typed columns only, for every row; `n_fail_other`
+  # is the residual or compound bucket and never adds to it.  `fully_decomposed`
+  # below is the column that certifies every failure is named.
   n_fail_known = dplyr::coalesce(.data$n_fail_pcr, 0L) +
     dplyr::coalesce(.data$n_fail_no_allele, 0L) +
     dplyr::coalesce(.data$n_fail_wheat_polymorphic, 0L) +
     dplyr::coalesce(.data$n_fail_monomorphic, 0L) +
-    dplyr::coalesce(.data$n_fail_heterozygote, 0L) +
-    # `n_fail_other` is the residual bucket, except for Mariyamma 2020: its 21
-    # are a printed compound class ('monomorphic and/or heterozygous type'), so
-    # they are a named reason and count as known even though the schema has no
-    # column to split them into
-    dplyr::if_else(.data$study == "mariyamma2020_maize_kasp",
-                   dplyr::coalesce(.data$n_fail_other, 0L), 0L),
+    dplyr::coalesce(.data$n_fail_heterozygote, 0L),
   # residual consistency: the measured failure `total` must equal the counted
   # reasons plus the residual bucket.  Nothing here is verified as a *finding*
   # -- it only shows the table is internally coherent.  Rows with no counted
   # reason stay NA so that "no data" never reads as "fully explained".
-  # Grewal 2022 is the one row whose five named classes (251 + 49 + 22 + 10 + 31)
-  # reconstitute its 363 failures exactly; the other rows name fewer classes and
-  # stay FALSE.  No residual number is ever invented to close a gap.
+  # Every row whose named classes reconstitute its own total satisfies this;
+  # the `fully_decomposed` whitelist below decides which of those rows a source
+  # names every failure for.  No residual number is ever invented to close a gap.
   decomposes = !is.na(.data$n_fail_pcr) &
     .data$n_fail_pcr + dplyr::coalesce(.data$n_fail_no_allele, 0L) +
       dplyr::coalesce(.data$n_fail_other, 0L) +
@@ -845,7 +843,7 @@ stopifnot(nrow(yn) == 1L, yn$n_designed == 268L, yn$n_success == 258L,
 mm <- conversion[conversion$study == "mariyamma2020_maize_kasp", ]
 stopifnot(nrow(mm) == 1L, mm$n_designed == 100L, mm$n_success == 71L,
           mm$n_fail_pcr == 8L, mm$n_fail_other == 21L,
-          mm$n_fail_known == 29L, isTRUE(mm$fully_decomposed))
+          mm$n_fail_known == 8L, isTRUE(mm$fully_decomposed))
 readr::write_csv(conversion, fs::path(out_dir, "conversion_rates.csv"))
 
 cat("wrote:\n", paste(fs::path(out_dir, c(
