@@ -2382,7 +2382,7 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
   артефакта.
 - Policy as data: `marker_decision_schema()` читает те же константы, что
   исполнитель; graph не может дрейфовать от кода.
-- 134 registered sources и 146 extract tables в `inst/extdata/`; 208 `test` rows
+- 134 registered sources и 147 extract tables в `inst/extdata/`; 208 `test` rows
   из 369 строк ledger (132 `report`, 20 `blocked`, 3 `rule`, 4 `artefact`,
   2 `config`) — join проверяется машиной, test не может claim extract, который
   не читает; 46 test files.
@@ -2594,24 +2594,35 @@ provenance_required)`: review queue candidate-обновлений с полны
       кластере.
       проверка: `BiocCheck` проходит на собранном пакете, и шаг падает при
       регрессии.
-      блокер (измерено 2026-11-23): `BiocCheck::BiocCheck(".")` (BiocCheck
-      1.48.1) даёт `3 ERROR | 3 WARNING | 15 NOTE`. E1 — примеры: 104 из 195
-      man-страниц целиком `\dontrun{}` (нужны движки, сеть или `BSgenome`);
-      чтобы пройти, не меньше 65 из них должны стать исполняемыми. E2 — адрес
-      мейнтейнера не найден на support.bioconductor.org (`HTTP 404`), это
-      действие оператора. E3 — `No biocViews terms found`: поля `biocViews:` в
-      `DESCRIPTION` нет (`grep -qE "^biocViews:" DESCRIPTION` → exit 1), это
-      наше действие. WARNING про 5 MB — артефакт рабочего каталога
-      (`.git/objects/pack`, `.tmp`, `dev/logs`, `graphify-out`), на собранном
-      тарболе исчезает; повтор в грязном дереве даёт 4 ERROR, потому что
-      BiocCheck считает свой `tidymarkers.BiocCheck/`.
-      `BiocCheck` 1.48.1 поставлен с `dependencies = FALSE` (девять пакетов,
-      библиотека 282 → 291, `rlang` 1.3.0 не сдвинут), но в `dev/check.R` он
-      не вшит: шаг гейта, который не может пройти, — это неправда.
+      блокер (измерено 2026-11-23): связывающее правило — E1
+      (`BiocCheck:::checkExportsAreDocumented`): доля man-страниц с исполняемым
+      примером среди «экспортирующих» должна быть ≥ 80 %. Страница
+      экспортирует, если её `\name` или любой `\alias` есть в
+      `getNamespaceExports()`. Исходная точка — 191 экспортирующая страница,
+      39 без исполняемого примера, 0.796 — порог не взят. Волна ZY9 перевела
+      большинство в исполняемые на переиспользуемом срезе
+      `inst/extdata/example_region.fa` (8001 bp, `Chr4:2716000-2724000`) плюс
+      `example_region_targets.csv`: 191 / 37 = 0.806. `\dontrun` остался
+      только там, где примеру нужна сеть (`ath_genome`, `ensembl_*`,
+      `marker_*_index`, `build_blast_db`, `blast_primers`, `specificity_*`),
+      движок (`primer_thermo`, `terminal_dg`, `dimer_thermo`,
+      `duplex_dg_thermo`, `hairpin_dg_thermo`, `oligo_dg`, `fold_amplicon`,
+      `pcr_efficiency`), аннотационные пакеты (`marker_txdb`,
+      `marker_bsgenome`, `marker_ensdb`, `annotate_variants`), действие
+      оператора (`marker_patent_validate`, `rprimer_assays`,
+      `render_design_search`, `marker_install_tools`), плюс девять страниц
+      дизайнеров, чей пробный вход не даёт результата на этом срезе, и
+      `haplotype_cover`. E2 — адрес мейнтейнера не найден на
+      support.bioconductor.org (`HTTP 404`), это действие оператора. E3
+      закрыт: `biocViews:` внесён в `DESCRIPTION`. WARNING про 5 MB — артефакт
+      рабочего каталога (`.git/objects/pack`, `.tmp`, `dev/logs`,
+      `graphify-out`), на собранном тарболе исчезает; повтор в грязном дереве
+      даёт 4 ERROR, потому что BiocCheck считает свой
+      `tidymarkers.BiocCheck/`.
       `updog`/`polyRAD`/`BatchR` по-прежнему не установлены; плюс внешний
-      review Bioconductor. Первый шаг в репозитории: добавить `biocViews:`,
-      конвертировать ≥65 `\dontrun`-страниц в исполняемые примеры, затем
-      вшить `BiocCheck` в `dev/check.R`; до этого шаг гейта не ставится.
+      review Bioconductor. Первый шаг в репозитории: вшить `BiocCheck` в
+      `dev/check.R` на собранном тарболе с allowlist для E2 и предупреждения
+      о `.Deprecated()`.
       следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
       cluster.
 - [—] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
