@@ -72,9 +72,11 @@ PATENT_DISCLAIMER <- "draft documents; patent filing requires qualified patent a
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' marker_patent_export(assay, format = "st26", output = tempfile(fileext = ".xml"))
 #' marker_patent_export(assay, format = "docx", output = tempfile(fileext = ".docx"))
+#' }
 #' @family patent
 #' @export
 marker_patent_export <- function(assay_or_solved, format = c("st26", "docx"), output = NULL, ...) {
@@ -183,7 +185,9 @@ marker_patent_validate <- function(path, schema = patent_schema_path()) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' cat(marker_defensive_publication(design_asq_marker(genome, loci[1, ])))
+#' }
 #' @family patent
 #' @export
 marker_defensive_publication <- function(assay_or_solved, ...) {

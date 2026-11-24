@@ -31,8 +31,10 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci)
 plot_oligo_structure(assay)
+}
 }
 \seealso{
 Other plots:

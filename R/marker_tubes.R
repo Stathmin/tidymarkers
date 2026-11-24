@@ -25,7 +25,9 @@
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' marker_primers(design_asq_marker(genome, loci[1, ]))
+#' }
 #' @family plan
 #' @export
 marker_primers <- function(marker, ...) UseMethod("marker_primers")

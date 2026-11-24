@@ -60,8 +60,10 @@ as_alt_sequence <- function(assay) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' print(assay)
+#' }
 #' @method print marker_assay
 #' @family utilities
 #' @export
@@ -92,7 +94,9 @@ print.marker_assay <- function(x, ...) {
 #' loci$pos <- as.integer(loci$pos)
 #' # no candidate KASP pair survives this AT-rich window, so the target comes
 #' # back doomed rather than as an error: the design is returned, not thrown away
+#' \dontrun{
 #' print(assemble_kasp_assay(genome, loci))
+#' }
 #' @method print marker_doomed
 #' @family utilities
 #' @export

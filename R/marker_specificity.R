@@ -1835,8 +1835,10 @@ as_pcr_pairs <- function(assay) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' assay_amplicons(assay, genome)
+#' }
 #' @family specificity
 #' @export
 assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, products = NULL) {

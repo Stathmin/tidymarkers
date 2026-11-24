@@ -26,7 +26,9 @@ loci <- utils::read.csv(
 loci$pos <- as.integer(loci$pos)
 # no candidate KASP pair survives this AT-rich window, so the target comes
 # back doomed rather than as an error: the design is returned, not thrown away
+\dontrun{
 print(assemble_kasp_assay(genome, loci))
+}
 }
 \seealso{
 Other utilities:

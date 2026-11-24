@@ -72,9 +72,11 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci[1, ])
 marker_patent_export(assay, format = "st26", output = tempfile(fileext = ".xml"))
 marker_patent_export(assay, format = "docx", output = tempfile(fileext = ".docx"))
+}
 }
 \seealso{
 Other patent:

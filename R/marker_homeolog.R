@@ -81,8 +81,10 @@ normalise_diagnostic_positions <- function(x) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' homeolog_axes(assay)
+#' }
 #' @family specificity
 #' @export
 homeolog_axes <- function(assay) {

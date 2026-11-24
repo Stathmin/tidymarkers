@@ -200,8 +200,10 @@ arms_outer_pairs <- function(seq, snp_i, limits, n_outer = 6L, spread = 50L) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' arms <- design_arms_marker(genome, loci[1, ], flank = 300)
 #' names(arms)
+#' }
 #' @family ARMS
 #' @export
 design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ...) {

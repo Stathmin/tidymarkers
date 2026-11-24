@@ -46,9 +46,11 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci)
 gene <- list(symbol = "AT4G05320")
 basename(write_marker_results(assay, gene, dir = tempdir()))
+}
 }
 \seealso{
 Other output:

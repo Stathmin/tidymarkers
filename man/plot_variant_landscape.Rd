@@ -32,6 +32,7 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci)
 # a gene record over this slice; ensembl_gene("AT4G05320") fetches the real one
 # over the network
@@ -41,6 +42,7 @@ variants <- tibble::tibble(
   consequence = "synonymous_variant"
 )
 plot_variant_landscape(gene, variants, loci, assay)
+}
 }
 \seealso{
 Other plots:

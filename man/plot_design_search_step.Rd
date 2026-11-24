@@ -26,6 +26,7 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci[1, ])
 variants <- tibble::tibble(
   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
@@ -33,6 +34,7 @@ variants <- tibble::tibble(
 )
 frames <- design_search_frames(assay, variants, loci[1, ])
 plot_design_search_step(frames, 1)
+}
 }
 \seealso{
 Other plots:

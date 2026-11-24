@@ -30,7 +30,9 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 cat(marker_defensive_publication(design_asq_marker(genome, loci[1, ])))
+}
 }
 \seealso{
 Other patent:

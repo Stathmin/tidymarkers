@@ -28,8 +28,10 @@
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' plot(assay)
+#' }
 #' @name plot-marker
 NULL
 

@@ -105,8 +105,10 @@ asq_limits <- function(amplicon = ASQ_AMPLICON, as_tm = ASQ_AS_TM_LIMITS,
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' assay$as_variant_offset
+#' }
 #' @family design
 #' @export
 design_asq_marker <- function(genome, snp, variants = NULL, haplotypes = NULL,

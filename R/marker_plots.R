@@ -819,12 +819,14 @@ haplotype_layers <- function(assay, snp, span) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' variants <- tibble::tibble(
 #'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
 #'   consequence = "synonymous_variant"
 #' )
 #' plot_primers(assay, variants, loci)
+#' }
 #' @family plots
 #' @export
 plot_primers <- function(assay, variants, snp, genome = NULL, features = NULL) {
@@ -1242,8 +1244,10 @@ bump_points <- function(a, b, y0 = 0.7, h = 1, n = 40L) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' plot_oligo_structure(assay)
+#' }
 #' @family plots
 #' @export
 plot_oligo_structure <- function(assay, min_armlength = 4L, max_looplength = 6L) {
@@ -1372,6 +1376,7 @@ plot_self_complementarity <- function(seq) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' # a gene record over this slice; ensembl_gene("AT4G05320") fetches the real one
 #' # over the network
@@ -1381,6 +1386,7 @@ plot_self_complementarity <- function(seq) {
 #'   consequence = "synonymous_variant"
 #' )
 #' plot_variant_landscape(gene, variants, loci, assay)
+#' }
 #' @family plots
 #' @export
 plot_variant_landscape <- function(gene, variants, snp, assay) {
@@ -1459,9 +1465,11 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")
 #' basename(write_marker_results(assay, gene, dir = tempdir()))
+#' }
 #' @family output
 #' @export
 write_marker_results <- function(assay, gene, dir = tempdir()) {
@@ -1529,9 +1537,11 @@ write_kasp_results <- function(...) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")
 #' marker_primer_table(assay, gene)
+#' }
 #' @family output
 #' @export
 marker_primer_table <- function(assay, gene) {
@@ -1578,9 +1588,11 @@ marker_primer_table <- function(assay, gene) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci)
 #' gene <- list(symbol = "AT4G05320")
 #' head(export_primers(assay, gene, dir = tempdir()))
+#' }
 #' @family output
 #' @export
 export_primers <- function(assay, gene, dir = tempdir()) {

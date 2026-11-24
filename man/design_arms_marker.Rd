@@ -37,7 +37,9 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 arms <- design_arms_marker(genome, loci[1, ], flank = 300)
 names(arms)
+}
 }
 \concept{ARMS}

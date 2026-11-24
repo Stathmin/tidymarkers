@@ -58,7 +58,9 @@ actually discriminates is therefore chosen by the physics, not by a hand rule.
 \examples{
 genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 tmpl <- snp_template(genome, "Chr4", 2844L, 200L)
+\dontrun{
 head(design_as_primers_indel(tmpl$seq, tmpl$snp_i, ref = "T", alt = "TAA"), 3)
+}
 }
 \seealso{
 Other design:

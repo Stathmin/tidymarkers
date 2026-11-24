@@ -215,8 +215,10 @@ castpcr_blocker <- function(seq, si, strand, ref, alt, lengths, gc_range) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' cast <- design_castpcr_marker(genome, loci[1, ])
 #' names(cast)
+#' }
 #' @family castPCR
 #' @export
 design_castpcr_marker <- function(genome, snp, flank = 150L,

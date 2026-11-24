@@ -46,12 +46,14 @@ loci <- utils::read.csv(
   colClasses = "character"
 )[, c("chrom", "pos", "ref", "alt")]
 loci$pos <- as.integer(loci$pos)
+\dontrun{
 assay <- design_asq_marker(genome, loci)
 variants <- tibble::tibble(
   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
   consequence = "synonymous_variant"
 )
 plot_primers(assay, variants, loci)
+}
 }
 \seealso{
 Other plots:

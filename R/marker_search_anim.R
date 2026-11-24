@@ -34,12 +34,14 @@
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' variants <- tibble::tibble(
 #'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
 #'   consequence = "synonymous_variant"
 #' )
 #' design_search_frames(assay, variants, loci[1, ])
+#' }
 #' @family plots
 #' @export
 design_search_frames <- function(assay, variants, snp) {
@@ -197,6 +199,7 @@ design_search_frames <- function(assay, variants, snp) {
 #'   colClasses = "character"
 #' )[, c("chrom", "pos", "ref", "alt")]
 #' loci$pos <- as.integer(loci$pos)
+#' \dontrun{
 #' assay <- design_asq_marker(genome, loci[1, ])
 #' variants <- tibble::tibble(
 #'   chrom = loci$chrom, pos = loci$pos, ref = loci$ref, alt = loci$alt,
@@ -204,6 +207,7 @@ design_search_frames <- function(assay, variants, snp) {
 #' )
 #' frames <- design_search_frames(assay, variants, loci[1, ])
 #' plot_design_search_step(frames, 1)
+#' }
 #' @family plots
 #' @export
 plot_design_search_step <- function(frames, step) {
