@@ -12,7 +12,9 @@ marker_outcome_corpus(dir)
 \value{
 a tibble with \code{artefact_id}, \code{artefact}, and the outcome columns of
 \code{\link[=marker_outcomes]{marker_outcomes()}}.  A directory with no recorded outcome returns the
-empty table.
+empty table.  The absolute scanned root travels with the table as its
+\code{root} attribute, because the relative \code{artefact} column alone cannot
+locate a directory again; \code{\link[=marker_export_outcomes]{marker_export_outcomes()}} needs it.
 }
 \description{
 \code{\link[=marker_outcomes]{marker_outcomes()}} reads one artefact.  A study grows by batches, so the
@@ -50,6 +52,7 @@ Other plan:
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_design_panel]{marker_design_panel()}},
 \code{\link[=marker_export]{marker_export()}},
+\code{\link[=marker_export_outcomes]{marker_export_outcomes()}},
 \code{\link[=marker_export_rocrate]{marker_export_rocrate()}},
 \code{\link[=marker_failure_registry]{marker_failure_registry()}},
 \code{\link[=marker_failure_summary]{marker_failure_summary()}},

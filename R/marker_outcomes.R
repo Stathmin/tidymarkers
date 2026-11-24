@@ -236,7 +236,9 @@ marker_outcomes <- function(artefact) {
 #' @param dir a directory searched recursively for `outcomes.csv`.
 #' @return a tibble with `artefact_id`, `artefact`, and the outcome columns of
 #'   [marker_outcomes()].  A directory with no recorded outcome returns the
-#'   empty table.
+#'   empty table.  The absolute scanned root travels with the table as its
+#'   `root` attribute, because the relative `artefact` column alone cannot
+#'   locate a directory again; [marker_export_outcomes()] needs it.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' loci <- utils::read.csv(
@@ -279,11 +281,15 @@ marker_outcome_corpus <- function(dir) {
   })
 
   if (length(parts) == 0L) {
-    return(tibble::add_column(
-      outcome_empty(),
-      artefact_id = character(0), artefact = character(0),
-      .before = 1
+    return(structure(
+      tibble::add_column(
+        outcome_empty(),
+        artefact_id = character(0), artefact = character(0),
+        .before = 1
+      ),
+      root = as.character(root)
     ))
   }
-  dplyr::bind_rows(parts)
+  # bind_rows drops attributes, so the root is attached after the bind.
+  structure(dplyr::bind_rows(parts), root = as.character(root))
 }

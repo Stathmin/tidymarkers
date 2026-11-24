@@ -39,22 +39,6 @@ rocrate_manifest_files <- function(artefact) {
   c("artefact.json", files[!is.na(files) & nzchar(files)])
 }
 
-rocrate_meta <- function(crate) {
-  jsonlite::fromJSON(
-    readr::read_file(fs::path(crate, "ro-crate-metadata.json")),
-    simplifyVector = FALSE
-  )
-}
-
-rocrate_entry <- function(meta, id) {
-  for (entry in meta[["@graph"]]) {
-    if (identical(as.character(entry[["@id"]]), id)) {
-      return(entry)
-    }
-  }
-  NULL
-}
-
 test_that("export copies exactly the files the manifest names", {
   art <- rocrate_fixture()$artefact
   # A stray file in the artefact directory is not part of the record.
