@@ -119,8 +119,10 @@ Rscript -e 'summaryRprof("x.out")'
 
 The scientific sources behind `inst/extdata/scientific_sources.csv` live in the
 operator's Zotero library, collection `tidymarkers — marker design sources`
-(`4RSE6KC2`, tag `merovingen:tidymarkers`). 30 of the 72 records carry a full-text
-attachment; 4 rows are `DOI-UNRESOLVED`. Read the full text through Merovingen's
+(`4RSE6KC2`, tag `merovingen:tidymarkers`). At the 2026-11 sweep the collection held
+119 records, all with a DOI and 42 with a full-text attachment. Exactly one row of
+`scientific_sources.csv` is `DOI-UNRESOLVED` — `lamp_mismatch_scan_negative`, which
+is a documented negative search, not a paper. Read the full text through Merovingen's
 read-only MCP lane before you rely on a claim:
 
 ```sh
