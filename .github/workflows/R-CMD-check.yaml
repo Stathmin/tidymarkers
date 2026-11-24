@@ -13,6 +13,16 @@
 # finishes, and warms its own cache. R-devel breaks between R releases, not
 # between your commits. See ROADMAP D8.
 #
+# The devel *installation* is its own job (`devel-cache`), and the check job
+# `needs:` it. A ~58 min source install followed by a ~16 min check is one job
+# that spends ~75 min inside a single runner, which is where the shutdown
+# signal has landed three times (ROADMAP 36); and because `actions/cache` saves
+# only when a job ends successfully, a job that dies after installing caches
+# nothing -- so the next run installs for another 58 min and dies again. Split,
+# each job stays short: the install job ends green and saves the cache, the
+# check job restores it warm (ROADMAP 24 measures that warm step), and a
+# failure in the check no longer throws the installation away.
+#
 # OligoArrayAux (`hybrid-min`/`hybrid-ss-min`) and BLAST+ are *optional*
 # engines: the suite skips an assertion when an engine is absent. Which leg gets
 # what is the `engines` matrix key: `unix` (both Linux legs) unpacks a pinned
@@ -188,15 +198,22 @@ jobs:
                   upload-snapshots: true
 
             # The devel leg dies inside `* checking tests ...` on a SIGTERM
-            # (exit 143) roughly 13-16 minutes in, and the sender is *not*
-            # established: no elapsed-time limit, no OOM killer message, and no
-            # rcmdcheck timeout is configured. Whatever kills it kills the
-            # process group before R writes the failing test's output, so the
-            # check directory is the only record of where it stopped -- and
+            # (exit 143) about 75 minutes after job start, and the sender is
+            # *not* established: no elapsed-time limit, no OOM killer message,
+            # and no rcmdcheck timeout is configured. Whatever kills it kills
+            # the process group before R writes the failing test's output, so
+            # the check directory is the only record of where it stopped -- and
             # `check-r-package`'s own upload step is skipped when the check
             # fails. Capture it ungated by success.
+            #
+            # `cancelled()` is in the condition because a job recorded as
+            # cancelled (which is how a runner shutdown / cancellation lands in
+            # the run's status) evaluates `failure()` to false and skips every
+            # step gated on it -- measured on the nightly run that lost its
+            # runner: both evidence steps reported `skipped`. A reclaimed VM
+            # may still take the artifact with it; this is best-effort.
             - name: Upload check results on failure
-              if: failure()
+              if: failure() || cancelled()
               uses: actions/upload-artifact@v4
               with:
                   name: check-failure-${{ matrix.config.os }}-${{ matrix.config.r }}
@@ -209,15 +226,40 @@ jobs:
             # Same evidence question, other side: was the runner under memory or
             # disk pressure when it sent the signal? Best-effort, Linux only.
             - name: Runner pressure on failure (best-effort)
-              if: failure() && runner.os == 'Linux'
+              if: (failure() || cancelled()) && runner.os == 'Linux'
               continue-on-error: true
               run: |
                   free -m
                   df -h "$RUNNER_TEMP"
                   sudo dmesg --ctime | tail -30
 
+    # Installs the devel dependency tree and nothing else, so the job ends
+    # green and `actions/cache` (inside `setup-r-dependencies`) saves it. The
+    # three steps below repeat the head of `*steps`; YAML cannot splice a
+    # sequence, and a shared anchor would have to be a job key. No `env:` here:
+    # `*job-env` carries `matrix.config.cpus`, and this job has no matrix.
+    devel-cache:
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        name: ubuntu-latest (devel, dependencies)
+        runs-on: ubuntu-latest
+        timeout-minutes: 120
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: r-lib/actions/setup-r@v2
+              with:
+                  r-version: devel
+                  use-public-rspm: true
+
+            - uses: r-lib/actions/setup-r-dependencies@v2
+              timeout-minutes: 75
+              with:
+                  extra-packages: any::rcmdcheck, any::pkgload
+                  needs: check
+
     R-CMD-check-devel:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        needs: devel-cache
         name: ubuntu-latest (devel)
         runs-on: ubuntu-latest
         timeout-minutes: 120
