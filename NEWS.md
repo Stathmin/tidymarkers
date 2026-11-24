@@ -6,6 +6,24 @@
 
 ## 0.4.1 (в работе)
 
+### Пример на внутренней теме ронял `R CMD check` (2026-11-24)
+
+- **Класс изменения: правка документации и новый статический гейт; поведение
+  пакета не менялось.**
+- `assay_pcr_products()` — внутренняя (`@keywords internal`, нет в `NAMESPACE`),
+  но её roxygen-блок нёс `@examples`, вызывавший её по голому имени. `R CMD
+check` подключает к примерам только экспорты, поэтому все пять легов CI
+  падали на `* checking examples ... ERROR`: `could not find function
+"assay_pcr_products"`. Пример убран; у экспортируемого `assay_amplicons()`
+  тот же сниппет остаётся.
+- Тема `assay_pcr_products` остаётся `.Rd`, а не `@noRd`: на неё ссылаются
+  `[assay_pcr_products()]` из `R/marker_plots.R`, `R/marker_specificity.R` и
+  `man/assay_amplicons.Rd`.
+- `dev/check-docs.R` получил пункт 5: тема с `\examples{}`, ни один алиас
+  которой не достижим из `NAMESPACE` (`export` и `S3method`), — провал гейта.
+  Проверено негативно: на `HEAD`-версии `man/assay_pcr_products.Rd` гейт
+  падает, на исправленной — проходит.
+
 ### Модель успеха на накопленных исходах (ZY29, 2026-11-24)
 
 - **Класс изменения: новый диагностический harness в `dev/`; поведение пакета

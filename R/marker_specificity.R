@@ -1850,15 +1850,6 @@ assay_amplicons <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, pr
 #' One virtual-PCR pass per AS primer (`as_pcr_pairs()`); computed once at design
 #' time and reused for both the amplicon counts and the genome ideogram, so the
 #' genome is scanned once instead of twice.
-#' @examples
-#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-#' loci <- utils::read.csv(
-#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
-#'   colClasses = "character"
-#' )[, c("chrom", "pos", "ref", "alt")]
-#' loci$pos <- as.integer(loci$pos)
-#' assay <- design_asq_marker(genome, loci[1, ])
-#' assay_pcr_products(assay, genome)
 #' @keywords internal
 assay_pcr_products <- function(assay, genome, max_mismatch = 0L, BPPARAM = NULL, near = FALSE) {
   # both allele-specific pairings share the COM primer and differ only in the AS

@@ -17,14 +17,4 @@ One virtual-PCR pass per AS primer (\code{as_pcr_pairs()}); computed once at des
 time and reused for both the amplicon counts and the genome ideogram, so the
 genome is scanned once instead of twice.
 }
-\examples{
-genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
-loci <- utils::read.csv(
-  system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
-  colClasses = "character"
-)[, c("chrom", "pos", "ref", "alt")]
-loci$pos <- as.integer(loci$pos)
-assay <- design_asq_marker(genome, loci[1, ])
-assay_pcr_products(assay, genome)
-}
 \keyword{internal}

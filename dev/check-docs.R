@@ -8,6 +8,8 @@
 #    3. every include_graphics() in vignettes/*.Rmd has a manifest entry
 #    4. backlinks agree -- an artifact's `docs` are exactly the docs that
 #       actually reference it, and vice versa
+#    5. an Rd topic that is not exported carries no \examples{} -- R CMD check
+#       attaches only the exports, so such an example dies at check time
 #
 #  Scope: README/AGENTS/CONTRIBUTING/ROADMAP/NEWS/VALIDATION, vignettes/*.Rmd,
 #  dev/*.md and docs/**/*.md.  dev/lecture/ is out of scope (its includes are
@@ -337,6 +339,32 @@ must_quote("docs/decision-audit.md", c(
 must_quote("vignettes/reading-results.Rmd", c(
   paste0(counts[["criteria"]], " criterion rows")
 ))
+
+# An Rd topic that is not exported must not carry \examples{} -----------------
+#  R CMD check runs the examples with only the exports attached, so an example
+#  on an internal topic dies there with `could not find function "..."` -- 12
+#  minutes into CI, not here.  S3 methods and data topics are reachable
+#  without an export of their own, so they are exempt.
+ns <- readLines("NAMESPACE", warn = FALSE)
+exported <- sub("^export\\((.*)\\)$", "\\1", grep("^export\\(", ns, value = TRUE))
+s3_parts <- regmatches(ns, regexec("^S3method\\(\\s*([^,]+),\\s*([^)]+)\\)", ns))
+s3_names <- vapply(
+  s3_parts[vapply(s3_parts, length, integer(1)) == 3L],
+  function(m) {
+    paste0(gsub('"', "", trimws(m[[2L]])), ".", gsub('"', "", trimws(m[[3L]])))
+  },
+  character(1)
+)
+reachable <- c(exported, s3_names)
+for (rd in list.files("man", pattern = "[.]Rd$", full.names = TRUE)) {
+  text <- doc_text(rd)
+  if (!grepl("\\\\examples\\{", text)) next
+  if (grepl("\\\\docType\\{data\\}", text)) next
+  aliases <- regmatches(text, gregexpr("\\\\alias\\{([^}]*)\\}", text))[[1L]]
+  if (length(aliases)) aliases <- gsub("^\\\\alias\\{|\\}$", "", aliases)
+  if (length(intersect(aliases, reachable))) next
+  note(rd, ": \\examples{} on a topic that is not exported (R CMD check cannot run it)")
+}
 
 # The three-step Tm decomposition is one number set quoted in five places -----
 #  The steps are a chain (-16.9 -> -9.6 -> ~-5.4 C) and a reader who sees only
