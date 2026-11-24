@@ -512,6 +512,26 @@ map_probe_rows <- function(probes, prefix = "probe") {
   list(spec_row(prefix, probes$start[1L], probes$end[1L], "+", "probe", label = prefix))
 }
 
+# The hydrolysis-probe schemes (TaqMan, dPCR) share one map: paired primers plus
+# one or more allele-specific probes.
+probe_map_spec <- function(marker) {
+  sp <- map_amplicon(marker)
+  pr <- marker$probes
+  sequences <- list(forward = marker$primers$forward, reverse = marker$primers$reverse)
+  if (!is.null(pr) && all(c("allele", "probe") %in% names(pr))) {
+    for (i in seq_len(nrow(pr))) {
+      sequences[[paste0("probe ", pr$allele[i])]] <- pr$probe[i]
+    }
+  } else if (!is.null(pr) && "probe" %in% names(pr)) {
+    sequences$probe <- pr$probe[1L]
+  }
+  map_spec(
+    marker,
+    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), map_probe_rows(pr)),
+    sequences = sequences
+  )
+}
+
 map_set_seq <- function(spec, feature, value) {
   i <- match(feature, spec$feature)
   if (!is.na(i) && length(value) && !is.na(value[1L])) {

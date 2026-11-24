@@ -1847,13 +1847,13 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       вокруг `primer_candidates()`, пустая tibble при ошибке); разница — порядок
       аргументов и дефолт `strand = "+"`. Одна
       `safe_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-    conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
+  conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
       8 rpa) перевести на именованные аргументы.
       проверка: `Rscript dev/test.R lamp`, `Rscript dev/test.R rpa`, гейт.
       риск: `lamp` передаёт `strand` третьим позиционным, `rpa` — четвёртым;
       без именованных аргументов правка перепутает strand и окна.
       закрыто 2026-11-24: `safe_candidates(seq, starts, lengths, strand, tm_range,
-    gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
+  gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
       `primer_candidates()`; `lamp_candidates()` и `rpa_candidates()` удалены.
       Вызовов 12, не 13: 4 в `R/marker_lamp.R` + 8 в `R/marker_rpa.R`, все с
       именованными аргументами. `strand` в хелпере обязателен (без дефолта),
@@ -1865,7 +1865,7 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       не изменился (рендер байт-в-байт тот же), обновились только
       `input_hash` в `docs/artifacts.yml`.
 
-- [ ] **`ZA9.4` `marker_map_spec.marker_dpcr` ≡ `marker_map_spec.marker_taqman`.**
+- [x] **`ZA9.4` `marker_map_spec.marker_dpcr` ≡ `marker_map_spec.marker_taqman`.**
       `R/marker_dpcr.R:389` и `R/marker_taqman.R:362` — побайтово одинаковые
       тела (15 строк). Слить в `probe_map_spec(marker)` и вызвать из обоих
       методов. **Посылка проверена:** методы возвращают `map_spec()` (не
@@ -1874,6 +1874,14 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       проверка: `Rscript dev/test.R dpcr`, `Rscript dev/test.R taqman`, гейт.
       риск: если методы когда-нибудь разойдутся по смыслу, общий хелпер спрячет
       точку расхождения; тогда `probe_map_spec()` придётся развести обратно.
+      закрыто 2026-11-24: `probe_map_spec(marker)` в `R/marker_plot_methods.R`
+      сразу после `map_probe_rows()`; тела обоих S3-методов теперь одна строка.
+      `scheme_def_dpcr`/`scheme_def_taqman` в пункт не входили и не менялись.
+      Тесты: `dpcr` 169 pass, `taqman` 245 pass / 1 skip; гейт зелёный.
+      `R/marker_plot_methods.R` входит в `code` всех галерейных и decision
+      фигур, поэтому после правки перерисованы 22 фигуры: `output_hash` не
+      изменился ни у одной, обновились только `input_hash` в
+      `docs/artifacts.yml` — рендер байт-в-байт тот же.
 
 - [ ] **`ZA9.5` `dev/check-reporter.R` для `ok` / `note`.**
       `ok` дублируется в `dev/check.R:76`, `dev/check-docs.R:30`,

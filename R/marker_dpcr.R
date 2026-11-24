@@ -387,21 +387,7 @@ print.marker_dpcr <- function(x, ...) {
 #' @export
 #' @noRd
 marker_map_spec.marker_dpcr <- function(marker, scheme = NULL, ...) {
-  sp <- map_amplicon(marker)
-  pr <- marker$probes
-  sequences <- list(forward = marker$primers$forward, reverse = marker$primers$reverse)
-  if (!is.null(pr) && all(c("allele", "probe") %in% names(pr))) {
-    for (i in seq_len(nrow(pr))) {
-      sequences[[paste0("probe ", pr$allele[i])]] <- pr$probe[i]
-    }
-  } else if (!is.null(pr) && "probe" %in% names(pr)) {
-    sequences$probe <- pr$probe[1L]
-  }
-  map_spec(
-    marker,
-    features = c(map_pair_rows(marker, sp[["start"]], sp[["end"]]), map_probe_rows(pr)),
-    sequences = sequences
-  )
+  probe_map_spec(marker)
 }
 
 scheme_def_dpcr <- function() {
