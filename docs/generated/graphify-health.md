@@ -36,7 +36,7 @@ A label that echoes a filename is honest for a single-file community and mislead
 | `duplicate` | 0 |
 | `echo-stale` | 0 |
 | `echo-honest` | 0 |
-| `named` | 466 |
+| `named` | 461 |
 
 No missing, duplicate or multi-file file-echo labels.
 
@@ -52,14 +52,15 @@ No missing, duplicate or multi-file file-echo labels.
 | 2026-11-16 | `Ternary-Bonsai-2-27B-tight` | 35 | 32 | 3 |  |
 | 2026-11-16 | `manual` | 3 | 3 | 0 | strict-purpose: Title Case, 2-5 words, no file/symbol/heading echoes |
 | 2026-11-24 | `manual` | 161 | 161 | 0 | strict-purpose: Title Case, 2-5 words, no file/symbol/heading echoes |
+| 2026-11-24 | `manual` | 32 | 32 | 0 | strict-purpose: Title Case, 2-5 words, no file/symbol/heading echoes |
 
 ## Size
 
 | metric | value |
 | --- | ---: |
-| nodes | 9 223 |
-| edges | 13 846 |
-| communities | 466 |
+| nodes | 9 224 |
+| edges | 13 849 |
+| communities | 461 |
 | nodes without `source_file` | 414 |
 
 ## Nodes without a `source_file`
@@ -168,8 +169,8 @@ Undocumented and phantom parameters are gated by `--check`. Missing `@return`: n
 | nodes from the model | 0 |
 | concept nodes (any origin) | 20 |
 | …of which import/source targets (no `source_file`) | 20 |
-| INFERRED edges | 2 114 |
-| …from the AST pass | 2 114 |
+| INFERRED edges | 2 116 |
+| …from the AST pass | 2 116 |
 | …from the model | 0 |
 
 ## God nodes
@@ -258,7 +259,7 @@ What is wired into graphify here, and what is deliberately not. `open` is usable
 
 ## Provenance
 
-Built at commit `07e58ee64afc2f699a10e0dd401502c1e6558efe`.
+Built at commit `64b83430bdc0f5e6833889843a6260c697205fa6`.
 The graph matches `HEAD`.
 
 ## Rerun
