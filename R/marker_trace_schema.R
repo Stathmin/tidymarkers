@@ -409,3 +409,180 @@ marker_trace_write <- function(trace, path) {
   saveRDS(trace, path)
   invisible(path)
 }
+
+# =============================================================================
+#  Cross-language conformance (ZY22)
+# =============================================================================
+#  A trace is only worth pooling if a second implementation can write the same
+#  record.  This section is the contract between the R writer and
+#  `inst/python/marker_trace.py`: one schema file names the four conformance
+#  files, their columns and their types, and both writers read it rather than
+#  keeping a private copy of the table layout.
+#
+#  The payload is the transfer format, not a fifth artefact file.  It carries
+#  the in-memory manifest (where an `AsIs` length-1 vector and a scalar still
+#  differ, which JSON alone would lose) and the sidecar rows already pinned to
+#  the schema types.  A second writer re-renders those; it does not re-derive
+#  them, so a schema drift breaks the read instead of passing silently.
+
+#' The cross-language conformance schema
+#'
+#' The schema names the four files a record must reproduce byte for byte
+#' (`artefact.json`, `decisions.csv`, `checks.csv`, `why.csv`), each table's
+#' columns in order, their types, and the CSV spellings both writers must use.
+#' `targets.csv` and `signals.csv` are informational and outside the set.
+#' @param path a schema file; the package's own when `NULL`.
+#' @return the parsed schema as a nested list (`simplifyVector = FALSE`), so
+#'   `columns` stays an ordered list of `list(name, type)`.
+#' @keywords internal
+#' @noRd
+trace_conformance_schema <- function(path = NULL) {
+  if (is.null(path)) {
+    path <- system.file("extdata", "trace-schema.json", package = "tidymarkers")
+  }
+  if (!nzchar(path) || !fs::file_exists(path)) {
+    cli::cli_abort(gettext("No conformance schema at {.path {path}}."))
+  }
+  jsonlite::fromJSON(path, simplifyVector = FALSE)
+}
+
+# readr collectors for one schema table, keyed by the schema's own type names.
+# `status` is a factor in memory and a string on disk, so it is pinned to `c`.
+trace_pinned_cols <- function(table) {
+  map <- c(string = "c", integer = "i", number = "d", logical = "l")
+  types <- vapply(table$columns, function(col) col$type, character(1))
+  unknown <- unique(types[!types %in% names(map)])
+  if (length(unknown)) {
+    cli::cli_abort(gettext(
+      "Unknown column type {.val {unknown}} in the conformance schema for {.file {table$file}}."
+    ))
+  }
+  do.call(
+    readr::cols,
+    stats::setNames(as.list(map[types]), vapply(table$columns, function(col) col$name, character(1)))
+  )
+}
+
+#' Read one conformance table with the schema's column types
+#'
+#' The types come from the schema, never from readr's guess; the header must
+#' name the same columns in the same order or the read aborts.
+#' @keywords internal
+#' @noRd
+trace_pinned_read <- function(dir, table) {
+  file <- fs::path(dir, table$file)
+  out <- readr::read_csv(
+    file,
+    col_types = trace_pinned_cols(table),
+    progress = FALSE,
+    show_col_types = FALSE,
+    na = c("NA", "")
+  )
+  want <- vapply(table$columns, function(col) col$name, character(1))
+  if (!identical(names(out), want)) {
+    cli::cli_abort(c(
+      gettext("{.file {table$file}} does not match the conformance schema."),
+      x = gettext("Schema columns: {.val {want}}"),
+      i = gettext("File columns: {.val {names(out)}}")
+    ))
+  }
+  out
+}
+
+#' Dot paths of the manifest values jsonlite renders inline
+#'
+#' `jsonlite::toJSON()` writes an atomic vector inline (`[1, 2]`) and a list
+#' multiline, and an `I()` length-1 vector inline as a one-element array.  That
+#' distinction lives in the R object, not in its JSON, so a second writer needs
+#' it named explicitly.
+#' @keywords internal
+#' @noRd
+trace_inline_arrays <- function(x, prefix = NULL) {
+  if (!is.list(x) || is.null(names(x))) {
+    return(character(0))
+  }
+  out <- character(0)
+  for (nm in names(x)) {
+    value <- x[[nm]]
+    path <- if (is.null(prefix)) nm else paste0(prefix, ".", nm)
+    inline <- (is.atomic(value) && (length(value) != 1L || inherits(value, "AsIs"))) ||
+      (is.list(value) && inherits(value, "AsIs"))
+    if (inline) {
+      out <- c(out, path)
+    } else if (is.list(value) && !is.data.frame(value) && length(value)) {
+      out <- c(out, trace_inline_arrays(value, path))
+    }
+  }
+  out
+}
+
+# One table cell as a JSON array element.  A one-element list keeps the cell an
+# array under `auto_unbox`; a missing value becomes `null`, which is `NA` in the
+# CSV and `null` in the JSON.
+trace_payload_cell <- function(x) {
+  if (is.factor(x)) {
+    x <- as.character(x)
+  }
+  if (length(x) != 1L || is.na(x)) {
+    return(list(NULL))
+  }
+  list(unname(x))
+}
+
+#' Payload a second writer needs to reproduce an artefact byte for byte
+#'
+#' The payload is the transfer format between [marker_artefact()] and
+#' `inst/python/marker_trace.py`; it is not written into an artefact.  It holds
+#' the in-memory manifest (so an `AsIs` length-1 vector and a scalar stay
+#' distinguishable), the dot paths jsonlite renders inline, and the sidecar rows
+#' already read with the conformance schema's types.
+#'
+#' Write it with `jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null",
+#' na = "null", digits = 17)`; `digits = 17` matters, because `digits = NA`
+#' rounds to 15 significant digits and the CSV would then differ.
+#' @param artefact a `marker_artefact` from [marker_artefact()].  Its sidecar
+#'   files are read from `artefact$dir`.
+#' @return a list with `schema`, `trace_schema`, `manifest`, `inline_arrays` and
+#'   `tables`.
+#' @examples
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+#' payload <- marker_trace_payload(marker_artefact(solved, dir = tempfile("artefact")))
+#' names(payload)
+#' names(payload$tables)
+#' @family plan
+#' @export
+marker_trace_payload <- function(artefact) {
+  if (!inherits(artefact, "marker_artefact")) {
+    cli::cli_abort(gettext(
+      "`artefact` must be a marker_artefact; a directory has already lost the in-memory manifest."
+    ))
+  }
+  schema <- trace_conformance_schema()
+  tables <- list()
+  for (table in schema$tables) {
+    if (!fs::file_exists(fs::path(artefact$dir, table$file))) {
+      next
+    }
+    tab <- trace_pinned_read(artefact$dir, table)
+    rows <- lapply(seq_len(nrow(tab)), function(i) {
+      lapply(names(tab), function(nm) trace_payload_cell(tab[[nm]][[i]]))
+    })
+    tables[[table$name]] <- list(
+      file = table$file,
+      columns = table$columns,
+      rows = rows
+    )
+  }
+  list(
+    schema = "tidymarkers/trace-payload@1",
+    trace_schema = TRACE_SCHEMA,
+    manifest = artefact$manifest,
+    inline_arrays = I(trace_inline_arrays(artefact$manifest)),
+    tables = tables
+  )
+}

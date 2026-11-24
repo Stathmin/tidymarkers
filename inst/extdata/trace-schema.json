@@ -1,0 +1,92 @@
+{
+  "schema": "tidymarkers/trace-schema@1",
+  "trace_schema": "tidymarkers/trace@1",
+  "scope": "The four files a marker_artefact() writes that make a design replayable: artefact.json plus decisions.csv, checks.csv and why.csv. targets.csv and signals.csv are informational and outside this set; a writer may copy them verbatim or omit them.",
+  "manifest": {
+    "file": "artefact.json",
+    "format": "json",
+    "encoding": "UTF-8",
+    "required": [
+      "schema",
+      "trace_schema",
+      "created",
+      "package",
+      "platform",
+      "engine_stamp",
+      "inputs",
+      "plan",
+      "parameters",
+      "overrides",
+      "limitations",
+      "counts",
+      "files",
+      "id"
+    ]
+  },
+  "csv": {
+    "encoding": "UTF-8",
+    "delimiter": ",",
+    "line_ending": "LF",
+    "header": true,
+    "missing": "NA",
+    "logical": ["TRUE", "FALSE"],
+    "quoting": "minimal: a field is quoted only when it contains the delimiter, a double quote or a newline; an inner double quote is doubled",
+    "integer": "decimal digits, no decimal point",
+    "number": "shortest round-trip decimal; fixed notation unless the power of ten is below -3, or at least 15 and scientific notation is shorter; no zero-padded exponent and no + sign",
+    "factor": "written as its label, read back as string"
+  },
+  "tables": [
+    {
+      "name": "decisions",
+      "file": "decisions.csv",
+      "columns": [
+        { "name": "target", "type": "string" },
+        { "name": "chrom", "type": "string" },
+        { "name": "pos", "type": "integer" },
+        { "name": "ref", "type": "string" },
+        { "name": "alt", "type": "string" },
+        { "name": "scheme", "type": "string" },
+        { "name": "analytical", "type": "string" },
+        { "name": "cost", "type": "number" },
+        { "name": "chosen", "type": "logical" },
+        { "name": "outcome", "type": "string" },
+        { "name": "verdict", "type": "string" },
+        { "name": "risk", "type": "string" },
+        { "name": "n_failed", "type": "integer" },
+        { "name": "failed", "type": "string" },
+        { "name": "relaxed", "type": "string" },
+        { "name": "violated", "type": "string" },
+        { "name": "stage", "type": "string" },
+        { "name": "reason", "type": "string" },
+        { "name": "discrimination", "type": "number" }
+      ]
+    },
+    {
+      "name": "checks",
+      "file": "checks.csv",
+      "columns": [
+        { "name": "target", "type": "string" },
+        { "name": "scheme", "type": "string" },
+        { "name": "stage", "type": "string" },
+        { "name": "criterion", "type": "string" },
+        { "name": "observed", "type": "number" },
+        { "name": "limit", "type": "string" },
+        { "name": "pass", "type": "logical" },
+        { "name": "status", "type": "string" },
+        { "name": "detail", "type": "string" },
+        { "name": "level", "type": "string" }
+      ]
+    },
+    {
+      "name": "why",
+      "file": "why.csv",
+      "columns": [
+        { "name": "target", "type": "string" },
+        { "name": "criterion", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "reason", "type": "string" }
+      ]
+    }
+  ],
+  "notes": "Pin the column types above rather than letting a CSV reader guess: a single-row table whose ref is `T` is guessed as logical, an all-NA column is guessed as logical, and `status` is stored as a factor and read back as a string. A table absent from a record is absent, not empty."
+}

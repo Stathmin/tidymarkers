@@ -54,6 +54,7 @@ Other plan:
 \code{\link[=marker_targets]{marker_targets()}},
 \code{\link[=marker_trace_from_artefact]{marker_trace_from_artefact()}},
 \code{\link[=marker_trace_migrate]{marker_trace_migrate()}},
+\code{\link[=marker_trace_payload]{marker_trace_payload()}},
 \code{\link[=marker_trace_read]{marker_trace_read()}},
 \code{\link[=marker_trace_schema]{marker_trace_schema()}},
 \code{\link[=marker_trace_write]{marker_trace_write()}},

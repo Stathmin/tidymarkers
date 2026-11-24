@@ -2886,7 +2886,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       `soybean_worked_panel_kasp_gates.csv`, т.е. `expected` = принято полем,
       `observed` = `gates_reject`; бенчмарк это фиксирует, а не выдаёт за pass.
       блокер: нет.
-- [ ] **`ZY22` Кросс-языковой writer трасс + conformance suite.** `artefact.json`
+- [x] **`ZY22` Кросс-языковой writer трасс + conformance suite.** `artefact.json`
       и `decisions.csv` / `checks.csv` / `why.csv` пишет только R
       (`marker_artefact()`). Экосистема, куда трассу надо отдавать — Snakemake,
       Nextflow, Python — писать её не умеет; ограничение в черновике methodology
@@ -2903,6 +2903,20 @@ provenance_required)`: review queue candidate-обновлений с полны
       сказано в тесте.
       следствие: трассы остаются R-only; черновик methodology не может назвать
       второй язык, а внешние пайплайны не могут эмитить RDS trace.
+      закрыто 2026-11-24: схема — `inst/extdata/trace-schema.json` (19 колонок
+      `decisions`, 10 `checks`, 4 `why`, правила чисел readr и `%.15g` для
+      манифеста); writer — `inst/python/marker_trace.py`, только stdlib;
+      `marker_trace_payload()` отдаёт манифест, inline-пути и типизированные
+      строки, `marker_trace_payload(<путь>)` падает, потому что из каталога
+      уже потеряно разделение atomic/list.
+      Conformance держит `tests/testthat/test-trace-conformance.R`: на
+      `example_region` + `hrm` Python пишет `artefact.json`, `decisions.csv`,
+      `checks.csv`, `why.csv` байт-в-байт, `marker_replay()` на обоих каталогах
+      даёт `match = TRUE` и одинаковую таблицу. Расхождение схемы — exit 1 и
+      отсутствие каталога, нет схемы — exit 2; оба случая в тесте.
+      `solved.rds` Python не пишет: `--solved` копирует файл, и replay всё
+      равно пересчитывает, поэтому копия не является предметом доверия.
+      блокер: нет.
 - [ ] **`ZY23` Экспорт `artefact.json` в RO-Crate + PROV-O.** RO-Crate и
       PROV-O — языки, на которых черновик methodology обещает совместимость, но
       экспорта нет: трасса project-shaped. Выход — `ro-crate-metadata.json`
@@ -2910,7 +2924,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       `Activity` / `Entity` / `Agent` на дизайн, ссылающийся на те же hashed
       inputs, что и `artefact.json`.
       правка: новый `R/marker_export_rocrate.R` — `marker_export_rocrate(artefact,
-  dir)` пишет crate-профиль поверх существующих четырёх файлов; обратный
+dir)` пишет crate-профиль поверх существующих четырёх файлов; обратный
       импорт `marker_import_rocrate()` восстанавливает decision graph.
       проверка: `tests/testthat/test-rocrate.R` — экспорт-импорт даёт тот же
       decision graph и те же hashed inputs; PROV-O граф содержит agent, activity и
