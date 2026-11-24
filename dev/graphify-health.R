@@ -121,6 +121,11 @@ inferred_ast <- inferred_edges - inferred_semantic
 # --- structural invariants: any non-zero value is a defect --------------------
 dangling <- sum(!src %in% ids | !tgt %in% ids)
 self_loops <- sum(src == tgt)
+# A `calls` self-edge is a recursive function, not a defect: the AST extractor
+# sees a name resolving to itself and that is exactly what the code does.
+# Only self-loops of any other kind (or recursion in vendored code) are gated.
+self_idx <- which(src == tgt)
+self_recursive <- rel[self_idx] %in% c("calls", "calls_from")
 duplicate_edges <- sum(duplicated(paste(src, tgt, rel, sep = "\r")))
 collapsed <- sum(duplicated(paste(pmin(src, tgt), pmax(src, tgt), sep = "\r")))
 
@@ -394,11 +399,15 @@ is_file_echo <- function(x) {
 }
 node_comm <- vapply(nodes, function(n) as.character(n$community %||% NA), character(1))
 
-# `.tools/` is ignored now, so the vendored ELK self-loop is gone; the gate
-# stays on any self-loop outside `.tools/` because a swap in the total alone
-# would hide it (one leaves, another enters, the count still reads the same).
-self_loop_file <- node_file[match(src[src == tgt], ids)]
-unexpected_self_loops <- sum(!grepl("\\.tools/", self_loop_file))
+# `.tools/` is ignored now, so the vendored ELK self-loop is gone. The gate
+# stays on any self-loop outside `.tools/` that is not a recursive call,
+# because a swap in the total alone would hide it (one leaves, another enters,
+# the count still reads the same).
+self_loop_file <- node_file[match(src[self_idx], ids)]
+unexpected_self_loops <- sum(
+  !self_recursive & !grepl("\\.tools/", self_loop_file)
+)
+recursive_calls <- sum(self_recursive)
 comm_nodes <- table(node_comm)[communities]
 comm_files <- vapply(
   communities,
@@ -454,21 +463,22 @@ report <- c(
   rows("exact duplicate edges", fmt(duplicate_edges)),
   rows("same-endpoint (collapsed) edges", fmt(collapsed)),
   rows("import cycles", fmt(length(import_cycles))),
-  rows("self-loops outside `.tools/`", fmt(unexpected_self_loops)),
+  rows("unexpected self-loops", fmt(unexpected_self_loops)),
+  rows("recursive calls (accepted)", fmt(recursive_calls)),
   "",
   "## Known, accepted",
   "",
   if (self_loops > 0L) {
     c(
-      "Not zero, and not gated: the cause is understood and lives outside this package.",
+      "Not zero, and not gated: the cause is understood.",
       "",
       rows("metric", "value", "status"),
       rows("---", "---:", "---"),
       rows(
         "self-loops", fmt(self_loops),
         paste(
-          "accepted: a recursive `collectEdges()` self-edge in the vendored",
-          "`.tools/elk/elk-layout.js`; `--check` fails on any self-loop outside `.tools/`"
+          "accepted: `calls` self-edges are recursive functions;",
+          "non-call self-loops outside `.tools/` still fail `--check`"
         )
       )
     )
@@ -1111,7 +1121,10 @@ regressions <- c(
   if (duplicate_edges > 0L) paste0(duplicate_edges, " exact duplicate edge(s)"),
   if (collapsed > 0L) paste0(collapsed, " same-endpoint edge(s)"),
   if (unexpected_self_loops > 0L) {
-    paste0(unexpected_self_loops, " self-loop(s) outside .tools/")
+    paste0(
+      unexpected_self_loops,
+      " non-recursive self-loop(s) outside .tools/"
+    )
   },
   if (length(import_cycles)) paste0(length(import_cycles), " import cycle(s)")
 )

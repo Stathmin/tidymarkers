@@ -15,11 +15,16 @@ These must stay at zero. `dev/graphify-health.R --check` fails if one moves.
 | exact duplicate edges | 0 |
 | same-endpoint (collapsed) edges | 0 |
 | import cycles | 0 |
-| self-loops outside `.tools/` | 0 |
+| unexpected self-loops | 0 |
+| recursive calls (accepted) | 1 |
 
 ## Known, accepted
 
-None. Every structural invariant above is zero; nothing is accepted as-is.
+Not zero, and not gated: the cause is understood.
+
+| metric | value | status |
+| --- | ---: | --- |
+| self-loops | 1 | accepted: `calls` self-edges are recursive functions; non-call self-loops outside `.tools/` still fail `--check` |
 
 ## Community labels
 
@@ -27,13 +32,141 @@ A label that echoes a filename is honest for a single-file community and mislead
 
 | status | communities |
 | --- | ---: |
-| `missing` | 0 |
+| `missing` | 125 |
 | `duplicate` | 0 |
 | `echo-stale` | 0 |
 | `echo-honest` | 0 |
-| `named` | 432 |
+| `named` | 308 |
 
-No missing, duplicate or multi-file file-echo labels.
+### Actionable
+
+| cid | nodes | files | label |
+| ---: | ---: | ---: | --- |
+| 98 | 111 | 20 | `` |
+| 151 | 91 | 12 | `` |
+| 87 | 90 | 16 | `` |
+| 149 | 84 | 15 | `` |
+| 303 | 78 | 14 | `` |
+| 324 | 75 | 24 | `` |
+| 1 | 69 | 5 | `` |
+| 82 | 65 | 9 | `` |
+| 108 | 62 | 12 | `` |
+| 100 | 61 | 8 | `` |
+| 33 | 60 | 24 | `` |
+| 132 | 58 | 13 | `` |
+| 53 | 55 | 7 | `` |
+| 168 | 52 | 6 | `` |
+| 22 | 52 | 4 | `` |
+| 109 | 51 | 6 | `` |
+| 166 | 48 | 16 | `` |
+| 42 | 48 | 1 | `` |
+| 299 | 46 | 11 | `` |
+| 44 | 46 | 6 | `` |
+| 333 | 43 | 11 | `` |
+| 95 | 42 | 8 | `` |
+| 172 | 41 | 2 | `` |
+| 310 | 41 | 8 | `` |
+| 61 | 39 | 11 | `` |
+| 208 | 37 | 8 | `` |
+| 51 | 37 | 2 | `` |
+| 17 | 36 | 7 | `` |
+| 255 | 36 | 8 | `` |
+| 3 | 35 | 4 | `` |
+| 198 | 31 | 2 | `` |
+| 199 | 31 | 4 | `` |
+| 288 | 31 | 5 | `` |
+| 60 | 31 | 1 | `` |
+| 120 | 30 | 8 | `` |
+| 6 | 30 | 7 | `` |
+| 5 | 29 | 9 | `` |
+| 72 | 29 | 1 | `` |
+| 289 | 28 | 1 | `` |
+| 309 | 28 | 13 | `` |
+| 131 | 27 | 3 | `` |
+| 167 | 26 | 9 | `` |
+| 206 | 26 | 3 | `` |
+| 356 | 24 | 4 | `` |
+| 78 | 24 | 1 | `` |
+| 207 | 23 | 7 | `` |
+| 222 | 23 | 1 | `` |
+| 145 | 22 | 1 | `` |
+| 350 | 20 | 8 | `` |
+| 39 | 20 | 1 | `` |
+| 197 | 19 | 14 | `` |
+| 240 | 19 | 1 | `` |
+| 373 | 18 | 1 | `` |
+| 8 | 18 | 1 | `` |
+| 185 | 16 | 3 | `` |
+| 196 | 16 | 7 | `` |
+| 201 | 16 | 1 | `` |
+| 338 | 16 | 1 | `` |
+| 99 | 16 | 1 | `` |
+| 223 | 15 | 1 | `` |
+| 258 | 15 | 1 | `` |
+| 268 | 15 | 1 | `` |
+| 369 | 15 | 1 | `` |
+| 148 | 15 | 10 | `` |
+| 150 | 14 | 1 | `` |
+| 152 | 14 | 1 | `` |
+| 186 | 14 | 1 | `` |
+| 229 | 14 | 3 | `` |
+| 242 | 14 | 3 | `` |
+| 344 | 14 | 1 | `` |
+| 251 | 13 | 2 | `` |
+| 256 | 13 | 1 | `` |
+| 270 | 13 | 1 | `` |
+| 280 | 13 | 2 | `` |
+| 314 | 13 | 1 | `` |
+| 144 | 12 | 1 | `` |
+| 265 | 11 | 1 | `` |
+| 269 | 11 | 1 | `` |
+| 135 | 10 | 1 | `` |
+| 237 | 10 | 4 | `` |
+| 315 | 10 | 1 | `` |
+| 205 | 10 | 1 | `` |
+| 261 | 10 | 1 | `` |
+| 230 | 9 | 1 | `` |
+| 243 | 9 | 1 | `` |
+| 274 | 9 | 4 | `` |
+| 285 | 9 | 1 | `` |
+| 341 | 9 | 1 | `` |
+| 433 | 9 | 1 | `` |
+| 313 | 9 | 1 | `` |
+| 219 | 8 | 1 | `` |
+| 241 | 8 | 1 | `` |
+| 271 | 8 | 1 | `` |
+| 278 | 8 | 1 | `` |
+| 320 | 8 | 1 | `` |
+| 364 | 8 | 1 | `` |
+| 447 | 8 | 1 | `` |
+| 438 | 8 | 1 | `` |
+| 347 | 7 | 1 | `` |
+| 363 | 7 | 1 | `` |
+| 298 | 7 | 1 | `` |
+| 339 | 7 | 1 | `` |
+| 437 | 7 | 1 | `` |
+| 440 | 7 | 1 | `` |
+| 244 | 6 | 1 | `` |
+| 254 | 6 | 2 | `` |
+| 257 | 6 | 1 | `` |
+| 266 | 6 | 1 | `` |
+| 336 | 6 | 1 | `` |
+| 442 | 6 | 2 | `` |
+| 287 | 6 | 1 | `` |
+| 321 | 6 | 1 | `` |
+| 374 | 6 | 1 | `` |
+| 441 | 5 | 1 | `` |
+| 351 | 5 | 1 | `` |
+| 449 | 5 | 1 | `` |
+| 293 | 4 | 2 | `` |
+| 323 | 4 | 1 | `` |
+| 343 | 3 | 1 | `` |
+| 454 | 3 | 1 | `` |
+| 444 | 2 | 1 | `` |
+| 445 | 2 | 1 | `` |
+| 456 | 2 | 1 | `` |
+| 435 | 1 | 0 | `` |
+| 450 | 1 | 0 | `` |
 
 ### Relabel provenance
 
@@ -51,10 +184,10 @@ No missing, duplicate or multi-file file-echo labels.
 
 | metric | value |
 | --- | ---: |
-| nodes | 8 382 |
-| edges | 12 196 |
-| communities | 432 |
-| nodes without `source_file` | 381 |
+| nodes | 9 148 |
+| edges | 13 705 |
+| communities | 433 |
+| nodes without `source_file` | 414 |
 
 ## Nodes without a `source_file`
 
@@ -75,29 +208,29 @@ be zero, and is not.
 
 | kind | count |
 | --- | ---: |
-| external_function | 308 |
-| package | 55 |
-| concept | 14 |
+| external_function | 333 |
+| package | 57 |
+| concept | 20 |
 | package_function | 3 |
 | external_class | 1 |
 
 ## Granularity and interfaces
 
-Graphify's R extractor emits a node per function (a nested closure included), per file, and per assignment, top-level or local. The split is where the noise is: 100 nested function nodes under `R/` (closures, a helper defined inside another function) and 0 nested assignment(s) -- against 2 188 inside `tests/` -- `test_that()` and `local()` bodies mint a node per local -- and 249 in `data-raw/`. Most such nodes are leaves reachable only through their file's `contains` edge; a leaf adds no seam, so the leaf ratio -- not the raw node count -- is the entity-multiplication signal.
+Graphify's R extractor emits a node per function (a nested closure included), per file, and per assignment, top-level or local. The split is where the noise is: 108 nested function nodes under `R/` (closures, a helper defined inside another function) and 0 nested assignment(s) -- against 2 428 inside `tests/` -- `test_that()` and `local()` bodies mint a node per local -- and 249 in `data-raw/`. Most such nodes are leaves reachable only through their file's `contains` edge; a leaf adds no seam, so the leaf ratio -- not the raw node count -- is the entity-multiplication signal.
 
 | metric | value |
 | --- | ---: |
-| nodes: `function` | 1 612 |
-| nodes: `variable` | 5 565 |
-| nodes: `file` | 361 |
-| degree-1 (leaf) nodes | 6 330 (76%) |
-| …of which `variable` | 5 560 |
-| nested (indented) nodes | 2 679 (33% of located) |
-| labels shared by >1 node | 664 (3 654 nodes) |
-| nodes under `R/` | 1 210 (14%) |
-| nodes under `data-raw/`, `tests/`, `dev/` | 6 355 (76%) |
-| exported functions with a node | 180 / 180 |
-| S3 methods with a node | 91 / 92 |
+| nodes: `function` | 1 877 |
+| nodes: `variable` | 5 916 |
+| nodes: `file` | 388 |
+| degree-1 (leaf) nodes | 6 775 (74%) |
+| …of which `variable` | 5 909 |
+| nested (indented) nodes | 3 050 (35% of located) |
+| labels shared by >1 node | 715 (3 924 nodes) |
+| nodes under `R/` | 1 381 (15%) |
+| nodes under `data-raw/`, `tests/`, `dev/` | 6 828 (75%) |
+| exported functions with a node | 199 / 201 |
+| S3 methods with a node | 93 / 94 |
 | generics with a node | 5 / 12 |
 | `generic`/`method` pairs joined by an edge | 1 |
 
@@ -107,18 +240,18 @@ Every export (175/175) and all but one S3 method have a node. The absent method 
 
 | kind | top-level | nested |
 | --- | ---: | ---: |
-| `function` | 1 419 | 193 |
-| `variable` | 3 082 | 2 483 |
+| `function` | 1 662 | 215 |
+| `variable` | 3 182 | 2 734 |
 
 ### Nested nodes by directory
 
 | dir | nested nodes |
 | --- | ---: |
-| `tests/` | 2 188 |
+| `tests/` | 2 428 |
 | `data-raw/` | 249 |
-| `dev/` | 133 |
-| `inst/` | 6 |
-| `R/` | 100 |
+| `dev/` | 158 |
+| `inst/` | 12 |
+| `R/` | 108 |
 
 ### `R/` files by size
 
@@ -126,15 +259,15 @@ Largest files first; `functions` is the `function` node count for the file.
 
 | file | functions | lines |
 | --- | ---: | ---: |
-| `R/marker_specificity.R` | 41 | 1 949 |
-| `R/marker_plots.R` | 41 | 1 544 |
-| `R/marker_criteria.R` | 36 | 1 500 |
-| `R/marker_assemble.R` | 22 | 1 455 |
-| `R/marker_checks.R` | 15 | 1 062 |
-| `R/marker_core.R` | 27 | 987 |
-| `R/marker_plot_methods.R` | 47 | 903 |
-| `R/marker_lamp.R` | 19 | 884 |
-| `R/marker_thermo.R` | 32 | 847 |
+| `R/marker_specificity.R` | 55 | 2 494 |
+| `R/marker_plots.R` | 42 | 1 608 |
+| `R/marker_assemble.R` | 25 | 1 571 |
+| `R/marker_criteria.R` | 36 | 1 503 |
+| `R/marker_checks.R` | 15 | 1 080 |
+| `R/marker_core.R` | 27 | 1 059 |
+| `R/marker_thermo.R` | 34 | 940 |
+| `R/marker_plot_methods.R` | 47 | 924 |
+| `R/marker_artefact.R` | 31 | 896 |
 
 ## Code ↔ documentation
 
@@ -142,14 +275,14 @@ The graph cannot see `man/`, so this reads the source: for each export it compar
 
 | metric | value |
 | --- | ---: |
-| exports checked | 180 |
+| exports checked | 201 |
 | exports without a roxygen block | 0 |
 | undocumented parameters | 0 |
 | documented-but-absent parameters | 0 |
-| missing `@return` | 1 |
+| missing `@return` | 0 |
 | missing `@examples` | 0 |
 
-Undocumented and phantom parameters are gated by `--check`. Missing `@return`: `design_asq_marker`.
+Undocumented and phantom parameters are gated by `--check`. Missing `@return`: none.
 
 ## Semantic extraction (local LLM)
 
@@ -157,13 +290,13 @@ Undocumented and phantom parameters are gated by `--check`. Missing `@return`: `
 
 | metric | value |
 | --- | ---: |
-| document-like files | 46 |
+| document-like files | 48 |
 | with a `semantic_hash` | 0 |
 | nodes from the model | 0 |
-| concept nodes (any origin) | 14 |
-| …of which import/source targets (no `source_file`) | 14 |
-| INFERRED edges | 1 803 |
-| …from the AST pass | 1 803 |
+| concept nodes (any origin) | 20 |
+| …of which import/source targets (no `source_file`) | 20 |
+| INFERRED edges | 1 370 |
+| …from the AST pass | 1 370 |
 | …from the model | 0 |
 
 ## God nodes
@@ -176,16 +309,16 @@ Read this as the **third-party plumbing this package leans on**, not as the pack
 
 | node | callers |
 | --- | ---: |
-| `tibble::tibble()` | 184 |
-| `cli::cli_abort()` | 112 |
-| `glue::glue()` | 59 |
+| `tibble::tibble()` | 213 |
+| `cli::cli_abort()` | 163 |
+| `glue::glue()` | 63 |
+| `fs::path()` | 57 |
+| `Biostrings::DNAStringSet()` | 49 |
+| `purrr::list_rbind()` | 49 |
 | `dplyr::mutate()` | 48 |
+| `utils::read.csv()` | 47 |
 | `dplyr::filter()` | 46 |
-| `purrr::list_rbind()` | 46 |
-| `Biostrings::DNAStringSet()` | 43 |
-| `fs::path()` | 40 |
-| `utils::read.csv()` | 40 |
-| `purrr::map()` | 38 |
+| `fs::file_exists()` | 44 |
 
 ### Internal seams
 
@@ -201,10 +334,10 @@ The package's own interfaces, measured: distinct files under `R/` that call each
 | `scheme_conditions()()` | 10 |
 | `marker_design_checks()()` | 9 |
 | `primer_tm()()` | 9 |
+| `bp_lapply()()` | 8 |
 | `engine_has()()` | 8 |
 | `genome_seq()()` | 8 |
 | `has_repeat()()` | 8 |
-| `map_pair_rows()()` | 8 |
 
 ## Known gaps
 
@@ -218,10 +351,10 @@ Adopted from GWASILIY's graph practice.
 | `dev/relabel-bonsai.R` helper | shipped | repeatable strict pass; defaults to missing/duplicate/echo-stale, `--all-echo` also renames the honest single-file echoes, `--cids=` repairs one name, and a proposal equal to the current label is kept, not counted as a rename. A rebuild that renumbers communities drops label keys; the pass restores them as `missing` and names them |
 | vignettes/ and man/ coverage | partial | `.graphifyrc` maps `.Rmd` to markdown, so `vignettes/*.Rmd` **are** indexed (91 `document` nodes). `man/*.Rd` is not, and `.graphifyrc` leaves it unmapped on purpose: mapping it measures as a net loss (189 `document` nodes but communities 432 -> 600, 218 singletons, every curated label renumbered). Read `man/*.Rd` as text for doc<->code faithfulness instead |
 | single-file echo labels (254) | skipped | a file-echo name is honest for a one-file community; the strict pass renames only missing/duplicate/echo-stale, `--all-echo` opts in |
-| nested-local assignment leaves | accepted | `variable` nodes include function locals: `test_that()`/`local()` bodies in `tests/` mint 2 130 nested nodes ( 2 679 nested nodes in all), and most are leaves with only their file's `contains` edge. They hold no seam; graphify has no per-kind knob, so the only lever is a `.graphifyignore` path exclusion, which also drops the `tests/` map |
+| nested-local assignment leaves | accepted | `variable` nodes include function locals: `test_that()`/`local()` bodies in `tests/` mint 2 359 nested nodes ( 3 050 nested nodes in all), and most are leaves with only their file's `contains` edge. They hold no seam; graphify has no per-kind knob, so the only lever is a `.graphifyignore` path exclusion, which also drops the `tests/` map |
 | R S3 dispatch edges | gap | every export and 91/92 S3 methods have nodes (`+.marker_plan()` is dropped: a string-named LHS fails graphify's identifier-only `binding()`); the 7 generics without nodes are external implementations. No `generic -> method` relation and no exported/internal flag (`interface_dispatch.py` covers C#, Java, Swift and others, not R), so "what implements `marker_chunk()`" is a label-prefix query |
 | code ↔ documentation faithfulness | partial | `dev/graphify-health.R` compares each export's `@param` names with `formals()` and gates undocumented or phantom parameters; whether the prose describes the body is not checked -- that needs the local model, and it is not built |
-| cross-file call resolution | shipped | The R resolver binds a bare call only inside the caller's own file, and resolves a cross-file call only through an `imports_from` edge, which it creates from an explicit `source()` call. An R package has neither: it declares dependencies in `NAMESPACE`/`Collate`, not with `source()`, so the AST alone left **0 cross-file** `calls` edges and every community a file island. `dev/graphify-calls.R` closes it with  652 INFERRED edges keyed on a package-wide unique function name (ambiguous names, shadowed locals and test fixtures are skipped, never guessed). Run it after every rebuild: a rebuild is AST-only and drops the pass. |
+| cross-file call resolution | shipped | The R resolver binds a bare call only inside the caller's own file, and resolves a cross-file call only through an `imports_from` edge, which it creates from an explicit `source()` call. An R package has neither: it declares dependencies in `NAMESPACE`/`Collate`, not with `source()`, so the AST alone left **0 cross-file** `calls` edges and every community a file island. `dev/graphify-calls.R` closes it with  708 INFERRED edges keyed on a package-wide unique function name (ambiguous names, shadowed locals and test fixtures are skipped, never guessed). Run it after every rebuild: a rebuild is AST-only and drops the pass. |
 | semantic layer in graph.json | drift | `graphify update .` writes an AST-only graph (`_origin: ast` on every node and edge); the semantic cache under `graphify-out/cache/semantic/` holds chunk results that are **not** merged into `graph.json`, so a current graph has 0 `_origin: semantic` nodes and 0 `semantic_hash` in the manifest until `dev/graphify-semantic.sh` runs to completion. Re-running it is a decision, not maintenance: the pass does not finish a document at bonsai's 31 tok/s (see the lever table), so budget hours and expect `finish=length` |
 | curated label → graph.json | adopted | `dev/relabel-bonsai.R` writes `graphify-out/.graphify_labels.json` and then propagates every name into the `community_name` cached on each node in `graph.json`, so `explain`/`query`/`path` agree with the health table. Propagation runs even when nothing was relabelled, so a rebuild without a rename still picks up names curated in an earlier pass |
 
@@ -244,7 +377,7 @@ What is wired into graphify here, and what is deliberately not. `open` is usable
 | `.graphifyignore` | shipped | `data-raw/proposed/`, `results/`, `.tmp/`, `.tools/` are design scratch or vendored tooling, not package API; a rebuild prunes them, and the file can only ever add exclusions |
 | per-kind node pruning | skipped | no CLI or rc knob drops `variable` leaves; only a `.graphifyignore` path exclusion can, at the cost of the `tests/`/`data-raw/`/`dev/` map |
 | `--mode deep` | skipped | richer INFERRED edges, but a full re-extract and it re-names changed communities with the weak built-in prompt; no consumer here |
-| `dev/graphify-calls.R` | shipped | the AST pass resolves `calls` only inside one file, so every community was a file island; this deterministic post-pass re-reads `R/` with srcref attribution and adds  652  cross-file edges ( 652  carry `_origin = calls-pass`) |
+| `dev/graphify-calls.R` | shipped | the AST pass resolves `calls` only inside one file, so every community was a file island; this deterministic post-pass re-reads `R/` with srcref attribution and adds  708  cross-file edges ( 708  carry `_origin = calls-pass`) |
 | `language.rd=markdown` (man/ in the graph) | rejected | adds 189 `document` nodes, but takes communities 432 -> 600 with 218 singletons (one island per man page) and renumbers every curated label. A gitignored `.md` mirror cannot work either: graphify honours .gitignore, so the stubs never enter the graph. Doc<->code faithfulness reads `man/*.Rd` as text instead |
 | `graphify-mcp` | shipped | 0.9.92 does ship an MCP server (`graphify-mcp`, module `graphify.serve`): stdio or Streamable HTTP over the same `graph.json`, with `--graph`, `--port` and `--stateless`. Verified by `graphify-mcp --help`; register it in the editor's `context_servers` to query the graph without a shell-out |
 | `query` / `path` / `explain` / `affected` | shipped | verified from the shell: `explain "Biostrings::complement"` resolves one node and shows its `supersedes` edge, `affected "normalise_allele()"` lists its caller; the same four are reachable over MCP (see the row above) |
@@ -252,8 +385,8 @@ What is wired into graphify here, and what is deliberately not. `open` is usable
 
 ## Provenance
 
-Built at commit `24bb510bf84c93820a872a158de757f3d2079043`.
-`HEAD` is `35892c9ea0630e5ab433c86f74146aeba7dd4dc5`, so the graph is **stale**; rerun `graphify update .` and this script.
+Built at commit `35723b50654bcbea113b8e6e5193cb442d3fb2e7`.
+The graph matches `HEAD`.
 
 ## Rerun
 
