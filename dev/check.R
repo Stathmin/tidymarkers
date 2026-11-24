@@ -73,7 +73,7 @@ message("mode: ", if (quick) {
   "gate (install smoke)"
 })
 
-ok <- function(...) message("  ok   ", ...)
+source(file.path(root, "dev", "check-reporter.R"))
 
 step <- function(name, code) {
   message("\n== ", name, " ==")

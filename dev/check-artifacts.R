@@ -28,8 +28,7 @@ setwd(root)
 source(file.path(root, "dev", "artifacts.R"))
 
 failures <- character()
-note <- function(...) failures <<- c(failures, paste0(...))
-ok <- function(...) message("  ok   ", ...)
+source(file.path(root, "dev", "check-reporter.R"))
 
 artifacts <- read_manifest()
 paths <- vapply(artifacts, function(a) a$path, character(1))

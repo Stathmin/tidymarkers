@@ -26,8 +26,7 @@ setwd(root)
 source(file.path(root, "dev", "artifacts.R"))
 
 failures <- character()
-note <- function(...) failures <<- c(failures, paste0(...))
-ok <- function(...) message("  ok   ", ...)
+source(file.path(root, "dev", "check-reporter.R"))
 
 doc_text <- function(path) {
   paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")

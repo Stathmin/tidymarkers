@@ -1847,13 +1847,13 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       вокруг `primer_candidates()`, пустая tibble при ошибке); разница — порядок
       аргументов и дефолт `strand = "+"`. Одна
       `safe_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-  conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
+conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
       8 rpa) перевести на именованные аргументы.
       проверка: `Rscript dev/test.R lamp`, `Rscript dev/test.R rpa`, гейт.
       риск: `lamp` передаёт `strand` третьим позиционным, `rpa` — четвёртым;
       без именованных аргументов правка перепутает strand и окна.
       закрыто 2026-11-24: `safe_candidates(seq, starts, lengths, strand, tm_range,
-  gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
+gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
       `primer_candidates()`; `lamp_candidates()` и `rpa_candidates()` удалены.
       Вызовов 12, не 13: 4 в `R/marker_lamp.R` + 8 в `R/marker_rpa.R`, все с
       именованными аргументами. `strand` в хелпере обязателен (без дефолта),
@@ -1883,7 +1883,7 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       изменился ни у одной, обновились только `input_hash` в
       `docs/artifacts.yml` — рендер байт-в-байт тот же.
 
-- [ ] **`ZA9.5` `dev/check-reporter.R` для `ok` / `note`.**
+- [x] **`ZA9.5` `dev/check-reporter.R` для `ok` / `note`.**
       `ok` дублируется в `dev/check.R:76`, `dev/check-docs.R:30`,
       `dev/check-artifacts.R:32`; `note` — в двух последних. `dev/reporter.R`
       занят таймингом тестов — не туда. Новый файл с `ok()` и `note()`;
@@ -1895,6 +1895,11 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       правки — формат строк байт-в-байт.
       риск: `note()` упадёт, если скрипт забыл объявить `failures`; это громкий
       отказ, а не тихая потеря записи.
+      закрыто 2026-11-24: `dev/check-reporter.R` держит `ok()` и `note()`; три
+      скрипта `source()`-ят его сразу после `failures <- character()`, все
+      места вызова не тронуты. Лог гейта `--no-render` после правки
+      байт-в-байт равен логу до (`diff` пуст, exit 0); `dev/check-artifacts.R`
+      и `dev/check-docs.R` отдельно зелёные.
 
 - [ ] **`ZA9.6` `marker_primers.marker_taqman` ≡ `.marker_dpcr`.**
       `R/marker_tubes.R:84` и `:94` — 18 побайтово одинаковых строк (оба
