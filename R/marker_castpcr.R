@@ -169,31 +169,6 @@ castpcr_blocker <- function(seq, si, strand, ref, alt, lengths, gc_range) {
   cand[which.max(cand$len), ]
 }
 
-#' The most Tm-balanced AS x common pair that still leaves room for the probe
-#'
-#' The castPCR sibling of `pick_primer_pair()`: the same Tm-balance ranking, but
-#' the inner gap between the two primers must hold at least `min_gap` bases (the
-#' shortest accepted probe), because the locus probe has to fit between them
-#' without overlapping either primer.
-#' @keywords internal
-#' @noRd
-pick_castpcr_pair <- function(fwd, rev, min_product, max_product, min_gap) {
-  if (!nrow(fwd) || !nrow(rev)) {
-    return(NULL)
-  }
-  pairs <- dplyr::cross_join(fwd, rev, suffix = c("_f", "_r")) |>
-    dplyr::mutate(
-      product = .data$end_r - .data$start_f + 1L,
-      gap = .data$start_r - .data$end_f - 1L,
-      dtm = abs(.data$tm_f - .data$tm_r)
-    ) |>
-    dplyr::filter(dplyr::between(.data$product, min_product, max_product), .data$gap >= min_gap)
-  if (!nrow(pairs)) {
-    return(NULL)
-  }
-  pairs[order(pairs$dtm, pairs$product), ][1L, ]
-}
-
 #' Design a castPCR / allele-specific qPCR marker at a variant
 #'
 #' The real-time analogue of [assemble_kasp_assay()] that targets the mutant
@@ -305,7 +280,9 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
         KASP_LIMITS$com_tm, gc_range,
         conditions = conditions
       )
-      b <- pick_castpcr_pair(as_one, mate, prod_win[1L], prod_win[2L], min_gap)
+      # min_gap = the shortest accepted probe: it has to fit between the ASP and
+      # the mate without overlapping either primer
+      b <- pick_primer_pair(as_one, mate, prod_win[1L], prod_win[2L], min_gap = min_gap)
     } else {
       if (best$tmpl_start <= 1L) {
         return(NULL)
@@ -316,7 +293,7 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
         conditions = conditions
       ) |>
         dplyr::filter(.data$end < best$tmpl_start)
-      b <- pick_castpcr_pair(mate, as_one, prod_win[1L], prod_win[2L], min_gap)
+      b <- pick_primer_pair(mate, as_one, prod_win[1L], prod_win[2L], min_gap = min_gap)
     }
     if (is.null(b)) {
       return(NULL)

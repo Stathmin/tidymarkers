@@ -1784,11 +1784,89 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
 - [x] **`ZA8.3` Имена сообществ и `supersedes`.** `dev/relabel-bonsai.R` (424
       сообщества `named`, `echo-honest` → 0); `dev/handrolled.yml` +
       `dev/graphify-handrolled.R` (8011 узлов / 10688 рёбер / 2 `supersedes`).
+- [ ] **`ZA8.4` Курировать 143 имени сообществ.** `docs/generated/graphify-health.md`
+      — единственный оставшийся `WARN` гейта: 143 сообщества без осмысленного
+      имени, которые `dev/relabel-bonsai.R` не разобрал. Правило имени: оно
+      описывает шов, который сообщество держит (`tubes/duplex primers`,
+      `artifact build`), а не файл и не узел.
+      проверка: `Rscript dev/graphify-health.R --check` без `WARN`.
+      блокер: разобрать состав каждого сообщества — ручная работа; она не
+      блокирует `ZA9.1`–`ZA9.5`.
 - **Состояние:** `docs/artifacts.yml` перечисляет входы явно, по артефакту; но
   все 20 решений-SVG делят пять входов (`R/marker_decision.R`, `R/marker_select.R`,
   `R/marker_criteria.R`, `R/marker_schemes.R`, `R/marker_scheme_registry.R`),
   поэтому правка любого из этих пяти делает 20 SVG stale: `dev/render-gallery.R`,
   затем `dev/artifacts.R --write`. PNG git-ignored; SVG коммитятся.
+
+### ZA9. Здоровье кода: дубли и dev-инфраструктура (2026-11-24)
+
+Замер `grep`/графа на `916dde3`. Порядок — по возрастанию риска; каждый пункт
+закрывается отдельным коммитом и отдельным прогоном гейта, чтобы слом бисектился.
+Домашний `dev/check-docs.R` (рукописный markdown-разбор) и `manual_revcomp`
+сюда не входят: первое проверяет точный источник, второе — будущий ловец.
+
+- [x] **`ZA9.1` `pick_castpcr_pair` → `pick_primer_pair(min_gap = 0L)`.**
+      `R/marker_castpcr.R:180` повторяет `R/marker_primer_pairs.R:93` плюс поле
+      `gap` и фильтр `.data$gap >= min_gap`. Слить: аргумент `min_gap = 0L` в
+      `pick_primer_pair()`, `gap` — в общий `mutate` (при `0L` фильтр всегда
+      истинен). Два вызова (`R/marker_castpcr.R:308,319`) — на общую функцию,
+      `pick_castpcr_pair` удалить; её docstring (зачем нужен зазор под probe)
+      перенести в комментарий тех двух вызовов.
+      проверка: `Rscript dev/test.R castpcr` + `Rscript dev/check.R --no-render`.
+      риск: `gap` не должен попасть в `pair_to_list()` — там фиксированный
+      набор полей.
+      закрыто 2026-11-24: `pick_castpcr_pair()` удалён; `pick_primer_pair()`
+      получил пятый формал `min_gap = 0L`, а `gap` добавляется **только** при
+      `min_gap > 0L` — это сужение пункта: колонка `gap` не протекает в схему
+      строки ни одного из шести остальных вызовов. Обоснование зазора уехало
+      в комментарий над первым вызовом castPCR. Доказательство эквивалентности
+      сильнее тестов: `dev/render-decision.R` + `dev/render-gallery.R` после
+      правки дали **побайтово те же** `decision-castpcr.svg` и `castpcr.svg`,
+      сдвинулись только `input_hash` в `docs/artifacts.yml`. Тесты: `castpcr`
+      76/76, гейт `--no-render` зелёный.
+
+- [ ] **`ZA9.2` Общий `imap`-блок в `R/marker_tubes.R:49` / `:70`.**
+      `marker_primers.marker_lax` (форма без гаплотипа) и
+      `marker_primers.marker_duplex` собирают примитивы одним и тем же
+      `purrr::imap(...) |> unlist(use.names = TRUE)`. Вынести в
+      `primers_by_assay(assays)` и вызвать из обоих.
+      проверка: `Rscript dev/test.R tubes` + гейт.
+      риск: `marker_lax` имеет два ранних `return`; хелпер вызывается только
+      после них, поэтому `pool`/`base`-ветки не меняются.
+
+- [ ] **`ZA9.3` `lamp_candidates` + `rpa_candidates` → `safe_candidates()`.**
+      `R/marker_lamp.R:255` и `R/marker_rpa.R:235` — одинаковое тело (tryCatch
+      вокруг `primer_candidates()`, пустая tibble при ошибке); разница — порядок
+      аргументов и дефолт `strand = "+"`. Одна
+      `safe_candidates(seq, starts, lengths, strand, tm_range, gc_range,
+  conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
+      8 rpa) перевести на именованные аргументы.
+      проверка: `Rscript dev/test.R lamp`, `Rscript dev/test.R rpa`, гейт.
+      риск: `lamp` передаёт `strand` третьим позиционным, `rpa` — четвёртым;
+      без именованных аргументов правка перепутает strand и окна.
+
+- [ ] **`ZA9.4` `marker_map_spec.marker_dpcr` ≡ `marker_map_spec.marker_taqman`.**
+      `R/marker_dpcr.R:389` и `R/marker_taqman.R:362` — побайтово одинаковые
+      тела (15 строк). Слить в `probe_map_spec(marker)` и вызвать из обоих
+      методов. **Посылка проверена:** методы возвращают `map_spec()` (не
+      `marker`), класс возврата одинаков, отправка идёт по классу `marker`.
+      Расходятся только `scheme_def_dpcr`/`scheme_def_taqman` — их не трогать.
+      проверка: `Rscript dev/test.R dpcr`, `Rscript dev/test.R taqman`, гейт.
+      риск: если методы когда-нибудь разойдутся по смыслу, общий хелпер спрячет
+      точку расхождения; тогда `probe_map_spec()` придётся развести обратно.
+
+- [ ] **`ZA9.5` `dev/check-reporter.R` для `ok` / `note`.**
+      `ok` дублируется в `dev/check.R:76`, `dev/check-docs.R:30`,
+      `dev/check-artifacts.R:32`; `note` — в двух последних. `dev/reporter.R`
+      занят таймингом тестов — не туда. Новый файл с `ok()` и `note()`;
+      три скрипта `source()`-ят его. `note()` берёт `failures` из
+      `globalenv()` (`Rscript` и `source(local = FALSE)` кладут верхний уровень
+      именно туда), поэтому вызовы и инициализация `failures <- character()`
+      остаются как есть.
+      проверка: `Rscript dev/check.R --no-render`; лог сравнить с логом до
+      правки — формат строк байт-в-байт.
+      риск: `note()` упадёт, если скрипт забыл объявить `failures`; это громкий
+      отказ, а не тихая потеря записи.
 
 ## ZP. Параллельный rollout (coordination)
 

@@ -88,9 +88,14 @@ spanning_probe_candidates <- function(seq, snp_i, lengths, tm_range, gc_range,
 #' `fwd` must be a `"+"` candidate set, `rev` a `"-"` set (plus-strand
 #' coordinates).  Returns the one with the closest Tm within the product window,
 #' or `NULL`.
+#'
+#' `min_gap` requires at least that many bases between the forward primer's end
+#' and the reverse primer's start.  castPCR needs it to leave room for the locus
+#' probe; every other caller leaves it at `0L`, which adds no column and no
+#' filter, so the row schema is unchanged.
 #' @keywords internal
 #' @noRd
-pick_primer_pair <- function(fwd, rev, min_product, max_product) {
+pick_primer_pair <- function(fwd, rev, min_product, max_product, min_gap = 0L) {
   if (!nrow(fwd) || !nrow(rev)) {
     return(NULL)
   }
@@ -100,6 +105,11 @@ pick_primer_pair <- function(fwd, rev, min_product, max_product) {
       dtm = abs(.data$tm_f - .data$tm_r)
     ) |>
     dplyr::filter(dplyr::between(.data$product, min_product, max_product))
+  if (min_gap > 0L) {
+    pairs <- pairs |>
+      dplyr::mutate(gap = .data$start_r - .data$end_f - 1L) |>
+      dplyr::filter(.data$gap >= min_gap)
+  }
   if (!nrow(pairs)) {
     return(NULL)
   }

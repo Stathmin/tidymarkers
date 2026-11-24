@@ -341,7 +341,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: cc660a9bcf121ac8a285ea9929ebed88
+  input_hash: d51e8dc7d6bd2aa023861f19e40899a0
   output_hash: bece7518d18def2766eb579dfb1d2399
   docs: vignettes/markers-probe.Rmd
   code:
@@ -468,7 +468,7 @@ artifacts:
   inputs:
   - R/marker_castpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 0019d4bfb25b0235e2323a6a7b05af38
+  input_hash: 3e43eea59593e948c86e8fab58bca1ff
   output_hash: 521a35be33589f5a163bfc9b00097c28
   docs: vignettes/markers-probe.Rmd
   status: verified
