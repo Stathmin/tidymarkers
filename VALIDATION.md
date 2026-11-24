@@ -451,6 +451,45 @@ _Consequence for the multi-axis verdict:_ the scalar did not survive, so the
 multi-axis verdict is not shown to be over-complicated by this run; the
 falsification is ready to cite in the perspectives draft.
 
+## Success model
+
+The single-score section above asks whether one number predicts anything. This
+section asks the same question of the checks themselves, which is the direction
+`dev/success-model.R` opens: a recorded outcome is a label, a check from
+`checks.csv` is a predictor, and the corpus from `marker_outcome_corpus()` is
+the join.
+
+The join is by artefact and target. An outcome names the artefact it came from
+and, when the design had one, the target it was built for; the script reads that
+artefact's `checks.csv` and, per criterion, scores the row `1` when every
+recorded instance passed, `0` when any instance failed, and leaves it `NA` when
+the criterion was not evaluated. A criterion that never appears in the corpus is
+not a predictor there.
+
+Discrimination is reported as leave-one-out AUC per check, with ties counted as
+one half. The threshold is twelve labelled rows with at least four in each
+class; below it a predictor reads `not_run` with the reason spelled out, not a
+number. The `success-model:sum` row is the complete-case sum over checks, so a
+row is only compared with another row on the checks both were evaluated on.
+
+```sh
+Rscript dev/success-model.R            # writes .tmp/success-model.csv
+Rscript dev/success-model.R --check    # recomputes twice, writes nothing
+```
+
+The table below is generated; `--check` reproduces it byte for byte and fails if
+the file has drifted.
+
+<!-- success-model:begin -->
+_The corpus holds no recorded outcome, so no predictor can be scored. This run reports `not_run` with its reason rather than a number._
+
+| Predictor | n | works | fails | AUC | LOO mean | LOO min-max | Verdict | Reason |
+| --------- | - | ----- | ----- | --- | -------- | ----------- | ------- | ------ |
+| `success-model:corpus` | 0 | 0 | 0 | — | — | — | `not_run` | no outcomes.csv under .tmp/corpus; record some with marker_record_outcome() |
+
+The harness is `dev/success-model.R`; its header names the join rule, the tie convention and the thresholds above.
+<!-- success-model:end -->
+
 ## Reproducing
 
 The fast suite (`Rscript dev/test.R`) runs the core contracts and skips the
