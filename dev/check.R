@@ -13,6 +13,9 @@
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
+#   3c. every Rd example runs on a host without OligoArrayAux -- the macOS CI
+#       leg installs BLAST+ only, so an example that reaches `pcr_efficiency()`
+#       must sit in `\dontrun{}` (see dev/check-examples-noengine.R)
 #    4. spelling -- only with `--spelling`: English prose (README, man/, vignettes/)
 #       is checked against `inst/WORDLIST`; the Russian NEWS.md/ROADMAP.md are out
 #       of scope because `spelling` has no per-file exclusion
@@ -226,6 +229,19 @@ step("docs/artifacts", function() {
     }
   }
   ok("docs index, artifact manifest and roadmap remainders are consistent")
+})
+
+# 3c. examples without the engine ----------------------------------------
+step("examples (no engine)", function() {
+  if (quick) return(message("  skip (--quick)"))
+  if (!requireNamespace("pkgload", quietly = TRUE)) return(message("  skip (pkgload not installed)"))
+  # the macOS CI leg has no OligoArrayAux, so an example that reaches
+  # pcr_efficiency() aborts there and R CMD check stops on that Rd file. This
+  # host has the engine, so the only way to see the gap is to emulate the leg.
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-examples-noengine.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-examples-noengine.R failed (status ", status, ")")
+  }
 })
 
 # 4. spelling ---------------------------------------------------------------
