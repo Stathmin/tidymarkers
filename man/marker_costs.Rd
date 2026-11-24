@@ -33,6 +33,7 @@ Other plan:
 \code{\link[=marker_failure_registry]{marker_failure_registry()}},
 \code{\link[=marker_failure_summary]{marker_failure_summary()}},
 \code{\link[=marker_import_rocrate]{marker_import_rocrate()}},
+\code{\link[=marker_outcome_corpus]{marker_outcome_corpus()}},
 \code{\link[=marker_outcomes]{marker_outcomes()}},
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},

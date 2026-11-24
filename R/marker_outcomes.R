@@ -216,3 +216,74 @@ marker_outcomes <- function(artefact) {
   }
   readr::read_csv(path, col_types = outcome_types(), na = c("", "NA"))
 }
+
+#' The outcomes recorded across every artefact under a directory
+#'
+#' [marker_outcomes()] reads one artefact.  A study grows by batches, so the
+#' question "what did the lab actually get" spans directories.  This walker
+#' binds every `outcomes.csv` it finds under `dir` and adds the two columns the
+#' single-artefact reader cannot know: `artefact_id`, the id of the containing
+#' artefact's manifest, and `artefact`, its directory relative to `dir`.
+#'
+#' A row's own `id` is left exactly as it was recorded, even when it disagrees
+#' with the manifest of the directory holding it: relabelling a laboratory's
+#' observation to match a rewritten artefact is worse than showing both, so a
+#' disagreement stays visible as two different columns.
+#'
+#' Nothing is aggregated here, for the reason [marker_outcomes()] gives: rows
+#' from different designs are not comparable until a laboratory says they are.
+#' The corpus is the raw material of that decision, not the decision.
+#' @param dir a directory searched recursively for `outcomes.csv`.
+#' @return a tibble with `artefact_id`, `artefact`, and the outcome columns of
+#'   [marker_outcomes()].  A directory with no recorded outcome returns the
+#'   empty table.
+#' @examples
+#' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
+#' loci <- utils::read.csv(
+#'   system.file("extdata", "example_region_targets.csv", package = "tidymarkers"),
+#'   colClasses = "character"
+#' )[, c("chrom", "pos", "ref", "alt")]
+#' solved <- marker_solve(marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm"))
+#' art <- marker_artefact(solved, dir = file.path(tempdir(), "run"))
+#' marker_record_outcome(art, "works")
+#' marker_outcome_corpus(tempdir())
+#' @family plan
+#' @export
+marker_outcome_corpus <- function(dir) {
+  if (!fs::dir_exists(dir)) {
+    cli::cli_abort(gettext("`dir` must be a directory searched for outcomes.csv."))
+  }
+  root <- fs::path_abs(dir)
+  files <- fs::dir_ls(root, recurse = TRUE, type = "file")
+  files <- files[fs::path_file(files) == "outcomes.csv"]
+
+  parts <- lapply(files, function(path) {
+    tbl <- readr::read_csv(
+      path,
+      col_types = outcome_types(), na = c("", "NA"), show_col_types = FALSE
+    )
+    adir <- fs::path_dir(path)
+    manifest <- tryCatch(artefact_manifest(adir), error = function(e) NULL)
+    mid <- if (is.null(manifest)) NA_character_ else manifest$id
+    id <- if (length(mid) == 1L && !is.na(mid) && nzchar(mid)) {
+      mid
+    } else {
+      fs::path_file(adir)
+    }
+    tibble::add_column(
+      tbl,
+      artefact_id = as.character(id),
+      artefact = as.character(fs::path_rel(adir, root)),
+      .before = 1
+    )
+  })
+
+  if (length(parts) == 0L) {
+    return(tibble::add_column(
+      outcome_empty(),
+      artefact_id = character(0), artefact = character(0),
+      .before = 1
+    ))
+  }
+  dplyr::bind_rows(parts)
+}

@@ -471,3 +471,69 @@ test_that("Z8.4: the gate-pass rate is uncomputable without a failure class", {
   expect_true(s$computable)
   expect_true(is.finite(s$rate) && s$rate > 0 && s$rate < 1)
 })
+
+## --- ZY26: outcomes read across artefacts --------------------------------
+
+# Several artefacts under one root, each an outcome file beside a manifest.
+# The rows are synthetic: real outcomes come from a laboratory, which is the
+# ZY26 blocker. What is tested is the joining, not any success rate.
+corpus_fixture <- function(root, name, id) {
+  dir <- fs::dir_create(fs::path(root, name))
+  writeLines(
+    sprintf('{"schema": "tidymarkers/artefact@1", "id": "%s"}', id),
+    fs::path(dir, "artefact.json")
+  )
+  readr::write_csv(
+    tibble::tibble(target = c("t1", "t2")),
+    fs::path(dir, "targets.csv")
+  )
+  dir
+}
+
+test_that("ZY26: a corpus keeps artefacts apart and paths relative", {
+  root <- withr::local_tempdir()
+  a <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  b <- corpus_fixture(root, "batch-b", "bbbbbbbbbbbbbbbb")
+  marker_record_outcome(a, "works", target = "t1")
+  marker_record_outcome(b, "fails", target = "t2", notes = "no band at 60 C")
+
+  corpus <- marker_outcome_corpus(root)
+  expect_equal(nrow(corpus), 2L)
+  # the join adds provenance and does not reorder rows
+  expect_identical(corpus$artefact, c("batch-a", "batch-b"))
+  expect_identical(corpus$artefact_id, c("aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"))
+  expect_identical(corpus$result, c("works", "fails"))
+  expect_identical(corpus$target, c("t1", "t2"))
+  # each row still agrees with its own artefact's single-artefact reader
+  expect_equal(corpus$id, c(marker_outcomes(a)$id, marker_outcomes(b)$id))
+})
+
+test_that("ZY26: a corpus with no recorded outcome is empty, not an error", {
+  root <- withr::local_tempdir()
+  corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  corpus <- marker_outcome_corpus(root)
+  expect_equal(nrow(corpus), 0L)
+  expect_identical(names(corpus), c("artefact_id", "artefact", outcome_columns()))
+})
+
+test_that("ZY26: a row's recorded id is not relabelled by its directory", {
+  root <- withr::local_tempdir()
+  dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  readr::write_csv(
+    tibble::tibble(
+      id = "ffffffffffffffff", recorded = "2026-01-01T00:00:00Z",
+      target = NA_character_, result = "works", notes = NA_character_,
+      calibrated = FALSE
+    ),
+    fs::path(dir, "outcomes.csv")
+  )
+  corpus <- marker_outcome_corpus(root)
+  # the observation keeps the id it was recorded under; the manifest id is a
+  # second column, so the disagreement is visible rather than silently repaired
+  expect_identical(corpus$id, "ffffffffffffffff")
+  expect_identical(corpus$artefact_id, "aaaaaaaaaaaaaaaa")
+})
+
+test_that("ZY26: a corpus takes a directory", {
+  expect_error(marker_outcome_corpus(tempfile("absent")), "directory")
+})
