@@ -45,16 +45,15 @@ marker_primers.marker_assay <- function(marker, ...) {
   c(AS_ref = a$as_ref[1L], AS_alt = a$as_alt[1L], COM = a$com[1L])
 }
 
-#' @export
-marker_primers.marker_lax <- function(marker, ...) {
-  if (!is.null(marker$pool)) {
-    return(marker$pool)
-  }
-  if (!is.null(marker$base)) {
-    return(marker_primers(marker$base))
-  }
-  # the no-haplotype form: one plain KASP assay per (single) ALT
-  purrr::imap(marker$assays, function(a, i) {
+#' The oligos of every assay in a multi-assay marker, named by assay
+#'
+#' One assay's oligos come from `marker_primers()`; each name is suffixed with
+#' the assay's index so the tube layer can tell them apart.  The shared shape of
+#' a no-haplotype `marker_lax` and a `marker_duplex`.
+#' @keywords internal
+#' @noRd
+primers_by_assay <- function(assays) {
+  purrr::imap(assays, function(a, i) {
     p <- marker_primers(a)
     if (!length(p)) {
       return(character(0))
@@ -67,17 +66,20 @@ marker_primers.marker_lax <- function(marker, ...) {
 }
 
 #' @export
+marker_primers.marker_lax <- function(marker, ...) {
+  if (!is.null(marker$pool)) {
+    return(marker$pool)
+  }
+  if (!is.null(marker$base)) {
+    return(marker_primers(marker$base))
+  }
+  # the no-haplotype form: one plain KASP assay per (single) ALT
+  primers_by_assay(marker$assays)
+}
+
+#' @export
 marker_primers.marker_duplex <- function(marker, ...) {
-  purrr::imap(marker$assays, function(a, i) {
-    p <- marker_primers(a)
-    if (!length(p)) {
-      return(character(0))
-    }
-    nm <- names(p)
-    if (is.null(nm)) nm <- rep("primer", length(p))
-    stats::setNames(p, paste0(nm, "_", i))
-  }) |>
-    unlist(use.names = TRUE)
+  primers_by_assay(marker$assays)
 }
 
 #' @export

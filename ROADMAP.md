@@ -1825,21 +1825,29 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       сдвинулись только `input_hash` в `docs/artifacts.yml`. Тесты: `castpcr`
       76/76, гейт `--no-render` зелёный.
 
-- [ ] **`ZA9.2` Общий `imap`-блок в `R/marker_tubes.R:49` / `:70`.**
+- [x] **`ZA9.2` Общий `imap`-блок в `R/marker_tubes.R:49` / `:70`.**
       `marker_primers.marker_lax` (форма без гаплотипа) и
       `marker_primers.marker_duplex` собирают примитивы одним и тем же
       `purrr::imap(...) |> unlist(use.names = TRUE)`. Вынести в
       `primers_by_assay(assays)` и вызвать из обоих.
-      проверка: `Rscript dev/test.R tubes` + гейт.
+      проверка: `Rscript dev/test.R plan`, `Rscript dev/test.R duplex`,
+      `Rscript dev/test.R pool` + гейт. (Фильтра `tubes` в `dev/test.R` нет:
+      тубовый слой покрыт этими тремя файлами.)
       риск: `marker_lax` имеет два ранних `return`; хелпер вызывается только
       после них, поэтому `pool`/`base`-ветки не меняются.
+      закрыто 2026-11-24: `primers_by_assay(assays)` рядом с
+      `marker_primers.marker_assay`; оба метода теперь одна строка. Тесты:
+      `plan` 166/166, `duplex` 112/112, `pool` 24/24, гейт зелёный.
+      Попутно замечено: `marker_primers.marker_taqman` и `.marker_dpcr`
+      (`R/marker_tubes.R:84-101`) — тоже побайтовые близнецы; вынесено в
+      `ZA9.6`, чтобы не смешивать с этим коммитом.
 
 - [ ] **`ZA9.3` `lamp_candidates` + `rpa_candidates` → `safe_candidates()`.**
       `R/marker_lamp.R:255` и `R/marker_rpa.R:235` — одинаковое тело (tryCatch
       вокруг `primer_candidates()`, пустая tibble при ошибке); разница — порядок
       аргументов и дефолт `strand = "+"`. Одна
       `safe_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-  conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
+      conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
       8 rpa) перевести на именованные аргументы.
       проверка: `Rscript dev/test.R lamp`, `Rscript dev/test.R rpa`, гейт.
       риск: `lamp` передаёт `strand` третьим позиционным, `rpa` — четвёртым;
@@ -1867,6 +1875,14 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       правки — формат строк байт-в-байт.
       риск: `note()` упадёт, если скрипт забыл объявить `failures`; это громкий
       отказ, а не тихая потеря записи.
+
+- [ ] **`ZA9.6` `marker_primers.marker_taqman` ≡ `.marker_dpcr`.**
+      `R/marker_tubes.R:84` и `:94` — 18 побайтово одинаковых строк (оба
+      собирают `forward`/`reverse` и зонды из `marker$probes`). Слить в
+      `probe_primers(marker)` и вызвать из обоих методов.
+      проверка: `Rscript dev/test.R taqman`, `Rscript dev/test.R dpcr`, гейт.
+      риск: если taqMan и dPCR когда-нибудь разойдутся по набору олиго, хелпер
+      спрячет точку расхождения.
 
 ## ZP. Параллельный rollout (coordination)
 
