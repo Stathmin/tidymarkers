@@ -346,7 +346,7 @@ to the last digit.
 ## Validation benchmark
 
 `dev/validation-benchmark.R` runs a fixed set of 25 tasks whose verdicts were
-established *before* the package ran them. Each row compares that `expected`
+established _before_ the package ran them. Each row compares that `expected`
 verdict with what the package reports (`observed`) and writes
 `task | family | expected | observed | verdict | where | note` to
 `.tmp/validation-benchmark.csv` (git-ignored). `Rscript dev/validation-benchmark.R
@@ -364,33 +364,92 @@ one failed gate in `soybean_worked_panel_kasp_gates.csv`. The benchmark records
 that the package's current rules reject assays the field accepted; it does not
 mask that as a pass.
 
-| Task | Family | Expected | Observed | Verdict | Where it diverged |
-| --- | --- | --- | --- | --- | --- |
-| `fixture:Chr1:300 A>C` | fixture | designed | designed | `pass` | snp:doomed — one flanking pair must survive on a clean template |
-| `fixture:Chr2:150 A>C` | fixture | rejected with a cause from every chemistry | rejected with a cause | `pass` | snp:doomed; hrm:NA; caps:NA — no chemistry may design on the homopolymer block |
-| `soybean:KASP_AGP10_branch_chr6_13.303311Mb` | soybean | worked | gates_reject | `fail` | AS GC x1; COM Tm >= AS Tm x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGP10_height_chr18_58.02Mb` | soybean | worked | gates_reject | `fail` | amplicon length (bp) x1; COM Tm >= AS Tm x1; longest homopolymer (bp) x1 — 9 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGP9_habit_chr19_44.43Mb` | soybean | worked | gates_reject | `fail` | COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGP9_height_chr19_46.10Mb` | soybean | worked | gates_reject | `fail` | AS GC x1; discrimination x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGPO2_height_chr19_49.74Mb` | soybean | worked | gates_reject | `fail` | COM Tm >= AS Tm x1; discrimination x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGPO2_height2_chr19_51.07Mb` | soybean | worked | gates_reject | `fail` | AS GC x1; COM Tm >= AS Tm x1 — 9 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGPO2_nodes_chr19_49.65Mb` | soybean | worked | gates_reject | `fail` | amplicon length (bp) x1; COM Tm >= AS Tm x1; discrimination x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGPO2_seed_chr19_48.03Mb` | soybean | worked | gates_reject | `fail` | COM Tm >= AS Tm x1; discrimination x1; inverted repeat (arms>=4, loop<=6) x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_AGPO8_protein_chr15_10.93Mb` | soybean | worked | gates_reject | `fail` | amplicon length (bp) x1; discrimination x1; inverted repeat (arms>=4, loop<=6) x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_DT2_flank_high_chr18_56.61Mb` | soybean | worked | gates_reject | `fail` | COM Tm >= AS Tm x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_DT2_flank_low_chr18_55.26Mb` | soybean | worked | gates_reject | `fail` | AS GC x1; COM Tm >= AS Tm x1; inverted repeat (arms>=4, loop<=6) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_DT2_near_chr18_56.14Mb` | soybean | worked | gates_reject | `fail` | amplicon length (bp) x1; COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `soybean:KASP_JOINT_protein_chr15_11.28Mb` | soybean | worked | gates_reject | `fail` | COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
-| `measured:mm2020 ranking` | measured | r > 0.9, spearman > 0.85, -25 < mean(tm - measured) < -10, sd < 2 | n 64, r 0.958, rho 0.941, mean -16.86, sd 0.64 | `pass` | test-tm-mm2020.R:88-113 — 64 canonical duplexes; the level bias is the salt term, not corrected |
-| `measured:primer3 Tm offset` | measured | n 34, mean +3.92, sd 0.25, max 4.66 (primer3 - pkg) | n 34, mean +3.92, sd 0.25, max 4.66 | `pass` | results/primer3-thermo.csv — cross-tool offset recorded from a local primer3 run; additive, not modelled |
-| `measured:primer3 design (one locus)` | measured | 8/20 variants have a primer3 pair passing every gate | 8/20 | `pass` | results/primer3-design.csv — only one of the three loci in the VALIDATION.md claim is recorded here; the other two need a live primer3_core and are not invented |
-| `measured:specificity oracle` | measured | 3'-seed 8/8, exact PCR 3/3, BLAST recall 1.000 | seed 8/8, pcr 3/3, blast recall 1.000 | `pass` | results/specificity-oracle.csv — BLAST rows carry equal = NA by design; recall is compared instead |
-| `contract:crispr_spacer_hits counts raw occurrences` | contract | 1 occurrence -> 1; 2 occurrences -> 2 | once 1, twice 2 | `pass` | R/marker_crispr.R:268 — counts forward and reverse-complement occurrences; the design subtracts 1 |
-| `contract:off_target == hits - 1` | contract | design_crispr_marker()$off_target equals crispr_spacer_hits(guide) - 1 | off_target 0, hits 1 | `pass` | R/marker_crispr.R:471 — the on-target occurrence is not an off-target |
-| `contract:crispr flow uses a preamp pair, no RPA gate` | contract | no gate_rpa_structure in scheme_def_crispr(); preamp defaults to "rpa" | rpa gate present: FALSE; preamp default: "rpa" | `pass` | R/marker_crispr.R:600 — the vignette prose already matches this |
-| `contract:design_duplex warns on undeclared homology` | contract | warning 'undeclared', gate_duplex_targets not_applicable, verdict fail | warned TRUE, gate_duplex_targets not_applicable, verdict fail | `pass` | R/marker_duplex.R:400-405 — an undeclared topology cannot pass, so the pairing fails |
-| `contract:decision graph stamps gate status from the selection` | contract | one gate: no record ok, relaxed record relaxed, violated record violated | as:gate:gate_discrimination -> ok/relaxed/violated | `pass` | tests/testthat/test-falsifiable.R:405-440 — the graph reads the selection records; it does not restate the rules |
-| `contract:select_with_ladder refuses an NA margin` | contract | NA COM Tm -> best NULL; 60 -> best non-NULL | NA -> NULL; 60 -> non-NULL | `pass` | R/marker_select.R:458-465 — an unmeasured margin is never a pass |
+| Task                                                            | Family   | Expected                                                                 | Observed                                                      | Verdict | Where it diverged                                                                                                                                                              |
+| --------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `fixture:Chr1:300 A>C`                                          | fixture  | designed                                                                 | designed                                                      | `pass`  | snp:doomed — one flanking pair must survive on a clean template                                                                                                                |
+| `fixture:Chr2:150 A>C`                                          | fixture  | rejected with a cause from every chemistry                               | rejected with a cause                                         | `pass`  | snp:doomed; hrm:NA; caps:NA — no chemistry may design on the homopolymer block                                                                                                 |
+| `soybean:KASP_AGP10_branch_chr6_13.303311Mb`                    | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | AS GC x1; COM Tm >= AS Tm x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                      |
+| `soybean:KASP_AGP10_height_chr18_58.02Mb`                       | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | amplicon length (bp) x1; COM Tm >= AS Tm x1; longest homopolymer (bp) x1 — 9 unknown gate rows; 28 gate rows; outcome recorded as worked                                       |
+| `soybean:KASP_AGP9_habit_chr19_44.43Mb`                         | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                                             |
+| `soybean:KASP_AGP9_height_chr19_46.10Mb`                        | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | AS GC x1; discrimination x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                       |
+| `soybean:KASP_AGPO2_height_chr19_49.74Mb`                       | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | COM Tm >= AS Tm x1; discrimination x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                          |
+| `soybean:KASP_AGPO2_height2_chr19_51.07Mb`                      | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | AS GC x1; COM Tm >= AS Tm x1 — 9 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                                   |
+| `soybean:KASP_AGPO2_nodes_chr19_49.65Mb`                        | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | amplicon length (bp) x1; COM Tm >= AS Tm x1; discrimination x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                    |
+| `soybean:KASP_AGPO2_seed_chr19_48.03Mb`                         | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | COM Tm >= AS Tm x1; discrimination x1; inverted repeat (arms>=4, loop<=6) x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked      |
+| `soybean:KASP_AGPO8_protein_chr15_10.93Mb`                      | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | amplicon length (bp) x1; discrimination x1; inverted repeat (arms>=4, loop<=6) x1; longest homopolymer (bp) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked |
+| `soybean:KASP_DT2_flank_high_chr18_56.61Mb`                     | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | COM Tm >= AS Tm x1; SSR (2-4 nt, >=3 copies) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                |
+| `soybean:KASP_DT2_flank_low_chr18_55.26Mb`                      | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | AS GC x1; COM Tm >= AS Tm x1; inverted repeat (arms>=4, loop<=6) x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                            |
+| `soybean:KASP_DT2_near_chr18_56.14Mb`                           | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | amplicon length (bp) x1; COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                    |
+| `soybean:KASP_JOINT_protein_chr15_11.28Mb`                      | soybean  | worked                                                                   | gates_reject                                                  | `fail`  | COM Tm >= AS Tm x1 — 8 unknown gate rows; 28 gate rows; outcome recorded as worked                                                                                             |
+| `measured:mm2020 ranking`                                       | measured | r > 0.9, spearman > 0.85, -25 < mean(tm - measured) < -10, sd < 2        | n 64, r 0.958, rho 0.941, mean -16.86, sd 0.64                | `pass`  | test-tm-mm2020.R:88-113 — 64 canonical duplexes; the level bias is the salt term, not corrected                                                                                |
+| `measured:primer3 Tm offset`                                    | measured | n 34, mean +3.92, sd 0.25, max 4.66 (primer3 - pkg)                      | n 34, mean +3.92, sd 0.25, max 4.66                           | `pass`  | results/primer3-thermo.csv — cross-tool offset recorded from a local primer3 run; additive, not modelled                                                                       |
+| `measured:primer3 design (one locus)`                           | measured | 8/20 variants have a primer3 pair passing every gate                     | 8/20                                                          | `pass`  | results/primer3-design.csv — only one of the three loci in the VALIDATION.md claim is recorded here; the other two need a live primer3_core and are not invented               |
+| `measured:specificity oracle`                                   | measured | 3'-seed 8/8, exact PCR 3/3, BLAST recall 1.000                           | seed 8/8, pcr 3/3, blast recall 1.000                         | `pass`  | results/specificity-oracle.csv — BLAST rows carry equal = NA by design; recall is compared instead                                                                             |
+| `contract:crispr_spacer_hits counts raw occurrences`            | contract | 1 occurrence -> 1; 2 occurrences -> 2                                    | once 1, twice 2                                               | `pass`  | R/marker_crispr.R:268 — counts forward and reverse-complement occurrences; the design subtracts 1                                                                              |
+| `contract:off_target == hits - 1`                               | contract | design_crispr_marker()$off_target equals crispr_spacer_hits(guide) - 1   | off_target 0, hits 1                                          | `pass`  | R/marker_crispr.R:471 — the on-target occurrence is not an off-target                                                                                                          |
+| `contract:crispr flow uses a preamp pair, no RPA gate`          | contract | no gate_rpa_structure in scheme_def_crispr(); preamp defaults to "rpa"   | rpa gate present: FALSE; preamp default: "rpa"                | `pass`  | R/marker_crispr.R:600 — the vignette prose already matches this                                                                                                                |
+| `contract:design_duplex warns on undeclared homology`           | contract | warning 'undeclared', gate_duplex_targets not_applicable, verdict fail   | warned TRUE, gate_duplex_targets not_applicable, verdict fail | `pass`  | R/marker_duplex.R:400-405 — an undeclared topology cannot pass, so the pairing fails                                                                                           |
+| `contract:decision graph stamps gate status from the selection` | contract | one gate: no record ok, relaxed record relaxed, violated record violated | as:gate:gate_discrimination -> ok/relaxed/violated            | `pass`  | tests/testthat/test-falsifiable.R:405-440 — the graph reads the selection records; it does not restate the rules                                                               |
+| `contract:select_with_ladder refuses an NA margin`              | contract | NA COM Tm -> best NULL; 60 -> best non-NULL                              | NA -> NULL; 60 -> non-NULL                                    | `pass`  | R/marker_select.R:458-465 — an unmeasured margin is never a pass                                                                                                               |
+
+## Single-score baseline
+
+The perspectives draft (§5) argues that any single scalar "design quality" score
+is falsifiable: it does not separate accepted from rejected constructions. This
+section makes that claim runnable. `dev/single-score-baseline.R` builds one
+plausible scalar from checks the package already has and scores a panel whose
+outcome was established before the package saw it.
+
+_Panel:_ `inst/extdata/sharplab2021_assays.csv` — 50 KASP assays from Sharplab
+2021 (doi:10.1186/s12870-021-02932-8), of which the paper reports 46 as
+polymorphic between 1212 and B73 and 4 as not. Both classes carry full primer
+sequences, so the scalar is computable for every row. Six other candidate panels
+were rejected for having no rejected class or no sequences; they are listed in
+the script header.
+
+_Scalar_ (cost, lower is better), summed over the three primers:
+
+| Term      | Feature                             | Weight           |
+| --------- | ----------------------------------- | ---------------- |
+| `tm_dev`  | `abs(primer_tm(seq) - 60)`          | 1.0 per °C       |
+| `gc_dev`  | `abs(gc_frac(seq) - 0.5)`           | 20 per fraction  |
+| `run`     | `max(0, longest_run(seq) - 4)`      | 2 per base       |
+| `hairpin` | `max(0, -internal_hairpin_dg(seq))` | 1.0 per kcal/mol |
+| `clamp`   | 3' base is not G/C                  | 1.0              |
+
+_Metric:_ every pair (rejected, accepted) ordered the wrong way is an
+inversion; `pairs = n_rejected × n_accepted`.
+
+As of 2026-11-24 the run is **58 rows: pass 5, fail 52, not_run 1, gap 0**. The
+falsification succeeds:
+
+| Row                                   | Observed                                                    | Verdict   |
+| ------------------------------------- | ----------------------------------------------------------- | --------- |
+| `baseline:pairwise inversions`        | 71 of 184 pairs; 41 of 46 accepted below a rejected one     | `fail`    |
+| `baseline:rejected inside the best k` | 0 of 4 rejected in the best 4 by cost (ranks 6, 33, 41, 43) | `fail`    |
+| `baseline:sensitivity tm_only`        | 47 of 184 pairs; 27 of 46 accepted below a rejected one     | `fail`    |
+| `baseline:sensitivity tm_dominant`    | 50 of 184 pairs; 29 of 46 accepted below a rejected one     | `fail`    |
+| `baseline:sensitivity gc_dominant`    | 106 of 184 pairs; 46 of 46 accepted below a rejected one    | `fail`    |
+| `baseline:sensitivity gentle`         | 66 of 184 pairs; 38 of 46 accepted below a rejected one     | `fail`    |
+| `baseline:sensitivity tails_stripped` | 147 of 184 pairs; 40 of 46 accepted below a rejected one    | `fail`    |
+| `baseline:corpus`                     | —                                                           | `not_run` |
+
+The four alternative weightings were fixed before the run and all outcomes are
+reported: no weighting separates the panel, and none was selected afterwards.
+The tail-stripped row is a caveat rather than a control. The FAM/HEX tails are
+not an additive offset — they enter the normalised Tm and GC of the whole
+oligo — so stripping them moves the score from 71 to 147 wrong pairs. Both
+still fail, which is the claim, but the size of the swing says a single scalar
+is sensitive to a decision the sequence alone cannot settle.
+
+The corpus row is `not_run` with its reason, not `0`: a corpus-wide run needs
+recorded outcomes from `marker_record_outcome()`, and the tree holds none. Only
+published panels have a known outcome, so the falsification runs on fixtures
+and the corpus run waits for outcomes to accumulate.
+
+_Consequence for the multi-axis verdict:_ the scalar did not survive, so the
+multi-axis verdict is not shown to be over-complicated by this run; the
+falsification is ready to cite in the perspectives draft.
 
 ## Reproducing
 
