@@ -1842,16 +1842,28 @@ node-link list). Поэтому docs/artifacts — через manifest + generat
       (`R/marker_tubes.R:84-101`) — тоже побайтовые близнецы; вынесено в
       `ZA9.6`, чтобы не смешивать с этим коммитом.
 
-- [ ] **`ZA9.3` `lamp_candidates` + `rpa_candidates` → `safe_candidates()`.**
+- [x] **`ZA9.3` `lamp_candidates` + `rpa_candidates` → `safe_candidates()`.**
       `R/marker_lamp.R:255` и `R/marker_rpa.R:235` — одинаковое тело (tryCatch
       вокруг `primer_candidates()`, пустая tibble при ошибке); разница — порядок
       аргументов и дефолт `strand = "+"`. Одна
       `safe_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-      conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
+    conditions = NULL)` рядом с `primer_candidates()`; 13 вызовов (5 lamp +
       8 rpa) перевести на именованные аргументы.
       проверка: `Rscript dev/test.R lamp`, `Rscript dev/test.R rpa`, гейт.
       риск: `lamp` передаёт `strand` третьим позиционным, `rpa` — четвёртым;
       без именованных аргументов правка перепутает strand и окна.
+      закрыто 2026-11-24: `safe_candidates(seq, starts, lengths, strand, tm_range,
+    gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
+      `primer_candidates()`; `lamp_candidates()` и `rpa_candidates()` удалены.
+      Вызовов 12, не 13: 4 в `R/marker_lamp.R` + 8 в `R/marker_rpa.R`, все с
+      именованными аргументами. `strand` в хелпере обязателен (без дефолта),
+      поэтому окна не могут сдвинуться в его позицию. Из удалённого doc
+      `lamp_candidates` факт про B3 (внешний праймер — reverse complement)
+      перенесён комментарием к месту вызова. Тесты: `lamp` 391/391, `rpa`
+      244 pass / 1 skip; гейт зелёный. Фигуры `decision-lamp.svg`,
+      `decision-rpa.svg`, `lamp.svg`, `rpa.svg` перерисованы: `output_hash`
+      не изменился (рендер байт-в-байт тот же), обновились только
+      `input_hash` в `docs/artifacts.yml`.
 
 - [ ] **`ZA9.4` `marker_map_spec.marker_dpcr` ≡ `marker_map_spec.marker_taqman`.**
       `R/marker_dpcr.R:389` и `R/marker_taqman.R:362` — побайтово одинаковые

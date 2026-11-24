@@ -58,6 +58,32 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
   )
 }
 
+#' A `primer_candidates()` grid that treats "all filtered out" as empty
+#'
+#' The shared screener fails inside `primer_tm()` when every candidate is
+#' removed by the homopolymer / SSR filter, and the two isothermal arms (LAMP,
+#' RPA) probe windows narrow enough for that.  An empty grid is returned
+#' instead, with the columns the callers index.  `strand` is required so a new
+#' call site cannot shift the windows into its place.
+#' @param seq,starts,lengths,strand,tm_range,gc_range,conditions see
+#'   [primer_candidates()].
+#' @keywords internal
+#' @noRd
+safe_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range,
+                            conditions = NULL) {
+  empty <- tibble::tibble(
+    start = integer(0), len = integer(0), end = integer(0),
+    primer = character(0), tm = numeric(0), gc = numeric(0)
+  )
+  out <- tryCatch(
+    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range,
+      conditions = conditions
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(out)) empty else out
+}
+
 #' A GC/Tm-screened grid of plus-strand probes spanning a position
 #'
 #' The shared enumeration behind the hydrolysis-probe schemes (TaqMan, castPCR):

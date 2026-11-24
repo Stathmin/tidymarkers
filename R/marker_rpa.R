@@ -229,24 +229,6 @@ KASP_TIERS_RPA <- c(
   tier3 = "probe geometry", tier4 = "amplicon length"
 )
 
-# An empty primer_candidates() result (every candidate carries a homopolymer run or
-# an SSR) makes the shared screener fail in primer_tm(); RPA probes very narrow
-# windows, so guard it here and treat "no candidates" as an empty grid.
-rpa_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range,
-                           conditions = NULL) {
-  empty <- tibble::tibble(
-    start = integer(0), len = integer(0), end = integer(0),
-    primer = character(0), tm = numeric(0), gc = numeric(0)
-  )
-  out <- tryCatch(
-    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-      conditions = conditions
-    ),
-    error = function(e) NULL
-  )
-  if (is.null(out)) empty else out
-}
-
 #' Do an RPA primer pair pass the structure / dimer filters?
 #'
 #' The recombinase cannot work through strong primer secondary structure or
@@ -304,10 +286,16 @@ rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
   if (design_probe) {
     # with a probe the primers flank the variant and the probe carries the
     # discrimination, so the primers only need to bracket it
-    fwd <- rpa_candidates(seq, seq_len(si - 1L), lengths, "+", tm_range, gc_range) |>
+    fwd <- safe_candidates(seq,
+      starts = seq_len(si - 1L), lengths = lengths, strand = "+",
+      tm_range = tm_range, gc_range = gc_range
+    ) |>
       dplyr::filter(.data$end < si) |>
       clean()
-    rev <- rpa_candidates(seq, seq.int(si + 1L, n), lengths, "-", tm_range, gc_range) |>
+    rev <- safe_candidates(seq,
+      starts = seq.int(si + 1L, n), lengths = lengths, strand = "-",
+      tm_range = tm_range, gc_range = gc_range
+    ) |>
       clean()
     b <- pick_primer_pair(fwd, rev, min_product, max_product)
     return(if (is.null(b)) NULL else pair_to_list(b))
@@ -320,16 +308,28 @@ rpa_pair <- function(seq, si, design_probe, lengths, min_product, max_product,
   near_r <- seq.int(max(1L, si - max(lengths) + 1L), si)
   # the variant at the 3' end of the forward primer (its `end`) or the reverse
   # primer (whose 3' terminus is its plus-strand `start`)
-  cover_f <- rpa_candidates(seq, near_f, lengths, "+", tm_range, gc_range) |>
+  cover_f <- safe_candidates(seq,
+    starts = near_f, lengths = lengths, strand = "+",
+    tm_range = tm_range, gc_range = gc_range
+  ) |>
     dplyr::filter(.data$end >= si, .data$end <= si + w) |>
     clean()
-  cover_r <- rpa_candidates(seq, near_r, lengths, "-", tm_range, gc_range) |>
+  cover_r <- safe_candidates(seq,
+    starts = near_r, lengths = lengths, strand = "-",
+    tm_range = tm_range, gc_range = gc_range
+  ) |>
     dplyr::filter(.data$start >= si - w) |>
     clean()
   # the mates stay clear of the covering primer so they cannot overlap it
-  mate_r <- rpa_candidates(seq, seq.int(si + w + 1L, n), lengths, "-", tm_range, gc_range) |>
+  mate_r <- safe_candidates(seq,
+    starts = seq.int(si + w + 1L, n), lengths = lengths, strand = "-",
+    tm_range = tm_range, gc_range = gc_range
+  ) |>
     clean()
-  mate_f <- rpa_candidates(seq, seq_len(si - w - 1L), lengths, "+", tm_range, gc_range) |>
+  mate_f <- safe_candidates(seq,
+    starts = seq_len(si - w - 1L), lengths = lengths, strand = "+",
+    tm_range = tm_range, gc_range = gc_range
+  ) |>
     dplyr::filter(.data$end < si - w) |>
     clean()
   cand <- dplyr::bind_rows(
@@ -420,7 +420,10 @@ rpa_probe <- function(seq, si, pair, probe_len, gc_range,
   # between the flanking primers' 3' ends.
   inner_lo <- pair$start + nchar(pair$forward)
   inner_hi <- pair$end - nchar(pair$reverse)
-  cand <- rpa_candidates(seq, starts, probe_len, "+", RPA_NO_TM, gc_range) |>
+  cand <- safe_candidates(seq,
+    starts = starts, lengths = probe_len, strand = "+",
+    tm_range = RPA_NO_TM, gc_range = gc_range
+  ) |>
     dplyr::filter(
       .data$start >= inner_lo, .data$end <= inner_hi,
       .data$start <= si, .data$end >= si

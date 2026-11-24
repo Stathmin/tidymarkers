@@ -239,34 +239,6 @@ lamp_revcomp <- function(x) {
   as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(x)))
 }
 
-#' A guarded `primer_candidates()` for the narrow windows LAMP probes
-#'
-#' The shared screener fails in `primer_tm()` when every candidate is removed by
-#' its homopolymer / SSR filter; LAMP arm windows can be that narrow, so an empty
-#' grid is returned instead.  `strand` selects whether the returned `primer` is
-#' the plus strand (`"+"`, a forward primer) or its reverse complement (`"-"`, a
-#' reverse primer that extends leftward) - the outer B3 must be the latter.
-#' @param tm_range,gc_range accepted windows.
-#' @param strand `"+"` or `"-"` (see `primer_candidates()`).
-#' @param conditions reaction conditions for [primer_tm()] (see
-#'   `primer_candidates()`; `NULL` keeps the historical buffer).
-#' @keywords internal
-#' @noRd
-lamp_candidates <- function(seq, starts, lengths, tm_range, gc_range, strand = "+",
-                            conditions = NULL) {
-  empty <- tibble::tibble(
-    start = integer(0), len = integer(0), end = integer(0),
-    primer = character(0), tm = numeric(0), gc = numeric(0)
-  )
-  out <- tryCatch(
-    primer_candidates(seq, starts, lengths, strand, tm_range, gc_range,
-      conditions = conditions
-    ),
-    error = function(e) NULL
-  )
-  if (is.null(out)) empty else out
-}
-
 #' The plus-strand binding sites of one inner-primer arm
 #'
 #' A set of GC/Tm-screened plus-strand sites that is also free of inverted
@@ -276,7 +248,9 @@ lamp_candidates <- function(seq, starts, lengths, tm_range, gc_range, strand = "
 #' @keywords internal
 #' @noRd
 lamp_arm_sites <- function(seq, starts, lengths, tm_range, gc_range, reverse, top) {
-  d <- lamp_candidates(seq, starts, lengths, tm_range, gc_range)
+  d <- safe_candidates(seq, starts, lengths,
+    strand = "+", tm_range = tm_range, gc_range = gc_range
+  )
   if (!nrow(d)) {
     return(d)
   }
@@ -530,7 +504,10 @@ lamp_loop <- function(seq, lo, hi, tm_range, gc_range, target_tm, reverse) {
   if (hi - lo + 1L < min(LAMP_LOOP_LEN)) {
     return(NULL)
   }
-  cand <- lamp_candidates(seq, seq.int(lo, hi), LAMP_LOOP_LEN, tm_range, gc_range) |>
+  cand <- safe_candidates(seq,
+    starts = seq.int(lo, hi), lengths = LAMP_LOOP_LEN, strand = "+",
+    tm_range = tm_range, gc_range = gc_range
+  ) |>
     dplyr::filter(.data$start >= lo, .data$end <= hi)
   if (!nrow(cand)) {
     return(NULL)
@@ -689,9 +666,16 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     }
     amp_lo <- if ("gate_lamp_amplicon" %in% relaxed) min_product - LAMP_AMPLICON_RELAX else min_product
     amp_hi <- if ("gate_lamp_amplicon" %in% relaxed) max_product + LAMP_AMPLICON_RELAX else max_product
-    fwd <- lamp_candidates(tmpl$seq, seq_len(max(1L, lo - 1L)), outer_lengths, tm_win, gc_range) |>
+    fwd <- safe_candidates(tmpl$seq,
+      starts = seq_len(max(1L, lo - 1L)), lengths = outer_lengths, strand = "+",
+      tm_range = tm_win, gc_range = gc_range
+    ) |>
       dplyr::filter(.data$end < lo, !has_palindrome(.data$primer))
-    rev <- lamp_candidates(tmpl$seq, seq.int(hi + 1L, n), outer_lengths, tm_win, gc_range, strand = "-") |>
+    # the outer B3 extends leftward: its primer is the reverse complement
+    rev <- safe_candidates(tmpl$seq,
+      starts = seq.int(hi + 1L, n), lengths = outer_lengths, strand = "-",
+      tm_range = tm_win, gc_range = gc_range
+    ) |>
       dplyr::filter(!has_palindrome(.data$primer))
     pair <- pick_primer_pair(fwd, rev, amp_lo, amp_hi)
     if (is.null(pair)) {
