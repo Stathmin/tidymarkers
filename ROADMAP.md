@@ -2917,7 +2917,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       `solved.rds` Python не пишет: `--solved` копирует файл, и replay всё
       равно пересчитывает, поэтому копия не является предметом доверия.
       блокер: нет.
-- [ ] **`ZY23` Экспорт `artefact.json` в RO-Crate + PROV-O.** RO-Crate и
+- [x] **`ZY23` Экспорт `artefact.json` в RO-Crate + PROV-O.** RO-Crate и
       PROV-O — языки, на которых черновик methodology обещает совместимость, но
       экспорта нет: трасса project-shaped. Выход — `ro-crate-metadata.json`
       (JSON-LD) с `CreateAction` / `HowToStep` на прогон и PROV-O
@@ -2932,8 +2932,28 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: официальный RO-Crate-валидатор — Python/Node, в дереве его нет;
       проверка ограничивается структурными assert'ами на JSON-LD, и это сказано в
       тесте, а не выдаётся за валидацию.
-      следствие: строка черновика про RO-Crate остаётся «не сравнивалось»; трассу
-      нельзя положить в WorkflowHub или Galaxy как есть.
+      следствие: официальный валидатор RO-Crate (Python/Node) в дереве не
+      запускался, поэтому проверка структурная, а трассу нельзя положить в
+      WorkflowHub или Galaxy как есть. Это ограничение записано в тесте.
+      закрыто 2026-11-24: `R/marker_export_rocrate.R` —
+      `marker_export_rocrate(artefact, dir)` копирует в новый crate-каталог
+      ровно те файлы, что названы в `manifest$files`, плюс `artefact.json`, и
+      пишет `ro-crate-metadata.json`; посторонний файл из каталога артефакта не
+      попадает в crate. `marker_import_rocrate(path)` принимает каталог или сам
+      дескриптор, проверяет `sha256` каждого объявленного файла и равенство
+      корневого `identifier` полю `id` в `artefact.json`, затем возвращает
+      `marker_artefact`.
+      Решение: «decision graph» здесь — решения прогона (манифест +
+      `decisions.csv`), а не `marker_decision_graph(scheme)` (это DAG критериев из
+      кода, у него нет артефакта); поэтому импорт возвращает артефакт. Решение:
+      термины PROV-O пишутся полными IRI (`prov#Activity` и т.п.), потому что
+      контекст RO-Crate 1.1 не отображает префикс `prov:`; термины RO-Crate
+      (`File`, `Dataset`, `CreateAction`) остаются сокращёнными.
+      Проверка: `tests/testthat/test-rocrate.R` — 45 assert'ов: состав crate,
+      структурный разбор JSON-LD (root/run/agent/howto, hashes всех `File`),
+      round-trip импорта и отказ на подменённом `decisions.csv` и на чужом
+      `identifier`.
+      блокер: нет.
 - [ ] **`ZY24` Фальсификация односкалярной оценки.** Черновик perspectives §5
       утверждает, что любой единый скаляр «качества дизайна» опровержим: он не
       разделяет принятые и отклонённые конструкции. Утверждение сейчас — проза;

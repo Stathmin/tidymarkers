@@ -44,6 +44,8 @@ Other plan:
 \code{\link[=marker_costs]{marker_costs()}},
 \code{\link[=marker_design_panel]{marker_design_panel()}},
 \code{\link[=marker_export]{marker_export()}},
+\code{\link[=marker_export_rocrate]{marker_export_rocrate()}},
+\code{\link[=marker_import_rocrate]{marker_import_rocrate()}},
 \code{\link[=marker_outcomes]{marker_outcomes()}},
 \code{\link[=marker_plan]{marker_plan()}},
 \code{\link[=marker_plot]{marker_plot()}},
