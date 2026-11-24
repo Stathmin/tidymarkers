@@ -41,7 +41,7 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
 # useless.  A pattern that matches nothing today is a guard for the next change.
 handrolled_patterns <- function() {
   c(
-    manual_complement = "chartr\\(\\s*\"[ACGTacgtRYSWKMBDHV]+\"",
+    manual_complement = "chartr\\(\\s*\"[ACGTacgtRYSWKMBDHVNn]+\"",
     manual_revcomp = "paste0?\\(\\s*rev\\(",
     manual_gc = "sum\\([^()]*==\\s*\"[GC]\"",
     manual_tm = "81\\.5|64\\.9"

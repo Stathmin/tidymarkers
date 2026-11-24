@@ -48,6 +48,15 @@ entries:
           adapter reuses one copy of the nearest-neighbour table. Same parameters,
           same pin: tm_nn() reports Tm and cannot report the split terms.
 
+    - symbol: iupac_complement
+      replacement: Biostrings::complement
+      status: justified
+      reason: >-
+          complement() upper-cases its input ("acgt" -> "TGCA"), errors on a
+          character outside the DNA alphabet, and returns a DNAString. This
+          helper has to keep the caller's case and pass an unknown character
+          through untouched; wildcard_arms() then reads it back as a mask.
+
     - symbol: hairpin_candidates
       replacement: Biostrings::findPalindromes
       status: justified
