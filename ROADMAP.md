@@ -2850,7 +2850,7 @@ provenance_required)`: review queue candidate-обновлений с полны
   `command -v`: ни одного нет). Ворота возврата: каждый названный
   инструмент установлен, затем повторить sweep.
 
-- [ ] **`ZY21` Бенчмарк валидации, а не генерации.** Черновик methodology
+- [x] **`ZY21` Бенчмарк валидации, а не генерации.** Черновик methodology
       показывает: RO-Crate, WorkflowHub, Galaxy и «agentic genomics» отвечают,
       _что запускалось_, и ни один не даёт задачи, на которой меряется _что
       проверено_. Бенчмарк — набор задач дизайна с независимо установленным
@@ -2871,6 +2871,21 @@ provenance_required)`: review queue candidate-обновлений с полны
       следствие: «валидация» остаётся набором per-rule утверждений без агрегата;
       черновик methodology остаётся без данных и рискует desk-reject на
       «no evaluation».
+      закрыто 2026-11-24: `dev/validation-benchmark.R` — 25 задач в четырёх
+      семействах (fixture 2, soybean 13, measured 4, contract 6).
+      `Rscript dev/validation-benchmark.R --check` воспроизводится: pass 12,
+      fail 13, not_run 0, gap 0; CSV в `.tmp/` (git-ignored), таблица по строке
+      на задачу в `VALIDATION.md` §Validation benchmark, контракт держит
+      `tests/testthat/test-validation-benchmark.R`.
+      Шесть `contradicts`-правок `ZX3` (в) к моменту работы уже применены в
+      виньетках, поэтому `contract`-семейство проверяет текущую прозу против
+      живого кода и даёт pass; `graphify-out/claims.md` — устаревший
+      сгенерированный черновик.
+      Тринадцать соевых `fail` — не регрессия: оператор записал все 13 как
+      `worked`, а у каждой есть проваленное ворота в
+      `soybean_worked_panel_kasp_gates.csv`, т.е. `expected` = принято полем,
+      `observed` = `gates_reject`; бенчмарк это фиксирует, а не выдаёт за pass.
+      блокер: нет.
 - [ ] **`ZY22` Кросс-языковой writer трасс + conformance suite.** `artefact.json`
       и `decisions.csv` / `checks.csv` / `why.csv` пишет только R
       (`marker_artefact()`). Экосистема, куда трассу надо отдавать — Snakemake,
@@ -2895,7 +2910,7 @@ provenance_required)`: review queue candidate-обновлений с полны
       `Activity` / `Entity` / `Agent` на дизайн, ссылающийся на те же hashed
       inputs, что и `artefact.json`.
       правка: новый `R/marker_export_rocrate.R` — `marker_export_rocrate(artefact,
-    dir)` пишет crate-профиль поверх существующих четырёх файлов; обратный
+  dir)` пишет crate-профиль поверх существующих четырёх файлов; обратный
       импорт `marker_import_rocrate()` восстанавливает decision graph.
       проверка: `tests/testthat/test-rocrate.R` — экспорт-импорт даёт тот же
       decision graph и те же hashed inputs; PROV-O граф содержит agent, activity и
