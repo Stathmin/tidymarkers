@@ -1901,13 +1901,17 @@ gc_range, conditions = NULL)` в `R/marker_primer_pairs.R` сразу после
       байт-в-байт равен логу до (`diff` пуст, exit 0); `dev/check-artifacts.R`
       и `dev/check-docs.R` отдельно зелёные.
 
-- [ ] **`ZA9.6` `marker_primers.marker_taqman` ≡ `.marker_dpcr`.**
+- [x] **`ZA9.6` `marker_primers.marker_taqman` ≡ `.marker_dpcr`.**
       `R/marker_tubes.R:84` и `:94` — 18 побайтово одинаковых строк (оба
       собирают `forward`/`reverse` и зонды из `marker$probes`). Слить в
       `probe_primers(marker)` и вызвать из обоих методов.
       проверка: `Rscript dev/test.R taqman`, `Rscript dev/test.R dpcr`, гейт.
       риск: если taqMan и dPCR когда-нибудь разойдутся по набору олиго, хелпер
       спрячет точку расхождения.
+      закрыто 2026-11-24: тело вынесено в `probe_primers(marker)` рядом с двумя
+      методами; оба — одна строка. Тесты без изменения счёта: `taqman` 245
+      pass / 1 skip, `dpcr` 169 pass; гейт `--no-render` зелёный (WARN
+      graphify-лейблов 148 — счёт двигается от любой правки кода).
 
 ## ZP. Параллельный rollout (coordination)
 

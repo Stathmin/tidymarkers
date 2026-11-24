@@ -82,8 +82,13 @@ marker_primers.marker_duplex <- function(marker, ...) {
   primers_by_assay(marker$assays)
 }
 
-#' @export
-marker_primers.marker_taqman <- function(marker, ...) {
+#' The flanking pair and the hydrolysis probes of a probe-based marker
+#'
+#' The shared shape of a `marker_taqman` and a `marker_dpcr`: the pair plus one
+#' named entry per probe allele.
+#' @keywords internal
+#' @noRd
+probe_primers <- function(marker) {
   out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
   pr <- marker$probes
   if (!is.null(pr) && all(c("probe", "allele") %in% names(pr))) {
@@ -93,14 +98,10 @@ marker_primers.marker_taqman <- function(marker, ...) {
 }
 
 #' @export
-marker_primers.marker_dpcr <- function(marker, ...) {
-  out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
-  pr <- marker$probes
-  if (!is.null(pr) && all(c("probe", "allele") %in% names(pr))) {
-    out <- c(out, stats::setNames(pr$probe, paste0("probe_", pr$allele)))
-  }
-  out
-}
+marker_primers.marker_taqman <- function(marker, ...) probe_primers(marker)
+
+#' @export
+marker_primers.marker_dpcr <- function(marker, ...) probe_primers(marker)
 
 #' @export
 marker_primers.marker_castpcr <- function(marker, ...) {
