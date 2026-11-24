@@ -2802,6 +2802,10 @@ provenance_required)`: review queue candidate-обновлений с полны
   (ΔG/структура и off-target вместо пар), но та же форма прогона, тот же
   `not_run` с названной причиной и та же строка в `VALIDATION.md`; поэтому это
   расширение ZY20, а не новые пункты.
+  Проход ZY17 по литературе 2024–2026 добавил к тому же списку восемь
+  дизайнеров, названных в tool-черновике, но не запущенных: VCF2CAPS,
+  KASP-IEva, LAMPrimers iQ, ThermoPlex, ARMSprimer3, PrimerWeaver, PyPCRtool
+  и PRISM. Это те же строки `not_run`, что и выше, а не отдельные пункты.
   правка: `dev/cross-tool-sweep.R` — один блок на инструмент; для каждого
   печатает строку «tool | loci designed | pairs в окне 50–100 bp | runtime |
   где разошёлся» и пишет CSV в `.tmp/`; в `VALIDATION.md`, раздел
