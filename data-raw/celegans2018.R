@@ -2,8 +2,10 @@
 #  data-raw/celegans2018.R  --  a primer mismatch that is SEEN in the product
 # =============================================================================
 #  "Simplified detection of a point mutation in C. elegans using tetra-primer
-#  ARMS-PCR." microPublication Biology 2018. PMC7255807 (CC-BY). The paper has
-#  no DOI of its own in the fetched XML; PMC7255807 is the identifier.
+#  ARMS-PCR." microPublication Biology 2018. PMC7255807 (CC-BY). The paper's
+#  DOI is 10.17912/micropub.biology.000078 (resolved against Crossref after the
+#  first extraction, which read the fetched XML, where it is absent);
+#  PMC7255807 stays in `identifier` as the PubMed-side handle.
 #
 #  WHY THIS FILE EXISTS
 #  Z7 assumes a deliberately introduced primer mismatch only changes the
@@ -52,6 +54,7 @@ if (!file.exists(ft)) {
   stop("missing ", ft, "\n  fetch with: Rscript data-raw/fetch-sources.R")
 }
 PMC <- "PMC7255807"
+DOI <- "10.17912/micropub.biology.000078"
 SRC <- ".tmp/lit/celegans2018/fulltext.xml"
 
 ## --- 1. the text, and the statements it must contain -------------------------
@@ -188,7 +191,7 @@ out <- data.frame(
   source_file = SRC,
   source_section = "Results ('Interestingly, sequencing showed...') and Detailed Protocol",
   identifier = PMC,
-  doi = NA_character_,
+  doi = DOI,
   stringsAsFactors = FALSE
 )
 
