@@ -166,6 +166,77 @@ test_that("ijms2022 minimum input: the smallest amount is not a genotype call", 
   expect_setequal(unique(d$method), c("HRM", "PSQ", "HRM (single-strand only)", "HRM (no product)"))
 })
 
+## --- HRM melt: the diatom Tm set, one row per amplicon ----------------------
+
+test_that("HRM diatom melt: 28 amplicons, one run, and the paper's own slips", {
+  d <- read_ext("readout_hrm_diatom2025.csv")
+  expect_equal(nrow(d), 28L)
+  expect_setequal(
+    d$primer_pair,
+    c("UPA99", "18S-V7", "ND", "Primer1", "psaA-2", "Dia18S")
+  )
+  n_by <- table(d$primer_pair)
+  expect_equal(as.integer(n_by[["Dia18S"]]), 3L)
+  expect_true(all(as.integer(n_by[names(n_by) != "Dia18S"]) == 5L))
+  # constant columns are provenance, not per-row choices
+  expect_setequal(unique(d$chemistry), "hrm_melt")
+  expect_equal(length(unique(d$assay)), 1L)
+  expect_true(all(d$evidence_tier == "measured"))
+  expect_true(all(d$doi == "10.1371/journal.pone.0321885"))
+  expect_true(all(d$pmcid == "PMC12002481"))
+  expect_true(all(nzchar(d$source_file)))
+  # the CSV must keep saying what it is: absolute Tm of one amplicon, not a dTm
+  expect_true(all(grepl("NOT a dTm", d$outcome_definition)))
+})
+
+test_that("HRM diatom melt: thermodynamics scale with length and stay negative", {
+  d <- read_ext("readout_hrm_diatom2025.csv")
+  expect_true(all(d$tm_measured_c > 70 & d$tm_measured_c < 90))
+  expect_true(all(d$dh_kcal_mol < 0))
+  expect_true(all(d$ds_cal_k_mol < 0))
+  expect_true(all(d$dh_kcal_mol / d$amplicon_bp > -8.5))
+  expect_true(all(d$dh_kcal_mol / d$amplicon_bp < -7.8))
+  expect_true(all(d$ds_cal_k_mol / d$amplicon_bp > -22.5))
+  expect_true(all(d$ds_cal_k_mol / d$amplicon_bp < -21.0))
+  # the printed extremes, which are the paper's own (its prose claims 60-152 bp)
+  expect_equal(range(d$amplicon_bp), c(59L, 154L))
+  expect_equal(range(d$gc_pct), c(34.62, 55.24))
+})
+
+test_that("HRM diatom melt: Table 7 vs Table 8 disagreements are kept, not patched", {
+  d <- read_ext("readout_hrm_diatom2025.csv")
+  slip <- d$gc_printed_vs_recomputed_slip
+  expect_equal(sum(slip), 3L)
+  # the paper's three arithmetic slips: printed GC% HIGHER than recomputed
+  expect_true(all(d$gc_pct[slip] > d$gc_from_seq[slip]))
+  expect_true(all(abs(d$gc_pct[slip] - d$gc_from_seq[slip]) >= 0.06))
+  ok <- !slip & !is.na(d$gc_from_seq)
+  expect_true(all(abs(d$gc_pct[ok] - d$gc_from_seq[ok]) < 0.06))
+  # no sequence is printed for the three Dia18S cells, so no GC is recomputed
+  expect_true(all(is.na(d$gc_from_seq) == (d$primer_pair == "Dia18S")))
+  # the +1 nt between Table 7 length and Table 8 bp, kept as a column
+  expect_equal(d$seq_len - d$amplicon_bp, d$seq_len_vs_table_bp)
+  expect_equal(sum(d$seq_len_vs_table_bp == 1L, na.rm = TRUE), 23L)
+  expect_equal(sum(d$seq_len_vs_table_bp == 0L, na.rm = TRUE), 2L)
+  expect_equal(sum(is.na(d$seq_len_vs_table_bp)), 3L)
+})
+
+test_that("HRM diatom melt: no salt, so the set cannot constrain a Tm model alone", {
+  d <- read_ext("readout_hrm_diatom2025.csv")
+  # Mg2+ sits inside a proprietary 2x master mix; the paper prints neither it
+  # nor the DNA input, so a salt term cannot be fitted. This is why
+  # R/marker_readout.R keeps HRM at simulated = FALSE.
+  expect_true(all(is.na(d$mg_mm)))
+  expect_true(all(is.na(d$dna_ng_ul)))
+  # Absolute Tm of DIFFERENT amplicons: within each primer pair the products
+  # span < 3 C, and the six pair means span > 5 C. There is no dTm of one
+  # locus across genotypes in this set.
+  spread <- tapply(d$tm_measured_c, d$primer_pair, function(z) diff(range(z)))
+  expect_true(all(spread < 3))
+  means <- sort(tapply(d$tm_measured_c, d$primer_pair, mean))
+  expect_gt(means[[length(means)]] - means[[1L]], 5)
+})
+
 test_that("Sanger floor: a textbook number may not calibrate anything", {
   d <- read_ext("sanger_detection_floor.csv")
   expect_equal(nrow(d), 2L)

@@ -1149,12 +1149,24 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
   (`poisson_lambda()`, `poisson_positive_fraction()`, `dpcr_partition_table()`;
   `test-readout-dpcr.R` воспроизводит λ Dong и разведение MPS) и TaqMan
   (`probe_discrimination()`, `test-readout.R`). У остальных
-  четырёх химий — `FALSE` с причиной: HRM есть набор из 28 ампликонов, но нет
-  Mg/соли (**partial**); LAMP есть Tp × температура, но `copies_per_reaction`
-  = `NA` (**partial**, `Q1` не закрыт); CRISPR-Dx — Nalefski 2024 печатает
-  kcat/KM (`readout_crispr_nalefski2024_pass2.conditions.csv`, 109 строк), но не
-  ряд «концентрация → доля расщеплённого»; виртуального геля нет (bp→мм с
-  % геля, вольтажом и временем).
+  четырёх химий — `FALSE` с причиной: LAMP есть Tp × температура, но
+  `copies_per_reaction` = `NA` (**partial**, `Q1` не закрыт); CRISPR-Dx —
+  Nalefski 2024 печатает kcat/KM
+  (`readout_crispr_nalefski2024_pass2.conditions.csv`, 109 строк), но не ряд
+  «концентрация → доля расщеплённого»; виртуального геля нет (bp→мм с % геля,
+  вольтажом и временем).
+    - **HRM:** набор Zhou 2025 (пять диатомов × шесть праймеров = 28
+      ампликонов, `inst/extdata/readout_hrm_diatom2025.csv`) теперь имеет
+      потребителя — четыре блока в `tests/testthat/test-readout-physics.R`.
+      Набор стягивает **последовательный** член: Tm ∈ (70, 90) °C, dH/bp ∈
+      [−8.32, −7.93] ккал/(моль·bp), dS/bp ∈ [−22.20, −21.32] кал/(моль·K·bp),
+      длина 59–154 bp, GC 34.62–55.24 %; расхождения Table 7 ↔ Table 8
+      сохранены колонками (`gc_printed_vs_recomputed_slip`,
+      `seq_len_vs_table_bp`), не подшиты. Чего набор не даёт: `mg_mm` и
+      `dna_ng_ul` — `NA` во всех 28 строках (Mg внутри фирменной 2× MonAmp
+      смеси), поэтому солевой член не подпирается; ΔTm одного локуса по
+      генотипам в наборе нет, поэтому дискриминационная заявка модели
+      остаётся неподтверждённой.
     - **правка:** код начинается только когда есть набор «условия → исход»,
       который модель обязана воспроизвести; иначе `simulated = TRUE` — ложь.
     - **проверка:** тот же набор, что читает `test-readout-physics.R`; строка
