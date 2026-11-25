@@ -290,7 +290,16 @@ counts <- c(
   blocked_real = sum(ledger$use == "blocked") - blocked_none,
   criteria = nrow(prov),
   named_source = sum(prov$reason_class == "named_source"),
-  assumption = sum(prov$source == "package assumption")
+  assumption = sum(prov$source == "package assumption"),
+  verified = sum(sources$verified, na.rm = TRUE),
+  fulltext = sum(sources$access == "fulltext"),
+  supplement = sum(sources$access == "supplement"),
+  abstract = sum(sources$access == "abstract"),
+  closed = sum(sources$access == "closed access"),
+  code = sum(sources$access == "source"),
+  stub = sum(sources$access == "stub"),
+  transcribed = sum(sources$access == "transcribed"),
+  notfound = sum(sources$access == "not found")
 )
 
 must_quote <- function(path, snippets) {
@@ -317,7 +326,19 @@ must_quote("VALIDATION.md", c(
     "Of the ", counts[["blocked"]], " `blocked` rows, ",
     counts[["blocked_none"]], " name no extract"
   ),
-  paste0(counts[["blocked_real"]], " name a real extract")
+  paste0(counts[["blocked_real"]], " name a real extract"),
+  paste0(
+    counts[["fulltext"]], " sources were read in full text, ",
+    counts[["supplement"]], " through a supplement, ",
+    counts[["abstract"]], " as an abstract only, ",
+    counts[["closed"]], " are closed access, ",
+    counts[["code"]], " are source code, ",
+    counts[["stub"]], " are stubs, ",
+    counts[["transcribed"]], " was transcribed, ",
+    counts[["notfound"]], " were not found"
+  ),
+  paste0(counts[["verified"]], " of the ", counts[["sources"]], " rows are marked `verified`"),
+  paste0(counts[["closed"]], " sources are closed access")
 ))
 
 must_quote("ROADMAP.md", c(

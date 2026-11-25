@@ -37,8 +37,8 @@ Three tables carry the provenance, and three tests keep them honest.
 | `inst/extdata/science_ledger.csv`     | 369  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
 | `inst/extdata/scientific_backlog.csv` | 45   | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched`                                                     |
 
-`access` is a closed vocabulary and it is load-bearing: 103 sources were read in
-full text, 11 through a supplement, 4 as an abstract only, 7 are closed access,
+`access` is a closed vocabulary and it is load-bearing: 104 sources were read in
+full text, 11 through a supplement, 4 as an abstract only, 6 are closed access,
 3 are source code, 2 are stubs, 1 was transcribed, 3 were not found. 128 of the
 134 rows are marked `verified`, each with the date it was checked. A source read
 only as an abstract may not calibrate anything, and the tests enforce that.
@@ -555,8 +555,15 @@ matching tests skip with a named reason when one is absent.
 - 20 ledger rows are `blocked`: 10 name no extract at all, 10 name an extract
   that carries no verdict of its own yet, and each says why the paper could not
   be landed.
-- 7 sources are closed access; they exist so that the number they would have
-  anchored is visibly absent rather than silently invented.
+- 6 sources are closed access; they exist so that the number they would have
+  anchored is visibly absent rather than silently invented. Every route tried for
+  the closed and not-found rows on 2026-11-25 failed at the publisher: IA Scholar
+  served its bot challenge, CSHL, OUP and Canadian Science Publishing answered
+  403, Nature returned only its landing page, Springer returned its paywall
+  notice, `api.fatcat.wiki` and `web.archive.org` timed out, and keyless web
+  search was challenged. Each row's `access_detail` records the Unpaywall and
+  OpenAlex measurement behind its `access` level, so a later reader can retry
+  without re-walking a route that was already tried.
 - `DECIPHER`'s amplification efficiency is a model of hybridisation plus Taq
   extension. It is a proxy for allelic discrimination, not a replacement for an
   experiment.
