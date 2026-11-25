@@ -113,7 +113,6 @@ Each row is asserted by a named test, not inferred.
 <!-- prettier-ignore -->
 | where                     | what breaks                                                                                                                        | why                                                                                                                                                                       | test                                                                                        |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| the locus model           | a reverse-complemented locus is not representable                                                                                  | `locus_at()` has `chrom` / `pos` / `ref` / `alt` and no strand column, so a revcomp locus is only another REF/ALT pair; M1 is not testable until the model grows `strand` | `test-invariants.R` asserts `!"strand" %in% names(snp)`                                     |
 | three contig-wide criteria | "in-silico PCR (REF 1 / ALT 0)", "off-target exact primer hits (n)" and "in-silico PCR products (n)" differ under a coordinate shift                             | they read the whole contig, and a shifted frame is a different contig; M3 excludes them **by label**, not by weakening the assertion                                      | `test-invariants.R`, M3                                                                     |
 | REF/ALT swap (M2)         | the AS primers swap _roles_, not sequences, and their 3' bases exchange between FAM and HEX                                        | the discriminating base must follow the allele, not the primer slot                                                                                                       | `test-invariants.R`, M2                                                                     |
 | the `-` strand AS primer  | its 3' base is the **complement** of the allele                                                                                    | the primer binds the plus strand, so using the allele base itself would invert discrimination                                                                             | `test-as-primer.R`                                                                          |
@@ -121,9 +120,22 @@ Each row is asserted by a named test, not inferred.
 | a LAMP design             | it carries a paired REF set (`$paired`, `$ref_fip`, `$discriminating_base`); an indel gives `status = "not_applicable"` and a note | a REF-only template and a failed reaction both give no amplification, so an ALT-only set cannot tell them apart; an indel has no single 3' base to flip                   | `test-lamp.R` (Z9.1)                                                                        |
 | status, every scheme      | `NA` and `not_applicable` never become `pass`                                                                                      | "no evidence" is not "evidence in favour": an unknown row stamps `unknown`, and a non-applicable one is neutral, not ok                                                   | `test-decision.R`; user-facing table in [reading results](../vignettes/reading-results.Rmd) |
 
-### Known gap, not an exception
+### Frame invariance: closed by ZW0 M5
 
-The design search is **not** frame-invariant: candidate ranking differs across
-frames, and the evaluation row must be the chosen candidate. That is a defect,
-kept as a precondition-guarded test (`test-invariants.R`, "ZW0 KNOWN GAP"), not
-an accepted asymmetry. Do not add it to `asymmetry_reason`.
+The design search **is** frame-invariant, and `test-invariants.R` ("ZW0 M5")
+proves it. The test designs one core in four coordinate frames (shifts 1, 17, 43
+and 99 bases inside a 100-base pad period), across six sweep cells plus one
+pinned cell; every frame must return an identical `as_ref`, `as_alt`, `com` and
+amplicon, and the seed 7 / core pos 40 cell additionally pins each of those to a
+literal so a change that moves all four frames the same way still fails. The two
+defects that once broke this are closed:
+
+- the ranking keys on content only — the absolute `as_start` / `com_start`
+  tie-breaks are gone (ROADMAP №11);
+- the fixture gives every frame an unclipped 150-base `snp_template()` window
+  (the left flank is 400 bases), so a frame can no longer truncate the search
+  (ROADMAP №29).
+
+This symmetry is **not** an `asymmetry_reason` entry: it is a property the code
+must keep, not a deliberate exception. Neither its former absence nor its
+presence belongs in the registry.

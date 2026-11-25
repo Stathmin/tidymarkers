@@ -1,5 +1,10 @@
 # ZW0.1 + Z11.1 — deliberate invariant exceptions and the user-facing decision audit
 
+> **Superseded (2026-11-25).** The frame-invariance "known gap" recorded below
+> is closed: see `docs/decision-audit.md` §«Frame invariance: closed by ZW0 M5»
+> and `ROADMAP.md` №29 / ZW0 M5. This file stays as a provenance record; do not
+> re-derive live numbers from it.
+
 Proposal, 2026-11-03. Lands in `docs/decision-audit.md` (ZW0.1 §"Where the
 invariant deliberately does not hold", Z11.1 §"Decision audit") plus one line in
 the superseded inventory §W. Nothing here changes `R/`; the registry half
@@ -10,15 +15,15 @@ of ZW0.1 (`criterion_spec()$asymmetry_reason`) already exists.
 Counted through `tidymarkers:::criterion_spec()` after `pkgload::load_all(".")`,
 never by `grep` (the string is recycled by `criterion_tbl()`):
 
-| column     | value                                                         | rows  |
-| ---------- | ------------------------------------------------------------- | ----- |
-| (total)    | —                                                             | 193   |
-| `source`   | `package assumption`                                          | 177   |
-| `source`   | `kwok1990`                                                    | 7     |
-| `source`   | `santalucia1998`                                              | 9     |
-| `evidence` | `rule_of_thumb`                                               | 193   |
-| `evidence` | `vendor_guideline` / `primary_literature` / `fitted_here`     | 0     |
-| `asymmetry_reason` | non-`NA`                                              | 9     |
+| column             | value                                                     | rows |
+| ------------------ | --------------------------------------------------------- | ---- |
+| (total)            | —                                                         | 193  |
+| `source`           | `package assumption`                                      | 177  |
+| `source`           | `kwok1990`                                                | 7    |
+| `source`           | `santalucia1998`                                          | 9    |
+| `evidence`         | `rule_of_thumb`                                           | 193  |
+| `evidence`         | `vendor_guideline` / `primary_literature` / `fitted_here` | 0    |
+| `asymmetry_reason` | non-`NA`                                                  | 9    |
 
 The "176 of 193" printed in four vignettes and "191 rows" printed in ROADMAP
 ZW1.3 are both stale. Naming a source raises `source`, not `evidence`: no row on
@@ -35,15 +40,18 @@ Registry-declared (9, the rows `criterion_asymmetry()` names and
 
 Outside the registry, each grounded in a named test:
 
-| # | where | what breaks | why | test |
-| - | ----- | ----------- | --- | ---- |
-| 1 | `test-invariants.R:181` | a revcomp locus is not representable | the locus model is strandless (`chrom`/`pos`/`ref`/`alt`) | asserts `!"strand" %in% names(snp)` |
-| 2 | `test-invariants.R:124` | two criteria differ under a coordinate shift | they read the whole contig; excluded by label `in-silico PCR (REF 1 / ALT 0)`, `off-target exact primer hits (n)` | M3 |
-| 3 | `test-invariants.R:33` | REF/ALT swap changes the probe set | the AS primers swap *roles*, not sequences; 3' bases exchange FAM↔HEX | M2 |
-| 4 | `test-as-primer.R:1` | the `-` strand AS 3' base is the complement | the primer binds the plus strand | makes the complement explicit |
-| 5 | `test-caps.R:214` | every CAPS site must be its own reverse complement | the scanner reads the plus strand only | asserts `all(rc(site) == site)` |
-| 6 | `test-lamp.R:238` | LAMP emits a paired REF set; an indel pair is `not_applicable` | REF template and failed reaction look alike; an indel has no single 3' base | Z9.1 |
-| 7 | `test-decision.R:161` | `NA` / `not_applicable` are never `pass` | "no evidence" is not "evidence in favour"; both stamp `unknown`/neutral | asserts `unknown` and `neutral` |
+| #   | where                   | what breaks                                                    | why                                                                                                               | test                                |
+| --- | ----------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 1   | `test-invariants.R:181` | a revcomp locus is not representable                           | the locus model is strandless (`chrom`/`pos`/`ref`/`alt`)                                                         | asserts `!"strand" %in% names(snp)` |
+| 2   | `test-invariants.R:124` | two criteria differ under a coordinate shift                   | they read the whole contig; excluded by label `in-silico PCR (REF 1 / ALT 0)`, `off-target exact primer hits (n)` | M3                                  |
+| 3   | `test-invariants.R:33`  | REF/ALT swap changes the probe set                             | the AS primers swap _roles_, not sequences; 3' bases exchange FAM↔HEX                                             | M2                                  |
+| 4   | `test-as-primer.R:1`    | the `-` strand AS 3' base is the complement                    | the primer binds the plus strand                                                                                  | makes the complement explicit       |
+| 5   | `test-caps.R:214`       | every CAPS site must be its own reverse complement             | the scanner reads the plus strand only                                                                            | asserts `all(rc(site) == site)`     |
+| 6   | `test-lamp.R:238`       | LAMP emits a paired REF set; an indel pair is `not_applicable` | REF template and failed reaction look alike; an indel has no single 3' base                                       | Z9.1                                |
+| 7   | `test-decision.R:161`   | `NA` / `not_applicable` are never `pass`                       | "no evidence" is not "evidence in favour"; both stamp `unknown`/neutral                                           | asserts `unknown` and `neutral`     |
+
+> **Superseded 2026-11-25:** closed by ZW0 M5 — see
+> `docs/decision-audit.md` §«Frame invariance: closed by ZW0 M5» and ROADMAP №29.
 
 Known gap, **not** an exception: `test-invariants.R:165`, the design search is
 not frame-invariant (candidate ranking differs across frames; the evaluation row
