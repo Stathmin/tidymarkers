@@ -123,6 +123,28 @@ test_that("primer_tm()'s default table is the one the oracle pins", {
   expect_identical(tidymarkers:::NN_TABLE, NN_SANTA_LUCIA)
 })
 
+# ZW3.10: the KASP/AS/COM and dPCR windows were written on primer_tm()'s default
+# salt correction, so the two move together or not at all.  This pins the
+# coupling.  It cannot say whether the numbers are right - that needs a measured
+# anchor (ZW3.4) - but a deliberate re-anchor has to change this test in the same
+# commit, so it cannot happen quietly.
+test_that("the design windows and the salt correction are one coordinate", {
+  expect_identical(tidymarkers:::TM_SALT_METHOD, "Schildkraut2010")
+  expect_equal(tidymarkers:::KASP_LIMITS$as_tm, c(55, 65))
+  expect_equal(tidymarkers:::KASP_LIMITS$com_tm, c(58, 63))
+  # the dPCR window is a written literal, not a copy of KASP's
+  expect_identical(deparse(formals(design_dpcr_marker)$tm_range), "c(44, 50)")
+
+  # both consumers reach the same symbol, so neither can drift alone
+  expect_identical(deparse(formals(assemble_primer_assay)$salt_method), "TM_SALT_METHOD")
+  s <- c("GAAGGTGACCAAGTTCATGCT", "AAGGTGACCAAGTTCATGCTC")
+  expect_equal(
+    primer_tm(s),
+    primer_tm(s, salt_method = "Schildkraut2010"),
+    tolerance = 1e-9
+  )
+})
+
 test_that("every pinned model is a table primer_tm() accepts", {
   s <- "ACGTACGTACGTACGTACGT"
   for (model in tm_models()) {

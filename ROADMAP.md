@@ -1589,6 +1589,12 @@ EST-CAPS, SNP2CAPS, HRM TP53, AS-LAMP (с цензурированием), ddPCR
   сборщиком с дефолтом `"SantaLucia1998-2"`; теперь дефолт —
   `TM_SALT_METHOD`, как у `assemble_kasp_assay()`. SL2-воспроизведение
   печатной панели остаётся явным аргументом (`test-tm-oracle.R`).
+  guard (2026-11-25): `test-tm-oracle.R` — «the design windows and the salt
+  correction are one coordinate» — пинит `TM_SALT_METHOD == "Schildkraut2010"`,
+  окна `as_tm` 55–65 / `com_tm` 58–63 / dPCR `tm_range` 44–50 и то, что дефолты
+  `assemble_primer_assay()` и `primer_tm()` указывают на символ
+  `TM_SALT_METHOD`, а не на копию значения. Guard держит связь, не уровень:
+  наивный flip теперь падает тестом, но сам flip по-прежнему ждёт вход (1).
   измерено (2026-11-23, `dev/tm-reanchor-measure.R`): SL2−Schild на реальных
   популяциях праймеров при Na 50 / Mg 1.5 / dNTPs 0.6 мМ, DMSO 0 %,
   dnac 25 нМ (mon = 163.842 мМ = 0.163842 М) даёт Δ = +3.28…+4.25 °C
