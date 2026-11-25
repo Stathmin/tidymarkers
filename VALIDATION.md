@@ -20,7 +20,7 @@ check is enforced, and what has not been validated at all.
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
   are checked against the enumeration, with BLAST+ as a speed/recall baseline.
 - **What does exist** is a literature-anchored evidence layer: 134 registered
-  sources, 147 extracted tables in `inst/extdata/`, and a ledger that binds 208
+  sources, 148 extracted tables in `inst/extdata/`, and a ledger that binds 208
   `test` rows to the 46 test files that consume them. Each link from a source,
   to the exact table read from it, to the test that asserts a property of it is
   machine-checked.
@@ -45,9 +45,10 @@ only as an abstract may not calibrate anything, and the tests enforce that.
 
 Ledger rows by use: 208 `test`, 132 `report` (a claim the paper makes, kept for
 comparison), 20 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 145 extract tables are named — the 147th CSV in
-`inst/extdata/` is the ledger itself and `example_region_targets.csv` is the
-shipped slice's target table — and `test` rows account for 129 of them.
+why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 145 extract tables are named — `example_region_targets.csv`
+is the shipped slice's target table, `steele2025_rice_kasp_calls.csv` the
+per-marker matrix above, and the 148th CSV in `inst/extdata/` is the ledger
+itself — and `test` rows account for 129 of them.
 Of the 20 `blocked` rows, 10 name no extract (`extract = none`) and say which
 paper could not be landed, and 10 name a real extract that carries no verdict of
 its own yet.
@@ -291,6 +292,21 @@ in `wheat_platform2019_platform_outcomes.csv`).
 review point: published markers are successes, so a pass/fail dataset built from
 them is survivorship-biased. The response is narrow — keep the denominators,
 keep the failures, never present the result as a probability.
+
+One file moves from study-level counts to per-marker calls:
+`inst/extdata/steele2025_rice_kasp_calls.csv` is the per-marker call matrix of
+Steele 2025, 3,366 KASP designs × 178 rice varieties parsed from the paper's
+Supplementary File S2 by `data-raw/steele2025_rice_s2.R`. Each row is one marker
+partitioned into ref / alt / het / missing / other calls that sum to 178. `?` is
+the only no-call (9,810 cells, 1.64 %); `-:-` is a real homozygous deletion, not
+a miss; `Uncallable` and `Bad` are annotations rather than calls.
+`tests/testthat/test-steele-s2.R` enforces the per-marker split, the measured
+panel totals and three hand-checked markers. The table is a published,
+measured outcome, not a simulation. It adds no ledger row of its own, so it does
+not change the family counts below; the paper's prose (>90 % called for all
+3,366 designs, 635 designs failed) does not match the shipped matrix (91 markers
+at ≤90 % called, one with no calls), and that mismatch is recorded rather than
+adjudicated.
 
 Per-family outcome tables do the same for wheat KASP platforms
 (`test-kasp-platforms.R`), rice KASP validation, tetra-primer ARMS in wheat and
