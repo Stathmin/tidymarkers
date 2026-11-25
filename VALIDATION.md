@@ -152,13 +152,22 @@ disagreement cannot pose as a quality disagreement.
 | Primer3 returned no pair at all                                                                              | 3/20                                                    |
 | Primer3 pair rejected by a package gate                                                                      | 9/20                                                    |
 | Primer3 would have used a >100 bp product on its own 60–150 bp range                                         | 12/20                                                   |
-| Amplicon size, both solved (n = 7)                                                                           | median difference **+1 bp**, range [−5, +25], ρ = 0.847 |
-| Runtime per locus, single core                                                                               | Primer3 0.06 s, this package **9.5 s**                  |
+| Amplicon size, both solved (n = 7)                                                                           | median difference **+1 bp**, range [−5, +17], ρ = 0.883 |
+| Runtime per locus, single core                                                                               | Primer3 0.05 s, this package **6.1 s**                  |
 
 The amplicon-size row's `n = 7` is the set of loci where _both_ tools produced
 any product — Primer3 on its own 60–150 bp range and this package on its
 50–100 bp gate. That set overlaps the eight gate-clearing loci above; it is not
 a subset of them.
+
+Both figures are wall-clock and move with the host and with designer changes, so
+they are recorded with the tree they were measured on: the first crosscheck run
+read ρ = 0.847 over [−5, +25] and 9.5 s per locus; the current values come from a
+run after `263cb50` (hairpin dG in R), `0383fe3`/`7529c4a` (screening) and
+`98502f5` (canonical locus row). Exactly one package amplicon moved across those
+commits — 81 → 73 bp at `ENSVATH10569559` (Chr4:1513124) — which turns its
+difference to Primer3 from +25 to +17 and leaves the Primer3 side unchanged.
+That single row is the whole of the drift; every acceptance band still holds.
 
 The three loci where Primer3 had a usable pair and this package returned none
 fail on their own stated rules (`No AS primer survived even the relaxed
@@ -187,6 +196,44 @@ specificity gates are written in, and it is now pinned to enumeration.
 
 The third table above is not a benchmark of `blast_primers()`; that path needs
 `rBLAST` and an index, and is covered by its own test.
+
+### One row per external tool
+
+`dev/cross-tool-sweep.R` answers ZY20's question — one row per tool, numbers or an
+explicit `not_run` — and writes `.tmp/cross-tool-sweep.csv`. It recomputes the
+Primer3, UNAFold and BLAST rows from the CSVs the scripts above produced, and
+probes the host for every other binary in the same run, so each cause is a fact
+observed then, not a note copied from an earlier session. The Primer3 block is a
+regression anchor: it re-checks the bands this file records (Tm r ≥ 0.999, mean
++3.92 °C, 17/20 loci with a pair, 5/8 agreement) and exits non-zero if one slips,
+because a slip means the harness changed, not the world.
+
+| Tool              | Kind                     | Status                     | Result on this host                                                                                                                                              |
+| ----------------- | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primer3 2.6.1     | designer + thermo oracle | measured                   | 17/20 loci get a pair in the 50–100 bp window; amplicon median +1 bp (n = 7), ρ = 0.883; 3/20 no pair; 9/20 rejected by a package gate                           |
+| UNAFold / mfold   | thermo oracle (dG)       | measured (not independent) | hairpin dG mean −0.84 kcal/mol (n = 34); heterodimer −1.75 (n = 4); `hybrid-ss-min` is the engine `oligo_dg()` calls, so this checks the wrapper, not the method |
+| BLAST+ (`blastn`) | specificity baseline     | measured                   | seed 8/8 equal, exact PCR 3/3 equal, 8 exact full-length hits, 0.47 s; answers a narrower question than the seed screen and is not a designer                    |
+| Primer-BLAST      | designer                 | not_run                    | web service only — needs network and manual submission; no local binary to run unattended                                                                        |
+| BatchPrimer3      | designer                 | not_run                    | same: web form only                                                                                                                                              |
+| MFEprimer-3.0     | designer + specificity   | not_run                    | `Sys.which("mfeprimer") == ""` — no binary in `PATH`                                                                                                             |
+| isPcr (UCSC)      | specificity              | not_run                    | `Sys.which("ispcr") == ""` — `blastn` is not a substitute for its product model                                                                                  |
+| EasyKASP          | designer (KASP)          | not_run                    | `Sys.which("easykasp") == ""`                                                                                                                                    |
+| NUPACK            | thermo oracle            | not_run                    | no binary; licence-gated                                                                                                                                         |
+| MELTING           | thermo oracle            | not_run                    | `Sys.which("melting") == ""`                                                                                                                                     |
+| VCF2CAPS          | designer                 | not_run                    | publication code, not distributed as an installable tool here; source is `vcf2caps2021`                                                                          |
+| KASP-IEva         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| LAMPrimers iQ     | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| ThermoPlex        | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| ARMSprimer3       | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| PrimerWeaver      | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| PyPCRtool         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| PRISM             | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+
+Three of eighteen run here. The fifteen that do not are named with the cause the
+run measured — a missing binary, a web-only form, a licence, or code that is not
+distributed — and none of them is reported as a comparison. The return gate is
+unchanged: install a named tool, the sweep reports it as newly present, then its
+block is written against the same anchors.
 
 ### Two bugs the cross-checks found
 
