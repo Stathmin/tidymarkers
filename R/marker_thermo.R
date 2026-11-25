@@ -480,6 +480,13 @@ primer_tm <- function(seq, DMSO = NULL, nn_table = NN_TABLE,
   conditions <- as_reaction_conditions(conditions)
   DMSO <- DMSO %||% conditions$DMSO
   seq <- as.character(seq)
+  # Zero candidates is a normal state for a `mutate()` over an empty filter
+  # (a very short template leaves design_common_primers() no window).  Passing
+  # it on raised TmCalculator's "Input sequence cannot be NULL or empty" before
+  # the caller could reach its own, clearer abort.
+  if (!length(seq)) {
+    return(numeric(0))
+  }
   gr <- TmCalculator::to_genomic_ranges(seq)
   dnac <- dnac %||% formals(TmCalculator::tm_nn)$dnac_high
   res <- TmCalculator::tm_calculate(gr,

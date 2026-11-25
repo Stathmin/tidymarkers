@@ -151,6 +151,14 @@ test_that("primer_tm() reproduces the legacy conditions and honours overrides", 
   )))
 })
 
+test_that("primer_tm() returns an empty numeric for an empty input", {
+  # A design whose window leaves no candidate primer calls primer_tm() on a
+  # zero-length vector; TmCalculator aborted there, before the caller could
+  # reach its own, clearer message.
+  expect_identical(primer_tm(character(0)), numeric(0))
+  expect_identical(primer_tm(NULL), numeric(0))
+})
+
 test_that("primer_tm() fills a partial conditions list from the defaults", {
   s <- "ACGTACGTACGTACGTACGT"
   expect_equal(

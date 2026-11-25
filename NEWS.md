@@ -6,6 +6,18 @@
 
 ## 0.4.1 (в работе)
 
+### `primer_tm(character(0))` больше не падает (2026-11-25)
+
+- **Класс изменения: исправление; поведение пакета.**
+- Пустой вход — нормальное состояние `mutate()` по пустому фильтру: короткое
+  окно не оставляет `design_common_primers()` ни одного кандидата, и
+  `TmCalculator` абортировал с «Input sequence cannot be NULL or empty» раньше,
+  чем вызывающий успевал дать свою, понятную ошибку. Теперь
+  `primer_tm(character(0))` и `primer_tm(NULL)` возвращают `numeric(0)`, а
+  `design_common_primers()` доходит до «No common primer passed the filters».
+- Тесты: `tests/testthat/test-oligo-dg.R`,
+  `tests/testthat/test-design-common-primers.R`.
+
 ### Rust-ускорение `ZY10`/`ZX4` закрыто замером: движок не окупается (2026-11-25)
 
 - **Класс изменения: решение и документация; `R/` не менялся.**
