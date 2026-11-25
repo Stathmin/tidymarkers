@@ -340,20 +340,26 @@ success_block <- function(x) {
       "the rest are `not_run` with their reason._"
     )
   }
-  head <- c(
-    lead,
-    "",
-    "| Predictor | n | works | fails | AUC | LOO mean | LOO min-max | Verdict | Reason |",
-    "| --------- | - | ----- | ----- | --- | -------- | ----------- | ------- | ------ |"
-  )
-  body <- sprintf(
-    "| `%s` | %d | %d | %d | %s | %s | %s | `%s` | %s |",
-    x$predictor, x$n, x$works, x$fails,
+  head <- c("Predictor", "n", "works", "fails", "AUC", "LOO mean", "LOO min-max", "Verdict", "Reason")
+  body <- cbind(
+    paste0("`", x$predictor, "`"),
+    as.character(x$n), as.character(x$works), as.character(x$fails),
     success_fmt(x$auc), success_fmt(x$loo_mean), success_range(x$loo_min, x$loo_max),
-    x$verdict, ifelse(nzchar(x$note), x$note, "\u2014")
+    paste0("`", x$verdict, "`"),
+    ifelse(nzchar(x$note), x$note, "\u2014")
   )
+  # Pad every column to its widest cell (at least three characters) so the
+  # generated block matches what a markdown formatter leaves behind; otherwise
+  # `--check` fails the first time an editor saves the file.
+  cells <- rbind(head, body)
+  widths <- pmax(3L, apply(nchar(cells, type = "width"), 2L, max))
+  row_md <- function(v) {
+    pad <- strrep(" ", widths - nchar(v, type = "width"))
+    paste0("| ", paste0(v, pad, collapse = " | "), " |")
+  }
+  rule <- paste0("| ", paste0(strrep("-", widths), collapse = " | "), " |")
   c(
-    head, body, "",
+    "", lead, "", row_md(head), rule, apply(body, 1L, row_md), "",
     paste0(
       "The harness is `dev/success-model.R`; its header names the join rule, ",
       "the tie convention and the thresholds above."
