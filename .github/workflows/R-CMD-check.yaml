@@ -167,32 +167,13 @@ jobs:
             # in the test output and this step's warning), not to a red job.
             - name: Warm demo cache (best-effort)
               continue-on-error: true
-              # pwsh is the Windows default and mangled the multi-line R script
-              # (exit 1 in under half a second, no output); the bash shell is
-              # what the OligoArrayAux step above already relies on.
-              shell: bash
-              run: |
-                  Rscript -e '
-                  pkgload::load_all(".")
-                  warm <- list(
-                    genome = function() ath_genome(),
-                    variants = function() ensembl_variants("4", 1500000L, 1560000L),
-                    gene = function() ensembl_gene("AT4G00650")
-                  )
-                  failed <- character()
-                  for (nm in names(warm)) {
-                    msg <- tryCatch(
-                      { invisible(warm[[nm]]()); NULL },
-                      error = function(e) conditionMessage(e)
-                    )
-                    if (!is.null(msg)) {
-                      failed <- c(failed, nm)
-                      cat("::warning title=Demo cache warm failed::", nm, ": ",
-                        gsub("[\\r\\n]+", " ", msg), "\n", sep = "")
-                    }
-                  }
-                  quit(status = as.integer(length(failed) > 0L))
-                  '
+              # The R code lives in dev/warm-demo-cache.R.  The multi-line
+              # `Rscript -e` this step used to carry died before R started on
+              # Windows -- exit 139 in ~60 ms, no output at all -- under both
+              # pwsh and bash, so the runner never warmed anything and the
+              # suite fell back to SKIPs.  A one-line command under the default
+              # shell has no quoting hazard on either platform.
+              run: Rscript dev/warm-demo-cache.R
 
             - uses: r-lib/actions/check-r-package@v2
               # A cold demo cache makes the examples ~11 min and the suite ~21 min

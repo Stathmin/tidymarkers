@@ -186,6 +186,7 @@ multi_locus <- function() {
 
 test_that("the batch and design_markers() design a multi-allelic locus the same", {
   skip_if_no_oligoarrayaux()
+  skip_if_cold_demo_cache("genome")
   genome <- ath_genome()
   locus <- multi_locus()
   batch <- design_marker_batch(genome, locus, design = "snp", flank = 150L)
@@ -201,6 +202,7 @@ test_that("the batch and design_markers() design a multi-allelic locus the same"
 
 test_that("a locus table without alt2/strand is the same as one that names them", {
   skip_if_no_oligoarrayaux()
+  skip_if_cold_demo_cache("genome")
   genome <- ath_genome()
   bare <- multi_locus()[, c("chrom", "pos", "ref", "alt")]
   named <- bare
