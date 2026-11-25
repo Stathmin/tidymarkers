@@ -167,6 +167,10 @@ jobs:
             # in the test output and this step's warning), not to a red job.
             - name: Warm demo cache (best-effort)
               continue-on-error: true
+              # pwsh is the Windows default and mangled the multi-line R script
+              # (exit 1 in under half a second, no output); the bash shell is
+              # what the OligoArrayAux step above already relies on.
+              shell: bash
               run: |
                   Rscript -e '
                   pkgload::load_all(".")
@@ -191,20 +195,25 @@ jobs:
                   '
 
             - uses: r-lib/actions/check-r-package@v2
-              timeout-minutes: 40
+              # A cold demo cache makes the examples ~11 min and the suite ~21 min
+              # on Windows, so the 40-minute step ceiling cut the vignette
+              # rebuild off mid-run; 50 leaves headroom for both.
+              timeout-minutes: 50
               with:
                   args: 'c("--no-manual", "--as-cran")'
                   error-on: '"warning"'
                   upload-snapshots: true
 
-            # The devel leg dies inside `* checking tests ...` on a SIGTERM
-            # (exit 143) about 75 minutes after job start, and the sender is
-            # *not* established: no elapsed-time limit, no OOM killer message,
-            # and no rcmdcheck timeout is configured. Whatever kills it kills
-            # the process group before R writes the failing test's output, so
-            # the check directory is the only record of where it stopped -- and
-            # `check-r-package`'s own upload step is skipped when the check
-            # fails. Capture it ungated by success.
+            # The devel leg once died inside `* checking tests ...` with exit
+            # 143 about 75 minutes after job start. Measured later: the suite
+            # really runs ~21-30 minutes and the job finished in ~20 minutes, so
+            # the sender was the runner shutting the job down mid-test-run; no
+            # OOM-killer message or elapsed-time limit was found and memory
+            # pressure is *not* established. `TESTTHAT_CPUS=2` stays as a
+            # mitigation. Whatever kills it kills the process group before R
+            # writes the failing test's output, and `check-r-package`'s own
+            # upload step is skipped when the check fails, so capture the check
+            # directory ungated by success.
             #
             # `cancelled()` is in the condition because a job recorded as
             # cancelled (which is how a runner shutdown / cancellation lands in
