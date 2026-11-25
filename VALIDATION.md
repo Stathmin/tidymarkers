@@ -661,7 +661,17 @@ named reason when one is absent.
 
 ## Known gaps
 
-- No bench validation, and none claimed in the README.
+- **No bench (wet-lab) validation, and none claimed.** The gap is wet-lab, not
+  computational: `README.md` §Validation says in as many words that the short
+  answer is published measurements, not a bench run by the maintainers, and that
+  no wet-lab data was produced here. What would close it is a single operator
+  experiment — the eight-row mismatch panel already used for the allele-specific
+  cross-check, run through a real assay, scored against the package's predicted
+  sign and within-primer ordering — and that is an operator action, not agent
+  work. Separately, the wall-clock and RSS figures quoted in `ROADMAP.md` are
+  host measurements from a single machine, not a benchmark suite:
+  `capabilities("profmem")` is `FALSE`, so `bench::mark()$mem_alloc` is `NA`, and
+  `dev/proc-mem.R` reads `VmHWM` from `/proc` instead.
 - The allele-specific layer has one external comparator — Biopython's
   terminal-mismatch nearest-neighbour Tm — and it is a proxy: it agrees with the
   package's efficiency gap on the direction of all eight panel rows but ranks
@@ -683,7 +693,11 @@ named reason when one is absent.
   notice, `api.fatcat.wiki` and `web.archive.org` timed out, and keyless web
   search was challenged. Each row's `access_detail` records the Unpaywall and
   OpenAlex measurement behind its `access` level, so a later reader can retry
-  without re-walking a route that was already tried.
+  without re-walking a route that was already tried. The workspace's own network
+  allowlist was measured on 2026-11-25: `www.ebi.ac.uk` answered 200, while
+  `api.core.ac.uk` and `ouci.dntb.gov.ua` did not connect (000) and
+  `academic.oup.com` returned 403 — so the six PDFs are an operator action
+  (institutional access or a supplied copy), not an untried route.
 - `DECIPHER`'s amplification efficiency is a model of hybridisation plus Taq
   extension. It is a proxy for allelic discrimination, not a replacement for an
   experiment.
