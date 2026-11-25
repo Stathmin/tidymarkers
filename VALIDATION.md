@@ -5,8 +5,10 @@ check is enforced, and what has not been validated at all.
 
 ## Summary
 
-- **The maintainers have produced no wet-lab data.** Every measured number in
-  this repository was measured by the authors of the cited paper, not here.
+- **The maintainers have produced no wet-lab data.** No number that comes from
+  a paper was measured here. What the repository measures itself — engine
+  agreement, the specificity oracle, the validation benchmark — is marked
+  `measured` below and is reproducibility evidence, not experimental evidence.
   There is no bench validation of a `tidymarkers` design.
 - **There is now a head-to-head run against Primer3 2.6.1**, on the layer the
   two tools share: the same oligos through both Tm and dG engines, and the same
