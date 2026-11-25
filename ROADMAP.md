@@ -2582,10 +2582,12 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
 
 Это очередь: каждый `ZY1`–`ZY29` — один пункт с четырьмя полями, и порядок
 внутри секции и есть приоритет. Закрыты `ZY2` (причина отказа попытки),
-`ZY7` (`marker_reprex()`) и `ZY11` (property-тесты). Сначала разблокированное
+`ZY7` (`marker_reprex()`), `ZY11` (property-тесты) и `ZY13` (formal model
+лексикографического порядка). Сначала разблокированное
 (`ZY16`), затем внутренняя работа (`ZY1`, `ZY4`, `ZY15`), затем внешне
-заблокированное (`ZY3`, `ZY5`, `ZY6`, `ZY8`, `ZY9`, `ZY10`, `ZY13`, `ZY17`);
-`ZY12`, `ZY14` начинаются только после установки названного инструмента.
+заблокированное (`ZY3`, `ZY5`, `ZY6`, `ZY8`, `ZY9`, `ZY17`);
+`ZY10` ждёт замера `ZX4` (тулчейн `rustc`/`cargo` уже поставлен), `ZY12`,
+`ZY14` начинаются только после установки названного инструмента.
 `ZY21`–`ZY24` — идеи, перенесённые из черновиков статьи: бенчмарк валидации,
 кросс-языковой writer трасс, экспорт RO-Crate/PROV-O и фальсификация
 односкалярной оценки; они разблокированы и стоят после `ZY20`.
@@ -2867,12 +2869,20 @@ provenance_required)`: review queue candidate-обновлений с полны
   правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
   проверка: equality-тест на замороженном наборе входов плюс benchmark, где
   Rust обязан быть быстрее R-адаптера.
-  блокер: `ZX4` (сначала R-адаптер и замер) и отсутствие `cargo`/`rustc`;
-  `rextendr`, `arrow`, `polars` не установлены.
+  блокер: `ZX4` (сначала R-адаптер и замер) остаётся открытым; `rextendr`,
+  `arrow`, `polars` не установлены.
   следствие: медленные пути остаются в R; ничего не ломается.
-  Блокер: на этой машине нет тулчейна `cargo`/`rustc` (проверено
-  `command -v`: оба отсутствуют). Ворота возврата: тулчейн установлен,
-  затем портировать inner-loop ядро и прогнать R-vs-Rust equivalence-проверку.
+  тулчейн (проверено 2026-11-25): `rustc 1.85.1 (4eb161250 2025-03-15)` и
+  `cargo 1.85.1 (d73d2caf9 2024-12-31)`, поставлены
+  `apt-get install -y --no-install-recommends rustc cargo`. Пробный крейт с
+  `extendr-api = "0.7.1"` собирается (`cargo build` →
+  `Finished dev profile [unoptimized + debuginfo]`). Два измеренных условия:
+  (а) `libR-sys` ищет `R` в `PATH` — при одном `R_HOME` падает
+  `build.rs:396: Cannot find R major version`; (б) `extendr-api 0.9.0` падает
+  в своём `build.rs:19`: `Result::unwrap() on an Err value: NotPresent`
+  (нет `DEP_R_R_VERSION_MAJOR`), поэтому пин — `0.7.x`.
+  Ворота возврата: `ZX4` закрыт замером R-адаптера, `R` в `PATH`, затем
+  портировать inner-loop ядро и прогнать R-vs-Rust equivalence-проверку.
 - [x] **`ZY11` Property-based testing.** Расширение examples-based тестов через
       `hedgehog` (или аналог). Инварианты: specificity scoring — детерминизм
       рейтинга, нет negative scores, транзитивный tier ordering; decision
@@ -2906,18 +2916,28 @@ provenance_required)`: review queue candidate-обновлений с полны
       на base R: `checkmate`/`assertthat` не понадобились, названный блокер снят
       самим решением; `tests/testthat/test-contracts.R` (38 `expect_`-утверждений), коммит
       `e7025a2`.
-- [—] **`ZY13` Formal verification одного инварианта.** Пилот — доказательство
-  корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
-  либо CrossHair на R-эквивалентной Python-реимплементации. Один
-  доказанный инвариант как reference для подхода.
-  правка: артефакт вне пакета, на него ссылается `VALIDATION.md`.
-  проверка: прогон тулчейна на артефакте завершается успешно (CI-шаг —
-  только когда тулчейн появится).
-  блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
-  следствие: инвариант остаётся проверенным примерами, не доказанным.
-  Блокер: нет тулчейна `lean`/`lake` (проверено `command -v`: `lean`,
-  `lake`, `crosshair` отсутствуют). Ворота возврата: тулчейн установлен,
-  затем доказательство identity арифметики Tm-смещения.
+- [x] **`ZY13` Formal verification одного инварианта.** Пилот — доказательство
+      корректности lexicographic tier ordering (или BNCC Pareto front) в Lean 4
+      либо CrossHair на R-эквивалентной Python-реимплементации. Один
+      доказанный инвариант как reference для подхода.
+      правка: артефакт вне пакета, на него ссылается `VALIDATION.md`.
+      проверка: прогон тулчейна на артефакте завершается успешно (CI-шаг —
+      только когда тулчейн появится).
+      блокер: нет `lean`/`crosshair`; без тулчейна пункт не начинается.
+      следствие: инвариант остаётся проверенным примерами, не доказанным.
+      закрыто 2026-11-25 (CrossHair-маршрут, не Lean): `dev/formal/lexicographic_order.py`
+      — модель `order_by_margins()` (`R/marker_select.R:405`) как лексикографический
+      компаратор над ключами `d·v` (`d = ±1`); `dev/formal/README.md` — аргумент
+      отображения R → модель. Шесть инвариантов (`tie_is_reflexive`,
+      `ranking_is_asymmetric`, `ranking_is_transitive`, `ranking_is_total`,
+      `comparator_matches_successive_refinement`, `directions_only_rescale`)
+      подтверждены `crosshair-tool 0.0.114` на Python 3.13.5 («Confirmed over all
+      paths»), домен ограничен (`MAX_KEY_LEN`/`MAX_DIRECTION_LEN = 3`) — это
+      bounded-domain proof, README говорит это прямо. Мутация `>` → `>=` ломает
+      асимметрию и ловится (`AssertionError`). В `dev/check.R` — шаг 3d, только
+      dependency-free `_selftest()`; сами шесть прогонов требуют venv и ~5 мин,
+      поэтому остаются ручными. `VALIDATION.md` §Formal verification.
+      Не покрыто моделью: Pareto-шаг `bncc_rank()` и каскад гейтов.
 - [x] **`ZY14` Mutation testing критических subsystems.** Только policy decision
       logic (classification, routing в decision graph), invariant enforcement
       (artefact hashing, outcome binding) и chemistry fallback cascade. Цель —

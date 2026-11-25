@@ -13,9 +13,12 @@
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
-#   3c. every Rd example runs on a host without OligoArrayAux -- the macOS CI
+#    3c. every Rd example runs on a host without OligoArrayAux -- the macOS CI
 #       leg installs BLAST+ only, so an example that reaches `pcr_efficiency()`
 #       must sit in `\dontrun{}` (see dev/check-examples-noengine.R)
+#    3d. the formal model's dependency-free selftest (dev/formal/README.md);
+#       the CrossHair checks themselves need a venv and take ~5 min, so they
+#       stay a manual run
 #    4. spelling -- only with `--spelling`: English prose (README, man/, vignettes/)
 #       is checked against `inst/WORDLIST`; the Russian NEWS.md/ROADMAP.md are out
 #       of scope because `spelling` has no per-file exclusion
@@ -242,6 +245,27 @@ step("examples (no engine)", function() {
   if (!identical(as.integer(status), 0L)) {
     stop("dev/check-examples-noengine.R failed (status ", status, ")")
   }
+})
+
+# 3d. formal model (selftest) -----------------------------------------------
+step("formal model (selftest)", function() {
+  python <- Sys.which("python3")
+  if (!nzchar(python)) return(message("  skip (python3 not installed)"))
+  # The CrossHair checks (dev/formal/README.md) need a venv and ~5 min; the
+  # selftest needs nothing and catches an algebra regression in the model.
+  out <- suppressWarnings(system2(
+    python, file.path("dev", "formal", "lexicographic_order.py"),
+    stdout = TRUE, stderr = TRUE
+  ))
+  status <- attr(out, "status")
+  if (!is.null(status) && status != 0L) {
+    message(paste(out, collapse = "\n"))
+    stop("dev/formal/lexicographic_order.py selftest failed")
+  }
+  if (!any(grepl("selftest ok", out, fixed = TRUE))) {
+    stop("dev/formal/lexicographic_order.py printed no 'selftest ok'")
+  }
+  ok("the lexicographic-ordering model passes its selftest")
 })
 
 # 4. spelling ---------------------------------------------------------------

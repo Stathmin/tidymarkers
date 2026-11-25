@@ -481,14 +481,33 @@ The table below is generated; `--check` reproduces it byte for byte and fails if
 the file has drifted.
 
 <!-- success-model:begin -->
+
 _The corpus holds no recorded outcome, so no predictor can be scored. This run reports `not_run` with its reason rather than a number._
 
-| Predictor | n | works | fails | AUC | LOO mean | LOO min-max | Verdict | Reason |
-| --------- | - | ----- | ----- | --- | -------- | ----------- | ------- | ------ |
-| `success-model:corpus` | 0 | 0 | 0 | — | — | — | `not_run` | no outcomes.csv under .tmp/corpus; record some with marker_record_outcome() |
+| Predictor              | n   | works | fails | AUC | LOO mean | LOO min-max | Verdict   | Reason                                                                      |
+| ---------------------- | --- | ----- | ----- | --- | -------- | ----------- | --------- | --------------------------------------------------------------------------- |
+| `success-model:corpus` | 0   | 0     | 0     | —   | —        | —           | `not_run` | no outcomes.csv under .tmp/corpus; record some with marker_record_outcome() |
 
 The harness is `dev/success-model.R`; its header names the join rule, the tie convention and the thresholds above.
 <!-- success-model:end -->
+
+## Formal verification of the ranking
+
+`ZY13`'s invariant is the lexicographic ordering behind `order_by_margins()`
+(`R/marker_select.R:405`). `dev/formal/lexicographic_order.py` restates it as a
+comparator over rank keys `d * v` (`d = +1` for a `desc` column, `-1` for an
+`asc` one), and `dev/formal/README.md` argues the R-to-model mapping. Six
+properties are confirmed by CrossHair (`crosshair-tool 0.0.114`, Python 3.13.5):
+tie reflexivity, asymmetry, transitivity, totality, agreement with "the first
+differing coordinate decides", and invariance when a value and its direction are
+mirrored together.
+
+The proof covers a bounded domain — key tuples and direction lists of at most
+three entries — and it covers the model, not the R code; the README states both
+limits and carries the command lines. Mutating the comparator's `>` to `>=`
+produces a counterexample, so the checks are not vacuous. `dev/check.R` step 3d
+runs only the model's dependency-free selftest, because the six CrossHair runs
+need a virtualenv and about five minutes.
 
 ## Reproducing
 
@@ -539,3 +558,6 @@ matching tests skip with a named reason when one is absent.
 - `DECIPHER`'s amplification efficiency is a model of hybridisation plus Taq
   extension. It is a proxy for allelic discrimination, not a replacement for an
   experiment.
+- The formal model bounds key and direction lengths at three entries and covers
+  the comparator only: `bncc_rank()`'s Pareto step and the gate cascade are
+  checked by examples and mutation tests, not proven.
