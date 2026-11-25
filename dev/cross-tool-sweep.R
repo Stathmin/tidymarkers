@@ -19,8 +19,8 @@
 #  changed.  The same rule is written in ROADMAP.md's acceptance clause.
 #
 #  Run:  Rscript dev/cross-tool-sweep.R [--fresh] [--check]
-#    --fresh  re-run dev/primer3-crosscheck.R and dev/specificity-oracle.R
-#             instead of reusing their CSVs (~3 min, ~1 GB peak)
+#    --fresh  re-run dev/primer3-crosscheck.R, dev/specificity-oracle.R and
+#             dev/as-tm-crosscheck.R instead of reusing their CSVs (~3 min, ~1 GB peak)
 #    --check  exit non-zero if a row is malformed or a Primer3 band slipped
 #  Writes .tmp/cross-tool-sweep.csv (git-ignored).
 # =============================================================================
@@ -51,9 +51,11 @@ fresh <- "--fresh" %in% opts
 check <- "--check" %in% opts
 rscript <- file.path(R.home("bin"), "Rscript")
 
-run_script <- function(name, label) {
+run_script <- function(name, label, wd = root) {
   cat(sprintf("--fresh: running %s (%s)\n", name, label))
   t0 <- proc.time()[["elapsed"]]
+  old <- setwd(wd)
+  on.exit(setwd(old), add = TRUE)
   status <- system2(rscript, file.path(root, "dev", name), stdout = TRUE, stderr = TRUE)
   elapsed <- proc.time()[["elapsed"]] - t0
   cat(tail(status, 3L), sep = "\n")
@@ -159,23 +161,27 @@ registry <- data.frame(
     "Primer-BLAST", "BatchPrimer3", "MFEprimer-3.0", "isPcr (UCSC)",
     "EasyKASP", "NUPACK", "MELTING",
     "VCF2CAPS", "KASP-IEva", "LAMPrimers iQ", "ThermoPlex",
-    "ARMSprimer3", "PrimerWeaver", "PyPCRtool", "PRISM"
+    "ARMSprimer3", "PrimerWeaver", "PyPCRtool", "PRISM",
+    "Biopython Tm_NN"
   ),
   kind = c(
     "designer + thermo oracle", "thermo oracle (dG)", "specificity baseline",
     "designer", "designer", "designer + specificity", "specificity",
     "designer (KASP)", "thermo oracle", "thermo oracle",
-    rep("designer", 8L)
+    rep("designer", 8L),
+    "allele-specific thermo oracle"
   ),
   probe = c(
     "primer3_core", "hybrid-ss-min", "blastn",
     NA, NA, "mfeprimer", "ispcr", "easykasp", "nupack", "melting",
-    rep(NA_character_, 8L)
+    rep(NA_character_, 8L),
+    "python3"
   ),
   status = c(
     "measured", "measured", "measured",
     "web", "web", "absent", "absent", "absent", "licence", "absent",
-    rep("paper", 8L)
+    rep("paper", 8L),
+    "measured"
   ),
   stringsAsFactors = FALSE
 )
@@ -193,6 +199,40 @@ not_run_cause <- function(kind, probe) {
 probe_hits <- vapply(registry$probe, function(p) {
   if (is.na(p)) NA_character_ else Sys.which(p)
 }, character(1))
+
+# Biopython is a Python library, not a binary: probe the interpreter, then the
+# import, then the CSV.  Any failure names the observed fact, as for not_run.
+as_py <- ""
+as_cause <- ""
+if (!nzchar(probe_hits[registry$tool == "Biopython Tm_NN"])) {
+  as_cause <- 'Sys.which("python3") == "" -- no interpreter for the Biopython leg'
+} else {
+  as_import <- suppressWarnings(system2(
+    Sys.which("python3"), c("-c", shQuote("import Bio.SeqUtils.MeltingTemp")),
+    stdout = FALSE, stderr = FALSE
+  ))
+  if (identical(as.integer(as_import), 0L)) {
+    as_py <- Sys.which("python3")
+  } else {
+    as_cause <- 'python3 -c "import Bio.SeqUtils.MeltingTemp" exited non-zero -- Biopython not importable'
+  }
+}
+as_csv <- csv_path("as-tm-crosscheck.csv")
+as_elapsed <- NA_real_
+if (nzchar(as_py) && (fresh || !file.exists(as_csv))) {
+  as_elapsed <- run_script("as-tm-crosscheck.R", "8-row AS panel")
+  st <- attr(as_elapsed, "status")
+  if (!is.null(st) && st != 0L) {
+    as_cause <- sprintf(
+      "dev/as-tm-crosscheck.R exited %d (OligoArrayAux or Biopython missing -- see its output)", st
+    )
+  }
+}
+as_df <- if (nzchar(as_py) && file.exists(as_csv)) {
+  tryCatch(utils::read.csv(as_csv, stringsAsFactors = FALSE), error = function(e) NULL)
+} else {
+  NULL
+}
 
 rows <- lapply(seq_len(nrow(registry)), function(i) {
   r <- registry[i, ]
@@ -216,6 +256,34 @@ rows <- lapply(seq_len(nrow(registry)), function(i) {
         where_diverged = sprintf(
           "hairpin dG mean %+.2f kcal/mol (n = %d); heterodimer %+.2f (n = %d); NOT independent -- hybrid-ss-min is the engine oligo_dg() calls",
           mean(hp_delta), length(hp_delta), mean(dm_delta), length(dm_delta)
+        ),
+        cause = ""
+      ))
+    }
+    if (r$tool == "Biopython Tm_NN") {
+      if (nzchar(as_cause) || is.null(as_df) || nrow(as_df) != 8L) {
+        return(c(
+          tool = r$tool, kind = r$kind, status = "not_run",
+          oracle = "", loci = "", pairs_50_100 = "", runtime_s = "",
+          where_diverged = "",
+          cause = if (nzchar(as_cause)) {
+            as_cause
+          } else {
+            "results/as-tm-crosscheck.csv missing or not 8 rows -- run dev/as-tm-crosscheck.R"
+          }
+        ))
+      }
+      return(c(
+        tool = r$tool, kind = r$kind, status = "measured",
+        oracle = "Biopython Tm_NN (DNA_NN3 + DNA_TMM1), same salt and strand conditions",
+        loci = sprintf("%d", nrow(as_df)), pairs_50_100 = "",
+        runtime_s = if (is.na(as_elapsed)) "reused" else sprintf("%.1f", as_elapsed),
+        where_diverged = sprintf(
+          "dtm > 0 %d/%d, dgap > 0 %d/%d; median dtm penultimate %+.2f C vs terminal %+.2f C; Spearman rho(dtm, discrimination) %+.3f (reported, not asserted)",
+          sum(as_df$dtm > 0), nrow(as_df), sum(as_df$dgap > 0), nrow(as_df),
+          stats::median(as_df$dtm[as_df$geom == 1L]),
+          stats::median(as_df$dtm[as_df$geom == 0L]),
+          stats::cor(as_df$dtm, as_df$discrimination, method = "spearman")
         ),
         cause = ""
       ))

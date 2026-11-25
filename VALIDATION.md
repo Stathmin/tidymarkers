@@ -15,6 +15,13 @@ check is enforced, and what has not been validated at all.
   20 SNP loci through both designers with Primer3 constrained to the package's
   own amplicon window. The numbers are in _Primer3, end to end_ below, and are
   reproducible with `Rscript dev/primer3-crosscheck.R`.
+- **The allele-specific layer has one external comparator.** Primer3 does not
+  design allele-specific primers, but Biopython's `Tm_NN` scores a 3′-terminal
+  mismatch through its own penalty table. On the same eight panel rows both
+  engines put the mutant duplex lower, and within every primer the penultimate
+  mismatch costs more than the terminal one; the two metrics rank the rows
+  differently (ρ = 0.238), so only direction is asserted. See _Allele-specific
+  discrimination_ below.
 - **Specificity is scored against ground truth, not against PolyMarker.** On
   TAIR10 the correct answer to "how many places does this primer bind" is
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
@@ -178,6 +185,50 @@ layer — allele-specific discrimination, 3′-mismatch class, off-target counti
 is exactly what Primer3 does not do, so this table is the _shared_ layer and not
 a ranking of the two tools.
 
+### Allele-specific discrimination: a terminal-mismatch Tm cross-check
+
+Primer3 does not design allele-specific primers, so the Primer3 run above cannot
+score the discrimination layer. The one external engine that can is Biopython's
+`Bio.SeqUtils.MeltingTemp.Tm_NN` (1.85), which applies a terminal-mismatch
+penalty table (`DNA_TMM1`) on top of its nearest-neighbour set. `ntthal` cannot:
+it truncates the primer at the mismatch instead of scoring it, and three
+different 3′ substitutions returned the identical dG = −4333.7 with it.
+
+`dev/as-tm-crosscheck.R` builds an 8-row panel — four 6-nt allele-specific
+regions, each scored with the mismatch at the 3′ terminal base and again at the
+penultimate base — computes the package's `discrimination` and the on/off
+efficiency gap `dgap`, calls `dev/as-tm-crosscheck.py` (`Tm_NN` at
+dnac1 = dnac2 = 25 nM, Na 50 mM, Mg 1.5 mM, dNTPs 0.6 mM, saltcorr 5), and merges
+the two.
+
+| primer region | mismatch at | `discrimination` | `dgap` | `tm_ref` | `tm_alt` | `dtm` |
+| ------------- | ----------- | ---------------- | ------ | -------- | -------- | ----- |
+| CATGCT        | 3′ terminal | 0.0296           | 0.1154 | 58.49    | 57.55    | 0.95  |
+| CAGGAT        | 3′ terminal | 0.1618           | 0.8740 | 59.82    | 59.38    | 0.45  |
+| CGATGA        | 3′ terminal | 0.4303           | 0.8644 | 58.74    | 57.83    | 0.91  |
+| CCGTAA        | 3′ terminal | 0.3243           | 0.8695 | 58.55    | 57.97    | 0.58  |
+| CATGCT        | penultimate | 0.3542           | 0.6966 | 58.49    | 49.69    | 8.80  |
+| CAGGAT        | penultimate | 0.2992           | 0.6035 | 59.82    | 54.50    | 5.33  |
+| CGATGA        | penultimate | 0.3175           | 0.6324 | 58.74    | 51.89    | 6.85  |
+| CCGTAA        | penultimate | 0.3029           | 0.6021 | 58.55    | 52.75    | 5.80  |
+
+All eight rows point the same way in both engines: the mismatch destabilises the
+duplex (`dtm > 0`) and lowers amplification (`dgap > 0`), and within every primer
+the penultimate mismatch costs more than the terminal one (median `dtm` 6.33 °C
+against 0.74 °C). Beyond that the two metrics do not agree. Spearman ρ(`dtm`,
+`discrimination`) is 0.238, and `discrimination` inverts the terminal/penultimate
+ordering for two of the four primers. The test therefore asserts the direction
+and the within-primer ordering, reports ρ, and asserts no magnitude: a Tm drop is
+not an efficiency drop, and the second depends on where the mismatch sits with
+respect to the polymerase, which a two-state nearest-neighbour model does not
+contain.
+
+Routes that were tried and do not work, recorded so a later reader does not
+retry them: the Bioconductor package `melting` cannot be installed here (`curl`
+to bioconductor.org times out, exit 28); `nupack` has no PyPI distribution;
+`pydna` models perfect duplexes only; and `primer3-py` is the same engine as the
+cross-check above rather than an independent one.
+
 ### Specificity against ground truth
 
 `dev/specificity-oracle.R` hits TAIR10 (119.7 Mb) three ways. PolyMarker is not
@@ -202,35 +253,36 @@ The third table above is not a benchmark of `blast_primers()`; that path needs
 
 `dev/cross-tool-sweep.R` answers ZY20's question — one row per tool, numbers or an
 explicit `not_run` — and writes `.tmp/cross-tool-sweep.csv`. It recomputes the
-Primer3, UNAFold and BLAST rows from the CSVs the scripts above produced, and
+Primer3, UNAFold, BLAST and Biopython rows from the CSVs the scripts above produced, and
 probes the host for every other binary in the same run, so each cause is a fact
 observed then, not a note copied from an earlier session. The Primer3 block is a
 regression anchor: it re-checks the bands this file records (Tm r ≥ 0.999, mean
 +3.92 °C, 17/20 loci with a pair, 5/8 agreement) and exits non-zero if one slips,
 because a slip means the harness changed, not the world.
 
-| Tool              | Kind                     | Status                     | Result on this host                                                                                                                                              |
-| ----------------- | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Primer3 2.6.1     | designer + thermo oracle | measured                   | 17/20 loci get a pair in the 50–100 bp window; amplicon median +1 bp (n = 7), ρ = 0.883; 3/20 no pair; 9/20 rejected by a package gate                           |
-| UNAFold / mfold   | thermo oracle (dG)       | measured (not independent) | hairpin dG mean −0.84 kcal/mol (n = 34); heterodimer −1.75 (n = 4); `hybrid-ss-min` is the engine `oligo_dg()` calls, so this checks the wrapper, not the method |
-| BLAST+ (`blastn`) | specificity baseline     | measured                   | seed 8/8 equal, exact PCR 3/3 equal, 8 exact full-length hits, 0.47 s; answers a narrower question than the seed screen and is not a designer                    |
-| Primer-BLAST      | designer                 | not_run                    | web service only — needs network and manual submission; no local binary to run unattended                                                                        |
-| BatchPrimer3      | designer                 | not_run                    | same: web form only                                                                                                                                              |
-| MFEprimer-3.0     | designer + specificity   | not_run                    | `Sys.which("mfeprimer") == ""` — no binary in `PATH`                                                                                                             |
-| isPcr (UCSC)      | specificity              | not_run                    | `Sys.which("ispcr") == ""` — `blastn` is not a substitute for its product model                                                                                  |
-| EasyKASP          | designer (KASP)          | not_run                    | `Sys.which("easykasp") == ""`                                                                                                                                    |
-| NUPACK            | thermo oracle            | not_run                    | no binary; licence-gated                                                                                                                                         |
-| MELTING           | thermo oracle            | not_run                    | `Sys.which("melting") == ""`                                                                                                                                     |
-| VCF2CAPS          | designer                 | not_run                    | publication code, not distributed as an installable tool here; source is `vcf2caps2021`                                                                          |
-| KASP-IEva         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| LAMPrimers iQ     | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| ThermoPlex        | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| ARMSprimer3       | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| PrimerWeaver      | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| PyPCRtool         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
-| PRISM             | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                        |
+| Tool              | Kind                     | Status                     | Result on this host                                                                                                                                                                |
+| ----------------- | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Primer3 2.6.1     | designer + thermo oracle | measured                   | 17/20 loci get a pair in the 50–100 bp window; amplicon median +1 bp (n = 7), ρ = 0.883; 3/20 no pair; 9/20 rejected by a package gate                                             |
+| UNAFold / mfold   | thermo oracle (dG)       | measured (not independent) | hairpin dG mean −0.84 kcal/mol (n = 34); heterodimer −1.75 (n = 4); `hybrid-ss-min` is the engine `oligo_dg()` calls, so this checks the wrapper, not the method                   |
+| BLAST+ (`blastn`) | specificity baseline     | measured                   | seed 8/8 equal, exact PCR 3/3 equal, 8 exact full-length hits, 0.47 s; answers a narrower question than the seed screen and is not a designer                                      |
+| Biopython `Tm_NN` | allele-specific oracle   | measured                   | 8/8 panel rows point the same way as the package's efficiency gap; median `dtm` 6.33 °C penultimate vs 0.74 °C terminal; ρ(`dtm`, `discrimination`) = 0.238, reported not asserted |
+| Primer-BLAST      | designer                 | not_run                    | web service only — needs network and manual submission; no local binary to run unattended                                                                                          |
+| BatchPrimer3      | designer                 | not_run                    | same: web form only                                                                                                                                                                |
+| MFEprimer-3.0     | designer + specificity   | not_run                    | `Sys.which("mfeprimer") == ""` — no binary in `PATH`                                                                                                                               |
+| isPcr (UCSC)      | specificity              | not_run                    | `Sys.which("ispcr") == ""` — `blastn` is not a substitute for its product model                                                                                                    |
+| EasyKASP          | designer (KASP)          | not_run                    | `Sys.which("easykasp") == ""`                                                                                                                                                      |
+| NUPACK            | thermo oracle            | not_run                    | no binary; licence-gated                                                                                                                                                           |
+| MELTING           | thermo oracle            | not_run                    | `Sys.which("melting") == ""`                                                                                                                                                       |
+| VCF2CAPS          | designer                 | not_run                    | publication code, not distributed as an installable tool here; source is `vcf2caps2021`                                                                                            |
+| KASP-IEva         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| LAMPrimers iQ     | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| ThermoPlex        | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| ARMSprimer3       | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| PrimerWeaver      | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| PyPCRtool         | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
+| PRISM             | designer                 | not_run                    | publication code, not installable here; no source row yet                                                                                                                          |
 
-Three of eighteen run here. The fifteen that do not are named with the cause the
+Four of nineteen run here. The fifteen that do not are named with the cause the
 run measured — a missing binary, a web-only form, a licence, or code that is not
 distributed — and none of them is reported as a comparison. The return gate is
 unchanged: install a named tool, the sweep reports it as newly present, then its
@@ -598,19 +650,24 @@ disagreement rather than assert it:
 
 ```sh
 Rscript dev/primer3-crosscheck.R   # Primer3 -> results/primer3-{thermo,design}.csv
+Rscript dev/as-tm-crosscheck.R     # Biopython Tm_NN -> results/as-tm-crosscheck.csv
 Rscript dev/specificity-oracle.R   # TAIR10 ground truth -> results/specificity-oracle.csv
 ```
 
-Both need binaries that are not package dependencies (`oligotm`, `ntthal`,
-`primer3_core`, `blastn`, `makeblastdb`) and the OligoArrayAux build; the
-matching tests skip with a named reason when one is absent.
+These need binaries that are not package dependencies (`oligotm`, `ntthal`,
+`primer3_core`, `blastn`, `makeblastdb`), the OligoArrayAux build and, for the
+allele-specific pair, a `python3` with Biopython; the matching tests skip with a
+named reason when one is absent.
 
 ## Known gaps
 
 - No bench validation, and none claimed in the README.
-- The Primer3 comparison covers the _shared_ layer only: Primer3 does not design
-  allele-specific primers, so the allelic-discrimination layer has no external
-  comparator at all.
+- The allele-specific layer has one external comparator — Biopython's
+  terminal-mismatch nearest-neighbour Tm — and it is a proxy: it agrees with the
+  package's efficiency gap on the direction of all eight panel rows but ranks
+  them differently (ρ = 0.238), so only the sign and the within-primer ordering
+  are asserted. No external engine scores allele-specific amplification
+  efficiency itself, and no wet-lab discrimination has been measured.
 - No predictor of published per-assay success is fitted: the corpus has
   denominators at study level, but the tables that carry primer triples do not
   carry both outcomes (maize 2020 has 100/100 `design_success = TRUE` and no
