@@ -2553,8 +2553,18 @@ edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`
 
 ### ZX4. Что сознательно не делается
 
-- Rust-движок: сначала чистый R-адаптер и замер; не быстрее адаптера — движок
-  ничего не добавляет.
+- Rust-движок: отклонён замером R-адаптера. `primer_tm()` уже батчевый —
+  один `to_genomic_ranges()` и один `tm_calculate()` на вызов
+  (`R/marker_thermo.R:478`). Замер (R 4.6.1, min из 5 повторов): 1 праймер —
+  18 мс, 10 — 18 мс, 100 — 18 мс, 1000 — 22 мс, 5000 — 37 мс. То есть пол
+  вызова ≈ 18 мс на построение S4/`GRanges`, а предельная стоимость NN —
+  ≈ 3.8 мкс/праймер (1000→5000: 15 мс на 4000). В дизайне:
+  `design_kasp_markers()` — 2250 мс/прогон, доля `primer_tm` 4.4 % ≈ 100 мс,
+  так что весь Rust-движок ограничен ≈ 1.05×; `design_as_primers()` —
+  1480 мс, доля 1.4 % ≈ 20 мс; `design_common_primers()` — 31.5 мс, доля
+  62.5 % ≈ 19.7 мс, но это те же накладные адаптера, а не счёт NN. Профиль
+  подтверждает AGENTS.md-сигнатуру: горячи `validObject`/`getClassDef`/`new`,
+  то есть построение S4-объектов, а не математика.
 - `matchPDict`/групповой батчинг как _счётчик специфичности_: `matchPDict`
   закрыт замером (см. item 4 в «Остатках») — потолок выигрыша там секунды из
   40 с. Групповой батчинг равных по ширине шаблонов (item «Проход по геному»)
@@ -2581,13 +2591,12 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
 для plant molecular breeding. Даты не фиксируются: разработка агентная.
 
 Это очередь: каждый `ZY1`–`ZY29` — один пункт с четырьмя полями, и порядок
-внутри секции и есть приоритет. Закрыты `ZY2` (причина отказа попытки),
-`ZY7` (`marker_reprex()`), `ZY11` (property-тесты) и `ZY13` (formal model
-лексикографического порядка). Сначала разблокированное
-(`ZY16`), затем внутренняя работа (`ZY1`, `ZY4`, `ZY15`), затем внешне
-заблокированное (`ZY3`, `ZY5`, `ZY6`, `ZY8`, `ZY9`, `ZY17`);
-`ZY10` ждёт замера `ZX4` (тулчейн `rustc`/`cargo` уже поставлен), `ZY12`,
-`ZY14` начинаются только после установки названного инструмента.
+внутри секции и есть приоритет. Закрыты `ZY1`–`ZY4`, `ZY7`, `ZY8`,
+`ZY10`–`ZY16` и `ZY21`–`ZY29`. Открыты внешне заблокированные `ZY5`, `ZY6`,
+`ZY9`, `ZY17` и `ZY20` (cross-tool sweep). У `ZY10` (Rust-ускорение) гейт
+`ZX4` пройден замером отрицательно: движок не окупается, пункт закрыт без
+крейта. `ZY12` (design by contract) и `ZY14` (mutation testing) закрыты
+своими инструментами, установка извне им больше не нужна.
 `ZY21`–`ZY24` — идеи, перенесённые из черновиков статьи: бенчмарк валидации,
 кросс-языковой writer трасс, экспорт RO-Crate/PROV-O и фальсификация
 односкалярной оценки; они разблокированы и стоят после `ZY20`.
@@ -2858,31 +2867,38 @@ provenance_required)`: review queue candidate-обновлений с полны
   поставит `updog`/`polyRAD`/`BatchR` и будет подан external review.
   следствие: пакет остаётся CRAN-совместимым, но не частью Bioconductor
   cluster.
-- [—] **`ZY10` Rust acceleration.** Reference R остаётся ground truth, Rust —
-  оптимизация, не реимплементация; гейт — property-тесты
-  `assert_eq!(rust_impl(x), reference_impl(x))` на любом входе; флаг
-  `use_rust_backend = FALSE` по умолчанию. Hot paths: primer thermodynamics
-  (первый, самый низкий риск — pure function, измеримый benchmark),
-  FM-index/BWT wrapper, specificity scoring batch, VCF streaming parser.
-  Инструменты: `extendr`/`rextendr`, `arrow` для zero-copy, `polars` где
-  уместно.
-  правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
-  проверка: equality-тест на замороженном наборе входов плюс benchmark, где
-  Rust обязан быть быстрее R-адаптера.
-  блокер: `ZX4` (сначала R-адаптер и замер) остаётся открытым; `rextendr`,
-  `arrow`, `polars` не установлены.
-  следствие: медленные пути остаются в R; ничего не ломается.
-  тулчейн (проверено 2026-11-25): `rustc 1.85.1 (4eb161250 2025-03-15)` и
-  `cargo 1.85.1 (d73d2caf9 2024-12-31)`, поставлены
-  `apt-get install -y --no-install-recommends rustc cargo`. Пробный крейт с
-  `extendr-api = "0.7.1"` собирается (`cargo build` →
-  `Finished dev profile [unoptimized + debuginfo]`). Два измеренных условия:
-  (а) `libR-sys` ищет `R` в `PATH` — при одном `R_HOME` падает
-  `build.rs:396: Cannot find R major version`; (б) `extendr-api 0.9.0` падает
-  в своём `build.rs:19`: `Result::unwrap() on an Err value: NotPresent`
-  (нет `DEP_R_R_VERSION_MAJOR`), поэтому пин — `0.7.x`.
-  Ворота возврата: `ZX4` закрыт замером R-адаптера, `R` в `PATH`, затем
-  портировать inner-loop ядро и прогнать R-vs-Rust equivalence-проверку.
+- [x] **`ZY10` Rust acceleration.** Reference R — ground truth, Rust —
+      оптимизация, не реимплементация; гейт — property-тесты
+      `assert_eq!(rust_impl(x), reference_impl(x))` на любом входе; флаг
+      `use_rust_backend = FALSE` по умолчанию. Hot paths: primer thermodynamics
+      (первый, самый низкий риск — pure function, измеримый benchmark),
+      FM-index/BWT wrapper, specificity scoring batch, VCF streaming parser.
+      Инструменты: `extendr`/`rextendr`, `arrow` для zero-copy, `polars` где
+      уместно.
+      правка: отдельный Rust-крейт + `extendr`-обёртка с дефолтом off.
+      проверка: equality-тест на замороженном наборе входов плюс benchmark, где
+      Rust обязан быть быстрее R-адаптера.
+      блокер: нет.
+      сделано: гейт `ZX4` пройден замером и ответил отрицательно. `primer_tm()`
+      уже батчевый; пол вызова ≈ 18 мс (построение S4/`GRanges`), предельная
+      стоимость NN ≈ 3.8 мкс/праймер; в `design_kasp_markers()` (2250 мс) доля Tm
+      4.4 %, в `design_as_primers()` (1480 мс) — 1.4 %, то есть весь движок
+      ограничен ≈ 1.05×. Поэтому `use_rust_backend` не добавлен, крейт не создан,
+      `primer_tm()` работает на R. Следствие: медленные пути живут в R, и это
+      осознанный выбор по числу, а не отговорка.
+      тулчейн (проверено 2026-11-25): `rustc 1.85.1 (4eb161250 2025-03-15)` и
+      `cargo 1.85.1 (d73d2caf9 2024-12-31)`, поставлены
+      `apt-get install -y --no-install-recommends rustc cargo`. Пробный крейт с
+      `extendr-api = "0.7.1"` собирается (`cargo build` →
+      `Finished dev profile [unoptimized + debuginfo]`). Два измеренных условия:
+      (а) `libR-sys` ищет `R` в `PATH` — при одном `R_HOME` падает
+      `build.rs:396: Cannot find R major version`; (б) `extendr-api 0.9.0` падает
+      в своём `build.rs:19`: `Result::unwrap() on an Err value: NotPresent`
+      (нет `DEP_R_R_VERSION_MAJOR`), поэтому пин — `0.7.x`.
+      Переоткрытие: только если появится горячий путь, где Tm доминирует —
+      ≥ 10⁴ праймеров в одном вызове без других затрат, или доля `primer_tm`
+      в профиле дизайна выше ≈ 30 %. Проверенная база к тому моменту: `R` в
+      `PATH` и пин `extendr-api` 0.7.x.
 - [x] **`ZY11` Property-based testing.** Расширение examples-based тестов через
       `hedgehog` (или аналог). Инварианты: specificity scoring — детерминизм
       рейтинга, нет negative scores, транзитивный tier ordering; decision
