@@ -63,6 +63,16 @@ test_that("an empty or already-annotated table is returned unchanged", {
   expect_equal(nrow(annotate_variants(empty)), 0L)
 })
 
+test_that("codon_strings() reads codons from every column shape", {
+  # `predictCoding()` hands the codons over as an XStringSet on release and as a
+  # list-like column on newer Biostrings; both must become one string per row.
+  expect_equal(tidymarkers:::codon_strings(c("TGG", "TGA")), c("TGG", "TGA"))
+  set <- Biostrings::DNAStringSet(c("TGG", "TGA"))
+  expect_equal(tidymarkers:::codon_strings(set), c("TGG", "TGA"))
+  plain <- list(Biostrings::DNAString("TGG"), Biostrings::DNAString("TGA"))
+  expect_equal(tidymarkers:::codon_strings(plain), c("TGG", "TGA"))
+})
+
 test_that("marker_ensdb builds an EnsDb from a GTF", {
   skip_if_not_full()
   skip_if_not_installed("ensembldb")
@@ -73,9 +83,16 @@ test_that("marker_ensdb builds an EnsDb from a GTF", {
     paste("1", "src", feature, start, end, ".", "+", frame, extra, sep = "\t")
   }
   writeLines(c(
+    row("gene", 100L, 200L, ".", "gene_id \"G1\"; gene_name \"FRI\"; gene_biotype \"protein_coding\";"),
+    # a real Ensembl GTF always carries the transcript feature; without it
+    # ensembldb takes its derived `range()` branch and leaves the CDS bounds as
+    # logical `NA` columns, which fails its own integer-column check
+    row("transcript", 100L, 200L, ".", paste0(
+      "gene_id \"G1\"; transcript_id \"T1\"; ",
+      "transcript_biotype \"protein_coding\";"
+    )),
     row("exon", 100L, 200L, ".", "gene_id \"G1\"; transcript_id \"T1\"; exon_number \"1\";"),
-    row("CDS", 110L, 190L, "0", "gene_id \"G1\"; transcript_id \"T1\"; exon_number \"1\";"),
-    row("gene", 100L, 200L, ".", "gene_id \"G1\"; gene_name \"FRI\"; gene_biotype \"protein_coding\";")
+    row("CDS", 110L, 190L, "0", "gene_id \"G1\"; transcript_id \"T1\"; exon_number \"1\";")
   ), gtf)
   # Build in a subprocess: ensDbFromGtf() leaves an RSQLite connection that
   # otherwise leaks a benign "call dbDisconnect()" note at this session's exit.

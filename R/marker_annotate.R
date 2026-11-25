@@ -152,6 +152,21 @@ VA_TO_SO <- c(
   "spliceSite"     = "splice_region_variant"
 )
 
+# `predictCoding()`'s codon columns are an `XStringSet` on release and a
+# list-like column (`AsIs` list, `CharacterList`) on newer Biostrings.  On an
+# `XStringSet` `as.character()` is element-wise, on a list it deparses S4
+# garbage, and `as_tibble()` drops the columns altogether on devel -- so read
+# `mcols()` and coerce per element unless the column is already character.
+codon_strings <- function(x) {
+  if (is.character(x)) {
+    return(x)
+  }
+  if (inherits(x, "XStringSet")) {
+    return(as.character(x))
+  }
+  vapply(seq_along(x), function(i) as.character(x[[i]])[[1L]], character(1L))
+}
+
 # `locateVariants()` LOCATION -> SO term, used when no reference source is given
 # (i.e. codon-level calls are impossible).
 LOCATION_TO_SO <- c(
@@ -274,15 +289,16 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
         varAllele = Biostrings::DNAStringSet(alts)
       )
     ))
-    coding <- tibble::as_tibble(pc) |>
-      dplyr::mutate(
-        query = as.integer(.data$QUERYID),
-        CONSEQUENCE = as.character(.data$CONSEQUENCE)
-      ) |>
+    mc <- S4Vectors::mcols(pc)
+    coding <- tibble::tibble(
+      query = as.integer(mc$QUERYID),
+      CONSEQUENCE = as.character(mc$CONSEQUENCE),
+      codon = paste0(codon_strings(mc$REFCODON), ">", codon_strings(mc$VARCODON))
+    ) |>
       dplyr::arrange(.data$query) |>
       dplyr::summarise(
         so_codon = unname(VA_TO_SO[utils::head(.data$CONSEQUENCE, 1L)]),
-        codon_change = paste(unique(paste0(.data$REFCODON, ">", .data$VARCODON)), collapse = ","),
+        codon_change = paste(unique(.data$codon), collapse = ","),
         .by = "query"
       )
     out <- dplyr::left_join(out, coding, by = "query")
