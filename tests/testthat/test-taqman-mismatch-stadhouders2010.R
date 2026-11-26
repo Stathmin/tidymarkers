@@ -144,8 +144,6 @@ test_that("guidelines: standard Taq relaxes away from the 3' end", {
   }
   # the two classes the paper puts on top of the hierarchy are avoided at the
   # terminal base; a purine-pyrimidine mismatch is the class it calls acceptable
-  expect_true(all(avoid[g$position == "terminal" &
-    g$mismatch_class != "purine_pyrimidine"]))
-  expect_false(any(avoid[g$position == "terminal" &
-    g$mismatch_class == "purine_pyrimidine"]))
+  expect_true(all(avoid[g$position == "terminal" & g$mismatch_class != "purine_pyrimidine"]))
+  expect_false(any(avoid[g$position == "terminal" & g$mismatch_class == "purine_pyrimidine"]))
 })
