@@ -3896,14 +3896,28 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: снято; `Imports` короче на одну зависимость, графики не
       изменились.
 
-- [~] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
-    - сделано (шаг 1): `R/marker_hash.R` — `hash_object()`, `hash_file()`
-      (sha256) вместо прямых `digest::digest()`; `artefact_sha256*` удалены,
-      вызовы переведены. Проверка: known-answer на байтах, `dev/test.R
-      "hash|index|artefact|outcome|crate"` — 0 fail.
-    - осталось (шаг 2): `R/marker_exec.R` — `run_external()` с таймаутом и
-      классом `tidymarkers_timeout`; не-горячие бинарники (node-раскладка,
-      ImageMagick, git-проба, пробы версий) идут через него.
+- [x] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
+    - сделано: `R/marker_hash.R` — `hash_object()`, `hash_file()` (sha256)
+      вместо прямых `digest::digest()`; `artefact_sha256*` удалены, вызовы
+      переведены. `R/marker_exec.R` — `run_external()` на
+      `processx::run(error_on_status = FALSE)`: таймаут возвращается флагом
+      `res$timeout` и превращается в условие класса `tidymarkers_timeout`.
+      Через него идут node-раскладка (`decision_solver`, 60 с), ImageMagick
+      (`assemble_gif`, 300 с), git-проба версии (`artefact_git_sha`, 10 с) и
+      пробы версий движков (`exe_version`, 10 с). `Rbowtie`/`rBLAST` работают
+      как парсеры без процесса; `oligo_dg()` не переводится на `processx` —
+      это горячий цикл, там он ~2× дороже на олиго (зафиксировано в ADR
+      0007 §5).
+    - проверка: фейковый `Rscript -e 'Sys.sleep(60)'` убит на 2 с, ошибка
+      класса `tidymarkers_timeout` (`test-exec.R`); known-answer на байтах
+      `abc`; `dev/test.R "exec|anim|tools|decision|engine|artefact|manifest"`
+      — 30180 pass, 0 fail; `dev/test.R "scan|bowtie|thermo|oligo"` — 163
+      pass, 0 fail, 17 skip (нет внешних баз); `test-scan.R`/`test-bowtie.R`
+      не менялись.
+    - блокер: нет; таймаут для процессов внутри `Rbowtie`/`rBLAST` и горячего
+      цикла OligoArrayAux — известные ограничения.
+    - следствие: хеш-алгоритм и таймаут живут в одном месте; зависший
+      cold-бинарник падает по таймауту, а не держит CI до убийства раннера.
       правка: `R/marker_hash.R` — `hash_object()`, `hash_file()`
       (`digest::digest`, sha256) вместо трёх прямых вызовов;
       `R/marker_exec.R` — `run_external(cmd, args, timeout = )` на

@@ -361,11 +361,11 @@ assemble_gif <- function(pngs, path, delay_cs = 25L) {
       i = "Or assemble the `pngs` yourself (e.g. with gifski)."
     )
   }
-  res <- processx::run(tool$exe, c(
+  res <- run_external(tool$exe, c(
     tool$args, "-delay", as.character(delay_cs), "-loop", "0",
     "-layers", "Optimize", pngs, path
   ),
-  error_on_status = FALSE
+  timeout = 300
   )
   if (res$status != 0L) {
     abort_msg("ImageMagick failed: {res$stderr}")

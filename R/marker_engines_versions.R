@@ -64,7 +64,15 @@ marker_engine_versions_probe <- function() {
     if (!nzchar(path)) {
       return(NA_character_)
     }
-    out <- tryCatch(suppressWarnings(system2(path, args, stdout = TRUE, stderr = TRUE)),
+    out <- tryCatch(
+      {
+        res <- run_external(path, args, timeout = 10)
+        if (res$status != 0L) {
+          character()
+        } else {
+          strsplit(paste(c(res$stdout, res$stderr), collapse = "\n"), "\n", fixed = TRUE)[[1L]]
+        }
+      },
       error = function(e) character()
     )
     if (!length(out)) {

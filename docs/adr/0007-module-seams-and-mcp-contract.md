@@ -171,7 +171,9 @@ tool's input.
 - **`processx` for external processes.** `R/marker_exec.R` gains
   `run_external(cmd, args, timeout = )` on `processx::run()` with
   `error_on_status = FALSE` and a classed `tidymarkers_timeout`. Bowtie, BLAST
-  and the other binaries the package owns go through it. `Rbowtie` and `rBLAST`
+  and the other binaries the package owns go through it; `oligo_dg()` keeps
+  `system2()` (measured ~2x cheaper per oligo in the design hot loop), so that
+  is a named limit rather than a silent one. `Rbowtie` and `rBLAST`
   remain the parsers; where their wrapper does not expose the process, the
   timeout is a named limit in the manifest, not an unstated assumption.
 

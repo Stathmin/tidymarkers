@@ -63,10 +63,14 @@ artefact_git_sha <- function() {
     return(NA_character_)
   }
   out <- tryCatch(
-    suppressWarnings(system2(git, c("-C", shQuote(root), "rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE)),
-    error = function(e) character()
+    run_external(git, c("-C", root, "rev-parse", "HEAD"), timeout = 10),
+    error = function(e) NULL
   )
-  if (!length(out) || !nzchar(out[[1L]])) NA_character_ else trimws(out[[1L]])
+  if (is.null(out) || out$status != 0L) {
+    return(NA_character_)
+  }
+  sha <- trimws(strsplit(out$stdout, "\n", fixed = TRUE)[[1L]])
+  if (!length(sha) || !nzchar(sha[[1L]])) NA_character_ else sha[[1L]]
 }
 
 #' A value the manifest can carry

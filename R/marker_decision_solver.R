@@ -128,10 +128,10 @@ decision_solve <- function(graph, style = decision_style()) {
   on.exit(unlink(req_file), add = TRUE)
   writeLines(jsonlite::toJSON(req, auto_unbox = TRUE, null = "null", digits = NA), req_file)
   res <- tryCatch(
-    processx::run(
+    run_external(
       decision_solver_node(),
       args = c(file.path(dir, "render-layout.js"), req_file),
-      stdout = "|", stderr = "|", error_on_status = FALSE, timeout = 60000
+      stdout = "|", stderr = "|", timeout = 60
     ),
     error = function(e) e
   )
