@@ -51,7 +51,9 @@
 #             not re-run inside R CMD check (that serial rerun cost ~30 min for
 #             the same files); CI still runs it inside `R CMD check`.
 #
-#  A missing tool is a message, not a failure, so it runs on a bare machine.
+#  roxygen2 may be absent (the documentation step then skips with a message).
+#  styler and lintr are required: a gate that cannot lint must fail, because
+#  "all checks passed" without a lint run proves nothing.
 #  Run:  Rscript dev/check.R [--quick] [--full] [--spelling] [--render] [--no-render]
 #                            [--no-artifacts]
 # =============================================================================

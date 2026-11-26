@@ -3934,13 +3934,16 @@ dir)` пишет crate-профиль поверх существующих че
       следствие: без тестов класс держится на `vec_restore`, а `vec_c()`
       может вернуть голый tibble.
 
-- [ ] **T13. Гейт не прощает отсутствия линтеров.** `dev/check.R` молча
-      пропускал `lintr`/`styler`, если пакет не установлен: «all checks passed»
-      в среде без линтера ничего не доказывает. Отдельно: `lintr::lint_package()`
-      без `pkgload::load_all()` даёт 2199 ложных `object_usage` вместо 3 реальных.
-      правка: отсутствие `lintr`/`styler` — ошибка, а не skip; линт только после
-      `load_all`; три `commented_code` в виньетках переписаны прозой.
-      проверка: `Rscript dev/check.R --quick --no-render` без `lintr` падает с
-      внятным сообщением; с `lintr` — ноль замечаний.
-      блокер: нет.
-      следствие: зелёный гейт снова означает «линт прогнан», а не «линтера не было».
+- [x] **T13. Гейт не прощает отсутствия линтеров.**
+    - сделано: шаги `style` и `lintr` в `dev/check.R` падают, если пакета нет
+      (`stop("<tool> is required for the merge gate")`; внесено в `8094c4e`
+      вместе с разбором трёх `commented_code` в виньетках); линт идёт после
+      `pkgload::load_all()`. Остаток был в шапке скрипта: она всё ещё обещала
+      «A missing tool is a message, not a failure»; шапка исправлена.
+    - проверка: с временно убранным `lintr` — exit 1,
+      `FAIL lintr is required for the merge gate; install.packages("lintr")`;
+      со `styler` — exit 1, то же для `styler`; `lint_package()` после
+      `load_all()` — 0 lints; `dev/check.R --quick --no-render` зелёный.
+    - блокер: нет.
+    - следствие: снято; зелёный гейт снова означает «линт прогнан», а не
+      «линтера не было».
