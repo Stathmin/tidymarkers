@@ -80,7 +80,7 @@ reason_for <- function(id, label, cls) {
 }
 
 named_reason <- function(src) {
-  ifelse(grepl("^doi:", src), "inline snapshot rule states the bar.", "source states the bar.")
+  rep("source states the bar.", length(src))
 }
 
 out <- data.frame(

@@ -1089,9 +1089,9 @@ marker_family_check_rows <- function() {
 
 # Every rule in the SNaPshot provenance table, as a registry row.  One row per
 # CSV rule id, `moderate` / `weak` / `none` mapped DOWN the ladder by
-# CRITERION_TIER_EVIDENCE (never upgraded), and the DOI / PMCID the CSV records
-# carried in `source` - these papers are not in inst/extdata/scientific_sources.csv,
-# so there is no `criterion_sources()` key to name instead.
+# CRITERION_TIER_EVIDENCE (never upgraded).  `source` names the registry key of
+# the paper in inst/extdata/scientific_sources.csv; the DOI / PMCID live on that
+# row, not in the key.
 #
 # `label` is the rule id: a paper's prose is a sentence, not a criterion name, and
 # the CSV holds no short label per rule.  Role `rule`, not `check`: no designer
@@ -1104,13 +1104,13 @@ marker_family_check_rows <- function() {
 snapshot_rule_spec <- function() {
   # full provenance strings are held once, so each rule row stays readable and
   # under the line-length limit
-  src_atanasovska <- "atanasovska2012 doi:10.1371/journal.pone.0048167 PMCID:PMC3482202"
-  src_namdar <- "namdar2023 doi:10.52547/ibj.3856 PMCID:PMC9971712"
-  src_coutinho <- "coutinho2014 doi:10.1371/journal.pone.0093292 PMCID:PMC3966882"
-  src_zhao <- "zhao2026 doi:10.1186/s12864-026-13173-0 PMCID:PMC13644189"
-  src_dicristofaro <- "dicristofaro2010 doi:10.2353/jmoldx.2010.090222 PMCID:PMC2893629"
-  src_fanis <- "fanis2014 doi:10.1186/1471-2164-15-108 PMCID:PMC3922441"
-  src_mrazkova <- "mrazkova2021 doi:10.3390/diagnostics11020301 PMCID:PMC7918147"
+  src_atanasovska <- "atanasovska2012"
+  src_namdar <- "namdar2023"
+  src_coutinho <- "coutinho2014"
+  src_zhao <- "zhao2026_snapshot"
+  src_dicristofaro <- "dicristofaro2010"
+  src_fanis <- "fanis2014"
+  src_mrazkova <- "mrazkova2021"
   rule <- function(id, level, tier, source) {
     criterion_tbl(
       id = paste0("family_", id), scope = "family", stage = "snapshot",

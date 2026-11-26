@@ -80,11 +80,11 @@ test_that("ZW4.6: a criterion names a source only where one states the bar", {
   expect_identical(anyDuplicated(names(map)), 0L)
   # ZW4.6 moved these rows off the default; every other row keeps it
   expect_true(all(spec$source[match(names(map), spec$id)] == map))
-  # a row off the map either keeps the default, or (snapshot rules, §U) carries
-  # its citation inline because the source is a whole sentence, not a registry key
+  # a row off the map either keeps the default, or names a registry key
   unnamed <- unique(spec$source[!spec$id %in% names(map)])
   expect_true(all(
-    unnamed == "package assumption" | grepl("doi:", unnamed, fixed = TRUE)
+    unnamed == "package assumption" |
+      unnamed %in% utils::read.csv(tm_extdata("scientific_sources.csv"))$key
   ))
   # the citation is a KEY of the source registry, not prose a reader cannot look up
   expect_true(all(map %in% utils::read.csv(tm_extdata("scientific_sources.csv"))$key))
@@ -143,6 +143,10 @@ test_that("ZW4.6: every criterion carries a machine-checkable provenance stateme
   # the shipped source is the spec's source, so the two cannot drift
   src <- spec$source[match(prov$id, spec$id)]
   expect_identical(prov$source, src)
+  # every named source joins the registry, so offsets/ledger can key on it
+  keys <- utils::read.csv(tm_extdata("scientific_sources.csv"))$key
+  named <- !is.na(prov$source) & prov$source != "package assumption"
+  expect_true(all(prov$source[named] %in% keys))
   allowed <- c(
     "named_source", "conditions_unstated", "simulator_threshold",
     "inherited_geometry", "scheme_constant"

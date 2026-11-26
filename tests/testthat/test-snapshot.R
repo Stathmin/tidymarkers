@@ -145,8 +145,10 @@ test_that("every rule in the SNaPshot provenance table is a registry row at its 
     unname(CRITERION_TIER_EVIDENCE[csv$evidence_tier]),
     ignore_attr = TRUE
   )
-  # each row cites its own DOI / PMCID in `source`, and reaches the snapshot scheme
-  expect_true(all(grepl("doi:", rows$source) & grepl("PMCID:PMC", rows$source)))
+  # each row names its source by registry key, and that key carries a DOI
+  reg <- utils::read.csv(tm_extdata("scientific_sources.csv"), stringsAsFactors = FALSE)
+  expect_true(all(rows$source %in% reg$key))
+  expect_true(all(nzchar(reg$doi[match(rows$source, reg$key)])))
   expect_true(all(vapply(rows$schemes, function(s) identical(s, "snapshot"), logical(1))))
   # the rows are evidence only: the designer applies none of them, so the DAG
   # draws none of them (a check node would claim an evaluation that does not run)
