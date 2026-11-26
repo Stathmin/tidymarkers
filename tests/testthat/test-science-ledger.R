@@ -142,6 +142,38 @@ test_that("ledger: an extract's own DOI belongs to the source that row names", {
   }
 })
 
+test_that("ledger: no shipped CSV is left without a consumer", {
+  # The mirror of "every ledger extract exists": a table that no row names is a
+  # file nobody reads, which is how an extract quietly stops being enforced.
+  # The allowlist is for files that are NOT literature extracts: the ledger and
+  # registry themselves, and the documented example fixture used only in docs.
+  l <- ledger()
+  named <- unlist(strsplit(l$extract[!is.na(l$extract)], ",", fixed = TRUE))
+  named <- trimws(named)
+  allow <- c(
+    "science_ledger.csv", "scientific_sources.csv",
+    "example_region_targets.csv"
+  )
+  shipped <- list.files(
+    system.file("extdata", package = "tidymarkers"),
+    pattern = "[.]csv$",
+    full.names = FALSE
+  )
+  expect_gt(length(shipped), 100L)
+  orphans <- setdiff(shipped, c(named, allow))
+  expect_length(orphans, 0L)
+})
+
+test_that("ledger: the 'none' sentinel only appears on a blocked row", {
+  # `none` is the literal stand-in for "this paper produced no extract".  It is
+  # not a filename, so it must never survive onto a row a test is meant to read.
+  l <- ledger()
+  none <- l$extract == "none"
+  expect_true(any(none))
+  expect_true(all(l$use[none] == "blocked"))
+  expect_true(all(is.na(l$test_file[none])))
+})
+
 test_that("ledger: no measured source is left without an entry", {
   l <- ledger()
   s <- ext("scientific_sources.csv")
