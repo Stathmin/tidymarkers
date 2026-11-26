@@ -22,7 +22,7 @@
 "soybean_est_caps","soybean_est_caps_funnel.csv","test","test-z8-outcomes.R","caps: restriction-site conversion rate",""
 "snap2caps","snap2caps_markers.csv","test","test-z8-outcomes.R","caps: dCAPS site creation",""
 "jak2v617f_ddpcr","jak2v617f_ddpcr_limits.csv","test","test-z8-outcomes.R","dpcr: LoB / LoD of a partition readout",""
-"gao2022","polyploid_gao2022_sugarcane_chain.csv","test","test-polyploid-gao2022.R","the nested selection chain is strictly decreasing (77 > 49 > 24) and only the workbook tier is labelled measured",""
+"gao2022","polyploid_gao2022_sugarcane_chain.csv,gao2022_kasp_marker_pvalues.csv","test","test-polyploid-gao2022.R","the nested selection chain is strictly decreasing (77 > 49 > 24) and only the workbook tier is labelled measured",""
 "jaimes2024","polyploid_jaimes2024_sugarcane_dosage.csv","test","test-polyploid-jaimes2024.R","the autopolyploid outcome axis is DOSAGE not homoeologs: 42 of 76 SNPs assigned a dose",""
 "jaimes2024","none","blocked","","none yet (Z10.2 pins 42-of-76 only)","Z10.2 wants the per-marker allele dose so the dosage classes can be counted; Appendix S3 (APS3-12-e11574-s002.xlsx, sheet 1 rows 7-82) carries Marker x {GBS+RADseq, Flex-Seq, KASP} correlation/t/df/P only, and Appendix S1/S2 are the panel and the 401-bp windows, so no fetched file holds a dose per marker. The paper points to GitHub (Allele_Dosage_Sugarcane_APPS), which is not a paper table, so nothing was landed"
 "durum2019","polyploid_durum2019_hexaploid_vs_tetraploid.csv","test","test-polyploid-durum2019.R","the tetraploid vs hexaploid difference is carried by the split rows, which add up to the total",""

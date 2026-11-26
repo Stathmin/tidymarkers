@@ -53,6 +53,24 @@ test_that("polyploid/gao2022: the allele-specific end is recorded, not assumed",
   expect_true(all(is.na(g$as_allele_match_3prime[1:2])))
 })
 
+test_that("polyploid/gao2022: the six panel assays keep their QTL and P-value", {
+  p <- ext("gao2022_kasp_marker_pvalues.csv")
+  expect_equal(nrow(p), 6L)
+  expect_equal(p$marker, c(
+    "A014653", "A014666", "A014669", "A014680", "A014692", "A014713"
+  ))
+  # the shipped file keeps the paper's printed value, never 3.87e-4
+  raw <- paste(readLines(tm_extdata("gao2022_kasp_marker_pvalues.csv")), collapse = "\n")
+  expect_match(raw, "A014692,qSR59-2,0.000387,", fixed = TRUE)
+  expect_false(grepl("e-4", raw, fixed = TRUE))
+  # every association is significant; the panel spans three QTLs, not one
+  p_num <- as.numeric(p$p_value)
+  expect_true(all(p_num > 0 & p_num < 0.05))
+  expect_equal(length(unique(p$qtl)), 3L)
+  expect_equal(p$qtl[p_num < 1e-3], "qSR59-2")
+  expect_true(all(p$species == "Saccharum spp. (hybrid)"))
+})
+
 test_that("polyploid/gao2022: the CSV still matches Supplementary Table 10", {
   lit <- test_path("../../.tmp/lit/gao2022")
   skip_if_not(file.exists(file.path(lit, "supp", "Table_1.XLSX")))
