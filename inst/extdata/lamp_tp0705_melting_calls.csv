@@ -1,0 +1,134 @@
+sample_no,sample_type,strain,lineage,tp0705_allele,tm_506,call_506,tm_625,call_625,tm_708,call_708,tp0548_nichols_lamp,tp0548_ss14_lamp
+1,Swab,Japan287e,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+2,Swab,Japan288,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+3,Swab,Japan290,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+4,Swab,Japan291x,SS14-East Asia,8,61.52,V,63.09,M,73.93,G,-,-
+5,Swab,-,Nichols,3,64.03,T,63.25,M,73.1,G,Positive,Negative
+6,Swab,Japan294x,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+7,Swab,Japan295x,SS14-East Asia,8,61.52,V,63.09,M,73.93,G,-,-
+8,Swab,Japan298x,SS14-East Asia,8,61.52,V,63.09,M,74.74,G,-,-
+9,Swab,Japan300,SS14Ω-A,1,71.91,A,69.96,V,67.38,S,-,-
+10,Swab,Japan301,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+11,Swab,Japan302x,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+12,Swab,Japan303,Nichols,3,63.64,T,63.86,M,73.51,G,Positive,Negative
+13,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+14,Swab,Japan305,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+15,Swab,Japan306,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+16,Swab,Japan307,SS14Ω-A,1,71.52,A,70.15,V,67.59,S,-,-
+17,Swab,Japan308,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+18,Swab,Japan309x,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+19,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+20,Swab,Japan311,SS14-East Asia,8,61.52,V,63.09,M,73.93,G,-,-
+21,Swab,Japan312xe,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+22,Swab,Japan313x,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+23,Swab,Japan314,SS14Ω-A,1,71.52,A,70.94,V,67.59,S,-,-
+24,Swab,Japan316x,SS14Ω-A,1,71.52,A,70.55,V,68,S,-,-
+25,Swab,Japan317xi,Nichols,3,63.64,T,63.25,M,73.51,G,Positive,Negative
+26,Swab,Japan318,SS14-East Asia,8,61.13,V,63.09,M,73.52,G,-,-
+27,Swab,Japan319,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+28,Swab,Japan320e,-,9,71.52,A,63.86,M,67.38,S,-,-
+29,Swab,Japan322e,-,9,71.52,A,63.85,M,67.59,S,-,-
+30,Swab,Japan323x,SS14Ω-A,1,71.52,A,70.55,V,67.59,S,-,-
+31,Swab,Japan324x,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+32,Swab,Japan325xe,SS14-East Asia,8,60.74,V,63.09,M,73.93,G,-,-
+33,Swab,Japan326e,-,9,71.52,A,63.85,M,67.59,S,-,-
+34,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.52,G,-,-
+35,Swab,Japan328x,SS14-East Asia,8,61.13,V,63.09,M,73.52,G,-,-
+36,Swab,Japan329,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+37,Swab,-,-,9,71.52,A,63.85,M,67.59,S,-,-
+38,Swab,Japan331,SS14Ω-A,1,71.52,A,70.55,V,67.59,S,-,-
+39,Swab,Japan329,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+40,Swab,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+41,Swab,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+42,Swab,-,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+43,Swab,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+44,Swab,-,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+45,Swab,-,SS14-East Asia,8,60.74,V,63.69,M,73.93,G,-,-
+46,Swab,-,SS14-East Asia,8,60.74,V,63.69,M,73.11,G,-,-
+47,Swab,-,SS14-East Asia,8,60.74,V,63.69,M,73.93,G,-,-
+48,Swab,-,SS14-East Asia,8,60.74,V,63.69,M,73.35,G,-,-
+49,Swab,-,SS14-East Asia,8,60.48,V,63.84,M,73.35,G,-,-
+50,Swab,-,SS14-East Asia,8,60.48,V,63.84,M,73.35,G,-,-
+51,Swab,-,SS14-East Asia,8,60.48,V,63.84,M,73.35,G,-,-
+52,Swab,-,SS14-East Asia,8,60.48,V,63.84,M,73.35,G,-,-
+53,Swab,-,SS14-East Asia,8,60.08,V,63.84,M,73.35,G,-,-
+54,Swab,-,SS14-East Asia,8,60.48,V,63.84,M,73.35,G,-,-
+55,Swab,-,SS14-East Asia,8,60.08,V,63.84,M,72.94,G,-,-
+56,Swab,-,SS14-East Asia,8,60.48,V,63.23,M,73.35,G,-,-
+57,Swab,-,SS14-East Asia,8,60.48,V,63.23,M,73.35,G,-,-
+58,Swab,-,SS14-East Asia,8,60.48,V,63.23,M,73.35,G,-,-
+59,Swab,-,Nichols,3,63.64,T,63.85,M,74.17,G,Positive,Negative
+60,Swab,-,SS14-East Asia,8,60.88,V,63.24,M,73.76,G,-,-
+61,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.76,G,-,-
+62,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.76,G,-,-
+63,Swab,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+64,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.76,G,-,-
+65,Swab,-,SS14-East Asia,8,60.49,V,63.85,M,73.76,G,-,-
+66,Swab,-,SS14-East Asia,8,60.88,V,63.24,M,74.17,G,-,-
+67,Swab,-,SS14-East Asia,8,60.88,V,63.86,M,73.1,G,-,-
+68,Swab,-,SS14-East Asia,8,61.27,V,63.24,M,73.76,G,-,-
+69,Swab,-,SS14-East Asia,8,60.49,V,63.46,M,73.35,G,-,-
+70,Swab,-,SS14-East Asia,8,60.49,V,63.86,M,73.1,G,-,-
+71,Swab,-,SS14-East Asia,8,60.49,V,63.85,M,73.76,G,-,-
+72,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.51,G,-,-
+73,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.76,G,-,-
+74,Swab,-,SS14-East Asia,8,61.27,V,63.85,M,73.35,G,-,-
+75,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+76,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+77,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+78,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+79,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+80,Swab,-,Nichols,3,64.03,T,63.85,M,73.76,G,Positive,Negative
+81,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+82,Swab,-,Nichols,3,64.03,T,63.46,M,73.76,G,Positive,Negative
+83,Swab,-,SS14-East Asia,8,60.74,V,63.09,M,73.93,G,-,-
+84,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+85,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+86,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+87,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+88,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+89,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+90,Swab,-,SS14-East Asia,8,60.88,V,63.85,M,73.35,G,-,-
+91,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.93,G,-,-
+92,Swab,-,SS14-East Asia,8,60.49,V,63.46,M,72.94,G,-,-
+93,Swab,-,SS14-East Asia,8,60.49,V,63.46,M,72.94,G,-,-
+94,Swab,-,SS14-East Asia,8,60.49,V,63.46,M,72.94,G,-,-
+95,Swab,-,SS14-East Asia,8,60.74,V,63.09,M,73.52,G,-,-
+96,Swab,-,SS14-East Asia,8,61.13,V,63.09,M,73.52,G,-,-
+97,Swab,-,SS14-East Asia,8,60.88,V,63.46,M,73.35,G,-,-
+98,Swab,-,SS14Ω-A,1,71.52,A,70.55,V,67.59,S,-,-
+99,Swab,-,SS14Ω-B 1A,3,64.03,T,63.25,M,73.35,G,Negative,Positive
+100,Swab,-,SS14Ω-B 1A,3,64.03,T,63.25,M,73.35,G,Negative,Positive
+101,Swab,-,SS14-East Asia,8,60.09,V,63.25,M,73.51,G,-,-
+102,Swab,-,SS14-East Asia,8,60.09,V,63.25,M,73.51,G,-,-
+103,Swab,-,SS14-East Asia,8,60.09,V,63.25,M,73.51,G,-,-
+104,Swab,-,SS14-East Asia,8,60.09,V,63.86,M,73.92,G,-,-
+105,Swab,-,SS14-East Asia,8,60.09,V,63.86,M,73.92,G,-,-
+106,Saliva,-,Nichols,3,64.03,T,63.85,M,73.76,G,Positive,Negative
+107,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+108,Saliva,-,SS14-East Asia,8,61.13,V,63.69,M,73.52,G,-,-
+109,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+110,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+111,Saliva,-,Nichols,3,63.64,T,63.85,M,73.35,G,Positive,Negative
+112,Saliva,-,SS14-East Asia,8,42.76,NA,47.1,NA,56.76,NA,-,-
+113,Saliva,-,SS14-East Asia,8,40,NA,63.46,M,55.53,NA,-,-
+114,Saliva,-,SS14-East Asia,8,60.88,V,63.25,M,73.1,G,-,-
+115,Saliva,-,SS14-East Asia,8,61.52,V,63.09,M,73.93,G,-,-
+116,Saliva,-,SS14-East Asia,8,61.27,V,63.25,M,73.51,G,-,-
+117,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+118,Saliva,-,SS14-East Asia,8,60.35,V,63.09,M,73.52,G,-,-
+119,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+120,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.1,G,-,-
+121,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.1,G,-,-
+122,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.1,G,-,-
+123,Saliva,-,SS14-East Asia,8,40,NA,45.91,NA,53.9,NA,-,-
+124,Saliva,-,SS14-East Asia,8,60.49,V,63.86,M,73.51,G,-,-
+125,Saliva,-,SS14-East Asia,8,60.49,V,63.86,M,73.1,G,-,-
+126,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.1,G,-,-
+127,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+128,Saliva,-,SS14-East Asia,8,41.19,NA,43.55,NA,54.3,NA,-,-
+129,Saliva,-,Nichols,3,63.64,T,63.85,M,73.35,G,Positive,Negative
+130,Saliva,KARADA201,-,9,71.52,A,63.85,M,67.59,S,-,-
+131,Saliva,-,SS14-East Asia,8,60.88,V,63.86,M,73.51,G,-,-
+132,Saliva,-,SS14-East Asia,8,61.13,V,63.09,M,73.52,G,-,-
+133,Saliva,-,SS14-East Asia,8,61.13,V,63.69,M,73.52,G,-,-
