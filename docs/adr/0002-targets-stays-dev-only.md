@@ -67,3 +67,37 @@ Either of these, measured on a warm tree:
 - [`dev/targets.R`](../../dev/targets.R) — the front end and the fallback.
 - [`dev/check.R`](../../dev/check.R) — the caller.
 - [`ROADMAP.md`](../../ROADMAP.md) — ZA4 (dependency policy), ZA8.1/Z8.2.
+
+## Amendment (2026-11-26): the trigger was measured, and it was not met
+
+`dev/step-cost.R` timed every step of the current chain on a warm tree, each step
+in a child `Rscript` so the peak is the step's own `VmHWM` (this host: 32 cores,
+29 GB). Raw rows are `results/step-cost.csv` (git-ignored); the durable numbers
+are here.
+
+| step                  | status   | elapsed s | peak MB | rerun  |
+| --------------------- | -------- | --------- | ------- | ------ |
+| `targets-make-cold`   | measured | 31.1      | 140.6   | rare   |
+| `targets-make-warm`   | measured | 0.84      | 136.1   | gate   |
+| `targets-check`       | measured | 0.72      | 134.6   | change |
+| `render-decision`     | measured | 28.5      | 611.1   | change |
+| `render-gallery`      | measured | 98.4      | 959.1   | change |
+| `render-plots`        | measured | 28.5      | 732.5   | change |
+| `artifacts-check`     | measured | 0.22      | 69.9    | gate   |
+| `artifacts-write`     | measured | 0.16      | 69.9    | change |
+
+- Gate-equivalent total (warm `--make` plus `artifacts-check`): **≈ 1.1 s**.
+- Cold-to-warm value of the store: **31.1 s → 0.84 s** (a rebuild that would
+  otherwise be paid on every fresh clone).
+- Slowest single step: `render-gallery` at **98.4 s**, likewise the heaviest at
+  959 MB.
+
+Neither branch of the revisit trigger holds: no step approaches ten minutes
+(largest 98.4 s), and no step is run by hand more than weekly — the chain is
+driven by `dev/check.R`, and a manual rerun is an edit, which is exactly the
+signal `targets` already consumes. For `targets --make` the recorded peak is the
+orchestrator's own `VmHWM`; the render runs in a grandchild `Rscript`, whose
+peak the `render-decision` row carries.
+
+**Decision unchanged.** `targets` stays a dev-only freshness holder; no
+`DESCRIPTION` entry, no root `_targets.R`, no widening of the chain.
