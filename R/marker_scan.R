@@ -189,6 +189,65 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   )
 }
 
+#' BLAST every primer against a local genome database (rBLAST, optional)
+#' @param primers named character vector of oligos.
+#' @param db_path BLAST database path.
+#' @return a tibble of BLAST hits, or `NULL` when the database is missing or the
+#'   query fails.
+#' @examples
+#' \dontrun{
+#' blast_primers(c(AS = "GAAGGTGACCAAGTTCATGCT"), "tair10")
+#' }
+#' @family specificity
+#' @export
+blast_primers <- function(primers, db_path) {
+  if (is.null(db_path) || !fs::file_exists(db_path)) {
+    return(NULL)
+  }
+  rlang::check_installed("rBLAST")
+  query <- Biostrings::DNAStringSet(rlang::set_names(primers, names(primers)))
+  out <- tryCatch(
+    {
+      bl <- rBLAST::blast(db_path, type = "blastn")
+      stats::predict(bl,
+        newdata = query,
+        BLAST_args = c("-task", "blastn-short", "-word_size", "7", "-dust", "no")
+      )
+    },
+    error = function(e) {
+      warn_msg("BLAST failed: {conditionMessage(e)}")
+      NULL
+    }
+  )
+  if (is.null(out) || nrow(out) == 0L) {
+    return(out)
+  }
+  tibble::as_tibble(out)
+}
+
+#' Build (once) a BLAST nucleotide database from a genome
+#'
+#' Kept as an alias of [marker_blast_index()] so there is one implementation of
+#' the build.  The index (`<path>.nhr/.nin/.nsq`) is written next to the FASTA
+#' and reused when present, so a second call does not repave a genome-sized
+#' file.  This used to write under a fixed `tair10.fa` name for every genome.
+#'
+#' @param genome a `marker_genome` or a `DNAStringSet`.
+#' @param path FASTA path to write (and index); `NULL` derives a content-keyed
+#'   name in the cache.  Ignored for a `marker_genome`, whose own FASTA is
+#'   indexed in place.
+#' @return the FASTA path the database was built from (the database prefix).
+#' @examples
+#' \dontrun{
+#' genome <- ath_genome()
+#' build_blast_db(genome)
+#' }
+#' @family specificity
+#' @export
+build_blast_db <- function(genome, path = NULL) {
+  marker_blast_index(genome, path = path)
+}
+
 #' Specificity by the right path for the genome at hand
 #'
 #' In-memory `DNAStringSet` -> [specificity_seed()] (exact `PDict` path, or a
@@ -325,3 +384,4 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
   }
   mark_scan(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), "3'-seed")
 }
+
