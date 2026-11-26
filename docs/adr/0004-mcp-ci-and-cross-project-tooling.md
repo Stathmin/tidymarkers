@@ -75,3 +75,33 @@ server itself stays R.
 - [`tests/testthat/test-mcp.R`](../../tests/testthat/test-mcp.R) — the contract.
 - [`dev/check.R`](../../dev/check.R) — the local gate.
 - [`_quarto.yml`](../../_quarto.yml) — the docs/lecture stack.
+
+## Amendment (2026-11-26): the schema is published, by operator decision
+
+`inst/mcp/schema.json` now exists, emitted by `dev/mcp-schema.R` (`--write` to
+write, `--check` to fail on drift). It is JSON Schema **draft 2020-12**, 1892
+bytes, and it is derived from the registry, not hand-kept:
+
+- top level: `type: object`, `additionalProperties: false`, `required` =
+  `["tools"]`;
+- `tools` is an array with `minItems` = `maxItems` = **38** (the registry's
+  `length(specs)`);
+- each tool's `name` is an enum of the same 38 names, and its `required` is
+  `["name", "title", "description", "inputSchema"]`, with every required key
+  present in `properties`.
+
+`tests/testthat/test-mcp.R` gained a drift test: it validates the file with
+`jsonlite::validate()`, checks the shape above, and `expect_setequal`s the
+`name` enum against `names(mcp_tool_specs())`. `Rscript dev/test.R mcp` — 7
+tests, all pass.
+
+The trigger above ("a second consumer that cannot load R") was **not** met by a
+consumer. Publication is an operator decision: the contract is useful to a
+foreign agent before such an agent exists, and the drift test makes it a file
+the gate can hold. The distinction matters — this does not license a second
+implementation.
+
+**Decision unchanged in substance.** The server stays one R file; nothing in
+`R/` reads `inst/mcp/schema.json`, so it is a contract artifact, not a runtime
+dependency. `tools/list` remains the live surface; the schema is the published
+shape of that surface.

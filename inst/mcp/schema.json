@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "tidymarkers MCP tools/list result",
+  "description": "The result of a JSON-RPC `tools/list` call on the tidymarkers MCP server (inst/mcp/server.R). Generated from mcp_tool_specs() by dev/mcp-schema.R; tests/testthat/test-mcp.R fails on drift.",
+  "type": "object",
+  "required": "tools",
+  "additionalProperties": false,
+  "properties": {
+    "tools": {
+      "type": "array",
+      "minItems": 38,
+      "maxItems": 38,
+      "items": {
+        "type": "object",
+        "required": ["name", "title", "description", "inputSchema"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["primer_tm", "oligo_dg", "terminal_dg", "marker_schemes", "marker_criteria", "marker_technologies", "marker_technology", "marker_priors", "kasp_mix_recipe", "specificity_policy", "genome_info", "read_variants", "in_silico_pcr", "design_marker", "variant_type", "marker_site_class", "mask_positions", "asq_limits", "reaction_conditions", "scheme_conditions", "primer_thermo", "primer_set_compatibility", "dimer_thermo", "hairpin_dg_thermo", "fold_amplicon", "pcr_efficiency", "wobble_mismatch", "find_palindromes", "has_palindrome", "find_caps_enzymes", "rescue_strategy", "marker_decision_text", "screen_snp_targets", "engine_status", "engine_capabilities", "design_chemistries", "design_scheme", "design_markers"],
+            "description": "the registered tool name"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inputSchema": {
+            "type": "object",
+            "description": "JSON Schema draft 2020-12 for the tool's arguments"
+          }
+        }
+      }
+    }
+  }
+}

@@ -248,3 +248,40 @@ test_that("protocol edges fail readably, not silently", {
   unknown <- .mcp_call(env, "no_such_tool", list())
   expect_true(isTRUE(unknown$result$isError))
 })
+
+test_that("inst/mcp/schema.json matches the tool registry", {
+  skip_if_not_installed("jsonlite")
+  env <- .mcp_env()
+  specs <- env$mcp_tool_specs()
+
+  path <- system.file("mcp", "schema.json", package = "tidymarkers")
+  if (!nzchar(path)) {
+    path <- testthat::test_path("..", "..", "inst", "mcp", "schema.json")
+  }
+  expect_true(file.exists(path), info = path)
+
+  text <- readChar(path, file.info(path)$size, useBytes = TRUE)
+  expect_true(jsonlite::validate(text))
+  schema <- jsonlite::fromJSON(text, simplifyVector = FALSE)
+
+  expect_equal(schema$`$schema`, "https://json-schema.org/draft/2020-12/schema")
+  expect_equal(schema$type, "object")
+  expect_false(isTRUE(schema$additionalProperties))
+
+  tools <- schema$properties$tools
+  # The count and the name enum are the two places a new or renamed tool shows
+  # up; regenerate with `Rscript dev/mcp-schema.R --write` rather than editing.
+  expect_equal(tools$minItems, length(specs))
+  expect_equal(tools$maxItems, length(specs))
+  expect_setequal(unlist(tools$items$properties$name$enum), names(specs))
+  expect_equal(
+    unlist(tools$items$required, use.names = FALSE),
+    c("name", "title", "description", "inputSchema")
+  )
+
+  for (nm in names(specs)) {
+    input <- specs[[nm]]$inputSchema
+    required <- unlist(input$required, use.names = FALSE)
+    expect_true(all(required %in% names(input$properties)), info = nm)
+  }
+})
