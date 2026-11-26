@@ -3803,20 +3803,29 @@ dir)` пишет crate-профиль поверх существующих че
       следствие: панель остаётся обёрткой без LD и без воспроизводимого
       артефакта; ZY1 закрыт, но швы не проверены.
 
-- [ ] **T6. Реестры вместо 47 делегаторов `plot`/`print` (+16 `marker_map_spec`).**
-      правка: `R/marker_result_registry.R` — `marker_print_registry()`,
-      `marker_plot_registry()`, `marker_map_spec_registry()`; `"marker"`
-      последним классом; `print.marker`, `plot.marker`,
-      `marker_map_spec.marker`; `need_cols()` в `R/marker_contracts.R`
-      (30 мест в 21 файле сегодня, в предложении 11); `abort_msg()` в
-      `R/marker_i18n.R` (49 файлов/216 вызовов, в предложении 54).
-      проверка: снимки `print`/`plot`/`map_spec` идентичны; `need_cols`
-      покрывает все прежние места; `potools::po_extract()` видит
-      `abort_msg`; `LANGUAGE=ru` дым.
-      блокер: нет.
-      следствие: 47 тел `print`/`plot` и 16 `map_spec` дублируются; guard
-      колонок и формат ошибки расходятся между файлами.
-
+- [x] **T6. Реестры вместо делегаторов `plot`/`print`/`marker_map_spec`.**
+    - сделано: `R/marker_result_registry.R` — три реестра; `print.marker` и
+      `marker_map_spec.marker` находят тело по `class()`, 32 прежних
+      S3-метода стали внутренними `marker_print_*` / `marker_map_*`;
+      `plot.marker` берёт раскладку из `MARKER_PLOT_LAYOUTS`
+      (`R/marker_plot_methods.R`), 17 адаптеров `marker_plot_*` удалены.
+      `NAMESPACE`: `S3method` 79 -> 48 (−31), `export` 206 -> 206.
+      Определений функций 1052 -> 1041: тела `print`/`map_spec` сохранены
+      как внутренние помощники, удалены 17 plot-адаптеров и
+      `print.marker_explain`, добавлены `marker_plot_layout()` и два
+      диспетчера. `R/*.R` 38809 -> 38786 строк, `marker_plot_methods.R`
+      912 -> 887.
+    - сделано (i18n): `warn_msg()` рядом с `abort_msg()`, общий
+      `translate_msg()`; `cli_warn(gettext*(...))` и `cli_abort(gettextf(...))`
+      переведены на них, длинные сообщения разбиты на строки cli (не склеены),
+      `po/README.md` знает оба как translation functions.
+    - проверка: `dev/test.R result-registry`, `plot-methods`, `plots`,
+      `snapshot`, `i18n`, `ingest`, `outcome`, `homeolog`, `taqman`,
+      `haplotypes` — зелёные; `Rscript dev/check.R --quick --no-render` —
+      all checks passed; `docs/artifacts.yml` input hashes пересчитаны
+      (`dev/artifacts.R --write`), выходные хеши фигур не менялись.
+    - осталось: `need_cols()` из тикета не входил в E1; `marker_plots.R`
+      (1620 строк) разрезает T7.
 - [ ] **T7. Разрезать god-файлы.**
       правка: `marker_specificity.R` 2487 -> seed/index/cache;
       `marker_plots.R` 1620 -> ideogram/diagram/layers;
