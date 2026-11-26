@@ -285,13 +285,7 @@ reprex_gc <- function(seq) {
 
 reprex_from_table <- function(v, preserve) {
   need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(v))
-  if (length(missing)) {
-    abort_msg(
-      "A variant table is missing column{?s} {.val {missing}}.",
-      i = "It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes."
-    )
-  }
+  need_cols(v, need, arg = "variant table")
   # A column the script cannot carry would make the replay differ silently.
   extra <- setdiff(names(v), need)
   if (length(extra)) {

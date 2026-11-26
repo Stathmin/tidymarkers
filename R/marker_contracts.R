@@ -57,6 +57,28 @@ marker_contract <- function(condition, message, ...,
   cli::cli_abort(message, ..., class = class, call = call)
 }
 
+#' Abort when a table or named list lacks required columns
+#'
+#' The one required-column guard: it names `arg` and the missing columns in the
+#' order the caller listed them, and carries both condition classes so a caller
+#' can catch either.
+#' @param x a data frame, tibble or named list.
+#' @param cols the required column names.
+#' @param arg the name the message uses for `x`.
+#' @param call the call shown to the user; defaults to the caller's frame.
+#' @keywords internal
+#' @noRd
+need_cols <- function(x, cols, arg = "x", call = rlang::caller_env()) {
+  missing <- setdiff(cols, names(x))
+  marker_contract(
+    !length(missing),
+    gettextf("`%s` is missing column(s): %s", arg, paste(missing, collapse = ", ")),
+    class = c("tidymarkers_contract_error", "tidymarkers_missing_columns"),
+    call = call
+  )
+  invisible(TRUE)
+}
+
 # Post-condition of `pick_target_snp()`: the returned row names one locus whose
 # AS window is designable at all.  `marker_site_class()` is the one definition of
 # "designable" (no second one is invented here); the attached `"marker"`, when

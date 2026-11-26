@@ -51,10 +51,7 @@
 #' @export
 design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL, ...) {
   if (is.null(design) || is.character(design)) {
-    missing <- setdiff(c("chrom", "pos", "ref", "alt"), names(loci))
-    if (length(missing)) {
-      abort_msg("`loci` is missing column(s): {paste(missing, collapse = ', ')}")
-    }
+    need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
   }
   dots <- rlang::list2(...)
   one <- function(i) {

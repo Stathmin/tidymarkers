@@ -1185,10 +1185,7 @@ normalise_fixed_snp <- function(snp) {
   if (!is.data.frame(snp) || nrow(snp) != 1L) {
     abort_msg("`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`.")
   }
-  miss <- setdiff(c("chrom", "pos", "ref", "alt"), names(snp))
-  if (length(miss)) {
-    abort_msg("`snp` is missing: {paste(miss, collapse = ', ')}.")
-  }
+  need_cols(snp, c("chrom", "pos", "ref", "alt"), arg = "snp")
   out <- tibble::tibble(
     chrom = as.character(snp$chrom[[1L]]),
     pos = as.integer(snp$pos[[1L]]),

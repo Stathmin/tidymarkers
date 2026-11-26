@@ -126,13 +126,7 @@ empty_targets <- function() {
 #' @noRd
 normalise_targets <- function(x) {
   x <- tibble::as_tibble(x)
-  need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(x))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("`targets` is missing column(s): {paste(missing, collapse = ', ')}.")
-    ))
-  }
+  need_cols(x, c("chrom", "pos", "ref", "alt"), arg = "targets")
   x$chrom <- as.character(x$chrom)
   x$pos <- as.integer(x$pos)
   x$ref <- toupper(as.character(x$ref))

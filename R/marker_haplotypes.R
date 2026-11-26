@@ -22,13 +22,10 @@
 #' @keywords internal
 #' @noRd
 normalise_haplotypes <- function(haplotypes) {
-  need <- c("haplotype", "freq", "chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(haplotypes))
-  if (length(missing)) {
-    abort_msg(
-      "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-    )
-  }
+  need_cols(
+    haplotypes, c("haplotype", "freq", "chrom", "pos", "ref", "alt"),
+    arg = "haplotypes"
+  )
   h <- tibble::as_tibble(haplotypes) |>
     dplyr::transmute(
       haplotype = as.character(.data$haplotype),

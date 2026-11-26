@@ -30,12 +30,7 @@ normalise_region <- function(region) {
     )
   } else if (is.data.frame(region) || is.list(region)) {
     x <- tibble::as_tibble(region)
-    missing <- setdiff(c("chrom", "start", "end"), names(x))
-    if (length(missing)) {
-      cli::cli_abort(glue::glue(
-        gettext("`region` is missing column(s): {paste(missing, collapse = ', ')}.")
-      ))
-    }
+    need_cols(x, c("chrom", "start", "end"), arg = "region")
     if (nrow(x) != 1L) {
       abort_msg("`region` must name exactly one interval.")
     }
@@ -69,12 +64,7 @@ region_variants <- function(plan) {
     )
   }
   v <- tibble::as_tibble(v)
-  missing <- setdiff(c("chrom", "pos", "ref", "alt"), names(v))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("The variant context is missing column(s): {paste(missing, collapse = ', ')}.")
-    ))
-  }
+  need_cols(v, c("chrom", "pos", "ref", "alt"), arg = "variant context")
   v[, c("chrom", "pos", "ref", "alt")]
 }
 

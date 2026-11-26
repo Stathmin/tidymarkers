@@ -120,13 +120,7 @@ informativeness_targets <- function(x) {
 #' @noRd
 normalise_genotypes <- function(g) {
   g <- tibble::as_tibble(g)
-  need <- c("line", "pos", "genotype")
-  missing <- setdiff(need, names(g))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("`genotypes` is missing column(s): {paste(missing, collapse = ', ')}.")
-    ))
-  }
+  need_cols(g, c("line", "pos", "genotype"), arg = "genotypes")
   col <- function(nm, f) if (nm %in% names(g)) f(g[[nm]]) else rep(NA_character_, nrow(g))
   out <- tibble::tibble(
     line = as.character(g$line),

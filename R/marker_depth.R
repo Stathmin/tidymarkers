@@ -217,12 +217,7 @@ variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
     abort_msg("`min_depth` must be a single positive number.")
   }
   x <- tibble::as_tibble(depth)
-  missing <- setdiff(c("chrom", "pos", "depth"), names(x))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("`depth` is missing column(s): {paste(missing, collapse = ', ')}.")
-    ))
-  }
+  need_cols(x, c("chrom", "pos", "depth"), arg = "depth")
   x$chrom <- ath_chrom(x$chrom)
 
   d <- as.numeric(x$depth)
@@ -284,12 +279,7 @@ filter_targets_by_depth <- function(targets, depth) {
     return(targets)
   }
   d <- tibble::as_tibble(depth)
-  missing <- setdiff(c("chrom", "pos", "confident"), names(d))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("The depth table is missing column(s): {paste(missing, collapse = ', ')}.")
-    ))
-  }
+  need_cols(d, c("chrom", "pos", "confident"), arg = "depth")
   low <- paste(ath_chrom(d$chrom), d$pos, sep = "|")[!is.na(d$confident) & !d$confident]
   key <- paste(ath_chrom(tg$chrom), tg$pos, sep = "|")
   out <- tg[!key %in% low, , drop = FALSE]

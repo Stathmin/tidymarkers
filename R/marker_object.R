@@ -163,11 +163,7 @@ variant_type <- function(ref, alt) {
 #' @family design
 #' @export
 design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, ...) {
-  need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(loci))
-  if (length(missing)) {
-    abort_msg("`loci` is missing column(s): {paste(missing, collapse = ', ')}")
-  }
+  need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
   one <- function(ch, pos, ref, alt, cores) {
     # the same canonical row `design_markers()` designs; only `ref`/`alt` are read
     snp <- locus_row(tibble::tibble(chrom = ch, pos = pos, ref = ref, alt = alt))

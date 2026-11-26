@@ -159,14 +159,7 @@ ingest_read_json <- function(path) {
 #' @keywords internal
 #' @noRd
 ingest_fields <- function(dat) {
-  required <- c("record_id", "doi", "metric", "value")
-  absent <- setdiff(required, names(dat))
-  if (length(absent)) {
-    cli::cli_abort(gettextf(
-      "The literature source is missing required column(s): %s.",
-      paste(absent, collapse = ", ")
-    ))
-  }
+  need_cols(dat, c("record_id", "doi", "metric", "value"), arg = "literature source")
   n <- nrow(dat)
   fill <- function(name) {
     if (name %in% names(dat)) as.character(dat[[name]]) else rep(NA_character_, n)

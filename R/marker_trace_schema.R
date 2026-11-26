@@ -201,13 +201,7 @@ trace_validate <- function(x) {
   if (!inherits(x, "marker_trace")) {
     abort_msg("`x` is not a marker_trace; migrate it with marker_trace_migrate().")
   }
-  missing <- setdiff(TRACE_FIELDS, names(x))
-  if (length(missing)) {
-    abort_msg(
-      "A trace must have every field.",
-      x = "Missing: {paste(missing, collapse = ', ')}."
-    )
-  }
+  need_cols(x, TRACE_FIELDS, arg = "trace")
   if (!identical(x$schema, marker_trace_schema())) {
     abort_msg(
       "A trace must carry the current schema.",

@@ -1199,13 +1199,7 @@ new_marker_criteria <- function(x) {
     "bounds", "units", "source", "calibrated", "evidence", "evaluator", "hard",
     "limit", "order", "schemes", "asymmetry_reason", "target"
   )
-  miss <- setdiff(fields, names(x))
-  if (length(miss)) {
-    stop("a criterion table is missing column(s): ",
-      paste(miss, collapse = ", "),
-      call. = FALSE
-    )
-  }
+  need_cols(x, fields, arg = "criterion table")
   vctrs::new_data_frame(
     x[, fields, drop = FALSE],
     class = c("marker_criteria", "tbl_df", "tbl", "data.frame")

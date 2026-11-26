@@ -186,7 +186,11 @@ test_that("a bad source path or threshold is an error, not an empty queue", {
   corpus <- fs::path(tmp, "corpus.csv")
   readr::write_lines(c("record_id,doi,metric", "a,10.1000/aaa,LoD"), corpus)
 
-  expect_error(marker_ingest_literature(corpus), "missing required column")
+  expect_error(
+    marker_ingest_literature(corpus),
+    "`literature source` is missing column(s): value",
+    fixed = TRUE
+  )
   expect_error(marker_ingest_literature(fs::path(tmp, "absent.csv")), "is not one")
   txt <- fs::path(tmp, "corpus.txt")
   readr::write_lines("x", txt)

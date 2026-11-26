@@ -362,10 +362,7 @@ marker_as_granges <- function(x, extra = NULL) {
     return(NULL)
   }
   need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(x))
-  if (length(missing)) {
-    abort_msg("`x` is missing column(s): {paste(missing, collapse = ', ')}")
-  }
+  need_cols(x, need)
   df <- tibble::as_tibble(x)
   if (!is.null(extra)) {
     extra <- tibble::as_tibble(extra)
@@ -392,10 +389,7 @@ marker_from_granges <- function(x) {
   }
   if (!methods::is(x, "GRanges")) abort_msg("`x` must be a GRanges.")
   m <- S4Vectors::mcols(x)
-  missing <- setdiff(c("ref", "alt"), names(m))
-  if (length(missing)) {
-    abort_msg("`x` is missing mcol(s): {paste(missing, collapse = ', ')}")
-  }
+  need_cols(m, c("ref", "alt"))
   tibble::as_tibble(m) |>
     dplyr::mutate(
       chrom = ath_chrom(as.character(GenomicRanges::seqnames(x))),
@@ -423,11 +417,7 @@ marker_from_granges <- function(x) {
 #' @family input
 #' @export
 write_variants_vcf <- function(x, path = NULL) {
-  need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(x))
-  if (length(missing)) {
-    abort_msg("`x` is missing column(s): {paste(missing, collapse = ', ')}")
-  }
+  need_cols(x, c("chrom", "pos", "ref", "alt"))
   x <- tibble::as_tibble(x)
   if (!"depth" %in% names(x)) x$depth <- NA_real_
   if (any(is.na(x$chrom) | is.na(x$pos) | is.na(x$ref) | is.na(x$alt))) {

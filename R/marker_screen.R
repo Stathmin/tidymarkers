@@ -54,9 +54,7 @@ screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+
                                clean_3p = 5L, hotzone = 8L, linked = NULL,
                                limits = KASP_LIMITS) {
   v <- tibble::as_tibble(variants)
-  if (!all(c("chrom", "pos") %in% names(v))) {
-    abort_msg("`variants` needs `chrom` and `pos` columns.")
-  }
+  need_cols(v, c("chrom", "pos"), arg = "variants")
   chroms <- unique(v$chrom)
   purrr::map(chroms, function(ch) {
     screen_one_chrom(

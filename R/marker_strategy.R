@@ -93,13 +93,7 @@ rescue_strategy <- function(schemes = NULL) {
 #' @family design
 #' @export
 design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
-  need <- c("chrom", "pos", "ref", "alt")
-  missing <- setdiff(need, names(loci))
-  if (length(missing)) {
-    cli::cli_abort(glue::glue(
-      gettext("`loci` is missing column(s): {paste(missing, collapse = ', ')}")
-    ))
-  }
+  need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
   purrr::map(seq_len(nrow(loci)), function(i) {
     snp <- locus_row(loci[i, , drop = FALSE])
     if (is.null(scheme)) {

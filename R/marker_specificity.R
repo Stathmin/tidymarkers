@@ -1242,11 +1242,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
 #' @family specificity
 #' @export
 offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed_len = NA_integer_) {
-  required <- c("primer", "chrom", "start", "end", "strand")
-  missing_cols <- setdiff(required, names(hits))
-  if (length(missing_cols)) {
-    abort_msg("`hits` is missing required columns: {.val {missing_cols}}.")
-  }
+  need_cols(hits, c("primer", "chrom", "start", "end", "strand"), arg = "hits")
   if (is.null(primers)) {
     if (!"sequence" %in% names(hits)) {
       abort_msg(

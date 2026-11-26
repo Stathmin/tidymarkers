@@ -30,12 +30,7 @@ normalise_diagnostic_positions <- function(x) {
     chrom <- as.character(GenomicRanges::seqnames(x))
     pos <- as.integer(GenomicRanges::start(x))
   } else if (is.data.frame(x)) {
-    miss <- setdiff(c("chrom", "pos"), names(x))
-    if (length(miss)) {
-      abort_msg(
-        "`diagnostic_positions` is missing column(s): {paste(miss, collapse = ', ')}."
-      )
-    }
+    need_cols(x, c("chrom", "pos"), arg = "diagnostic_positions")
     chrom <- as.character(x$chrom)
     pos <- as.integer(x$pos)
   } else if (is.list(x) && all(c("chrom", "pos") %in% names(x))) {

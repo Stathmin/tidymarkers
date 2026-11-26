@@ -194,9 +194,7 @@ normalise_hap_freq <- function(freq, nms) {
     return(stats::setNames(rep(1 / n, n), nms))
   }
   if (is.data.frame(freq)) {
-    if (!all(c("haplotype", "freq") %in% names(freq))) {
-      abort_msg("A `freq` table needs `haplotype` and `freq` columns.")
-    }
+    need_cols(freq, c("haplotype", "freq"), arg = "freq")
     v <- stats::setNames(as.numeric(freq$freq), as.character(freq$haplotype))
     out <- v[nms]
     out[is.na(out)] <- 0
