@@ -2210,7 +2210,10 @@ specificity_backend <- function(genome = NULL, scheme = "pcr") {
     caps <- genome$capabilities
     return(list(
       engine = switch(genome$strategy,
-        memory = TRUE, bowtie = "index", blast = "blast", fm = "fm"
+        memory = TRUE,
+        bowtie = "index",
+        blast = "blast",
+        fm = "fm"
       ),
       capabilities = c(
         exact_scan = isTRUE(caps$seed_scan),

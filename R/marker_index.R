@@ -203,13 +203,15 @@ index_manifest <- function(index) {
 
 # A missing shard names the chromosome; a changed one names the shard.
 index_abort_missing <- function(row) {
-  where <- if (is.na(row$chrom[[1L]])) {
-    gettextf("the %s index", row$strategy[[1L]])
-  } else {
-    gettextf("chromosome %s", row$chrom[[1L]])
+  if (is.na(row$chrom[[1L]])) {
+    abort_msg(
+      "The {row$strategy} index shard {row$shard} is missing.",
+      i = "Build it again with `genome_index(strategy = \"{row$strategy}\")`.",
+      class = "tidymarkers_index_missing_error"
+    )
   }
   abort_msg(
-    "The {row$strategy} index shard {row$shard} is missing: {where}.",
+    "The {row$strategy} index shard {row$shard} is missing: chromosome {row$chrom}.",
     i = "Build it again with `genome_index(strategy = \"{row$strategy}\")`.",
     class = "tidymarkers_index_missing_error"
   )

@@ -218,7 +218,8 @@ genome_index_scan <- function(primers, index, k = SEED_K,
       if (!identical(as.integer(k), as.integer(SEED_K))) {
         abort_msg(
           "The bowtie strategy scans the whole primer: it cannot honour `k = {k}`.",
-          i = "Its declared capabilities are `seed_scan = {caps$seed_scan}` and `whole_primer_scan = {caps$whole_primer_scan}`.",
+          i = "Its declared capabilities are `seed_scan = {caps$seed_scan}` and `whole_primer_scan`.",
+          i = "The whole primer is scanned, so there is no seed window to shorten.",
           i = "Use strategy = \"memory\" for the 3'-seed question.",
           class = "tidymarkers_capability_error"
         )
