@@ -117,10 +117,10 @@ specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MI
         k = NA_integer_, BPPARAM = BPPARAM
       ))
     }
-    cli::cli_abort(c(
-      gettext("This indexed genome has neither a bowtie index nor a BLAST database."),
-      i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
-    ))
+    abort_msg(
+      "This indexed genome has neither a bowtie index nor a BLAST database.",
+      i = "Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=)."
+    )
   }
   if (inherits(genome, "DNAStringSet")) {
     seed_scan_cost_warn(sum(Biostrings::width(genome)), length(seeds))
@@ -1094,11 +1094,11 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
     sequences <- as.character(sequences)
   }
   if (!is.character(sequences) || !length(sequences)) {
-    cli::cli_abort(gettext("`sequences` must be a non-empty character vector of oligos."))
+    abort_msg("`sequences` must be a non-empty character vector of oligos.")
   }
   max_mismatch <- as.integer(max_mismatch)
   if (is.na(max_mismatch) || max_mismatch < 0L) {
-    cli::cli_abort(gettext("`max_mismatch` must be a non-negative integer."))
+    abort_msg("`max_mismatch` must be a non-negative integer.")
   }
   nm <- names(sequences)
   if (is.null(nm)) {
@@ -1245,47 +1245,47 @@ offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed
   required <- c("primer", "chrom", "start", "end", "strand")
   missing_cols <- setdiff(required, names(hits))
   if (length(missing_cols)) {
-    cli::cli_abort(gettext("`hits` is missing required columns: {.val {missing_cols}}."))
+    abort_msg("`hits` is missing required columns: {.val {missing_cols}}.")
   }
   if (is.null(primers)) {
     if (!"sequence" %in% names(hits)) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "`hits` carries no `sequence` column, so `primers` must be supplied."
-      ))
+      )
     }
     key <- as.character(hits$primer)
     seq <- as.character(hits$sequence)
     if (anyNA(seq)) {
-      cli::cli_abort(gettext("`hits$sequence` must not contain NA."))
+      abort_msg("`hits$sequence` must not contain NA.")
     }
     pairs <- unique(data.frame(name = key, seq = seq, stringsAsFactors = FALSE))
     if (anyDuplicated(pairs$name)) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "`hits$sequence` gives one primer name more than one oligo; supply `primers` explicitly."
-      ))
+      )
     }
     primers <- stats::setNames(pairs$seq, pairs$name)
   }
   if (!is.character(primers) || is.null(names(primers)) || any(is.na(names(primers)) | names(primers) == "")) {
-    cli::cli_abort(gettext("`primers` must be a named character vector of oligos."))
+    abort_msg("`primers` must be a named character vector of oligos.")
   }
   primer_name <- as.character(hits$primer)
   strand <- as.character(hits$strand)
   bad_strand <- !is.na(strand) & !(strand %in% c("+", "-"))
   if (any(bad_strand)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`hits$strand` must be {.val {c('+', '-')}}; got {.val {unique(strand[bad_strand])}}."
-    ))
+    )
   }
   start <- hits$start
   if (!is.numeric(start) || anyNA(start) || any(start < 1) || any(start != floor(start))) {
-    cli::cli_abort(gettext("`hits$start` must be a positive integer."))
+    abort_msg("`hits$start` must be a positive integer.")
   }
   missing_primers <- setdiff(unique(primer_name), names(primers))
   if (length(missing_primers)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "Every `hits$primer` must be a name in `primers`; missing: {.val {missing_primers}}."
-    ))
+    )
   }
   primer_seq <- unname(primers[primer_name])
   width <- as.integer(hits$end) - as.integer(hits$start) + 1L
@@ -2100,16 +2100,16 @@ specificity_policy <- function(scheme = "pcr", length = NULL, spacer_len = NULL)
     scheme <- "pcr"
   }
   if (!is.character(scheme) || length(scheme) != 1L) {
-    cli::cli_abort(gettext("`scheme` must be a single scheme name."))
+    abort_msg("`scheme` must be a single scheme name.")
   }
   if (!is.null(spacer_len)) {
     n <- if (is.numeric(spacer_len)) spacer_len else NA_real_
     whole <- length(n) == 1L && is.finite(n) && n >= 1 &&
       n <= .Machine$integer.max && n == round(n)
     if (!whole) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "`spacer_len` must be a single positive whole number of nucleotides."
-      ))
+      )
     }
   }
   key <- gsub("[-_ ]", "", tolower(scheme))

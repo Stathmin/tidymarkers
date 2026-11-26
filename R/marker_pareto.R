@@ -107,16 +107,16 @@ pareto_candidates <- function(x, quality, linkage_risk, anchor, recombination,
   } else if (is.data.frame(x)) {
     base <- tibble::as_tibble(x)
     if (!"cost" %in% names(base)) {
-      cli::cli_abort(gettext("A candidate table needs a `cost` column."))
+      abort_msg("A candidate table needs a `cost` column.")
     }
     if (!is.null(quality)) {
       pareto_override_length(quality, nrow(base), "quality")
       base$quality <- quality
     }
     if (!"quality" %in% names(base)) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "A candidate table needs a `quality` column (or an explicit `quality`)."
-      ))
+      )
     }
     if (!is.null(linkage_risk)) {
       pareto_override_length(linkage_risk, nrow(base), "linkage_risk")
@@ -126,9 +126,9 @@ pareto_candidates <- function(x, quality, linkage_risk, anchor, recombination,
       base$linkage_risk <- 0
     }
   } else {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`x` must be a candidate table or a marker_solve() result."
-    ))
+    )
   }
   pareto_validate(base)
   base

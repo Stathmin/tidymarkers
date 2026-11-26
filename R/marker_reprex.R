@@ -105,14 +105,14 @@ marker_reprex <- function(x, path = NULL, preserve = c("gc_content", "variant_ty
 
 reprex_preserve <- function(preserve) {
   if (!is.character(preserve) || !length(preserve)) {
-    cli::cli_abort(gettext("`preserve` must be a non-empty character vector."))
+    abort_msg("`preserve` must be a non-empty character vector.")
   }
   unknown <- setdiff(unique(preserve), REPREX_PRESERVE)
   if (length(unknown)) {
-    cli::cli_abort(c(
-      gettext("`preserve` names a property this function does not implement: {.val {unknown}}."),
-      i = gettext("Allowed values are {.val {REPREX_PRESERVE}}.")
-    ))
+    abort_msg(
+      "`preserve` names a property this function does not implement: {.val {unknown}}.",
+      i = "Allowed values are {.val {REPREX_PRESERVE}}."
+    )
   }
   REPREX_PRESERVE[REPREX_PRESERVE %in% preserve]
 }
@@ -122,10 +122,10 @@ reprex_path <- function(path) {
     return(tempfile("tidymarkers-reprex", fileext = ".R"))
   }
   if (!is.character(path) || length(path) != 1L || is.na(path)) {
-    cli::cli_abort(gettext("`path` must be one non-missing file path or `NULL`."))
+    abort_msg("`path` must be one non-missing file path or `NULL`.")
   }
   if (!dir.exists(dirname(path))) {
-    cli::cli_abort(gettext("Cannot write {.path {path}}: {.path {dirname(path)}} does not exist."))
+    abort_msg("Cannot write {.path {path}}: {.path {dirname(path)}} does not exist.")
   }
   path
 }
@@ -140,10 +140,10 @@ reprex_version <- function() {
 reprex_input <- function(x, preserve) {
   if (inherits(x, "marker_genome")) {
     if (is.null(x$path)) {
-      cli::cli_abort(c(
-        gettext("A {.cls marker_genome} backed by a {.cls BSgenome} has no file to read."),
-        i = gettext("Pass a {.cls DNAStringSet} or a FASTA path instead.")
-      ))
+      abort_msg(
+        "A {.cls marker_genome} backed by a {.cls BSgenome} has no file to read.",
+        i = "Pass a {.cls DNAStringSet} or a FASTA path instead."
+      )
     }
     return(reprex_from_seq(reprex_read_fasta(x$path), preserve))
   }
@@ -171,20 +171,20 @@ reprex_input <- function(x, preserve) {
       return(reprex_from_seq(reprex_read_fasta(x), preserve))
     }
     if (length(x) == 1L && file.exists(x)) {
-      cli::cli_abort(c(
-        gettext("{.path {x}} is not a VCF, a BED or a FASTA (by its extension)."),
-        i = gettext("Expected .vcf, .vcf.gz, .bed, .fa, .fasta or .fna.")
-      ))
+      abort_msg(
+        "{.path {x}} is not a VCF, a BED or a FASTA (by its extension).",
+        i = "Expected .vcf, .vcf.gz, .bed, .fa, .fasta or .fna."
+      )
     }
     return(reprex_from_seq(x, preserve))
   }
   if (is.data.frame(x)) {
     return(reprex_from_table(x, preserve))
   }
-  cli::cli_abort(c(
-    gettext("`x` is not a variant table, a set of sequences, or a path to one."),
-    x = gettext("Got {.cls {class(x)}}.")
-  ))
+  abort_msg(
+    "`x` is not a variant table, a set of sequences, or a path to one.",
+    x = "Got {.cls {class(x)}}."
+  )
 }
 
 reprex_file_kind <- function(path) {
@@ -209,7 +209,7 @@ reprex_file_kind <- function(path) {
 reprex_from_seq <- function(x, preserve) {
   seqs <- as.character(x)
   if (!length(seqs)) {
-    cli::cli_abort(gettext("`x` holds no sequence."))
+    abort_msg("`x` holds no sequence.")
   }
   syn <- withr::with_seed(1L, lapply(seqs, reprex_synthetic, preserve))
   stuck <- sum(vapply(syn, `[[`, integer(1), "kept"))
@@ -287,10 +287,10 @@ reprex_from_table <- function(v, preserve) {
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(v))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext("A variant table is missing column{?s} {.val {missing}}."),
-      i = gettext("It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes.")
-    ))
+    abort_msg(
+      "A variant table is missing column{?s} {.val {missing}}.",
+      i = "It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes."
+    )
   }
   # A column the script cannot carry would make the replay differ silently.
   extra <- setdiff(names(v), need)
@@ -307,7 +307,7 @@ reprex_from_table <- function(v, preserve) {
     v <- v[keep, , drop = FALSE]
   }
   if (!nrow(v)) {
-    cli::cli_abort(gettext("`x` holds no complete variant."))
+    abort_msg("`x` holds no complete variant.")
   }
   pos <- reprex_int(v$pos)
   chrom <- as.character(v$chrom)
@@ -371,10 +371,10 @@ reprex_gaps <- function(chrom, pos) {
 }
 
 reprex_lost <- function(prop) {
-  cli::cli_abort(c(
-    gettext("Anonymisation lost `{prop}`; no script was written."),
-    i = gettext("This is a bug in `marker_reprex()`: please report it.")
-  ))
+  abort_msg(
+    "Anonymisation lost `{prop}`; no script was written.",
+    i = "This is a bug in `marker_reprex()`: please report it."
+  )
 }
 
 # --- shared ------------------------------------------------------------------
@@ -390,7 +390,7 @@ reprex_read_lines <- function(path) {
       # carriage return is not part of the record and is not a DNA base
       sub("\r$", "", text)
     },
-    error = function(e) cli::cli_abort(gettext("Cannot read {.path {path}}."))
+    error = function(e) abort_msg("Cannot read {.path {path}}.")
   )
 }
 
@@ -398,10 +398,10 @@ reprex_read_lines <- function(path) {
 reprex_ascii <- function(x, what) {
   bad <- !is.na(x) & grepl("[^ -~]", x)
   if (any(bad)) {
-    cli::cli_abort(c(
-      gettext("The script is plain ASCII and a {.field {what}} field is not."),
-      i = gettext("Rewrite that field by hand before sharing.")
-    ))
+    abort_msg(
+      "The script is plain ASCII and a {.field {what}} field is not.",
+      i = "Rewrite that field by hand before sharing."
+    )
   }
   x
 }
@@ -409,7 +409,7 @@ reprex_ascii <- function(x, what) {
 reprex_int <- function(x) {
   y <- suppressWarnings(as.integer(x))
   if (anyNA(y)) {
-    cli::cli_abort(gettext("`pos` must hold whole numbers."))
+    abort_msg("`pos` must hold whole numbers.")
   }
   y
 }
@@ -425,11 +425,11 @@ reprex_read_vcf <- function(path) {
   lines <- reprex_read_lines(path)
   records <- lines[!startsWith(lines, "#") & nzchar(lines)]
   if (!length(records)) {
-    cli::cli_abort(gettext("{.path {path}} holds no VCF record."))
+    abort_msg("{.path {path}} holds no VCF record.")
   }
   fields <- strsplit(records, "\t", fixed = TRUE)
   if (any(lengths(fields) < 8L)) {
-    cli::cli_abort(gettext("{.path {path}} has a record with fewer than 8 VCF columns."))
+    abort_msg("{.path {path}} has a record with fewer than 8 VCF columns.")
   }
   pick <- function(j) vapply(fields, function(f) f[[j]], character(1))
   tibble::tibble(chrom = pick(1L), pos = pick(2L), ref = pick(4L), alt = pick(5L))
@@ -441,11 +441,11 @@ reprex_read_bed <- function(path) {
   lines <- reprex_read_lines(path)
   rows <- lines[!grepl("^((#|track|browser)[[:space:]]*|$)", lines)]
   if (!length(rows)) {
-    cli::cli_abort(gettext("{.path {path}} holds no BED interval."))
+    abort_msg("{.path {path}} holds no BED interval.")
   }
   fields <- strsplit(rows, "\t", fixed = TRUE)
   if (any(lengths(fields) < 3L)) {
-    cli::cli_abort(gettext("{.path {path}} has a line with fewer than 3 BED columns."))
+    abort_msg("{.path {path}} has a line with fewer than 3 BED columns.")
   }
   cli::cli_warn(c(
     gettext("A BED interval is replayed as a 1-based single-base record, not as a width."),
@@ -462,7 +462,7 @@ reprex_read_fasta <- function(path) {
   lines <- reprex_read_lines(path)
   head <- which(startsWith(lines, ">"))
   if (!length(head)) {
-    cli::cli_abort(gettext("{.path {path}} is not a FASTA (no `>` header)."))
+    abort_msg("{.path {path}} is not a FASTA (no `>` header).")
   }
   end <- c(head[-1L] - 1L, length(lines))
   seqs <- vapply(seq_along(head), function(i) {

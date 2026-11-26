@@ -198,7 +198,7 @@ marker_primers.marker_sanger <- function(marker, ...) {
 #' @export
 marker_tubes <- function(solved, min_cross_run = 6L, max_selfcomp = 5L) {
   if (!inherits(solved, "marker_solved")) {
-    cli::cli_abort(gettext("`solved` must be a marker_solved (see marker_solve())."))
+    abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   r <- solved$report
   keep <- which(r$ok)

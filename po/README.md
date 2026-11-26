@@ -9,6 +9,13 @@
 - Строки-шаблоны обёрнуты в `gettext()`; домен `R-tidymarkers` R подставляет по namespace.
   `rlang::abort/warn/inform` и `cli::cli_*` potools сам **не** распознаёт — их строки
   обёрнуты вручную.
+- `abort_msg()` (`R/marker_i18n.R`) — единственный путь для пользовательских abort'ов:
+  переводит сообщение и каждый bullet **один раз** через `gettext()` и передаёт в
+  `cli::cli_abort()`. Для извлекателя он зарегистрирован как custom translation
+  function: `potools::po_extract(custom_translation_functions = list(
+  R = "abort_msg:...\\class,call,parent"))` — все аргументы, кроме `class`, `call`,
+  `parent`, считаются переводимыми строками. Без `R =` в списке potools аргумент
+  игнорирует и msgid'ы `abort_msg()` в шаблон не попадают.
 - `po/R-tidymarkers.pot` — шаблон (`potools::po_extract()`).
 - `po/R-ru.po` — перевод (`potools::po_update()`).
 - `inst/po/ru/LC_MESSAGES/R-tidymarkers.mo` — скомпилированный каталог
@@ -17,7 +24,10 @@
 ## Цикл (нужны system gettext-tools + potools)
 
 ```r
-potools::po_extract()   # код -> po/R-tidymarkers.pot
+# код -> po/R-tidymarkers.pot; `R =` обязателен, иначе abort_msg() не виден
+potools::po_extract(custom_translation_functions = list(
+  R = "abort_msg:...\\class,call,parent"
+))
 potools::po_update()    # pot -> po/R-ru.po   (merge, сохраняя перевод)
 potools::po_compile()   # po  -> inst/po/ru/LC_MESSAGES/R-tidymarkers.mo
 ```

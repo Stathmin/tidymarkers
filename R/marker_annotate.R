@@ -362,7 +362,7 @@ gff_attribute <- function(attributes) {
 marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NULL) {
   path <- fs::path(path)
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("`path` does not exist: {.path {path}}."))
+    abort_msg("`path` does not exist: {.path {path}}.")
   }
   open_con <- function() if (grepl("\\.gz$", path)) gzfile(path, "rt") else file(path, "rt")
   read_head <- function(n) {
@@ -407,7 +407,7 @@ marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NU
       stringsAsFactors = FALSE, fill = TRUE
     )
     if (ncol(d) < 9L) {
-      cli::cli_abort(gettext("`path` is neither an NCBI feature table nor a 9-column GFF3."))
+      abort_msg("`path` is neither an NCBI feature table nor a 9-column GFF3.")
     }
     keep <- if (is.null(feature)) rep(TRUE, nrow(d)) else d[[3L]] == feature
     d <- d[keep, , drop = FALSE]

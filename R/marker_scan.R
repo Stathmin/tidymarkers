@@ -61,11 +61,11 @@ marker_blast_index <- function(genome, path = NULL) {
   fasta <- src$fasta
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    cli::cli_abort(c(gettext("NCBI BLAST+ ('blastn'/'makeblastdb') was not found."),
-      i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
-      i = gettext("On Windows run the NCBI BLAST+ installer."),
-      i = gettext("Or point the package at an existing build with options(tidymarkers.blast = ).")
-    ))
+    abort_msg("NCBI BLAST+ ('blastn'/'makeblastdb') was not found.",
+      i = "Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS).",
+      i = "On Windows run the NCBI BLAST+ installer.",
+      i = "Or point the package at an existing build with options(tidymarkers.blast = )."
+    )
   }
   if (inherits(genome, "marker_genome")) {
     # build once: BLAST+ writes <fasta>.nhr/.nin/.nsq beside the FASTA, and a
@@ -114,13 +114,13 @@ marker_blast_index <- function(genome, path = NULL) {
 specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL) {
   rlang::check_installed("rBLAST", reason = gettext("for the indexed genome scan"))
   if (!has_blast()) {
-    cli::cli_abort(c(
-      gettext("No NCBI BLAST+ found (has_blast() is FALSE)."),
-      i = gettext("Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS)."),
-      i = gettext("On Windows run the NCBI BLAST+ installer."),
-      i = gettext("Or use specificity_seed() on an in-memory genome."),
-      i = gettext("Or point the package at an existing build with options(tidymarkers.blast = ).")
-    ))
+    abort_msg(
+      "No NCBI BLAST+ found (has_blast() is FALSE).",
+      i = "Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast (macOS).",
+      i = "On Windows run the NCBI BLAST+ installer.",
+      i = "Or use specificity_seed() on an in-memory genome.",
+      i = "Or point the package at an existing build with options(tidymarkers.blast = )."
+    )
   }
   seeds <- if (is.na(k)) {
     as.character(primers)
@@ -134,10 +134,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
   bl <- rlang::try_fetch(
     with_blast(rBLAST::blast(db_path, type = "blastn")),
     error = function(e) {
-      cli::cli_abort(
-        gettext(
-          "Could not open a BLAST database at {db_path} (build it with marker_blast_index())."
-        ),
+      abort_msg(
+        "Could not open a BLAST database at {db_path} (build it with marker_blast_index()).",
         parent = e
       )
     }
@@ -241,10 +239,10 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
   # `marker_genome`, itself a classed list) out of this branch
   if (is.list(genome) && !is.object(genome)) {
     if (is.null(names(genome)) || any(!nzchar(names(genome)))) {
-      cli::cli_abort(c(
-        gettext("`genome` must be a named list of genomes, one name per element."),
-        i = gettext("Name every genome, e.g. list(A = , B = , D = ).")
-      ))
+      abort_msg(
+        "`genome` must be a named list of genomes, one name per element.",
+        i = "Name every genome, e.g. list(A = , B = , D = )."
+      )
     }
     parts <- vector("list", length(genome))
     scans <- character(length(genome))
@@ -288,19 +286,19 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     ))
   }
   if (!is.null(genome$fm_index)) {
-    cli::cli_abort(c(
-      gettext("This genome has only an FM index; the whole-genome scan no longer dispatches to it."),
-      i = gettext("On TAIR10 the Subread index cost 31.7 bytes/bp and 53 s/query; wheat (16 Gb) needs ~490 GB."),
-      i = gettext("Build a bowtie index instead: marker_bowtie_index(genome) (bowtie_index=)."),
-      i = gettext("Or call specificity_fm() explicitly if you want the read mapper.")
-    ))
+    abort_msg(
+      "This genome has only an FM index; the whole-genome scan no longer dispatches to it.",
+      i = "On TAIR10 the Subread index cost 31.7 bytes/bp and 53 s/query; wheat (16 Gb) needs ~490 GB.",
+      i = "Build a bowtie index instead: marker_bowtie_index(genome) (bowtie_index=).",
+      i = "Or call specificity_fm() explicitly if you want the read mapper."
+    )
   }
   db <- genome$blast_db
   if (is.null(db)) {
-    cli::cli_abort(c(
-      gettext("This indexed genome has neither a bowtie index nor a BLAST database attached."),
-      i = gettext("Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=).")
-    ))
+    abort_msg(
+      "This indexed genome has neither a bowtie index nor a BLAST database attached.",
+      i = "Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=)."
+    )
   }
   structure(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), scan = "3'-seed")
 }

@@ -222,9 +222,9 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   # silence (design_as_primers() refuses a negative `stab_ats`), so refuse it here
   # where the caller still has the argument in hand.
   if ("stab_ats" %in% names(list(...)) && any(list(...)$stab_ats < 0L, na.rm = TRUE)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`stab_ats` is a distance from the 3' end (3L); the signed policy offset is `-ARMS_EXTRA_MISMATCH_POSITION`."
-    ))
+    )
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   outer <- arms_outer_pairs(tmpl$seq, tmpl$snp_i, limits)
@@ -410,7 +410,7 @@ marker_map_spec.marker_arms <- function(marker, scheme = NULL, ...) {
 plot_arms_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the ARMS gel"))
   if (!inherits(marker, "marker_arms")) {
-    cli::cli_abort(gettext("`marker` must be a marker_arms object (see design_arms_marker())."))
+    abort_msg("`marker` must be a marker_arms object (see design_arms_marker()).")
   }
   ctrl <- marker$bands$size[marker$bands$band == "control"]
   ref <- marker$bands$size[marker$bands$band == "REF"]

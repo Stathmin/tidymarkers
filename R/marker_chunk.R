@@ -45,7 +45,7 @@ marker_chunk.marker_chunk <- function(x, ...) x
 #' @export
 marker_chunk.list <- function(x, from = NULL, to = NULL, chrom = NULL, ...) {
   if (is.null(x$reference) || is.null(x$alignment) || is.null(x$haplotypes)) {
-    cli::cli_abort(gettext("A list source must come from haplotypes_from_alignment()."))
+    abort_msg("A list source must come from haplotypes_from_alignment().")
   }
   chunk_slice(x, from, to, chrom)
 }
@@ -53,7 +53,7 @@ marker_chunk.list <- function(x, from = NULL, to = NULL, chrom = NULL, ...) {
 #' @export
 marker_chunk.data.frame <- function(x, reference = NULL, chrom = "chunk", ...) {
   if (is.null(reference)) {
-    cli::cli_abort(gettext("A chunk from a table needs a `reference` sequence."))
+    abort_msg("A chunk from a table needs a `reference` sequence.")
   }
   if (all(c("haplotype", "freq") %in% names(x))) {
     x <- tibble::as_tibble(x)
@@ -63,7 +63,7 @@ marker_chunk.data.frame <- function(x, reference = NULL, chrom = "chunk", ...) {
   } else if (all(c("pos", "ref", "alt") %in% names(x))) {
     marker_chunk_new(reference, as_variant_table(x, chrom), NULL, NULL, chrom)
   } else {
-    cli::cli_abort(gettext("A table source needs `pos`/`ref`/`alt`, or `haplotype`/`freq`."))
+    abort_msg("A table source needs `pos`/`ref`/`alt`, or `haplotype`/`freq`.")
   }
 }
 
@@ -72,7 +72,7 @@ marker_chunk.DNAMultipleAlignment <- function(x, reference = NULL, chrom = "chun
   a <- as.character(x)
   if (is.null(reference)) reference <- names(a)[1L]
   if (!reference %in% names(a)) {
-    cli::cli_abort(gettext("`reference` must be one of the alignment's sequence names."))
+    abort_msg("`reference` must be one of the alignment's sequence names.")
   }
   ref <- gsub("-", "", a[[reference]], fixed = TRUE)
   hap <- setdiff(names(a), reference)
@@ -126,7 +126,7 @@ chunk_slice <- function(hp, from, to, chrom) {
   if (is.null(from)) from <- 1L
   if (is.null(to)) to <- nchar(ref)
   if (from < 1L || to > nchar(ref) || to < from) {
-    cli::cli_abort(gettext("The window {from}..{to} is outside the reference (1..{nchar(ref)})."))
+    abort_msg("The window {from}..{to} is outside the reference (1..{nchar(ref)}).")
   }
   shift <- function(d) {
     if (is.null(d)) {
@@ -215,7 +215,7 @@ chunk_alignment <- function(chunk) {
 #' @noRd
 check_chunk <- function(chunk) {
   if (!inherits(chunk, "marker_chunk")) {
-    cli::cli_abort(gettext("`chunk` must be a marker_chunk (see marker_chunk())."))
+    abort_msg("`chunk` must be a marker_chunk (see marker_chunk()).")
   }
 }
 

@@ -143,7 +143,7 @@ KASP_GATE_HARD_LABEL_CAPS <- c(
 #' @export
 restriction_enzymes <- function() {
   f <- system.file("extdata", "restriction_enzymes.csv", package = "tidymarkers")
-  if (!nzchar(f)) cli::cli_abort(gettext("Bundled restriction-enzyme catalogue not found."))
+  if (!nzchar(f)) abort_msg("Bundled restriction-enzyme catalogue not found.")
   caps_operative_enzymes(readr::read_csv(f, show_col_types = FALSE))
 }
 
@@ -819,7 +819,7 @@ caps_site_label <- function(site) {
 plot_caps_gel <- function(marker) {
   rlang::check_installed("ggplot2", reason = gettext("to draw the CAPS gel"))
   if (!inherits(marker, "marker_caps")) {
-    cli::cli_abort(gettext("`marker` must be a marker_caps object (see design_caps_marker())."))
+    abort_msg("`marker` must be a marker_caps object (see design_caps_marker()).")
   }
   shared <- intersect(marker$fragments_ref, marker$fragments_alt)
   bands <- gel_spec(

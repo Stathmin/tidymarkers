@@ -85,9 +85,9 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
     return(bowtie_index_build(genome, basename, threads))
   }
   if (length(chroms) == 0L) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`chroms` must name at least one sequence, or be `NULL` for one whole-genome index."
-    ))
+    )
   }
   bowtie_index_set(genome, src$fasta, basename, as.character(chroms), threads)
 }
@@ -142,10 +142,10 @@ bowtie_index_set <- function(genome, fasta, basename, chroms, threads) {
   defline <- if (inherits(genome, "marker_genome")) genome$seqnames else rlang::set_names(names(seqs))
   unknown <- chroms[is.na(match(chroms, names(defline)))]
   if (length(unknown) > 0L) {
-    cli::cli_abort(c(
-      gettext("{.arg chroms} asks for sequence{?s} {.val {unknown}}, which {.arg genome} does not have."),
-      i = gettext("Available: {.val {names(defline)}}.")
-    ))
+    abort_msg(
+      "{.arg chroms} asks for sequence{?s} {.val {unknown}}, which {.arg genome} does not have.",
+      i = "Available: {.val {names(defline)}}."
+    )
   }
   seqs <- seqs[unname(defline[chroms])]
   names(seqs) <- chroms
@@ -188,7 +188,7 @@ specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4
   rlang::check_installed("Rbowtie", reason = gettext("for the bowtie genome scan"))
   max_mismatches <- as.integer(max_mismatches)
   if (max_mismatches > 3L) {
-    cli::cli_abort(gettext("bowtie1 allows at most 3 mismatches (`max_mismatches` is {max_mismatches})."))
+    abort_msg("bowtie1 allows at most 3 mismatches (`max_mismatches` is {max_mismatches}).")
   }
   # `as.character()` drops the set's names but keeps its length, which is the
   # only thing a set is told by: two or more basenames are summed

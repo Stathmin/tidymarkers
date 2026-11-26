@@ -58,9 +58,9 @@
 #' @export
 read_genbank <- function(path, region = NULL) {
   if (grepl("\\.gz$", path)) {
-    cli::cli_abort(gettext("{.file {path}} is gzipped; gunzip it first"))
+    abort_msg("{.file {path}} is gzipped; gunzip it first")
   }
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("GenBank not found: {path}"))
+  if (!fs::file_exists(path)) abort_msg("GenBank not found: {path}")
 
   reg <- if (is.null(region)) NULL else normalise_region(region)
 

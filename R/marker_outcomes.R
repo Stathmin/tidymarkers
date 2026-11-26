@@ -118,22 +118,22 @@ marker_record_outcome <- function(artefact,
   }
 
   if (!is.null(notes) && !(is.character(notes) && length(notes) == 1L)) {
-    cli::cli_abort(gettext("`notes` must be a single string."))
+    abort_msg("`notes` must be a single string.")
   }
   notes <- trimws(notes %||% NA_character_)
   if (is.na(notes) || !nzchar(notes)) {
     notes <- NA_character_
   }
   if (identical(result, "fails") && is.na(notes)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "A failing outcome must carry `notes`: without a reason it cannot be told \\
        apart from a design failure or a failed run."
-    ))
+    )
   }
 
   if (!is.null(target)) {
     if (!is.character(target) || length(target) != 1L || is.na(target)) {
-      cli::cli_abort(gettext("`target` must be one label or NULL."))
+      abort_msg("`target` must be one label or NULL.")
     }
     known <- artefact_targets(dir)
     if (!is.null(known) && !target %in% known) {
@@ -253,7 +253,7 @@ marker_outcomes <- function(artefact) {
 #' @export
 marker_outcome_corpus <- function(dir) {
   if (!fs::dir_exists(dir)) {
-    cli::cli_abort(gettext("`dir` must be a directory searched for outcomes.csv."))
+    abort_msg("`dir` must be a directory searched for outcomes.csv.")
   }
   root <- fs::path_abs(dir)
   files <- fs::dir_ls(root, recurse = TRUE, type = "file")

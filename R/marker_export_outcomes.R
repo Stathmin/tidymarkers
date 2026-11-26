@@ -137,36 +137,36 @@ outcomes_attach <- function(crate, rows) {
 marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   if (is.character(corpus)) {
     if (length(corpus) != 1L || is.na(corpus)) {
-      cli::cli_abort(gettext("A character `corpus` must be one directory path."))
+      abort_msg("A character `corpus` must be one directory path.")
     }
     corpus <- marker_outcome_corpus(corpus)
   }
   if (!is.data.frame(corpus)) {
-    cli::cli_abort(gettext("`corpus` must be a corpus table or a directory."))
+    abort_msg("`corpus` must be a corpus table or a directory.")
   }
   root <- attr(corpus, "root")
   if (!is.character(root) || length(root) != 1L || is.na(root) || !nzchar(root)) {
-    cli::cli_abort(c(
-      gettext("`corpus` carries no scanned root."),
-      i = gettext("Build it with marker_outcome_corpus(), or pass the directory instead.")
-    ))
+    abort_msg(
+      "`corpus` carries no scanned root.",
+      i = "Build it with marker_outcome_corpus(), or pass the directory instead."
+    )
   }
   root <- fs::path_abs(root)
   if (!is.character(dir) || length(dir) != 1L || is.na(dir) || !nzchar(dir)) {
-    cli::cli_abort(gettext("`dir` must be one directory path."))
+    abort_msg("`dir` must be one directory path.")
   }
   if (identical(fs::path_abs(dir), root) || fs::path_has_parent(fs::path_abs(dir), root)) {
-    cli::cli_abort(c(
-      gettext("`dir` must sit outside the scanned corpus root."),
-      i = gettext("An export inside it would be read back as more corpus on the next scan.")
-    ))
+    abort_msg(
+      "`dir` must sit outside the scanned corpus root.",
+      i = "An export inside it would be read back as more corpus on the next scan."
+    )
   }
 
   salt <- if (is.null(trustee)) {
     paste(sprintf("%02x", sample(0:255, 8, replace = TRUE)), collapse = "")
   } else {
     if (!is.character(trustee) || length(trustee) != 1L || is.na(trustee) || !nzchar(trustee)) {
-      cli::cli_abort(gettext("`trustee` must be NULL or one non-empty string."))
+      abort_msg("`trustee` must be NULL or one non-empty string.")
     }
     trustee
   }

@@ -88,7 +88,7 @@ internal_duplex_dg <- function(seq1, seq2, na = 0.05, temp = 37) {
   n <- max(length(seq1), length(seq2))
   if (length(seq1) != length(seq2)) {
     if (n %% length(seq1) != 0L || n %% length(seq2) != 0L) {
-      cli::cli_abort(gettext("`seq1` and `seq2` must be the same length (or recycle)."))
+      abort_msg("`seq1` and `seq2` must be the same length (or recycle).")
     }
   }
   seq1 <- rep_len(seq1, n)

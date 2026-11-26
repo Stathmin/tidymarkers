@@ -55,7 +55,7 @@ screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+
                                limits = KASP_LIMITS) {
   v <- tibble::as_tibble(variants)
   if (!all(c("chrom", "pos") %in% names(v))) {
-    cli::cli_abort(gettext("`variants` needs `chrom` and `pos` columns."))
+    abort_msg("`variants` needs `chrom` and `pos` columns.")
   }
   chroms <- unique(v$chrom)
   purrr::map(chroms, function(ch) {
@@ -209,7 +209,7 @@ screen_one_chrom <- function(g, chrom, genome, lengths, strands, clean_3p, hotzo
 #' @family plots
 #' @export
 plot_snp_screen <- function(screen, gene = NULL, threshold = 1L) {
-  if (nrow(screen) == 0L) cli::cli_abort(gettext("`screen` is empty."))
+  if (nrow(screen) == 0L) abort_msg("`screen` is empty.")
   p <- ggplot2::ggplot(screen, ggplot2::aes(.data$pos, .data$n_ok, colour = .data$verdict)) +
     ggplot2::geom_segment(ggplot2::aes(xend = .data$pos, yend = 0), linewidth = 0.3, alpha = 0.5) +
     ggplot2::geom_point(size = 2) +

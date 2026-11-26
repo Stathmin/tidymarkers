@@ -68,7 +68,7 @@ normalise_allele <- function(x) {
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
   backend <- match.arg(backend)
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("VCF not found: {path}"))
+  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
@@ -136,21 +136,21 @@ vcf_header_names <- function(path) {
   repeat {
     line <- readLines(con, n = 1L, warn = FALSE)
     if (!length(line)) {
-      cli::cli_abort(gettext("{path} has no '#CHROM' header line."))
+      abort_msg("{path} has no '#CHROM' header line.")
     }
     if (startsWith(line, "##") || !nzchar(line)) next
     if (!startsWith(line, "#CHROM")) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "{path}: the first non-'##' line does not start with '#CHROM'."
-      ))
+      )
     }
     nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
     missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
     if (length(missing)) {
-      cli::cli_abort(c(
-        gettext("{path}: the '#CHROM' header is missing {.val {missing}}."),
-        i = gettext("A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf().")
-      ))
+      abort_msg(
+        "{path}: the '#CHROM' header is missing {.val {missing}}.",
+        i = "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
+      )
     }
     return(nms)
   }
@@ -204,7 +204,7 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' @export
 fasta_index <- function(path) {
   rlang::check_installed("Rsamtools", reason = gettext("for indexed FASTA random access"))
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("FASTA not found: {path}"))
+  if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
   plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
   if (!fs::file_exists(plain)) {
     cli::cli_alert_info(gettext("Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."))
@@ -264,7 +264,7 @@ mask_positions <- function(seq, positions) {
 #' @export
 marker_example <- function(type = NULL) {
   f <- system.file("extdata", "example_targets.csv", package = "tidymarkers")
-  if (!nzchar(f)) cli::cli_abort(gettext("Bundled example data not found."))
+  if (!nzchar(f)) abort_msg("Bundled example data not found.")
   ex <- readr::read_csv(f, show_col_types = FALSE)
   if (!is.null(type)) ex <- ex[ex$type %in% type, , drop = FALSE]
   ex
@@ -290,7 +290,7 @@ marker_example <- function(type = NULL) {
 #' @family input
 #' @export
 read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("FASTA not found: {path}"))
+  if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))
@@ -364,7 +364,7 @@ marker_as_granges <- function(x, extra = NULL) {
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(x))
   if (length(missing)) {
-    cli::cli_abort(gettext("`x` is missing column(s): {paste(missing, collapse = ', ')}"))
+    abort_msg("`x` is missing column(s): {paste(missing, collapse = ', ')}")
   }
   df <- tibble::as_tibble(x)
   if (!is.null(extra)) {
@@ -373,7 +373,7 @@ marker_as_granges <- function(x, extra = NULL) {
   }
   ref <- as.character(df$ref)
   if (any(is.na(ref) | !nzchar(ref))) {
-    cli::cli_abort(gettext("`ref` must be a non-empty allele string on every row."))
+    abort_msg("`ref` must be a non-empty allele string on every row.")
   }
   gr <- GenomicRanges::GRanges(
     seqnames = as.character(df$chrom),
@@ -390,11 +390,11 @@ marker_from_granges <- function(x) {
     cli::cli_inform(gettext("GenomicRanges is not installed; returning `NULL`."))
     return(NULL)
   }
-  if (!methods::is(x, "GRanges")) cli::cli_abort(gettext("`x` must be a GRanges."))
+  if (!methods::is(x, "GRanges")) abort_msg("`x` must be a GRanges.")
   m <- S4Vectors::mcols(x)
   missing <- setdiff(c("ref", "alt"), names(m))
   if (length(missing)) {
-    cli::cli_abort(gettext("`x` is missing mcol(s): {paste(missing, collapse = ', ')}"))
+    abort_msg("`x` is missing mcol(s): {paste(missing, collapse = ', ')}")
   }
   tibble::as_tibble(m) |>
     dplyr::mutate(
@@ -426,12 +426,12 @@ write_variants_vcf <- function(x, path = NULL) {
   need <- c("chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(x))
   if (length(missing)) {
-    cli::cli_abort(gettext("`x` is missing column(s): {paste(missing, collapse = ', ')}"))
+    abort_msg("`x` is missing column(s): {paste(missing, collapse = ', ')}")
   }
   x <- tibble::as_tibble(x)
   if (!"depth" %in% names(x)) x$depth <- NA_real_
   if (any(is.na(x$chrom) | is.na(x$pos) | is.na(x$ref) | is.na(x$alt))) {
-    cli::cli_abort(gettext("`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`."))
+    abort_msg("`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`.")
   }
   records <- paste(
     as.character(x$chrom), as.integer(x$pos), ".", as.character(x$ref),

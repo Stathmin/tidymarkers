@@ -33,7 +33,7 @@
 #' @export
 read_transcripts <- function(path, merge_accessions = TRUE) {
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("FASTA not found: {path}"))
+    abort_msg("FASTA not found: {path}")
   }
   s <- Biostrings::readDNAStringSet(path)
   if (!merge_accessions) {
@@ -77,7 +77,7 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
         i <- i + 1L
       }
       if (rp < 1L) {
-        cli::cli_abort(gettext("Haplotype {hap} has an insertion before the reference start; cannot anchor it."))
+        abort_msg("Haplotype {hap} has an insertion before the reference start; cannot anchor it.")
       }
       a <- substr(ref_seq, rp, rp)
       pos <- c(pos, rp)
@@ -92,7 +92,7 @@ call_haplotype_variants <- function(ref_aln, seq_aln, ref_seq, chrom, hap) {
       }
       anchor <- rp - length(del)
       if (anchor < 1L) {
-        cli::cli_abort(gettext("Haplotype {hap} has a deletion at the reference start; cannot anchor it."))
+        abort_msg("Haplotype {hap} has a deletion at the reference start; cannot anchor it.")
       }
       a <- substr(ref_seq, anchor, anchor)
       pos <- c(pos, anchor)
@@ -142,22 +142,22 @@ haplotypes_from_alignment <- function(seqs, reference = 1L, chrom = "SAT2",
                                       freq = NULL, maf = NULL, ...) {
   if (is.character(seqs)) seqs <- Biostrings::DNAStringSet(seqs)
   if (!inherits(seqs, "DNAStringSet")) {
-    cli::cli_abort(gettext("`seqs` must be a DNAStringSet or a character vector."))
+    abort_msg("`seqs` must be a DNAStringSet or a character vector.")
   }
   if (length(seqs) < 2L) {
-    cli::cli_abort(gettext("Need at least two sequences to call haplotypes."))
+    abort_msg("Need at least two sequences to call haplotypes.")
   }
   rlang::check_installed("DECIPHER", reason = gettext("to align the haplotypes"))
   aln <- DECIPHER::AlignSeqs(seqs, verbose = FALSE, ...)
   a <- stats::setNames(as.character(aln), names(aln))
   ref_name <- if (is.numeric(reference)) {
     if (reference < 1L || reference > length(a)) {
-      cli::cli_abort(gettext("`reference` is out of range (1..{length(a)})."))
+      abort_msg("`reference` is out of range (1..{length(a)}).")
     }
     names(a)[[reference]]
   } else {
     if (!reference %in% names(a)) {
-      cli::cli_abort(gettext("`reference` = {reference} is not a sequence name."))
+      abort_msg("`reference` = {reference} is not a sequence name.")
     }
     reference
   }
@@ -195,7 +195,7 @@ normalise_hap_freq <- function(freq, nms) {
   }
   if (is.data.frame(freq)) {
     if (!all(c("haplotype", "freq") %in% names(freq))) {
-      cli::cli_abort(gettext("A `freq` table needs `haplotype` and `freq` columns."))
+      abort_msg("A `freq` table needs `haplotype` and `freq` columns.")
     }
     v <- stats::setNames(as.numeric(freq$freq), as.character(freq$haplotype))
     out <- v[nms]
@@ -206,7 +206,7 @@ normalise_hap_freq <- function(freq, nms) {
     return(stats::setNames(rep(as.numeric(freq), n), nms))
   }
   if (is.null(names(freq))) {
-    cli::cli_abort(gettext("A `freq` vector must be named by haplotype."))
+    abort_msg("A `freq` vector must be named by haplotype.")
   }
   v <- stats::setNames(as.numeric(freq), names(freq))
   out <- v[nms]
@@ -240,7 +240,7 @@ apply_maf <- function(v, maf = NULL) {
   m <- tibble::as_tibble(maf)
   fcol <- intersect(c("maf", "freq"), names(m))[1L]
   if (!all(c("pos", "ref", "alt") %in% names(m)) || is.na(fcol)) {
-    cli::cli_abort(gettext("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."))
+    abort_msg("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`.")
   }
   m <- m[, c(intersect("chrom", names(m)), "pos", "ref", "alt", fcol)]
   names(m)[names(m) == fcol] <- "maf"
@@ -275,7 +275,7 @@ apply_maf <- function(v, maf = NULL) {
 plot_alignment <- function(hp, type = c("variants", "all"), features = NULL, ...) {
   rlang::check_installed("ggplot2", reason = gettext("to plot an alignment"))
   if (!is.list(hp) || is.null(hp$alignment)) {
-    cli::cli_abort(gettext("`hp` must come from haplotypes_from_alignment()."))
+    abort_msg("`hp` must come from haplotypes_from_alignment().")
   }
   type <- match.arg(type)
   A <- as.character(hp$alignment)

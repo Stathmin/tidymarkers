@@ -1183,11 +1183,11 @@ FIXED_PRIMER_DROPOUTS <- c(
 normalise_fixed_snp <- function(snp) {
   if (is.list(snp) && !is.data.frame(snp)) snp <- tibble::as_tibble(snp)
   if (!is.data.frame(snp) || nrow(snp) != 1L) {
-    cli::cli_abort(gettext("`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`."))
+    abort_msg("`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`.")
   }
   miss <- setdiff(c("chrom", "pos", "ref", "alt"), names(snp))
   if (length(miss)) {
-    cli::cli_abort(gettext("`snp` is missing: {paste(miss, collapse = ', ')}."))
+    abort_msg("`snp` is missing: {paste(miss, collapse = ', ')}.")
   }
   out <- tibble::tibble(
     chrom = as.character(snp$chrom[[1L]]),
@@ -1196,13 +1196,13 @@ normalise_fixed_snp <- function(snp) {
     alt = toupper(as.character(snp$alt[[1L]]))
   )
   if (is.na(out$pos) || !nzchar(out$chrom)) {
-    cli::cli_abort(gettext("`snp` needs a non-missing chromosome and a positive integer position."))
+    abort_msg("`snp` needs a non-missing chromosome and a positive integer position.")
   }
   if (!grepl("^[ACGT]$", out$ref) || !grepl("^[ACGT]$", out$alt)) {
-    cli::cli_abort(gettext("Fixed-primer assembly currently handles single-base substitutions only."))
+    abort_msg("Fixed-primer assembly currently handles single-base substitutions only.")
   }
   if (identical(out$ref, out$alt)) {
-    cli::cli_abort(gettext("`snp$ref` and `snp$alt` must differ."))
+    abort_msg("`snp$ref` and `snp$alt` must differ.")
   }
   out
 }
@@ -1221,7 +1221,7 @@ normalise_fixed_primers <- function(primers) {
     # `sequence` column may still carry the 5' KASP tail
     seq_col <- intersect(c("body", "sequence", "seq"), names(primers))[1L]
     if (is.na(role_col) || is.na(seq_col)) {
-      cli::cli_abort(gettext("`primers` needs a `role` (or `name`) and a `sequence` (or `body`) column."))
+      abort_msg("`primers` needs a `role` (or `name`) and a `sequence` (or `body`) column.")
     }
     role <- as.character(primers[[role_col]])
     seqs <- as.character(primers[[seq_col]])
@@ -1229,20 +1229,20 @@ normalise_fixed_primers <- function(primers) {
     role <- names(primers)
     seqs <- unname(primers)
   } else {
-    cli::cli_abort(gettext("`primers` must be a table with `role`/`sequence`, or a named character vector."))
+    abort_msg("`primers` must be a table with `role`/`sequence`, or a named character vector.")
   }
   idx <- match(role, names(aliases))
   role[!is.na(idx)] <- aliases[idx[!is.na(idx)]]
   seqs <- toupper(gsub("\\s+", "", seqs))
   if (length(seqs) != 3L || anyDuplicated(role)) {
-    cli::cli_abort(gettext("`primers` must be exactly three distinct roles: AS_ref, AS_alt and COM."))
+    abort_msg("`primers` must be exactly three distinct roles: AS_ref, AS_alt and COM.")
   }
   if (!setequal(role, c("AS_ref", "AS_alt", "COM"))) {
-    cli::cli_abort(gettext("`primers` roles must be AS_ref / AS_alt / COM (aliases: allele1 / allele2 / common)."))
+    abort_msg("`primers` roles must be AS_ref / AS_alt / COM (aliases: allele1 / allele2 / common).")
   }
   p <- rlang::set_names(seqs, role)[c("AS_ref", "AS_alt", "COM")]
   if (any(!nzchar(p)) || any(grepl("[^ACGT]", p))) {
-    cli::cli_abort(gettext("Every primer must be a non-empty ACGT sequence."))
+    abort_msg("Every primer must be a non-empty ACGT sequence.")
   }
   p
 }
@@ -1327,13 +1327,13 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   com <- p[["COM"]]
   n_as <- nchar(as_ref)
   if (nchar(as_alt) != n_as) {
-    cli::cli_abort(gettext("AS_ref and AS_alt must be the same length (they are one allele-specific primer pair)."))
+    abort_msg("AS_ref and AS_alt must be the same length (they are one allele-specific primer pair).")
   }
   n_pre <- n_as - 1L
   same_prefix <- substr(as_ref, 1L, n_pre) == substr(as_alt, 1L, n_pre)
   same_last <- substr(as_ref, n_as, n_as) == substr(as_alt, n_as, n_as)
   if (!same_prefix || same_last) {
-    cli::cli_abort(gettext("AS_ref and AS_alt must differ at exactly their 3'-terminal base."))
+    abort_msg("AS_ref and AS_alt must differ at exactly their 3'-terminal base.")
   }
 
   # --- locate the oligos on the genome (never accept coordinates from prose) ---
@@ -1342,11 +1342,11 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   anchor <- ifelse(h$strand == "+", h$end, h$start)
   cand <- h[h$chrom == snp$chrom & anchor == snp$pos, , drop = FALSE]
   if (nrow(cand) != 1L) {
-    cli::cli_abort(c(
-      gettext("The AS_ref primer must have exactly one exact genome hit whose 3' end sits on the target."),
-      x = gettext("{snp$chrom}:{snp$pos}: found {nrow(cand)} such hit(s)."),
-      i = gettext("AS_ref (5'->3'): {as_ref}")
-    ))
+    abort_msg(
+      "The AS_ref primer must have exactly one exact genome hit whose 3' end sits on the target.",
+      x = "{snp$chrom}:{snp$pos}: found {nrow(cand)} such hit(s).",
+      i = "AS_ref (5'->3'): {as_ref}"
+    )
   }
   strand <- cand$strand[[1L]]
   as_start <- cand$start[[1L]]
@@ -1359,13 +1359,13 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     if (identical(strand, "+")) allele else as.character(Biostrings::complement(Biostrings::DNAString(allele)))
   }
   if (!identical(last_base(as_ref), expected(snp$ref))) {
-    cli::cli_abort(c(
-      gettext("AS_ref's 3' base does not match the reference allele at the target."),
-      x = gettext("target {snp$chrom}:{snp$pos} has {snp$ref}; strand {strand} expects {expected(snp$ref)}.")
-    ))
+    abort_msg(
+      "AS_ref's 3' base does not match the reference allele at the target.",
+      x = "target {snp$chrom}:{snp$pos} has {snp$ref}; strand {strand} expects {expected(snp$ref)}."
+    )
   }
   if (!identical(last_base(as_alt), expected(snp$alt))) {
-    cli::cli_abort(gettext("AS_alt's 3' base does not match the ALT allele ({snp$alt}) on strand {strand}."))
+    abort_msg("AS_alt's 3' base does not match the ALT allele ({snp$alt}) on strand {strand}.")
   }
 
   # the common primer: an opposite-strand hit on the target chromosome that
@@ -1378,15 +1378,15 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
     hc <- hc[hc$strand != strand & spans & closes, , drop = FALSE]
   }
   if (!nrow(hc)) {
-    cli::cli_abort(c(
-      gettext("The COM primer has no exact opposite-strand hit that closes an amplicon on {snp$chrom}."),
-      i = gettext("COM (5'->3'): {com}")
-    ))
+    abort_msg(
+      "The COM primer has no exact opposite-strand hit that closes an amplicon on {snp$chrom}.",
+      i = "COM (5'->3'): {com}"
+    )
   }
   span_len <- pmax(as_end, hc$end) - pmin(as_start, hc$start) + 1L
   best <- which(span_len == min(span_len))
   if (length(best) > 1L) {
-    cli::cli_abort(gettext("The COM primer has more than one equally short amplicon on {snp$chrom}; ambiguous."))
+    abort_msg("The COM primer has more than one equally short amplicon on {snp$chrom}; ambiguous.")
   }
   com_hit <- hc[best, , drop = FALSE]
   com_start <- com_hit$start[[1L]]
@@ -1397,11 +1397,11 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   needed <- max(abs(c(as_start, as_end, com_start, com_end) - snp$pos)) + 10L
   half <- max(as.integer(flank), as.integer(needed))
   if (snp$pos - half < 1L) {
-    cli::cli_abort(gettext("The amplicon runs off the start of {snp$chrom}; cannot build a template around {snp$pos}."))
+    abort_msg("The amplicon runs off the start of {snp$chrom}; cannot build a template around {snp$pos}.")
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, half)
   if (!identical(as.character(Biostrings::subseq(tmpl$seq, tmpl$snp_i, tmpl$snp_i)), snp$ref)) {
-    cli::cli_abort(gettext("The genome at {snp$chrom}:{snp$pos} is not the supplied REF allele {snp$ref}."))
+    abort_msg("The genome at {snp$chrom}:{snp$pos} is not the supplied REF allele {snp$ref}.")
   }
 
   win3p <- as_3p_interval(snp$pos, strand)
@@ -1423,7 +1423,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   seg <- as.character(genome_seq(genome, snp$chrom, as_start, as_end))
   anchor_seg <- if (identical(strand, "+")) nchar(seg) else 1L
   if (substr(seg, anchor_seg, anchor_seg) != snp$ref) {
-    cli::cli_abort(gettext("The AS_ref hit does not place {snp$ref} at its 3' base."))
+    abort_msg("The AS_ref hit does not place {snp$ref} at its 3' base.")
   }
   seg_alt <- seg
   substr(seg_alt, anchor_seg, anchor_seg) <- snp$alt

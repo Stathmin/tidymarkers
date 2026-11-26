@@ -76,14 +76,14 @@
 marker_informativeness <- function(targets, genotypes = NULL, haplotypes = NULL,
                                    min_lines = 4L) {
   if (!is.null(genotypes) && !is.null(haplotypes)) {
-    cli::cli_abort(gettext("Give exactly one of `genotypes` and `haplotypes`, not both."))
+    abort_msg("Give exactly one of `genotypes` and `haplotypes`, not both.")
   }
   if (is.null(genotypes) && is.null(haplotypes)) {
-    cli::cli_abort(gettext("Give `genotypes` (line calls) or `haplotypes` (a frequency model)."))
+    abort_msg("Give `genotypes` (line calls) or `haplotypes` (a frequency model).")
   }
   min_lines <- as.integer(min_lines)[1L]
   if (is.na(min_lines) || min_lines < 1L) {
-    cli::cli_abort(gettext("`min_lines` must be a positive whole number."))
+    abort_msg("`min_lines` must be a positive whole number.")
   }
 
   tg <- informativeness_targets(targets)
@@ -137,7 +137,7 @@ normalise_genotypes <- function(g) {
     genotype = genotype_dosage(g$genotype)
   )
   if (anyNA(out$line) || anyNA(out$pos)) {
-    cli::cli_abort(gettext("`genotypes` needs a non-missing `line` and `pos` on every row."))
+    abort_msg("`genotypes` needs a non-missing `line` and `pos` on every row.")
   }
   out
 }
@@ -152,7 +152,7 @@ genotype_dosage <- function(x) {
   if (is.numeric(x)) {
     bad <- !is.na(x) & !(x %in% c(0, 1, 2))
     if (any(bad)) {
-      cli::cli_abort(gettext("`genotype` dosages must be 0, 1 or 2."))
+      abort_msg("`genotype` dosages must be 0, 1 or 2.")
     }
     return(as.numeric(x))
   }
@@ -165,9 +165,9 @@ genotype_dosage <- function(x) {
   out <- unname(map[calls])
   bad <- !is.na(calls) & is.na(out)
   if (any(bad)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`genotype` calls must be REF/HET/ALT (or 0/0, 0/1, 1/1)."
-    ))
+    )
   }
   out
 }

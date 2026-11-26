@@ -191,7 +191,7 @@ solve_one <- function(plan, row, schemes, dots, cache, all = FALSE) {
 #' @export
 marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = interactive()) {
   if (!inherits(plan, "marker_plan")) {
-    cli::cli_abort(gettext("`plan` must be a marker_plan (see marker_plan())."))
+    abort_msg("`plan` must be a marker_plan (see marker_plan()).")
   }
   tg <- plan$targets
   if (!is.null(plan$region)) {
@@ -199,9 +199,9 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
   }
   tg <- filter_targets_by_depth(tg, plan$depth)
   if (!nrow(tg)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "The plan has no targets; add them with marker_targets() or name a `region`."
-    ))
+    )
   }
   schemes <- plan_schemes(plan)
   if (is.null(cache)) cache <- new.env(parent = emptyenv())
@@ -279,7 +279,7 @@ print.marker_solved <- function(x, ...) {
 #' @export
 marker_plot <- function(solved, ...) {
   if (!inherits(solved, "marker_solved")) {
-    cli::cli_abort(gettext("`solved` must be a marker_solved (see marker_solve())."))
+    abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   rlang::check_installed("ggplot2", reason = gettext("to plot a solved plan"))
   a <- solved$attempts
@@ -326,7 +326,7 @@ marker_plot <- function(solved, ...) {
 #' @export
 marker_export <- function(solved, dir = tempdir(), artefact = TRUE) {
   if (!inherits(solved, "marker_solved")) {
-    cli::cli_abort(gettext("`solved` must be a marker_solved (see marker_solve())."))
+    abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   fs::dir_create(dir)
   readr::write_csv(

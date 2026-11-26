@@ -384,7 +384,7 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
                           homologous = NA, ...) {
   readout <- match.arg(readout)
   if (nrow(loci) != 2L) {
-    cli::cli_abort(gettext("`loci` must have exactly two rows for a duplex assay."))
+    abort_msg("`loci` must have exactly two rows for a duplex assay.")
   }
   assays <- purrr::map(seq_len(2L), function(i) {
     suppressWarnings(assemble_kasp_assay(

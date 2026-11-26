@@ -32,9 +32,9 @@ normalise_diagnostic_positions <- function(x) {
   } else if (is.data.frame(x)) {
     miss <- setdiff(c("chrom", "pos"), names(x))
     if (length(miss)) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "`diagnostic_positions` is missing column(s): {paste(miss, collapse = ', ')}."
-      ))
+      )
     }
     chrom <- as.character(x$chrom)
     pos <- as.integer(x$pos)
@@ -52,9 +52,9 @@ normalise_diagnostic_positions <- function(x) {
   }
   out <- tibble::tibble(chrom = ath_chrom(chrom), pos = pos)
   if (anyNA(out$chrom) || anyNA(out$pos) || any(out$pos < 1L)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`diagnostic_positions` needs a non-NA chromosome and a positive integer position in every row."
-    ))
+    )
   }
   out
 }

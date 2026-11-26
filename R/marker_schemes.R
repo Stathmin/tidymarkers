@@ -225,7 +225,7 @@ KASP_SPECIFICITY_STRICT <- c("unique", "homeolog-aware")
 marker_specificity <- function(scheme = "snp") {
   mode <- extra_scheme_defs()[[scheme]]$specificity %||% "multicopy"
   if (!mode %in% KASP_SPECIFICITY_MODES) {
-    cli::cli_abort(gettext("Unknown specificity mode {mode} for scheme {scheme}."))
+    abort_msg("Unknown specificity mode {mode} for scheme {scheme}.")
   }
   mode
 }
@@ -297,7 +297,7 @@ marker_scheme <- function(scheme = "snp") {
   s <- marker_schemes()
   i <- match(scheme, s$scheme)
   if (is.na(i)) {
-    cli::cli_abort(gettext("Unknown marker scheme {scheme}; see marker_schemes()."))
+    abort_msg("Unknown marker scheme {scheme}; see marker_schemes().")
   }
   s[i, , drop = FALSE]
 }

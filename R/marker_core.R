@@ -230,11 +230,11 @@ reaction_conditions <- function(Na = PCR_COND$Na, Mg = PCR_COND$Mg, # nolint: ob
   for (nm in names(out)) {
     value <- out[[nm]]
     if (!is.numeric(value) || length(value) != 1L || !is.finite(value)) {
-      cli::cli_abort(gettext("`{nm}` must be a single finite number."))
+      abort_msg("`{nm}` must be a single finite number.")
     }
   }
   if (any(unlist(out[c("Na", "Mg", "dNTPs", "DMSO")]) < 0)) {
-    cli::cli_abort(gettext("Salt, dNTP and DMSO concentrations cannot be negative."))
+    abort_msg("Salt, dNTP and DMSO concentrations cannot be negative.")
   }
   out
 }
@@ -250,15 +250,15 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
     return(reaction_conditions())
   }
   if (!is.list(conditions) || is.null(names(conditions)) || any(!nzchar(names(conditions)))) {
-    cli::cli_abort(gettext("`conditions` must be a named list, e.g. reaction_conditions()."))
+    abort_msg("`conditions` must be a named list, e.g. reaction_conditions().")
   }
   defaults <- reaction_conditions()
   unknown <- setdiff(names(conditions), names(defaults))
   if (length(unknown)) {
-    cli::cli_abort(c(
-      gettext("Unknown reaction condition(s): {.val {unknown}}."),
-      i = gettext("Allowed fields: {.val {names(defaults)}}.")
-    ))
+    abort_msg(
+      "Unknown reaction condition(s): {.val {unknown}}.",
+      i = "Allowed fields: {.val {names(defaults)}}."
+    )
   }
   merged <- defaults
   for (nm in names(conditions)) merged[[nm]] <- conditions[[nm]]
@@ -323,7 +323,7 @@ as_reaction_conditions <- function(conditions = reaction_conditions()) {
 #' @export
 scheme_conditions <- function(scheme = "pcr") {
   if (!is.character(scheme) || length(scheme) != 1L || is.na(scheme) || !nzchar(scheme)) {
-    cli::cli_abort(gettext("`scheme` must be a single scheme id."))
+    abort_msg("`scheme` must be a single scheme id.")
   }
   family <- if (scheme %in% names(SCHEME_TEMPERATURE)) {
     scheme
@@ -454,7 +454,7 @@ marker_engines <- function(thermo = getOption("tidymarkers.thermo_engine", "auto
 #' @export
 capabilities <- function(engine, capability = NULL, ...) {
   if (!is.null(capability) && (!is.character(capability) || length(capability) != 1L)) {
-    cli::cli_abort(gettext("`capability` must be a single capability name."))
+    abort_msg("`capability` must be a single capability name.")
   }
   UseMethod("capabilities")
 }
@@ -1024,19 +1024,17 @@ ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
     g <- parse()
   }
   if (is.null(g)) {
-    cli::cli_abort(c(
-      gettext("ath_genome(): TAIR10 FASTA could not be read from {.path {fa}}."),
-      i = gettext("Delete the cached file and retry.")
-    ))
+    abort_msg(
+      "ath_genome(): TAIR10 FASTA could not be read from {.path {fa}}.",
+      i = "Delete the cached file and retry."
+    )
   }
   missing <- setdiff(need, names(g))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext(
-        "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}."
-      ),
-      i = gettext("Ensembl deflines may have changed.")
-    ))
+    abort_msg(
+      "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, collapse = ', ')}.",
+      i = "Ensembl deflines may have changed."
+    )
   }
   g[need]
 }
@@ -1052,7 +1050,7 @@ tair10_download <- function(fa, release) {
   cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {dirname(fa)}} ..."))
   status <- utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
   if (!identical(status, 0L) || !fs::file_exists(tmp) || fs::file_size(tmp) == 0L) {
-    cli::cli_abort(gettext("ath_genome(): downloading TAIR10 from Ensembl Plants failed."))
+    abort_msg("ath_genome(): downloading TAIR10 from Ensembl Plants failed.")
   }
   fs::file_move(tmp, fa)
   invisible(fa)

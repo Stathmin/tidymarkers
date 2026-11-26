@@ -102,7 +102,7 @@ bncc_bands <- function(stage, tiers) {
 #' @noRd
 bncc_regret <- function(x, ideal = NULL, nadir = NULL) {
   if (!is.numeric(x)) {
-    cli::cli_abort("{.arg x} must be numeric.")
+    abort_msg("{.arg x} must be numeric.")
   }
   if (!length(x)) {
     return(numeric(0))
@@ -113,7 +113,7 @@ bncc_regret <- function(x, ideal = NULL, nadir = NULL) {
     return(rep(NA_real_, length(x)))
   }
   if (ideal < nadir) {
-    cli::cli_abort("{.arg ideal} ({ideal}) must not be below {.arg nadir} ({nadir}).")
+    abort_msg("{.arg ideal} ({ideal}) must not be below {.arg nadir} ({nadir}).")
   }
   denom <- ideal - nadir
   if (denom <= 0) {
@@ -155,7 +155,7 @@ bncc_scores <- function(data, tiers, bands, ideal = NULL, nadir = NULL,
                         weights = NULL) {
   n <- nrow(data)
   if (!length(tiers)) {
-    cli::cli_abort("{.arg tiers} must name at least one tier.")
+    abort_msg("{.arg tiers} must name at least one tier.")
   }
   r <- lapply(tiers, function(t) {
     bncc_regret(data[[t]], ideal[[t]] %||% NULL, nadir[[t]] %||% NULL)

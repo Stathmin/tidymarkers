@@ -355,11 +355,11 @@ image_tool <- function() {
 assemble_gif <- function(pngs, path, delay_cs = 25L) {
   tool <- image_tool()
   if (is.null(tool)) {
-    cli::cli_abort(c(
-      gettext("No GIF assembler available (ImageMagick not found)."),
-      i = gettext("Install it: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS)."),
-      i = gettext("Or assemble the `pngs` yourself (e.g. with gifski).")
-    ))
+    abort_msg(
+      "No GIF assembler available (ImageMagick not found).",
+      i = "Install it: apt-get install imagemagick (Debian/Ubuntu), brew install imagemagick (macOS).",
+      i = "Or assemble the `pngs` yourself (e.g. with gifski)."
+    )
   }
   res <- processx::run(tool$exe, c(
     tool$args, "-delay", as.character(delay_cs), "-loop", "0",
@@ -368,7 +368,7 @@ assemble_gif <- function(pngs, path, delay_cs = 25L) {
   error_on_status = FALSE
   )
   if (res$status != 0L) {
-    cli::cli_abort(gettext("ImageMagick failed: {res$stderr}"))
+    abort_msg("ImageMagick failed: {res$stderr}")
   }
   path
 }

@@ -88,14 +88,14 @@ marker_technology <- function(name, base = "snp", params = list(),
                               blocks = character(0), specificity = NULL,
                               label = NULL, verdict = NULL, overwrite = FALSE) {
   if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
-    cli::cli_abort(gettext("`name` must be a single non-empty string."))
+    abort_msg("`name` must be a single non-empty string.")
   }
   if (!overwrite && name %in% marker_schemes()$scheme) {
-    cli::cli_abort(gettext("Scheme {name} already exists; pass overwrite = TRUE to replace it."))
+    abort_msg("Scheme {name} already exists; pass overwrite = TRUE to replace it.")
   }
   base_row <- marker_scheme(base) # aborts on an unknown base
   if (!is.list(params) || (length(params) && is.null(names(params)))) {
-    cli::cli_abort(gettext("`params` must be a (possibly empty) named list."))
+    abort_msg("`params` must be a (possibly empty) named list.")
   }
   # the composition is a legitimate one only if every block can act on this
   # chemistry (roadmap Y1.1); the registry answers, the constructor refuses
@@ -124,7 +124,7 @@ marker_technology <- function(name, base = "snp", params = list(),
     calibration_evidence = "rule_of_thumb"
   )
   if (!is.null(specificity) && !specificity %in% KASP_SPECIFICITY_MODES) {
-    cli::cli_abort(gettext("Unknown specificity mode {specificity}."))
+    abort_msg("Unknown specificity mode {specificity}.")
   }
   assign(name, spec, envir = .marker_tech_store)
   session_memo_clear() # the scheme registry changed

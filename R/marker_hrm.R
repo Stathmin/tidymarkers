@@ -444,7 +444,7 @@ marker_map_spec.marker_hrm <- function(marker, scheme = NULL, ...) {
 
 plot_hrm_amplicon <- function(marker) {
   if (!inherits(marker, "marker_hrm")) {
-    cli::cli_abort(gettext("`marker` must be a marker_hrm object (see design_hrm_marker())."))
+    abort_msg("`marker` must be a marker_hrm object (see design_hrm_marker()).")
   }
   amp <- marker$amplicon
   pr <- marker$primers

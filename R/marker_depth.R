@@ -37,10 +37,10 @@
 #' @export
 read_variant_depth <- function(path, sample = 1L) {
   rlang::check_installed("vroom", reason = gettext("to read VCF files"))
-  if (!fs::file_exists(path)) cli::cli_abort(gettext("VCF not found: {path}"))
+  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
   hdr <- readr::read_lines(path, n_max = 1000L)
   hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
-  if (is.na(hdr)) cli::cli_abort(gettext("{path} has no '#CHROM' header line."))
+  if (is.na(hdr)) abort_msg("{path} has no '#CHROM' header line.")
   nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
 
   fmt_i <- match("FORMAT", nms)
@@ -75,9 +75,9 @@ resolve_depth_sample <- function(sample, sample_names) {
   if (is.numeric(sample)) {
     i <- as.integer(sample)
     if (length(i) != 1L || is.na(i) || i < 1L || i > length(sample_names)) {
-      cli::cli_abort(gettext(
+      abort_msg(
         "`sample` must be a sample index (1..N) or a column name in the VCF."
-      ))
+      )
     }
     return(sample_names[[i]])
   }
@@ -214,7 +214,7 @@ clean_vcf_value <- function(x) {
 #' @export
 variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
   if (!is.numeric(min_depth) || length(min_depth) != 1L || is.na(min_depth) || min_depth <= 0) {
-    cli::cli_abort(gettext("`min_depth` must be a single positive number."))
+    abort_msg("`min_depth` must be a single positive number.")
   }
   x <- tibble::as_tibble(depth)
   missing <- setdiff(c("chrom", "pos", "depth"), names(x))

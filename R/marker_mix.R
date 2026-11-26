@@ -41,12 +41,10 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   stock_share <- ratios / stock_uM # fraction of the mix
   water_share <- 1 - sum(stock_share)
   if (water_share < 0) {
-    cli::cli_abort(c(
-      gettext(
-        "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} uM stock."
-      ),
-      i = gettext("Raise `stock_uM` or lower the targets.")
-    ))
+    abort_msg(
+      "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} uM stock.",
+      i = "Raise `stock_uM` or lower the targets."
+    )
   }
 
   primer_mix <- tibble::tibble(
@@ -62,9 +60,9 @@ kasp_mix_recipe <- function(n_reactions = 96L, mix_uL = 100,
   master_per_rxn <- reaction_uL / master_mix_conc
   water_per_rxn <- reaction_uL - master_per_rxn - assay_per_rxn - dna_uL
   if (water_per_rxn < 0) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
-    ))
+    )
   }
   total_rxn <- ceiling(n_reactions * (1 + overfill))
 

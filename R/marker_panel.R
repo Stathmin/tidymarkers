@@ -86,22 +86,22 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
                                 chemistries, targets = NULL, region = NULL,
                                 dir = tempdir(), ...) {
   if (!inherits(genome, "DNAStringSet") && !inherits(genome, "marker_genome")) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`genome` must be a DNAStringSet or a marker_genome (see marker_genome())."
-    ))
+    )
   }
   if (
     !is.character(chemistries) || !length(chemistries) ||
       anyNA(chemistries) || !all(nzchar(chemistries))
   ) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`chemistries` must be one or more scheme ids, e.g. c(\"snp\", \"hrm\")."
-    ))
+    )
   }
   if (is.null(targets) && is.null(region)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "Give `targets` (a chrom/pos/ref/alt table) or a `region` to design for."
-    ))
+    )
   }
   variants <- panel_variants(variants)
   haplotypes <- panel_haplotypes(haplotypes)

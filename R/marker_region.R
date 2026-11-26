@@ -21,7 +21,7 @@
 normalise_region <- function(region) {
   if (inherits(region, "GRanges")) {
     if (length(region) != 1L) {
-      cli::cli_abort(gettext("`region` must be a single GRanges interval."))
+      abort_msg("`region` must be a single GRanges interval.")
     }
     out <- tibble::tibble(
       chrom = as.character(GenomicRanges::seqnames(region)),
@@ -37,7 +37,7 @@ normalise_region <- function(region) {
       ))
     }
     if (nrow(x) != 1L) {
-      cli::cli_abort(gettext("`region` must name exactly one interval."))
+      abort_msg("`region` must name exactly one interval.")
     }
     out <- tibble::tibble(
       chrom = as.character(x$chrom),
@@ -45,12 +45,12 @@ normalise_region <- function(region) {
       end = as.integer(x$end)
     )
   } else {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`region` must be a GRanges or a data frame with `chrom`, `start`, `end`."
-    ))
+    )
   }
   if (anyNA(c(out$chrom, out$start, out$end)) || out$start < 1L || out$end < out$start) {
-    cli::cli_abort(gettext("`region` needs a chromosome and a valid 1-based start <= end."))
+    abort_msg("`region` needs a chromosome and a valid 1-based start <= end.")
   }
   out
 }
@@ -64,9 +64,9 @@ region_variants <- function(plan) {
     v <- variants_from_haplotypes(normalise_haplotypes(plan$haplotypes))
   }
   if (is.null(v)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "A `region` needs variant context; add marker_context(variants = ) or marker_context(haplotypes = )."
-    ))
+    )
   }
   v <- tibble::as_tibble(v)
   missing <- setdiff(c("chrom", "pos", "ref", "alt"), names(v))

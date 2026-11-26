@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidymarkers 0.4.0\n"
-"POT-Creation-Date: 2026-10-23 00:30+0300\n"
+"POT-Creation-Date: 2026-11-26 17:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: marker_alignment.R:36 marker_io.R:160 marker_io.R:244
+#: marker_alignment.R:36 marker_io.R:207 marker_io.R:293
 msgid "FASTA not found: {path}"
 msgstr ""
 
@@ -57,11 +57,11 @@ msgstr ""
 msgid "A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."
 msgstr ""
 
-#: marker_alignment.R:278
+#: marker_alignment.R:276
 msgid "to plot an alignment"
 msgstr ""
 
-#: marker_alignment.R:280
+#: marker_alignment.R:278
 msgid "`hp` must come from haplotypes_from_alignment()."
 msgstr ""
 
@@ -69,384 +69,805 @@ msgstr ""
 msgid "for structured variant annotation"
 msgstr ""
 
-#: marker_annotate.R:71
+#: marker_annotate.R:87
 msgid "for codon-level annotation"
 msgstr ""
 
-#: marker_annotate.R:101
+#: marker_annotate.R:117
 msgid "for an EnsDb gene model"
 msgstr ""
 
-#: marker_annotate.R:110
+#: marker_annotate.R:126
 msgid "Downloading the Ensembl Plants GTF into {.path {cache}}."
 msgstr ""
 
-#: marker_annotate.R:116
+#: marker_annotate.R:132
 msgid "Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."
 msgstr ""
 
-#: marker_arms.R:243
+#: marker_annotate.R:365
+msgid "`path` does not exist: {.path {path}}."
+msgstr ""
+
+#: marker_annotate.R:410
+msgid "`path` is neither an NCBI feature table nor a 9-column GFF3."
+msgstr ""
+
+#: marker_arms.R:213
 msgid "tetra-primer ARMS is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_arms.R:253
+#: marker_arms.R:226
+msgid ""
+"`stab_ats` is a distance from the 3' end (3L); the signed policy offset is `-"
+"ARMS_EXTRA_MISMATCH_POSITION`."
+msgstr ""
+
+#: marker_arms.R:232
 msgid "No outer primer pair passed the Tm/GC filters."
 msgstr ""
 
-#: marker_arms.R:261
+#: marker_arms.R:240
 msgid "No inner allele-specific primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_arms.R:274
+#: marker_arms.R:253
 msgid "An inner primer is missing on one strand."
 msgstr ""
 
-#: marker_arms.R:321
+#: marker_arms.R:305
 msgid "No tetra-primer set cleared even the relaxed constraints."
 msgstr ""
 
-#: marker_arms.R:418
+#: marker_arms.R:309
+msgid "No tetra-primer set's outer pair gives a single in-silico PCR product."
+msgstr ""
+
+#: marker_arms.R:411
 msgid "to draw the ARMS gel"
 msgstr ""
 
-#: marker_arms.R:420
+#: marker_arms.R:413
 msgid "`marker` must be a marker_arms object (see design_arms_marker())."
 msgstr ""
 
-#: marker_assemble.R:201 marker_assemble.R:210
+#: marker_artefact.R:297
+msgid "the designer returned no marker object"
+msgstr ""
+
+#: marker_artefact.R:323
+msgid "a gate rejected the candidate"
+msgstr ""
+
+#: marker_artefact.R:530 marker_solve.R:282 marker_solve.R:329 marker_tubes.R:201
+msgid "`solved` must be a marker_solved (see marker_solve())."
+msgstr ""
+
+#: marker_artefact.R:676
+msgid "`path` must be one directory or artefact.json path."
+msgstr ""
+
+#: marker_artefact.R:683
+msgid ""
+"Not an artefact: `schema` is {.val {trace_schema_label(manifest$schema)}}."
+msgstr ""
+
+#: marker_artefact.R:684
+msgid "Expected a {.val {'tidymarkers/artefact'}} record."
+msgstr ""
+
+#: marker_artefact.R:690
+msgid ""
+"This artefact is {.val {manifest$schema}}: newer than this reader's artefact "
+"schema."
+msgstr ""
+
+#: marker_artefact.R:691 marker_trace_schema.R:331
+msgid "Update tidymarkers to read it."
+msgstr ""
+
+#: marker_artefact.R:722
+msgid "`artefact` must be a marker_artefact or a directory."
+msgstr ""
+
+#: marker_artefact.R:731
+msgid "No artefact.json in {.path {dir}}; write one with marker_artefact()."
+msgstr ""
+
+#: marker_artefact.R:820
+msgid "No solved.rds in {.path {dir}}; the artefact cannot be replayed."
+msgstr ""
+
+#: marker_artefact.R:826
+msgid ""
+"The reference or variant table no longer matches the artefact's hash; \\\n"
+"       a replay difference below is explained by the input, not the engine."
+msgstr ""
+
+#: marker_artefact.R:833
+msgid ""
+"Engine changed since the artefact was written: {.val {engines$changed}}."
+msgstr ""
+
+#: marker_artefact.R:834
+msgid "A replay difference below may be engine drift, not a model change."
+msgstr ""
+
+#: marker_asq.R:122
+msgid ""
+"ASQ designs substitutions; a length-changing indel is not placed at the "
+"penultimate base."
+msgstr ""
+
+#: marker_assemble.R:203 marker_assemble.R:212
 msgid "No AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_assemble.R:228
+#: marker_assemble.R:230
 msgid "No AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: marker_assemble.R:241
+#: marker_assemble.R:243
 msgid "No indel AS primer passed the GC/Tm filter."
 msgstr ""
 
-#: marker_assemble.R:245
+#: marker_assemble.R:247
 msgid "No indel AS primer passed the homopolymer/SSR filter."
 msgstr ""
 
-#: marker_assemble.R:325
+#: marker_assemble.R:327
 msgid "No ALT primer's 3' code is the consensus of every ALT."
 msgstr ""
 
-#: marker_assemble.R:377
+#: marker_assemble.R:390
 msgid ""
 "No AS primer survived the footprint cap (max_footprint_variants = "
 "{max_footprint_variants})."
 msgstr ""
 
-#: marker_assemble.R:414
+#: marker_assemble.R:431
 msgid "No AS primer survived even the relaxed constraints."
 msgstr ""
 
-#: marker_assemble.R:435
+#: marker_assemble.R:452
 msgid ""
 "Target SNP {snp$chrom}:{snp$pos} has {best_as$n_3p} other variant(s) in the "
 "AS 3'-terminal {clean_3p} nt."
 msgstr ""
 
-#: marker_assemble.R:437
+#: marker_assemble.R:454
 msgid ""
 "Allele specificity on strand {best_as$strand} may not hold across accessions."
 msgstr ""
 
-#: marker_assemble.R:442
+#: marker_assemble.R:459
 msgid "AS primer overlaps {best_as$n_var} other variant(s) in its footprint."
 msgstr ""
 
-#: marker_assemble.R:443
+#: marker_assemble.R:460
 msgid "No candidate with fewer passed the GC/Tm/discrimination filters."
 msgstr ""
 
-#: marker_assemble.R:449
+#: marker_assemble.R:466
 msgid ""
 "Best AS primer discrimination = {round(best_as$discrimination, 2)} is below "
 "min_disc = {min_disc}."
 msgstr ""
 
-#: marker_assemble.R:451
+#: marker_assemble.R:468
 msgid "Consider widening `strands` or `tm_range`."
 msgstr ""
 
-#: marker_assemble.R:467
+#: marker_assemble.R:484
 msgid ""
 "Design at {snp$chrom}:{snp$pos} relies on linkage ({n_link} linked "
 "variant(s) in the AS zone)."
 msgstr ""
 
-#: marker_assemble.R:469
+#: marker_assemble.R:486
 msgid ""
 "The ALT primer is valid only in accessions carrying the linked haplotype."
 msgstr ""
 
-#: marker_assemble.R:595
+#: marker_assemble.R:657
 msgid ""
 "OligoArrayAux was not found: thermodynamic and structural checks will be NA."
 msgstr ""
 
-#: marker_assemble.R:596
+#: marker_assemble.R:658
 msgid "run tidymarkers::marker_install_tools() once to build it."
 msgstr ""
 
-#: marker_assemble.R:735
+#: marker_assemble.R:812
+msgid ""
+"The assay pairing could not be graded: {paste(unknown, collapse = ', ')} has "
+"no value."
+msgstr ""
+
+#: marker_assemble.R:813 marker_snapshot.R:228
+msgid ""
+"A gate whose margin is NA is unknown, not a pass; OligoArrayAux supplies the "
+"structure dG."
+msgstr ""
+
+#: marker_assemble.R:823
+msgid ""
+"No candidate assay could be graded: {paste(unknown, collapse = ', ')} has no "
+"value."
+msgstr ""
+
+#: marker_assemble.R:825
 msgid "No candidate assay survived even the relaxed constraints."
 msgstr ""
 
-#: marker_assemble.R:785
+#: marker_assemble.R:944
 msgid ""
 "No screened pairing is genome-specific (an off-target hit, a second product "
 "or an inverted repeat)."
 msgstr ""
 
-#: marker_assemble.R:792
+#: marker_assemble.R:951
 msgid ""
 "Top-ranked pairing failed genome-level checks; kept the next clean one "
 "({win} of {n_screen} screened)."
 msgstr ""
 
-#: marker_assemble.R:794
+#: marker_assemble.R:953
 msgid ""
 "Ranking is genome-free; off-target hits, in-silico PCR and inverted repeats "
 "are screened here."
 msgstr ""
 
-#: marker_assemble.R:822
+#: marker_assemble.R:985 marker_assemble.R:1514
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:835
-msgid "FM scan failed: {conditionMessage(e)}"
+#: marker_assemble.R:1002
+msgid "bowtie scan failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:841
+#: marker_assemble.R:1008
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:885
+#: marker_assemble.R:1071 marker_assemble.R:1522
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:919 marker_assemble.R:928
+#: marker_assemble.R:1105 marker_assemble.R:1114
 msgid ""
 "Target {snp$chrom}:{snp$pos} is multi-allelic ({out$site$n_alt[1L]} ALTs, "
 "class {out$site$class[1L]})."
 msgstr ""
 
-#: marker_assemble.R:922
+#: marker_assemble.R:1108
 msgid ""
 "The ALT primer is degenerate (3' base {out$site$code[1L]}): it covers every "
 "ALT but cannot tell them apart."
 msgstr ""
 
-#: marker_assemble.R:931
+#: marker_assemble.R:1117
 msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr ""
 
-#: marker_assemble.R:942
+#: marker_assemble.R:1128 marker_assemble.R:1532
 msgid "The acceptance checks could not be evaluated: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_assemble.R:943
+#: marker_assemble.R:1129 marker_assemble.R:1533
 msgid "assay$evaluation is NULL; the verdict is unknown, not usable."
 msgstr ""
 
-#: marker_assemble.R:959
+#: marker_assemble.R:1145
 msgid ""
 "The chosen assay fails structural/specificity checks: {paste(bad, collapse = "
 "'; ')}."
 msgstr ""
 
-#: marker_assemble.R:961
+#: marker_assemble.R:1147
 msgid ""
 "Selection does not gate these yet - inspect assay$evaluation and consider a "
 "trade-off."
 msgstr ""
 
-#: marker_caps.R:144
+#: marker_assemble.R:1186
+msgid ""
+"`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`."
+msgstr ""
+
+#: marker_assemble.R:1190
+msgid "`snp` is missing: {paste(miss, collapse = ', ')}."
+msgstr ""
+
+#: marker_assemble.R:1199
+msgid "`snp` needs a non-missing chromosome and a positive integer position."
+msgstr ""
+
+#: marker_assemble.R:1202
+msgid "Fixed-primer assembly currently handles single-base substitutions only."
+msgstr ""
+
+#: marker_assemble.R:1205
+msgid "`snp$ref` and `snp$alt` must differ."
+msgstr ""
+
+#: marker_assemble.R:1224
+msgid ""
+"`primers` needs a `role` (or `name`) and a `sequence` (or `body`) column."
+msgstr ""
+
+#: marker_assemble.R:1232
+msgid ""
+"`primers` must be a table with `role`/`sequence`, or a named character "
+"vector."
+msgstr ""
+
+#: marker_assemble.R:1238
+msgid "`primers` must be exactly three distinct roles: AS_ref, AS_alt and COM."
+msgstr ""
+
+#: marker_assemble.R:1241
+msgid ""
+"`primers` roles must be AS_ref / AS_alt / COM (aliases: allele1 / allele2 / "
+"common)."
+msgstr ""
+
+#: marker_assemble.R:1245
+msgid "Every primer must be a non-empty ACGT sequence."
+msgstr ""
+
+#: marker_assemble.R:1330
+msgid ""
+"AS_ref and AS_alt must be the same length (they are one allele-specific "
+"primer pair)."
+msgstr ""
+
+#: marker_assemble.R:1336
+msgid "AS_ref and AS_alt must differ at exactly their 3'-terminal base."
+msgstr ""
+
+#: marker_assemble.R:1346
+msgid ""
+"The AS_ref primer must have exactly one exact genome hit whose 3' end sits "
+"on the target."
+msgstr ""
+
+#: marker_assemble.R:1347
+msgid "{snp$chrom}:{snp$pos}: found {nrow(cand)} such hit(s)."
+msgstr ""
+
+#: marker_assemble.R:1348
+msgid "AS_ref (5'->3'): {as_ref}"
+msgstr ""
+
+#: marker_assemble.R:1363
+msgid "AS_ref's 3' base does not match the reference allele at the target."
+msgstr ""
+
+#: marker_assemble.R:1364
+msgid ""
+"target {snp$chrom}:{snp$pos} has {snp$ref}; strand {strand} expects "
+"{expected(snp$ref)}."
+msgstr ""
+
+#: marker_assemble.R:1368
+msgid ""
+"AS_alt's 3' base does not match the ALT allele ({snp$alt}) on strand "
+"{strand}."
+msgstr ""
+
+#: marker_assemble.R:1382
+msgid ""
+"The COM primer has no exact opposite-strand hit that closes an amplicon on "
+"{snp$chrom}."
+msgstr ""
+
+#: marker_assemble.R:1383
+msgid "COM (5'->3'): {com}"
+msgstr ""
+
+#: marker_assemble.R:1389
+msgid ""
+"The COM primer has more than one equally short amplicon on {snp$chrom}; "
+"ambiguous."
+msgstr ""
+
+#: marker_assemble.R:1400
+msgid ""
+"The amplicon runs off the start of {snp$chrom}; cannot build a template "
+"around {snp$pos}."
+msgstr ""
+
+#: marker_assemble.R:1404
+msgid ""
+"The genome at {snp$chrom}:{snp$pos} is not the supplied REF allele {snp$ref}."
+msgstr ""
+
+#: marker_assemble.R:1426
+msgid "The AS_ref hit does not place {snp$ref} at its 3' base."
+msgstr ""
+
+#: marker_batch.R:56 marker_object.R:169 marker_strategy.R:100
+msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+msgstr ""
+
+#: marker_bncc.R:105
+msgid "{.arg x} must be numeric."
+msgstr ""
+
+#: marker_bncc.R:116
+msgid "{.arg ideal} ({ideal}) must not be below {.arg nadir} ({nadir})."
+msgstr ""
+
+#: marker_bncc.R:158
+msgid "{.arg tiers} must name at least one tier."
+msgstr ""
+
+#: marker_bowtie.R:82 marker_bowtie.R:188
+msgid "for the bowtie genome scan"
+msgstr ""
+
+#: marker_bowtie.R:89
+msgid ""
+"`chroms` must name at least one sequence, or be `NULL` for one whole-genome "
+"index."
+msgstr ""
+
+#: marker_bowtie.R:112
+msgid "Reusing the existing bowtie index at {.path {basename}}."
+msgstr ""
+
+#: marker_bowtie.R:123
+msgid "Building a bowtie index at {.path {basename}} (one-off)."
+msgstr ""
+
+#: marker_bowtie.R:146
+msgid ""
+"{.arg chroms} asks for sequence{?s} {.val {unknown}}, which {.arg genome} "
+"does not have."
+msgstr ""
+
+#: marker_bowtie.R:147
+msgid "Available: {.val {names(defline)}}."
+msgstr ""
+
+#: marker_bowtie.R:191
+msgid ""
+"bowtie1 allows at most 3 mismatches (`max_mismatches` is {max_mismatches})."
+msgstr ""
+
+#: marker_caps.R:146
 msgid "Bundled restriction-enzyme catalogue not found."
 msgstr ""
 
-#: marker_caps.R:291
+#: marker_caps.R:345
 msgid "dCAPS scanning is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_caps.R:638
+#: marker_caps.R:640
+msgid "No restriction marker's in-silico PCR gives one product."
+msgstr ""
+
+#: marker_caps.R:725
 msgid ""
 "CAPS: no population haplotypes supplied; restriction-site frequency/"
 "conservation is not checked."
 msgstr ""
 
-#: marker_caps.R:660
+#: marker_caps.R:747
 msgid "No natural or primer-introduced (dCAPS) restriction marker here."
 msgstr ""
 
-#: marker_caps.R:733
+#: marker_caps.R:820
 msgid "to draw the CAPS gel"
 msgstr ""
 
-#: marker_caps.R:735
+#: marker_caps.R:822
 msgid "`marker` must be a marker_caps object (see design_caps_marker())."
 msgstr ""
 
-#: marker_castpcr.R:255
+#: marker_castpcr.R:236
 msgid "castPCR is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_castpcr.R:270
+#: marker_castpcr.R:251
 msgid "No allele-specific primer passed the GC/Tm filters for castPCR."
 msgstr ""
 
-#: marker_castpcr.R:383
+#: marker_castpcr.R:366
 msgid ""
 "No mutant allele-specific primer, common mate, probe and WT blocker passed "
 "the castPCR filters."
 msgstr ""
 
-#: marker_chunk.R:50
+#: marker_chunk.R:48
 msgid "A list source must come from haplotypes_from_alignment()."
 msgstr ""
 
-#: marker_chunk.R:58
+#: marker_chunk.R:56
 msgid "A chunk from a table needs a `reference` sequence."
 msgstr ""
 
-#: marker_chunk.R:68
+#: marker_chunk.R:66
 msgid "A table source needs `pos`/`ref`/`alt`, or `haplotype`/`freq`."
 msgstr ""
 
-#: marker_chunk.R:77
+#: marker_chunk.R:75
 msgid "`reference` must be one of the alignment's sequence names."
 msgstr ""
 
-#: marker_chunk.R:131
+#: marker_chunk.R:129
 msgid "The window {from}..{to} is outside the reference (1..{nchar(ref)})."
 msgstr ""
 
-#: marker_chunk.R:219
+#: marker_chunk.R:218
 msgid "`chunk` must be a marker_chunk (see marker_chunk())."
 msgstr ""
 
-#: marker_core.R:175
+#: marker_contracts.R:71
+msgid ""
+"Contract violated in pick_target_snp: the returned target is not a one-row "
+"pos/ref/alt locus"
+msgstr ""
+
+#: marker_contracts.R:79
+msgid ""
+"Contract violated in pick_target_snp: the returned target has an unset pos/"
+"ref/alt"
+msgstr ""
+
+#: marker_contracts.R:84
+msgid ""
+"Contract violated in pick_target_snp: the returned SNP has no designable AS "
+"window"
+msgstr ""
+
+#: marker_contracts.R:90
+msgid ""
+"Contract violated in pick_target_snp: the attached marker is not designable"
+msgstr ""
+
+#: marker_contracts.R:105
+msgid "Contract violated in assemble_kasp_assay: no genome supplied"
+msgstr ""
+
+#: marker_contracts.R:110
+msgid ""
+"Contract violated in assemble_kasp_assay: `snp` is not a one-row chrom/pos/"
+"ref/alt locus"
+msgstr ""
+
+#: marker_contracts.R:116
+msgid ""
+"Contract violated in assemble_kasp_assay: the locus position is not a "
+"positive number"
+msgstr ""
+
+#: marker_contracts.R:122
+msgid "Contract violated in assemble_kasp_assay: the locus REF allele is unset"
+msgstr ""
+
+#: marker_contracts.R:128
+msgid ""
+"Contract violated in assemble_kasp_assay: the locus ALT alleles are not "
+"designable"
+msgstr ""
+
+#: marker_contracts.R:143
+msgid ""
+"Contract violated in assemble_kasp_assay: the result is not a marker_assay "
+"object"
+msgstr ""
+
+#: marker_contracts.R:148
+msgid "Contract violated in assemble_kasp_assay: the assay carries no scheme"
+msgstr ""
+
+#: marker_contracts.R:158
+msgid ""
+"Contract violated in assemble_kasp_assay: the assay has an empty AS/COM "
+"primer"
+msgstr ""
+
+#: marker_contracts.R:163
+msgid ""
+"Contract violated in assemble_kasp_assay: the assay has no finite amplicon "
+"length"
+msgstr ""
+
+#: marker_contracts.R:171
+msgid ""
+"Contract violated in assemble_kasp_assay: the assay has no labelled AS/COM "
+"primer tails"
+msgstr ""
+
+#: marker_core.R:233
 msgid "`{nm}` must be a single finite number."
 msgstr ""
 
-#: marker_core.R:179
+#: marker_core.R:237
 msgid "Salt, dNTP and DMSO concentrations cannot be negative."
 msgstr ""
 
-#: marker_core.R:195
+#: marker_core.R:253
 msgid "`conditions` must be a named list, e.g. reaction_conditions()."
 msgstr ""
 
-#: marker_core.R:201
+#: marker_core.R:259
 msgid "Unknown reaction condition(s): {.val {unknown}}."
 msgstr ""
 
-#: marker_core.R:202
+#: marker_core.R:260
 msgid "Allowed fields: {.val {names(defaults)}}."
 msgstr ""
 
-#: marker_core.R:259
+#: marker_core.R:326
 msgid "`scheme` must be a single scheme id."
 msgstr ""
 
-#: marker_core.R:355
+#: marker_core.R:457
 msgid "`capability` must be a single capability name."
 msgstr ""
 
-#: marker_core.R:444
+#: marker_core.R:555
 msgid "OligoArrayAux ('{bin}') was not found."
 msgstr ""
 
-#: marker_core.R:464
+#: marker_core.R:578
+#, c-format
+msgid ""
+"OligoArrayAux ('%s') has no UNAFold data tables: expected '%s'. dG may be "
+"meaningless."
+msgstr ""
+
+#: marker_core.R:591
 msgid "OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}"
 msgstr ""
 
-#: marker_core.R:470
+#: marker_core.R:597
 msgid ""
 "OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, "
 "collapse = ' '))}"
 msgstr ""
 
-#: marker_core.R:477
+#: marker_core.R:604
 msgid "OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."
 msgstr ""
 
-#: marker_core.R:847
-msgid ""
-"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
-"{cache}} ..."
-msgstr ""
-
-#: marker_core.R:855
+#: marker_core.R:1006
 msgid ""
 "Dropping {length(dropped)} non-chromosome sequence(s), e.g. {.val {utils::"
 "head(dropped, 3L)}}."
 msgstr ""
 
-#: marker_core.R:865
+#: marker_core.R:1028
+msgid "ath_genome(): TAIR10 FASTA could not be read from {.path {fa}}."
+msgstr ""
+
+#: marker_core.R:1029
+msgid "Delete the cached file and retry."
+msgstr ""
+
+#: marker_core.R:1035
 msgid ""
 "ath_genome(): TAIR10 FASTA is missing chromosome(s): {paste(missing, "
 "collapse = ', ')}."
 msgstr ""
 
-#: marker_core.R:867
+#: marker_core.R:1036
 msgid "Ensembl deflines may have changed."
 msgstr ""
 
-#: marker_crispr.R:298
+#: marker_core.R:1050
+msgid ""
+"Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path "
+"{dirname(fa)}} ..."
+msgstr ""
+
+#: marker_core.R:1053
+msgid "ath_genome(): downloading TAIR10 from Ensembl Plants failed."
+msgstr ""
+
+#: marker_crispr.R:299
 msgid "unknown Cas effector:"
 msgstr ""
 
-#: marker_crispr.R:375
+#: marker_crispr.R:383
 msgid ""
 "Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled."
 msgstr ""
 
-#: marker_crispr.R:438
+#: marker_crispr.R:465
 msgid ""
 "No guide spacer passed the PAM/PFS / seed / specificity / GC filters with a "
 "pre-amplification pair."
 msgstr ""
 
-#: marker_crispr.R:492
+#: marker_crispr.R:525
 msgid ""
 "CRISPR: no population haplotypes supplied; guide/PAM conservation is not "
 "checked."
 msgstr ""
 
-#: marker_decision.R:288
+#: marker_criteria.R:314
+msgid "KASP_CHECK_* labels with no criterion row:"
+msgstr ""
+
+#: marker_criteria.R:315 marker_criteria.R:321 marker_criteria.R:1205 marker_performance.R:55
+msgid ","
+msgstr ""
+
+#: marker_criteria.R:320
+msgid "criterion row(s) in no KASP_CHECK_* class:"
+msgstr ""
+
+#: marker_criteria.R:1204
+msgid "a criterion table is missing column(s):"
+msgstr ""
+
+#: marker_decision.R:302
 msgid "for the decision graph"
 msgstr ""
 
-#: marker_decision_render.R:125
+#: marker_decision_render.R:134
 msgid ""
 "drawing the decision graph without the layout engine (fallback placement)"
 msgstr ""
 
-#: marker_decision_solver.R:75
+#: marker_decision_solver.R:76
 msgid "no TrueType font found for the decision layout"
 msgstr ""
 
-#: marker_decision_solver.R:138
+#: marker_decision_solver.R:139
 msgid "decision layout engine failed to run:"
 msgstr ""
 
-#: marker_decision_solver.R:142
+#: marker_decision_solver.R:143
 msgid "decision layout engine failed (status"
 msgstr ""
 
-#: marker_decision_solver.R:142
+#: marker_decision_solver.R:143
 msgid "):"
 msgstr ""
 
-#: marker_decision_solver.R:147
+#: marker_decision_solver.R:148
 msgid "decision layout engine returned no placement"
+msgstr ""
+
+#: marker_depth.R:39
+msgid "to read VCF files"
+msgstr ""
+
+#: marker_depth.R:40 marker_io.R:71
+msgid "VCF not found: {path}"
+msgstr ""
+
+#: marker_depth.R:43 marker_io.R:139
+msgid "{path} has no '#CHROM' header line."
+msgstr ""
+
+#: marker_depth.R:79
+msgid "`sample` must be a sample index (1..N) or a column name in the VCF."
+msgstr ""
+
+#: marker_depth.R:87
+msgid ""
+"Sample '{s}' is not in the VCF (samples: {paste(sample_names, collapse = ', "
+"')})."
+msgstr ""
+
+#: marker_depth.R:217
+msgid "`min_depth` must be a single positive number."
+msgstr ""
+
+#: marker_depth.R:223
+msgid "`depth` is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_depth.R:290
+msgid ""
+"The depth table is missing column(s): {paste(missing, collapse = ', ')}."
 msgstr ""
 
 #: marker_design.R:89
@@ -457,96 +878,300 @@ msgstr ""
 msgid "Widen `tm_range`/GC or increase `flank` in snp_template()."
 msgstr ""
 
-#: marker_design.R:251
+#: marker_design.R:253
 msgid "every `alt` allele must be as long as `ref`"
 msgstr ""
 
-#: marker_design.R:261
+#: marker_design.R:263
 msgid "`stab_ats` are distances from the 3' end and must be positive (or NA)."
 msgstr ""
 
-#: marker_design.R:262
+#: marker_design.R:264
 msgid "Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}"
 msgstr ""
 
-#: marker_design.R:263
+#: marker_design.R:265
 msgid "The signed policy constant means abs(): -3L -> 3L."
 msgstr ""
 
-#: marker_design.R:644
+#: marker_design.R:654
 msgid ""
 "design_as_primers_indel() needs unequal alleles; use design_as_primers() for "
 "a substitution."
 msgstr ""
 
-#: marker_design.R:701
+#: marker_design.R:711
 msgid "No indel AS-primer placement fit inside the design window."
 msgstr ""
 
-#: marker_dpcr.R:171
+#: marker_dg_internal.R:83
+msgid ""
+"The internal engine has no hairpin/fold model; use OligoArrayAux "
+"(`oligo_dg(seq1)`)."
+msgstr ""
+
+#: marker_dg_internal.R:91
+msgid "`seq1` and `seq2` must be the same length (or recycle)."
+msgstr ""
+
+#: marker_dpcr.R:186
 msgid ""
 "dPCR allelic discrimination is implemented for single-base substitutions "
 "only."
 msgstr ""
 
-#: marker_dpcr.R:189
+#: marker_dpcr.R:204
 msgid "No flanking primer pair passed the Tm/GC filters for dPCR."
 msgstr ""
 
-#: marker_dpcr.R:194
+#: marker_dpcr.R:209
 msgid "No hydrolysis probe passed the composition/Tm filters for dPCR."
 msgstr ""
 
-#: marker_dpcr.R:286
+#: marker_dpcr.R:301
 msgid ""
 "The dPCR candidate failed a hard gate (probe composition, specificity, Tm "
 "ordering or primer Tm)."
 msgstr ""
 
-#: marker_duplex.R:384
+#: marker_duplex.R:387
 msgid "`loci` must have exactly two rows for a duplex assay."
 msgstr ""
 
-#: marker_duplex.R:400
+#: marker_duplex.R:403
 msgid ""
 "Duplex: `homologous` is undeclared; the topology gate is not_applicable and "
 "the pairing cannot pass."
 msgstr ""
 
-#: marker_duplex.R:420
+#: marker_duplex.R:423
 msgid "Duplex pairing accepted only after relaxing a soft compatibility cap."
 msgstr ""
 
-#: marker_duplex.R:422
+#: marker_duplex.R:425
 #, c-format
 msgid "relaxed: %s"
 msgstr ""
 
-#: marker_fm.R:35 marker_fm.R:77
+#: marker_export_outcomes.R:140
+msgid "A character `corpus` must be one directory path."
+msgstr ""
+
+#: marker_export_outcomes.R:145
+msgid "`corpus` must be a corpus table or a directory."
+msgstr ""
+
+#: marker_export_outcomes.R:150
+msgid "`corpus` carries no scanned root."
+msgstr ""
+
+#: marker_export_outcomes.R:151
+msgid "Build it with marker_outcome_corpus(), or pass the directory instead."
+msgstr ""
+
+#: marker_export_outcomes.R:156
+msgid "`dir` must be one directory path."
+msgstr ""
+
+#: marker_export_outcomes.R:160
+msgid "`dir` must sit outside the scanned corpus root."
+msgstr ""
+
+#: marker_export_outcomes.R:161
+msgid "An export inside it would be read back as more corpus on the next scan."
+msgstr ""
+
+#: marker_export_outcomes.R:169
+msgid "`trustee` must be NULL or one non-empty string."
+msgstr ""
+
+#: marker_export_outcomes.R:184
+#, c-format
+msgid "Two artefact directories share a pseudonym: %s."
+msgstr ""
+
+#: marker_export_outcomes.R:185
+msgid "Give them distinct names, or export them in separate runs."
+msgstr ""
+
+#: marker_export_rocrate.R:219
+msgid "`artefact` must be a marker_artefact (see marker_artefact())."
+msgstr ""
+
+#: marker_export_rocrate.R:223
+msgid "`dir` must be a new directory, not the artefact's own directory."
+msgstr ""
+
+#: marker_export_rocrate.R:231
+msgid ""
+"The manifest names {.file {file}}, but the artefact does not contain it."
+msgstr ""
+
+#: marker_export_rocrate.R:232
+msgid "A crate that claims a file it does not carry is not self-contained."
+msgstr ""
+
+#: marker_export_rocrate.R:273
+msgid "`path` must be one crate directory or its ro-crate-metadata.json."
+msgstr ""
+
+#: marker_export_rocrate.R:278
+msgid "No ro-crate-metadata.json at {.path {meta_path}}."
+msgstr ""
+
+#: marker_export_rocrate.R:284
+msgid "Not an RO-Crate 1.1 metadata document."
+msgstr ""
+
+#: marker_export_rocrate.R:285
+msgid "@context is {.val {paste(context, collapse = ', ')}}."
+msgstr ""
+
+#: marker_export_rocrate.R:293
+msgid "The crate has no root data entity (`\"@id\": \"./\"`)."
+msgstr ""
+
+#: marker_export_rocrate.R:305
+msgid "The crate declares {.file {id}}, but the file is not in {.path {dir}}."
+msgstr ""
+
+#: marker_export_rocrate.R:306
+msgid "A crate is a directory, not a manifest of what once was there."
+msgstr ""
+
+#: marker_export_rocrate.R:312
+msgid "{.file {id}} does not hash to what the crate declares."
+msgstr ""
+
+#: marker_export_rocrate.R:313
+msgid "Declared sha256: {.val {declared}}"
+msgstr ""
+
+#: marker_export_rocrate.R:314
+msgid "File sha256: {.val {actual}}"
+msgstr ""
+
+#: marker_export_rocrate.R:323
+msgid "The crate's root identifier does not match artefact.json."
+msgstr ""
+
+#: marker_export_rocrate.R:324
+msgid "RO-Crate identifier: {.val {declared_id}}"
+msgstr ""
+
+#: marker_export_rocrate.R:325
+msgid "artefact.json id: {.val {artefact$id}}"
+msgstr ""
+
+#: marker_failure_registry.R:233
+#, c-format
+msgid "No directory at %s."
+msgstr ""
+
+#: marker_failure_registry.R:288
+msgid "`registry` must be a table from marker_failure_registry()."
+msgstr ""
+
+#: marker_filter_blocks.R:117
+msgid "`blocks` must be a character vector of block ids."
+msgstr ""
+
+#: marker_filter_blocks.R:125
+msgid "Unknown technology block{?s}: {.val {unknown}}."
+msgstr ""
+
+#: marker_filter_blocks.R:126
+msgid ""
+"Only the {.field filter} blocks of {.fn marker_filter_blocks} can be "
+"requested."
+msgstr ""
+
+#: marker_filter_blocks.R:135
+#, c-format
+msgid "block `%s` does not apply to the `%s` family"
+msgstr ""
+
+#: marker_filter_blocks.R:141
+msgid "This block/chemistry mix cannot hold."
+msgstr ""
+
+#: marker_filter_blocks.R:143
+msgid "See {.fn marker_filter_blocks} for each block's {.field applies_to}."
+msgstr ""
+
+#: marker_fm.R:57 marker_fm.R:124
 msgid "for the FM-index genome scan"
 msgstr ""
 
-#: marker_fm.R:38
+#: marker_fm.R:61
+msgid ""
+"The FM index is not used by the design pipeline: specificity_fm() is a read "
+"mapper.\n"
+"     For the design scan use marker_bowtie_index() / specificity_bowtie()."
+msgstr ""
+
+#: marker_fm.R:65
 msgid "Reusing the existing FM-index at {.path {basename}}."
 msgstr ""
 
-#: marker_fm.R:49
+#: marker_fm.R:85
 msgid "Building a Subread FM-index at {.path {basename}} (one-off)."
 msgstr ""
 
-#: marker_fm.R:78
+#: marker_fm.R:93
+msgid ""
+"Subread rewrote the non-ACGT bases of this genome to 'A' when building the "
+"index;\n"
+"       counts over ambiguous regions are conservative."
+msgstr ""
+
+#: marker_fm.R:125
 msgid "to read the alignments"
 msgstr ""
 
-#: marker_genome.R:75
+#: marker_genbank.R:61
+msgid "{.file {path}} is gzipped; gunzip it first"
+msgstr ""
+
+#: marker_genbank.R:63
+msgid "GenBank not found: {path}"
+msgstr ""
+
+#: marker_genome.R:98
 msgid "for a BSgenome genome source"
 msgstr ""
 
-#: marker_genome.R:77
+#: marker_genome.R:100
 msgid "for the BSgenome genome source"
 msgstr ""
 
-#: marker_genome.R:150 marker_genome.R:180
+#: marker_genome.R:148
+msgid ""
+"{.fn {call}} needs a DNAStringSet or a FASTA-backed genome, and this genome "
+"is BSgenome-backed."
+msgstr ""
+
+#: marker_genome.R:149
+msgid ""
+"Pass the {.cls BSgenome} itself instead of {.code marker_genome(bsgenome = "
+")}."
+msgstr ""
+
+#: marker_genome.R:150
+msgid ""
+"Or attach a prebuilt index: {.code marker_genome(bsgenome = , "
+"{index_arg(call)} = <path>)}."
+msgstr ""
+
+#: marker_genome.R:151
+msgid "{.fn specificity_of} uses that index as-is."
+msgstr ""
+
+#: marker_genome.R:163
+msgid "Unknown index call: {call}"
+msgstr ""
+
+#: marker_genome.R:233 marker_genome.R:263
 msgid "Unknown sequence: {chrom}"
 msgstr ""
 
@@ -558,192 +1183,842 @@ msgstr ""
 msgid "`freq` must be one value in [0, 1] per haplotype."
 msgstr ""
 
-#: marker_haplotypes.R:331
+#: marker_haplotypes.R:382
 msgid "The marker has no `snp` row to anchor haplotypes."
 msgstr ""
 
-#: marker_haplotypes.R:360
+#: marker_haplotypes.R:411
 msgid ""
 "Target ALT frequency is %s%% (< %s%%); this marker may be monomorphic/rare "
 "in the supplied population."
 msgstr ""
 
-#: marker_haplotypes.R:376
+#: marker_haplotypes.R:427
 msgid ""
 "CAPS recognition site carries %d extra population variant(s); site "
 "conservation/frequency is not guaranteed."
 msgstr ""
 
-#: marker_haplotypes.R:391
+#: marker_haplotypes.R:442
 msgid ""
 "CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); "
 "conservation is not guaranteed."
 msgstr ""
 
-#: marker_hrm.R:321
+#: marker_haplotypes.R:489
+msgid "dosage supplied by the caller (copies of ALT); not estimated here"
+msgstr ""
+
+#: marker_haplotypes.R:492
+msgid ""
+"allele dosage / copy number is not modelled; a polyploid mixture needs "
+"fitPoly (Z10.2)"
+msgstr ""
+
+#: marker_homeolog.R:36
+msgid ""
+"`diagnostic_positions` is missing column(s): {paste(miss, collapse = ', ')}."
+msgstr ""
+
+#: marker_homeolog.R:49
+msgid ""
+"`diagnostic_positions` must be NULL, a data frame / list with `chrom` and "
+"`pos`,"
+msgstr ""
+
+#: marker_homeolog.R:50
+msgid "a GRanges, or a named list `chrom -> positions`."
+msgstr ""
+
+#: marker_homeolog.R:56
+msgid ""
+"`diagnostic_positions` needs a non-NA chromosome and a positive integer "
+"position in every row."
+msgstr ""
+
+#: marker_homeolog.R:151
+msgid "The common primer's 3' base is not on a subgenome-diagnostic position:"
+msgstr ""
+
+#: marker_homeolog.R:152
+msgid "the assay genotypes but does not localise."
+msgstr ""
+
+#: marker_hrm.R:328
 msgid ""
 "A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and "
 "a positive control."
 msgstr ""
 
-#: marker_hrm.R:347
+#: marker_hrm.R:374
 msgid ""
 "No short flanking primer pair in the HRM amplicon window passed the Tm/GC "
 "filters."
 msgstr ""
 
-#: marker_hrm.R:406
+#: marker_hrm.R:380
+msgid "No HRM flanking pair's in-silico PCR gives one product."
+msgstr ""
+
+#: marker_hrm.R:447
 msgid "`marker` must be a marker_hrm object (see design_hrm_marker())."
 msgstr ""
 
-#: marker_indel_size.R:146
+#: marker_indel_size.R:148
 msgid "Not an InDel size polymorphism: `ref` and `alt` are the same length."
 msgstr ""
 
-#: marker_indel_size.R:154
+#: marker_indel_size.R:156
 msgid ""
 "The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a "
 "longer indel."
 msgstr ""
 
-#: marker_indel_size.R:171
+#: marker_indel_size.R:173
 msgid ""
 "No flanking primer pair passed the Tm/GC/amplicon filters for this InDel."
 msgstr ""
 
-#: marker_indel_size.R:214 marker_sanger.R:533
+#: marker_indel_size.R:221 marker_sanger.R:574
+msgid ""
+"No flanking pair's in-silico PCR gives one product (or its pair passes the "
+"structure screen)."
+msgstr ""
+
+#: marker_indel_size.R:230 marker_sanger.R:583
 msgid ""
 "No flanking pair has unique 3' ends (every candidate's 3' seed repeats in "
 "the genome)."
 msgstr ""
 
-#: marker_indel_size.R:216
+#: marker_indel_size.R:232
 msgid ""
 "No flanking pair passed the InDel-size gates (gap, windows, structure, "
 "uniqueness)."
 msgstr ""
 
-#: marker_io.R:62
-msgid "VCF not found: {path}"
+#: marker_informativeness.R:79
+msgid "Give exactly one of `genotypes` and `haplotypes`, not both."
+msgstr ""
+
+#: marker_informativeness.R:82
+msgid "Give `genotypes` (line calls) or `haplotypes` (a frequency model)."
+msgstr ""
+
+#: marker_informativeness.R:86
+msgid "`min_lines` must be a positive whole number."
+msgstr ""
+
+#: marker_informativeness.R:127
+msgid "`genotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_informativeness.R:140
+msgid "`genotypes` needs a non-missing `line` and `pos` on every row."
+msgstr ""
+
+#: marker_informativeness.R:155
+msgid "`genotype` dosages must be 0, 1 or 2."
+msgstr ""
+
+#: marker_informativeness.R:169
+msgid "`genotype` calls must be REF/HET/ALT (or 0/0, 0/1, 1/1)."
+msgstr ""
+
+#: marker_ingest.R:77
+msgid "`min_evidence` must be one non-negative whole number."
+msgstr ""
+
+#: marker_ingest.R:83
+msgid "`min_confidence` must be one number in [0, 1]."
+msgstr ""
+
+#: marker_ingest.R:86
+msgid "`provenance_required` must be TRUE or FALSE."
+msgstr ""
+
+#: marker_ingest.R:96
+msgid "`path` must be one existing .csv or .json file."
+msgstr ""
+
+#: marker_ingest.R:101
+#, c-format
+msgid "`path` must be an existing .csv or .json file; %s is not one."
+msgstr ""
+
+#: marker_ingest.R:108
+#, c-format
+msgid "`path` must end in .csv or .json, not .%s (%s)."
+msgstr ""
+
+#: marker_ingest.R:139
+msgid "A JSON literature source must be a top-level array of objects."
+msgstr ""
+
+#: marker_ingest.R:166
+#, c-format
+msgid "The literature source is missing required column(s): %s."
+msgstr ""
+
+#: marker_ingest.R:334
+#, c-format
+msgid "The existing registry %s does not have the expected columns (%s)."
+msgstr ""
+
+#: marker_ingest.R:437
+msgid "`queue` must come from marker_ingest_literature()."
+msgstr ""
+
+#: marker_ingest.R:440
+msgid "`record_id` must be one non-empty string."
+msgstr ""
+
+#: marker_ingest.R:443
+msgid "`reviewer` must be one non-empty string."
+msgstr ""
+
+#: marker_ingest.R:448
+#, c-format
+msgid "Record %s is not among this queue's candidates."
+msgstr ""
+
+#: marker_ingest.R:453
+#, c-format
+msgid "Record %s is already in the registry %s."
+msgstr ""
+
+#: marker_io.R:89
+msgid "{n_dropped} VCF record{?s} with a symbolic or absent ALT"
+msgstr ""
+
+#: marker_io.R:90
+msgid "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed"
 msgstr ""
 
 #: marker_io.R:91
+msgid "across structural alleles."
+msgstr ""
+
+#: marker_io.R:108
 msgid "to read large VCF files"
 msgstr ""
 
-#: marker_io.R:94
-msgid "{path} has no '#CHROM' header line."
+#: marker_io.R:144
+msgid "{path}: the first non-'##' line does not start with '#CHROM'."
 msgstr ""
 
-#: marker_io.R:120
+#: marker_io.R:151
+msgid "{path}: the '#CHROM' header is missing {.val {missing}}."
+msgstr ""
+
+#: marker_io.R:152
+msgid "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
+msgstr ""
+
+#: marker_io.R:167
 msgid "for the readVcf backend"
 msgstr ""
 
-#: marker_io.R:159
+#: marker_io.R:206
 msgid "for indexed FASTA random access"
 msgstr ""
 
-#: marker_io.R:163
+#: marker_io.R:210
 msgid "Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."
 msgstr ""
 
-#: marker_io.R:218
+#: marker_io.R:267
 msgid "Bundled example data not found."
 msgstr ""
 
-#: marker_lamp.R:714
+#: marker_io.R:361 marker_io.R:390
+msgid "GenomicRanges is not installed; returning `NULL`."
+msgstr ""
+
+#: marker_io.R:367 marker_io.R:429
+msgid "`x` is missing column(s): {paste(missing, collapse = ', ')}"
+msgstr ""
+
+#: marker_io.R:376
+msgid "`ref` must be a non-empty allele string on every row."
+msgstr ""
+
+#: marker_io.R:393
+msgid "`x` must be a GRanges."
+msgstr ""
+
+#: marker_io.R:397
+msgid "`x` is missing mcol(s): {paste(missing, collapse = ', ')}"
+msgstr ""
+
+#: marker_io.R:434
+msgid "`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`."
+msgstr ""
+
+#: marker_lamp.R:724
 msgid ""
 "No LAMP primer set passed the variant-placement / inner-Tm / structure / "
 "cross-dimer / amplicon filters."
 msgstr ""
 
-#: marker_lamp.R:746
+#: marker_lamp.R:756
 msgid "LAMP primer-set geometry check failed."
 msgstr ""
 
-#: marker_lamp.R:748
+#: marker_lamp.R:758
 msgid ""
 "The set is returned with `geometry$ok = FALSE`; inspect the named check(s)."
 msgstr ""
 
-#: marker_lax.R:390
+#: marker_lamp.R:763
+msgid "LAMP primer-set geometry could not be fully evaluated."
+msgstr ""
+
+#: marker_lamp.R:765
+msgid "No OligoArrayAux: {paste(geo$unknown, collapse = ', ')} is NA and"
+msgstr ""
+
+#: marker_lamp.R:766
+msgid "`geometry$ok` is NA, not a pass."
+msgstr ""
+
+#: marker_lax.R:391
 msgid "No ALT haplotype carries the target allele; nothing to design."
 msgstr ""
 
-#: marker_lax.R:441
+#: marker_lax.R:442
 msgid "no ALT primer covers {n_uncovered} ALT haplotype(s)"
 msgstr ""
 
-#: marker_lax.R:444
+#: marker_lax.R:445
 msgid ""
 "the wild type also carries a baked linked allele (leakage {round(leakage, 2)}"
 ")"
 msgstr ""
 
-#: marker_lax.R:447
+#: marker_lax.R:448
 msgid "{n_cross} haplotype-group pairs cross-prime"
 msgstr ""
 
-#: marker_lax.R:451
+#: marker_lax.R:452
 msgid "The lax tube fails the haplotype stage."
 msgstr ""
 
-#: marker_mix.R:46
+#: marker_mix.R:45
 msgid ""
 "Requested working mix ({as_uM}/{as_uM}/{com_uM} uM) exceeds the {stock_uM} "
 "uM stock."
 msgstr ""
 
-#: marker_mix.R:48
+#: marker_mix.R:46
 msgid "Raise `stock_uM` or lower the targets."
 msgstr ""
 
-#: marker_mix.R:66
+#: marker_mix.R:64
 msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 
-#: marker_object.R:137 marker_strategy.R:93
-msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgstr ""
-
-#: marker_object.R:192
+#: marker_object.R:222
 msgid "Designing KASP markers"
 msgstr ""
 
-#: marker_plan.R:59
+#: marker_one_pot.R:92
+msgid "`require` must be \"all\" or \"any\", not {.val {require}}."
+msgstr ""
+
+#: marker_one_pot.R:167
+msgid ""
+"`max_markers` must be one positive whole number, not {.val {max_markers}}."
+msgstr ""
+
+#: marker_one_pot.R:247
+msgid "`assays` must be a data frame or tibble, not {.cls {class(assays)}}."
+msgstr ""
+
+#: marker_one_pot.R:252
+msgid "`assays` is missing required column(s): {.field {missing_cols}}."
+msgstr ""
+
+#: marker_one_pot.R:253
+msgid "One-pot grouping needs {.field {ONE_POT_COLUMNS}}."
+msgstr ""
+
+#: marker_one_pot.R:257
+msgid "`assays` has no rows, so there is nothing to place in a pot."
+msgstr ""
+
+#: marker_one_pot.R:262
+msgid ""
+"{.field {not_numeric}} must be numeric in `assays`, not {.cls "
+"{class(assays[[not_numeric[1L]]])}}."
+msgstr ""
+
+#: marker_one_pot.R:272
+msgid "`matrix` must be a one-pot compatibility matrix with {.field {needed}}."
+msgstr ""
+
+#: marker_one_pot.R:273
+msgid "Build one with `one_pot_matrix()` and edit its rows."
+msgstr ""
+
+#: marker_one_pot.R:277
+msgid "`matrix` has no rules, so every set would pass vacuously."
+msgstr ""
+
+#: marker_one_pot.R:297
+msgid ""
+"Unknown `comparison` {.val {comparison}} on one-pot rule {.val {rule$rule}}."
+msgstr ""
+
+#: marker_one_pot.R:304
+msgid ""
+"One-pot rule {.val {rule$rule}} compares {.field {rule$field}}, which is not "
+"numeric in `assays`."
+msgstr ""
+
+#: marker_one_pot.R:314
+msgid ""
+"One-pot rule {.val {rule$rule}} needs one non-missing numeric `value`, not {."
+"val {value}}."
+msgstr ""
+
+#: marker_outcomes.R:115
+msgid ""
+"Contract violated in marker_record_outcome: the artefact id resolves to no "
+"existing artefact"
+msgstr ""
+
+#: marker_outcomes.R:121
+msgid "`notes` must be a single string."
+msgstr ""
+
+#: marker_outcomes.R:129
+msgid ""
+"A failing outcome must carry `notes`: without a reason it cannot be told \\\n"
+"       apart from a design failure or a failed run."
+msgstr ""
+
+#: marker_outcomes.R:136
+msgid "`target` must be one label or NULL."
+msgstr ""
+
+#: marker_outcomes.R:141
+#, c-format
+msgid "Target %s is not in this artefact. Known targets: %s."
+msgstr ""
+
+#: marker_outcomes.R:161
+#, c-format
+msgid "The existing outcomes.csv does not have the expected columns (%s)."
+msgstr ""
+
+#: marker_outcomes.R:179
+msgid ""
+"Contract violated in marker_record_outcome: the outcome is not readable back "
+"by marker_outcomes()"
+msgstr ""
+
+#: marker_outcomes.R:256
+msgid "`dir` must be a directory searched for outcomes.csv."
+msgstr ""
+
+#: marker_panel.R:90
+msgid ""
+"`genome` must be a DNAStringSet or a marker_genome (see marker_genome())."
+msgstr ""
+
+#: marker_panel.R:98
+msgid "`chemistries` must be one or more scheme ids, e.g. c(\"snp\", \"hrm\")."
+msgstr ""
+
+#: marker_panel.R:103
+msgid "Give `targets` (a chrom/pos/ref/alt table) or a `region` to design for."
+msgstr ""
+
+#: marker_panel.R:119
+msgid "No chemistry designed any target; every attempt and its cause:"
+msgstr ""
+
+#: marker_pareto.R:110
+msgid "A candidate table needs a `cost` column."
+msgstr ""
+
+#: marker_pareto.R:118
+msgid "A candidate table needs a `quality` column (or an explicit `quality`)."
+msgstr ""
+
+#: marker_pareto.R:130
+msgid "`x` must be a candidate table or a marker_solve() result."
+msgstr ""
+
+#: marker_pareto.R:142
+#, c-format
+msgid "`%s` must be one number per candidate."
+msgstr ""
+
+#: marker_pareto.R:221
+#, c-format
+msgid "`%s` must be a finite number on every candidate."
+msgstr ""
+
+#: marker_pareto.R:226
+#, c-format
+msgid "`%s` must lie in [%s, %s]."
+msgstr ""
+
+#: marker_patent.R:88
+msgid "Unsupported `format` {.val {format}}."
+msgstr ""
+
+#: marker_patent.R:89
+msgid "Supported formats: {.val {formats}}."
+msgstr ""
+
+#: marker_patent.R:104
+msgid "writing a WIPO ST.26 sequence listing"
+msgstr ""
+
+#: marker_patent.R:111
+msgid "WIPO ST.26 XML written without schema validation."
+msgstr ""
+
+#: marker_patent.R:114
+msgid ""
+"The XSD was not found at {.file {schema}}; ?marker_patent_export gives the "
+"filename and curl command."
+msgstr ""
+
+#: marker_patent.R:122
+msgid "building the application draft"
+msgstr ""
+
+#: marker_patent.R:148
+msgid "No sequence listing at {.file {path}}."
+msgstr ""
+
+#: marker_patent.R:152
+msgid "The WIPO ST.26 XSD was not found at {.file {schema}}."
+msgstr ""
+
+#: marker_patent.R:153
+msgid ""
+"Download ST26SequenceListing_V1_3.xsd into the cache directory {.file "
+"{marker_cache_dir()}}."
+msgstr ""
+
+#: marker_patent.R:154
+msgid ""
+"See ?marker_patent_export for the expected filename and the one-line curl "
+"command."
+msgstr ""
+
+#: marker_patent.R:157
+msgid "validating a WIPO ST.26 sequence listing"
+msgstr ""
+
+#: marker_patent.R:161
+msgid "The sequence listing does not validate against {.file {schema}}."
+msgstr ""
+
+#: marker_patent.R:215
+msgid "The {.pkg {pkg}} package is required for {why}."
+msgstr ""
+
+#: marker_patent.R:216
+msgid "Install it with {.run install.packages(\"{pkg}\")}."
+msgstr ""
+
+#: marker_patent.R:230
+msgid ""
+"No designed marker to export: every target in this marker_solved is unsolved."
+msgstr ""
+
+#: marker_patent.R:235
+msgid "`assay_or_solved` must be a marker_assay or a marker_solved."
+msgstr ""
+
+#: marker_patent.R:236
+msgid "Got {.cls {class(assay_or_solved)}}."
+msgstr ""
+
+#: marker_patent.R:247
+msgid "Marker {i} carries no usable assay table."
+msgstr ""
+
+#: marker_patent.R:248
+msgid ""
+"A marker_assay needs a one-row `$assay` with {.field {needed}}; missing: {."
+"field {missing}}."
+msgstr ""
+
+#: marker_patent.R:284
+msgid ""
+"Marker {i} has no template sequence, so the amplicon cannot be reconstructed."
+msgstr ""
+
+#: marker_patent.R:285
+msgid ""
+"Keep `$template$seq` on the marker, or store the amplicon in "
+"`$assay$amplicon_seq`."
+msgstr ""
+
+#: marker_patent.R:292
+msgid ""
+"Marker {i} has no primer coordinates, so the amplicon cannot be "
+"reconstructed."
+msgstr ""
+
+#: marker_patent.R:293
+msgid "Missing `$assay` column(s): {.field {missing}}."
+msgstr ""
+
+#: marker_patent.R:302
+msgid "Marker {i}: the amplicon falls outside the template."
+msgstr ""
+
+#: marker_patent.R:303
+msgid "Template positions {lo}..{hi} were asked of a {n}-bp template."
+msgstr ""
+
+#: marker_patent.R:323
+#, c-format
+msgid "The %s sequence%s is not plain DNA (non-ACGT)."
+msgstr ""
+
+#: marker_patent.R:324
+msgid ""
+"WIPO ST.26 lists unambiguous DNA; degenerate IUPAC codes cannot be exported."
+msgstr ""
+
+#: marker_patent.R:421
+msgid "Template {.file {path}} is missing from the installed package."
+msgstr ""
+
+#: marker_patent.R:445
+#, c-format
+msgid "Unrendered template placeholder(s): %s."
+msgstr ""
+
+#: marker_patent.R:446
+msgid "Every `{{name}}` in a template needs a value."
+msgstr ""
+
+#: marker_performance.R:54
+msgid "scheme '"
+msgstr ""
+
+#: marker_performance.R:54
+msgid "' declares unknown analytical quantities:"
+msgstr ""
+
+#: marker_plan.R:133
 msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
 msgstr ""
 
-#: marker_plan.R:87
+#: marker_plan.R:164
 msgid "Give `chrom`, `pos`, `ref`, `alt`, or a `data` table."
 msgstr ""
 
-#: marker_plan.R:136
+#: marker_plan.R:222
 msgid "`genome` is required (see marker_genome())."
 msgstr ""
 
-#: marker_plan.R:262
+#: marker_plan.R:384
 msgid "`...` must be named costs, e.g. marker_costs(hrm = 1.2)."
 msgstr ""
 
-#: marker_plan.R:273
+#: marker_plan.R:395
 msgid ""
 "Only marker_*() layers (marker_targets(), marker_context(), marker_tech()) "
 "can be added to a marker_plan."
 msgstr ""
 
-#: marker_plan.R:308
+#: marker_plan.R:435
 msgid ""
 "Unknown scheme(s) in the plan: {paste(unknown, collapse = ', ')}; see "
 "marker_schemes()."
 msgstr ""
 
-#: marker_rpa.R:539
+#: marker_region.R:24
+msgid "`region` must be a single GRanges interval."
+msgstr ""
+
+#: marker_region.R:36
+msgid "`region` is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_region.R:40
+msgid "`region` must name exactly one interval."
+msgstr ""
+
+#: marker_region.R:49
+msgid ""
+"`region` must be a GRanges or a data frame with `chrom`, `start`, `end`."
+msgstr ""
+
+#: marker_region.R:53
+msgid "`region` needs a chromosome and a valid 1-based start <= end."
+msgstr ""
+
+#: marker_region.R:68
+msgid ""
+"A `region` needs variant context; add marker_context(variants = ) or "
+"marker_context(haplotypes = )."
+msgstr ""
+
+#: marker_region.R:75
+msgid ""
+"The variant context is missing column(s): {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_region.R:99
+msgid "No variant lies in the region {reg$chrom}:{reg$start}-{reg$end}."
+msgstr ""
+
+#: marker_reprex.R:108
+msgid "`preserve` must be a non-empty character vector."
+msgstr ""
+
+#: marker_reprex.R:113
+msgid ""
+"`preserve` names a property this function does not implement: {.val "
+"{unknown}}."
+msgstr ""
+
+#: marker_reprex.R:114
+msgid "Allowed values are {.val {REPREX_PRESERVE}}."
+msgstr ""
+
+#: marker_reprex.R:125
+msgid "`path` must be one non-missing file path or `NULL`."
+msgstr ""
+
+#: marker_reprex.R:128
+msgid "Cannot write {.path {path}}: {.path {dirname(path)}} does not exist."
+msgstr ""
+
+#: marker_reprex.R:144
+msgid "A {.cls marker_genome} backed by a {.cls BSgenome} has no file to read."
+msgstr ""
+
+#: marker_reprex.R:145
+msgid "Pass a {.cls DNAStringSet} or a FASTA path instead."
+msgstr ""
+
+#: marker_reprex.R:175
+msgid "{.path {x}} is not a VCF, a BED or a FASTA (by its extension)."
+msgstr ""
+
+#: marker_reprex.R:176
+msgid "Expected .vcf, .vcf.gz, .bed, .fa, .fasta or .fna."
+msgstr ""
+
+#: marker_reprex.R:185
+msgid "`x` is not a variant table, a set of sequences, or a path to one."
+msgstr ""
+
+#: marker_reprex.R:186
+msgid "Got {.cls {class(x)}}."
+msgstr ""
+
+#: marker_reprex.R:212
+msgid "`x` holds no sequence."
+msgstr ""
+
+#: marker_reprex.R:218
+msgid ""
+"{stuck} sequence{?s} kept at least one base in place: too short or too "
+"restricted to reshuffle."
+msgstr ""
+
+#: marker_reprex.R:219
+msgid ""
+"The output is still not the original; check a very repetitive input by hand."
+msgstr ""
+
+#: marker_reprex.R:291
+msgid "A variant table is missing column{?s} {.val {missing}}."
+msgstr ""
+
+#: marker_reprex.R:292
+msgid "It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes."
+msgstr ""
+
+#: marker_reprex.R:299
+msgid "{.val {extra}}: dropped, the script replays only {.val {need}}."
+msgstr ""
+
+#: marker_reprex.R:300
+msgid "A bug that depends on them will not reproduce; check them by hand."
+msgstr ""
+
+#: marker_reprex.R:306
+msgid "{sum(!keep)} incomplete row{?s} dropped from the reproducer."
+msgstr ""
+
+#: marker_reprex.R:310
+msgid "`x` holds no complete variant."
+msgstr ""
+
+#: marker_reprex.R:375
+msgid "Anonymisation lost `{prop}`; no script was written."
+msgstr ""
+
+#: marker_reprex.R:376
+msgid "This is a bug in `marker_reprex()`: please report it."
+msgstr ""
+
+#: marker_reprex.R:393
+msgid "Cannot read {.path {path}}."
+msgstr ""
+
+#: marker_reprex.R:402
+msgid "The script is plain ASCII and a {.field {what}} field is not."
+msgstr ""
+
+#: marker_reprex.R:403
+msgid "Rewrite that field by hand before sharing."
+msgstr ""
+
+#: marker_reprex.R:412
+msgid "`pos` must hold whole numbers."
+msgstr ""
+
+#: marker_reprex.R:428
+msgid "{.path {path}} holds no VCF record."
+msgstr ""
+
+#: marker_reprex.R:432
+msgid "{.path {path}} has a record with fewer than 8 VCF columns."
+msgstr ""
+
+#: marker_reprex.R:444
+msgid "{.path {path}} holds no BED interval."
+msgstr ""
+
+#: marker_reprex.R:448
+msgid "{.path {path}} has a line with fewer than 3 BED columns."
+msgstr ""
+
+#: marker_reprex.R:451
+msgid ""
+"A BED interval is replayed as a 1-based single-base record, not as a width."
+msgstr ""
+
+#: marker_reprex.R:452
+msgid "A bug that depends on an interval's width will not reproduce."
+msgstr ""
+
+#: marker_reprex.R:465
+msgid "{.path {path}} is not a FASTA (no `>` header)."
+msgstr ""
+
+#: marker_rpa.R:547
 msgid ""
 "RPA discrimination here is implemented for single-base substitutions only."
 msgstr ""
 
-#: marker_rpa.R:588
+#: marker_rpa.R:596
 msgid ""
 "No RPA primer pair passed the variant-placement / length / structure / "
 "amplicon filters."
@@ -757,261 +2032,407 @@ msgstr ""
 msgid "for an independent oligo-design cross-check"
 msgstr ""
 
-#: marker_sanger.R:400
+#: marker_sanger.R:425
 msgid ""
 "No usable Sanger read reaches the variant (%s): more than %s bp from the "
 "read primer."
 msgstr ""
 
-#: marker_sanger.R:403
+#: marker_sanger.R:428
 msgid "The amplicon is returned, but that side cannot call the variant."
 msgstr ""
 
-#: marker_sanger.R:493 marker_sanger.R:535
+#: marker_sanger.R:524 marker_sanger.R:585
 msgid "No flanking pair kept the variant clear of both read starts for Sanger."
 msgstr ""
 
-#: marker_sanger.R:561
+#: marker_sanger.R:611
 msgid ""
 "Sanger: no population variants supplied; primer-over-variant allele dropout "
 "is not checked."
 msgstr ""
 
-#: marker_sanger.R:562
+#: marker_sanger.R:612
 msgid "`allele_dropout_risk` is unknown, not a pass."
 msgstr ""
 
-#: marker_sanger.R:572
+#: marker_sanger.R:622
 msgid ""
 "Sanger: {nrow(hits)} population variant(s) fall under a primer (allele-"
 "dropout risk)."
 msgstr ""
 
-#: marker_sanger.R:574
+#: marker_sanger.R:624
 msgid ""
 "A variant in a primer binding site can lose that allele (or the whole "
 "product); see `$allele_dropout`."
 msgstr ""
 
-#: marker_scan.R:45 marker_scan.R:85
+#: marker_scan.R:62 marker_scan.R:115
 msgid "for the indexed genome scan"
 msgstr ""
 
-#: marker_scan.R:47
+#: marker_scan.R:64
 msgid "NCBI BLAST+ ('blastn'/'makeblastdb') was not found."
 msgstr ""
 
-#: marker_scan.R:48 marker_scan.R:89
+#: marker_scan.R:65 marker_scan.R:119
 msgid ""
 "Install it: apt-get install ncbi-blast+ (Debian/Ubuntu), brew install blast "
 "(macOS)."
 msgstr ""
 
-#: marker_scan.R:49 marker_scan.R:90
+#: marker_scan.R:66 marker_scan.R:120
 msgid "On Windows run the NCBI BLAST+ installer."
 msgstr ""
 
-#: marker_scan.R:50 marker_scan.R:92
+#: marker_scan.R:67 marker_scan.R:122
 msgid ""
 "Or point the package at an existing build with options(tidymarkers.blast = )."
 msgstr ""
 
-#: marker_scan.R:88
+#: marker_scan.R:118
 msgid "No NCBI BLAST+ found (has_blast() is FALSE)."
 msgstr ""
 
-#: marker_scan.R:91
+#: marker_scan.R:121
 msgid "Or use specificity_seed() on an in-memory genome."
 msgstr ""
 
-#: marker_scan.R:109
+#: marker_scan.R:138
 msgid ""
 "Could not open a BLAST database at {db_path} (build it with "
 "marker_blast_index())."
 msgstr ""
 
-#: marker_scan.R:165
-msgid "This indexed genome has no BLAST database attached."
+#: marker_scan.R:243
+msgid "`genome` must be a named list of genomes, one name per element."
 msgstr ""
 
-#: marker_scan.R:166
-msgid "Build one with marker_blast_index(genome) and pass it as `blast_db=`."
+#: marker_scan.R:244
+msgid "Name every genome, e.g. list(A = , B = , D = )."
 msgstr ""
 
-#: marker_schemes.R:221
+#: marker_scan.R:275
+msgid ""
+"The bowtie path scans the whole primer and ignores `k` / `max_mismatch`."
+msgstr ""
+
+#: marker_scan.R:276
+msgid "Use specificity_seed() on an in-memory genome for the 3'-seed question."
+msgstr ""
+
+#: marker_scan.R:290
+msgid ""
+"This genome has only an FM index; the whole-genome scan no longer dispatches "
+"to it."
+msgstr ""
+
+#: marker_scan.R:291
+msgid ""
+"On TAIR10 the Subread index cost 31.7 bytes/bp and 53 s/query; wheat (16 Gb) "
+"needs ~490 GB."
+msgstr ""
+
+#: marker_scan.R:292
+msgid ""
+"Build a bowtie index instead: marker_bowtie_index(genome) (bowtie_index=)."
+msgstr ""
+
+#: marker_scan.R:293
+msgid "Or call specificity_fm() explicitly if you want the read mapper."
+msgstr ""
+
+#: marker_scan.R:299
+msgid ""
+"This indexed genome has neither a bowtie index nor a BLAST database attached."
+msgstr ""
+
+#: marker_scan.R:300 marker_specificity.R:122
+msgid ""
+"Build marker_bowtie_index(genome) (bowtie_index=) or "
+"marker_blast_index(genome) (blast_db=)."
+msgstr ""
+
+#: marker_schemes.R:228
 msgid "Unknown specificity mode {mode} for scheme {scheme}."
 msgstr ""
 
-#: marker_schemes.R:293
+#: marker_schemes.R:300
 msgid "Unknown marker scheme {scheme}; see marker_schemes()."
 msgstr ""
 
-#: marker_screen.R:54
+#: marker_screen.R:58
 msgid "`variants` needs `chrom` and `pos` columns."
 msgstr ""
 
-#: marker_screen.R:204
+#: marker_screen.R:212
 msgid "`screen` is empty."
 msgstr ""
 
-#: marker_search_anim.R:300
+#: marker_search_anim.R:327
 msgid ""
 "Design-search animation written to {.path {path}} ({length(pngs)} frames)."
 msgstr ""
 
-#: marker_search_anim.R:332
+#: marker_search_anim.R:359
 msgid "No GIF assembler available (ImageMagick not found)."
 msgstr ""
 
-#: marker_search_anim.R:333
+#: marker_search_anim.R:360
 msgid ""
 "Install it: apt-get install imagemagick (Debian/Ubuntu), brew install "
 "imagemagick (macOS)."
 msgstr ""
 
-#: marker_search_anim.R:334
+#: marker_search_anim.R:361
 msgid "Or assemble the `pngs` yourself (e.g. with gifski)."
 msgstr ""
 
-#: marker_search_anim.R:344
+#: marker_search_anim.R:371
 msgid "ImageMagick failed: {res$stderr}"
 msgstr ""
 
-#: marker_select.R:482
+#: marker_select.R:514
 msgid ""
 "No assay cleared every hard constraint; returned the least-bad after "
 "relaxing some."
 msgstr ""
 
-#: marker_snapshot.R:117
+#: marker_snapshot.R:128
 msgid ""
 "SNaPshot single-base extension is implemented for single-base substitutions "
 "only."
 msgstr ""
 
-#: marker_snapshot.R:130
+#: marker_snapshot.R:141
 msgid "No amplification pair passed the Tm/GC and amplicon-length filters."
 msgstr ""
 
-#: marker_snapshot.R:150
+#: marker_snapshot.R:163
 msgid ""
 "No extension primer ended immediately 5' of the variant within the Tm/GC "
 "filters."
 msgstr ""
 
-#: marker_snapshot.R:206
+#: marker_snapshot.R:227
+msgid ""
+"The SNaPshot candidate could not be graded: {paste(unknown, collapse = ', "
+"')} has no value."
+msgstr ""
+
+#: marker_snapshot.R:232
 msgid ""
 "The SNaPshot candidate failed a hard gate (extension placement, composition "
 "or uniqueness)."
 msgstr ""
 
-#: marker_solve.R:143
+#: marker_solve.R:73
+msgid "the designer returned no marker object (it may have errored)"
+msgstr ""
+
+#: marker_solve.R:79
+msgid "the designed marker carries a fail verdict"
+msgstr ""
+
+#: marker_solve.R:81
+msgid "no designable marker was returned"
+msgstr ""
+
+#: marker_solve.R:194
 msgid "`plan` must be a marker_plan (see marker_plan())."
 msgstr ""
 
-#: marker_solve.R:147
-msgid "The plan has no targets; add them with marker_targets()."
+#: marker_solve.R:203
+msgid ""
+"The plan has no targets; add them with marker_targets() or name a `region`."
 msgstr ""
 
-#: marker_solve.R:212 marker_solve.R:243 marker_tubes.R:181
-msgid "`solved` must be a marker_solved (see marker_solve())."
-msgstr ""
-
-#: marker_solve.R:214
+#: marker_solve.R:284
 msgid "to plot a solved plan"
 msgstr ""
 
-#: marker_solve.R:252
+#: marker_solve.R:342
+msgid "Wrote {.path {dir}} ({paste(sort(list.files(dir)), collapse = ', ')})."
+msgstr ""
+
+#: marker_specificity.R:49
+#, c-format
+msgid "This seed scan reads %s bp in memory, O(genome) per primer."
+msgstr ""
+
+#: marker_specificity.R:50
+#, c-format
+msgid "~%s s for %d primer(s); only an index is flat in genome size."
+msgstr ""
+
+#: marker_specificity.R:51
 msgid ""
-"Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."
+"Build marker_bowtie_index(genome) and pass bowtie_index= (~1.34 bytes/bp, ~0."
+"05 s per primer set)."
 msgstr ""
 
-#: marker_specificity.R:42
-msgid "specificity_seed() needs an in-memory DNAStringSet."
+#: marker_specificity.R:121
+msgid "This indexed genome has neither a bowtie index nor a BLAST database."
 msgstr ""
 
-#: marker_specificity.R:43
-msgid "For an indexed genome use specificity_of()/specificity_blast()."
-msgstr ""
-
-#: marker_specificity.R:500
+#: marker_specificity.R:955 marker_specificity.R:987
 msgid "A degenerate primer cannot be scanned with `max_mismatch > 0`;"
 msgstr ""
 
-#: marker_specificity.R:501
+#: marker_specificity.R:956 marker_specificity.R:988
 msgid "only its exact (IUPAC-aware) matches are scored."
 msgstr ""
 
-#: marker_specificity.R:744
+#: marker_specificity.R:1097
+msgid "`sequences` must be a non-empty character vector of oligos."
+msgstr ""
+
+#: marker_specificity.R:1101
+msgid "`max_mismatch` must be a non-negative integer."
+msgstr ""
+
+#: marker_specificity.R:1248
+msgid "`hits` is missing required columns: {.val {missing_cols}}."
+msgstr ""
+
+#: marker_specificity.R:1253
+msgid "`hits` carries no `sequence` column, so `primers` must be supplied."
+msgstr ""
+
+#: marker_specificity.R:1259
+msgid "`hits$sequence` must not contain NA."
+msgstr ""
+
+#: marker_specificity.R:1264
+msgid ""
+"`hits$sequence` gives one primer name more than one oligo; supply `primers` "
+"explicitly."
+msgstr ""
+
+#: marker_specificity.R:1270
+msgid "`primers` must be a named character vector of oligos."
+msgstr ""
+
+#: marker_specificity.R:1277
+msgid ""
+"`hits$strand` must be {.val {c('+', '-')}}; got {.val "
+"{unique(strand[bad_strand])}}."
+msgstr ""
+
+#: marker_specificity.R:1282
+msgid "`hits$start` must be a positive integer."
+msgstr ""
+
+#: marker_specificity.R:1287
+msgid ""
+"Every `hits$primer` must be a name in `primers`; missing: {.val "
+"{missing_primers}}."
+msgstr ""
+
+#: marker_specificity.R:1296
+msgid "`hits` must describe gapless equal-width alignments."
+msgstr ""
+
+#: marker_specificity.R:1298
+msgid "Row"
+msgstr ""
+
+#: marker_specificity.R:1298
+msgid "(primer {.val {primer_name[[i]]}}) has width"
+msgstr ""
+
+#: marker_specificity.R:1299
+msgid ", but primer length is"
+msgstr ""
+
+#: marker_specificity.R:1299
+msgid "."
+msgstr ""
+
+#: marker_specificity.R:1681
 msgid "%d near-match in-silico PCR product(s) with <= 1 primer mismatch"
 msgstr ""
 
-#: marker_specificity.R:745
+#: marker_specificity.R:1682
 msgid ""
 "were found; exact mode ignores them. Set max_mismatch = 1 to include them."
 msgstr ""
 
-#: marker_specificity.R:894
+#: marker_specificity.R:1901
 msgid "BLAST failed: {conditionMessage(e)}"
 msgstr ""
 
-#: marker_specificity.R:1063
+#: marker_specificity.R:2103
 msgid "`scheme` must be a single scheme name."
 msgstr ""
 
-#: marker_specificity.R:1073
+#: marker_specificity.R:2111
+msgid "`spacer_len` must be a single positive whole number of nucleotides."
+msgstr ""
+
+#: marker_specificity.R:2123
 msgid "Unknown specificity scheme {.val {scheme}}."
 msgstr ""
 
-#: marker_specificity.R:1075
+#: marker_specificity.R:2125
 msgid "Use one of {.val {names(SPECIFICITY_POLICIES)}} or an alias"
 msgstr ""
 
-#: marker_specificity.R:1076
+#: marker_specificity.R:2126
 msgid "({.val {names(SPECIFICITY_SCHEME_ALIASES)}})."
 msgstr ""
 
-#: marker_specificity.R:1150
+#: marker_specificity.R:2230
 msgid "No genome was supplied."
 msgstr ""
 
-#: marker_specificity.R:1153
+#: marker_specificity.R:2233
 msgid "No genome-wide engine for this genome: it is not an in-memory"
 msgstr ""
 
-#: marker_specificity.R:1154
+#: marker_specificity.R:2234
 msgid "DNAStringSet and it has no usable BLAST database."
 msgstr ""
 
-#: marker_specificity.R:1280
+#: marker_specificity.R:2396
 msgid "No genome-wide engine was consulted; a missing engine is never a pass."
 msgstr ""
 
-#: marker_specificity.R:1284
+#: marker_specificity.R:2400
 msgid ""
 "No genome-wide engine for this genome; a missing engine is never a pass."
 msgstr ""
 
-#: marker_specificity.R:1294
+#: marker_specificity.R:2411
 msgid "No in-silico PCR product at all: the primers do not amplify."
 msgstr ""
 
-#: marker_specificity.R:1296
+#: marker_specificity.R:2413
 msgid ""
 "The guide's PAM changed: a hard loss of target, not a tolerated mismatch."
 msgstr ""
 
-#: marker_specificity.R:1298
+#: marker_specificity.R:2415
 msgid "Every product breaks the scheme's mismatch policy."
 msgstr ""
 
-#: marker_specificity.R:1311
+#: marker_specificity.R:2429
 #, c-format
 msgid "%d tolerated in-silico PCR products: not specific."
 msgstr ""
 
-#: marker_specificity.R:1320
-msgid "Exactly one tolerated in-silico PCR product."
+#: marker_specificity.R:2442
+msgid ""
+"One tolerated product and a genome-wide primer scan: no other binding site."
+msgstr ""
+
+#: marker_specificity.R:2453
+msgid "Exactly one tolerated in-silico PCR product; pair-level evidence only,"
+msgstr ""
+
+#: marker_specificity.R:2454
+msgid "not a genome-wide primer scan."
 msgstr ""
 
 #: marker_ssr.R:205
@@ -1022,13 +2443,13 @@ msgstr ""
 msgid "No flanking primer pair outside the repeat passed the Tm/GC filters."
 msgstr ""
 
-#: marker_ssr.R:257
+#: marker_ssr.R:267
 msgid ""
 "No flanking pair sits in unique enough sequence (every candidate's 3' seed "
 "repeats)."
 msgstr ""
 
-#: marker_ssr.R:259
+#: marker_ssr.R:269
 msgid ""
 "No flanking pair passed the SSR gates (windows, variability, one product)."
 msgstr ""
@@ -1039,153 +2460,302 @@ msgid ""
 "marker_schemes()."
 msgstr ""
 
-#: marker_taqman.R:157
+#: marker_taqman.R:77
+msgid "Bundled Kutyavin 2000 MGB Tm ledger not found."
+msgstr ""
+
+#: marker_taqman.R:176
 msgid ""
 "TaqMan allelic discrimination is implemented for single-base substitutions "
 "only."
 msgstr ""
 
-#: marker_taqman.R:172
+#: marker_taqman.R:185
+msgid "probe_modification = \"lna\" is not supported: the Kutyavin 2000 source"
+msgstr ""
+
+#: marker_taqman.R:186
+msgid "has no LNA arm, so no LNA Tm shift is sourced."
+msgstr ""
+
+#: marker_taqman.R:202
 msgid "No short flanking primer pair passed the Tm/GC filters for TaqMan."
 msgstr ""
 
-#: marker_taqman.R:183 marker_taqman.R:192
+#: marker_taqman.R:213 marker_taqman.R:222
 msgid "No composition- and position-clean hydrolysis probe passed the filters."
 msgstr ""
 
-#: marker_taqman.R:281
+#: marker_taqman.R:316
 msgid ""
 "The TaqMan candidate failed a hard gate (probe composition, specificity, Tm "
 "window, primer Tm or mismatch dG)."
 msgstr ""
 
-#: marker_target.R:51
+#: marker_target.R:63
 msgid ""
 "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
 msgstr ""
 
-#: marker_target.R:53 marker_target.R:103
+#: marker_target.R:64 marker_target.R:112
 msgid "The Ensembl REST schema may have changed."
 msgstr ""
 
-#: marker_target.R:101
+#: marker_target.R:111
 msgid ""
 "ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
 "', ')}."
 msgstr ""
 
-#: marker_target.R:285
+#: marker_target.R:295
+msgid ""
+"Contract violated in pick_target_snp: `variants` is not a variant table with "
+"chrom/pos/ref_genome"
+msgstr ""
+
+#: marker_target.R:300
+msgid "Contract violated in pick_target_snp: `gene` names no chromosome"
+msgstr ""
+
+#: marker_target.R:305
+msgid "Contract violated in pick_target_snp: no genome supplied"
+msgstr ""
+
+#: marker_target.R:333
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr ""
 
-#: marker_target.R:388
+#: marker_target.R:436
 msgid ""
 "No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
 msgstr ""
 
-#: marker_target.R:389
+#: marker_target.R:437
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr ""
 
-#: marker_target.R:477
+#: marker_target.R:512
 msgid ""
 "`context` is a marker_plan() layer; pass marker_run_context(genome, ...) "
 "instead."
 msgstr ""
 
-#: marker_target.R:481
+#: marker_target.R:516
 msgid "`context` must be a marker_run_context() object."
 msgstr ""
 
-#: marker_technology.R:84
+#: marker_technology.R:91
 msgid "`name` must be a single non-empty string."
 msgstr ""
 
-#: marker_technology.R:87
+#: marker_technology.R:94
 msgid "Scheme {name} already exists; pass overwrite = TRUE to replace it."
 msgstr ""
 
-#: marker_technology.R:91
+#: marker_technology.R:98
 msgid "`params` must be a (possibly empty) named list."
 msgstr ""
 
-#: marker_technology.R:111
+#: marker_technology.R:127
 msgid "Unknown specificity mode {specificity}."
 msgstr ""
 
-#: marker_thermo.R:315
+#: marker_thermo.R:105
+msgid "`seq` must be DNA (ACGT plus IUPAC ambiguity codes)."
+msgstr ""
+
+#: marker_thermo.R:533
 msgid "Directory not found: {path}"
 msgstr ""
 
-#: marker_thermo.R:469
+#: marker_thermo.R:712 marker_thermo.R:856
+msgid "`seq` must hold a sequence."
+msgstr ""
+
+#: marker_thermo.R:718 marker_thermo.R:872
+msgid "no folding engine (OligoArrayAux `hybrid-ss-min`): fold unknown"
+msgstr ""
+
+#: marker_thermo.R:740
+msgid ""
+"this OligoArrayAux build cannot fold RNA with its tables: RNA fold unknown "
+"(not folded as DNA)"
+msgstr ""
+
+#: marker_thermo.R:742 marker_thermo.R:888
+msgid "the folding engine returned no structure: fold unknown"
+msgstr ""
+
+#: marker_thermo.R:876
+#, c-format
+msgid "amplicon longer than %d bp is not folded here: fold unknown"
+msgstr ""
+
+#: marker_thermo.R:902
+#, c-format
+msgid "most of the amplicon is paired (%.0f%% single-stranded)"
+msgstr ""
+
+#: marker_thermo.R:935
 msgid "OligoArrayAux ('hybrid-min') is required for PCR efficiencies."
 msgstr ""
 
-#: marker_thermo.R:470
+#: marker_thermo.R:936
 msgid ""
 "run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
 msgstr ""
 
-#: marker_tools.R:175
+#: marker_tools.R:234
 msgid "'{command}' failed (status {status})."
 msgstr ""
 
-#: marker_tools.R:209
+#: marker_tools.R:271
 msgid "OligoArrayAux is already installed in {.path {dest}}."
 msgstr ""
 
-#: marker_tools.R:212
+#: marker_tools.R:274
 msgid "Download and build OligoArrayAux into the user cache?"
 msgstr ""
 
-#: marker_tools.R:213
+#: marker_tools.R:275
 msgid "Cancelled; nothing was downloaded."
 msgstr ""
 
-#: marker_tools.R:219
+#: marker_tools.R:281
 msgid "'make' was not found on the PATH."
 msgstr ""
 
-#: marker_tools.R:220
+#: marker_tools.R:282
 msgid "On Windows install Rtools; on Unix install your build tools."
 msgstr ""
 
-#: marker_tools.R:225
+#: marker_tools.R:287
 msgid "No C compiler (cc/gcc/clang) was found on the PATH."
 msgstr ""
 
-#: marker_tools.R:226
+#: marker_tools.R:288
 msgid "On Windows install Rtools; on Unix install a compiler."
 msgstr ""
 
-#: marker_tools.R:235
+#: marker_tools.R:297
 msgid "Downloading OligoArrayAux {version} ..."
 msgstr ""
 
-#: marker_tools.R:240
+#: marker_tools.R:302
 msgid "No sha256 tool found; skipping the checksum."
 msgstr ""
 
-#: marker_tools.R:242
+#: marker_tools.R:304
 msgid "Checksum mismatch for {tar} (expected {sha256}, got {got})."
 msgstr ""
 
-#: marker_tools.R:248
+#: marker_tools.R:310
 msgid "Configuring and building OligoArrayAux (this takes a minute) ..."
 msgstr ""
 
-#: marker_tools.R:253
+#: marker_tools.R:315
 msgid "Building on Windows needs 'bash' (Rtools/MSYS2) on the PATH."
 msgstr ""
 
-#: marker_tools.R:254
+#: marker_tools.R:316
 msgid "Install Rtools, or build OligoArrayAux by hand."
 msgstr ""
 
-#: marker_tools.R:269
+#: marker_tools.R:331
 msgid "The build finished but hybrid-min did not return a dG."
 msgstr ""
 
-#: marker_tools.R:271
+#: marker_tools.R:334
 msgid "OligoArrayAux installed in {.path {dest}}."
+msgstr ""
+
+#: marker_trace_schema.R:69
+msgid "Not a trace: `schema` is {.val {trace_schema_label(schema)}}."
+msgstr ""
+
+#: marker_trace_schema.R:71
+msgid ""
+"Expected {.val {marker_trace_schema()}} or a legacy {.val {'tidymarkers/"
+"artefact@1'}} manifest."
+msgstr ""
+
+#: marker_trace_schema.R:202
+msgid "`x` is not a marker_trace; migrate it with marker_trace_migrate()."
+msgstr ""
+
+#: marker_trace_schema.R:207
+msgid "A trace must have every field."
+msgstr ""
+
+#: marker_trace_schema.R:208
+msgid "Missing: {paste(missing, collapse = ', ')}."
+msgstr ""
+
+#: marker_trace_schema.R:213
+msgid "A trace must carry the current schema."
+msgstr ""
+
+#: marker_trace_schema.R:214
+msgid ""
+"Found {.val {trace_schema_label(x$schema)}}, expected {.val "
+"{marker_trace_schema()}}."
+msgstr ""
+
+#: marker_trace_schema.R:218
+msgid "`decisions` in a trace must be a data frame."
+msgstr ""
+
+#: marker_trace_schema.R:291
+msgid ""
+"`x` must be a marker_artefact, an artefact directory or a marker_solved."
+msgstr ""
+
+#: marker_trace_schema.R:330
+msgid ""
+"This record is {.val {x$schema}}: newer than this reader's {parts$kind} "
+"schema."
+msgstr ""
+
+#: marker_trace_schema.R:368
+msgid "No trace at {.path {path}}."
+msgstr ""
+
+#: marker_trace_schema.R:376
+msgid "{.path {path}} is not a readable trace."
+msgstr ""
+
+#: marker_trace_schema.R:377
+msgid "The error was: {conditionMessage(out)}"
+msgstr ""
+
+#: marker_trace_schema.R:406
+msgid "No directory at {.path {dir}}; create it before writing a trace."
+msgstr ""
+
+#: marker_trace_schema.R:443
+msgid "No conformance schema at {.path {path}}."
+msgstr ""
+
+#: marker_trace_schema.R:456
+msgid ""
+"Unknown column type {.val {unknown}} in the conformance schema for {.file "
+"{table$file}}."
+msgstr ""
+
+#: marker_trace_schema.R:483
+msgid "{.file {table$file}} does not match the conformance schema."
+msgstr ""
+
+#: marker_trace_schema.R:484
+msgid "Schema columns: {.val {want}}"
+msgstr ""
+
+#: marker_trace_schema.R:485
+msgid "File columns: {.val {names(out)}}"
+msgstr ""
+
+#: marker_trace_schema.R:561
+msgid ""
+"`artefact` must be a marker_artefact; a directory has already lost the in-"
+"memory manifest."
 msgstr ""

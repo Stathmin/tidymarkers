@@ -65,12 +65,11 @@ trace_schema_label <- function(schema) {
 }
 
 trace_abort_unknown <- function(schema) {
-  cli::cli_abort(c(
-    gettext("Not a trace: `schema` is {.val {trace_schema_label(schema)}}."),
-    i = gettext(
+  abort_msg(
+    "Not a trace: `schema` is {.val {trace_schema_label(schema)}}.",
+    i =
       "Expected {.val {marker_trace_schema()}} or a legacy {.val {'tidymarkers/artefact@1'}} manifest."
-    )
-  ))
+  )
 }
 
 # --- the aggregation contract ------------------------------------------------
@@ -200,23 +199,23 @@ trace_from_solved <- function(solved) {
 #' @noRd
 trace_validate <- function(x) {
   if (!inherits(x, "marker_trace")) {
-    cli::cli_abort(gettext("`x` is not a marker_trace; migrate it with marker_trace_migrate()."))
+    abort_msg("`x` is not a marker_trace; migrate it with marker_trace_migrate().")
   }
   missing <- setdiff(TRACE_FIELDS, names(x))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext("A trace must have every field."),
-      x = gettext("Missing: {paste(missing, collapse = ', ')}.")
-    ))
+    abort_msg(
+      "A trace must have every field.",
+      x = "Missing: {paste(missing, collapse = ', ')}."
+    )
   }
   if (!identical(x$schema, marker_trace_schema())) {
-    cli::cli_abort(c(
-      gettext("A trace must carry the current schema."),
-      x = gettext("Found {.val {trace_schema_label(x$schema)}}, expected {.val {marker_trace_schema()}}.")
-    ))
+    abort_msg(
+      "A trace must carry the current schema.",
+      x = "Found {.val {trace_schema_label(x$schema)}}, expected {.val {marker_trace_schema()}}."
+    )
   }
   if (!is.data.frame(x$decisions)) {
-    cli::cli_abort(gettext("`decisions` in a trace must be a data frame."))
+    abort_msg("`decisions` in a trace must be a data frame.")
   }
   invisible(x)
 }
@@ -288,9 +287,9 @@ marker_trace_from_artefact <- function(x) {
   if (inherits(x, "marker_solved")) {
     return(trace_from_solved(x))
   }
-  cli::cli_abort(gettext(
+  abort_msg(
     "`x` must be a marker_artefact, an artefact directory or a marker_solved."
-  ))
+  )
 }
 
 #' Migrate a record to the current trace schema
@@ -327,10 +326,10 @@ marker_trace_migrate <- function(x) {
   }
   current <- TRACE_FORMATS[[parts$kind]]
   if (parts$version > current) {
-    cli::cli_abort(c(
-      gettext("This record is {.val {x$schema}}: newer than this reader's {parts$kind} schema."),
-      i = gettext("Update tidymarkers to read it.")
-    ))
+    abort_msg(
+      "This record is {.val {x$schema}}: newer than this reader's {parts$kind} schema.",
+      i = "Update tidymarkers to read it."
+    )
   }
   if (parts$version < current) {
     # no such version was ever written; treating it as current would guess
@@ -366,17 +365,17 @@ marker_trace_migrate <- function(x) {
 #' @export
 marker_trace_read <- function(path) {
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("No trace at {.path {path}}."))
+    abort_msg("No trace at {.path {path}}.")
   }
   out <- tryCatch(
     trace_validate(marker_trace_migrate(readRDS(path))),
     error = function(e) e
   )
   if (inherits(out, "error")) {
-    cli::cli_abort(c(
-      gettext("{.path {path}} is not a readable trace."),
-      x = gettext("The error was: {conditionMessage(out)}")
-    ))
+    abort_msg(
+      "{.path {path}} is not a readable trace.",
+      x = "The error was: {conditionMessage(out)}"
+    )
   }
   out
 }
@@ -404,7 +403,7 @@ marker_trace_write <- function(trace, path) {
   trace <- trace_validate(marker_trace_migrate(trace))
   dir <- fs::path_dir(path)
   if (!fs::dir_exists(dir)) {
-    cli::cli_abort(gettext("No directory at {.path {dir}}; create it before writing a trace."))
+    abort_msg("No directory at {.path {dir}}; create it before writing a trace.")
   }
   saveRDS(trace, path)
   invisible(path)
@@ -441,7 +440,7 @@ trace_conformance_schema <- function(path = NULL) {
     path <- system.file("extdata", "trace-schema.json", package = "tidymarkers")
   }
   if (!nzchar(path) || !fs::file_exists(path)) {
-    cli::cli_abort(gettext("No conformance schema at {.path {path}}."))
+    abort_msg("No conformance schema at {.path {path}}.")
   }
   jsonlite::fromJSON(path, simplifyVector = FALSE)
 }
@@ -453,9 +452,9 @@ trace_pinned_cols <- function(table) {
   types <- vapply(table$columns, function(col) col$type, character(1))
   unknown <- unique(types[!types %in% names(map)])
   if (length(unknown)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "Unknown column type {.val {unknown}} in the conformance schema for {.file {table$file}}."
-    ))
+    )
   }
   do.call(
     readr::cols,
@@ -480,11 +479,11 @@ trace_pinned_read <- function(dir, table) {
   )
   want <- vapply(table$columns, function(col) col$name, character(1))
   if (!identical(names(out), want)) {
-    cli::cli_abort(c(
-      gettext("{.file {table$file}} does not match the conformance schema."),
-      x = gettext("Schema columns: {.val {want}}"),
-      i = gettext("File columns: {.val {names(out)}}")
-    ))
+    abort_msg(
+      "{.file {table$file}} does not match the conformance schema.",
+      x = "Schema columns: {.val {want}}",
+      i = "File columns: {.val {names(out)}}"
+    )
   }
   out
 }
@@ -558,9 +557,9 @@ trace_payload_cell <- function(x) {
 #' @export
 marker_trace_payload <- function(artefact) {
   if (!inherits(artefact, "marker_artefact")) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`artefact` must be a marker_artefact; a directory has already lost the in-memory manifest."
-    ))
+    )
   }
   schema <- trace_conformance_schema()
   tables <- list()

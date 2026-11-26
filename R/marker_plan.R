@@ -161,7 +161,7 @@ target_rows <- function(chrom, pos, ref, alt, alt2 = NULL, data, type, label,
     return(normalise_targets(data))
   }
   if (is.null(chrom) || is.null(pos) || is.null(ref) || is.null(alt)) {
-    cli::cli_abort(gettext("Give `chrom`, `pos`, `ref`, `alt`, or a `data` table."))
+    abort_msg("Give `chrom`, `pos`, `ref`, `alt`, or a `data` table.")
   }
   out <- tibble::tibble(
     chrom = as.character(chrom), pos = as.integer(pos),
@@ -219,7 +219,7 @@ marker_layer <- function(apply, label) {
 #' @export
 marker_plan <- function(genome, targets = NULL, region = NULL) {
   if (is.null(genome)) {
-    cli::cli_abort(gettext("`genome` is required (see marker_genome())."))
+    abort_msg("`genome` is required (see marker_genome()).")
   }
   structure(
     list(
@@ -381,7 +381,7 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
 marker_costs <- function(...) {
   ov <- c(...)
   if (length(ov) && (is.null(names(ov)) || any(!nzchar(names(ov))))) {
-    cli::cli_abort(gettext("`...` must be named costs, e.g. marker_costs(hrm = 1.2)."))
+    abort_msg("`...` must be named costs, e.g. marker_costs(hrm = 1.2).")
   }
   base <- KASP_TECH_COSTS
   base[names(ov)] <- as.numeric(ov)
@@ -391,9 +391,9 @@ marker_costs <- function(...) {
 #' @export
 "+.marker_plan" <- function(e1, e2) {
   if (!inherits(e2, "marker_layer")) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "Only marker_*() layers (marker_targets(), marker_context(), marker_tech()) can be added to a marker_plan."
-    ))
+    )
   }
   out <- e2$apply(e1)
   out$layers <- c(out$layers, e2$label)

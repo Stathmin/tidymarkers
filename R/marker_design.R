@@ -86,9 +86,9 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
     dplyr::arrange(abs(.data$com_tm - target_tm))
 
   if (nrow(cand) == 0L) {
-    cli::cli_abort(c(gettext("No common primer passed the filters."),
-      i = gettext("Widen `tm_range`/GC or increase `flank` in snp_template().")
-    ))
+    abort_msg("No common primer passed the filters.",
+      i = "Widen `tm_range`/GC or increase `flank` in snp_template()."
+    )
   }
   cand |>
     dplyr::slice_head(n = n) |>
@@ -250,7 +250,7 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
     return(empty_as_primers())
   }
   if (any(nchar(alts) != ref_len)) {
-    cli::cli_abort(gettext("every `alt` allele must be as long as `ref`"))
+    abort_msg("every `alt` allele must be as long as `ref`")
   }
   # `stab_ats` are DISTANCES from the 3' end (positive), which is what
   # `make_as_primer()` computes with: `i <- length - stab_at + 1`.  The decided
@@ -259,11 +259,11 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   # silently put the mismatch past the primer's 5' end.  Refuse the signed form
   # rather than place it wrongly.
   if (any(stab_ats < 0L, na.rm = TRUE)) {
-    cli::cli_abort(c(
-      gettext("`stab_ats` are distances from the 3' end and must be positive (or NA)."),
-      i = gettext("Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}"),
-      i = gettext("The signed policy constant means abs(): -3L -> 3L.")
-    ))
+    abort_msg(
+      "`stab_ats` are distances from the 3' end and must be positive (or NA).",
+      i = "Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}",
+      i = "The signed policy constant means abs(): -3L -> 3L."
+    )
   }
   # linked variants (substitutions and indels co-segregating with the ALT
   # haplotype) are baked into the ALT template and the ALT primer, so it
@@ -650,9 +650,9 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
   ref_len <- nchar(ref)
   alt_len <- nchar(alt)
   if (ref_len == alt_len) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "design_as_primers_indel() needs unequal alleles; use design_as_primers() for a substitution."
-    ))
+    )
   }
   at <- allele_templates(ref_tmpl, snp_i, ref, alt)
 
@@ -708,7 +708,7 @@ design_as_primers_indel <- function(ref_tmpl, snp_i, ref, alt,
     }
   ) |>
     purrr::list_rbind()
-  if (nrow(cand) == 0L) cli::cli_abort(gettext("No indel AS-primer placement fit inside the design window."))
+  if (nrow(cand) == 0L) abort_msg("No indel AS-primer placement fit inside the design window.")
 
   # apply the caller's GC/Tm window before the DECIPHER calls (the caller drops
   # those rows afterwards anyway); an empty result is left for the caller

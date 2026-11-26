@@ -74,7 +74,7 @@ TAQMAN_AMPLICON_RELAX <- 20L
 taqman_mgb_tm_offset <- function() {
   f <- system.file("extdata", "taqman_kutyavin2000_mgb_tm.csv", package = "tidymarkers")
   if (!nzchar(f)) {
-    cli::cli_abort(gettext("Bundled Kutyavin 2000 MGB Tm ledger not found."))
+    abort_msg("Bundled Kutyavin 2000 MGB Tm ledger not found.")
   }
   d <- utils::read.csv(f, stringsAsFactors = FALSE)
   d$value[match("ODN1 15mer, Tm gain from MGB", d$item)]

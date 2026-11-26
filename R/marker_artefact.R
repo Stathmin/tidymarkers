@@ -527,7 +527,7 @@ artefact_id <- function(manifest) {
 #' @export
 marker_artefact <- function(solved, dir = tempdir()) {
   if (!inherits(solved, "marker_solved")) {
-    cli::cli_abort(gettext("`solved` must be a marker_solved (see marker_solve())."))
+    abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   fs::dir_create(dir)
   pkg_dir <- artefact_pkg_root()
@@ -673,23 +673,23 @@ artefact_sidecar <- function(dir, file, empty) {
 #' @export
 marker_artefact_read <- function(path) {
   if (!is.character(path) || length(path) != 1L || is.na(path)) {
-    cli::cli_abort(gettext("`path` must be one directory or artefact.json path."))
+    abort_msg("`path` must be one directory or artefact.json path.")
   }
   dir <- if (fs::is_dir(path)) path else fs::path_dir(path)
   manifest <- artefact_manifest(dir)
   parts <- trace_schema_parts(manifest$schema)
   if (is.null(parts) || parts$kind != "artefact") {
-    cli::cli_abort(c(
-      gettext("Not an artefact: `schema` is {.val {trace_schema_label(manifest$schema)}}."),
-      i = gettext("Expected a {.val {'tidymarkers/artefact'}} record.")
-    ))
+    abort_msg(
+      "Not an artefact: `schema` is {.val {trace_schema_label(manifest$schema)}}.",
+      i = "Expected a {.val {'tidymarkers/artefact'}} record."
+    )
   }
   current <- TRACE_FORMATS[["artefact"]]
   if (parts$version > current) {
-    cli::cli_abort(c(
-      gettext("This artefact is {.val {manifest$schema}}: newer than this reader's artefact schema."),
-      i = gettext("Update tidymarkers to read it.")
-    ))
+    abort_msg(
+      "This artefact is {.val {manifest$schema}}: newer than this reader's artefact schema.",
+      i = "Update tidymarkers to read it."
+    )
   }
   if (parts$version < current) {
     # no such version was ever written; treating it as current would guess
@@ -719,7 +719,7 @@ artefact_dir <- function(artefact) {
   if (is.character(artefact) && length(artefact) == 1L) {
     return(artefact)
   }
-  cli::cli_abort(gettext("`artefact` must be a marker_artefact or a directory."))
+  abort_msg("`artefact` must be a marker_artefact or a directory.")
 }
 
 #' Read an artefact's manifest back
@@ -728,7 +728,7 @@ artefact_dir <- function(artefact) {
 artefact_manifest <- function(dir) {
   path <- fs::path(dir, "artefact.json")
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("No artefact.json in {.path {dir}}; write one with marker_artefact()."))
+    abort_msg("No artefact.json in {.path {dir}}; write one with marker_artefact().")
   }
   jsonlite::fromJSON(readr::read_file(path), simplifyVector = FALSE)
 }
@@ -817,7 +817,7 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
   manifest <- artefact_manifest(dir)
   path <- fs::path(dir, "solved.rds")
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("No solved.rds in {.path {dir}}; the artefact cannot be replayed."))
+    abort_msg("No solved.rds in {.path {dir}}; the artefact cannot be replayed.")
   }
   solved <- readRDS(path)
   inputs_match <- artefact_inputs_match(manifest$inputs, solved$plan)

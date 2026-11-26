@@ -89,7 +89,7 @@ one_pot_matrix <- function() {
 #' @export
 one_pot_compatible <- function(assays, matrix = one_pot_matrix(), require = "all") {
   if (!is.character(require) || length(require) != 1L || !require %in% c("all", "any")) {
-    cli::cli_abort(gettext('`require` must be "all" or "any", not {.val {require}}.'))
+    abort_msg('`require` must be "all" or "any", not {.val {require}}.')
   }
   one_pot_check_assays(assays)
   one_pot_check_matrix(matrix)
@@ -164,7 +164,7 @@ marker_one_pot <- function(assays, matrix = one_pot_matrix(), max_markers = 4L) 
     !is.numeric(max_markers) || length(max_markers) != 1L || is.na(max_markers) ||
       max_markers < 1 || max_markers %% 1 != 0
   ) {
-    cli::cli_abort(gettext("`max_markers` must be one positive whole number, not {.val {max_markers}}."))
+    abort_msg("`max_markers` must be one positive whole number, not {.val {max_markers}}.")
   }
   # a group cannot hold more assays than exist, and the cap keeps the integer cast safe
   max_markers <- as.integer(min(max_markers, nrow(assays)))
@@ -244,23 +244,23 @@ ONE_POT_COLUMNS <- c("label", "scheme", "tm", "amplicon", "channel")
 
 one_pot_check_assays <- function(assays) {
   if (!is.data.frame(assays)) {
-    cli::cli_abort(gettext("`assays` must be a data frame or tibble, not {.cls {class(assays)}}."))
+    abort_msg("`assays` must be a data frame or tibble, not {.cls {class(assays)}}.")
   }
   missing_cols <- setdiff(ONE_POT_COLUMNS, names(assays))
   if (length(missing_cols)) {
-    cli::cli_abort(c(
-      gettext("`assays` is missing required column(s): {.field {missing_cols}}."),
-      i = gettext("One-pot grouping needs {.field {ONE_POT_COLUMNS}}.")
-    ))
+    abort_msg(
+      "`assays` is missing required column(s): {.field {missing_cols}}.",
+      i = "One-pot grouping needs {.field {ONE_POT_COLUMNS}}."
+    )
   }
   if (!nrow(assays)) {
-    cli::cli_abort(gettext("`assays` has no rows, so there is nothing to place in a pot."))
+    abort_msg("`assays` has no rows, so there is nothing to place in a pot.")
   }
   not_numeric <- c("tm", "amplicon")[!vapply(assays[c("tm", "amplicon")], is.numeric, logical(1))]
   if (length(not_numeric)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "{.field {not_numeric}} must be numeric in `assays`, not {.cls {class(assays[[not_numeric[1L]]])}}."
-    ))
+    )
   }
   invisible(assays)
 }
@@ -268,13 +268,13 @@ one_pot_check_assays <- function(assays) {
 one_pot_check_matrix <- function(matrix) {
   needed <- c("rule", "field", "comparison", "value", "source")
   if (!is.data.frame(matrix) || length(setdiff(needed, names(matrix)))) {
-    cli::cli_abort(c(
-      gettext("`matrix` must be a one-pot compatibility matrix with {.field {needed}}."),
-      i = gettext("Build one with `one_pot_matrix()` and edit its rows.")
-    ))
+    abort_msg(
+      "`matrix` must be a one-pot compatibility matrix with {.field {needed}}.",
+      i = "Build one with `one_pot_matrix()` and edit its rows."
+    )
   }
   if (!nrow(matrix)) {
-    cli::cli_abort(gettext("`matrix` has no rules, so every set would pass vacuously."))
+    abort_msg("`matrix` has no rules, so every set would pass vacuously.")
   }
   invisible(matrix)
 }
@@ -293,16 +293,16 @@ one_pot_rule_pass <- function(assays, rule) {
   if (identical(comparison, "unique")) {
     return(anyDuplicated(field[!is.na(field)]) == 0L)
   }
-  cli::cli_abort(gettext(
+  abort_msg(
     "Unknown `comparison` {.val {comparison}} on one-pot rule {.val {rule$rule}}."
-  ))
+  )
 }
 
 one_pot_need_numeric_field <- function(field, rule) {
   if (!is.numeric(field)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "One-pot rule {.val {rule$rule}} compares {.field {rule$field}}, which is not numeric in `assays`."
-    ))
+    )
   }
   invisible(field)
 }
@@ -310,9 +310,9 @@ one_pot_need_numeric_field <- function(field, rule) {
 one_pot_threshold <- function(rule) {
   value <- rule$value
   if (!is.numeric(value) || length(value) != 1L || is.na(value)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "One-pot rule {.val {rule$rule}} needs one non-missing numeric `value`, not {.val {value}}."
-    ))
+    )
   }
   as.numeric(value)
 }

@@ -102,7 +102,7 @@ gc_frac <- function(seq) {
   seq <- as.character(seq)
   n <- nchar(seq, keepNA = TRUE)
   if (anyNA(n) || any(grepl("[^ACGTMRWSYKVHDBNacgtmrwsykvhdbn+.-]", seq))) {
-    cli::cli_abort(gettext("`seq` must be DNA (ACGT plus IUPAC ambiguity codes)."))
+    abort_msg("`seq` must be DNA (ACGT plus IUPAC ambiguity codes).")
   }
   unname(nchar(gsub("[^GC]", "", toupper(seq)), keepNA = TRUE) / n)
 }
@@ -530,7 +530,7 @@ has_oligoarrayaux <- function() !is.null(oligoarrayaux_paths())
 #' @family utilities
 #' @export
 with_unafloddat <- function(path, code) {
-  if (!fs::dir_exists(path)) cli::cli_abort(gettext("Directory not found: {path}"))
+  if (!fs::dir_exists(path)) abort_msg("Directory not found: {path}")
   withr::with_envvar(c(UNAFOLDDAT = path), code)
 }
 
@@ -709,7 +709,7 @@ fold_amplicon <- function(seq, kind = c("DNA", "RNA"), conditions = NULL) {
   kind <- match.arg(kind)
   conditions <- as_reaction_conditions(conditions)
   seq <- gsub("[[:space:]]", "", paste(as.character(seq), collapse = ""))
-  if (!nzchar(seq)) cli::cli_abort(gettext("`seq` must hold a sequence."))
+  if (!nzchar(seq)) abort_msg("`seq` must hold a sequence.")
   # `fold` is hybrid-ss-min here: hybrid-min folds pairs of strands, not one
   avail <- capabilities(marker_engines()$thermo, "fold")
   if (!isTRUE(avail)) {
@@ -853,7 +853,7 @@ amplicon_fold_check <- function(seq, kind = c("DNA", "RNA"), conditions = NULL,
                                 max_length = 300L) {
   kind <- match.arg(kind)
   seq <- gsub("[[:space:]]", "", as.character(seq))
-  if (!length(seq) || !all(nzchar(seq))) cli::cli_abort(gettext("`seq` must hold a sequence."))
+  if (!length(seq) || !all(nzchar(seq))) abort_msg("`seq` must hold a sequence.")
   purrr::map(seq, \(s) amplicon_fold_row(s, kind, conditions, min_single_stranded, max_length)) |>
     purrr::list_rbind()
 }
@@ -932,9 +932,9 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
                            cores = getOption("tidymarkers.cores", 1L)) {
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
-    cli::cli_abort(c(gettext("OligoArrayAux ('hybrid-min') is required for PCR efficiencies."),
-      i = gettext("run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R")
-    ))
+    abort_msg("OligoArrayAux ('hybrid-min') is required for PCR efficiencies.",
+      i = "run marker_install_tools(), or build it with data-raw/install-oligoarrayaux.R"
+    )
   }
   primers <- as.character(primers)
   targets <- as.character(targets)

@@ -84,10 +84,10 @@ marker_patent_export <- function(assay_or_solved, format = c("st26", "docx"), ou
   format <- tryCatch(
     match.arg(format, formats),
     error = function(e) {
-      cli::cli_abort(c(
-        gettext("Unsupported `format` {.val {format}}."),
-        i = gettext("Supported formats: {.val {formats}}.")
-      ))
+      abort_msg(
+        "Unsupported `format` {.val {format}}.",
+        i = "Supported formats: {.val {formats}}."
+      )
     }
   )
   if (is.null(output)) {
@@ -145,14 +145,14 @@ marker_patent_export <- function(assay_or_solved, format = c("st26", "docx"), ou
 #' @export
 marker_patent_validate <- function(path, schema = patent_schema_path()) {
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("No sequence listing at {.file {path}}."))
+    abort_msg("No sequence listing at {.file {path}}.")
   }
   if (!fs::file_exists(schema)) {
-    cli::cli_abort(c(
-      gettext("The WIPO ST.26 XSD was not found at {.file {schema}}."),
-      i = gettext("Download ST26SequenceListing_V1_3.xsd into the cache directory {.file {marker_cache_dir()}}."),
-      i = gettext("See ?marker_patent_export for the expected filename and the one-line curl command.")
-    ))
+    abort_msg(
+      "The WIPO ST.26 XSD was not found at {.file {schema}}.",
+      i = "Download ST26SequenceListing_V1_3.xsd into the cache directory {.file {marker_cache_dir()}}.",
+      i = "See ?marker_patent_export for the expected filename and the one-line curl command."
+    )
   }
   patent_require("xml2", gettext("validating a WIPO ST.26 sequence listing"))
   ok <- xml2::xml_validate(xml2::read_xml(path), xml2::read_xml(schema))
@@ -211,10 +211,10 @@ patent_schema_path <- function() {
 # _R_CHECK_DEPENDS_ONLY_ never reaches an unguarded `::`.
 patent_require <- function(pkg, why) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    cli::cli_abort(c(
-      gettext("The {.pkg {pkg}} package is required for {why}."),
-      i = gettext("Install it with {.run install.packages(\"{pkg}\")}.")
-    ))
+    abort_msg(
+      "The {.pkg {pkg}} package is required for {why}.",
+      i = "Install it with {.run install.packages(\"{pkg}\")}."
+    )
   }
   invisible(TRUE)
 }
@@ -227,14 +227,14 @@ patent_markers <- function(assay_or_solved) {
   if (inherits(assay_or_solved, "marker_solved")) {
     markers <- Filter(Negate(is.null), assay_or_solved$report$marker)
     if (!length(markers)) {
-      cli::cli_abort(gettext("No designed marker to export: every target in this marker_solved is unsolved."))
+      abort_msg("No designed marker to export: every target in this marker_solved is unsolved.")
     }
     return(markers)
   }
-  cli::cli_abort(c(
-    gettext("`assay_or_solved` must be a marker_assay or a marker_solved."),
-    i = gettext("Got {.cls {class(assay_or_solved)}}.")
-  ))
+  abort_msg(
+    "`assay_or_solved` must be a marker_assay or a marker_solved.",
+    i = "Got {.cls {class(assay_or_solved)}}."
+  )
 }
 
 # The one-row assay table, checked for the columns every claim needs.
@@ -243,10 +243,10 @@ patent_assay_row <- function(marker, i) {
   needed <- c("as_ref", "as_alt", "com")
   missing <- setdiff(needed, names(row))
   if (!is.data.frame(row) || nrow(row) < 1L || length(missing)) {
-    cli::cli_abort(c(
-      gettext("Marker {i} carries no usable assay table."),
-      i = gettext("A marker_assay needs a one-row `$assay` with {.field {needed}}; missing: {.field {missing}}.")
-    ))
+    abort_msg(
+      "Marker {i} carries no usable assay table.",
+      i = "A marker_assay needs a one-row `$assay` with {.field {needed}}; missing: {.field {missing}}."
+    )
   }
   row[1L, , drop = FALSE]
 }
@@ -280,28 +280,28 @@ patent_amplicon <- function(marker, assay_row, i) {
   }
   tmpl <- marker$template
   if (is.null(tmpl) || is.null(tmpl$seq)) {
-    cli::cli_abort(c(
-      gettext("Marker {i} has no template sequence, so the amplicon cannot be reconstructed."),
-      i = gettext("Keep `$template$seq` on the marker, or store the amplicon in `$assay$amplicon_seq`.")
-    ))
+    abort_msg(
+      "Marker {i} has no template sequence, so the amplicon cannot be reconstructed.",
+      i = "Keep `$template$seq` on the marker, or store the amplicon in `$assay$amplicon_seq`."
+    )
   }
   cols <- c("as_start", "as_end", "com_start", "com_end")
   missing <- setdiff(cols, names(assay_row))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext("Marker {i} has no primer coordinates, so the amplicon cannot be reconstructed."),
-      i = gettext("Missing `$assay` column(s): {.field {missing}}.")
-    ))
+    abort_msg(
+      "Marker {i} has no primer coordinates, so the amplicon cannot be reconstructed.",
+      i = "Missing `$assay` column(s): {.field {missing}}."
+    )
   }
   off <- patent_template_offset(marker, tmpl)
   lo <- min(assay_row$as_start, assay_row$com_start) - off
   hi <- max(assay_row$as_end, assay_row$com_end) - off
   n <- length(tmpl$seq)
   if (lo < 1L || hi > n || hi < lo) {
-    cli::cli_abort(c(
-      gettext("Marker {i}: the amplicon falls outside the template."),
-      i = gettext("Template positions {lo}..{hi} were asked of a {n}-bp template.")
-    ))
+    abort_msg(
+      "Marker {i}: the amplicon falls outside the template.",
+      i = "Template positions {lo}..{hi} were asked of a {n}-bp template."
+    )
   }
   plus <- substr(as.character(tmpl$seq), lo, hi)
   strand <- if ("strand" %in% names(assay_row)) as.character(assay_row$strand[[1L]]) else "+"
@@ -418,7 +418,7 @@ patent_template_dir <- function() {
 patent_read_template <- function(name) {
   path <- fs::path(patent_template_dir(), name)
   if (!fs::file_exists(path)) {
-    cli::cli_abort(gettext("Template {.file {path}} is missing from the installed package."))
+    abort_msg("Template {.file {path}} is missing from the installed package.")
   }
   readLines(path, warn = FALSE, encoding = "UTF-8")
 }

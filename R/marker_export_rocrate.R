@@ -216,21 +216,21 @@ rocrate_graph <- function(artefact, dir) {
 #' @export
 marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
   if (!inherits(artefact, "marker_artefact")) {
-    cli::cli_abort(gettext("`artefact` must be a marker_artefact (see marker_artefact())."))
+    abort_msg("`artefact` must be a marker_artefact (see marker_artefact()).")
   }
   src <- artefact_dir(artefact)
   if (identical(fs::path_abs(dir), fs::path_abs(src))) {
-    cli::cli_abort(gettext("`dir` must be a new directory, not the artefact's own directory."))
+    abort_msg("`dir` must be a new directory, not the artefact's own directory.")
   }
   fs::dir_create(dir)
   files <- rocrate_files(artefact$manifest)
   for (file in files) {
     from <- fs::path(src, file)
     if (!fs::file_exists(from)) {
-      cli::cli_abort(c(
-        gettext("The manifest names {.file {file}}, but the artefact does not contain it."),
-        i = gettext("A crate that claims a file it does not carry is not self-contained.")
-      ))
+      abort_msg(
+        "The manifest names {.file {file}}, but the artefact does not contain it.",
+        i = "A crate that claims a file it does not carry is not self-contained."
+      )
     }
     fs::file_copy(from, fs::path(dir, file), overwrite = TRUE)
   }
@@ -270,27 +270,27 @@ marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
 #' @export
 marker_import_rocrate <- function(path) {
   if (!is.character(path) || length(path) != 1L || is.na(path)) {
-    cli::cli_abort(gettext("`path` must be one crate directory or its ro-crate-metadata.json."))
+    abort_msg("`path` must be one crate directory or its ro-crate-metadata.json.")
   }
   dir <- if (fs::is_dir(path)) path else fs::path_dir(path)
   meta_path <- fs::path(dir, "ro-crate-metadata.json")
   if (!fs::file_exists(meta_path)) {
-    cli::cli_abort(gettext("No ro-crate-metadata.json at {.path {meta_path}}."))
+    abort_msg("No ro-crate-metadata.json at {.path {meta_path}}.")
   }
   meta <- jsonlite::fromJSON(readr::read_file(meta_path), simplifyVector = FALSE)
   context <- unlist(meta[["@context"]] %||% "", use.names = FALSE)
   if (!any(grepl("w3id.org/ro/crate/1\\.1", context))) {
-    cli::cli_abort(c(
-      gettext("Not an RO-Crate 1.1 metadata document."),
-      x = gettext("@context is {.val {paste(context, collapse = ', ')}}.")
-    ))
+    abort_msg(
+      "Not an RO-Crate 1.1 metadata document.",
+      x = "@context is {.val {paste(context, collapse = ', ')}}."
+    )
   }
   graph <- meta[["@graph"]] %||% list()
   ids <- vapply(graph, function(entry) as.character(entry[["@id"]] %||% NA_character_), character(1))
 
   root_i <- match("./", ids)
   if (is.na(root_i)) {
-    cli::cli_abort(gettext("The crate has no root data entity (`\"@id\": \"./\"`)."))
+    abort_msg("The crate has no root data entity (`\"@id\": \"./\"`).")
   }
 
   for (i in seq_along(graph)) {
@@ -301,29 +301,29 @@ marker_import_rocrate <- function(path) {
     }
     file <- fs::path(dir, id)
     if (!fs::file_exists(file)) {
-      cli::cli_abort(c(
-        gettext("The crate declares {.file {id}}, but the file is not in {.path {dir}}."),
-        i = gettext("A crate is a directory, not a manifest of what once was there.")
-      ))
+      abort_msg(
+        "The crate declares {.file {id}}, but the file is not in {.path {dir}}.",
+        i = "A crate is a directory, not a manifest of what once was there."
+      )
     }
     actual <- artefact_sha256_file(file)
     if (!identical(as.character(declared), actual)) {
-      cli::cli_abort(c(
-        gettext("{.file {id}} does not hash to what the crate declares."),
-        x = gettext("Declared sha256: {.val {declared}}"),
-        i = gettext("File sha256: {.val {actual}}")
-      ))
+      abort_msg(
+        "{.file {id}} does not hash to what the crate declares.",
+        x = "Declared sha256: {.val {declared}}",
+        i = "File sha256: {.val {actual}}"
+      )
     }
   }
 
   artefact <- marker_artefact_read(dir)
   declared_id <- graph[[root_i]][["identifier"]]
   if (is.null(declared_id) || !identical(as.character(declared_id), as.character(artefact$id))) {
-    cli::cli_abort(c(
-      gettext("The crate's root identifier does not match artefact.json."),
-      x = gettext("RO-Crate identifier: {.val {declared_id}}"),
-      i = gettext("artefact.json id: {.val {artefact$id}}")
-    ))
+    abort_msg(
+      "The crate's root identifier does not match artefact.json.",
+      x = "RO-Crate identifier: {.val {declared_id}}",
+      i = "artefact.json id: {.val {artefact$id}}"
+    )
   }
   artefact
 }

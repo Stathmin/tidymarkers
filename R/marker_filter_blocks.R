@@ -114,17 +114,17 @@ filter_block_applies <- function(applies_to, family) {
 #' @noRd
 marker_technology_blocks <- function(blocks, family) {
   if (!is.character(blocks) || anyNA(blocks)) {
-    cli::cli_abort(gettext("`blocks` must be a character vector of block ids."))
+    abort_msg("`blocks` must be a character vector of block ids.")
   }
   blocks <- unique(blocks)
   reg <- marker_filter_blocks()
   requestable <- reg$block[reg$kind == "filter"]
   unknown <- setdiff(blocks, requestable)
   if (length(unknown)) {
-    cli::cli_abort(c(
-      gettext("Unknown technology block{?s}: {.val {unknown}}."),
-      i = gettext("Only the {.field filter} blocks of {.fn marker_filter_blocks} can be requested.")
-    ))
+    abort_msg(
+      "Unknown technology block{?s}: {.val {unknown}}.",
+      i = "Only the {.field filter} blocks of {.fn marker_filter_blocks} can be requested."
+    )
   }
   applies <- reg$applies_to[match(blocks, reg$block)]
   bad <- blocks[!vapply(applies, filter_block_applies, logical(1), family = family)]

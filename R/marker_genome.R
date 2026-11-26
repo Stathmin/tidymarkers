@@ -144,12 +144,12 @@ genome_fasta_path <- function(genome, call) {
   }
   # a BSgenome-backed `marker_genome` keeps no path, so it still says why
   if (inherits(genome, "marker_genome") && is.null(genome$path)) {
-    cli::cli_abort(c(
-      gettext("{.fn {call}} needs a DNAStringSet or a FASTA-backed genome, and this genome is BSgenome-backed."),
-      i = gettext("Pass the {.cls BSgenome} itself instead of {.code marker_genome(bsgenome = )}."),
-      i = gettext("Or attach a prebuilt index: {.code marker_genome(bsgenome = , {index_arg(call)} = <path>)}."),
-      i = gettext("{.fn specificity_of} uses that index as-is.")
-    ))
+    abort_msg(
+      "{.fn {call}} needs a DNAStringSet or a FASTA-backed genome, and this genome is BSgenome-backed.",
+      i = "Pass the {.cls BSgenome} itself instead of {.code marker_genome(bsgenome = )}.",
+      i = "Or attach a prebuilt index: {.code marker_genome(bsgenome = , {index_arg(call)} = <path>)}.",
+      i = "{.fn specificity_of} uses that index as-is."
+    )
   }
   genome$path
 }
@@ -160,7 +160,7 @@ index_arg <- function(call) {
     marker_blast_index = "blast_db",
     marker_bowtie_index = "bowtie_index",
     marker_fm_index = "fm_index",
-    cli::cli_abort(gettext("Unknown index call: {call}"))
+    abort_msg("Unknown index call: {call}")
   )
 }
 
@@ -230,7 +230,7 @@ genome_length <- function(genome, chrom) {
     return(length(genome[[chrom]]))
   }
   len <- genome$lengths[[chrom]]
-  if (is.null(len)) cli::cli_abort(gettext("Unknown sequence: {chrom}"))
+  if (is.null(len)) abort_msg("Unknown sequence: {chrom}")
   len
 }
 
@@ -260,7 +260,7 @@ genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, ch
     return(Biostrings::subseq(genome[[chrom]], start = start, end = end))
   }
   raw <- genome$seqnames[[chrom]]
-  if (is.null(raw)) cli::cli_abort(gettext("Unknown sequence: {chrom}"))
+  if (is.null(raw)) abort_msg("Unknown sequence: {chrom}")
   if (!is.null(genome$bsgenome)) {
     gr <- GenomicRanges::GRanges(raw, IRanges::IRanges(start, end))
     return(BSgenome::getSeq(genome$bsgenome, gr)[[1L]])

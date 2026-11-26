@@ -25,9 +25,9 @@ normalise_haplotypes <- function(haplotypes) {
   need <- c("haplotype", "freq", "chrom", "pos", "ref", "alt")
   missing <- setdiff(need, names(haplotypes))
   if (length(missing)) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-    ))
+    )
   }
   h <- tibble::as_tibble(haplotypes) |>
     dplyr::transmute(
@@ -42,7 +42,7 @@ normalise_haplotypes <- function(haplotypes) {
     dplyr::summarise(lo = min(.data$freq), hi = max(.data$freq), .by = "haplotype") |>
     dplyr::filter(.data$lo != .data$hi | .data$lo < 0 | .data$hi > 1)
   if (nrow(bad)) {
-    cli::cli_abort(gettext("`freq` must be one value in [0, 1] per haplotype."))
+    abort_msg("`freq` must be one value in [0, 1] per haplotype.")
   }
   h
 }
@@ -379,7 +379,7 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
 marker_attach_haplotypes <- function(marker, haplotypes, snp = marker$snp,
                                      min_alt_freq = 0.01) {
   if (is.null(snp) || !nrow(snp)) {
-    cli::cli_abort(gettext("The marker has no `snp` row to anchor haplotypes."))
+    abort_msg("The marker has no `snp` row to anchor haplotypes.")
   }
   h <- normalise_haplotypes(haplotypes)
   alt <- unique(h$haplotype[h$pos == snp$pos & h$alt == snp$alt])

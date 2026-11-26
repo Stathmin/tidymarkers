@@ -74,16 +74,16 @@ ingest_check_criteria <- function(min_evidence, min_confidence, provenance_requi
     !is.numeric(min_evidence) || length(min_evidence) != 1L || is.na(min_evidence) ||
       min_evidence < 0 || min_evidence != round(min_evidence)
   ) {
-    cli::cli_abort(gettext("`min_evidence` must be one non-negative whole number."))
+    abort_msg("`min_evidence` must be one non-negative whole number.")
   }
   if (
     !is.numeric(min_confidence) || length(min_confidence) != 1L || is.na(min_confidence) ||
       min_confidence < 0 || min_confidence > 1
   ) {
-    cli::cli_abort(gettext("`min_confidence` must be one number in [0, 1]."))
+    abort_msg("`min_confidence` must be one number in [0, 1].")
   }
   if (!is.logical(provenance_required) || length(provenance_required) != 1L || is.na(provenance_required)) {
-    cli::cli_abort(gettext("`provenance_required` must be TRUE or FALSE."))
+    abort_msg("`provenance_required` must be TRUE or FALSE.")
   }
   invisible(NULL)
 }
@@ -93,7 +93,7 @@ ingest_check_criteria <- function(min_evidence, min_confidence, provenance_requi
 #' @noRd
 ingest_path <- function(path) {
   if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
-    cli::cli_abort(gettext("`path` must be one existing .csv or .json file."))
+    abort_msg("`path` must be one existing .csv or .json file.")
   }
   path <- fs::path_abs(path)
   if (!fs::is_file(path)) {
@@ -136,7 +136,7 @@ ingest_read <- function(path) {
 ingest_read_json <- function(path) {
   items <- jsonlite::fromJSON(readr::read_file(path), simplifyVector = FALSE)
   if (!is.list(items) || !is.null(names(items)) || !all(vapply(items, is.list, logical(1)))) {
-    cli::cli_abort(gettext("A JSON literature source must be a top-level array of objects."))
+    abort_msg("A JSON literature source must be a top-level array of objects.")
   }
   if (!length(items)) {
     return(tibble::tibble(
@@ -434,13 +434,13 @@ marker_ingest_literature <- function(path, min_evidence = 1L, min_confidence = 0
 marker_ingest_approve <- function(queue, record_id, registry = ingest_registry_path(),
                                   reviewer = "maintainer") {
   if (!inherits(queue, "marker_ingest_queue")) {
-    cli::cli_abort(gettext("`queue` must come from marker_ingest_literature()."))
+    abort_msg("`queue` must come from marker_ingest_literature().")
   }
   if (!is.character(record_id) || length(record_id) != 1L || is.na(record_id) || !nzchar(record_id)) {
-    cli::cli_abort(gettext("`record_id` must be one non-empty string."))
+    abort_msg("`record_id` must be one non-empty string.")
   }
   if (!is.character(reviewer) || length(reviewer) != 1L || is.na(reviewer) || !nzchar(reviewer)) {
-    cli::cli_abort(gettext("`reviewer` must be one non-empty string."))
+    abort_msg("`reviewer` must be one non-empty string.")
   }
   rows <- queue$candidates[queue$candidates$record_id == record_id, , drop = FALSE]
   if (!nrow(rows)) {

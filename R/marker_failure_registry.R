@@ -285,7 +285,7 @@ marker_failure_registry <- function(dir = ".", recursive = TRUE) {
 #' @export
 marker_failure_summary <- function(registry) {
   if (!is.data.frame(registry)) {
-    cli::cli_abort(gettext("`registry` must be a table from marker_failure_registry()."))
+    abort_msg("`registry` must be a table from marker_failure_registry().")
   }
   if (!nrow(registry)) {
     return(tibble::tibble(

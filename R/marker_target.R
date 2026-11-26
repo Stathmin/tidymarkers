@@ -59,12 +59,10 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   need <- c("id", "seq_region_name", "start", "end", "strand")
   missing <- setdiff(need, names(j))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext(
-        "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
-      ),
-      i = gettext("The Ensembl REST schema may have changed.")
-    ))
+    abort_msg(
+      "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}.",
+      i = "The Ensembl REST schema may have changed."
+    )
   }
   tibble::tibble(
     gene_id = j$id, symbol = j$display_name %||% j$id,
@@ -109,12 +107,10 @@ ensembl_variants <- function(chrom, start, end,
   need <- c("id", "seq_region_name", "start", "alleles")
   missing <- setdiff(need, names(df))
   if (length(missing)) {
-    cli::cli_abort(c(
-      gettext(
-        "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}."
-      ),
-      i = gettext("The Ensembl REST schema may have changed.")
-    ))
+    abort_msg(
+      "ensembl_variants(): response is missing field(s) {paste(missing, collapse = ', ')}.",
+      i = "The Ensembl REST schema may have changed."
+    )
   }
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
   df |>
@@ -334,7 +330,7 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
       stringr::str_detect(.data$ref, "^[ACGT]+$"),
       stringr::str_detect(.data$alt, "^[ACGT]+$")
     )
-  if (nrow(v) == 0L) cli::cli_abort(gettext("No usable substitution variant (SNP/MNP) left after filtering."))
+  if (nrow(v) == 0L) abort_msg("No usable substitution variant (SNP/MNP) left after filtering.")
 
   # every variant of the gene (incl. indels): used to penalise targets whose AS
   # 3' neighbourhood is itself variable (breaks allele specificity across lines)
@@ -512,12 +508,12 @@ marker_run_context_args <- function(context, variants = NULL, haplotypes = NULL)
     return(list(variants = variants, haplotypes = haplotypes))
   }
   if (inherits(context, "marker_layer")) {
-    cli::cli_abort(gettext(
+    abort_msg(
       "`context` is a marker_plan() layer; pass marker_run_context(genome, ...) instead."
-    ))
+    )
   }
   if (!inherits(context, "marker_run_context")) {
-    cli::cli_abort(gettext("`context` must be a marker_run_context() object."))
+    abort_msg("`context` must be a marker_run_context() object.")
   }
   list(
     variants = variants %||% context$variants,
