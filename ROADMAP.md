@@ -2723,8 +2723,8 @@ graph, criterion registry, evidence rungs, artefact export, MCP server, обра
   артефакта.
 - Policy as data: `marker_decision_schema()` читает те же константы, что
   исполнитель; graph не может дрейфовать от кода.
-- 134 registered sources и 148 extract tables в `inst/extdata/`; 208 `test` rows
-  из 369 строк ledger (132 `report`, 20 `blocked`, 3 `rule`, 4 `artefact`,
+- 134 registered sources и 149 extract tables в `inst/extdata/`; 209 `test` rows
+  из 369 строк ledger (132 `report`, 19 `blocked`, 3 `rule`, 4 `artefact`,
   2 `config`) — join проверяется машиной, test не может claim extract, который
   не читает; 46 test files.
 - 213 criterion rows в `criterion_spec()`; rungs: 128 `primary_literature` +

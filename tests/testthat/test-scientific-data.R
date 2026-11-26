@@ -284,3 +284,25 @@ test_that("every extracted backlog entry is a registered source", {
   expect_false(any(is.na(s$doi[match(extracted, s$key)])))
   expect_true(all(nzchar(b$what_it_would_anchor)))
 })
+
+# Huguet 2017 gives the salt-specific nearest-neighbour set, so a model that
+# scales Na+ parameters by one constant is wrong by up to 2x: the Mg2+/Na+ free
+# energy ratio runs 0.46 (CC/GG) to 0.98 (TA/AT). The table is also internally
+# consistent (dG298 = the Mg2+ unzip value, mi298 = the Mg2+ model interface).
+test_that("huguet2017: the Mg2+ nearest-neighbour parameters are pair-specific and self-consistent", {
+  d <- ext("huguet2017_nn_mg.csv")
+  nn <- d[d$row_type == "nnbp", ]
+  expect_equal(nrow(nn), 10L)
+  expect_setequal(nn$nntc, c(
+    "AA/TT", "AC/TG", "AG/TC", "AT/TA", "CA/GT",
+    "CC/GG", "CG/GC", "GA/CT", "GC/CG", "TA/AT"
+  ))
+  expect_true(all(nn$mg_unzip_dg_kcal < nn$na_unzip_dg_kcal))
+  ratio <- nn$mg_unzip_mi / nn$na_unzip_mi
+  expect_true(all(ratio > 0.4 & ratio < 1))
+  expect_gt(max(ratio) - min(ratio), 0.4)
+  expect_equal(nn$dg298_kcal, nn$mg_unzip_dg_kcal, tolerance = 0.01)
+  expect_lt(max(abs(nn$mi298 - nn$mg_unzip_mi)), 0.005)
+  expect_lt(max(abs(nn$dh298_kcal - nn$dg298_kcal - 298.15 * nn$ds298_cal_per_mol_K / 1000)), 0.05)
+  expect_true(all(d$dh298_kcal[d$row_type == "initiator"] > 0))
+})
