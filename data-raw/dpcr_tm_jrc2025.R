@@ -19,10 +19,11 @@
 #    CONTRAST set, tier "computed, not measured", for Z0.2 only.
 #
 #    What it does show is that the textbook primer rule is not what a real
-#    dPCR assay obeys: both probes (60.9 C and 57.8 C) sit BELOW their own
-#    primers (59.2/60.2 and 61.0/61.9 C), i.e. the "+8-10 C above the primers"
-#    probe rule is violated, and the assay works (annealing optimised to 60 C
-#    by gradient, 50-62 C).  It says nothing about the -16.86 C level offset.
+#    dPCR assay obeys: neither probe (60.9 C and 57.8 C) is within +8-10 C of
+#    its primers (59.2/60.2 and 61.0/61.9 C), and the two land on OPPOSITE
+#    sides -- JRC-HA's probe is 0.7 C above its hotter primer, JRC-MP's is
+#    4.1 C below -- and the assays work (annealing optimised to 60 C by
+#    gradient, 50-62 C).  It says nothing about the -16.86 C level offset.
 #
 #  ARITHMETIC ASSERTED BELOW is the paper's own, recomputed from its printed
 #  sequences only: length, GC %, and amplicon size / primer ends.  The Tm
@@ -82,6 +83,19 @@ stopifnot(
   grepl(t1$sequence[6L], amplicon[["jrc_mp"]], fixed = TRUE)
 )
 
+oligo_definition <- paste(
+  "Tm of a Primer3Plus-designed oligo, ordered by length, GC and the Tm column",
+  "of Table 1; oligos ran at 900 nM (primers) / 400 nM (probes) in a Bio-Rad",
+  "one-step ddRT-PCR Advanced Kit on a QX600, annealing optimised 50-62 C, 60 C used;",
+  "kit-dependent [Na+]/[Mg2+] not reported, so the Tm basis is unknown"
+)
+amplicon_definition <- paste(
+  "Amplicon span of the assay, printed in Table 1 as a sequence and a size and",
+  "re-checked here against the two primers; no Tm is measured on it, so the row",
+  "carries the span only, to let a reader line a Tm up with the sequence it was",
+  "designed against"
+)
+
 out <- data.frame(
   assay_id = t1$assay_id,
   primer_or_probe = t1$primer_or_probe,
@@ -90,18 +104,36 @@ out <- data.frame(
   tm_method = "Primer3Plus (design tool output, printed in Table 1; not a UV melt)",
   salt_mM = NA_integer_,
   mg_mM = NA_integer_,
-  outcome_definition = paste(
-    "Tm of a Primer3Plus-designed oligo, ordered by length, GC and the Tm column",
-    "of Table 1; oligos ran at 900 nM (primers) / 400 nM (probes) in a Bio-Rad",
-    "one-step ddRT-PCR Advanced Kit on a QX600, annealing optimised 50-62 C, 60 C used;",
-    "kit-dependent [Na+]/[Mg2+] not reported, so the Tm basis is unknown"
-  ),
+  amplicon_size_bp = size_printed[t1$assay_id],
+  outcome_definition = oligo_definition,
   evidence_tier = "computed, not measured",
   source_file = source_file,
   doi = doi,
   pmcid = pmcid,
   stringsAsFactors = FALSE
 )
+
+# the amplicon itself, one row per assay: `sequence` holds the full span, the
+# size column is repeated so every row of an assay carries its amplicon size
+amplicon_rows <- data.frame(
+  assay_id = names(amplicon),
+  primer_or_probe = "amplicon",
+  sequence = unname(amplicon),
+  tm_measured_C = NA_real_,
+  tm_method = NA_character_,
+  salt_mM = NA_integer_,
+  mg_mM = NA_integer_,
+  amplicon_size_bp = size_printed,
+  outcome_definition = amplicon_definition,
+  evidence_tier = "computed, not measured",
+  source_file = source_file,
+  doi = doi,
+  pmcid = pmcid,
+  stringsAsFactors = FALSE
+)
+out <- rbind(out, amplicon_rows)
+# `tm_method` is NA on the amplicon rows; the column is character, not factor
+stopifnot(nrow(out) == 8L, !anyNA(out$sequence), !anyNA(out$amplicon_size_bp))
 
 utils::write.csv(out, "inst/extdata/dpcr_tm_jrc2025.csv", row.names = FALSE)
 message("wrote inst/extdata/dpcr_tm_jrc2025.csv: ", nrow(out), " rows")
