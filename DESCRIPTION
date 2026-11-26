@@ -47,7 +47,6 @@ Imports:
     gggenes,
     ggforce,
     ggrepel,
-    forcats,
     patchwork,
     httr2,
     jsonlite,

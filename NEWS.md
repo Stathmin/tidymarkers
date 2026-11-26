@@ -6,6 +6,25 @@
 
 ## 0.4.1 (в работе)
 
+### T9: `forcats` убран из зависимостей (2026-11-26)
+
+- **Класс изменения: рефакторинг без изменения поведения; `Imports` на одну
+  зависимость короче, `R/` и `NAMESPACE` (экспорты) не менялись.**
+- `R/marker_plots.R` — внутренний `lump_top_n()` заменяет
+  `forcats::fct_lump_n()` в `variants_in_window()` и
+  `plot_variant_landscape()`. Уровни: сохранённые в исходном порядке,
+  `"Other"` последним; ничья на границе `n` сохраняет все связанные уровни,
+  как `fct_lump_n()`; `NA` остаётся `NA`.
+- `fct_rev()` в `tumbler_plot()` — `factor(name, levels = rev(levels(factor(name))))`;
+  `fct()` в `marker_check_status()` — `factor(status, levels = ...)` (значения
+  санитизированы выше, поэтому строгая проверка `fct()` не нужна).
+- `forcats` удалён из `DESCRIPTION`. Решение по `DECIPHER`/`TmCalculator`/
+  `ggforce` уже зафиксировано в ADR 0007 §5, поэтому ADR не менялся.
+- Проверка: `lump_top_n()` побайтово равен `forcats::fct_lump_n()` на 300
+  случайных векторах × 6 значений `n` (включая ничьи, `NA`, `n = 0` и
+  `n > уровней`); `dev/test.R "plot|checks|variant"` — зелёный;
+  `dev/check.R --quick --no-render` — зелёный; `grep -r forcats R` пуст.
+
 ### MCP: валидация `tools/call` и полная схема инструментов (2026-11-26)
 
 - **Класс изменения: серверный слой `inst/mcp/`, dev-скрипт и тесты; `R/` и

@@ -47,6 +47,31 @@ design_window <- function(assay, snp) {
   c(snp$pos - flank, snp$pos + flank)
 }
 
+#' Keep the `n` most frequent levels, lump the rest into `"Other"`
+#'
+#' Local stand-in for `forcats::fct_lump_n()`: same level order (kept levels in
+#' their original order, `"Other"` last) and the same tie rule (every level
+#' tied with the n-th count is kept).  `NA` stays `NA`.
+#' @keywords internal
+#' @noRd
+lump_top_n <- function(x, n, other_level = "Other") {
+  f <- factor(x)
+  if (nlevels(f) <= n) {
+    return(f)
+  }
+  counts <- as.integer(table(f))
+  keep <- if (n <= 0L) {
+    character(0)
+  } else {
+    rank_order <- order(-counts, seq_along(counts))
+    levels(f)[counts >= counts[rank_order[[n]]]]
+  }
+  lumped <- !levels(f) %in% keep
+  out <- as.character(f)
+  out[!is.na(out) & !out %in% keep] <- other_level
+  factor(out, levels = c(levels(f)[!lumped], if (any(lumped)) other_level))
+}
+
 #' Variants inside a region, as a tidy tibble
 #' @keywords internal
 #' @noRd
@@ -56,7 +81,7 @@ variants_in_window <- function(variants, chrom, win) {
       .data$chrom == !!chrom,
       dplyr::between(.data$pos, win[1], win[2])
     ) |>
-    dplyr::mutate(consequence = forcats::fct_lump_n(.data$consequence, 6L))
+    dplyr::mutate(consequence = lump_top_n(.data$consequence, 6L))
 }
 
 
@@ -1138,7 +1163,7 @@ tumbler_plot <- function(chk) {
     chk$value[neutral] <- "NA"
   }
   chk$level <- droplevels(factor(chk$level, levels = unique(chk$level)))
-  ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = forcats::fct_rev(.data$name))) +
+  ggplot2::ggplot(chk, ggplot2::aes(x = 0.5, y = factor(.data$name, levels = rev(levels(factor(.data$name)))))) +
     ggplot2::geom_tile(ggplot2::aes(fill = .data$status), width = 0.3, height = 0.28) +
     ggplot2::geom_text(
       ggplot2::aes(label = .data$value),
@@ -1395,7 +1420,7 @@ plot_variant_landscape <- function(gene, variants, snp, assay) {
     strand = gene$strand
   )
   v <- variants |>
-    dplyr::mutate(consequence = forcats::fct_lump_n(.data$consequence, 6L))
+    dplyr::mutate(consequence = lump_top_n(.data$consequence, 6L))
   # label the target from the variant itself - a bare (chrom, pos, ref, alt)
   # record carries no `id`, so the plot must not depend on one; a multi-allelic
   # target shows every ALT

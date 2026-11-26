@@ -23,14 +23,14 @@ MARKER_CHECK_STATUS_LEVELS <- c("pass", "fail", "unknown", "not_applicable")
 
 #' Construct a check-status vector
 #' @param status character; `NA` (or anything unrecognised) becomes `"unknown"`.
-#' @return a `forcats` factor with levels `pass`, `fail`, `unknown`,
+#' @return a factor with levels `pass`, `fail`, `unknown`,
 #'   `not_applicable`.
 #' @keywords internal
 #' @noRd
 marker_check_status <- function(status = character()) {
   status <- as.character(status)
   status[is.na(status) | !status %in% MARKER_CHECK_STATUS_LEVELS] <- "unknown"
-  forcats::fct(status, levels = MARKER_CHECK_STATUS_LEVELS)
+  factor(status, levels = MARKER_CHECK_STATUS_LEVELS)
 }
 
 #' The legacy logical `pass` view of a status

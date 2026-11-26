@@ -3880,17 +3880,21 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: закрыто; `schema.json` — контракт, который читает валидатор
       (`tools/list` и рантайм отвечают одним документом).
 
-- [ ] **T9. Решить DECIPHER/TmCalculator/ggforce/forcats.**
-      правка: ADR 0007 фиксирует: DECIPHER (14 файлов) и TmCalculator
-      (9 файлов) — движки, остаются; ggforce — один `facet_zoom`, остаётся
-      как фича; forcats — четыре вызова в двух файлах, удаляется,
-      `fct_lump_n` заменяется локальным `lump_top_n()`; из
-      `DESCRIPTION`/`NAMESPACE` уходит `forcats`.
-      проверка: графы `plot` идентичны; `R CMD check` без unused import;
-      `grep -r forcats R` пуст.
-      блокер: нет.
-      следствие: без решения forcats остаётся в Imports ради четырёх
-      вызовов, а DECIPHER/TmCalculator не получают названной границы.
+- [x] **T9. Решить DECIPHER/TmCalculator/ggforce/forcats.**
+    - сделано: ADR 0007 §5 фиксирует DECIPHER (14 файлов) и TmCalculator
+      (9 файлов) как движки, ggforce — как фичу одного `facet_zoom()`;
+      `forcats` удалён. `R/marker_plots.R` получил внутренний `lump_top_n()`
+      (`variants_in_window()`, `plot_variant_landscape()`), `fct_rev()` в
+      `tumbler_plot()` стал `factor(name, levels = rev(levels(factor(name))))`,
+      `fct()` в `marker_check_status()` — `factor()`; `forcats` ушёл из
+      `DESCRIPTION`.
+    - проверка: `lump_top_n()` совпадает с `forcats::fct_lump_n()` по значениям,
+      уровням и `NA` на 300 случайных векторах × 6 `n` (ничьи, `n = 0`,
+      `n > уровней`); `dev/test.R "plot|checks|variant"`;
+      `dev/check.R --quick --no-render`; `grep -r forcats R` пуст.
+    - блокер: нет.
+    - следствие: снято; `Imports` короче на одну зависимость, графики не
+      изменились.
 
 - [ ] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
       правка: `R/marker_hash.R` — `hash_object()`, `hash_file()`
