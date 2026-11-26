@@ -322,7 +322,9 @@ ingest_write_registry <- function(rows, registry) {
     header <- names(utils::read.csv(registry, nrows = 1L))
     if (!identical(header, names(rows))) {
       abort_msg(
-        "The existing registry {encodeString(as.character(registry), quote = '`')} does not have the expected columns ({paste(ingest_registry_columns(), collapse = ', ')})."
+        "The existing registry {encodeString(as.character(registry), quote = '`')}",
+        "does not have the expected columns",
+        "({paste(ingest_registry_columns(), collapse = ', ')})."
       )
     }
     readr::write_csv(rows, registry, append = TRUE, col_names = FALSE)
@@ -439,7 +441,8 @@ marker_ingest_approve <- function(queue, record_id, registry = ingest_registry_p
   }
   if (record_id %in% marker_ingest_registry(registry)$record_id) {
     abort_msg(
-      "Record {encodeString(record_id, quote = '`')} is already in the registry {encodeString(as.character(fs::path(registry)), quote = '`')}."
+      "Record {encodeString(record_id, quote = '`')} is already in the registry",
+      "{encodeString(as.character(fs::path(registry)), quote = '`')}."
     )
   }
   stamped <- ingest_stamp(rows, reviewer)

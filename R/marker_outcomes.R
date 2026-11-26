@@ -138,7 +138,8 @@ marker_record_outcome <- function(artefact,
     known <- artefact_targets(dir)
     if (!is.null(known) && !target %in% known) {
       abort_msg(
-        "Target {shQuote(target)} is not in this artefact. Known targets: {paste(utils::head(known, 10L), collapse = ', ')}."
+        "Target {shQuote(target)} is not in this artefact.",
+        "Known targets: {paste(utils::head(known, 10L), collapse = ', ')}."
       )
     }
   }

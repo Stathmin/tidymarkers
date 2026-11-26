@@ -572,10 +572,10 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   # the child, so a missing share/ directory is not the same as missing tables
   if (!is.null(paths) && is.na(paths$dat) && !nzchar(Sys.getenv("UNAFOLDDAT"))) {
     # a run without the tables still returns a number, so name the gap once
-    expected <- as.character(fs::path(fs::path_dir(paths$bin), "share", "oligoarrayaux"))
     session_once("oaa_dat_missing", {
       warn_msg(
-        "OligoArrayAux ('{bin}') has no UNAFold data tables: expected '{expected}'. dG may be meaningless."
+        "OligoArrayAux ('{bin}') has no UNAFold data tables:",
+        "expected '{fs::path(fs::path_dir(paths$bin), 'share', 'oligoarrayaux')}'. dG may be meaningless."
       )
     })
   }

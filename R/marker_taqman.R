@@ -182,7 +182,8 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   probe_modification <- match.arg(probe_modification)
   if (identical(probe_modification, "lna")) {
     abort_msg(
-      "probe_modification = \"lna\" is not supported: the Kutyavin 2000 source has no LNA arm, so no LNA Tm shift is sourced."
+      "probe_modification = \"lna\" is not supported: the Kutyavin 2000 source",
+      "has no LNA arm, so no LNA Tm shift is sourced."
     )
   }
   # a 3'-MGB probe anneals like a longer unmodified probe, so the effective
