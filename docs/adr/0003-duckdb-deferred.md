@@ -64,3 +64,40 @@ plan, and keep the engine under `dev/`.
 - [`ROADMAP.md`](../../ROADMAP.md) — ZA4 (dependency policy), ZX2, ZY5.
 - [`R/marker_trace_schema.R`](../../R/marker_trace_schema.R) — the pooled record.
 - [`R/marker_artefact.R`](../../R/marker_artefact.R) — what a design exports today.
+
+## Amendment (2026-11-26): the ladder was run; `dplyr` wins at every scale
+
+`dev/duckdb-aggregation-bench.R` runs one aggregate — the real query against the
+real schema — through `dplyr` and through `duckplyr` in separate child
+`Rscript`s, at the largest real table and on a synthetic ladder. Raw rows are
+`results/duckdb-aggregation.csv` (git-ignored); these are the durable numbers.
+`elapsed_s` is the aggregate call only; `peak_rss_mb` is the whole child.
+
+| rows         | `dplyr` s / MB   | `duckplyr` s / MB  |
+| ------------ | ---------------- | ------------------ |
+| 3366 (real)  | 0.276 / 106.8    | 0.404 / 173.8      |
+| 1e5          | 0.254 / 119.7    | 0.382 / 202.4      |
+| 1e6          | 0.387 / 322.0    | 0.744 / 550.8      |
+| 1e7          | 0.920 / 1931.8   | 3.796 / 3983.2     |
+
+Both engines return the same answer at every scale (`all.equal`, tol `1e-8`).
+`dplyr` is faster and lighter throughout; `duckplyr` is 1.5–4× slower and
+1.5–2× heavier, and its disadvantage grows with size rather than shrinking.
+
+Two facts need correcting from the body above:
+
+1. **`duckdb` (2.0.1) and `duckplyr` (1.2.2) are installed** in the R 4.6.1
+   *site* library on this host — they are not a project dependency (no
+   `DESCRIPTION` entry, `renv.lock` untouched) but they are present as dev-only
+   packages. The "not in the library" clause above describes the pinned tree,
+   not this machine.
+2. Caveats on the benchmark: the ladder is **synthetic** (largest real table is
+   `steele2025_rice_kasp_calls.csv`, 3366 rows); both engines received an
+   in-memory data frame, so this measures query cost, not an out-of-core CSV
+   scan; `duckdb` downloads extensions on first use per session
+   (`duckdb(shared_home = TRUE)` avoids the repeat).
+
+**Decision unchanged.** DuckDB stays out of `DESCRIPTION`, and the ZA4 rule
+(a second engine needs a second consumer) is untouched. If an out-of-core need
+ever appears, re-run this script first — the numbers here are the baseline it
+must beat.
