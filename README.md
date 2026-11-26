@@ -284,9 +284,9 @@ short answer is published measurements, not a bench run by the maintainers:
 - **Specificity scored against ground truth, not against PolyMarker**: on TAIR10
   the answer is enumerated (3′-seed screen 8/8 equal; exact in-silico PCR 3/3
   equal), with BLAST+ as a speed/recall baseline. `dev/specificity-oracle.R`.
-- **A literature-anchored evidence layer instead**: 134 registered sources, 149
-  extract tables in `inst/extdata/`, and 209 ledger links from an extract to the
-  test file that asserts it (46 distinct test files). The join is machine-checked,
+- **A literature-anchored evidence layer instead**: 134 registered sources, 157
+  extract tables in `inst/extdata/`, and 215 ledger links from an extract to the
+  test file that asserts it (55 distinct test files). The join is machine-checked,
   so a test cannot claim an extract it does not read.
 
   Across the 213 criterion rows the rungs are 128 `primary_literature`, 13

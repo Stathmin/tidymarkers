@@ -333,7 +333,7 @@ must_quote("VALIDATION.md", c(
     counts[["abstract"]], " as an abstract only, ",
     counts[["closed"]], " are closed access, ",
     counts[["code"]], " are source code, ",
-    counts[["stub"]], " are stubs, ",
+    if (counts[["stub"]] == 1L) "1 is a stub, " else paste0(counts[["stub"]], " are stubs, "),
     counts[["transcribed"]], " was transcribed, ",
     counts[["notfound"]], " were not found"
   ),

@@ -27,8 +27,8 @@ check is enforced, and what has not been validated at all.
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
   are checked against the enumeration, with BLAST+ as a speed/recall baseline.
 - **What does exist** is a literature-anchored evidence layer: 134 registered
-  sources, 149 extracted tables in `inst/extdata/`, and a ledger that binds 209
-  `test` rows to the 46 test files that consume them. Each link from a source,
+  sources, 157 extracted tables in `inst/extdata/`, and a ledger that binds 215
+  `test` rows to the 55 test files that consume them. Each link from a source,
   to the exact table read from it, to the test that asserts a property of it is
   machine-checked.
 - **Agreement between models is not evidence about a real duplex.** That
@@ -44,19 +44,19 @@ Three tables carry the provenance, and three tests keep them honest.
 | `inst/extdata/science_ledger.csv`     | 369  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
 | `inst/extdata/scientific_backlog.csv` | 45   | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched`                                                     |
 
-`access` is a closed vocabulary and it is load-bearing: 104 sources were read in
+`access` is a closed vocabulary and it is load-bearing: 105 sources were read in
 full text, 11 through a supplement, 4 as an abstract only, 6 are closed access,
-3 are source code, 2 are stubs, 1 was transcribed, 3 were not found. 128 of the
+3 are source code, 1 is a stub, 1 was transcribed, 3 were not found. 128 of the
 134 rows are marked `verified`, each with the date it was checked. A source read
 only as an abstract may not calibrate anything, and the tests enforce that.
 
-Ledger rows by use: 209 `test`, 132 `report` (a claim the paper makes, kept for
-comparison), 19 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 146 extract tables are named — `example_region_targets.csv`
+Ledger rows by use: 215 `test`, 130 `report` (a claim the paper makes, kept for
+comparison), 15 `blocked` (read, extracted, consumed by nothing yet — each says
+why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 155 extract tables are named — `example_region_targets.csv`
 is the shipped slice's target table, `steele2025_rice_kasp_calls.csv` the
-per-marker matrix above, and the 149th CSV in `inst/extdata/` is the ledger
-itself — and `test` rows account for 130 of them.
-Of the 19 `blocked` rows, 9 name no extract (`extract = none`) and say which
+per-marker matrix above, and the 157th CSV in `inst/extdata/` is the ledger
+itself — and `test` rows account for 141 of them.
+Of the 15 `blocked` rows, 5 name no extract (`extract = none`) and say which
 paper could not be landed, and 10 name a real extract that carries no verdict of
 its own yet.
 
