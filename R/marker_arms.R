@@ -352,7 +352,7 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
     AS_ref = out$inner$ref$primer, AS_alt = out$inner$alt$primer
   ), conditions = scheme_conditions("arms"))
   warn_relaxed(pick$violated)
-  structure(out, class = "marker_arms")
+  structure(out, class = c("marker_arms", "marker"))
 }
 
 #' @export

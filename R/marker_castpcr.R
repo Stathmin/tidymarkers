@@ -400,7 +400,7 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
     as_primer = out$primers$as_primer, common = out$primers$forward,
     mate = out$primers$reverse, probe = out$probe$sequence, blocker = out$blocker$sequence
   ), conditions = conditions)
-  structure(out, class = "marker_castpcr")
+  structure(out, class = c("marker_castpcr", "marker"))
 }
 
 #' @export

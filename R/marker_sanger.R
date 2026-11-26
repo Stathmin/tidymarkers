@@ -603,7 +603,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
     selection = list(relaxed = sel$relaxed, violated = sel$violated),
     readout = SANGER_DETECTION
   )
-  out <- structure(out, class = "marker_sanger")
+  out <- structure(out, class = c("marker_sanger", "marker"))
   if (is.null(population)) {
     out$allele_dropout <- tibble::tibble()
     out$allele_dropout_risk <- NA

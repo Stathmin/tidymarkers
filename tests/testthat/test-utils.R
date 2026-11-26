@@ -25,7 +25,7 @@ mk_assay <- function() {
     ideogram = list(hits = tibble::tibble(
       primer = names(p), chrom = "Chr4", pos = 1L
     ))
-  ), class = "marker_assay")
+  ), class = c("marker_assay", "marker"))
 }
 
 test_that("is_marker_assay recognises the class", {

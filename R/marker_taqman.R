@@ -330,7 +330,7 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
       alt
     )
   }
-  structure(out, class = "marker_taqman")
+  structure(out, class = c("marker_taqman", "marker"))
 }
 
 #' @export

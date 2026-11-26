@@ -405,7 +405,7 @@ test_that("the runtime graph is the assay's own scheme (C12)", {
   bare <- tibble::as_tibble(marker_decision_graph(list(selection = NULL)))
   expect_false("duplex" %in% bare$stage)
   # the assembled assay stores its scheme, so a plot/report can match it
-  a <- suppressWarnings(structure(list(scheme = "indel"), class = "marker_assay"))
+  a <- suppressWarnings(structure(list(scheme = "indel"), class = c("marker_assay", "marker")))
   expect_identical(a$scheme, "indel")
 })
 

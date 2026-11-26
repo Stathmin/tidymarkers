@@ -799,22 +799,16 @@ plot_marker_map <- function(marker, scheme, variants = NULL, genome = NULL, feat
   }
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_assay <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_assay <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   # plot_primers() already carries the ideogram AND the check column
   plot_primers(x, variants %||% empty_variants(), x$snp, genome = genome, features = features)
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_doomed <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_doomed <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   plot_doomed_target(x, variants %||% empty_variants(), x$snp, features = features)
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_caps <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_caps <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "caps", variants, genome, features,
     above = plot_caps_gel(x), heights = c(0.8, 1),
@@ -822,9 +816,7 @@ plot.marker_caps <- function(x, variants = NULL, genome = NULL, features = NULL,
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_arms <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_arms <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "arms", variants, genome, features,
     above = plot_arms_gel(x), heights = c(0.8, 1),
@@ -832,72 +824,52 @@ plot.marker_arms <- function(x, variants = NULL, genome = NULL, features = NULL,
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_hrm <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_hrm <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "hrm", variants, genome, features, title = "HRM: amplicon map, class gates")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_taqman <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_taqman <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "taqman", variants, genome, features, title = "TaqMan: probes on the amplicon")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_castpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_castpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "castpcr", variants, genome, features,
     title = "castPCR: mutant ASP, WT blocker, locus probe"
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_dpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_dpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "dpcr", variants, genome, features, title = "dPCR: hydrolysis probes on the amplicon")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_snapshot <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_snapshot <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "snapshot", variants, genome, features,
     title = "SNaPshot: extension primer at the variant"
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_lamp <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_lamp <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "lamp", variants, genome, features,
     title = "LAMP: F3/B3 outer, FIP/BIP inner arms"
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_rpa <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_rpa <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "rpa", variants, genome, features, title = "RPA: primers and exo probe")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_crispr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_crispr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "crispr", variants, genome, features, title = "CRISPR-Dx: guide + PAM")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_sanger <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_sanger <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(x, "sanger", variants, genome, features, title = "Sanger: amplicon and read primers")
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_ssr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_ssr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "ssr", variants, genome, features,
     below = plot_fragment_readout(x, "ssr", genome), heights = c(1, 0.28),
@@ -905,9 +877,7 @@ plot.marker_ssr <- function(x, variants = NULL, genome = NULL, features = NULL, 
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_indel_size <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_indel_size <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   marker_figure(
     x, "indel_size", variants, genome, features,
     below = plot_fragment_readout(x, "indel_size", genome), heights = c(1, 0.28),
@@ -915,9 +885,7 @@ plot.marker_indel_size <- function(x, variants = NULL, genome = NULL, features =
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_duplex <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_duplex <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   maps <- lapply(x$assays, function(a) {
     if (inherits(a, "marker_assay")) {
       plot_marker_map(a, "snp", variants, genome, features)
@@ -931,9 +899,7 @@ plot.marker_duplex <- function(x, variants = NULL, genome = NULL, features = NUL
   )
 }
 
-#' @rdname plot-marker
-#' @export
-plot.marker_lax <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
+marker_plot_lax <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
   if (is.null(x$base)) {
     return(empty_plot())
   }

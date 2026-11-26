@@ -294,7 +294,7 @@ test_that("the adapter grades a pairing by its compatibility gates, NA never pas
   )
   expect_false(ev2$pass[ev2$criterion == "gate_duplex_targets"])
   # a doomed pairing has no compatibility stage: an empty table, not a pass
-  doomed <- structure(list(compatibility = NULL), class = "marker_duplex")
+  doomed <- structure(list(compatibility = NULL), class = c("marker_duplex", "marker"))
   expect_equal(nrow(marker_scheme_adapter("duplex")$evaluate(doomed)), 0L)
 })
 

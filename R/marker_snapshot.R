@@ -235,7 +235,7 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
     return(NULL)
   }
   out$selection <- sel
-  structure(out, class = "marker_snapshot")
+  structure(out, class = c("marker_snapshot", "marker"))
 }
 
 #' @export

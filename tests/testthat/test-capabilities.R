@@ -165,7 +165,7 @@ test_that("marker_primer_checks() forwards a per-call engines override to the th
         forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
       )
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   # a dG the screen rejects: the tool answers, the adapter decides whether the
   # screen that calls it runs at all

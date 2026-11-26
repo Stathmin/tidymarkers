@@ -118,7 +118,7 @@ test_that("family checks are not_applicable to another marker class", {
         primer = c("forward", "reverse")
       ))
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   ch <- marker_design_checks(x, scheme = "lamp")
   fam <- ch$criterion %in% unname(names(MARKER_CHECK_LAMP))
@@ -140,7 +140,7 @@ test_that("the generic ladder grades the in-silico product count", {
         primer = c("forward", "reverse")
       ))
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   # no product count on the object: the row is not applicable, not unknown
   ch <- marker_design_checks(x, scheme = "lamp")

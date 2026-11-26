@@ -16,7 +16,7 @@
 marker_doomed <- function(reason, stage, snp, template, as_candidates = NULL) {
   structure(
     list(snp = snp, template = template, reason = reason, stage = stage, as_candidates = as_candidates),
-    class = "marker_doomed"
+    class = c("marker_doomed", "marker")
   )
 }
 
@@ -1158,7 +1158,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # filled); the subgenome axis is read against the caller-supplied mask and is
   # never guessed from the one genome.
   out <- set_homeolog_axes(out, mask)
-  contract_assay_output(structure(out, class = "marker_assay"), call)
+  contract_assay_output(structure(out, class = c("marker_assay", "marker")), call)
 }
 
 # =============================================================================
@@ -1564,5 +1564,5 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   # Y3.1: the two 3' axes, explicit, read from the fixed primers' own geometry
   # (com_start/com_end) rather than from the designer's pair search.
   out <- set_homeolog_axes(out, mask)
-  structure(out, class = "marker_assay")
+  structure(out, class = c("marker_assay", "marker"))
 }

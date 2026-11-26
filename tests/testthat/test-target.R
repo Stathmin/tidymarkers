@@ -2,10 +2,10 @@
 
 test_that("is_target_designable covers every marker class", {
   expect_false(is_target_designable(NULL))
-  expect_false(is_target_designable(structure(list(), class = "marker_doomed")))
-  expect_true(is_target_designable(structure(list(), class = "marker_assay")))
-  expect_true(is_target_designable(structure(list(), class = "marker_caps")))
-  expect_true(is_target_designable(structure(list(), class = "marker_arms")))
+  expect_false(is_target_designable(structure(list(), class = c("marker_doomed", "marker"))))
+  expect_true(is_target_designable(structure(list(), class = c("marker_assay", "marker"))))
+  expect_true(is_target_designable(structure(list(), class = c("marker_caps", "marker"))))
+  expect_true(is_target_designable(structure(list(), class = c("marker_arms", "marker"))))
 })
 
 test_that("marker_design_at dispatches by scheme and is NULL for unsupported ones", {

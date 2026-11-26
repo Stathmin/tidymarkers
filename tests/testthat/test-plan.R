@@ -179,7 +179,7 @@ test_that("a solved region carries a haplotype -> signal table inside the block"
   # seed a haplotype-aware winner for the target and a doomed marker elsewhere
   hv <- haplotype_variants(haps, snp)
   hits <- haplotype_hits(haps, snp, as_start = 235L, as_end = 255L, alt_hap = hv$alt)
-  winner <- structure(list(haplotype_hits = hits), class = "marker_assay")
+  winner <- structure(list(haplotype_hits = hits), class = c("marker_assay", "marker"))
   cache <- new.env(parent = emptyenv())
   for (i in seq_len(nrow(tg))) {
     m <- if (tg$pos[[i]] == 250L) {
@@ -348,7 +348,7 @@ test_that("a decision row is chosen only for its own target's winner", {
     marker_tech(schemes = c("snp", "caps"))
   tg <- plan$targets
   cache <- new.env(parent = emptyenv())
-  winner <- structure(list(scheme = "snp"), class = "marker_assay")
+  winner <- structure(list(scheme = "snp"), class = c("marker_assay", "marker"))
   assign(paste(target_key(tg[1L, , drop = FALSE]), "snp", "", sep = "||"), winner, envir = cache)
   assign(
     paste(target_key(tg[2L, , drop = FALSE]), "snp", "", sep = "||"),

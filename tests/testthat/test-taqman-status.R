@@ -33,7 +33,7 @@ test_that("the mismatch threshold is declared an engineering default, not a find
 
 test_that("the TaqMan readout is not simulated, so no discrimination is claimed", {
   expect_match(readout_assumption("taqman"), "not simulated|not modelled")
-  m <- structure(list(scheme = "taqman"), class = "marker_taqman")
+  m <- structure(list(scheme = "taqman"), class = c("marker_taqman", "marker"))
   r <- marker_readout(m)
   expect_false(r$simulated)
   expect_null(r$table)

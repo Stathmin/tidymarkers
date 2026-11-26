@@ -319,7 +319,7 @@ design_dpcr_marker <- function(genome, snp, flank = 150L,
       alt
     )
   }
-  structure(out, class = "marker_dpcr")
+  structure(out, class = c("marker_dpcr", "marker"))
 }
 
 #' The best hydrolysis probe inside a primer pair

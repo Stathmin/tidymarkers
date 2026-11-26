@@ -61,7 +61,7 @@ test_that("print.marker_sanger summarises the marker and its sequencing primers"
       seq_primers = list(forward = "AAAACCCCGGGGTTTT", reverse = "TTTTGGGGCCCCAAAA", nested = TRUE),
       selection = list(relaxed = character(0), violated = character(0))
     ),
-    class = "marker_sanger"
+    class = c("marker_sanger", "marker")
   )
   expect_output(print(m), "marker_sanger")
   expect_output(print(m), "600 bp")

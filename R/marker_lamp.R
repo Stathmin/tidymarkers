@@ -789,7 +789,7 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
     geometry = geo,
     compatibility = pick$compat
   )
-  structure(out, class = "marker_lamp")
+  structure(out, class = c("marker_lamp", "marker"))
 }
 
 #' The REF counterpart of an ALT-specific LAMP set (Z9.1)

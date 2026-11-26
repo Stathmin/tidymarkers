@@ -244,7 +244,7 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
     gap = abs(delta),
     selection = list(relaxed = sel$relaxed, violated = sel$violated)
   )
-  structure(out, class = "marker_indel_size")
+  structure(out, class = c("marker_indel_size", "marker"))
 }
 
 #' @export

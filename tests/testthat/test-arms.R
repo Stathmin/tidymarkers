@@ -43,7 +43,7 @@ test_that("plot_arms_gel draws the AA / AB / BB readout", {
         band = c("control", "REF", "ALT"), size = c(400L, 200L, 250L)
       )
     ),
-    class = "marker_arms"
+    class = c("marker_arms", "marker")
   )
   p <- plot_arms_gel(marker)
   expect_s3_class(p, "ggplot")

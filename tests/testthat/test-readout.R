@@ -20,7 +20,7 @@ test_that("marker_readout returns a modelled readout for a hydrolysis-probe sche
 })
 
 test_that("marker_readout names the assumption for a non-simulated scheme", {
-  m <- structure(list(snp = tibble::tibble()), class = "marker_hrm")
+  m <- structure(list(snp = tibble::tibble()), class = c("marker_hrm", "marker"))
   r <- marker_readout(m)
   expect_false(r$simulated)
   expect_equal(r$scheme, "hrm")

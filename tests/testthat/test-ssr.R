@@ -74,7 +74,7 @@ test_that("print.marker_ssr reports the repeat and the amplicon", {
       ),
       amplicon = tibble::tibble(start = 1L, end = 120L)
     ),
-    class = "marker_ssr"
+    class = c("marker_ssr", "marker")
   )
   x[["repeat"]] <- tibble::tibble(
     start = 40L, end = 52L, unit = 2L, copies = 7L,

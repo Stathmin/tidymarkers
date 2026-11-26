@@ -650,7 +650,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
     forward = out$primers$forward, reverse = out$primers$reverse,
     probe = out$probe$sequence
   ), conditions = scheme_conditions("rpa"))
-  structure(out, class = "marker_rpa")
+  structure(out, class = c("marker_rpa", "marker"))
 }
 
 #' @export

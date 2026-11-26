@@ -383,7 +383,7 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
       selection = lax_selection(lax),
       verdict = if (is_target_designable(a) && !is.null(lax$pick$best)) "pass" else "fail"
     )
-    return(structure(out, class = "marker_lax"))
+    return(structure(out, class = c("marker_lax", "marker")))
   }
   hv <- haplotype_variants(haplotypes, snp)
   alt_hap <- hv$alt
@@ -404,7 +404,7 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
       snp = snp, haplotypes = hv$haplotypes, alt = alt_hap, base = base,
       alt_primers = NULL, pool = NULL, compatibility = NULL,
       selection = lax_selection(lax), verdict = "fail"
-    ), class = "marker_lax"))
+    ), class = c("marker_lax", "marker")))
   }
   strand <- base$strand
   h <- hv$haplotypes
@@ -479,7 +479,7 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
     selection = lax_selection(lax, designs),
     verdict = verdict
   )
-  structure(out, class = "marker_lax")
+  structure(out, class = c("marker_lax", "marker"))
 }
 
 #' @export

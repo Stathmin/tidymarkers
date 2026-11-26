@@ -11,7 +11,7 @@ test_that("LAMP has no simulated readout, so it reports no predicted gap", {
   expect_match(readout_assumption("lamp"), "not modelled")
   # decision clause 1: no landed row is a per-template Tt under two alleles, so
   # a LAMP design reports constructs and no signal at all
-  m <- structure(list(scheme = "lamp"), class = "marker_lamp")
+  m <- structure(list(scheme = "lamp"), class = c("marker_lamp", "marker"))
   r <- marker_readout(m)
   expect_identical(r$scheme, "lamp")
   expect_false(r$simulated)

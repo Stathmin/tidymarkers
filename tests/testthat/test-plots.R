@@ -74,7 +74,7 @@ test_that("a generic map replaces the SNP strip with a haplotype track", {
         ref = c("A", "A", "C"), alt = c("G", "G", "T")
       )
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   expect_s3_class(plot_marker_map(x, "caps"), "patchwork")
 })

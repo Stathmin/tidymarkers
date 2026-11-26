@@ -519,7 +519,7 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
       start = amp$start + off, end = amp$end + off, product = amp$product
     )
   )
-  out <- structure(out, class = "marker_crispr")
+  out <- structure(out, class = c("marker_crispr", "marker"))
   if (is.null(haplotypes)) {
     cli::cli_warn(gettext(
       "CRISPR: no population haplotypes supplied; guide/PAM conservation is not checked."

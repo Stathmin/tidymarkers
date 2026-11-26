@@ -669,7 +669,7 @@ caps_marker <- function(cands, snp, tmpl, enzymes, limits, floors, genome = NULL
       ),
       selection = list(relaxed = pick$relaxed, violated = pick$violated)
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
 }
 

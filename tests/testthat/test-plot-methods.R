@@ -35,7 +35,7 @@ test_that("each non-KASP marker class plots its own panel", {
     out <- base
     fields <- list(...)
     for (nm in names(fields)) out[[nm]] <- fields[[nm]]
-    structure(out, class = cls)
+    structure(out, class = c(cls, "marker"))
   }
 
   assay_stub <- stub("marker_assay",
@@ -94,7 +94,7 @@ test_that("marker_design_checks evaluates a non-KASP marker", {
       ),
       selection = list(relaxed = character(), violated = character())
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   ch <- marker_design_checks(x, scheme = "caps")
   # the row set is the registry's check rows for the scheme; deriving it keeps a
@@ -114,7 +114,7 @@ test_that("a non-KASP check without an observation is unknown, not a pass", {
         forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
       )
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   ch <- marker_design_checks(x, scheme = "caps")
   amp <- ch$criterion == "amplicon length (bp)"
@@ -155,7 +155,7 @@ test_that("non-KASP checks report one observed Tm per primer", {
         forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
       )
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   checks <- marker_primer_checks(x, "caps")
   tm <- checks[grepl("^Tm ", checks$name), ]
@@ -174,7 +174,7 @@ test_that("the check column shows unknown and not_applicable, never ok", {
         forward = "ACGTACGTACGTACGTACGT", reverse = "TGCATGCATGCATGCATGCA"
       )
     ),
-    class = "marker_caps"
+    class = c("marker_caps", "marker")
   )
   checks <- marker_primer_checks(x, "caps")
   # no genome/ideogram -> the off-target count was not computed: unknown
@@ -202,7 +202,7 @@ test_that("a fragment readout names the repeat formula and the observed sizes", 
       amplicon = tibble::tibble(start = 250L, end = 349L),
       primers = list(forward = "ACGT", reverse = "TGCA", product = 100L)
     ),
-    class = "marker_ssr"
+    class = c("marker_ssr", "marker")
   )
   x[["repeat"]] <- tibble::tibble(
     start = 295L, end = 304L, unit = 2L, copies = 5L,
@@ -221,6 +221,6 @@ test_that("a doomed marker still plots its target context", {
     template = list(snp_i = 151L, seq = Biostrings::DNAString(strrep("ACGT", 100L))),
     reason = "no candidate", stage = "as",
     candidates = tibble::tibble()
-  ), class = "marker_doomed")
+  ), class = c("marker_doomed", "marker"))
   expect_true(inherits(plot(d), c("patchwork", "ggplot")))
 })

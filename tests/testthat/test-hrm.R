@@ -84,7 +84,7 @@ test_that("the hrm scheme is registered with its own decision stage and is desig
   expect_true("hrm" %in% marker_schemes()$scheme)
   s <- marker_decision_schema("hrm")
   expect_true("hrm" %in% s$nodes$stage)
-  expect_true(is_target_designable(structure(list(), class = "marker_hrm")))
+  expect_true(is_target_designable(structure(list(), class = c("marker_hrm", "marker"))))
 })
 
 test_that("the hrm DAG obeys the contract", {

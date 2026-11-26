@@ -64,7 +64,7 @@ test_that("a dpcr design reports the probe readout and the partitioning model", 
 })
 
 test_that("a non-dpcr scheme still reports no simulation and no partition element", {
-  r <- marker_readout(structure(list(snp = tibble::tibble()), class = "marker_hrm"))
+  r <- marker_readout(structure(list(snp = tibble::tibble()), class = c("marker_hrm", "marker")))
   expect_false(r$simulated)
   expect_null(r$partition)
   expect_false("partition" %in% names(r))

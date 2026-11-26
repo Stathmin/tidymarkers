@@ -396,7 +396,7 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
     # the gate statuses are the record the graph and a report read
     selection = list(relaxed = relaxed, violated = character(0))
   )
-  structure(out, class = "marker_hrm")
+  structure(out, class = c("marker_hrm", "marker"))
 }
 
 #' @export

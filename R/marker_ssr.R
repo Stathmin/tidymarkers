@@ -292,7 +292,7 @@ design_ssr_marker <- function(genome, snp, flank = 250L,
     motif = motif,
     unit_seq = substr(motif, 1L, span$unit)
   )
-  structure(out, class = "marker_ssr")
+  structure(out, class = c("marker_ssr", "marker"))
 }
 
 #' @export

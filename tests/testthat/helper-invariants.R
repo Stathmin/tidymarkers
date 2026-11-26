@@ -171,7 +171,7 @@ make_assay <- function(as_ref, as_alt, com, ref = "T", alt = "C", amplicon = 49L
         class = "biallelic"
       )
     ),
-    class = "marker_assay"
+    class = c("marker_assay", "marker")
   )
 }
 

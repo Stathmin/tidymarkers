@@ -36,7 +36,7 @@ patent_marker <- function(row) {
       assay = row,
       template = list(seq = Biostrings::DNAString(patent_window), snp_i = 150L)
     ),
-    class = "marker_assay"
+    class = c("marker_assay", "marker")
   )
 }
 

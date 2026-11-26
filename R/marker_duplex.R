@@ -431,7 +431,7 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
     loci = loci, assays = assays, readout = readout, homologous = homologous,
     compatibility = compat, selection = sel, verdict = verdict
   )
-  structure(out, class = "marker_duplex")
+  structure(out, class = c("marker_duplex", "marker"))
 }
 
 #' Design a duplex marker from one locus row
