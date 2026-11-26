@@ -266,6 +266,18 @@ test_that("a criterion's threshold and its rendered limit cannot diverge (Z2)", 
   }
 })
 
+test_that("an open-bound family bar renders its finite end, never `NA`", {
+  spec <- tidymarkers:::criterion_spec()
+  open <- Filter(
+    function(b) is.numeric(b) && length(b) >= 2L && any(is.infinite(b)),
+    spec$bounds
+  )
+  expect_gt(length(open), 0L)
+  txt <- vapply(open, tidymarkers:::criterion_bound_text, character(1))
+  expect_false(anyNA(txt))
+  expect_false(any(grepl("NA", txt, fixed = TRUE)))
+})
+
 test_that("the scheme filter moves the amplicon bound and its limit together (Z2)", {
   for (sc in c("caps", "lamp", "ssr", "taqman")) {
     win <- tidymarkers:::marker_amplicon_window(marker_scheme(sc)$family)

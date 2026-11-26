@@ -214,10 +214,12 @@ criterion_bound_text <- function(bounds) {
   if (isTRUE(hi == "exclusive") && length(bounds) == 3L) {
     return(glue::glue("< {criterion_num(bounds[[3L]])}"))
   }
-  if (is.na(lo)) {
+  # An open end is `NA` in a parsed bound and `Inf` in a live `bounds` vector;
+  # `criterion_num(Inf)` coerced to `NA_integer_` and rendered `[20, NA]`.
+  if (is.na(lo) || is.infinite(lo)) {
     return(glue::glue("<= {criterion_num(hi)}"))
   }
-  if (is.na(hi)) {
+  if (is.na(hi) || is.infinite(hi)) {
     return(glue::glue(">= {criterion_num(lo)}"))
   }
   if (hi == lo) {
