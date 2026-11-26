@@ -201,13 +201,7 @@ trace_validate <- function(x) {
   if (!inherits(x, "marker_trace")) {
     abort_msg("`x` is not a marker_trace; migrate it with marker_trace_migrate().")
   }
-  # `x` is need_cols()'s first formal, so the old `x =` bullet becomes `i =`
-  # (same text); a named `x` in `...` would silently bind the positional args.
-  need_cols(
-    x, TRACE_FIELDS,
-    arg = "trace",
-    i = gettextf("Missing: %s.", paste(setdiff(TRACE_FIELDS, names(x)), collapse = ", "))
-  )
+  need_cols(x, TRACE_FIELDS, arg = "trace")
   if (!identical(x$schema, marker_trace_schema())) {
     abort_msg(
       "A trace must carry the current schema.",

@@ -51,8 +51,10 @@ contract.
 `R/marker_contracts.R` gains:
 
 ```r
-need_cols(x, cols, arg = "x", call = rlang::caller_env())
+need_cols(x, cols, arg = "x", call = rlang::caller_env(), ...)
 ```
+
+`...` carries optional cli bullet hints, translated with the message.
 
 It calls `marker_contract()` and aborts with
 `class = c("tidymarkers_contract_error", "tidymarkers_missing_columns")`,

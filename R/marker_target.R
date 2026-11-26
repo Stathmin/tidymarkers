@@ -59,7 +59,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
   need_cols(
     j, c("id", "seq_region_name", "start", "end", "strand"),
     arg = "record",
-    i = "The Ensembl REST schema may have changed."
+    i = gettext("The Ensembl REST schema may have changed.")
   )
   tibble::tibble(
     gene_id = j$id, symbol = j$display_name %||% j$id,
@@ -104,7 +104,7 @@ ensembl_variants <- function(chrom, start, end,
   need_cols(
     df, c("id", "seq_region_name", "start", "alleles"),
     arg = "response",
-    i = "The Ensembl REST schema may have changed."
+    i = gettext("The Ensembl REST schema may have changed.")
   )
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
   df |>

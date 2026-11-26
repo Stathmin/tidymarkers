@@ -389,7 +389,7 @@ marker_from_granges <- function(x) {
   }
   if (!methods::is(x, "GRanges")) abort_msg("`x` must be a GRanges.")
   m <- S4Vectors::mcols(x)
-  need_cols(m, c("ref", "alt"))
+  need_cols(m, c("ref", "alt"), i = gettext("`mcols()` is the metadata-column table."))
   tibble::as_tibble(m) |>
     dplyr::mutate(
       chrom = ath_chrom(as.character(GenomicRanges::seqnames(x))),

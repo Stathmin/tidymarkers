@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidymarkers 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidymarkers/issues\n"
-"POT-Creation-Date: 2026-11-26 17:42+0300\n"
+"POT-Creation-Date: 2026-11-26 18:38+0300\n"
 "PO-Revision-Date: 2026-10-23 00:30+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -49,23 +49,19 @@ msgstr "`reference` вне диапазона (1..{length(a)})."
 msgid "`reference` = {reference} is not a sequence name."
 msgstr "`reference` = {reference} не является именем последовательности."
 
-#: marker_alignment.R:198
-msgid "A `freq` table needs `haplotype` and `freq` columns."
-msgstr "Таблица `freq` требует колонок `haplotype` и `freq`."
-
-#: marker_alignment.R:209
+#: marker_alignment.R:207
 msgid "A `freq` vector must be named by haplotype."
 msgstr "Вектор `freq` должен быть именован по гаплотипу."
 
-#: marker_alignment.R:243
+#: marker_alignment.R:241
 msgid "A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`."
 msgstr "Таблица `maf` требует `pos`, `ref`, `alt` и `maf`/`freq`."
 
-#: marker_alignment.R:276
+#: marker_alignment.R:274
 msgid "to plot an alignment"
 msgstr "для отрисовки выравнивания"
 
-#: marker_alignment.R:278
+#: marker_alignment.R:276
 msgid "`hp` must come from haplotypes_from_alignment()."
 msgstr "`hp` должен быть получен из haplotypes_from_alignment()."
 
@@ -167,7 +163,7 @@ msgid ""
 "schema."
 msgstr ""
 
-#: marker_artefact.R:691 marker_trace_schema.R:331
+#: marker_artefact.R:691 marker_trace_schema.R:325
 msgid "Update tidymarkers to read it."
 msgstr ""
 
@@ -359,7 +355,7 @@ msgstr ""
 "Ранжирование не использует геном; здесь проверяются off-target хиты, ПЦР in "
 "silico и инвертированные повторы."
 
-#: marker_assemble.R:985 marker_assemble.R:1514
+#: marker_assemble.R:985 marker_assemble.R:1511
 msgid "in-silico PCR failed: {conditionMessage(e)}"
 msgstr "ПЦР in silico не удалась: {conditionMessage(e)}"
 
@@ -373,7 +369,7 @@ msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 msgid "BLAST db unavailable: {conditionMessage(e)}"
 msgstr "BLAST-БД недоступна: {conditionMessage(e)}"
 
-#: marker_assemble.R:1071 marker_assemble.R:1522
+#: marker_assemble.R:1071 marker_assemble.R:1519
 msgid "genome ideogram failed: {conditionMessage(e)}"
 msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
 
@@ -398,13 +394,13 @@ msgid ""
 "The ALT primer is built for {snp$alt} only; the other ALTs are not covered."
 msgstr "ALT-праймер построен только для {snp$alt}; остальные ALT не покрыты."
 
-#: marker_assemble.R:1128 marker_assemble.R:1532
+#: marker_assemble.R:1128 marker_assemble.R:1529
 #, fuzzy
 #| msgid "FM scan failed: {conditionMessage(e)}"
 msgid "The acceptance checks could not be evaluated: {conditionMessage(e)}"
 msgstr "Сканирование FM не удалось: {conditionMessage(e)}"
 
-#: marker_assemble.R:1129 marker_assemble.R:1533
+#: marker_assemble.R:1129 marker_assemble.R:1530
 msgid "assay$evaluation is NULL; the verdict is unknown, not usable."
 msgstr ""
 
@@ -429,32 +425,26 @@ msgid ""
 "`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`."
 msgstr ""
 
-#: marker_assemble.R:1190
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`snp` is missing: {paste(miss, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_assemble.R:1199
+#: marker_assemble.R:1196
 msgid "`snp` needs a non-missing chromosome and a positive integer position."
 msgstr ""
 
-#: marker_assemble.R:1202
+#: marker_assemble.R:1199
 #, fuzzy
 #| msgid "tetra-primer ARMS is implemented for single-base substitutions only."
 msgid "Fixed-primer assembly currently handles single-base substitutions only."
 msgstr "тетра-праймерный ARMS реализован только для однонуклеотидных замен."
 
-#: marker_assemble.R:1205
+#: marker_assemble.R:1202
 msgid "`snp$ref` and `snp$alt` must differ."
 msgstr ""
 
-#: marker_assemble.R:1224
+#: marker_assemble.R:1221
 msgid ""
 "`primers` needs a `role` (or `name`) and a `sequence` (or `body`) column."
 msgstr ""
 
-#: marker_assemble.R:1232
+#: marker_assemble.R:1229
 #, fuzzy
 #| msgid "`seqs` must be a DNAStringSet or a character vector."
 msgid ""
@@ -462,94 +452,90 @@ msgid ""
 "vector."
 msgstr "`seqs` должен быть DNAStringSet или символьным вектором."
 
-#: marker_assemble.R:1238
+#: marker_assemble.R:1235
 msgid "`primers` must be exactly three distinct roles: AS_ref, AS_alt and COM."
 msgstr ""
 
-#: marker_assemble.R:1241
+#: marker_assemble.R:1238
 msgid ""
 "`primers` roles must be AS_ref / AS_alt / COM (aliases: allele1 / allele2 / "
 "common)."
 msgstr ""
 
-#: marker_assemble.R:1245
+#: marker_assemble.R:1242
 msgid "Every primer must be a non-empty ACGT sequence."
 msgstr ""
 
-#: marker_assemble.R:1330
+#: marker_assemble.R:1327
 msgid ""
 "AS_ref and AS_alt must be the same length (they are one allele-specific "
 "primer pair)."
 msgstr ""
 
-#: marker_assemble.R:1336
+#: marker_assemble.R:1333
 msgid "AS_ref and AS_alt must differ at exactly their 3'-terminal base."
 msgstr ""
 
-#: marker_assemble.R:1346
+#: marker_assemble.R:1343
 msgid ""
 "The AS_ref primer must have exactly one exact genome hit whose 3' end sits "
 "on the target."
 msgstr ""
 
-#: marker_assemble.R:1347
+#: marker_assemble.R:1344
 msgid "{snp$chrom}:{snp$pos}: found {nrow(cand)} such hit(s)."
 msgstr ""
 
-#: marker_assemble.R:1348
+#: marker_assemble.R:1345
 msgid "AS_ref (5'->3'): {as_ref}"
 msgstr ""
 
-#: marker_assemble.R:1363
+#: marker_assemble.R:1360
 msgid "AS_ref's 3' base does not match the reference allele at the target."
 msgstr ""
 
-#: marker_assemble.R:1364
+#: marker_assemble.R:1361
 msgid ""
 "target {snp$chrom}:{snp$pos} has {snp$ref}; strand {strand} expects "
 "{expected(snp$ref)}."
 msgstr ""
 
-#: marker_assemble.R:1368
+#: marker_assemble.R:1365
 msgid ""
 "AS_alt's 3' base does not match the ALT allele ({snp$alt}) on strand "
 "{strand}."
 msgstr ""
 
-#: marker_assemble.R:1382
+#: marker_assemble.R:1379
 msgid ""
 "The COM primer has no exact opposite-strand hit that closes an amplicon on "
 "{snp$chrom}."
 msgstr ""
 
-#: marker_assemble.R:1383
+#: marker_assemble.R:1380
 msgid "COM (5'->3'): {com}"
 msgstr ""
 
-#: marker_assemble.R:1389
+#: marker_assemble.R:1386
 msgid ""
 "The COM primer has more than one equally short amplicon on {snp$chrom}; "
 "ambiguous."
 msgstr ""
 
-#: marker_assemble.R:1400
+#: marker_assemble.R:1397
 msgid ""
 "The amplicon runs off the start of {snp$chrom}; cannot build a template "
 "around {snp$pos}."
 msgstr ""
 
-#: marker_assemble.R:1404
+#: marker_assemble.R:1401
 msgid ""
 "The genome at {snp$chrom}:{snp$pos} is not the supplied REF allele {snp$ref}."
 msgstr ""
 
-#: marker_assemble.R:1426
+#: marker_assemble.R:1423
 msgid "The AS_ref hit does not place {snp$ref} at its 3' base."
 msgstr ""
-
-#: marker_batch.R:56 marker_object.R:169 marker_strategy.R:100
-msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
 #: marker_bncc.R:86
 msgid ""
@@ -694,78 +680,83 @@ msgstr "Окно {from}..{to} вне референса (1..{nchar(ref)})."
 msgid "`chunk` must be a marker_chunk (see marker_chunk())."
 msgstr "`chunk` должен быть объектом marker_chunk (см. marker_chunk())."
 
-#: marker_contracts.R:71
+#: marker_contracts.R:89
+#, c-format
+msgid "`%s` is missing column(s): %s"
+msgstr ""
+
+#: marker_contracts.R:108
 msgid ""
 "Contract violated in pick_target_snp: the returned target is not a one-row "
 "pos/ref/alt locus"
 msgstr ""
 
-#: marker_contracts.R:79
+#: marker_contracts.R:116
 msgid ""
 "Contract violated in pick_target_snp: the returned target has an unset pos/"
 "ref/alt"
 msgstr ""
 
-#: marker_contracts.R:84
+#: marker_contracts.R:121
 msgid ""
 "Contract violated in pick_target_snp: the returned SNP has no designable AS "
 "window"
 msgstr ""
 
-#: marker_contracts.R:90
+#: marker_contracts.R:127
 msgid ""
 "Contract violated in pick_target_snp: the attached marker is not designable"
 msgstr ""
 
-#: marker_contracts.R:105
+#: marker_contracts.R:142
 msgid "Contract violated in assemble_kasp_assay: no genome supplied"
 msgstr ""
 
-#: marker_contracts.R:110
+#: marker_contracts.R:147
 msgid ""
 "Contract violated in assemble_kasp_assay: `snp` is not a one-row chrom/pos/"
 "ref/alt locus"
 msgstr ""
 
-#: marker_contracts.R:116
+#: marker_contracts.R:153
 msgid ""
 "Contract violated in assemble_kasp_assay: the locus position is not a "
 "positive number"
 msgstr ""
 
-#: marker_contracts.R:122
+#: marker_contracts.R:159
 msgid "Contract violated in assemble_kasp_assay: the locus REF allele is unset"
 msgstr ""
 
-#: marker_contracts.R:128
+#: marker_contracts.R:165
 msgid ""
 "Contract violated in assemble_kasp_assay: the locus ALT alleles are not "
 "designable"
 msgstr ""
 
-#: marker_contracts.R:143
+#: marker_contracts.R:180
 msgid ""
 "Contract violated in assemble_kasp_assay: the result is not a marker_assay "
 "object"
 msgstr ""
 
-#: marker_contracts.R:148
+#: marker_contracts.R:185
 msgid "Contract violated in assemble_kasp_assay: the assay carries no scheme"
 msgstr ""
 
-#: marker_contracts.R:158
+#: marker_contracts.R:195
 msgid ""
 "Contract violated in assemble_kasp_assay: the assay has an empty AS/COM "
 "primer"
 msgstr ""
 
-#: marker_contracts.R:163
+#: marker_contracts.R:200
 msgid ""
 "Contract violated in assemble_kasp_assay: the assay has no finite amplicon "
 "length"
 msgstr ""
 
-#: marker_contracts.R:171
+#: marker_contracts.R:208
 msgid ""
 "Contract violated in assemble_kasp_assay: the assay has no labelled AS/COM "
 "primer tails"
@@ -916,17 +907,12 @@ msgstr ""
 msgid "KASP_CHECK_* labels with no criterion row:"
 msgstr ""
 
-#: marker_criteria.R:315 marker_criteria.R:321 marker_criteria.R:1205
-#: marker_performance.R:55
+#: marker_criteria.R:315 marker_criteria.R:321 marker_performance.R:55
 msgid ","
 msgstr ""
 
 #: marker_criteria.R:320
 msgid "criterion row(s) in no KASP_CHECK_* class:"
-msgstr ""
-
-#: marker_criteria.R:1204
-msgid "a criterion table is missing column(s):"
 msgstr ""
 
 #: marker_decision.R:302
@@ -988,19 +974,6 @@ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = 
 #: marker_depth.R:217
 msgid "`min_depth` must be a single positive number."
 msgstr ""
-
-#: marker_depth.R:223
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`depth` is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_depth.R:290
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid ""
-"The depth table is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
 
 #: marker_design.R:89
 msgid "No common primer passed the filters."
@@ -1323,74 +1296,63 @@ msgstr ""
 msgid "Unknown sequence: {chrom}"
 msgstr "Неизвестная последовательность: {chrom}"
 
-#: marker_haplotypes.R:29
-msgid "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_haplotypes.R:45
+#: marker_haplotypes.R:42
 msgid "`freq` must be one value in [0, 1] per haplotype."
 msgstr "`freq` должен быть одним значением в [0, 1] на гаплотип."
 
-#: marker_haplotypes.R:382
+#: marker_haplotypes.R:379
 msgid "The marker has no `snp` row to anchor haplotypes."
 msgstr ""
 
-#: marker_haplotypes.R:411
+#: marker_haplotypes.R:408
 msgid ""
 "Target ALT frequency is %s%% (< %s%%); this marker may be monomorphic/rare "
 "in the supplied population."
 msgstr ""
 
-#: marker_haplotypes.R:427
+#: marker_haplotypes.R:424
 msgid ""
 "CAPS recognition site carries %d extra population variant(s); site "
 "conservation/frequency is not guaranteed."
 msgstr ""
 
-#: marker_haplotypes.R:442
+#: marker_haplotypes.R:439
 msgid ""
 "CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); "
 "conservation is not guaranteed."
 msgstr ""
 
-#: marker_haplotypes.R:489
+#: marker_haplotypes.R:486
 msgid "dosage supplied by the caller (copies of ALT); not estimated here"
 msgstr ""
 
-#: marker_haplotypes.R:492
+#: marker_haplotypes.R:489
 msgid ""
 "allele dosage / copy number is not modelled; a polyploid mixture needs "
 "fitPoly (Z10.2)"
 msgstr ""
 
-#: marker_homeolog.R:36
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid ""
-"`diagnostic_positions` is missing column(s): {paste(miss, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_homeolog.R:49
+#: marker_homeolog.R:44
 msgid ""
 "`diagnostic_positions` must be NULL, a data frame / list with `chrom` and "
 "`pos`,"
 msgstr ""
 
-#: marker_homeolog.R:50
+#: marker_homeolog.R:45
 msgid "a GRanges, or a named list `chrom -> positions`."
 msgstr ""
 
-#: marker_homeolog.R:56
+#: marker_homeolog.R:51
 msgid ""
 "`diagnostic_positions` needs a non-NA chromosome and a positive integer "
 "position in every row."
 msgstr ""
 
-#: marker_homeolog.R:151
+#: marker_homeolog.R:146
 msgid "The common primer's 3' base is not on a subgenome-diagnostic position:"
 msgstr ""
 
-#: marker_homeolog.R:152
+#: marker_homeolog.R:147
 msgid "the assay genotypes but does not localise."
 msgstr ""
 
@@ -1469,22 +1431,15 @@ msgstr ""
 msgid "`min_lines` must be a positive whole number."
 msgstr ""
 
-#: marker_informativeness.R:127
-#, fuzzy
-#| msgid ""
-#| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`genotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_informativeness.R:140
+#: marker_informativeness.R:134
 msgid "`genotypes` needs a non-missing `line` and `pos` on every row."
 msgstr ""
 
-#: marker_informativeness.R:155
+#: marker_informativeness.R:149
 msgid "`genotype` dosages must be 0, 1 or 2."
 msgstr ""
 
-#: marker_informativeness.R:169
+#: marker_informativeness.R:163
 msgid "`genotype` calls must be REF/HET/ALT (or 0/0, 0/1, 1/1)."
 msgstr ""
 
@@ -1520,34 +1475,29 @@ msgstr ""
 msgid "A JSON literature source must be a top-level array of objects."
 msgstr ""
 
-#: marker_ingest.R:166
-#, c-format
-msgid "The literature source is missing required column(s): %s."
-msgstr ""
-
-#: marker_ingest.R:334
+#: marker_ingest.R:327
 #, c-format
 msgid "The existing registry %s does not have the expected columns (%s)."
 msgstr ""
 
-#: marker_ingest.R:437
+#: marker_ingest.R:430
 msgid "`queue` must come from marker_ingest_literature()."
 msgstr ""
 
-#: marker_ingest.R:440
+#: marker_ingest.R:433
 msgid "`record_id` must be one non-empty string."
 msgstr ""
 
-#: marker_ingest.R:443
+#: marker_ingest.R:436
 msgid "`reviewer` must be one non-empty string."
 msgstr ""
 
-#: marker_ingest.R:448
+#: marker_ingest.R:441
 #, c-format
 msgid "Record %s is not among this queue's candidates."
 msgstr ""
 
-#: marker_ingest.R:453
+#: marker_ingest.R:446
 #, c-format
 msgid "Record %s is already in the registry %s."
 msgstr ""
@@ -1599,31 +1549,23 @@ msgstr ""
 msgid "Bundled example data not found."
 msgstr "Встроенные примеры данных не найдены."
 
-#: marker_io.R:361 marker_io.R:390
+#: marker_io.R:361 marker_io.R:387
 msgid "GenomicRanges is not installed; returning `NULL`."
 msgstr ""
 
-#: marker_io.R:367 marker_io.R:429
-#, fuzzy
-#| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgid "`x` is missing column(s): {paste(missing, collapse = ', ')}"
-msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
-
-#: marker_io.R:376
+#: marker_io.R:373
 msgid "`ref` must be a non-empty allele string on every row."
 msgstr ""
 
-#: marker_io.R:393
+#: marker_io.R:390
 msgid "`x` must be a GRanges."
 msgstr ""
 
-#: marker_io.R:397
-#, fuzzy
-#| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgid "`x` is missing mcol(s): {paste(missing, collapse = ', ')}"
-msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
+#: marker_io.R:392
+msgid "`mcols()` is the metadata-column table."
+msgstr ""
 
-#: marker_io.R:434
+#: marker_io.R:424
 msgid "`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`."
 msgstr ""
 
@@ -1697,7 +1639,7 @@ msgid "Reaction volumes exceed {reaction_uL} uL; check `dna_uL`/`reaction_uL`."
 msgstr ""
 "Объёмы реакции превышают {reaction_uL} мкл; проверьте `dna_uL`/`reaction_uL`."
 
-#: marker_object.R:222
+#: marker_object.R:218
 msgid "Designing KASP markers"
 msgstr "Дизайн KASP-маркеров"
 
@@ -1715,50 +1657,43 @@ msgid "`assays` must be a data frame or tibble, not {.cls {class(assays)}}."
 msgstr ""
 
 #: marker_one_pot.R:252
-#, fuzzy
-#| msgid ""
-#| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`assays` is missing required column(s): {.field {missing_cols}}."
-msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_one_pot.R:253
 msgid "One-pot grouping needs {.field {ONE_POT_COLUMNS}}."
 msgstr ""
 
-#: marker_one_pot.R:257
+#: marker_one_pot.R:255
 msgid "`assays` has no rows, so there is nothing to place in a pot."
 msgstr ""
 
-#: marker_one_pot.R:262
+#: marker_one_pot.R:260
 msgid ""
 "{.field {not_numeric}} must be numeric in `assays`, not {.cls "
 "{class(assays[[not_numeric[1L]]])}}."
 msgstr ""
 
-#: marker_one_pot.R:272
+#: marker_one_pot.R:270
 msgid "`matrix` must be a one-pot compatibility matrix with {.field {needed}}."
 msgstr ""
 
-#: marker_one_pot.R:273
+#: marker_one_pot.R:271
 msgid "Build one with `one_pot_matrix()` and edit its rows."
 msgstr ""
 
-#: marker_one_pot.R:277
+#: marker_one_pot.R:275
 msgid "`matrix` has no rules, so every set would pass vacuously."
 msgstr ""
 
-#: marker_one_pot.R:297
+#: marker_one_pot.R:295
 msgid ""
 "Unknown `comparison` {.val {comparison}} on one-pot rule {.val {rule$rule}}."
 msgstr ""
 
-#: marker_one_pot.R:304
+#: marker_one_pot.R:302
 msgid ""
 "One-pot rule {.val {rule$rule}} compares {.field {rule$field}}, which is not "
 "numeric in `assays`."
 msgstr ""
 
-#: marker_one_pot.R:314
+#: marker_one_pot.R:312
 msgid ""
 "One-pot rule {.val {rule$rule}} needs one non-missing numeric `value`, not "
 "{.val {value}}."
@@ -2001,24 +1936,20 @@ msgstr ""
 msgid "' declares unknown analytical quantities:"
 msgstr ""
 
-#: marker_plan.R:133
-msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_plan.R:164
+#: marker_plan.R:158
 msgid "Give `chrom`, `pos`, `ref`, `alt`, or a `data` table."
 msgstr "Задайте `chrom`, `pos`, `ref`, `alt` или таблицу `data`."
 
-#: marker_plan.R:222
+#: marker_plan.R:216
 msgid "`genome` is required (see marker_genome())."
 msgstr "Требуется `genome` (см. marker_genome())."
 
-#: marker_plan.R:384
+#: marker_plan.R:378
 msgid "`...` must be named costs, e.g. marker_costs(hrm = 1.2)."
 msgstr ""
 "`...` должны быть именованными стоимостями, напр. marker_costs(hrm = 1.2)."
 
-#: marker_plan.R:395
+#: marker_plan.R:389
 msgid ""
 "Only marker_*() layers (marker_targets(), marker_context(), marker_tech()) "
 "can be added to a marker_plan."
@@ -2026,7 +1957,7 @@ msgstr ""
 "К marker_plan можно добавлять только слои marker_*() (marker_targets(), "
 "marker_context(), marker_tech())."
 
-#: marker_plan.R:435
+#: marker_plan.R:429
 msgid ""
 "Unknown scheme(s) in the plan: {paste(unknown, collapse = ', ')}; see "
 "marker_schemes()."
@@ -2038,39 +1969,26 @@ msgstr ""
 msgid "`region` must be a single GRanges interval."
 msgstr ""
 
-#: marker_region.R:36
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`region` is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_region.R:40
+#: marker_region.R:35
 msgid "`region` must name exactly one interval."
 msgstr ""
 
-#: marker_region.R:49
+#: marker_region.R:44
 msgid ""
 "`region` must be a GRanges or a data frame with `chrom`, `start`, `end`."
 msgstr ""
 
-#: marker_region.R:53
+#: marker_region.R:48
 msgid "`region` needs a chromosome and a valid 1-based start <= end."
 msgstr ""
 
-#: marker_region.R:68
+#: marker_region.R:63
 msgid ""
 "A `region` needs variant context; add marker_context(variants = ) or "
 "marker_context(haplotypes = )."
 msgstr ""
 
-#: marker_region.R:75
-#, fuzzy
-#| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid ""
-"The variant context is missing column(s): {paste(missing, collapse = ', ')}."
-msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_region.R:99
+#: marker_region.R:89
 msgid "No variant lies in the region {reg$chrom}:{reg$start}-{reg$end}."
 msgstr ""
 
@@ -2137,80 +2055,76 @@ msgid ""
 "The output is still not the original; check a very repetitive input by hand."
 msgstr ""
 
-#: marker_reprex.R:291
-msgid "A variant table is missing column{?s} {.val {missing}}."
-msgstr ""
-
-#: marker_reprex.R:292
+#: marker_reprex.R:293
 msgid "It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes."
 msgstr ""
 
-#: marker_reprex.R:299
+#: marker_reprex.R:300
 msgid "{.val {extra}}: dropped, the script replays only {.val {need}}."
 msgstr ""
 
-#: marker_reprex.R:300
+#: marker_reprex.R:301
 msgid "A bug that depends on them will not reproduce; check them by hand."
 msgstr ""
 
-#: marker_reprex.R:306
+#: marker_reprex.R:307
 msgid "{sum(!keep)} incomplete row{?s} dropped from the reproducer."
 msgstr ""
 
-#: marker_reprex.R:310
+#: marker_reprex.R:311
 msgid "`x` holds no complete variant."
 msgstr ""
 
-#: marker_reprex.R:375
+#: marker_reprex.R:376
 msgid "Anonymisation lost `{prop}`; no script was written."
 msgstr ""
 
-#: marker_reprex.R:376
+#: marker_reprex.R:377
 msgid "This is a bug in `marker_reprex()`: please report it."
 msgstr ""
 
-#: marker_reprex.R:393
+#: marker_reprex.R:394
 msgid "Cannot read {.path {path}}."
 msgstr ""
 
-#: marker_reprex.R:402
+#: marker_reprex.R:403
 msgid "The script is plain ASCII and a {.field {what}} field is not."
 msgstr ""
 
-#: marker_reprex.R:403
+#: marker_reprex.R:404
 msgid "Rewrite that field by hand before sharing."
 msgstr ""
 
-#: marker_reprex.R:412
+#: marker_reprex.R:413
 msgid "`pos` must hold whole numbers."
 msgstr ""
 
-#: marker_reprex.R:428
+#: marker_reprex.R:429
 msgid "{.path {path}} holds no VCF record."
 msgstr ""
 
-#: marker_reprex.R:432
+#: marker_reprex.R:433
 msgid "{.path {path}} has a record with fewer than 8 VCF columns."
 msgstr ""
 
-#: marker_reprex.R:444
+#: marker_reprex.R:445
 msgid "{.path {path}} holds no BED interval."
 msgstr ""
 
-#: marker_reprex.R:448
+#: marker_reprex.R:449
 msgid "{.path {path}} has a line with fewer than 3 BED columns."
 msgstr ""
 
-#: marker_reprex.R:451
+#: marker_reprex.R:452
 msgid ""
 "A BED interval is replayed as a 1-based single-base record, not as a width."
 msgstr ""
 
-#: marker_reprex.R:452
+#: marker_reprex.R:453
 msgid "A bug that depends on an interval's width will not reproduce."
 msgstr ""
 
-#: marker_reprex.R:465
+#: marker_reprex.R:466
 msgid "{.path {path}} is not a FASTA (no `>` header)."
 msgstr ""
 
@@ -2385,11 +2299,7 @@ msgstr "Неизвестный режим специфичности {mode} дл
 msgid "Unknown marker scheme {scheme}; see marker_schemes()."
 msgstr "Неизвестная схема маркера {scheme}; см. marker_schemes()."
 
-#: marker_screen.R:58
-msgid "`variants` needs `chrom` and `pos` columns."
-msgstr "`variants` требует колонки `chrom` и `pos`."
-
-#: marker_screen.R:212
+#: marker_screen.R:210
 msgid "`screen` is empty."
 msgstr "`screen` пуст."
 
@@ -2533,153 +2443,146 @@ msgstr "`seqs` должен быть DNAStringSet или символьным в
 msgid "`max_mismatch` must be a non-negative integer."
 msgstr ""
 
-#: marker_specificity.R:1248
-#, fuzzy
-#| msgid ""
-#| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
-msgid "`hits` is missing required columns: {.val {missing_cols}}."
-msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
-
-#: marker_specificity.R:1253
+#: marker_specificity.R:1249
 msgid "`hits` carries no `sequence` column, so `primers` must be supplied."
 msgstr ""
 
-#: marker_specificity.R:1259
+#: marker_specificity.R:1255
 msgid "`hits$sequence` must not contain NA."
 msgstr ""
 
-#: marker_specificity.R:1264
+#: marker_specificity.R:1260
 msgid ""
 "`hits$sequence` gives one primer name more than one oligo; supply `primers` "
 "explicitly."
 msgstr ""
 
-#: marker_specificity.R:1270
+#: marker_specificity.R:1266
 #, fuzzy
 #| msgid "`seqs` must be a DNAStringSet or a character vector."
 msgid "`primers` must be a named character vector of oligos."
 msgstr "`seqs` должен быть DNAStringSet или символьным вектором."
 
-#: marker_specificity.R:1277
+#: marker_specificity.R:1273
 msgid ""
 "`hits$strand` must be {.val {c('+', '-')}}; got {.val "
 "{unique(strand[bad_strand])}}."
 msgstr ""
 
-#: marker_specificity.R:1282
+#: marker_specificity.R:1278
 msgid "`hits$start` must be a positive integer."
 msgstr ""
 
-#: marker_specificity.R:1287
+#: marker_specificity.R:1283
 msgid ""
 "Every `hits$primer` must be a name in `primers`; missing: {.val "
 "{missing_primers}}."
 msgstr ""
 
-#: marker_specificity.R:1296
+#: marker_specificity.R:1292
 msgid "`hits` must describe gapless equal-width alignments."
 msgstr ""
 
-#: marker_specificity.R:1298
+#: marker_specificity.R:1294
 msgid "Row"
 msgstr ""
 
-#: marker_specificity.R:1298
+#: marker_specificity.R:1294
 msgid "(primer {.val {primer_name[[i]]}}) has width"
 msgstr ""
 
-#: marker_specificity.R:1299
+#: marker_specificity.R:1295
 msgid ", but primer length is"
 msgstr ""
 
-#: marker_specificity.R:1299
+#: marker_specificity.R:1295
 msgid "."
 msgstr ""
 
-#: marker_specificity.R:1681
+#: marker_specificity.R:1677
 msgid "%d near-match in-silico PCR product(s) with <= 1 primer mismatch"
 msgstr ""
 
-#: marker_specificity.R:1682
+#: marker_specificity.R:1678
 msgid ""
 "were found; exact mode ignores them. Set max_mismatch = 1 to include them."
 msgstr ""
 
-#: marker_specificity.R:1901
+#: marker_specificity.R:1897
 msgid "BLAST failed: {conditionMessage(e)}"
 msgstr "BLAST не удался: {conditionMessage(e)}"
 
-#: marker_specificity.R:2103
+#: marker_specificity.R:2099
 msgid "`scheme` must be a single scheme name."
 msgstr ""
 
-#: marker_specificity.R:2111
+#: marker_specificity.R:2107
 msgid "`spacer_len` must be a single positive whole number of nucleotides."
 msgstr ""
 
-#: marker_specificity.R:2123
+#: marker_specificity.R:2119
 #, fuzzy
 #| msgid "Unknown specificity mode {mode} for scheme {scheme}."
 msgid "Unknown specificity scheme {.val {scheme}}."
 msgstr "Неизвестный режим специфичности {mode} для схемы {scheme}."
 
-#: marker_specificity.R:2125
+#: marker_specificity.R:2121
 msgid "Use one of {.val {names(SPECIFICITY_POLICIES)}} or an alias"
 msgstr ""
 
-#: marker_specificity.R:2126
+#: marker_specificity.R:2122
 msgid "({.val {names(SPECIFICITY_SCHEME_ALIASES)}})."
 msgstr ""
 
-#: marker_specificity.R:2230
+#: marker_specificity.R:2226
 msgid "No genome was supplied."
 msgstr ""
 
-#: marker_specificity.R:2233
+#: marker_specificity.R:2229
 msgid "No genome-wide engine for this genome: it is not an in-memory"
 msgstr ""
 
-#: marker_specificity.R:2234
+#: marker_specificity.R:2230
 msgid "DNAStringSet and it has no usable BLAST database."
 msgstr ""
 
-#: marker_specificity.R:2396
+#: marker_specificity.R:2392
 msgid "No genome-wide engine was consulted; a missing engine is never a pass."
 msgstr ""
 
-#: marker_specificity.R:2400
+#: marker_specificity.R:2396
 msgid ""
 "No genome-wide engine for this genome; a missing engine is never a pass."
 msgstr ""
 
-#: marker_specificity.R:2411
+#: marker_specificity.R:2407
 msgid "No in-silico PCR product at all: the primers do not amplify."
 msgstr ""
 
-#: marker_specificity.R:2413
+#: marker_specificity.R:2409
 msgid ""
 "The guide's PAM changed: a hard loss of target, not a tolerated mismatch."
 msgstr ""
 
-#: marker_specificity.R:2415
+#: marker_specificity.R:2411
 msgid "Every product breaks the scheme's mismatch policy."
 msgstr ""
 
-#: marker_specificity.R:2429
+#: marker_specificity.R:2425
 #, c-format
 msgid "%d tolerated in-silico PCR products: not specific."
 msgstr ""
 
-#: marker_specificity.R:2442
+#: marker_specificity.R:2438
 msgid ""
 "One tolerated product and a genome-wide primer scan: no other binding site."
 msgstr ""
 
-#: marker_specificity.R:2453
+#: marker_specificity.R:2449
 msgid "Exactly one tolerated in-silico PCR product; pair-level evidence only,"
 msgstr ""
 
-#: marker_specificity.R:2454
+#: marker_specificity.R:2450
 msgid "not a genome-wide primer scan."
 msgstr ""
 
@@ -2756,59 +2659,46 @@ msgstr ""
 "Кандидат TaqMan не прошёл жёсткий гейт (состав пробы, специфичность, окно "
 "Tm, Tm праймеров или ΔG мисматча)."
 
-#: marker_target.R:63
-msgid ""
-"ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', ')}."
-msgstr ""
-"ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
-
-#: marker_target.R:64 marker_target.R:112
+#: marker_target.R:62 marker_target.R:107
 msgid "The Ensembl REST schema may have changed."
 msgstr "Возможно, изменилась схема Ensembl REST."
 
-#: marker_target.R:111
-msgid ""
-"ensembl_variants(): response is missing field(s) {paste(missing, collapse = "
-"', ')}."
-msgstr ""
-"ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', ')}."
-
-#: marker_target.R:295
+#: marker_target.R:289
 msgid ""
 "Contract violated in pick_target_snp: `variants` is not a variant table with "
 "chrom/pos/ref_genome"
 msgstr ""
 
-#: marker_target.R:300
+#: marker_target.R:294
 msgid "Contract violated in pick_target_snp: `gene` names no chromosome"
 msgstr ""
 
-#: marker_target.R:305
+#: marker_target.R:299
 msgid "Contract violated in pick_target_snp: no genome supplied"
 msgstr ""
 
-#: marker_target.R:333
+#: marker_target.R:327
 msgid "No usable substitution variant (SNP/MNP) left after filtering."
 msgstr "После фильтрации не осталось пригодных замен (SNP/MNP)."
 
-#: marker_target.R:436
+#: marker_target.R:430
 msgid ""
 "No ranked target is designable for scheme {scheme} ({nrow(cand)} tried)."
 msgstr ""
 "Ни одна мишень по рангу не дизайнится для схемы {scheme} ({nrow(cand)} "
 "испробовано)."
 
-#: marker_target.R:437
+#: marker_target.R:431
 msgid "returning the best-ranked target, whose design may be doomed."
 msgstr "возвращаю лучшую по рангу мишень, дизайн которой может быть doomed."
 
-#: marker_target.R:512
+#: marker_target.R:506
 msgid ""
 "`context` is a marker_plan() layer; pass marker_run_context(genome, ...) "
 "instead."
 msgstr ""
 
-#: marker_target.R:516
+#: marker_target.R:510
 #, fuzzy
 #| msgid "`chunk` must be a marker_chunk (see marker_chunk())."
 msgid "`context` must be a marker_run_context() object."
@@ -2960,87 +2850,174 @@ msgid "`x` is not a marker_trace; migrate it with marker_trace_migrate()."
 msgstr ""
 
 #: marker_trace_schema.R:207
-msgid "A trace must have every field."
-msgstr ""
-
-#: marker_trace_schema.R:208
-#, fuzzy
-#| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
-msgid "Missing: {paste(missing, collapse = ', ')}."
-msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
-
-#: marker_trace_schema.R:213
 msgid "A trace must carry the current schema."
 msgstr ""
 
-#: marker_trace_schema.R:214
+#: marker_trace_schema.R:208
 msgid ""
 "Found {.val {trace_schema_label(x$schema)}}, expected {.val "
 "{marker_trace_schema()}}."
 msgstr ""
 
-#: marker_trace_schema.R:218
+#: marker_trace_schema.R:212
 msgid "`decisions` in a trace must be a data frame."
 msgstr ""
 
-#: marker_trace_schema.R:291
+#: marker_trace_schema.R:285
 #, fuzzy
 #| msgid "`solved` must be a marker_solved (see marker_solve())."
 msgid ""
 "`x` must be a marker_artefact, an artefact directory or a marker_solved."
 msgstr "`solved` должен быть объектом marker_solved (см. marker_solve())."
 
-#: marker_trace_schema.R:330
+#: marker_trace_schema.R:324
 msgid ""
 "This record is {.val {x$schema}}: newer than this reader's {parts$kind} "
 "schema."
 msgstr ""
 
-#: marker_trace_schema.R:368
+#: marker_trace_schema.R:362
 msgid "No trace at {.path {path}}."
 msgstr ""
 
-#: marker_trace_schema.R:376
+#: marker_trace_schema.R:370
 msgid "{.path {path}} is not a readable trace."
 msgstr ""
 
-#: marker_trace_schema.R:377
+#: marker_trace_schema.R:371
 #, fuzzy
 #| msgid "genome ideogram failed: {conditionMessage(e)}"
 msgid "The error was: {conditionMessage(out)}"
 msgstr "построение идеограммы генома не удалось: {conditionMessage(e)}"
 
-#: marker_trace_schema.R:406
+#: marker_trace_schema.R:400
 msgid "No directory at {.path {dir}}; create it before writing a trace."
 msgstr ""
 
-#: marker_trace_schema.R:443
+#: marker_trace_schema.R:437
 msgid "No conformance schema at {.path {path}}."
 msgstr ""
 
-#: marker_trace_schema.R:456
+#: marker_trace_schema.R:450
 msgid ""
 "Unknown column type {.val {unknown}} in the conformance schema for {.file "
 "{table$file}}."
 msgstr ""
 
-#: marker_trace_schema.R:483
+#: marker_trace_schema.R:477
 msgid "{.file {table$file}} does not match the conformance schema."
 msgstr ""
 
-#: marker_trace_schema.R:484
+#: marker_trace_schema.R:478
 msgid "Schema columns: {.val {want}}"
 msgstr ""
 
-#: marker_trace_schema.R:485
+#: marker_trace_schema.R:479
 msgid "File columns: {.val {names(out)}}"
 msgstr ""
 
-#: marker_trace_schema.R:561
+#: marker_trace_schema.R:555
 msgid ""
 "`artefact` must be a marker_artefact; a directory has already lost the in-"
 "memory manifest."
 msgstr ""
+
+#~ msgid "A `freq` table needs `haplotype` and `freq` columns."
+#~ msgstr "Таблица `freq` требует колонок `haplotype` и `freq`."
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`snp` is missing: {paste(miss, collapse = ', ')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#~ msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+#~ msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`depth` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid ""
+#~ "The depth table is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#~ msgid ""
+#~ "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid ""
+#~ "`diagnostic_positions` is missing column(s): {paste(miss, collapse = ', "
+#~ "')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid ""
+#~| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`genotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+#~ msgid "`x` is missing column(s): {paste(missing, collapse = ', ')}"
+#~ msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
+
+#, fuzzy
+#~| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+#~ msgid "`x` is missing mcol(s): {paste(missing, collapse = ', ')}"
+#~ msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
+
+#, fuzzy
+#~| msgid ""
+#~| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`assays` is missing required column(s): {.field {missing_cols}}."
+#~ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#~ msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`region` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#, fuzzy
+#~| msgid "`targets` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid ""
+#~ "The variant context is missing column(s): {paste(missing, collapse = ', "
+#~ "')}."
+#~ msgstr "В `targets` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#~ msgid "`variants` needs `chrom` and `pos` columns."
+#~ msgstr "`variants` требует колонки `chrom` и `pos`."
+
+#, fuzzy
+#~| msgid ""
+#~| "`haplotypes` is missing column(s): {paste(missing, collapse = ', ')}."
+#~ msgid "`hits` is missing required columns: {.val {missing_cols}}."
+#~ msgstr "В `haplotypes` нет столбца(ов): {paste(missing, collapse = ', ')}."
+
+#~ msgid ""
+#~ "ensembl_gene(): record is missing field(s) {paste(missing, collapse = ', "
+#~ "')}."
+#~ msgstr ""
+#~ "ensembl_gene(): в записи нет поля(ей) {paste(missing, collapse = ', ')}."
+
+#~ msgid ""
+#~ "ensembl_variants(): response is missing field(s) {paste(missing, collapse "
+#~ "= ', ')}."
+#~ msgstr ""
+#~ "ensembl_variants(): в ответе нет поля(ей) {paste(missing, collapse = ', "
+#~ "')}."
+
+#, fuzzy
+#~| msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
+#~ msgid "Missing: {paste(missing, collapse = ', ')}."
+#~ msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
 #~ msgid ""
 #~ "Wrote {.path {dir}} (markers.csv, attempts.csv, primers.csv, solved.rds)."

@@ -249,7 +249,7 @@ one_pot_check_assays <- function(assays) {
   need_cols(
     assays, ONE_POT_COLUMNS,
     arg = "assays",
-    i = "One-pot grouping needs {.field {ONE_POT_COLUMNS}}."
+    i = gettext("One-pot grouping needs {.field {ONE_POT_COLUMNS}}.")
   )
   if (!nrow(assays)) {
     abort_msg("`assays` has no rows, so there is nothing to place in a pot.")
