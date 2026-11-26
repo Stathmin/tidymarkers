@@ -3743,10 +3743,16 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: нет; золотой набор — TAIR10-фикстура, не пшеница.
       следствие: сегодня индексный геном отвечает не на тот вопрос, а
       вызывающий узнаёт об этом из предупреждения (D2).
-      сделано (2026-11-26): конструктор `genome_index()` с `strategy` и
-      `capabilities`, диспетчер `specificity_of()` по стратегии и `scan` на
-      каждом пути, тест memory vs bowtie; остаются `manifest`,
-      `scan_question()` и отказ `specificity_verdict()` от смеси вопросов.
+      сделано (2026-11-26): конструктор `genome_index()` с `strategy`,
+      `capabilities` и `manifest` (12 колонок ADR 0005); `index_manifest()` /
+      `index_verify()` с классами `tidymarkers_index_missing_error` и
+      `tidymarkers_index_integrity_error`; диспетчер `specificity_of()` по
+      стратегии и `scan` на каждом пути; `scan_question()` — единственный
+      читатель, класс `specificity_scan`, отказ `specificity_verdict()` от
+      смеси вопросов; `genome_index()` в `specificity_backend()` (tier
+      `"index"`). Проверка: `test-genome-index.R` (56 pass), `dev/test.R
+      genome|scan|specificity`. Остаётся: TAIR10-золотой набор и бюджет
+      ADR 0005 гейта 2 (2x на локус) — на этом хосте не замерены.
 
 - [~] **T2. Пер-хромосомные индексы для генома > 21.5 ГБ.**
       правка: `marker_bowtie_index(chroms = )` уже строит набор; довести до
@@ -3761,6 +3767,14 @@ dir)` пишет crate-профиль поверх существующих че
       TAIR10-наборе.
       следствие: без ленивости сборка читает FASTA целиком (шорткат в
       `bowtie_index_set()`), а пангеном не влезает ни в диск, ни в RAM.
+      сделано (2026-11-26): шард на хромосому в `manifest`; сборка читает одну
+      хромосому (`index_chrom_seq()`), пишет одно-последовательную FASTA,
+      индексирует и удаляет копию, не заполняя кеш запроса; порог монолита
+      `BOWTIE_MONOLITH_LIMIT` (21.5 ГБ) включает шардирование при `chroms =
+      NULL`; пангеном — именованный список индексов, 4 шарда на две сборки;
+      отсутствующий шард называет хромосому, валидный переиспользуется без
+      изменения mtime. Проверка: `test-genome-index.R`, `dev/bench-index.R`,
+      `docs/index-perf.md`. Остаётся: прогон на 16 ГБ и TAIR10-замер.
 
 - [~] **T3. BiocParallel по локусам — не pass-through.**
       правка: `bp_lapply()` (`R/marker_thermo.R`) получает `chunksize`,

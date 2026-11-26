@@ -40,11 +40,39 @@
   memory и BLAST (у BLAST при `k = NA` — `"whole-primer"`), `"whole-primer"`
   для bowtie и FM. `max_mismatch` сверх объявленного `max_mismatch` стратегии —
   именованная ошибка, а не предупреждение с другим вопросом.
+- `R/marker_index.R` — `manifest` на шард (`shard`, `chrom`, `strategy`,
+  `path`, `bytes`, `sha256`, `tool`, `tool_version`, `build_id`,
+  `genome_build`, `source_sha256`, `created`). Конструктор заполняет пути и
+  версию движка, но не читает геном; `index_manifest()` досчитывает байты,
+  SHA-256 набора файлов шарда, хеш источника и время сборки. `index_verify()`
+  называет отсутствующий шард хромосомой (`tidymarkers_index_missing_error`),
+  а изменённый — шардом (`tidymarkers_index_integrity_error`).
+- Ленивая по-хромосомная сборка: `genome_index(strategy = "bowtie", chroms = )`
+  (и `marker_bowtie_index(chroms = )`) читает одну хромосому за раз через
+  `index_chrom_seq()`, пишет её одно-последовательную FASTA, индексирует и
+  удаляет копию; кеш хромосом запроса при сборке не заполняется. Выше
+  `BOWTIE_MONOLITH_LIMIT` (21.5 ГБ, 1.34 Б/п.н.) bowtie-геном шардируется по
+  хромосомам и при `chroms = NULL`. Пангеном — именованный список таких
+  индексов, шард на `(genome_build, chrom)`.
+- `scan_question()` — единственный читатель `attr(x, "scan")`; возвращает
+  `"3'-seed"` или `"whole-primer"` (именованный вектор для пангенома), а
+  отсутствующее или неизвестное значение — ошибка
+  (`tidymarkers_scan_error`). Таблицы специфичности получают класс
+  `specificity_scan`; `specificity_verdict()` отказывается смешивать два
+  вопроса для одного генома (`tidymarkers_scan_mixed_error`).
+- `genome_index()` учитывается в `specificity_backend()`: вердикт по индексу
+  больше не `"unknown"`; tier `"index"` — геном-широкий primer-level скан.
+- **Ломающее изменение:** нестандартный `k` на bowtie и `max_mismatch` сверх
+  объявленного — ошибка `tidymarkers_capability_error`, а не предупреждение с
+  другим вопросом.
 - `tests/testthat/test-genome-index.R` — матрица возможностей; memory и bowtie
-  дают одинаковый вердикт (unique / off-target) на маленькой фикстуре.
-- Остаётся по ROADMAP T1: `manifest`, `scan_question()` как единственный
-  читатель `scan` и отказ `specificity_verdict()` смешивать `"3'-seed"` и
-  `"whole-primer"`.
+  дают одинаковый вердикт (unique / off-target) на фикстуре; manifest и его
+  хеши; переиспользование шарда не меняет mtime; отсутствующий и изменённый
+  шард; пангеном из двух сборок по два шарда; `specificity_verdict()` совпадает
+  на memory и bowtie.
+- `dev/bench-index.R` и `docs/index-perf.md` — замер на одном локусе (3 Мб,
+  три шарда): memory 0.08 с, bowtie 0.12 с при сборке 1.58 с, объект индекса
+  меньше 0.05 МБ (только пути).
 
 ### Один шлюз для abort-сообщений: `abort_msg()` (2026-11-26)
 
