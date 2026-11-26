@@ -683,7 +683,7 @@ msgstr "`chunk` должен быть объектом marker_chunk (см. marke
 #: marker_contracts.R:89
 #, c-format
 msgid "`%s` is missing column(s): %s"
-msgstr ""
+msgstr "В `%s` нет столбца(ов): %s"
 
 #: marker_contracts.R:108
 msgid ""

@@ -74,12 +74,14 @@ marker_contract <- function(condition, message, ...,
 #' @param cols the required column names.
 #' @param arg the name the message uses for `x`.
 #' @param call the call shown to the user; defaults to the caller's frame.
-#' @param ... optional cli bullet hints. Each hint is translated once by
-#'   `marker_contract()` and rendered as a bullet; a `{...}` interpolation in a
-#'   hint resolves in `marker_contract()`'s frame, not the caller's, so a hint
-#'   that reads a caller value must be pre-formatted there. A hint cannot be
-#'   named `x`, `cols`, `arg`, `call`, `class`, `message` or `condition`: those
-#'   names match the formals of this helper or of `marker_contract()`.
+#' @param ... optional cli bullet hints. A hint must be written as
+#'   `gettext("...")` at the call site, which is what `potools` extracts;
+#'   `marker_contract()`'s own `gettext()` lookup is then a no-op. Each hint is
+#'   rendered as a bullet; a `{...}` interpolation in a hint resolves in
+#'   `marker_contract()`'s frame, not the caller's, so a hint that reads a
+#'   caller value must be pre-formatted there. A hint cannot be named `x`,
+#'   `cols`, `arg`, `call`, `class`, `message` or `condition`: those names
+#'   match the formals of this helper or of `marker_contract()`.
 #' @keywords internal
 #' @noRd
 need_cols <- function(x, cols, arg = "x", call = rlang::caller_env(), ...) {
