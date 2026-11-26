@@ -139,7 +139,7 @@ pareto_candidates <- function(x, quality, linkage_risk, anchor, recombination,
 #' @noRd
 pareto_override_length <- function(v, n, nm) {
   if (!is.numeric(v) || length(v) != n) {
-    cli::cli_abort(gettextf("`%s` must be one number per candidate.", nm))
+    abort_msg("`{nm}` must be one number per candidate.")
   }
   invisible(v)
 }
@@ -218,12 +218,12 @@ pareto_validate <- function(d) {
   for (nm in names(limits)) {
     v <- d[[nm]]
     if (!is.numeric(v) || anyNA(v) || any(!is.finite(v))) {
-      cli::cli_abort(gettextf("`%s` must be a finite number on every candidate.", nm))
+      abort_msg("`{nm}` must be a finite number on every candidate.")
     }
     lo <- limits[[nm]][1L]
     hi <- limits[[nm]][2L]
     if (any(v < lo) || any(v > hi)) {
-      cli::cli_abort(gettextf("`%s` must lie in [%s, %s].", nm, lo, hi))
+      abort_msg("`{nm}` must lie in [{lo}, {hi}].")
     }
   }
   d

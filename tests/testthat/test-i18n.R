@@ -37,6 +37,14 @@ test_that("abort_msg preserves unknown bullet names", {
   expect_identical(unname(err$body), "bullet text")
 })
 
+test_that("warn_msg mirrors the abort contract", {
+  caution <- function(x) warn_msg("careful {x}", i = "hint about {x}")
+  cnd <- rlang::catch_cnd(caution(3))
+  expect_s3_class(cnd, "warning")
+  expect_match(conditionMessage(cnd), "careful 3", fixed = TRUE)
+  expect_match(conditionMessage(cnd), "hint about 3", fixed = TRUE)
+})
+
 test_that("abort_msg looks the message up in the compiled Russian catalogue", {
   english <- "Bundled restriction-enzyme catalogue not found."
   mo <- system.file("po", "ru", "LC_MESSAGES", "R-tidymarkers.mo",

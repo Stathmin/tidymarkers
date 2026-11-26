@@ -304,7 +304,7 @@ reprex_from_table <- function(v, preserve) {
   v <- v[need]
   keep <- stats::complete.cases(unclass(v))
   if (!all(keep)) {
-    cli::cli_warn(gettext("{sum(!keep)} incomplete row{?s} dropped from the reproducer."))
+    warn_msg("{sum(!keep)} incomplete row{?s} dropped from the reproducer.")
     v <- v[keep, , drop = FALSE]
   }
   if (!nrow(v)) {

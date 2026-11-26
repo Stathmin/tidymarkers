@@ -982,7 +982,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   pcr_products <- tryCatch(
     assay_pcr_products(stub, genome, BPPARAM = BPPARAM),
     error = function(e) {
-      cli::cli_warn(gettext("in-silico PCR failed: {conditionMessage(e)}"))
+      warn_msg("in-silico PCR failed: {conditionMessage(e)}")
       NULL
     }
   )
@@ -999,13 +999,13 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
           nthreads = if (is.null(BPPARAM)) 4L else 1L
         ),
         error = function(e) {
-          cli::cli_warn(gettext("bowtie scan failed: {conditionMessage(e)}"))
+          warn_msg("bowtie scan failed: {conditionMessage(e)}")
           NULL
         }
       )
     } else {
       db <- tryCatch(build_blast_db(genome), error = function(e) {
-        cli::cli_warn(gettext("BLAST db unavailable: {conditionMessage(e)}"))
+        warn_msg("BLAST db unavailable: {conditionMessage(e)}")
         NULL
       })
       blast_primers(primers, db)
@@ -1068,7 +1068,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   out$ideogram <- tryCatch(
     assay_ideogram_data(out, genome, BPPARAM = BPPARAM, hits = ideogram_hits, products = pcr_products),
     error = function(e) {
-      cli::cli_warn(gettext("genome ideogram failed: {conditionMessage(e)}"))
+      warn_msg("genome ideogram failed: {conditionMessage(e)}")
       NULL
     }
   )
@@ -1508,7 +1508,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   pcr_products <- tryCatch(
     assay_pcr_products(stub, genome, BPPARAM = BPPARAM),
     error = function(e) {
-      cli::cli_warn(gettext("in-silico PCR failed: {conditionMessage(e)}"))
+      warn_msg("in-silico PCR failed: {conditionMessage(e)}")
       NULL
     }
   )
@@ -1516,7 +1516,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
   out$ideogram <- tryCatch(
     assay_ideogram_data(out, genome, BPPARAM = BPPARAM, products = pcr_products),
     error = function(e) {
-      cli::cli_warn(gettext("genome ideogram failed: {conditionMessage(e)}"))
+      warn_msg("genome ideogram failed: {conditionMessage(e)}")
       NULL
     }
   )

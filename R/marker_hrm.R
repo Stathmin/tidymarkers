@@ -324,9 +324,7 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
   ref <- toupper(as.character(snp$ref)[1L])
   alt <- toupper(as.character(snp$alt)[1L])
   if (nchar(ref) == 1L && nchar(alt) == 1L && ref %in% c("A", "T") && alt %in% c("A", "T")) {
-    cli::cli_warn(gettext(
-      "A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and a positive control."
-    ))
+    warn_msg("A/T SNP: the HRM Tm shift is small (Liew 2004); use high-resolution melt and a positive control.")
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i

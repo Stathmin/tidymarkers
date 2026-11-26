@@ -721,9 +721,7 @@ design_caps_marker <- function(genome, snp, flank = 250L, enzymes = restriction_
     return(NULL)
   }
   if (is.null(haplotypes)) {
-    cli::cli_warn(gettext(
-      "CAPS: no population haplotypes supplied; restriction-site frequency/conservation is not checked."
-    ))
+    warn_msg("CAPS: no population haplotypes supplied; restriction-site frequency/conservation is not checked.")
     return(out)
   }
   marker_attach_haplotypes(out, haplotypes, snp)

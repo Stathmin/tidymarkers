@@ -97,17 +97,15 @@ ingest_path <- function(path) {
   }
   path <- fs::path_abs(path)
   if (!fs::is_file(path)) {
-    cli::cli_abort(gettextf(
-      "`path` must be an existing .csv or .json file; %s is not one.",
-      encodeString(as.character(path), quote = "`")
-    ))
+    abort_msg(
+      "`path` must be an existing .csv or .json file; {encodeString(as.character(path), quote = '`')} is not one."
+    )
   }
   ext <- tolower(fs::path_ext(path))
   if (!ext %in% c("csv", "json")) {
-    cli::cli_abort(gettextf(
-      "`path` must end in .csv or .json, not .%s (%s).", ext,
-      encodeString(as.character(path), quote = "`")
-    ))
+    abort_msg(
+      "`path` must end in .csv or .json, not .{ext} ({encodeString(as.character(path), quote = '`')})."
+    )
   }
   fs::path_norm(path)
 }
@@ -323,11 +321,9 @@ ingest_write_registry <- function(rows, registry) {
   if (fs::file_exists(registry)) {
     header <- names(utils::read.csv(registry, nrows = 1L))
     if (!identical(header, names(rows))) {
-      cli::cli_abort(gettextf(
-        "The existing registry %s does not have the expected columns (%s).",
-        encodeString(as.character(registry), quote = "`"),
-        paste(ingest_registry_columns(), collapse = ", ")
-      ))
+      abort_msg(
+        "The existing registry {encodeString(as.character(registry), quote = '`')} does not have the expected columns ({paste(ingest_registry_columns(), collapse = ', ')})."
+      )
     }
     readr::write_csv(rows, registry, append = TRUE, col_names = FALSE)
   } else {
@@ -437,15 +433,14 @@ marker_ingest_approve <- function(queue, record_id, registry = ingest_registry_p
   }
   rows <- queue$candidates[queue$candidates$record_id == record_id, , drop = FALSE]
   if (!nrow(rows)) {
-    cli::cli_abort(gettextf(
-      "Record %s is not among this queue's candidates.", encodeString(record_id, quote = "`")
-    ))
+    abort_msg(
+      "Record {encodeString(record_id, quote = '`')} is not among this queue's candidates."
+    )
   }
   if (record_id %in% marker_ingest_registry(registry)$record_id) {
-    cli::cli_abort(gettextf(
-      "Record %s is already in the registry %s.", encodeString(record_id, quote = "`"),
-      encodeString(as.character(fs::path(registry)), quote = "`")
-    ))
+    abort_msg(
+      "Record {encodeString(record_id, quote = '`')} is already in the registry {encodeString(as.character(fs::path(registry)), quote = '`')}."
+    )
   }
   stamped <- ingest_stamp(rows, reviewer)
   ingest_write_registry(stamped, registry)

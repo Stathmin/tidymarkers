@@ -83,9 +83,9 @@ resolve_depth_sample <- function(sample, sample_names) {
   }
   s <- as.character(sample)
   if (length(s) != 1L || is.na(s) || !s %in% sample_names) {
-    cli::cli_abort(glue::glue(gettext(
+    abort_msg(
       "Sample '{s}' is not in the VCF (samples: {paste(sample_names, collapse = ', ')})."
-    )))
+    )
   }
   s
 }

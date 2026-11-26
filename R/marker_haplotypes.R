@@ -435,9 +435,7 @@ marker_population_warnings <- function(marker) {
     }
     extra <- h[h$pos >= lo & h$pos <= hi & h$pos != marker$snp$pos[1L], , drop = FALSE]
     if (nrow(extra)) {
-      cli::cli_warn(gettext(
-        "CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); conservation is not guaranteed."
-      ))
+      warn_msg("CRISPR guide/PAM region carries {nrow(extra)} extra population variant(s); conservation is not guaranteed.")
     }
   }
   invisible(NULL)

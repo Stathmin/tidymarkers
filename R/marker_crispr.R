@@ -379,9 +379,7 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
   strand <- match.arg(strand)
   preamp <- match.arg(preamp, "rpa")
   if (identical(cas, "cas13b")) {
-    cli::cli_warn(gettext(
-      "Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled."
-    ))
+    warn_msg("Cas13b: only the 5' D-PFS is enforced; the 3' PFS (NAN/NNA) is not modelled.")
   }
   strands <- if (identical(strand, "both")) c("+", "-") else strand
   strict_spacer <- if (is.null(spacer_lengths)) {
@@ -521,9 +519,7 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
   )
   out <- structure(out, class = c("marker_crispr", "marker"))
   if (is.null(haplotypes)) {
-    cli::cli_warn(gettext(
-      "CRISPR: no population haplotypes supplied; guide/PAM conservation is not checked."
-    ))
+    warn_msg("CRISPR: no population haplotypes supplied; guide/PAM conservation is not checked.")
     return(out)
   }
   marker_attach_haplotypes(out, haplotypes, snp)

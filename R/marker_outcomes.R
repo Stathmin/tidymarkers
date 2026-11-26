@@ -137,10 +137,9 @@ marker_record_outcome <- function(artefact,
     }
     known <- artefact_targets(dir)
     if (!is.null(known) && !target %in% known) {
-      cli::cli_abort(gettextf(
-        "Target %s is not in this artefact. Known targets: %s.",
-        shQuote(target), paste(utils::head(known, 10L), collapse = ", ")
-      ))
+      abort_msg(
+        "Target {shQuote(target)} is not in this artefact. Known targets: {paste(utils::head(known, 10L), collapse = ', ')}."
+      )
     }
   }
 
@@ -157,10 +156,9 @@ marker_record_outcome <- function(artefact,
   if (fs::file_exists(path)) {
     header <- names(utils::read.csv(path, nrows = 1L))
     if (!identical(header, outcome_columns())) {
-      cli::cli_abort(gettextf(
-        "The existing outcomes.csv does not have the expected columns (%s).",
-        paste(outcome_columns(), collapse = ", ")
-      ))
+      abort_msg(
+        "The existing outcomes.csv does not have the expected columns ({paste(outcome_columns(), collapse = ', ')})."
+      )
     }
     readr::write_csv(row, path, append = TRUE, col_names = FALSE)
   } else {

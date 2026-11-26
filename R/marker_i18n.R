@@ -1,11 +1,24 @@
 # =============================================================================
-#  i18n: one chokepoint for translated abort messages
+#  i18n: one chokepoint for translated user messages
 # =============================================================================
-#  Every user-facing abort goes through `abort_msg()`.  It translates the
-#  message and each bullet exactly once, keeps cli's names (so `i`, `x`, `v`
-#  bullets render as before) and forwards `class`, `call` and `parent` to
-#  `cli::cli_abort()`.  `po/README.md` registers it as a custom translation
-#  function so `potools::po_extract()` still sees the literals.
+#  Every user-facing abort goes through `abort_msg()`, every warning through
+#  `warn_msg()`.  Both translate the message and each bullet exactly once,
+#  keep cli's names (so `i`, `x`, `v` bullets render as before) and forward
+#  `class`, `call` and `parent` to the corresponding `cli::cli_*()` call.
+#  `po/README.md` registers them as custom translation functions so
+#  `potools::po_extract()` still sees the literals.
+
+# Translate the message and its bullets once, keeping the bullet names.
+translate_msg <- function(message, bullets) {
+  msg <- gettext(message)
+  if (length(bullets)) {
+    nm <- names(bullets)
+    if (is.null(nm)) nm <- rep("", length(bullets))
+    vals <- vapply(bullets, function(x) as.character(gettext(x)), character(1))
+    msg <- c(msg, stats::setNames(vals, nm))
+  }
+  msg
+}
 
 #' Translate and raise a user-facing abort
 #'
@@ -20,17 +33,19 @@
 #' @noRd
 abort_msg <- function(message, ..., class = NULL,
                       call = rlang::caller_env(), parent = NULL) {
-  env <- parent.frame()
-  bullets <- list(...)
-  msg <- gettext(message)
-  if (length(bullets)) {
-    nm <- names(bullets)
-    if (is.null(nm)) nm <- rep("", length(bullets))
-    vals <- vapply(bullets, function(x) as.character(gettext(x)), character(1))
-    msg <- c(msg, stats::setNames(vals, nm))
-  }
-  cli::cli_abort(msg,
+  cli::cli_abort(translate_msg(message, list(...)),
     class = class, call = call,
-    parent = parent, .envir = env
+    parent = parent, .envir = parent.frame()
   )
+}
+
+#' Translate and raise a user-facing warning
+#'
+#' Same contract as [abort_msg()], but raises a warning instead of an error.
+#' @param message a single message literal.
+#' @param ... named bullet literals.
+#' @keywords internal
+#' @noRd
+warn_msg <- function(message, ...) {
+  cli::cli_warn(translate_msg(message, list(...)), .envir = parent.frame())
 }

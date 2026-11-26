@@ -399,9 +399,7 @@ design_duplex <- function(genome, loci, readout = c("co-dominant", "presence-abs
   verdict <- "fail"
   if (all(ok)) {
     if (isTRUE(is.na(homologous))) {
-      cli::cli_warn(gettext(
-        "Duplex: `homologous` is undeclared; the topology gate is not_applicable and the pairing cannot pass."
-      ))
+      warn_msg("Duplex: `homologous` is undeclared; the topology gate is not_applicable and the pairing cannot pass.")
     }
     compat <- duplex_compatibility(assays, readout, homologous,
       conditions = scheme_conditions("duplex")

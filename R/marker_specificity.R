@@ -1894,7 +1894,7 @@ blast_primers <- function(primers, db_path) {
       )
     },
     error = function(e) {
-      cli::cli_warn(gettext("BLAST failed: {conditionMessage(e)}"))
+      warn_msg("BLAST failed: {conditionMessage(e)}")
       NULL
     }
   )

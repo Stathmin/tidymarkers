@@ -822,10 +822,8 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
   solved <- readRDS(path)
   inputs_match <- artefact_inputs_match(manifest$inputs, solved$plan)
   if (isFALSE(inputs_match)) {
-    cli::cli_warn(gettext(
-      "The reference or variant table no longer matches the artefact's hash; \\
-       a replay difference below is explained by the input, not the engine."
-    ))
+    warn_msg("The reference or variant table no longer matches the artefact's hash; \\
+       a replay difference below is explained by the input, not the engine.")
   }
   engines <- artefact_engine_match(manifest$engine_stamp)
   if (isFALSE(engines$match)) {

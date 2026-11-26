@@ -552,7 +552,7 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
   if (!nzchar(exe) || !fs::file_exists(exe)) {
     # once per session: a cold machine asks this per oligo otherwise
     session_once(paste0("oaa_missing_", bin), {
-      cli::cli_warn(gettext("OligoArrayAux ('{bin}') was not found."))
+      warn_msg("OligoArrayAux ('{bin}') was not found.")
     })
     return(NA_real_)
   }
@@ -574,10 +574,9 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     # a run without the tables still returns a number, so name the gap once
     expected <- as.character(fs::path(fs::path_dir(paths$bin), "share", "oligoarrayaux"))
     session_once("oaa_dat_missing", {
-      cli::cli_warn(gettextf(
-        "OligoArrayAux ('%s') has no UNAFold data tables: expected '%s'. dG may be meaningless.",
-        bin, expected
-      ))
+      warn_msg(
+        "OligoArrayAux ('{bin}') has no UNAFold data tables: expected '{expected}'. dG may be meaningless."
+      )
     })
   }
   out <- tryCatch(
@@ -588,20 +587,18 @@ oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
     error = function(e) e
   )
   if (inherits(out, "error")) {
-    cli::cli_warn(gettext("OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}"))
+    warn_msg("OligoArrayAux ('{bin}') could not be run: {conditionMessage(out)}")
     return(NA_real_)
   }
   status <- attr(out, "status")
   if (!is.null(status) && as.integer(status) != 0L) {
-    cli::cli_warn(gettext(
-      "OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, collapse = ' '))}"
-    ))
+    warn_msg("OligoArrayAux ('{bin}') exited with status {status}: {trimws(paste(out, collapse = ' '))}")
     return(NA_real_)
   }
   tok <- utils::tail(strsplit(trimws(paste(out, collapse = " ")), "[[:space:]]+")[[1L]], 1L)
   dg <- suppressWarnings(as.numeric(tok))
   if (length(dg) != 1L || !is.finite(dg)) {
-    cli::cli_warn(gettext("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}')."))
+    warn_msg("OligoArrayAux ('{bin}') returned no parsable dG (got '{tok}').")
     return(NA_real_)
   }
   # hybrid-ss-min / hybrid-min print a large POSITIVE value (998.701, 999.999,

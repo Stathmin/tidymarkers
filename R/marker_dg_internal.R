@@ -79,9 +79,7 @@ SANTA_LUCIA_2004 <- local({
 internal_duplex_dg <- function(seq1, seq2, na = 0.05, temp = 37) {
   seq1 <- as.character(seq1)
   if (missing(seq2) || is.null(seq2)) {
-    cli::cli_warn(gettext(
-      "The internal engine has no hairpin/fold model; use OligoArrayAux (`oligo_dg(seq1)`)."
-    ))
+    warn_msg("The internal engine has no hairpin/fold model; use OligoArrayAux (`oligo_dg(seq1)`).")
     return(rep(NA_real_, length(seq1)))
   }
   seq2 <- as.character(seq2)

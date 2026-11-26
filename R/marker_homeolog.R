@@ -40,10 +40,9 @@ normalise_diagnostic_positions <- function(x) {
     chrom <- rep(names(x), lengths(x))
     pos <- as.integer(unlist(x, use.names = FALSE))
   } else {
-    cli::cli_abort(gettext(paste0(
-      "`diagnostic_positions` must be NULL, a data frame / list with `chrom` and `pos`, ",
-      "a GRanges, or a named list `chrom -> positions`."
-    )))
+    abort_msg(
+      "`diagnostic_positions` must be NULL, a data frame / list with `chrom` and `pos`, a GRanges, or a named list `chrom -> positions`."
+    )
   }
   out <- tibble::tibble(chrom = ath_chrom(chrom), pos = pos)
   if (anyNA(out$chrom) || anyNA(out$pos) || any(out$pos < 1L)) {
@@ -142,10 +141,9 @@ set_homeolog_axes <- function(out, mask) {
   }
   out$homeolog_diagnostics <- dx
   if (isTRUE(dx$diagnostic == FALSE)) {
-    cli::cli_warn(gettext(paste0(
-      "The common primer's 3' base is not on a subgenome-diagnostic position: ",
-      "the assay genotypes but does not localise."
-    )))
+    warn_msg(
+      "The common primer's 3' base is not on a subgenome-diagnostic position: the assay genotypes but does not localise."
+    )
   }
   out
 }

@@ -315,7 +315,7 @@ marker_decision_graph <- function(assay = NULL, scheme = NULL) {
         "Population/haplotype data are present, but this decision schema has no ",
         "population/haplotype node; those gaps are not enforced by the DAG."
       )
-      cli::cli_warn(gettext(msg))
+      warn_msg(msg)
     }
   }
   nodes$status <- "neutral"

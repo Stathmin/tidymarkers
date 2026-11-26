@@ -230,7 +230,7 @@ failure_from_decisions <- function(dec, candidate_id, rel) {
 marker_failure_registry <- function(dir = ".", recursive = TRUE) {
   root <- fs::path_abs(dir)
   if (!fs::dir_exists(root)) {
-    cli::cli_abort(gettextf("No directory at %s.", shQuote(as.character(dir))))
+    abort_msg("No directory at {shQuote(as.character(dir))}.")
   }
   files <- fs::dir_ls(root, recurse = recursive, type = "file", fail = FALSE)
   files <- as.character(files)
