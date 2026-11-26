@@ -492,7 +492,7 @@ iupac_covers <- function(code, base) {
 #' every `primer_hits()` call on the same genome would pay it again, so the
 #' answer is memoised per process - the N count included, because that O(length)
 #' pass is the cost and it too is a property of the sequence, not of the pattern.
-#' The key is the sequence's content signature (`digest::digest` on the bytes is
+#' The key is the sequence's content signature (`hash_object()` on the bytes is
 #' not free either, so the key is the string of the length plus the first, middle
 #' and last 32 bases) - a *changed* sequence must not reuse a stale block list.
 #' The cache lives in the package namespace and is bounded.

@@ -82,7 +82,7 @@ test_that("the copied outcomes.csv is hashed in the crate", {
   entity <- rocrate_entry(rocrate_meta(crate), "outcomes.csv")
   expect_identical(
     as.character(entity[["sha256"]]),
-    artefact_sha256_file(fs::path(crate, "outcomes.csv"))
+    hash_file(fs::path(crate, "outcomes.csv"))
   )
   root <- rocrate_entry(rocrate_meta(crate), "./")
   parts <- vapply(root[["hasPart"]], function(part) as.character(part[["@id"]]), character(1))
@@ -111,7 +111,7 @@ test_that("the identity map stays outside the crate and maps back", {
 
 test_that("the pseudonym is reproducible from the salt alone", {
   fx <- outcomes_corpus_fixture()
-  expected <- paste0("site-", substr(artefact_sha256("lab-abatch-a"), 1L, 8L))
+  expected <- paste0("site-", substr(hash_object("lab-abatch-a"), 1L, 8L))
   expect_identical(fx$map$pseudonym[fx$map$site == "batch-a"], expected)
 
   other <- marker_export_outcomes(fx$corpus, paste0(tempfile("handover2"), "/out"), trustee = "lab-b")

@@ -27,36 +27,6 @@
 
 # --- hashing and provenance --------------------------------------------------
 
-#' SHA-256 of a file
-#' @param path a file path.
-#' @return a length-one character vector, `NA` when the file is missing.
-#' @keywords internal
-#' @noRd
-artefact_sha256_file <- function(path) {
-  if (is.null(path) || !length(path) || is.na(path) || !nzchar(path) || !file.exists(path)) {
-    return(NA_character_)
-  }
-  tryCatch(
-    as.character(digest::digest(file = path, algo = "sha256")),
-    error = function(e) NA_character_
-  )
-}
-
-#' SHA-256 of an R object
-#'
-#' Kept apart from `artefact_sha256_file()` because the same character value is
-#' a path in one call and data in the other, and guessing wrong hashes nothing.
-#' @param x any R object to serialise and hash.
-#' @return a length-one character vector, `NA` when hashing fails.
-#' @keywords internal
-#' @noRd
-artefact_sha256 <- function(x) {
-  tryCatch(
-    as.character(digest::digest(x, algo = "sha256")),
-    error = function(e) NA_character_
-  )
-}
-
 #' The package source root, when there is one
 #'
 #' An installed package ships neither `.git` nor `renv.lock`, and `pkgload`
@@ -137,7 +107,7 @@ artefact_genome_input <- function(genome) {
     path <- genome$path
     return(list(
       role = "genome", source = "fasta", name = fs::path_file(path),
-      path = as.character(fs::path_abs(path)), sha256 = artefact_sha256_file(path),
+      path = as.character(fs::path_abs(path)), sha256 = hash_file(path),
       bytes = as.integer(file.size(path))
     ))
   }
@@ -147,7 +117,7 @@ artefact_genome_input <- function(genome) {
       role = "genome", source = "DNAStringSet",
       name = paste0(length(seqs), " sequence(s)"),
       path = NA_character_,
-      sha256 = artefact_sha256(paste(seqs, collapse = "")),
+      sha256 = hash_object(paste(seqs, collapse = "")),
       bytes = as.integer(sum(nchar(seqs)))
     ))
   }
@@ -166,7 +136,7 @@ artefact_inputs <- function(plan) {
     out[[length(out) + 1L]] <- list(
       role = "variants", source = "table",
       name = paste0(nrow(plan$variants), " variant(s)"),
-      path = NA_character_, sha256 = artefact_sha256(plan$variants),
+      path = NA_character_, sha256 = hash_object(plan$variants),
       bytes = NA_integer_
     )
   }
@@ -174,7 +144,7 @@ artefact_inputs <- function(plan) {
     out[[length(out) + 1L]] <- list(
       role = "haplotypes", source = "table",
       name = paste0(nrow(plan$haplotypes), " haplotype row(s)"),
-      path = NA_character_, sha256 = artefact_sha256(plan$haplotypes),
+      path = NA_character_, sha256 = hash_object(plan$haplotypes),
       bytes = NA_integer_
     )
   }
@@ -482,7 +452,7 @@ artefact_id <- function(manifest) {
   core <- manifest[c(
     "schema", "package", "engine_stamp", "inputs", "plan", "parameters", "overrides"
   )]
-  artefact_sha256(jsonlite::toJSON(core, auto_unbox = TRUE, null = "null", digits = NA))
+  hash_object(jsonlite::toJSON(core, auto_unbox = TRUE, null = "null", digits = NA))
 }
 
 #' Write a self-documenting artefact for a solved plan
@@ -562,7 +532,7 @@ marker_artefact <- function(solved, dir = tempdir()) {
       renv_lock_sha256 = if (is.na(pkg_dir)) {
         NA_character_
       } else {
-        artefact_sha256_file(fs::path(pkg_dir, "renv.lock"))
+        hash_file(fs::path(pkg_dir, "renv.lock"))
       }
     ),
     platform = list(

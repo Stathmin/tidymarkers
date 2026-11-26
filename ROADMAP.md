@@ -3896,7 +3896,14 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: снято; `Imports` короче на одну зависимость, графики не
       изменились.
 
-- [ ] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
+- [~] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
+    - сделано (шаг 1): `R/marker_hash.R` — `hash_object()`, `hash_file()`
+      (sha256) вместо прямых `digest::digest()`; `artefact_sha256*` удалены,
+      вызовы переведены. Проверка: known-answer на байтах, `dev/test.R
+      "hash|index|artefact|outcome|crate"` — 0 fail.
+    - осталось (шаг 2): `R/marker_exec.R` — `run_external()` с таймаутом и
+      классом `tidymarkers_timeout`; не-горячие бинарники (node-раскладка,
+      ImageMagick, git-проба, пробы версий) идут через него.
       правка: `R/marker_hash.R` — `hash_object()`, `hash_file()`
       (`digest::digest`, sha256) вместо трёх прямых вызовов;
       `R/marker_exec.R` — `run_external(cmd, args, timeout = )` на
@@ -3923,23 +3930,25 @@ dir)` пишет crate-профиль поверх существующих че
       следствие: регрессия по цене локуса ловится после мержа, а не в
       следующей волне.
 
-- [~] **T12. vctrs-класс критерия (cast/ptype).**
-      правка: таблица уже типизирована — `marker_criteria` в
-      `R/marker_criteria.R` (`vec_restore`, `vec_ptype2`, `vec_cast`,
-      `vec_ptype_abbr`); добавить тесты на `vec_c()`/`rbind` критериев и
-      решение: строковый класс `criterion` не вводится без вызова.
-      проверка: `test-criteria.R` — subset/rbind/vec_c сохраняют класс;
-      `tbl_df` понижается, а не притворяется критерием; `dev/check.R`.
-      блокер: нет; строковый класс — только при реальном потребителе.
-      следствие: без тестов класс держится на `vec_restore`, а `vec_c()`
-      может вернуть голый tibble.
+- [x] **T12. vctrs-класс критерия (cast/ptype).**
+    - сделано: `tests/testthat/test-criteria.R` расширен: `vec_c(spec, spec)`
+      и `rbind(spec, spec)` сохраняют `marker_criteria`; `vec_c()` и
+      `vec_rbind()` с простым `tbl_df` на любой стороне понижают до `tbl_df`.
+      Зафиксировано ограничение: базовый `rbind(spec, plain)` берёт класс
+      первого аргумента (это поведение base R, не vctrs), поэтому
+      `rbind.marker_criteria` не вводится.
+    - решение: строковый класс `criterion` не вводится — потребителя нет.
+    - проверка: `dev/test.R criteria` — 300 pass, 0 fail.
+    - блокер: нет.
+    - следствие: снято; `vec_c()` больше не может молча вернуть голый tibble
+      без падения теста.
 
 - [x] **T13. Гейт не прощает отсутствия линтеров.**
     - сделано: шаги `style` и `lintr` в `dev/check.R` падают, если пакета нет
       (`stop("<tool> is required for the merge gate")`; внесено в `8094c4e`
       вместе с разбором трёх `commented_code` в виньетках); линт идёт после
-      `pkgload::load_all()`. Остаток был в шапке скрипта: она всё ещё обещала
-      «A missing tool is a message, not a failure»; шапка исправлена.
+      `pkgload::load_all()`. Несоответствие было в шапке скрипта: она всё ещё
+      обещала «A missing tool is a message, not a failure»; шапка исправлена.
     - проверка: с временно убранным `lintr` — exit 1,
       `FAIL lintr is required for the merge gate; install.packages("lintr")`;
       со `styler` — exit 1, то же для `styler`; `lint_package()` после

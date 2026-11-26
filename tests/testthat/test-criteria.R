@@ -325,6 +325,7 @@ test_that("the criterion spec keeps its typed class and every documented column 
   # two classed specs bind to a classed spec, in either order
   expect_s3_class(dplyr::bind_rows(spec, spec), "marker_criteria")
   expect_s3_class(dplyr::bind_rows(spec[0, ], spec), "marker_criteria")
+  expect_s3_class(vctrs::vec_c(spec, spec), "marker_criteria")
 
   # the vctrs ptype is the contract: a plain tibble on either side downgrades
   # rather than half-upgrading (dplyr, not vctrs, keeps the class when the typed
@@ -332,6 +333,15 @@ test_that("the criterion spec keeps its typed class and every documented column 
   plain <- tibble::as_tibble(spec)
   expect_false(inherits(vctrs::vec_rbind(spec, plain), "marker_criteria"))
   expect_false(inherits(vctrs::vec_rbind(plain, spec), "marker_criteria"))
+  expect_false(inherits(vctrs::vec_c(spec, plain), "marker_criteria"))
+  expect_false(inherits(vctrs::vec_c(plain, spec), "marker_criteria"))
+
+  # base rbind() is not vctrs: it keeps the class of its first argument, so the
+  # mixed order is a named limit (the `vec_c()`/`vec_rbind()` paths above are
+  # the contract; a `rbind.marker_criteria` method would add S3 surface for no
+  # caller)
+  expect_s3_class(rbind(spec, spec), "marker_criteria")
+  expect_s3_class(rbind(spec, plain), "marker_criteria")
 })
 
 test_that("the criterion constructor refuses a table missing a documented column", {

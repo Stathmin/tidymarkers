@@ -45,9 +45,7 @@ index_tool <- function(strategy) {
 # `index_manifest()` / `index_verify()`, not when the genome is opened.
 index_source_id <- function(genome) {
   if (inherits(genome, "DNAStringSet")) {
-    paste0("DNAStringSet:", digest::digest(paste(as.character(genome), collapse = "|"),
-      algo = "sha256"
-    ))
+    paste0("DNAStringSet:", hash_object(paste(as.character(genome), collapse = "|")))
   } else if (inherits(genome, "marker_genome")) {
     genome$path %||% "<BSgenome>"
   } else {
@@ -57,11 +55,11 @@ index_source_id <- function(genome) {
 
 index_source_sha256 <- function(genome) {
   if (inherits(genome, "DNAStringSet")) {
-    return(digest::digest(paste(as.character(genome), collapse = "|"), algo = "sha256"))
+    return(hash_object(paste(as.character(genome), collapse = "|")))
   }
   path <- if (inherits(genome, "marker_genome")) genome$path else NULL
   if (!is.null(path) && fs::file_exists(path)) {
-    return(digest::digest(file = path, algo = "sha256"))
+    return(hash_file(path))
   }
   NA_character_
 }
@@ -81,7 +79,7 @@ index_attached <- function(genome, slot) {
 index_shards <- function(genome, strategy, chroms, dir) {
   dir <- dir %||% fs::path_temp()
   build <- index_genome_build(genome)
-  id <- digest::digest(list(index_source_id(genome), strategy, chroms), algo = "sha256")
+  id <- hash_object(list(index_source_id(genome), strategy, chroms))
   id <- substr(id, 1L, 12L)
   rows <- switch(strategy,
     memory = data.frame(
@@ -167,10 +165,10 @@ index_manifest_row <- function(row, source_sha256) {
   # hash the artefact set, not one file: bowtie shards are six files and BLAST
   # shards three, and a mismatch in any of them is a mismatch in the shard
   parts <- vapply(files, function(f) {
-    paste0(fs::path_file(f), ":", digest::digest(file = f, algo = "sha256"))
+    paste0(fs::path_file(f), ":", hash_file(f))
   }, character(1))
   row$bytes <- sum(as.numeric(fs::file_size(files)))
-  row$sha256 <- digest::digest(paste(parts, collapse = "|"), algo = "sha256")
+  row$sha256 <- hash_object(paste(parts, collapse = "|"))
   row$created <- as.POSIXct(max(fs::file_info(files)$modification_time))
   row
 }

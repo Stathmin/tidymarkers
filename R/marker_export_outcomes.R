@@ -176,7 +176,7 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   # directories with the same basename in different subtrees would collide, and
   # the guard below refuses rather than overwriting a crate silently.
   pseudonyms <- vapply(sites, function(rel) {
-    paste0("site-", substr(artefact_sha256(paste0(salt, fs::path_file(rel))), 1L, 8L))
+    paste0("site-", substr(hash_object(paste0(salt, fs::path_file(rel))), 1L, 8L))
   }, character(1), USE.NAMES = FALSE)
   if (anyDuplicated(pseudonyms)) {
     dup <- unique(pseudonyms[duplicated(pseudonyms)])

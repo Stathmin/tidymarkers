@@ -77,7 +77,7 @@ rocrate_file_entity <- function(dir, file, run = "#run") {
   entity <- list(
     "@id" = file,
     "@type" = "File",
-    "sha256" = artefact_sha256_file(path),
+    "sha256" = hash_file(path),
     "contentSize" = as.integer(file.size(path)),
     "encodingFormat" = rocrate_encoding(file)
   )
@@ -306,7 +306,7 @@ marker_import_rocrate <- function(path) {
         i = "A crate is a directory, not a manifest of what once was there."
       )
     }
-    actual <- artefact_sha256_file(file)
+    actual <- hash_file(file)
     if (!identical(as.character(declared), actual)) {
       abort_msg(
         "{.file {id}} does not hash to what the crate declares.",

@@ -100,7 +100,7 @@ test_that("every File entity hashes the file the crate carries", {
   for (file in rocrate_manifest_files(art)) {
     entry <- rocrate_entry(meta, file)
     expect_false(is.null(entry), info = file)
-    expect_identical(as.character(entry[["sha256"]]), artefact_sha256_file(fs::path(crate, file)))
+    expect_identical(as.character(entry[["sha256"]]), hash_file(fs::path(crate, file)))
     expect_identical(as.character(entry[["http://www.w3.org/ns/prov#wasGeneratedBy"]][["@id"]]), "#run")
   }
 })
