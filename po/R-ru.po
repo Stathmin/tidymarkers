@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tidymarkers 0.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/Stathmin/tidymarkers/issues\n"
-"POT-Creation-Date: 2026-11-26 17:22+0300\n"
+"POT-Creation-Date: 2026-11-26 17:42+0300\n"
 "PO-Revision-Date: 2026-10-23 00:30+0300\n"
 "Last-Translator: Daniil Ulyanov <uldas1508@gmail.com>\n"
 "Language-Team: ru\n"
@@ -551,6 +551,16 @@ msgstr ""
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr "В `loci` нет столбца(ов): {paste(missing, collapse = ', ')}"
 
+#: marker_bncc.R:86
+msgid ""
+"The BNCC bands for stage {.val {stage}} do not partition its {length(tiers)} "
+"tier(s)."
+msgstr ""
+
+#: marker_bncc.R:87
+msgid "Declared positions: {.val {sort(pos)}}."
+msgstr ""
+
 #: marker_bncc.R:105
 msgid "{.arg x} must be numeric."
 msgstr ""
@@ -605,6 +615,16 @@ msgstr ""
 #: marker_caps.R:146
 msgid "Bundled restriction-enzyme catalogue not found."
 msgstr "Встроенный каталог ферментов рестрикции не найден."
+
+#: marker_caps.R:204
+#, fuzzy
+#| msgid "`seqs` must be a DNAStringSet or a character vector."
+msgid "`enzymes$site` must be a character vector of IUPAC recognition sites."
+msgstr "`seqs` должен быть DNAStringSet или символьным вектором."
+
+#: marker_caps.R:205
+msgid "It is {.cls {class(enzymes$site)}}."
+msgstr ""
 
 #: marker_caps.R:345
 msgid "dCAPS scanning is implemented for single-base substitutions only."
@@ -884,6 +904,14 @@ msgstr ""
 msgid ""
 "CRISPR: no population haplotypes supplied; guide/PAM conservation is not "
 "checked."
+msgstr ""
+
+#: marker_criteria.R:178
+msgid "Unknown criterion evidence: {.val {bad}}."
+msgstr ""
+
+#: marker_criteria.R:179
+msgid "Allowed values, weakest first: {.val {CRITERION_EVIDENCE}}."
 msgstr ""
 
 #: marker_criteria.R:314

@@ -13,8 +13,9 @@
   call = rlang::caller_env(), parent = NULL)`: переводит сообщение и каждый
   bullet один раз через `gettext()`, сохраняет имена bullet'ов cli, `class`,
   `call` и цепочку `parent` и передаёт всё в `cli::cli_abort()`. Не экспортируется.
-- 264 вызова `cli::cli_abort(gettext(...))` в 51 файле переведены на `abort_msg()`;
-  `gettextf()`, `marker_contract()` и сообщения, собранные из выражений
+- 267 вызовов `cli::cli_abort()` в 51 файле переведены на `abort_msg()`; из них
+  261 были с `gettext()`, 6 — с голыми литералами; `gettextf()`,
+  `marker_contract()` и сообщения, собранные из выражений
   (`paste0`, `glue`, вычисляемые bullet'ы), оставлены как были.
 - `po/README.md` регистрирует `abort_msg` как custom translation function для
   `potools::po_extract()`; шаблон и `po/R-ru.po` перегенерированы, существующие

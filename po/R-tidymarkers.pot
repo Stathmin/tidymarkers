@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tidymarkers 0.4.0\n"
-"POT-Creation-Date: 2026-11-26 17:22+0300\n"
+"POT-Creation-Date: 2026-11-26 17:42+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -492,6 +492,16 @@ msgstr ""
 msgid "`loci` is missing column(s): {paste(missing, collapse = ', ')}"
 msgstr ""
 
+#: marker_bncc.R:86
+msgid ""
+"The BNCC bands for stage {.val {stage}} do not partition its {length(tiers)} "
+"tier(s)."
+msgstr ""
+
+#: marker_bncc.R:87
+msgid "Declared positions: {.val {sort(pos)}}."
+msgstr ""
+
 #: marker_bncc.R:105
 msgid "{.arg x} must be numeric."
 msgstr ""
@@ -539,6 +549,14 @@ msgstr ""
 
 #: marker_caps.R:146
 msgid "Bundled restriction-enzyme catalogue not found."
+msgstr ""
+
+#: marker_caps.R:204
+msgid "`enzymes$site` must be a character vector of IUPAC recognition sites."
+msgstr ""
+
+#: marker_caps.R:205
+msgid "It is {.cls {class(enzymes$site)}}."
 msgstr ""
 
 #: marker_caps.R:345
@@ -788,6 +806,14 @@ msgstr ""
 msgid ""
 "CRISPR: no population haplotypes supplied; guide/PAM conservation is not "
 "checked."
+msgstr ""
+
+#: marker_criteria.R:178
+msgid "Unknown criterion evidence: {.val {bad}}."
+msgstr ""
+
+#: marker_criteria.R:179
+msgid "Allowed values, weakest first: {.val {CRITERION_EVIDENCE}}."
 msgstr ""
 
 #: marker_criteria.R:314

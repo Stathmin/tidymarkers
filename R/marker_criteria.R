@@ -174,10 +174,10 @@ criterion_evidence <- function(x = NULL) {
   x <- as.character(x)
   bad <- unique(x[!is.na(x) & !x %in% CRITERION_EVIDENCE])
   if (length(bad)) {
-    cli::cli_abort(c(
+    abort_msg(
       "Unknown criterion evidence: {.val {bad}}.",
-      "i" = "Allowed values, weakest first: {.val {CRITERION_EVIDENCE}}."
-    ))
+      i = "Allowed values, weakest first: {.val {CRITERION_EVIDENCE}}."
+    )
   }
   factor(x, levels = CRITERION_EVIDENCE, ordered = TRUE)
 }

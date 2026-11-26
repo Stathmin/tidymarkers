@@ -82,10 +82,10 @@ bncc_bands <- function(stage, tiers) {
   }
   pos <- unlist(declared, use.names = FALSE)
   if (!identical(sort(pos), seq_along(tiers))) {
-    cli::cli_abort(c(
+    abort_msg(
       "The BNCC bands for stage {.val {stage}} do not partition its {length(tiers)} tier(s).",
-      "x" = "Declared positions: {.val {sort(pos)}}."
-    ))
+      x = "Declared positions: {.val {sort(pos)}}."
+    )
   }
   lapply(declared, function(i) tiers[i])
 }

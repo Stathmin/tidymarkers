@@ -200,10 +200,10 @@ caps_fragments <- function(seq, enzymes = restriction_enzymes()) {
   # a list column reaches `matchPattern()` as its width, which gives 0 hits for
   # every site and a silent "no sites" for a hand-built table
   if (!is.character(enzymes$site)) {
-    cli::cli_abort(c(
+    abort_msg(
       "`enzymes$site` must be a character vector of IUPAC recognition sites.",
-      "x" = "It is {.cls {class(enzymes$site)}}."
-    ))
+      x = "It is {.cls {class(enzymes$site)}}."
+    )
   }
   s <- Biostrings::DNAString(as.character(seq))
   n <- length(s)

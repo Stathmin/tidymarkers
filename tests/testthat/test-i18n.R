@@ -36,3 +36,16 @@ test_that("abort_msg preserves unknown bullet names", {
   expect_identical(names(err$body), "weird")
   expect_identical(unname(err$body), "bullet text")
 })
+
+test_that("abort_msg looks the message up in the compiled Russian catalogue", {
+  english <- "Bundled restriction-enzyme catalogue not found."
+  mo <- system.file("po", "ru", "LC_MESSAGES", "R-tidymarkers.mo",
+    package = "tidymarkers"
+  )
+  skip_if(!nzchar(mo), "no compiled Russian catalogue")
+  withr::local_envvar(LANGUAGE = "ru")
+  ru <- gettext(english, domain = "R-tidymarkers")
+  skip_if(identical(ru, english), "Russian catalogue not installed in this run")
+  err <- rlang::catch_cnd(abort_msg(english))
+  expect_identical(conditionMessage(err), ru)
+})
