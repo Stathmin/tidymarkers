@@ -115,6 +115,17 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' `attr(x, "scan")`.  A missing index is built lazily on the first query, in
 #' `dir`, so constructing the object never writes a multi-gigabyte index.
 #'
+#' `manifest` is one row per shard (`shard`, `chrom`, `path`, `bytes`,
+#' `sha256`, `tool`, `tool_version`, `build_id`, `genome_build`,
+#' `source_sha256`, `created`).  The constructor fills the paths and the tool
+#' version but not the hashes, so opening a 16 Gb genome does not read it;
+#' Chromosome shards of a bowtie index with `chroms`; above
+#' `BOWTIE_MONOLITH_LIMIT` the shards are chosen even when `chroms` is `NULL`.
+#' [index_manifest()] refreshes the measured columns from disk.  Above
+#' `BOWTIE_MONOLITH_LIMIT` (21.5 GB, 1.34 bytes per base) a bowtie strategy with
+#' `chroms = NULL` is sharded per chromosome, and each shard is built from one
+#' chromosome at a time (`index_chrom_seq()`), never from the whole FASTA.
+#'
 #' The capability matrix is:
 #'
 #' | strategy | `seed_scan` | `whole_primer_scan` | `mismatch_tolerant` | `max_mismatch` | engine |
@@ -127,12 +138,13 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' @param genome a `DNAStringSet` for `strategy = "memory"`, or a
 #'   `marker_genome`, `DNAStringSet` or `BSgenome` for an index strategy.
 #' @param strategy the declared strategy; never inferred at query time.
-#' @param chroms optional sequence names for a per-chromosome bowtie build
-#'   (see [marker_bowtie_index()]).
+#' @param chroms optional sequence names for a per-chromosome build (bowtie and
+#'   BLAST); `NULL` leaves the whole-genome default, which a bowtie genome above
+#'   `BOWTIE_MONOLITH_LIMIT` is sharded into per-chromosome shards anyway.
 #' @param dir directory for a lazily built index; defaults to [tempdir()].
 #' @param threads threads for an index build.
-#' @return a `genome_index` object with `strategy`, `capabilities` and the
-#'   wrapped `genome`.
+#' @return a `genome_index` object with `strategy`, `capabilities`, `manifest`
+#'   and the wrapped `genome`.
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' idx <- genome_index(genome, strategy = "memory")
@@ -149,11 +161,17 @@ genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm")
       i = "Use an index strategy for a {.cls marker_genome} or a {.cls BSgenome}."
     )
   }
+  # a monolithic wheat index does not fit here, so shard it by chromosome and
+  # remember that in the manifest the caller can read
+  if (is.null(chroms) && strategy %in% c("bowtie", "blast") && index_should_shard(genome, strategy)) {
+    chroms <- names(if (inherits(genome, "DNAStringSet")) genome else genome$seqnames)
+  }
   structure(
     list(
       genome = genome, strategy = strategy,
       capabilities = GENOME_INDEX_CAPABILITIES[[strategy]],
-      chroms = chroms, dir = dir, threads = as.integer(threads)
+      chroms = chroms, dir = dir, threads = as.integer(threads),
+      manifest = index_shards(genome, strategy, chroms, dir)
     ),
     class = "genome_index"
   )
@@ -170,30 +188,10 @@ capabilities.genome_index <- function(engine, capability = NULL, ...) {
 }
 
 # Resolve (and, for an index strategy, lazily build) the handle a scan queries.
+# Shards come from the manifest, so a per-chromosome set is built one
+# chromosome at a time and an existing shard is reused.
 genome_index_handle <- function(index) {
-  g <- index$genome
-  dir <- if (is.null(index$dir)) fs::path_temp() else index$dir
-  switch(index$strategy,
-    bowtie = if (inherits(g, "marker_genome") && !is.null(g$bowtie_index)) {
-      g$bowtie_index
-    } else {
-      marker_bowtie_index(g,
-        basename = fs::path(dir, "genome_index_bowtie"),
-        chroms = index$chroms, threads = index$threads
-      )
-    },
-    blast = if (inherits(g, "marker_genome") && !is.null(g$blast_db)) {
-      g$blast_db
-    } else {
-      marker_blast_index(g, path = fs::path(dir, "genome_index.fa"))
-    },
-    fm = if (inherits(g, "marker_genome") && !is.null(g$fm_index)) {
-      g$fm_index
-    } else {
-      marker_fm_index(g, basename = fs::path(dir, "genome_index_fm"))
-    },
-    abort_msg("The {index$strategy} strategy has no query handle.")
-  )
+  index_build(index)
 }
 
 # The dispatcher: choose the declared strategy and announce the question the

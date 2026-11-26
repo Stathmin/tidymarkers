@@ -122,6 +122,19 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
       i = "Or point the package at an existing build with options(tidymarkers.blast = )."
     )
   }
+  # a per-chromosome set is queried shard by shard and summed, like bowtie
+  if (length(db_path) > 1L) {
+    rows <- lapply(unname(db_path), function(one) {
+      specificity_blast(primers, one, k = k, BPPARAM = BPPARAM)
+    })
+    return(marker_with_engine(
+      tibble::tibble(
+        primer = names(primers), seed = rows[[1L]]$seed,
+        hits = Reduce(`+`, lapply(rows, `[[`, "hits"))
+      ),
+      "BLAST+"
+    ))
+  }
   seeds <- if (is.na(k)) {
     as.character(primers)
   } else {

@@ -89,7 +89,7 @@ marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "ma
       "`chroms` must name at least one sequence, or be `NULL` for one whole-genome index."
     )
   }
-  bowtie_index_set(genome, src$fasta, basename, as.character(chroms), threads)
+  bowtie_index_set(genome, basename, as.character(chroms), threads)
 }
 
 # bowtie1 needs a non-empty defline on every sequence; unnamed sequences of an
@@ -120,6 +120,12 @@ bowtie_index_build <- function(genome, basename, threads) {
     Biostrings::writeXStringSet(bowtie_name_seqs(genome), p)
     p
   }
+  bowtie_build_fasta(fasta, basename, threads)
+}
+
+# the build half, separated so a per-chromosome shard can index the one-sequence
+# FASTA it just wrote instead of writing the sequence a second time
+bowtie_build_fasta <- function(fasta, basename, threads) {
   cli::cli_alert_info(gettext("Building a bowtie index at {.path {basename}} (one-off)."))
   # bowtie_build reports progress on stdout with no quiet switch
   invisible(utils::capture.output(
@@ -133,13 +139,13 @@ bowtie_index_build <- function(genome, basename, threads) {
   basename
 }
 
-# one index per chromosome, so no single build has to hold the whole genome
-bowtie_index_set <- function(genome, fasta, basename, chroms, threads) {
-  # shortcut: this reads the whole FASTA to slice it, as the single-index path
-  # does; upgrade to a streaming reader if a genome outgrows RAM
-  seqs <- if (inherits(genome, "marker_genome")) Biostrings::readDNAStringSet(fasta) else bowtie_name_seqs(genome)
+# one index per chromosome, so no single build has to hold the whole genome.
+# Each chromosome is read on its own (`index_chrom_seq()`), written as a
+# one-sequence FASTA and removed after the build: peak disc is one chromosome
+# plus its index, peak memory one chromosome.
+bowtie_index_set <- function(genome, basename, chroms, threads) {
   # `seqnames` maps the requested name to the FASTA defline (`chrom_map`)
-  defline <- if (inherits(genome, "marker_genome")) genome$seqnames else rlang::set_names(names(seqs))
+  defline <- if (inherits(genome, "marker_genome")) genome$seqnames else rlang::set_names(names(genome))
   unknown <- chroms[is.na(match(chroms, names(defline)))]
   if (length(unknown) > 0L) {
     abort_msg(
@@ -147,11 +153,16 @@ bowtie_index_set <- function(genome, fasta, basename, chroms, threads) {
       i = "Available: {.val {names(defline)}}."
     )
   }
-  seqs <- seqs[unname(defline[chroms])]
-  names(seqs) <- chroms
   bases <- rlang::set_names(paste0(basename, "_", chroms), chroms)
   for (chr in chroms) {
-    bowtie_index_build(seqs[chr], bases[[chr]], threads)
+    if (fs::file_exists(paste0(bases[[chr]], ".1.ebwt"))) {
+      cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {bases[[chr]]}}."))
+      next
+    }
+    fa <- paste0(bases[[chr]], ".fa")
+    index_write_chrom_fasta(index_chrom_seq(genome, chr), chr, fa)
+    bowtie_build_fasta(fa, bases[[chr]], threads)
+    unlink(fa)
   }
   structure(bases, class = c("marker_bowtie_index_set", "character"), chroms = chroms)
 }
