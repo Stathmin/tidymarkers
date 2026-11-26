@@ -56,7 +56,11 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
   j <- jsonlite::fromJSON(readr::read_file(path), simplifyDataFrame = FALSE)
-  need_cols(j, c("id", "seq_region_name", "start", "end", "strand"), arg = "record")
+  need_cols(
+    j, c("id", "seq_region_name", "start", "end", "strand"),
+    arg = "record",
+    i = "The Ensembl REST schema may have changed."
+  )
   tibble::tibble(
     gene_id = j$id, symbol = j$display_name %||% j$id,
     chrom = ath_chrom(j$seq_region_name),
@@ -97,7 +101,11 @@ ensembl_variants <- function(chrom, start, end,
     readr::write_lines(httr2::resp_body_string(resp), path)
   }
   df <- jsonlite::fromJSON(readr::read_file(path)) |> tibble::as_tibble()
-  need_cols(df, c("id", "seq_region_name", "start", "alleles"), arg = "response")
+  need_cols(
+    df, c("id", "seq_region_name", "start", "alleles"),
+    arg = "response",
+    i = "The Ensembl REST schema may have changed."
+  )
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
   df |>
     dplyr::transmute(

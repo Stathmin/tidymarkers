@@ -246,7 +246,11 @@ one_pot_check_assays <- function(assays) {
   if (!is.data.frame(assays)) {
     abort_msg("`assays` must be a data frame or tibble, not {.cls {class(assays)}}.")
   }
-  need_cols(assays, ONE_POT_COLUMNS, arg = "assays")
+  need_cols(
+    assays, ONE_POT_COLUMNS,
+    arg = "assays",
+    i = "One-pot grouping needs {.field {ONE_POT_COLUMNS}}."
+  )
   if (!nrow(assays)) {
     abort_msg("`assays` has no rows, so there is nothing to place in a pot.")
   }

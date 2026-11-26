@@ -25,6 +25,12 @@ test_that("need_cols passes a complete frame, tibble or named list", {
   expect_true(need_cols(list(chrom = "1", pos = 1L), c("chrom", "pos")))
 })
 
+test_that("need_cols keeps a named bullet with its name and text", {
+  err <- rlang::catch_cnd(need_cols(data.frame(a = 1), "b", i = "hint about b"))
+  expect_match(conditionMessage(err), "`x` is missing column(s): b", fixed = TRUE)
+  expect_identical(err$body, c(i = "hint about b"))
+})
+
 test_that("need_cols returns invisibly", {
   x <- tibble::tibble(chrom = "1")
   expect_invisible(need_cols(x, "chrom"))

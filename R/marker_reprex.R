@@ -285,7 +285,14 @@ reprex_gc <- function(seq) {
 
 reprex_from_table <- function(v, preserve) {
   need <- c("chrom", "pos", "ref", "alt")
-  need_cols(v, need, arg = "variant table")
+  # formatted here: cli would resolve `{need}` in the helper frame, not this one
+  need_cols(
+    v, need,
+    arg = "variant table",
+    i = cli::format_inline(
+      gettext("It needs {.val {need}}, the shape {.fun assemble_primer_assay} takes.")
+    )
+  )
   # A column the script cannot carry would make the replay differ silently.
   extra <- setdiff(names(v), need)
   if (length(extra)) {

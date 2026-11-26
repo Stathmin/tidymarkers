@@ -73,7 +73,7 @@ shared <- c("criteria", "decision", "falsifiable", "kasp-checks", "plot-methods"
 # Cheap contract tests for the dev tooling itself (the report must never print a
 # missing measurement as NA).  They ride along with the shared contracts so a
 # regression shows up in the routine loop, not only in --full.
-routine <- c(shared, "dev-reporter")
+routine <- c(shared, "dev-reporter", "i18n", "need-cols")
 
 # Files that spawn their own SOCK cluster.  Running these under testthat's
 # workers nests a cluster inside a worker and crashes the pool, so --full runs

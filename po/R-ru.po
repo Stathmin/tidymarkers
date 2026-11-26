@@ -617,10 +617,8 @@ msgid "Bundled restriction-enzyme catalogue not found."
 msgstr "Встроенный каталог ферментов рестрикции не найден."
 
 #: marker_caps.R:204
-#, fuzzy
-#| msgid "`seqs` must be a DNAStringSet or a character vector."
 msgid "`enzymes$site` must be a character vector of IUPAC recognition sites."
-msgstr "`seqs` должен быть DNAStringSet или символьным вектором."
+msgstr ""
 
 #: marker_caps.R:205
 msgid "It is {.cls {class(enzymes$site)}}."

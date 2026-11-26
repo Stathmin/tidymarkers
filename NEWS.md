@@ -13,7 +13,7 @@
   call = rlang::caller_env(), parent = NULL)`: переводит сообщение и каждый
   bullet один раз через `gettext()`, сохраняет имена bullet'ов cli, `class`,
   `call` и цепочку `parent` и передаёт всё в `cli::cli_abort()`. Не экспортируется.
-- 267 вызовов `cli::cli_abort()` в 51 файле переведены на `abort_msg()`; из них
+- 267 вызовов `cli::cli_abort()` в 52 файлах переведены на `abort_msg()`; из них
   261 были с `gettext()`, 6 — с голыми литералами; `gettextf()`,
   `marker_contract()` и сообщения, собранные из выражений
   (`paste0`, `glue`, вычисляемые bullet'ы), оставлены как были.

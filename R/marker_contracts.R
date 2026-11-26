@@ -43,7 +43,8 @@ in_dev_mode <- function() {
 #' static `gettext()` string: `cli_abort()` interpolates `{...}` in it.
 #' @param condition a single logical; `TRUE` means the invariant holds.
 #' @param message the translated, static failure message.
-#' @param ... passed to [cli::cli_abort()].
+#' @param ... named cli bullet hints; appended to `message` so `cli_abort()`
+#'   renders them as bullets rather than dropping them into condition fields.
 #' @param class condition class placed first, so a caller can catch it.
 #' @param call the call shown to the user; the exported function's own call.
 #' @keywords internal
@@ -54,7 +55,14 @@ marker_contract <- function(condition, message, ...,
   if (isTRUE(condition)) {
     return(invisible(TRUE))
   }
-  cli::cli_abort(message, ..., class = class, call = call)
+  bullets <- list(...)
+  if (length(bullets)) {
+    nm <- names(bullets)
+    if (is.null(nm)) nm <- rep("", length(bullets))
+    vals <- vapply(bullets, function(x) as.character(gettext(x)), character(1))
+    message <- c(message, stats::setNames(vals, nm))
+  }
+  cli::cli_abort(message, class = class, call = call)
 }
 
 #' Abort when a table or named list lacks required columns
@@ -66,13 +74,16 @@ marker_contract <- function(condition, message, ...,
 #' @param cols the required column names.
 #' @param arg the name the message uses for `x`.
 #' @param call the call shown to the user; defaults to the caller's frame.
+#' @param ... optional cli bullet hints, forwarded unchanged. A bullet cannot
+#'   be named `x`, `cols`, `arg` or `call`: those names match the formals.
 #' @keywords internal
 #' @noRd
-need_cols <- function(x, cols, arg = "x", call = rlang::caller_env()) {
+need_cols <- function(x, cols, arg = "x", call = rlang::caller_env(), ...) {
   missing <- setdiff(cols, names(x))
   marker_contract(
     !length(missing),
     gettextf("`%s` is missing column(s): %s", arg, paste(missing, collapse = ", ")),
+    ...,
     class = c("tidymarkers_contract_error", "tidymarkers_missing_columns"),
     call = call
   )
