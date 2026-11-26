@@ -59,3 +59,23 @@ test_that("Y6: three hand-read markers keep their exact counts", {
   expect_true(is.na(m("RM214_SNP_nn_2")$alt_allele))
   expect_equal(m("RM214_SNP_nn_2")$n_called, 0L)
 })
+
+test_that("Y6: the ambiguity sweep buys designs, not assay success", {
+  d <- ext("steele2025_design_sweep.csv")
+  expect_equal(nrow(d), 5L)
+  expect_equal(d$max_ambiguous_bases, 4:0)
+  # cutting the flanking-ambiguity budget shrinks the design space and spreads
+  # the candidates out
+  expect_true(all(diff(d$designs) < 0))
+  expect_true(all(diff(d$median_spacing_bp) > 0))
+  expect_equal(d$designs[[1L]], 1392359L)
+  expect_equal(d$designs[[5L]], 223783L)
+  expect_equal(d$median_spacing_bp[[1L]], 68L)
+  expect_equal(d$median_spacing_bp[[5L]], 580L)
+  # ... while the successful-assay rate stays inside a 5-point band: this is
+  # the table's point, and the guard against reading design count as quality
+  expect_lt(max(d$pct_successful) - min(d$pct_successful), 5)
+  expect_gte(min(d$pct_successful), 83.7)
+  expect_true(all(d$pct_producing_results >= d$pct_successful))
+  expect_setequal(d$doi, "10.1093/g3journal/jkae251")
+})
