@@ -3718,3 +3718,179 @@ dir)` пишет crate-профиль поверх существующих че
 - Cross-engine equivalence coverage (bowtie / BLAST / FM-index — каждая
   specificity row attributes to engine).
 - Outcome data accumulation через `marker_record_outcome()`.
+
+## ZT. Масштаб, швы и контракт MCP (2026-11-26)
+
+Решения, которые меняют не вердикт, а цену и границу пакета: геном как
+стратегия (ADR 0005), панель как оркестратор (ADR 0006), швы модулей и
+рантайм-контракт MCP (ADR 0007). Все три ADR — `proposed`; пункт закрывается
+кодом и гейтом, а не ссылкой на ADR. Формат полей — как в §ZY.
+
+- [ ] **T1. `genome_index()` с явными возможностями.**
+      правка: `R/marker_genome.R` — `genome_index(genome, strategy =
+      c("memory","bowtie","blast","fm"), chroms = NULL, dir = NULL)`;
+      объект `genome_index` с `capabilities` (`seed_scan`,
+      `whole_primer_scan`, `mismatch_tolerant`, `max_mismatch`, `engine`) и
+      `manifest` (shard, chrom, path, bytes, sha256, tool, tool_version,
+      build_id, genome_build, source_sha256); `specificity_of()` читает
+      стратегию, а не слоты; `attr(x, "scan")` остаётся проводом, но
+      `scan_question()` — единственный читатель, а `specificity_verdict()`
+      отказывается смешивать `"3'-seed"` и `"whole-primer"`.
+      проверка: `tests/testthat/test-genome-index.R` — матрица
+      возможностей; `max_mismatch > 0` на BLAST — именованная ошибка, не
+      молчание; золотой набор вердиктов memory vs bowtie; `scan` на каждом
+      пути.
+      блокер: нет; золотой набор — TAIR10-фикстура, не пшеница.
+      следствие: сегодня индексный геном отвечает не на тот вопрос, а
+      вызывающий узнаёт об этом из предупреждения (D2).
+
+- [~] **T2. Пер-хромосомные индексы для генома > 21.5 ГБ.**
+      правка: `marker_bowtie_index(chroms = )` уже строит набор; довести до
+      `genome_index(strategy = "bowtie", chroms = )` — ленивое открытие
+      шардов, потоковая выдача региона, `manifest` на шард; порог монолита
+      21.5 ГБ (1.34 Б/п.н. × 16 ГБ), выше — только пер-хромосомно; пангеном
+      A/B/D — шард на `(genome_build, chrom)`, не один индекс на ~64 ГБ.
+      проверка: сборка трёх маленьких сборок в тесте; запрос суммирует
+      шарды; manifest переживает перезапуск; отсутствующий шард называет
+      хромосому; повторная сборка не меняет mtime валидного шарда.
+      блокер: пшеничный фикспур 16 ГБ — не этот хост; логика проверяется на
+      TAIR10-наборе.
+      следствие: без ленивости сборка читает FASTA целиком (шорткат в
+      `bowtie_index_set()`), а пангеном не влезает ни в диск, ни в RAM.
+
+- [~] **T3. BiocParallel по локусам — не pass-through.**
+      правка: `bp_lapply()` (`R/marker_thermo.R`) получает `chunksize`,
+      `on_error = c("stop","collect")`, детерминированный порядок и
+      `RNGseed`; `design_kasp_markers()` собирает ошибку лока в строку
+      `verdict = "error"`, а не роняет батч; воркер открывает индекс только
+      на чтение, сборку не делает; вложенный параллелизм форсится в 1.
+      проверка: `test-batch.R` — serial vs 1/2/4 воркера: те же вердикты и
+      порядок; один падающий локус не убивает остальные; бюджет `ZX2`.
+      блокер: нет.
+      следствие: сегодня параллель — это `bplapply` плюс прогресс-бар;
+      ошибка одного лока стоит всего батча, а чанкинг не управляется.
+
+- [~] **T4. Фикстура фазовых гаплотипов, не заглушка.**
+      правка: `tests/testthat/fixtures/panel/` уже содержит `genome.fa` и
+      `haplotypes.csv` (три строки H1/H1/H2); добавить `haplotypes_ld.csv` с
+      парой в полном LD и `haplotypes_unphased.csv` с двумя аллелями в одной
+      позиции; контракт `panel_haplotype_contract()` — нет дубля
+      `(haplotype, chrom, pos)`, `ref`/`alt` строки в целевой позиции
+      совпадает с target (остальные — с variant-таблицей, если она дана),
+      отсутствие аллеля — это reference и считается,
+      `sum(freq) <= 1` на хромосому, иначе ошибка с именем гаплотипа и позиции.
+      проверка: `test-panel.R` — LD-пара сворачивается в один target,
+      нефазированный вход падает, а не «пропускается»; фикстура
+      закоммичена, сеть не нужна.
+      блокер: нет; старый блокер ZY1 снят этой фикстурой.
+      следствие: без контракта панель принимает конфликтующие строки и
+      считает `footprint_dropout` по гаплотипам без проверенной фазы.
+
+- [~] **T5. `marker_design_panel()` — оркестратор с швами и артефактом.**
+      правка: `R/marker_panel.R` (280 строк) уже склеивает plan -> solve ->
+      one_pot -> artefact; добавить `ld =`, `costs =`, `created =`; швы
+      `panel_ld()`, `panel_haplotype_contract()`, `panel_duplicate_guard()`;
+      `marker_artefact(created = )` читает `SOURCE_DATE_EPOCH`.
+      проверка: `test-panel.R` — каждый target ровно один раз; LD-пара;
+      обратный порядок costs выбирает другую химию; `artefact.json` и CSV
+      байт-в-байт при фиксированном epoch, `solved.rds` исключён по имени и
+      причине (igraph-указатель).
+      блокер: нет.
+      следствие: панель остаётся обёрткой без LD и без воспроизводимого
+      артефакта; ZY1 закрыт, но швы не проверены.
+
+- [ ] **T6. Реестры вместо 47 делегаторов `plot`/`print` (+16 `marker_map_spec`).**
+      правка: `R/marker_result_registry.R` — `marker_print_registry()`,
+      `marker_plot_registry()`, `marker_map_spec_registry()`; `"marker"`
+      последним классом; `print.marker`, `plot.marker`,
+      `marker_map_spec.marker`; `need_cols()` в `R/marker_contracts.R`
+      (30 мест в 21 файле сегодня, в предложении 11); `abort_msg()` в
+      `R/marker_i18n.R` (49 файлов/216 вызовов, в предложении 54).
+      проверка: снимки `print`/`plot`/`map_spec` идентичны; `need_cols`
+      покрывает все прежние места; `potools::po_extract()` видит
+      `abort_msg`; `LANGUAGE=ru` дым.
+      блокер: нет.
+      следствие: 47 тел `print`/`plot` и 16 `map_spec` дублируются; guard
+      колонок и формат ошибки расходятся между файлами.
+
+- [ ] **T7. Разрезать god-файлы.**
+      правка: `marker_specificity.R` 2487 -> seed/index/cache;
+      `marker_plots.R` 1620 -> ideogram/diagram/layers;
+      `marker_assemble.R` 1571 -> AS/COM/contract;
+      `marker_criteria.R` 1505 -> registry/table/evidence; ни один файл
+      `R/*.R` не больше 1200 строк; шаг `lines` в `dev/check.R`.
+      проверка: полный набор тестов; `wc -l`; `dev/check.R`; `NAMESPACE` и
+      `man/` не меняются.
+      блокер: нет.
+      следствие: правка в одном шве тянет 2.5k строк контекста, а линтер и
+      ревью не видят границы.
+
+- [ ] **T8. MCP: валидация `tools/call` и `read_only`/`mutating`.**
+      правка: `inst/mcp/tools.R` — `mcp_validate_args()` по
+      `spec$inputSchema` (type/required/properties/enum/min/max/items/pattern,
+      `additionalProperties = FALSE`); неизвестный инструмент и плохие
+      аргументы — JSON-RPC `-32602` с `data = list(tool, path, expected,
+      got)`, ошибка handler'а — `isError = TRUE`; `annotations`
+      (`readOnlyHint`, `destructiveHint`, `idempotentHint`,
+      `openWorldHint = FALSE`) на 38 инструментов; `protocolVersion`
+      остаётся `2024-11-05`, поле аддитивное. Рантайм валидирует по
+      `inputSchema` из `mcp_tool_specs()`, а `inst/mcp/schema.json`
+      публикует полную схему аргументов каждого инструмента (properties,
+      required, enum), а не только `type: object` (ADR 0004).
+      проверка: `test-mcp-validation.R` — 38/38 инструментов по строке
+      (валидный вызов + невалидный аргумент); `dev/mcp-schema.R --check`;
+      рантайм-валидатор и `schema.json` согласованы на корпусе.
+      блокер: нет.
+      следствие: `schema.json` опубликован, но неполон (только
+      `type: object`) и не читается; handler получает любой JSON, а
+      `tools/call` не различает protocol error и tool error.
+
+- [ ] **T9. Решить DECIPHER/TmCalculator/ggforce/forcats.**
+      правка: ADR 0007 фиксирует: DECIPHER (14 файлов) и TmCalculator
+      (9 файлов) — движки, остаются; ggforce — один `facet_zoom`, остаётся
+      как фича; forcats — четыре вызова в двух файлах, удаляется,
+      `fct_lump_n` заменяется локальным `lump_top_n()`; из
+      `DESCRIPTION`/`NAMESPACE` уходит `forcats`.
+      проверка: графы `plot` идентичны; `R CMD check` без unused import;
+      `grep -r forcats R` пуст.
+      блокер: нет.
+      следствие: без решения forcats остаётся в Imports ради четырёх
+      вызовов, а DECIPHER/TmCalculator не получают названной границы.
+
+- [ ] **T10. `digest` -> `hash_object()`, `processx` с таймаутами.**
+      правка: `R/marker_hash.R` — `hash_object()`, `hash_file()`
+      (`digest::digest`, sha256) вместо трёх прямых вызовов;
+      `R/marker_exec.R` — `run_external(cmd, args, timeout = )` на
+      `processx::run()` с `error_on_status = FALSE`, класс
+      `tidymarkers_timeout`; bowtie/BLAST и прочие внешние бинарники идут
+      через него; `Rbowtie`/`rBLAST` остаются парсерами, где не отдают
+      процесс.
+      проверка: фейковый бинарник `Sys.sleep(60)` убивается на 1 с, код
+      возврата/класс; хеш-тест на известной строке; `test-scan.R` и
+      `test-bowtie.R` без изменений.
+      блокер: нет; таймаут для процессов внутри `Rbowtie`/`rBLAST` —
+      известное ограничение, если пакет не отдаёт команду.
+      следствие: хеш-алгоритм и таймаут живут в трёх местах; зависший BLAST
+      держит CI до убийства раннера.
+
+- [ ] **T11. CI-гейт производительности (ZX2).**
+      правка: `dev/perf-gate.R` — медиана на локус на золотом наборе TAIR10,
+      бюджет 2× от 5.7 с (1 ядро) и 1.1 с (6 ядер); `dev/bench.R --gate`;
+      шаг в `.github/workflows/R-CMD-check.yaml` после тестов, linux release;
+      при отсутствии baseline — `not_run` с причиной, не молчание.
+      проверка: прогон с искусственным замедлением падает таблицей; текущий
+      baseline зелёный; время шага < 2 мин.
+      блокер: пшеничный бюджет — фикспур 16 ГБ (`ZX3`).
+      следствие: регрессия по цене локуса ловится после мержа, а не в
+      следующей волне.
+
+- [~] **T12. vctrs-класс критерия (cast/ptype).**
+      правка: таблица уже типизирована — `marker_criteria` в
+      `R/marker_criteria.R` (`vec_restore`, `vec_ptype2`, `vec_cast`,
+      `vec_ptype_abbr`); добавить тесты на `vec_c()`/`rbind` критериев и
+      решение: строковый класс `criterion` не вводится без вызова.
+      проверка: `test-criteria.R` — subset/rbind/vec_c сохраняют класс;
+      `tbl_df` понижается, а не притворяется критерием; `dev/check.R`.
+      блокер: нет; строковый класс — только при реальном потребителе.
+      следствие: без тестов класс держится на `vec_restore`, а `vec_c()`
+      может вернуть голый tibble.

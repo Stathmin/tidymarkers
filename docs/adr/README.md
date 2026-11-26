@@ -1,12 +1,13 @@
 # Architecture decisions
 
-One file per decision that changes what this repository depends on. Numbered in
-the order they were accepted. `docs/` is `.Rbuildignore`d, so nothing here ships
-in the package.
+One file per decision that changes what this repository depends on, or how a
+module is bounded. Numbered in the order they were accepted. `docs/` is
+`.Rbuildignore`d, so nothing here ships in the package.
 
-Status values used here: `accepted`, `rejected` (the proposal was refused),
-`superseded`, `accepted (amended)` (the decision stands and a dated amendment at
-the end of the file records the measurement or event that re-tested it).
+Status values used here: `proposed` (the decision is written, the code gate is
+not met), `accepted`, `rejected` (the proposal was refused), `superseded`,
+`accepted (amended)` (the decision stands and a dated amendment at the end of
+the file records the measurement or event that re-tested it).
 
 | ADR                                                                    | Decision                                                                    | Status   |
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------- |
@@ -14,6 +15,9 @@ the end of the file records the measurement or event that re-tested it).
 | [0002](0002-targets-stays-dev-only.md)                                 | `targets` stays a dev-only freshness holder, not a package dependency       | accepted (amended) |
 | [0003](0003-duckdb-deferred.md)                                        | DuckDB/`duckplyr` is deferred until an aggregation is measured              | accepted (amended) |
 | [0004](0004-mcp-ci-and-cross-project-tooling.md)                       | The MCP server stays one R file; no Python client, no published JSON Schema | accepted (amended) |
+| [0005](0005-index-backed-genome-access.md)                             | Genome access is an index-backed strategy with declared capabilities       | proposed |
+| [0006](0006-panel-pipeline.md)                                         | The panel pipeline is an orchestrator with falsifiable seams                | proposed |
+| [0007](0007-module-seams-and-mcp-contract.md)                          | Module seams (contracts, registries, splits) and the MCP runtime contract   | proposed |
 
 ## Triage of the 2026-11-26 tool list
 

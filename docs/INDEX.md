@@ -56,6 +56,12 @@ Other vignettes:
   an aggregation is measured.
 - [ADR 0004](adr/0004-mcp-ci-and-cross-project-tooling.md) — the MCP server
   stays one R file; no Python client, no published JSON Schema.
+- [ADR 0005](adr/0005-index-backed-genome-access.md) — genome access is an
+  index-backed strategy with declared capabilities.
+- [ADR 0006](adr/0006-panel-pipeline.md) — the panel pipeline is an
+  orchestrator with falsifiable seams.
+- [ADR 0007](adr/0007-module-seams-and-mcp-contract.md) — module seams
+  (contracts, registries, splits) and the MCP runtime contract.
 
 ## Docs and artifacts layer
 
