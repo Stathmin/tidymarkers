@@ -91,7 +91,7 @@ choice of chemistry are a plan: targets (`marker_targets()`), context
 plan <- marker_plan(genome) +
   marker_targets(marker_example("snp")) +
   marker_context(variants = variants) +
-  marker_tech(preset = "lab") # kasp / gel / lab / field
+  marker_tech(preset = "lab") # pick the lab preset
 
 solved <- marker_solve(plan, progress = FALSE)
 solved
@@ -266,7 +266,7 @@ at which the candidates ran out, and the reason:
 m <- solved$report$marker[[1]]
 inherits(m, "marker_doomed") # TRUE -> design failed
 m$stage # "as" or "pair"
-m$reason # "No AS primer passed the GC/Tm filter."
+m$reason # e.g. no AS primer passed the GC/Tm filter
 ```
 
 The stages of the KASP pipeline: `as` (allele-specific primers: GC/Tm,

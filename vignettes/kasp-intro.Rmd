@@ -104,7 +104,7 @@ sink the run):
 
 ```{r, eval = FALSE}
 loci <- marker_example()[c("chrom", "pos", "ref", "alt")]
-design_kasp_markers(genome, loci) # pass / warn / fail + reason
+design_kasp_markers(genome, loci) # status plus reason
 ```
 
 ## Results and ordering

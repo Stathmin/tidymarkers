@@ -111,14 +111,14 @@ step("documentation in sync", function() {
 
 # 2. style + lint -----------------------------------------------------------
 step("style (styler)", function() {
-  if (!requireNamespace("styler", quietly = TRUE)) return(message("  skip (styler not installed)"))
+  if (!requireNamespace("styler", quietly = TRUE)) stop("styler is required for the merge gate; install.packages(\"styler\")")
   styler::style_dir("R", dry = "fail")
   styler::style_dir("tests", dry = "fail")
   ok("R/ and tests/ are styler-clean")
 })
 
 step("lintr", function() {
-  if (!requireNamespace("lintr", quietly = TRUE)) return(message("  skip (lintr not installed)"))
+  if (!requireNamespace("lintr", quietly = TRUE)) stop("lintr is required for the merge gate; install.packages(\"lintr\")")
   # object_usage_linter resolves package-internal symbols from a *loaded* build,
   # and this step runs before the install smoke; without loading the source a
   # stale/absent install floods every internal call with "no visible binding"
