@@ -44,6 +44,19 @@ Other vignettes:
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
 
+## Architecture decisions
+
+- [adr/README](adr/README.md) — the decision records, and the full triage table
+  for the 2026-11-26 tool list.
+- [ADR 0001](adr/0001-llm-mt-and-agent-tooling-out-of-scope.md) — LLM, machine
+  translation and agent tooling is out of scope (18 tools rejected).
+- [ADR 0002](adr/0002-targets-stays-dev-only.md) — `targets` stays a dev-only
+  freshness holder, not a package dependency.
+- [ADR 0003](adr/0003-duckdb-deferred.md) — DuckDB/`duckplyr` is deferred until
+  an aggregation is measured.
+- [ADR 0004](adr/0004-mcp-ci-and-cross-project-tooling.md) — the MCP server
+  stays one R file; no Python client, no published JSON Schema.
+
 ## Docs and artifacts layer
 
 - [docs/INDEX](INDEX.md) — this page.
