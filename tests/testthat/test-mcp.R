@@ -17,6 +17,35 @@ test_that("initialize and tools/list speak JSON-RPC", {
   ))
 })
 
+test_that("every tool advertises MCP annotations", {
+  skip_if_not_installed("jsonlite")
+  env <- .mcp_env()
+  specs <- env$mcp_tool_specs()
+  hints <- c("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint")
+
+  for (nm in names(specs)) {
+    annotations <- specs[[nm]]$annotations
+    expect_true(all(hints %in% names(annotations)), info = nm)
+    for (hint in hints) {
+      expect_type(annotations[[hint]], "logical")
+    }
+    expect_false(annotations$destructiveHint, info = nm)
+    expect_true(annotations$idempotentHint, info = nm)
+    expect_false(annotations$openWorldHint, info = nm)
+  }
+
+  # Only the registry writer is not read-only; everything else has no side
+  # effect beyond reading its mounted inputs.
+  expect_false(specs$marker_technology$annotations$readOnlyHint)
+  others <- specs[setdiff(names(specs), "marker_technology")]
+  expect_true(all(vapply(others, function(s) isTRUE(s$annotations$readOnlyHint), logical(1))))
+
+  listed <- env$mcp_dispatch(list(jsonrpc = "2.0", id = 3L, method = "tools/list"))
+  expect_true(all(vapply(listed$result$tools, function(tool) {
+    identical(tool$annotations, specs[[tool$name]]$annotations)
+  }, logical(1))))
+})
+
 test_that("every registered tool is wired and returns content", {
   skip_if_not_installed("jsonlite")
   env <- .mcp_env()

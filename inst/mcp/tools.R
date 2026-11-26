@@ -982,7 +982,35 @@ mcp_tool_specs <- function() {
       }
     )
   )
-  mcp_normalise_specs(specs)
+  mcp_normalise_specs(mcp_annotate_specs(specs))
+}
+
+# MCP annotation hints. The registry reads files and computes values; only
+# `marker_technology` changes session state. No tool opens the network, and a
+# repeated call with the same arguments returns the same value.
+MCP_ANNOTATIONS <- list(
+  readOnlyHint = TRUE,
+  destructiveHint = FALSE,
+  idempotentHint = TRUE,
+  openWorldHint = FALSE
+)
+MCP_MUTATING_ANNOTATIONS <- list(
+  readOnlyHint = FALSE,
+  destructiveHint = FALSE,
+  idempotentHint = TRUE,
+  openWorldHint = FALSE
+)
+MCP_MUTATING_TOOLS <- c("marker_technology")
+
+mcp_annotate_specs <- function(specs) {
+  for (nm in names(specs)) {
+    specs[[nm]]$annotations <- if (nm %in% MCP_MUTATING_TOOLS) {
+      MCP_MUTATING_ANNOTATIONS
+    } else {
+      MCP_ANNOTATIONS
+    }
+  }
+  specs
 }
 
 # Every published argument object is closed (`additionalProperties = FALSE`)
@@ -1216,7 +1244,8 @@ mcp_dispatch <- function(request, specs = mcp_tool_specs()) {
         name = nm,
         title = spec$title,
         description = spec$description,
-        inputSchema = spec$inputSchema
+        inputSchema = spec$inputSchema,
+        annotations = spec$annotations
       )
     })),
     `tools/call` = mcp_call(request$params %||% list(), specs),
