@@ -384,4 +384,3 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
   }
   mark_scan(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), "3'-seed")
 }
-

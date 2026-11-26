@@ -6,6 +6,26 @@
 
 ## 0.4.1 (в работе)
 
+### T7: `marker_specificity.R` разрезан на четыре шва (2026-11-26)
+
+- **Класс изменения: рефакторинг без изменения поведения.** Публичные имена и
+  `man/` не менялись, `NAMESPACE` тот же.
+- `R/marker_specificity.R` (2525 -> 924 строк) — только скан в памяти:
+  `specificity_seed()`, счётчик 3'-сида, `mismatch_profile()` и батчевый проход.
+- `R/marker_specificity_hits.R` (новый, 421) — координатные таблицы хитов:
+  `primer_hit_table()`, `primer_hit_table_from_hits()`,
+  `hit_tables_per_chrom()`, `exact_hit_table()`, `offtarget_profile()`.
+- `R/marker_specificity_pcr.R` (новый, 541) — `in_silico_pcr()`, спаривание
+  продуктов, химический фильтр, пуловой near-проход, `assay_*` ампликоны.
+- `R/marker_specificity_policy.R` (новый, 606) — контракт оценки скана:
+  `specificity_policy()`, `specificity_backend()`, `pam_state()`,
+  `specificity_verdict()` и их `print`.
+- `R/marker_scan.R` (+60) — `blast_primers()` и `build_blast_db()` переехали
+  к `marker_blast_index()`/`specificity_blast()`, чтобы BLAST-путь жил в одном
+  файле; bowtie/FM уже были в `marker_bowtie.R`/`marker_fm.R`.
+- Проверка: `dev/test.R "specificity|scan|bowtie|fm|insilico|genome-index"` —
+  521 pass, 0 fail; `dev/check.R --quick --no-render` — зелёный.
+
 ### DRY-слой результатов: реестры `print`/`plot`/`marker_map_spec` (2026-11-26)
 
 - **Класс изменения: рефакторинг без изменения поведения.**

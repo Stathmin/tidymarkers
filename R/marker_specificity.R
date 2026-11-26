@@ -1,16 +1,19 @@
 # =============================================================================
-#  marker_specificity.R  --  genome-wide specificity, in-silico PCR
-# =============================================================================
-# =============================================================================
-#  6. Genome-wide specificity (pure R, plus optional BLAST)
+#  marker_specificity.R  --  the in-memory seed scan and mismatch engine
 # =============================================================================
 #
-#  Specificity is mismatch- and position-aware, not "exact hit + a 15-nt seed".
-#  Every product carries its primer mismatches, where they sit, and a penalty
-#  that weights the 3' end and the seed above the middle.  What is *tolerated*
-#  is chemistry-specific, so `specificity_policy(scheme)` returns that
-#  chemistry's tolerance object and `specificity_verdict()` grades hits against
-#  it.  The numbers are heuristics (calibrated = FALSE), see the policy table.
+#  `specificity_seed()` and the machinery under it: the 3'-seed prefilter, the
+#  position-aware mismatch profile (`mismatch_profile()`), the batch scan and
+#  the scoring ladder.  It is mismatch- and position-aware, not "exact hit + a
+#  15-nt seed": every hit carries where its mismatches sit and a penalty that
+#  weights the 3' end and the seed above the middle.
+#
+#  The rest of the specificity path lives in its own modules.  Coordinate hit
+#  tables, exact_hit_table() and offtarget_profile() are in
+#  marker_specificity_hits.R; in_silico_pcr() and product pairing in
+#  marker_specificity_pcr.R; specificity_policy(), specificity_backend() and
+#  specificity_verdict() in marker_specificity_policy.R; specificity_of() and
+#  the BLAST/bowtie index path in marker_scan.R.
 #
 #  Evidence is graded, never assumed.  `specificity_seed()` is a cheap
 #  *prefilter* (3'-seed counts, fixed false-negative rate) for use while a
@@ -301,44 +304,6 @@ near_seed_counts <- function(seeds, genome) {
   as.integer(rowsum(cnt[pats] + cnt[rc], rep(seq_along(seeds), n)))
 }
 
-#' Per-position mismatch weight for a primer hit (heuristic, not calibrated)
-#'
-#' A mismatch near the primer's 3' terminus destabilises the annealed end far
-#' more than one in the middle, because extension starts there; the seed region
-#' (the 3'-terminal `seed_len` nt, the mismatch-critical region of an
-#' allele-specific primer) sits just behind it.  The ladder is the scheme's own
-#' (`weight_seed`, `weight_three_prime`, `weight_terminal` of
-#' [specificity_policy()]), so RPA's tolerant filaments are not scored like a
-#' proofreading polymerase.  It is a monotone heuristic, not a free-energy
-#' calculation.
-#' @param n_nt primer length.
-#' @param scheme chemistry (see [specificity_policy()]).
-#' @param seed_len seed length (default: the policy's).
-#' @return numeric vector of length `n_nt`, weight per position (5'->3').
-#' @keywords internal
-#' @noRd
-mismatch_weights <- function(n_nt, scheme = "pcr", seed_len = NULL) {
-  pol <- specificity_policy(scheme)
-  seed_len <- seed_len %||% pol$seed_len
-  n_nt <- as.integer(n_nt)
-  if (!n_nt) {
-    return(numeric())
-  }
-  w <- rep(pol$weight_middle, n_nt)
-  seed <- seq.int(max(1L, n_nt - seed_len + 1L), n_nt)
-  w[seed] <- pol$weight_seed
-  tail5 <- seq.int(max(1L, n_nt - pol$three_prime_window + 1L), n_nt)
-  w[tail5] <- pol$weight_three_prime
-  w[tail_terminal(n_nt)] <- pol$weight_terminal
-  w
-}
-
-#' Last `THREE_PRIME_TERMINAL` positions of `n_nt` (5'->3', 1-based)
-#' @keywords internal
-#' @noRd
-tail_terminal <- function(n_nt) {
-  seq.int(max(1L, n_nt - THREE_PRIME_TERMINAL + 1L), n_nt)
-}
 
 #' Mismatch profile of one primer hit against the genomic footprint
 #'

@@ -3840,14 +3840,17 @@ dir)` пишет crate-профиль поверх существующих че
       (`dev/artifacts.R --write`), выходные хеши фигур не менялись.
     - осталось: `need_cols()` из тикета не входил в E1; `marker_plots.R`
       (1620 строк) разрезает T7.
-- [ ] **T7. Разрезать god-файлы.**
-      правка: `marker_specificity.R` 2487 -> seed/index/cache;
-      `marker_plots.R` 1620 -> ideogram/diagram/layers;
-      `marker_assemble.R` 1571 -> AS/COM/contract;
+- [~] **T7. Разрезать god-файлы.**
+      правка: `marker_specificity.R` 2525 -> 924 (seed), плюс
+      `marker_specificity_hits.R` 421, `marker_specificity_pcr.R` 541,
+      `marker_specificity_policy.R` 606; `blast_primers()`/`build_blast_db()`
+      переехали в `marker_scan.R`. Осталось: `marker_plots.R` 1620 ->
+      ideogram/diagram/layers; `marker_assemble.R` 1571 -> AS/COM/contract;
       `marker_criteria.R` 1505 -> registry/table/evidence; ни один файл
       `R/*.R` не больше 1200 строк; шаг `lines` в `dev/check.R`.
-      проверка: полный набор тестов; `wc -l`; `dev/check.R`; `NAMESPACE` и
-      `man/` не меняются.
+      проверка: `dev/test.R "specificity|scan|bowtie|fm|insilico|genome-index"`
+      — 521 pass, 0 fail; `wc -l`; `dev/check.R --quick --no-render`; `NAMESPACE`
+      и `man/` не меняются.
       блокер: нет.
       следствие: правка в одном шве тянет 2.5k строк контекста, а линтер и
       ревью не видят границы.

@@ -81,6 +81,45 @@ SPECIFICITY_SCHEME_ALIASES <- c(
   homolog = "paralog", homologe = "paralog"
 )
 
+#' Per-position mismatch weight for a primer hit (heuristic, not calibrated)
+#'
+#' A mismatch near the primer's 3' terminus destabilises the annealed end far
+#' more than one in the middle, because extension starts there; the seed region
+#' (the 3'-terminal `seed_len` nt, the mismatch-critical region of an
+#' allele-specific primer) sits just behind it.  The ladder is the scheme's own
+#' (`weight_seed`, `weight_three_prime`, `weight_terminal` of
+#' [specificity_policy()]), so RPA's tolerant filaments are not scored like a
+#' proofreading polymerase.  It is a monotone heuristic, not a free-energy
+#' calculation.
+#' @param n_nt primer length.
+#' @param scheme chemistry (see [specificity_policy()]).
+#' @param seed_len seed length (default: the policy's).
+#' @return numeric vector of length `n_nt`, weight per position (5'->3').
+#' @keywords internal
+#' @noRd
+mismatch_weights <- function(n_nt, scheme = "pcr", seed_len = NULL) {
+  pol <- specificity_policy(scheme)
+  seed_len <- seed_len %||% pol$seed_len
+  n_nt <- as.integer(n_nt)
+  if (!n_nt) {
+    return(numeric())
+  }
+  w <- rep(pol$weight_middle, n_nt)
+  seed <- seq.int(max(1L, n_nt - seed_len + 1L), n_nt)
+  w[seed] <- pol$weight_seed
+  tail5 <- seq.int(max(1L, n_nt - pol$three_prime_window + 1L), n_nt)
+  w[tail5] <- pol$weight_three_prime
+  w[tail_terminal(n_nt)] <- pol$weight_terminal
+  w
+}
+
+#' Last `THREE_PRIME_TERMINAL` positions of `n_nt` (5'->3', 1-based)
+#' @keywords internal
+#' @noRd
+tail_terminal <- function(n_nt) {
+  seq.int(max(1L, n_nt - THREE_PRIME_TERMINAL + 1L), n_nt)
+}
+
 #' Mismatch tolerance for a specificity scheme
 #'
 #' Encodes the *known biology* each chemistry imposes on a target site: how many
