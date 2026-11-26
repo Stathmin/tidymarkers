@@ -9,15 +9,16 @@
 ### DRY-слой результатов: реестры `print`/`plot`/`marker_map_spec` (2026-11-26)
 
 - **Класс изменения: рефакторинг без изменения поведения.**
-- `R/marker_result_registry.R` — три реестра `class -> function`:
-  `marker_print_registry()`, `marker_plot_registry()`,
-  `marker_map_spec_registry()`. Один метод на generic (`print.marker`,
-  `plot.marker`, `marker_map_spec.marker`) обходит `class()` и находит
-  форматтер; `marker_explain` печатает заголовок и проваливается к
+- `R/marker_result_registry.R` — три реестра: `marker_print_registry()` и
+  `marker_map_spec_registry()` держат `class -> function`, а
+  `marker_plot_registry()` — `class -> раскладку`; один метод на generic
+  (`print.marker`, `plot.marker`, `marker_map_spec.marker`) обходит `class()`
+  и находит форматтер; `marker_explain` печатает заголовок и проваливается к
   обёрнутому результату. 32 прежних S3-метода (`print.*` и
   `marker_map_spec.*`) стали внутренними `marker_print_*` / `marker_map_*`;
-  `print.marker` наследует поведение `NextMethod()`, снимки вывода не
-  менялись.
+  17 `marker_plot_*` адаптеров заменила таблица `MARKER_PLOT_LAYOUTS` и
+  `marker_plot_layout()` (четыре класса с собственной отрисовкой помечены
+  `custom`); снимки вывода и графиков не менялись.
 - `R/marker_i18n.R` — `warn_msg()` рядом с `abort_msg()`, общий
   `translate_msg()`; остальные `cli_warn(gettext(...))` и
   `cli_abort(gettextf(...))` переведены на них.

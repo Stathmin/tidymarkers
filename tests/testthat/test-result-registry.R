@@ -1,10 +1,10 @@
 # Result generics dispatch through a class -> function registry, so the package
 # carries one S3 method per generic instead of one per result class.
 
-test_that("the plot registry is a named list of functions", {
+test_that("the plot registry is a named list of layouts", {
   reg <- marker_plot_registry()
   expect_true(all(startsWith(names(reg), "marker_")))
-  expect_true(all(vapply(reg, is.function, logical(1))))
+  expect_true(all(vapply(reg, is.list, logical(1))))
   expect_identical(anyDuplicated(names(reg)), 0L)
 })
 
@@ -14,7 +14,7 @@ test_that("plot() is the only plot S3 method and lookup walks the class vector",
   wrapped <- structure(list(), class = c("marker_explain", "marker_assay", "marker"))
   expect_identical(
     marker_registry_lookup(marker_plot_registry(), wrapped, "plot"),
-    marker_plot_assay
+    marker_plot_registry()$marker_assay
   )
 })
 

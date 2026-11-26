@@ -797,114 +797,91 @@ plot_marker_map <- function(marker, scheme, variants = NULL, genome = NULL, feat
   }
 }
 
-marker_plot_assay <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  # plot_primers() already carries the ideogram AND the check column
-  plot_primers(x, variants %||% empty_variants(), x$snp, genome = genome, features = features)
-}
-
-marker_plot_doomed <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  plot_doomed_target(x, variants %||% empty_variants(), x$snp, features = features)
-}
-
-marker_plot_caps <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "caps", variants, genome, features,
-    above = plot_caps_gel(x), heights = c(0.8, 1),
+# One row per result class: either a `marker_figure()` layout (`kind`, optional
+# `above`/`below` panels and `heights`) or a `custom` drawing handled below.
+MARKER_PLOT_LAYOUTS <- list(
+  marker_assay = list(custom = "assay"),
+  marker_doomed = list(custom = "doomed"),
+  marker_caps = list(
+    kind = "caps", above = plot_caps_gel, heights = c(0.8, 1),
     title = "CAPS / dCAPS: gel, amplicon map, class gates"
-  )
-}
-
-marker_plot_arms <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "arms", variants, genome, features,
-    above = plot_arms_gel(x), heights = c(0.8, 1),
+  ),
+  marker_arms = list(
+    kind = "arms", above = plot_arms_gel, heights = c(0.8, 1),
     title = "ARMS: gel, primer map, class gates"
-  )
-}
-
-marker_plot_hrm <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "hrm", variants, genome, features, title = "HRM: amplicon map, class gates")
-}
-
-marker_plot_taqman <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "taqman", variants, genome, features, title = "TaqMan: probes on the amplicon")
-}
-
-marker_plot_castpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "castpcr", variants, genome, features,
+  ),
+  marker_hrm = list(kind = "hrm", title = "HRM: amplicon map, class gates"),
+  marker_taqman = list(kind = "taqman", title = "TaqMan: probes on the amplicon"),
+  marker_castpcr = list(
+    kind = "castpcr",
     title = "castPCR: mutant ASP, WT blocker, locus probe"
-  )
-}
-
-marker_plot_dpcr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "dpcr", variants, genome, features, title = "dPCR: hydrolysis probes on the amplicon")
-}
-
-marker_plot_snapshot <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "snapshot", variants, genome, features,
+  ),
+  marker_dpcr = list(kind = "dpcr", title = "dPCR: hydrolysis probes on the amplicon"),
+  marker_snapshot = list(
+    kind = "snapshot",
     title = "SNaPshot: extension primer at the variant"
-  )
-}
-
-marker_plot_lamp <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "lamp", variants, genome, features,
-    title = "LAMP: F3/B3 outer, FIP/BIP inner arms"
-  )
-}
-
-marker_plot_rpa <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "rpa", variants, genome, features, title = "RPA: primers and exo probe")
-}
-
-marker_plot_crispr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "crispr", variants, genome, features, title = "CRISPR-Dx: guide + PAM")
-}
-
-marker_plot_sanger <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(x, "sanger", variants, genome, features, title = "Sanger: amplicon and read primers")
-}
-
-marker_plot_ssr <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "ssr", variants, genome, features,
-    below = plot_fragment_readout(x, "ssr", genome), heights = c(1, 0.28),
+  ),
+  marker_lamp = list(kind = "lamp", title = "LAMP: F3/B3 outer, FIP/BIP inner arms"),
+  marker_rpa = list(kind = "rpa", title = "RPA: primers and exo probe"),
+  marker_crispr = list(kind = "crispr", title = "CRISPR-Dx: guide + PAM"),
+  marker_sanger = list(kind = "sanger", title = "Sanger: amplicon and read primers"),
+  marker_ssr = list(
+    kind = "ssr", below = plot_fragment_readout, heights = c(1, 0.28),
     title = "SSR: repeat tract and fragment sizes"
-  )
-}
-
-marker_plot_indel_size <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  marker_figure(
-    x, "indel_size", variants, genome, features,
-    below = plot_fragment_readout(x, "indel_size", genome), heights = c(1, 0.28),
+  ),
+  marker_indel_size = list(
+    kind = "indel_size", below = plot_fragment_readout, heights = c(1, 0.28),
     title = "InDel size: REF/ALT products"
-  )
-}
+  ),
+  marker_duplex = list(custom = "duplex"),
+  marker_lax = list(custom = "lax")
+)
 
-marker_plot_duplex <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  maps <- lapply(x$assays, function(a) {
-    if (inherits(a, "marker_assay")) {
-      plot_marker_map(a, "snp", variants, genome, features)
-    } else {
-      plot_doomed_target(a, variants %||% empty_variants(), a$snp)
-    }
-  })
-  marker_composite(
-    patchwork::wrap_plots(maps, ncol = 1), x, "duplex", "Duplex: two loci in one tube",
-    genome = genome
-  )
-}
-
-marker_plot_lax <- function(x, variants = NULL, genome = NULL, features = NULL, ...) {
-  if (is.null(x$base)) {
-    return(empty_plot())
-  }
-  if (inherits(x$base, "marker_assay")) {
-    return(plot_primers(x$base, variants %||% empty_variants(), x$base$snp,
+marker_plot_layout <- function(spec, x, variants = NULL, genome = NULL, features = NULL) {
+  custom <- spec$custom
+  if (identical(custom, "assay")) {
+    # plot_primers() already carries the ideogram AND the check column
+    return(plot_primers(
+      x, variants %||% empty_variants(), x$snp,
       genome = genome, features = features
     ))
   }
-  plot_doomed_target(x$base, variants %||% empty_variants(), x$base$snp)
+  if (identical(custom, "doomed")) {
+    return(plot_doomed_target(
+      x, variants %||% empty_variants(), x$snp,
+      features = features
+    ))
+  }
+  if (identical(custom, "duplex")) {
+    maps <- lapply(x$assays, function(a) {
+      if (inherits(a, "marker_assay")) {
+        plot_marker_map(a, "snp", variants, genome, features)
+      } else {
+        plot_doomed_target(a, variants %||% empty_variants(), a$snp)
+      }
+    })
+    return(marker_composite(
+      patchwork::wrap_plots(maps, ncol = 1), x, "duplex",
+      "Duplex: two loci in one tube",
+      genome = genome
+    ))
+  }
+  if (identical(custom, "lax")) {
+    if (is.null(x$base)) {
+      return(empty_plot())
+    }
+    if (inherits(x$base, "marker_assay")) {
+      return(plot_primers(
+        x$base, variants %||% empty_variants(), x$base$snp,
+        genome = genome, features = features
+      ))
+    }
+    return(plot_doomed_target(x$base, variants %||% empty_variants(), x$base$snp))
+  }
+  marker_figure(
+    x, spec$kind, variants, genome, features,
+    above = if (is.null(spec$above)) NULL else spec$above(x),
+    below = if (is.null(spec$below)) NULL else spec$below(x, spec$kind, genome),
+    heights = spec$heights, title = spec$title
+  )
 }
