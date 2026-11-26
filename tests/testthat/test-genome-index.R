@@ -219,3 +219,41 @@ test_that("memory and bowtie agree through specificity_verdict", {
   expect_identical(mem$products$violations, idx$products$violations)
   expect_identical(idx$tier, "index")
 })
+
+test_that("a pangenome is a named list of per-chromosome shards", {
+  skip_if_not_installed("Rbowtie")
+  withr::local_seed(21)
+  rand <- function(n) paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+  site <- rand(24L)
+  make_assembly <- function(with_site) {
+    filler <- rand(300L)
+    Biostrings::DNAStringSet(c(
+      chr1 = if (with_site) paste0(filler, site, filler) else paste0(filler, filler),
+      chr2 = rand(500L)
+    ))
+  }
+  fa <- vapply(c(A = TRUE, B = FALSE), function(site_in) {
+    p <- tempfile(fileext = ".fa")
+    Biostrings::writeXStringSet(make_assembly(site_in), p)
+    p
+  }, character(1))
+  dir <- withr::local_tempdir()
+  pan <- lapply(names(fa), function(nm) {
+    genome_index(marker_genome(fa[[nm]]), "bowtie",
+      chroms = c("chr1", "chr2"), dir = file.path(dir, nm)
+    )
+  })
+  names(pan) <- names(fa)
+
+  # one shard per (genome_build, chrom), never one monolithic build
+  for (idx in pan) {
+    expect_identical(idx$manifest$chrom, c("chr1", "chr2"))
+    expect_identical(nrow(idx$manifest), 2L)
+  }
+  expect_length(unique(unlist(lapply(pan, function(x) x$manifest$path))), 4L)
+
+  res <- specificity_of(c(AS = site), pan, k = 15L, max_mismatch = 0L)
+  expect_identical(res$genome, c("A", "B"))
+  expect_identical(res$hits, c(1L, 0L))
+  expect_identical(scan_question(res), c(A = "whole-primer", B = "whole-primer"))
+})
