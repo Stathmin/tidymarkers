@@ -111,7 +111,9 @@ ledger <- do.call(rbind, list(
   row("apol1_2019", "taqman_apol1_2019_failure.csv", "test", "test-taqman-sources.R", "a predesigned TaqMan assay's failure MODE on a deletion haplotype: no amplification and mis-typed G calls on 1,110 samples", NA_character_),
   row("wheat2019", "taqman_wheat2019_anova.csv,taqman_wheat2019_composition.csv,taqman_wheat2019_concordance.csv,taqman_wheat2019_platform.csv", "test", "test-taqman-sources.R", "platform performance on a plant call matrix: a platform rate cannot be quoted without the design it came from", NA_character_),
   row("znavsmgb2014", "taqman_znavsmgb2014_rules.csv,taqman_znavsmgb2014_tm.csv", "rule", "test-taqman-sources-chem.R", "3'-MGB vs conventional TaqMan mismatch tolerance: the rule is applied, not merely cited", NA_character_),
-  row("dnamate", "none", "blocked", NA_character_, "nothing moved", "dnamate tabulates no Tm of its own and the 348 oligo Tms it advertises belong to doi:10.1093/bioinformatics/bdt066, so citing dnamate would attribute another paper's data to it"),
+  # the paper prints no Tm table, but its model's valid range and the salt term
+  # primer_tm already applies are quotable, and the panel pins both
+  row("dnamate", "dnamate_operating_domain.csv", "test", "test-dnamate-domain.R", "the operating domain dnaMATE's own model is valid over (16-30 nt, 50-600 mM Na+, 89% of predictions within 5 C) and the Schildkraut-Lifson salt term 16.6 log[Na+] that primer_tm already applies", NA_character_),
   row("huguet2017", "none", "blocked", NA_character_, "nothing moved", "the nearest-neighbour magnesium parameters were regenerated, but Fig. S10 is a raster and S2-S6 are parameter sets, so no measured Tm set could be landed"),
   row("vonahsen2001", "none", "blocked", NA_character_, "nothing moved", "closed access, and the 475 Tms it reports were 'obtained ... or compiled' rather than tabulated, so not even their provenance could be checked")
 ))

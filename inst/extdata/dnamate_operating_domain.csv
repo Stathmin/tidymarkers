@@ -1,0 +1,14 @@
+item,value,unit,reported,section,doi,pmcid
+sequence_length_min,16,nt,DNA sequences within the length range of 16–30 nt,Abstract,10.1093/nar/gki379,PMC1160140
+sequence_length_max,30,nt,DNA sequences within the length range of 16–30 nt,Abstract,10.1093/nar/gki379,PMC1160140
+monovalent_salt_min,50,mM,in the range of 50–600 mM monovalent salt concentration,Abstract,10.1093/nar/gki379,PMC1160140
+monovalent_salt_max,600,mM,in the range of 50–600 mM monovalent salt concentration,Abstract,10.1093/nar/gki379,PMC1160140
+accuracy_within_5C,89,percent,89% of the melting temperature predictions will have an error or deviation of <5°C from experimental data,Abstract,10.1093/nar/gki379,PMC1160140
+server_batch_limit,5000,sequences,up to 5000 DNA sequences can be submitted in a single run,Abstract,10.1093/nar/gki379,PMC1160140
+salt_adjustment_coefficient,16.6,log10[Na+] per decade,"The Schildkraut–Lifson (8) equation is used as the salt adjustment factor, which corresponds to 16.6log[Na+]",Methods,10.1093/nar/gki379,PMC1160140
+gas_constant,1.987,cal/K/mol,R is the gas constant (fixed at 1.987 cal/K mol),Methods,10.1093/nar/gki379,PMC1160140
+b_nonself_complementary,4,dimensionless,Constant b adopts the value of 4 for non-self-complementary sequences,Methods,10.1093/nar/gki379,PMC1160140
+b_self_complementary_or_excess,1,dimensionless,or equal to 1 for duplexes of self-complementary strands or for duplexes when one of the strands is in significant excess,Methods,10.1093/nar/gki379,PMC1160140
+nn_tables,Breslauer;SantaLucia;Sugimoto,table names,"The thermodynamic data ... include the tables from Breslauer (5), SantaLucia (6) and Sugimoto (7)",Methods,10.1093/nar/gki379,PMC1160140
+consensus_zone_error_bound,5,degC,The Tm estimation error at the other regions where some consensus was observed is expected to be small (below 3–5°C),Results,10.1093/nar/gki379,PMC1160140
+black_zone,no consensus among any method; large error possible,qualitative,The Tm estimations of oligonucleotides falling into the black regions of the consensus map by any of the methods could have a large error,Results,10.1093/nar/gki379,PMC1160140
