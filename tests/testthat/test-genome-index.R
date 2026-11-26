@@ -159,3 +159,63 @@ test_that("a missing shard names the chromosome, a changed one names the shard",
     class = "tidymarkers_index_missing_error"
   )
 })
+
+test_that("scan_question names the question and refuses an absent one", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGTACGTACGTACGT"))
+  mem <- specificity_of(c(AS = "ACGTACGTACGTACGT"), gs, k = 12L, max_mismatch = 0L)
+  expect_identical(scan_question(mem), "3'-seed")
+  expect_s3_class(mem, "specificity_scan")
+  expect_error(scan_question(tibble::tibble(hits = 1L)), class = "tidymarkers_scan_error")
+  bad <- mem
+  attr(bad, "scan") <- "seed-ish"
+  expect_error(scan_question(bad), class = "tidymarkers_scan_error")
+})
+
+test_that("a capability the strategy lacks is a named error, not a warning", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  expect_error(
+    specificity_of(c(AS = "ACGTACGTACGTACGT"), genome_index(gs, "bowtie"), k = 12L),
+    class = "tidymarkers_capability_error"
+  )
+  expect_error(
+    specificity_of(c(AS = "ACGTACGTACGTACGT"), genome_index(gs, "blast"), max_mismatch = 1L),
+    class = "tidymarkers_capability_error"
+  )
+})
+
+test_that("a table cannot mix two questions for one genome", {
+  base <- tibble::tibble(hits = 1L)
+  mixed <- base
+  attr(mixed, "scan") <- c("3'-seed", "whole-primer")
+  expect_error(
+    specificity_verdict(mixed, "kasp"),
+    class = "tidymarkers_scan_mixed_error"
+  )
+  # one question per genome is allowed
+  named <- empty_pcr_products()
+  attr(named, "scan") <- c(A = "3'-seed", B = "whole-primer")
+  expect_no_error(specificity_verdict(named, "kasp"))
+})
+
+test_that("memory and bowtie agree through specificity_verdict", {
+  skip_if_not_installed("Rbowtie")
+  withr::local_seed(3)
+  rand <- function(n) paste(sample(c("A", "C", "G", "T"), n, TRUE), collapse = "")
+  site <- rand(24L)
+  genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
+    rand(200L), site, rand(200L), site, rand(200L)
+  )))
+  fa <- withr::local_tempfile(fileext = ".fa")
+  Biostrings::writeXStringSet(genome, fa)
+  hits <- in_silico_pcr(site, site, genome)
+
+  mem <- specificity_verdict(hits, "kasp", genome = genome_index(genome, "memory"))
+  idx <- specificity_verdict(
+    hits, "kasp",
+    genome = genome_index(marker_genome(fa), "bowtie", dir = withr::local_tempdir())
+  )
+  expect_identical(mem$verdict, idx$verdict)
+  expect_identical(mem$n_tolerated, idx$n_tolerated)
+  expect_identical(mem$products$violations, idx$products$violations)
+  expect_identical(idx$tier, "index")
+})
