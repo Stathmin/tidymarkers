@@ -203,44 +203,96 @@ genome_index_scan <- function(primers, index, k = SEED_K,
   if (!is.na(max_mismatch) && max_mismatch > caps$max_mismatch) {
     abort_msg(
       "The {index$strategy} strategy supports `max_mismatch <= {caps$max_mismatch}`, not {max_mismatch}.",
-      i = "Its declared capability is `mismatch_tolerant = {caps$mismatch_tolerant}`."
+      i = "Its declared capability is `mismatch_tolerant = {caps$mismatch_tolerant}`.",
+      class = "tidymarkers_capability_error"
     )
   }
   switch(index$strategy,
-    memory = structure(
+    memory = mark_scan(
       specificity_seed(primers, index$genome,
         k = k, max_mismatch = max_mismatch, BPPARAM = BPPARAM
       ),
-      scan = "3'-seed"
+      "3'-seed"
     ),
     bowtie = {
       if (!identical(as.integer(k), as.integer(SEED_K))) {
-        cli::cli_warn(c(
-          gettext("The bowtie path scans the whole primer and ignores `k`."),
-          i = gettext("Use strategy = \"memory\" for the 3'-seed question.")
-        ))
+        abort_msg(
+          "The bowtie strategy scans the whole primer: it cannot honour `k = {k}`.",
+          i = "Its declared capabilities are `seed_scan = {caps$seed_scan}` and `whole_primer_scan = {caps$whole_primer_scan}`.",
+          i = "Use strategy = \"memory\" for the 3'-seed question.",
+          class = "tidymarkers_capability_error"
+        )
       }
-      structure(
+      mark_scan(
         specificity_bowtie(primers, genome_index_handle(index),
           max_mismatches = max_mismatch,
           nthreads = if (is.null(BPPARAM)) 4L else 1L
         ),
-        scan = "whole-primer"
+        "whole-primer"
       )
     },
-    blast = structure(
+    blast = mark_scan(
       specificity_blast(primers, genome_index_handle(index),
         k = k, BPPARAM = BPPARAM
       ),
-      scan = if (is.na(k)) "whole-primer" else "3'-seed"
+      if (is.na(k)) "whole-primer" else "3'-seed"
     ),
-    fm = structure(
+    fm = mark_scan(
       specificity_fm(primers, genome_index_handle(index),
         max_mismatches = max_mismatch, nthreads = 1L
       ),
-      scan = "whole-primer"
+      "whole-primer"
     )
   )
+}
+
+# Tag a specificity table with the question it answers.  The attribute is the
+# wire format (`attr(x, "scan")`); the class is the type, so a caller can
+# require it; `scan_question()` is the only sanctioned reader.
+mark_scan <- function(x, question) {
+  stopifnot(question %in% c("3'-seed", "whole-primer"))
+  attr(x, "scan") <- question
+  class(x) <- c("specificity_scan", class(x))
+  x
+}
+
+#' The question a specificity table answers
+#'
+#' Every genome-wide scan answers one of two questions: `"3'-seed"` (a seed
+#' match anywhere in the genome) or `"whole-primer"` (the whole oligo binds
+#' somewhere else).  The counts are not comparable across the two, so the
+#' question travels with the table as `attr(x, "scan")` and this is the only
+#' sanctioned reader.  A named vector is returned for a pangenome scan, one
+#' entry per genome.
+#'
+#' @param x a specificity table (as returned by [specificity_of()]).
+#' @return `"3'-seed"` or `"whole-primer"`; a named vector for a pangenome.
+#'   An absent or unknown value is an error, never `NULL`.
+#' @examples
+#' specificity_of(
+#'   c(AS = "ACGTACGTACGTACGTACGT"),
+#'   Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGTACGTACGT"))
+#' ) |>
+#'   scan_question()
+#' @family specificity
+#' @export
+scan_question <- function(x) {
+  q <- attr(x, "scan")
+  if (is.null(q) || !length(q)) {
+    abort_msg(
+      "This table carries no `scan` question.",
+      i = "Only a result of specificity_of() names the question its counts answer.",
+      class = "tidymarkers_scan_error"
+    )
+  }
+  bad <- unname(q)[is.na(match(unname(q), c("3'-seed", "whole-primer")))]
+  if (length(bad)) {
+    abort_msg(
+      "Unknown scan question{?s} {.val {bad}}.",
+      class = "tidymarkers_scan_error"
+    )
+  }
+  q
 }
 
 #' Build a `marker_genome` from a `BSgenome` object

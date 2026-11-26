@@ -62,6 +62,7 @@ Other specificity:
 \code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
+\code{\link[=scan_question]{scan_question()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_bowtie]{specificity_bowtie()}},
 \code{\link[=specificity_fm]{specificity_fm()}},

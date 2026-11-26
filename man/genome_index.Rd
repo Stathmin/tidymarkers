@@ -18,16 +18,17 @@ genome_index(
 
 \item{strategy}{the declared strategy; never inferred at query time.}
 
-\item{chroms}{optional sequence names for a per-chromosome bowtie build
-(see \code{\link[=marker_bowtie_index]{marker_bowtie_index()}}).}
+\item{chroms}{optional sequence names for a per-chromosome build (bowtie and
+BLAST); \code{NULL} leaves the whole-genome default, which a bowtie genome above
+\code{BOWTIE_MONOLITH_LIMIT} is sharded into per-chromosome shards anyway.}
 
 \item{dir}{directory for a lazily built index; defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{threads}{threads for an index build.}
 }
 \value{
-a \code{genome_index} object with \code{strategy}, \code{capabilities} and the
-wrapped \code{genome}.
+a \code{genome_index} object with \code{strategy}, \code{capabilities}, \code{manifest}
+and the wrapped \code{genome}.
 }
 \description{
 ADR 0005 makes the genome a strategy, not a set of optional index slots.
@@ -38,6 +39,17 @@ instead of guessing from a non-\code{NULL} slot, and tags the result with
 \code{dir}, so constructing the object never writes a multi-gigabyte index.
 }
 \details{
+\code{manifest} is one row per shard (\code{shard}, \code{chrom}, \code{path}, \code{bytes},
+\code{sha256}, \code{tool}, \code{tool_version}, \code{build_id}, \code{genome_build},
+\code{source_sha256}, \code{created}).  The constructor fills the paths and the tool
+version but not the hashes, so opening a 16 Gb genome does not read it;
+Chromosome shards of a bowtie index with \code{chroms}; above
+\code{BOWTIE_MONOLITH_LIMIT} the shards are chosen even when \code{chroms} is \code{NULL}.
+\code{\link[=index_manifest]{index_manifest()}} refreshes the measured columns from disk.  Above
+\code{BOWTIE_MONOLITH_LIMIT} (21.5 GB, 1.34 bytes per base) a bowtie strategy with
+\code{chroms = NULL} is sharded per chromosome, and each shard is built from one
+chromosome at a time (\code{index_chrom_seq()}), never from the whole FASTA.
+
 The capability matrix is:\tabular{llllll}{
    strategy \tab \code{seed_scan} \tab \code{whole_primer_scan} \tab \code{mismatch_tolerant} \tab \code{max_mismatch} \tab engine \cr
    memory \tab yes \tab no \tab yes \tab any \tab Biostrings \cr

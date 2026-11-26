@@ -37,7 +37,7 @@ graded against, carrying \code{spacer_len}/\code{spacer_len_known} for a CRISPR
 guide), \code{n_products}, \code{n_tolerated}, \code{n_mismatch} (best product), \code{best}
 (one-row product tibble), \code{products} (the graded tibble), \code{pam} (state),
 \code{backend} (the capability list, or \code{NA} when no genome was supplied) and
-\code{tier} (\code{"pair"}/\code{"blast"}/\code{"fm"}/\code{"none"}).
+\code{tier} (\code{"pair"}/\code{"index"}/\code{"blast"}/\code{"fm"}/\code{"none"}).
 }
 \description{
 The structured answer to "is this specific enough?": \code{pass} when at least one
@@ -89,6 +89,7 @@ Other specificity:
 \code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
 \code{\link[=rprimer_assays]{rprimer_assays()}},
+\code{\link[=scan_question]{scan_question()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_bowtie]{specificity_bowtie()}},
 \code{\link[=specificity_fm]{specificity_fm()}},

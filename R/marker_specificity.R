@@ -2204,6 +2204,27 @@ specificity_backend <- function(genome = NULL, scheme = "pcr") {
   pol <- specificity_policy(scheme)
   in_memory <- inherits(genome, "DNAStringSet")
   blast_ok <- has_blast() && isTRUE(requireNamespace("rBLAST", quietly = TRUE))
+  if (inherits(genome, "genome_index")) {
+    # the declared strategy is the answer: a capability the strategy does not
+    # have is a missing engine, never an inferred one
+    caps <- genome$capabilities
+    return(list(
+      engine = switch(genome$strategy,
+        memory = TRUE, bowtie = "index", blast = "blast", fm = "fm"
+      ),
+      capabilities = c(
+        exact_scan = isTRUE(caps$seed_scan),
+        mismatch_scan = isTRUE(caps$mismatch_tolerant),
+        blast = blast_ok,
+        crispr_offtarget = FALSE,
+        bowtie = isTRUE(caps$whole_primer_scan),
+        bwa = nzchar(Sys.which("bwa")),
+        crisprverse = namespace_available("crisprVerse")
+      ),
+      scheme = pol$mode,
+      reason = NA_character_
+    ))
+  }
   if (inherits(genome, "marker_genome")) {
     in_memory <- !is.null(genome$blast_db) && blast_ok
   }
@@ -2306,7 +2327,7 @@ pam_state <- function(observed, pattern = "TTTV") {
 #'   guide), `n_products`, `n_tolerated`, `n_mismatch` (best product), `best`
 #'   (one-row product tibble), `products` (the graded tibble), `pam` (state),
 #'   `backend` (the capability list, or `NA` when no genome was supplied) and
-#'   `tier` (`"pair"`/`"blast"`/`"fm"`/`"none"`).
+#'   `tier` (`"pair"`/`"index"`/`"blast"`/`"fm"`/`"none"`).
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(chr1 = paste0(
 #'   strrep("A", 20L), "ACGTACGTACGTACGTACGT", strrep("T", 20L),
@@ -2322,6 +2343,20 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL,
                                 spacer_len = NULL) {
   pol <- specificity_policy(scheme, spacer_len = spacer_len)
   backend <- if (is.null(genome)) NA else specificity_backend(genome, scheme)
+  # a table may answer one question per genome, never two for the same genome:
+  # a count cannot be both a seed count and a whole-primer count
+  if (!is.null(attr(hits, "scan"))) {
+    q <- scan_question(hits)
+    by_genome <- split(unname(q), names(q) %||% rep("", length(q)))
+    mixed <- any(vapply(by_genome, function(v) length(unique(v)) > 1L, logical(1)))
+    if (mixed) {
+      abort_msg(
+        "This table mixes \"3'-seed\" and \"whole-primer\" counts for one genome.",
+        i = "Keep one question per genome: the two counts are not comparable.",
+        class = "tidymarkers_scan_mixed_error"
+      )
+    }
+  }
   products <- if (is.null(hits)) {
     empty_pcr_products()
   } else {
@@ -2372,20 +2407,24 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL,
     NULL
   }
   n_tol <- sum(products$tolerated)
-  # the evidence level: a BLAST/FM index is primer-level (it can fail a primer
-  # genome-wide), an in-memory genome is pair-level here, no engine is no tier
-  tier <- if (!is.list(backend) || !isTRUE(backend$engine)) {
-    "none"
-  } else if (identical(backend$engine, "blast")) {
+  # the evidence level: a genome-wide index (BLAST/FM/bowtie) is primer-level
+  # (it can fail a primer genome-wide), an in-memory genome is pair-level here,
+  # and no engine at all is no tier
+  engine <- if (is.list(backend)) backend$engine else FALSE
+  tier <- if (identical(engine, "blast")) {
     "blast"
-  } else if (identical(backend$engine, "fm")) {
+  } else if (identical(engine, "fm")) {
     "fm"
-  } else {
+  } else if (identical(engine, "index")) {
+    "index"
+  } else if (isTRUE(engine)) {
     "pair"
+  } else {
+    "none"
   }
-  primer_level <- tier %in% c("blast", "fm")
+  primer_level <- tier %in% c("blast", "fm", "index")
   # a backend that is not a list at all (no genome given) carries no engine
-  if (!is.list(backend) || !isTRUE(backend$engine)) {
+  if (identical(tier, "none")) {
     out <- list(
       verdict = "unknown",
       reason = if (is.null(genome)) {

@@ -271,7 +271,10 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     }
     names(parts) <- names(genome)
     names(scans) <- names(genome)
-    return(structure(dplyr::bind_rows(parts, .id = "genome"), scan = scans))
+    out <- dplyr::bind_rows(parts, .id = "genome")
+    attr(out, "scan") <- scans
+    class(out) <- c("specificity_scan", class(out))
+    return(out)
   }
   if (inherits(genome, "genome_index")) {
     return(genome_index_scan(primers, genome,
@@ -279,12 +282,12 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     ))
   }
   if (!inherits(genome, "marker_genome")) {
-    return(structure(
+    return(mark_scan(
       specificity_seed(primers, genome,
         k = k, max_mismatch = max_mismatch,
         BPPARAM = BPPARAM
       ),
-      scan = "3'-seed"
+      "3'-seed"
     ))
   }
   if (!is.null(genome$bowtie_index)) {
@@ -298,11 +301,11 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     }
     # a BPPARAM means the caller is already parallel across loci; 4 bowtie
     # threads per worker oversubscribed a 6-worker run by 2.75x
-    return(structure(
+    return(mark_scan(
       specificity_bowtie(primers, genome$bowtie_index,
         nthreads = if (is.null(BPPARAM)) 4L else 1L
       ),
-      scan = "whole-primer"
+      "whole-primer"
     ))
   }
   if (!is.null(genome$fm_index)) {
@@ -320,5 +323,5 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
       i = "Build marker_bowtie_index(genome) (bowtie_index=) or marker_blast_index(genome) (blast_db=)."
     )
   }
-  structure(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), scan = "3'-seed")
+  mark_scan(specificity_blast(primers, db, k = k, BPPARAM = BPPARAM), "3'-seed")
 }

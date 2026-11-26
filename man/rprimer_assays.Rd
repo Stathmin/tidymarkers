@@ -48,6 +48,7 @@ Other specificity:
 \code{\link[=marker_fm_index]{marker_fm_index()}},
 \code{\link[=offtarget_profile]{offtarget_profile()}},
 \code{\link[=primer_set_compatibility]{primer_set_compatibility()}},
+\code{\link[=scan_question]{scan_question()}},
 \code{\link[=specificity_blast]{specificity_blast()}},
 \code{\link[=specificity_bowtie]{specificity_bowtie()}},
 \code{\link[=specificity_fm]{specificity_fm()}},
