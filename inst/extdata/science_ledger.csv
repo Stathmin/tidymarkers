@@ -15,7 +15,7 @@
 "grewal2022_amblyopyrum","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: failure classes are not pooled",""
 "polymarker_source","polymarker_design_rules.csv","rule","test-y32-homeolog.R","constraint: the common primer 3' base is the subgenome anchor, also SHOWN as artifact$subgenome_anchor",""
 "newton1989","mismatch_discrimination.csv","test","test-z7-priors.R","mechanism prior only: a mismatched 3' base is not a primer",""
-"ye2001_primer_set","none","blocked","","none yet (provenance only)","the full text was read but no algebraic assertion is possible: the primer set carries no per-primer outcome to reproduce"
+"ye2001_primer_set","ye2001_arms_primer_set.csv","test","test-ye2001-arms-primers.R","literature_tm_panel",""
 "desilva2009","desilva2009_outcomes.csv","test","test-z8-outcomes.R","hrm: outcome counts with their own denominators",""
 "ace1r_aslamp2015","ace1r_aslamp2015_counts.csv","test","test-z8-outcomes.R","lamp: time-to-positive window, not a binary call",""
 "liu2016_caps","liu2016_caps_funnel.csv","test","test-z8-outcomes.R","caps: restriction-site conversion rate",""
