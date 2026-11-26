@@ -24,6 +24,27 @@ conditions <- function() {
   )
 }
 
+test_that("lamp melting: the mismatch family table states what the endpoint carries", {
+  m <- readr::read_csv(tm_extdata("mismatch_family_lamp.csv"),
+    show_col_types = FALSE,
+    na = c("", "NA")
+  )
+  expect_equal(nrow(m), 3L)
+  expect_setequal(m$family, "lamp")
+  expect_setequal(m$doi, "10.1128/spectrum.01565-25")
+  expect_setequal(m$pmcid, "PMC12671098")
+  # the two lineage-specific peaks are 1.25 C apart, just outside the paper's
+  # own +/-1 C assignment margin
+  v <- function(metric) m$value[m$metric == metric]
+  expect_equal(v("melting_tm_c"), 92.46)
+  expect_equal(v("delta_melting_tm_c"), 1.25)
+  expect_equal(v("tm_shift_direction"), -1)
+  # the table carries a SIGN where the paper prints no per-mismatch magnitude,
+  # so n_mismatches is genuinely unset rather than zero
+  expect_true(all(is.na(m$n_mismatches)))
+  expect_true(all(c("melting_tm_c", "delta_melting_tm_c", "tm_shift_direction") %in% m$metric))
+})
+
 test_that("lamp melting: the sample table keeps all 133 typed records", {
   d <- calls()
   expect_equal(nrow(d), 133L)

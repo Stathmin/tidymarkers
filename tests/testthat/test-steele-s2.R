@@ -60,6 +60,29 @@ test_that("Y6: three hand-read markers keep their exact counts", {
   expect_equal(m("RM214_SNP_nn_2")$n_called, 0L)
 })
 
+test_that("Y6: the conversion registry carries the unreconciled panel totals", {
+  d <- ext("conversion_rates.csv")
+  s <- d[d$study == "steele2025_rice_kasp", ]
+  expect_equal(nrow(s), 1L)
+  expect_equal(s$n_designed, 4000L)
+  expect_equal(s$n_success, 3366L)
+  expect_equal(s$n_fail_other, 634L)
+  expect_equal(s$n_failed, 634L)
+  # the paper does not decompose the failure: no PCR stage, no no-allele stage
+  expect_true(is.na(s$n_fail_pcr))
+  expect_true(is.na(s$n_fail_no_allele))
+  expect_equal(s$n_fail_known, 0L)
+  expect_false(s$decomposes)
+  expect_false(s$fully_decomposed)
+  expect_equal(s$outcome_scale, "usable")
+  expect_false(s$calibrated)
+  expect_equal(s$doi, "10.1093/g3journal/jkae251")
+  # 3,366 called + 635 failed = 4,001 against 4,000 designed: the note records
+  # the arithmetic rather than inventing the missing assay
+  expect_match(s$failure_note, "3,366 \\+ 635 = 4,001", fixed = FALSE)
+  expect_match(s$failure_note, "15.9%", fixed = TRUE)
+})
+
 test_that("Y6: the ambiguity sweep buys designs, not assay success", {
   d <- ext("steele2025_design_sweep.csv")
   expect_equal(nrow(d), 5L)
