@@ -368,3 +368,9 @@
 "corpus_shared","criterion_provenance.csv","test","test-criteria.R","what criterion_provenance.csv measures, asserted by test-criteria.R",NA
 "corpus_shared","z8_gate_outcomes.csv","blocked",NA,"nothing moved","no test reads z8_gate_outcomes.csv, and no single paper owns it: it is on disk but moves no verdict"
 "yang2020_brassica_kasp","conversion_rates.csv","test","test-z8-outcomes.R","conversion_rates: 268 Chinese cabbage KASP designs -> 258 polymorphic (96.27%); ten primers produced no signal, so all 10 failures are the no-amplification class",NA
+"vavilov2024","criterion_offsets.csv","test","test-criterion-offsets.R","four bars match the package exactly; five are narrower than the package bar and probe GC is wider; the table now names every direction",NA
+"ppr_ddpcr2026","criterion_offsets.csv","test","test-criterion-offsets.R","the dPCR primer window 58-62 C is disjoint from the package 44-50 C: a regime difference, not drift",NA
+"ssr_gel2026","criterion_offsets.csv","test","test-criterion-offsets.R","five SSR bars measured; the package is stricter on the gel band gap and the motif window, the source on the size delta",NA
+"wang2025_multikasp","criterion_offsets.csv","test","test-criterion-offsets.R","the duplex self-complementarity limits match the package exactly",NA
+"zhao2026_snapshot","criterion_offsets.csv","test","test-criterion-offsets.R","the SBE Tm window 53-60 C is 3 C narrower at the bottom than the package 50-60 C",NA
+"shimizu2025_kasp","criterion_offsets.csv","test","test-criterion-offsets.R","the source rejects dimers below -10 kcal/mol; the package bar at -9 is stricter by 1 kcal/mol",NA

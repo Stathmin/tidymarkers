@@ -27,7 +27,7 @@ check is enforced, and what has not been validated at all.
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
   are checked against the enumeration, with BLAST+ as a speed/recall baseline.
 - **What does exist** is a literature-anchored evidence layer: 134 registered
-  sources, 157 extracted tables in `inst/extdata/`, and a ledger that binds 215
+  sources, 158 extracted tables in `inst/extdata/`, and a ledger that binds 221
   `test` rows to the 55 test files that consume them. Each link from a source,
   to the exact table read from it, to the test that asserts a property of it is
   machine-checked.
@@ -41,7 +41,7 @@ Three tables carry the provenance, and three tests keep them honest.
 | File                                  | Rows | What it holds                                                                                                                           |
 | ------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `inst/extdata/scientific_sources.csv` | 134  | One row per paper or software source: citation, DOI/PMIM, **how much was read** (`access`), `what_it_anchors`, and the verbatim `claim` |
-| `inst/extdata/science_ledger.csv`     | 369  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
+| `inst/extdata/science_ledger.csv`     | 375  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
 | `inst/extdata/scientific_backlog.csv` | 45   | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched`                                                     |
 
 `access` is a closed vocabulary and it is load-bearing: 105 sources were read in
@@ -50,12 +50,12 @@ full text, 11 through a supplement, 4 as an abstract only, 6 are closed access,
 134 rows are marked `verified`, each with the date it was checked. A source read
 only as an abstract may not calibrate anything, and the tests enforce that.
 
-Ledger rows by use: 215 `test`, 130 `report` (a claim the paper makes, kept for
+Ledger rows by use: 221 `test`, 130 `report` (a claim the paper makes, kept for
 comparison), 15 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 155 extract tables are named — `example_region_targets.csv`
+why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 156 extract tables are named — `example_region_targets.csv`
 is the shipped slice's target table, `steele2025_rice_kasp_calls.csv` the
-per-marker matrix above, and the 157th CSV in `inst/extdata/` is the ledger
-itself — and `test` rows account for 141 of them.
+per-marker matrix above, and the 158th CSV in `inst/extdata/` is the ledger
+itself — and `test` rows account for 142 of them.
 Of the 15 `blocked` rows, 5 name no extract (`extract = none`) and say which
 paper could not be landed, and 10 name a real extract that carries no verdict of
 its own yet.
@@ -685,6 +685,14 @@ named reason when one is absent.
 - 20 ledger rows are `blocked`: 10 name no extract at all, 10 name an extract
   that carries no verdict of its own yet, and each says why the paper could not
   be landed.
+- **Named criterion sources are cited, not all enforced.** 33 distinct sources
+  name a criterion in `criterion_provenance.csv`; 11 of them have a `test` row
+  in `science_ledger.csv` (the 19 offset rows are the newest such join), 22 have
+  none, and the 130 `report` rows are cited-but-unenforced by construction.
+  Nothing in the package asserts that a named source must be enforced, so no
+  test fails on the 22 — the count is measured, not staged. Reopen gate: a
+  source that states a bar the package can evaluate enters the offsets table
+  with a reader test, as the six 2026-11-26 sources did.
 - 6 sources are closed access; they exist so that the number they would have
   anchored is visibly absent rather than silently invented. Every route tried for
   the closed and not-found rows on 2026-11-25 failed at the publisher: IA Scholar
