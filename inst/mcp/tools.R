@@ -160,7 +160,7 @@ mcp_scheme_ids <- function(design = FALSE) {
 # Every entry: title, description, inputSchema (JSON Schema draft 2020-12), and
 # a handler taking the parsed `arguments` object.
 mcp_tool_specs <- function() {
-  list(
+  specs <- list(
     primer_tm = list(
       title = "Primer melting temperature",
       description = paste(
@@ -572,10 +572,11 @@ mcp_tool_specs <- function() {
       inputSchema = list(
         type = "object",
         properties = list(
+          # No enum: the handler documents a scheme id *or* a temperature
+          # family, and treats an unregistered id as PCR-style.
           scheme = list(
             type = "string",
-            enum = mcp_scheme_ids(),
-            description = "scheme id (default \"pcr\")"
+            description = "scheme id or pcr/lamp/rpa/ambient (default \"pcr\")"
           )
         )
       ),
@@ -981,6 +982,156 @@ mcp_tool_specs <- function() {
       }
     )
   )
+  mcp_normalise_specs(specs)
+}
+
+# Every published argument object is closed (`additionalProperties = FALSE`)
+# unless a schema opts out; the tool then never receives a name a client could
+# not see in `properties`.
+mcp_normalise_specs <- function(specs) {
+  for (nm in names(specs)) {
+    schema <- specs[[nm]]$inputSchema
+    if (is.null(schema$additionalProperties)) {
+      schema$additionalProperties <- FALSE
+      specs[[nm]]$inputSchema <- schema
+    }
+  }
+  specs
+}
+
+# -- validation ----------------------------------------------------------
+
+# The runtime validator reads the same `inputSchema` that `tools/list`
+# publishes, so the server never hands a handler an argument the client was
+# told to send.  `path` names the failing argument, `got` is what arrived.
+mcp_type_of <- function(value) {
+  if (is.null(value)) {
+    return("null")
+  }
+  if (is.list(value)) {
+    return(if (is.null(names(value))) "array" else "object")
+  }
+  if (is.logical(value)) {
+    return("boolean")
+  }
+  if (is.numeric(value)) {
+    return("number")
+  }
+  if (is.character(value)) {
+    return("string")
+  }
+  typeof(value)
+}
+
+mcp_violation <- function(path, expected, got) {
+  list(path = path, expected = expected, got = got)
+}
+
+mcp_child_path <- function(path, name) {
+  if (nzchar(path)) paste0(path, ".", name) else name
+}
+
+mcp_validate_value <- function(value, schema, path) {
+  type <- schema$type
+  if (!is.null(type)) {
+    actual <- mcp_type_of(value)
+    ok <- switch(type,
+      string = is.character(value) && length(value) == 1L,
+      number = is.numeric(value) && length(value) == 1L,
+      integer = is.numeric(value) && length(value) == 1L && value == trunc(value),
+      boolean = is.logical(value) && length(value) == 1L,
+      # An empty JSON object and an empty JSON array are both `list()`; accept
+      # either as an empty object rather than guess.
+      object = is.list(value) &&
+        (is.null(names(value)) && length(value) == 0L || !is.null(names(value))),
+      array = is.list(value) && is.null(names(value)),
+      actual == type
+    )
+    if (!ok) {
+      return(mcp_violation(path, type, value))
+    }
+  }
+
+  if (!is.null(schema$enum)) {
+    choices <- as.list(schema$enum)
+    if (!any(vapply(choices, identical, logical(1), value))) {
+      return(mcp_violation(path, paste0("one of: ", paste(unlist(choices), collapse = ", ")), value))
+    }
+  }
+
+  if (is.numeric(value) && length(value) == 1L) {
+    if (!is.null(schema$minimum) && value < schema$minimum) {
+      return(mcp_violation(path, paste0(">= ", schema$minimum), value))
+    }
+    if (!is.null(schema$maximum) && value > schema$maximum) {
+      return(mcp_violation(path, paste0("<= ", schema$maximum), value))
+    }
+  }
+
+  if (is.character(value) && length(value) == 1L && !is.null(schema$pattern)) {
+    if (!grepl(schema$pattern, value)) {
+      return(mcp_violation(path, paste0("pattern ", schema$pattern), value))
+    }
+  }
+
+  if (is.list(value) &&
+    (is.null(names(value)) && length(value) == 0L && identical(type, "object") ||
+      !is.null(names(value)))) {
+    required <- unlist(schema$required %||% list(), use.names = FALSE)
+    for (nm in required) {
+      if (is.null(value[[nm]])) {
+        return(mcp_violation(mcp_child_path(path, nm), "required argument", NULL))
+      }
+    }
+    props <- schema$properties %||% list()
+    if (isFALSE(schema$additionalProperties)) {
+      extra <- setdiff(names(value), names(props))
+      if (length(extra)) {
+        return(mcp_violation(
+          mcp_child_path(path, extra[[1L]]),
+          paste0("one of: ", paste(names(props), collapse = ", ")),
+          value[[extra[[1L]]]]
+        ))
+      }
+    }
+    for (nm in intersect(names(value), names(props))) {
+      problem <- mcp_validate_value(value[[nm]], props[[nm]], mcp_child_path(path, nm))
+      if (!is.null(problem)) {
+        return(problem)
+      }
+    }
+    return(NULL)
+  }
+
+  if (is.list(value) && is.null(names(value)) && !is.null(schema$items)) {
+    for (i in seq_along(value)) {
+      problem <- mcp_validate_value(value[[i]], schema$items, paste0(path, "[", i, "]"))
+      if (!is.null(problem)) {
+        return(problem)
+      }
+    }
+  }
+
+  NULL
+}
+
+# `args` is the decoded JSON `arguments` object: a named list (or `list()` for
+# an absent/empty object).
+mcp_validate_args <- function(args, schema) {
+  if (!is.list(args)) {
+    return(mcp_violation("arguments", "object", args))
+  }
+  mcp_validate_value(args, schema, "")
+}
+
+mcp_protocol_error <- function(message, tool, path, expected, got) {
+  structure(
+    list(
+      message = message,
+      data = list(tool = tool, path = path, expected = expected, got = got)
+    ),
+    class = "mcp_protocol_error"
+  )
 }
 
 # -- dispatch ------------------------------------------------------------
@@ -995,14 +1146,31 @@ mcp_pkg_version <- function() {
 # A `tools/call` result: text for a plain client, structured content for one
 # that can read it. A handler error is a tool error (`isError`), not a
 # protocol error, so the client sees the message instead of a dropped call.
+# An unknown tool or an argument the schema rejects is JSON-RPC `-32602`
+# ("invalid params"), with `data` naming the tool, path, expectation and value.
 mcp_call <- function(params, specs) {
+  if (!is.list(params)) {
+    return(mcp_protocol_error("invalid params: `params` must be an object", "", "params", "object", params))
+  }
   name <- params$name
-  args <- params$arguments %||% list()
+  if (!is.character(name) || length(name) != 1L || !nzchar(name)) {
+    return(mcp_protocol_error(
+      "invalid params: `name` is required", "", "name", "string", params$name
+    ))
+  }
   spec <- specs[[name]]
   if (is.null(spec)) {
-    return(list(
-      content = list(list(type = "text", text = paste0("unknown tool: ", name))),
-      isError = TRUE
+    return(mcp_protocol_error(
+      paste0("unknown tool: ", name), name, "name", "a registered tool name", name
+    ))
+  }
+  args <- params$arguments %||% list()
+  problem <- mcp_validate_args(args, spec$inputSchema)
+  if (!is.null(problem)) {
+    label <- if (nzchar(problem$path)) problem$path else "arguments"
+    return(mcp_protocol_error(
+      paste0("invalid arguments for ", name, ": ", label),
+      name, label, problem$expected, problem$got
     ))
   }
   value <- tryCatch(
@@ -1021,8 +1189,12 @@ mcp_call <- function(params, specs) {
   )
 }
 
-mcp_error_response <- function(id, code, message) {
-  list(jsonrpc = "2.0", id = id, error = list(code = code, message = message))
+mcp_error_response <- function(id, code, message, data = NULL) {
+  error <- list(code = code, message = message)
+  if (!is.null(data)) {
+    error$data <- data
+  }
+  list(jsonrpc = "2.0", id = id, error = error)
 }
 
 # `request` is one decoded JSON-RPC message. A notification (no `id`) returns
@@ -1050,6 +1222,12 @@ mcp_dispatch <- function(request, specs = mcp_tool_specs()) {
     `tools/call` = mcp_call(request$params %||% list(), specs),
     NULL
   )
+  if (inherits(result, "mcp_protocol_error")) {
+    if (is.null(id)) {
+      return(NULL)
+    }
+    return(mcp_error_response(id, -32602L, result$message, result$data))
+  }
   if (is.null(result)) {
     if (is.null(id)) {
       return(NULL)

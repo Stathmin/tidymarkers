@@ -1,25 +1,5 @@
-# MCP tool layer (roadmap YP2): every registered tool is wired and callable.
-#
-# inst/mcp/tools.R is not part of the namespace, so source it into an
-# environment that sees the package; that is the same lookup the server's
-# `library(tidymarkers)` gives it.
-
-.mcp_env <- function() {
-  env <- new.env(parent = asNamespace("tidymarkers"))
-  path <- system.file("mcp", "tools.R", package = "tidymarkers")
-  if (!nzchar(path)) {
-    path <- testthat::test_path("..", "..", "inst", "mcp", "tools.R")
-  }
-  sys.source(path, envir = env)
-  env
-}
-
-.mcp_call <- function(env, name, arguments) {
-  env$mcp_dispatch(list(
-    jsonrpc = "2.0", id = 1L, method = "tools/call",
-    params = list(name = name, arguments = arguments)
-  ))
-}
+# MCP tool layer (roadmap YP2/T8): every registered tool is wired and callable.
+# The shared `mcp_env()` / `mcp_call()` helpers live in helper-mcp.R.
 
 test_that("initialize and tools/list speak JSON-RPC", {
   skip_if_not_installed("jsonlite")
@@ -224,13 +204,15 @@ test_that("genome tools answer from the mounted files", {
   expect_gt(nrow(pcr$result$structuredContent), 0L)
 })
 
-test_that("a missing path is a readable tool error", {
+test_that("a missing file is a readable tool error", {
   skip_if_not_installed("jsonlite")
   env <- .mcp_env()
 
-  missing_genome <- .mcp_call(env, "genome_info", list())
+  missing_genome <- .mcp_call(env, "genome_info", list(
+    genome_path = tempfile(fileext = ".fa")
+  ))
   expect_true(isTRUE(missing_genome$result$isError))
-  expect_match(missing_genome$result$content[[1L]]$text, "genome_path")
+  expect_true(nzchar(missing_genome$result$content[[1L]]$text))
 })
 
 test_that("protocol edges fail readably, not silently", {
@@ -244,9 +226,10 @@ test_that("protocol edges fail readably, not silently", {
   bad <- env$mcp_dispatch(list(jsonrpc = "2.0", id = 9L, method = "no/such"))
   expect_equal(bad$error$code, -32601L)
 
-  # An unknown tool is a tool error, not a dropped call.
+  # An unknown tool is invalid params, not a dropped call.
   unknown <- .mcp_call(env, "no_such_tool", list())
-  expect_true(isTRUE(unknown$result$isError))
+  expect_equal(unknown$error$code, -32602L)
+  expect_equal(unknown$error$data$tool, "no_such_tool")
 })
 
 test_that("inst/mcp/schema.json matches the tool registry", {
