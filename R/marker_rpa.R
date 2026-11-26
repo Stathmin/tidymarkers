@@ -653,8 +653,8 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
   structure(out, class = c("marker_rpa", "marker"))
 }
 
-#' @export
-print.marker_rpa <- function(x, ...) {
+#' @noRd
+marker_print_rpa <- function(x, ...) {
   cat("<marker_rpa>", x$snp$chrom, ":", x$snp$pos, " ", x$snp$ref, ">", x$snp$alt, "\n", sep = "")
   cat("  F:", x$primers$forward, " (", x$primers$length_f, " nt)\n", sep = "")
   cat("  R:", x$primers$reverse, " (", x$primers$length_r, " nt)\n", sep = "")
@@ -694,10 +694,8 @@ print.marker_rpa <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_rpa
-#' @export
 #' @noRd
-marker_map_spec.marker_rpa <- function(marker, scheme = NULL, ...) {
+marker_map_rpa <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   probe <- if (!is.null(marker$probe)) {
     list(spec_row(

@@ -503,10 +503,8 @@ marker_evaluate <- function(assay, limits = KASP_LIMITS, scheme = NULL) {
   marker_design_checks(assay, limits = limits, scheme = scheme)
 }
 
-#' @method marker_map_spec marker_duplex
-#' @export
 #' @noRd
-marker_map_spec.marker_duplex <- function(marker, scheme = NULL, ...) {
+marker_map_duplex <- function(marker, scheme = NULL, ...) {
   # the compatibility table, not the two per-locus maps: the loci share a tube,
   # not a coordinate; the rows are the pairing's gate segments
   compat <- marker$compatibility
@@ -523,8 +521,8 @@ marker_map_spec.marker_duplex <- function(marker, scheme = NULL, ...) {
   spec_bind(out)
 }
 
-#' @export
-print.marker_duplex <- function(x, ...) {
+#' @noRd
+marker_print_duplex <- function(x, ...) {
   cat("<marker_duplex>", x$readout, "| verdict", x$verdict, "\n")
   for (i in seq_along(x$assays)) {
     a <- x$assays[[i]]

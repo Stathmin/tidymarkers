@@ -525,8 +525,8 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
   marker_attach_haplotypes(out, haplotypes, snp)
 }
 
-#' @export
-print.marker_crispr <- function(x, ...) {
+#' @noRd
+marker_print_crispr <- function(x, ...) {
   cat(
     "<marker_crispr>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, " [", x$cas, "]\n",
@@ -566,10 +566,8 @@ print.marker_crispr <- function(x, ...) {
 #'   the label / limit lookups the decision graph and text export need.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_crispr
-#' @export
 #' @noRd
-marker_map_spec.marker_crispr <- function(marker, scheme = NULL, ...) {
+marker_map_crispr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   guide <- list(spec_row(
     "guide", marker$guide_start[1L], marker$guide_end[1L], marker$strand[1L], "guide",

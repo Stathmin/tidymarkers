@@ -682,8 +682,8 @@ sanger_primer_variants <- function(marker, haplotypes) {
   if (is.null(out)) tibble::tibble() else out
 }
 
-#' @export
-print.marker_sanger <- function(x, ...) {
+#' @noRd
+marker_print_sanger <- function(x, ...) {
   cat(
     "<marker_sanger>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, "\n",
@@ -733,10 +733,8 @@ print.marker_sanger <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_sanger
-#' @export
 #' @noRd
-marker_map_spec.marker_sanger <- function(marker, scheme = NULL, ...) {
+marker_map_sanger <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
   end <- sp[["end"]]

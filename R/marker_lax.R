@@ -482,8 +482,8 @@ design_lax_marker <- function(genome, snp, haplotypes = NULL, ...) {
   structure(out, class = c("marker_lax", "marker"))
 }
 
-#' @export
-print.marker_lax <- function(x, ...) {
+#' @noRd
+marker_print_lax <- function(x, ...) {
   cat(
     "<marker_lax>", x$snp$chrom, ":", x$snp$pos, " ", x$snp$ref, ">", x$snp$alt,
     " | ", length(x$alt), " ALT haplotype(s) | verdict ", x$verdict, "\n",

@@ -58,7 +58,7 @@ test_that("design_dpcr_marker returns a short amplicon with a hydrolysis probe o
   expect_gte(m$probes$tm[1L] - max(m$primers$tm_f, m$primers$tm_r), 8)
   expect_match(m$primers$forward, "^[ACGT]+$")
   expect_match(m$primers$reverse, "^[ACGT]+$")
-  expect_output(print.marker_dpcr(m), "marker_dpcr")
+  expect_output(print(m), "marker_dpcr")
 })
 
 test_that("the dPCR probe lies strictly between the primer 3' ends", {

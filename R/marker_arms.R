@@ -355,8 +355,8 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
   structure(out, class = c("marker_arms", "marker"))
 }
 
-#' @export
-print.marker_arms <- function(x, ...) {
+#' @noRd
+marker_print_arms <- function(x, ...) {
   cat("<marker_arms>", x$snp$chrom, ":", x$snp$pos, " ", x$snp$ref, ">", x$snp$alt, "\n", sep = "")
   cat("  outer:", x$outer$product, "bp\n")
   cat("  REF band:", x$bands$size[x$bands$band == "REF"], "bp (inner F:", x$inner$ref$primer, ")\n")
@@ -385,11 +385,8 @@ print.marker_arms <- function(x, ...) {
 #' plot_arms_gel(design_arms_marker(genome, marker_example("SNP")[1, ], flank = 300))
 #' }
 #' @family ARMS
-#' @export
-#' @method marker_map_spec marker_arms
-#' @export
 #' @noRd
-marker_map_spec.marker_arms <- function(marker, scheme = NULL, ...) {
+marker_map_arms <- function(marker, scheme = NULL, ...) {
   of <- marker$outer
   map_spec(
     marker,

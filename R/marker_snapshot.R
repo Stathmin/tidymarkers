@@ -238,8 +238,8 @@ design_snapshot_marker <- function(genome, snp, flank = 250L,
   structure(out, class = c("marker_snapshot", "marker"))
 }
 
-#' @export
-print.marker_snapshot <- function(x, ...) {
+#' @noRd
+marker_print_snapshot <- function(x, ...) {
   end3 <- if (x$extension$strand == "+") x$extension$end else x$extension$start
   cat(
     "<marker_snapshot>", x$snp$chrom, ":", x$snp$pos, " ",
@@ -336,10 +336,8 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
 #' The SNaPshot scheme definition (gates, tiers, labels)
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_snapshot
-#' @export
 #' @noRd
-marker_map_spec.marker_snapshot <- function(marker, scheme = NULL, ...) {
+marker_map_snapshot <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
   end <- sp[["end"]]

@@ -42,9 +42,9 @@ test_that("design_taqman_marker returns a short pair with two allele-specific pr
   expect_output(print(m), "marker_taqman")
   # the method itself (generic dispatch needs the package NAMESPACE, regenerated
   # by roxygen once the scheme is wired in)
-  expect_output(print.marker_taqman(m), "<marker_taqman>")
-  expect_output(print.marker_taqman(m), "FAM")
-  expect_output(print.marker_taqman(m), "HEX")
+  expect_output(print(m), "<marker_taqman>")
+  expect_output(print(m), "FAM")
+  expect_output(print(m), "HEX")
 })
 
 test_that("probes lie strictly between the primer 3' ends, not merely in the amplicon", {

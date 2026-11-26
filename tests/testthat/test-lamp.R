@@ -30,8 +30,8 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   # the inner primers are two-arm fusions, longer than the outer arms
   expect_gt(nchar(m$primers$FIP), nchar(m$primers$F3))
   expect_gt(nchar(m$primers$BIP), nchar(m$primers$B3))
-  expect_output(print.marker_lamp(m), "marker_lamp")
-  expect_output(print.marker_lamp(m), "FIP:")
+  expect_output(print(m), "marker_lamp")
+  expect_output(print(m), "FIP:")
 })
 
 test_that("LAMP cross-dimer dG is evaluated at the LAMP temperature, not 37 C (Z3)", {
@@ -210,15 +210,15 @@ test_that("the LAMP variant gate re-checks FIP placement (not a decorative TRUE)
   expect_false(lamp_variant_gate(NULL, "C", 10L))
 })
 
-test_that("print.marker_lamp names the four primers and the loop", {
+test_that("print names the four primers and the loop", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   genome <- f$genome
   snp <- f$snp
   m <- design_lamp_marker(genome, snp, flank = 150L)
-  expect_output(print.marker_lamp(m), "variant at the FIP 3' end")
-  expect_output(print.marker_lamp(m), "B3:")
-  expect_output(print.marker_lamp(m), "BIP:")
+  expect_output(print(m), "variant at the FIP 3' end")
+  expect_output(print(m), "B3:")
+  expect_output(print(m), "BIP:")
 })
 
 test_that("scheme_def_lamp declares the LAMP stage consistently", {

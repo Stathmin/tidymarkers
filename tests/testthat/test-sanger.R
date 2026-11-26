@@ -52,7 +52,7 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
   expect_true(all(c("PCR_F", "PCR_R", "read_F", "read_R") %in% names(oligos)))
 })
 
-test_that("print.marker_sanger summarises the marker and its sequencing primers", {
+test_that("print summarises the marker and its sequencing primers", {
   m <- structure(
     list(
       snp = tibble::tibble(chrom = "Chr1", pos = 10L, ref = "A", alt = "G"),

@@ -357,8 +357,8 @@ pick_dpcr_probe <- function(seq, si, primers, probe_lengths, probe_gc, probe_tm_
   dplyr::arrange(cand, .data$palindrome, .data$offset, .data$len)[1L, ]
 }
 
-#' @export
-print.marker_dpcr <- function(x, ...) {
+#' @noRd
+marker_print_dpcr <- function(x, ...) {
   cat("<marker_dpcr>", x$snp$chrom, ":", x$snp$pos, " ", x$snp$ref, ">", x$snp$alt, "\n", sep = "")
   cat("  amplicon:", x$primers$product, "bp\n")
   cat("  F:", x$primers$forward, "(Tm", round(x$primers$tm_f, 1), "C)\n")
@@ -383,10 +383,8 @@ print.marker_dpcr <- function(x, ...) {
 #' @return a list describing the `dpcr` scheme.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_dpcr
-#' @export
 #' @noRd
-marker_map_spec.marker_dpcr <- function(marker, scheme = NULL, ...) {
+marker_map_dpcr <- function(marker, scheme = NULL, ...) {
   probe_map_spec(marker)
 }
 

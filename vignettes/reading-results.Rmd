@@ -410,4 +410,4 @@ in the logic.
 
 `?marker_design_checks`, `?marker_risk`, `?marker_decision_text`,
 `?marker_plan`, `?marker_solve`, `?marker_export`, `?write_marker_results`,
-`?print.marker_doomed`, `?plot_decision_tree`.
+`?print`, `?plot_decision_tree`.

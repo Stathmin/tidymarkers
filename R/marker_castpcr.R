@@ -403,8 +403,8 @@ design_castpcr_marker <- function(genome, snp, flank = 150L,
   structure(out, class = c("marker_castpcr", "marker"))
 }
 
-#' @export
-print.marker_castpcr <- function(x, ...) {
+#' @noRd
+marker_print_castpcr <- function(x, ...) {
   cat(
     "<marker_castpcr>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, " (detects ALT ", x$snp$alt, ")\n",
@@ -434,10 +434,8 @@ print.marker_castpcr <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_castpcr
-#' @export
 #' @noRd
-marker_map_spec.marker_castpcr <- function(marker, scheme = NULL, ...) {
+marker_map_castpcr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
   end <- sp[["end"]]

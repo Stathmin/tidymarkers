@@ -542,10 +542,8 @@ map_set_seq <- function(spec, feature, value) {
   spec
 }
 
-#' @method marker_map_spec marker_assay
-#' @export
 #' @noRd
-marker_map_spec.marker_assay <- function(marker, scheme = NULL, ...) {
+marker_map_assay <- function(marker, scheme = NULL, ...) {
   aa <- marker$assay[1L, ]
   map_spec_rows(
     amplicon = c(

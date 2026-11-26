@@ -132,10 +132,8 @@ LAMP_3P_DG_MAX <- -0.5
 #'   registry's schemes).
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_lamp
-#' @export
 #' @noRd
-marker_map_spec.marker_lamp <- function(marker, scheme = NULL, ...) {
+marker_map_lamp <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
   end <- sp[["end"]]
@@ -843,8 +841,8 @@ lamp_paired_set <- function(seq, q, fip, snp, arm_lengths, tm_range, gc_range, t
   )
 }
 
-#' @export
-print.marker_lamp <- function(x, ...) {
+#' @noRd
+marker_print_lamp <- function(x, ...) {
   cat(
     "<marker_lamp>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, "\n",

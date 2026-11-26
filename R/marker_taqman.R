@@ -332,8 +332,8 @@ design_taqman_marker <- function(genome, snp, flank = 150L,
   structure(out, class = c("marker_taqman", "marker"))
 }
 
-#' @export
-print.marker_taqman <- function(x, ...) {
+#' @noRd
+marker_print_taqman <- function(x, ...) {
   cat("<marker_taqman>", x$snp$chrom, ":", x$snp$pos, " ", x$snp$ref, ">", x$snp$alt, "\n", sep = "")
   cat("  amplicon:", x$amplicon$product, "bp\n")
   cat("  F:", x$primers$forward, "\n  R:", x$primers$reverse, "\n")
@@ -355,10 +355,8 @@ print.marker_taqman <- function(x, ...) {
 #' @return a named list with the scheme row fields plus the gate/tier vocabulary.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_taqman
-#' @export
 #' @noRd
-marker_map_spec.marker_taqman <- function(marker, scheme = NULL, ...) {
+marker_map_taqman <- function(marker, scheme = NULL, ...) {
   probe_map_spec(marker)
 }
 

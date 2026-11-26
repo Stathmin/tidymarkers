@@ -64,10 +64,9 @@ as_alt_sequence <- function(assay) {
 #' assay <- design_asq_marker(genome, loci)
 #' print(assay)
 #' }
-#' @method print marker_assay
 #' @family utilities
-#' @export
-print.marker_assay <- function(x, ...) {
+#' @noRd
+marker_print_assay <- function(x, ...) {
   a <- x$assay[1L, ]
   cat(
     "<marker_assay>",
@@ -97,10 +96,9 @@ print.marker_assay <- function(x, ...) {
 #' \dontrun{
 #' print(assemble_kasp_assay(genome, loci))
 #' }
-#' @method print marker_doomed
 #' @family utilities
-#' @export
-print.marker_doomed <- function(x, ...) {
+#' @noRd
+marker_print_doomed <- function(x, ...) {
   cat(
     "<marker_doomed>",
     glue::glue("{x$snp$chrom}:{x$snp$pos} {x$snp$ref}>{x$snp$alt} (stage {x$stage})"), "\n"

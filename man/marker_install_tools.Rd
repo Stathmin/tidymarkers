@@ -48,8 +48,6 @@ Other utilities:
 \code{\link[=marker_engine_stamp_field]{marker_engine_stamp_field()}},
 \code{\link[=marker_engine_versions]{marker_engine_versions()}},
 \code{\link[=marker_evaluation_stamp]{marker_evaluation_stamp()}},
-\code{\link[=print.marker_assay]{print.marker_assay()}},
-\code{\link[=print.marker_doomed]{print.marker_doomed()}},
 \code{\link[=with_unafloddat]{with_unafloddat()}}
 }
 \concept{utilities}

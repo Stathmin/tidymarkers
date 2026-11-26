@@ -64,7 +64,7 @@ test_that("the polymorphism gate is really evaluated and relaxes to the detectio
   expect_true("gate_ssr_polymorphic" %in% m$selection$relaxed)
 })
 
-test_that("print.marker_ssr reports the repeat and the amplicon", {
+test_that("print reports the repeat and the amplicon", {
   x <- structure(
     list(
       snp = tibble::tibble(chrom = "Chr1", pos = 10L, ref = "A", alt = "G"),

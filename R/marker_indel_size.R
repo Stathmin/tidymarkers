@@ -247,8 +247,8 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
   structure(out, class = c("marker_indel_size", "marker"))
 }
 
-#' @export
-print.marker_indel_size <- function(x, ...) {
+#' @noRd
+marker_print_indel_size <- function(x, ...) {
   cat(
     "<marker_indel_size>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, "\n",
@@ -276,10 +276,8 @@ print.marker_indel_size <- function(x, ...) {
 #' @return a list describing the `indel_size` scheme.
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_indel_size
-#' @export
 #' @noRd
-marker_map_spec.marker_indel_size <- function(marker, scheme = NULL, ...) {
+marker_map_indel_size <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
   end <- sp[["end"]]

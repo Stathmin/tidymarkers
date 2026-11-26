@@ -747,8 +747,8 @@ design_dcaps_marker <- function(genome, snp, flank, enzymes, min_gap = 50L) {
   marker
 }
 
-#' @export
-print.marker_caps <- function(x, ...) {
+#' @noRd
+marker_print_caps <- function(x, ...) {
   cat("<marker_caps>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, " via ", x$enzyme,
     if (isTRUE(x$dcaps)) " (dCAPS)" else "", "\n",
@@ -777,11 +777,8 @@ print.marker_caps <- function(x, ...) {
 #' plot_caps_gel(m)
 #' }
 #' @family CAPS
-#' @export
-#' @method marker_map_spec marker_caps
-#' @export
 #' @noRd
-marker_map_spec.marker_caps <- function(marker, scheme = NULL, ...) {
+marker_map_caps <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   site <- marker$site
   site_row <- if (!is.null(site) && !anyNA(c(site$start[1L], site$end[1L]))) {

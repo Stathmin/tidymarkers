@@ -295,8 +295,8 @@ design_ssr_marker <- function(genome, snp, flank = 250L,
   structure(out, class = c("marker_ssr", "marker"))
 }
 
-#' @export
-print.marker_ssr <- function(x, ...) {
+#' @noRd
+marker_print_ssr <- function(x, ...) {
   cat(
     "<marker_ssr>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, "\n",
@@ -340,10 +340,8 @@ print.marker_ssr <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
-#' @method marker_map_spec marker_ssr
-#' @export
 #' @noRd
-marker_map_spec.marker_ssr <- function(marker, scheme = NULL, ...) {
+marker_map_ssr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   tract <- if (!is.null(marker[["repeat"]])) {
     rp <- marker[["repeat"]]

@@ -397,8 +397,8 @@ design_hrm_marker <- function(genome, snp, flank = 150L,
   structure(out, class = c("marker_hrm", "marker"))
 }
 
-#' @export
-print.marker_hrm <- function(x, ...) {
+#' @noRd
+marker_print_hrm <- function(x, ...) {
   cat(
     "<marker_hrm>", x$snp$chrom, ":", x$snp$pos, " ",
     x$snp$ref, ">", x$snp$alt, "\n",
@@ -427,11 +427,8 @@ print.marker_hrm <- function(x, ...) {
 #' plot_hrm_amplicon(design_hrm_marker(genome, snp))
 #' }
 #' @family HRM
-#' @export
-#' @method marker_map_spec marker_hrm
-#' @export
 #' @noRd
-marker_map_spec.marker_hrm <- function(marker, scheme = NULL, ...) {
+marker_map_hrm <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   map_spec(
     marker,

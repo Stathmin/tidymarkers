@@ -101,9 +101,3 @@ explain_reason <- function(row, status) {
     sprintf("%s: %s", crit, status)
   )
 }
-
-#' @export
-print.marker_explain <- function(x, ...) {
-  cat(attr(x, "headline"), "\n", sep = "")
-  NextMethod()
-}
