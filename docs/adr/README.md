@@ -5,14 +5,15 @@ the order they were accepted. `docs/` is `.Rbuildignore`d, so nothing here ships
 in the package.
 
 Status values used here: `accepted`, `rejected` (the proposal was refused),
-`superseded`.
+`superseded`, `accepted (amended)` (the decision stands and a dated amendment at
+the end of the file records the measurement or event that re-tested it).
 
 | ADR                                                                    | Decision                                                                    | Status   |
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------- |
 | [0001](0001-llm-mt-and-agent-tooling-out-of-scope.md)                  | LLM, MT and agent tooling is out of scope                                   | accepted |
-| [0002](0002-targets-stays-dev-only.md)                                 | `targets` stays a dev-only freshness holder, not a package dependency       | accepted |
-| [0003](0003-duckdb-deferred.md)                                        | DuckDB/`duckplyr` is deferred until an aggregation is measured              | accepted |
-| [0004](0004-mcp-ci-and-cross-project-tooling.md)                       | The MCP server stays one R file; no Python client, no published JSON Schema | accepted |
+| [0002](0002-targets-stays-dev-only.md)                                 | `targets` stays a dev-only freshness holder, not a package dependency       | accepted (amended) |
+| [0003](0003-duckdb-deferred.md)                                        | DuckDB/`duckplyr` is deferred until an aggregation is measured              | accepted (amended) |
+| [0004](0004-mcp-ci-and-cross-project-tooling.md)                       | The MCP server stays one R file; no Python client, no published JSON Schema | accepted (amended) |
 
 ## Triage of the 2026-11-26 tool list
 
@@ -44,7 +45,7 @@ caller).
 | 19 | OpenHands                   | Reject          | Editor-side tool, not a repository dependency.                                                |
 | 20 | aider                       | Reject          | Same: the git workflow belongs to the operator, not to the package.                           |
 | 21 | AgentOps                    | Reject          | No agents to observe.                                                                         |
-| 22 | duckplyr / DuckDB           | Defer           | Dev-only analytics; the trigger is not met (ADR 0003).                                        |
+| 22 | duckplyr / DuckDB           | Defer           | Dev-only analytics; measured 2026-11-26, `dplyr` wins (ADR 0003).                                        |
 | 23 | Quarto                      | Already in use  | `_quarto.yml`, `dev/lecture/`; no change.                                                    |
 | 24 | Apertium                    | Reject          | No translation surface.                                                                      |
 | 25 | LibreTranslate              | Reject          | No translation surface.                                                                      |
@@ -54,3 +55,15 @@ consumer of this package: a pipeline that drives these MCP tools with a model
 can optimise its prompts or constrain its decoding there, against the tool
 schemas published here. This repository owes that consumer a stable, tested
 contract — `tests/testthat/test-mcp.R` — not a copy of the consumer's stack.
+
+## Amendments (2026-11-26)
+
+The three deferred follow-ups from the triage were executed; none changed its
+decision, so each ADR keeps `accepted` with a dated amendment at the end:
+
+- [0002](0002-targets-stays-dev-only.md#amendment-2026-11-26-the-trigger-was-measured-and-it-was-not-met) —
+  step cost measured; no step nears ten minutes, so `targets` is not widened.
+- [0003](0003-duckdb-deferred.md#amendment-2026-11-26-the-ladder-was-run-dplyr-wins-at-every-scale) —
+  aggregation ladder run; `dplyr` wins at every scale.
+- [0004](0004-mcp-ci-and-cross-project-tooling.md#amendment-2026-11-26-the-schema-is-published-by-operator-decision) —
+  `inst/mcp/schema.json` published by operator decision plus a drift test.
