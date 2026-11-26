@@ -1,8 +1,9 @@
 # =============================================================================
 #  Z8/ZY17  --  the quenching-probe LAMP melting table of Imai et al. 2025
 # =============================================================================
-#  `lamp_melting_allele_spectrum2025` (10.1128/spectrum.01565-25, PMC12671098)
-#  is the only source in the corpus with a per-sample LAMP melting readout.
+#  Source key lamp_melting_allele_spectrum2025, DOI 10.1128/spectrum.01565-25
+#  (PMC12671098), is the only source in the corpus with a per-sample LAMP
+#  melting readout.
 #  This test is the consumer gate: it pins the three probe partitions, the
 #  allele -> call mapping, the samples the paper could not resolve, and the
 #  reaction chemistry that gives `SCHEME_UNMODELLED$lamp = "betaine"` a number.
