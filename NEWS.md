@@ -6,6 +6,31 @@
 
 ## 0.4.1 (в работе)
 
+### Позиционные смещения 5'-нуклеазы: Stadhouders 2010 (2026-11-26)
+
+- **Класс изменения: данные и тест; `R/` не менялся.**
+- Две таблицы из полного текста: `taqman_mismatch_stadhouders2010.csv` (20
+  строк измеренных ΔCt по позиции и классу мисматча) и
+  `taqman_mismatch_guidelines_stadhouders2010.csv` (9 строк Table 1 — совет
+  `Accept`/`Avoid` по классу и позиции для трёх ферментных схем).
+- `taqman_mismatch_stadhouders2010.csv` несёт `setup`, `primer`,
+  `mismatch_class`, `position`, `quantity`, `n_observations`, `value_low`,
+  `value_high`; `quantity` — измеренная величина (ΔCt, доля от одиночного
+  мисматча, процент отказа амплификации). `value_high` пуст там, где
+  работа печатает точку, а не диапазон.
+- `tests/testthat/test-taqman-mismatch-stadhouders2010.R` — 8 блоков:
+  реестр источника требует `fulltext`, обе таблицы читаются тестом, число
+  строк фиксировано, `value_low <= value_high` где задан диапазон, ключи
+  `(setup, primer, class, position, quantity)` уникальны.
+- Реестр: `stadhouders2010` переведён в `access = fulltext`, PMC2797725
+  внесён в backlog, две `test`-строки в `science_ledger.csv`. В
+  `access_detail` — категориальные факты (иерархия классов, 94–105 %,
+  LoD ≈30/≈300 копий, SD 0.57 Ct → порог 1.71 Ct, явное «правила 2 Ct в
+  работе нет»).
+- Счётчики дрейфанули вверх: 160 extract tables, 158 названных, 144 с
+  `test`-строкой, 223 `test` / 377 строк ledger, 106 `fulltext`, 0 `stub`.
+  `VALIDATION.md` и `ROADMAP.md` поправлены по замеру, не по памяти.
+
 ### Смещения порогов: замер «источник против пакета» (2026-11-26)
 
 - **Класс изменения: данные и тест; `R/` не менялся.**

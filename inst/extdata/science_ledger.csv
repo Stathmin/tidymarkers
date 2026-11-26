@@ -374,3 +374,5 @@
 "wang2025_multikasp","criterion_offsets.csv","test","test-criterion-offsets.R","the duplex self-complementarity limits match the package exactly",NA
 "zhao2026_snapshot","criterion_offsets.csv","test","test-criterion-offsets.R","the SBE Tm window 53-60 C is 3 C narrower at the bottom than the package 50-60 C",NA
 "shimizu2025_kasp","criterion_offsets.csv","test","test-criterion-offsets.R","the source rejects dimers below -10 kcal/mol; the package bar at -9 is stricter by 1 kcal/mol",NA
+"stadhouders2010","taqman_mismatch_stadhouders2010.csv","test","test-taqman-mismatch-stadhouders2010.R","the measured Delta-Ct decay, the rTth reversal and the failure range are read back and re-checked",""
+"stadhouders2010","taqman_mismatch_guidelines_stadhouders2010.csv","test","test-taqman-mismatch-stadhouders2010.R","Table 1 shape and advice vocabulary are re-checked, and the standard-Taq column must relax away from the 3' end",""

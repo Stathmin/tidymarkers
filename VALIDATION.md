@@ -27,8 +27,8 @@ check is enforced, and what has not been validated at all.
   computable, so `dev/specificity-oracle.R` enumerates it and the fast screens
   are checked against the enumeration, with BLAST+ as a speed/recall baseline.
 - **What does exist** is a literature-anchored evidence layer: 134 registered
-  sources, 158 extracted tables in `inst/extdata/`, and a ledger that binds 221
-  `test` rows to the 55 test files that consume them. Each link from a source,
+  sources, 160 extracted tables in `inst/extdata/`, and a ledger that binds 223
+  `test` rows to the 56 test files that consume them. Each link from a source,
   to the exact table read from it, to the test that asserts a property of it is
   machine-checked.
 - **Agreement between models is not evidence about a real duplex.** That
@@ -41,21 +41,21 @@ Three tables carry the provenance, and three tests keep them honest.
 | File                                  | Rows | What it holds                                                                                                                           |
 | ------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `inst/extdata/scientific_sources.csv` | 134  | One row per paper or software source: citation, DOI/PMIM, **how much was read** (`access`), `what_it_anchors`, and the verbatim `claim` |
-| `inst/extdata/science_ledger.csv`     | 375  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
+| `inst/extdata/science_ledger.csv`     | 377  | The join `source_key → extract → test_file`, plus `verdict_moved`: which design or ranking decision the extract actually changed        |
 | `inst/extdata/scientific_backlog.csv` | 45   | Search results and their status: 35 `extracted`, 6 `not_extractable`, 4 `unfetched`                                                     |
 
-`access` is a closed vocabulary and it is load-bearing: 105 sources were read in
+`access` is a closed vocabulary and it is load-bearing: 106 sources were read in
 full text, 11 through a supplement, 4 as an abstract only, 6 are closed access,
-3 are source code, 1 is a stub, 1 was transcribed, 3 were not found. 128 of the
+3 are source code, 0 are stubs, 1 was transcribed, 3 were not found. 128 of the
 134 rows are marked `verified`, each with the date it was checked. A source read
 only as an abstract may not calibrate anything, and the tests enforce that.
 
-Ledger rows by use: 221 `test`, 130 `report` (a claim the paper makes, kept for
+Ledger rows by use: 223 `test`, 130 `report` (a claim the paper makes, kept for
 comparison), 15 `blocked` (read, extracted, consumed by nothing yet — each says
-why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 156 extract tables are named — `example_region_targets.csv`
+why), 3 `rule`, 4 `artefact`, 2 `config`. Across the ledger 158 extract tables are named — `example_region_targets.csv`
 is the shipped slice's target table, `steele2025_rice_kasp_calls.csv` the
-per-marker matrix above, and the 158th CSV in `inst/extdata/` is the ledger
-itself — and `test` rows account for 142 of them.
+per-marker matrix above, and the 160th CSV in `inst/extdata/` is the ledger
+itself — and `test` rows account for 144 of them.
 Of the 15 `blocked` rows, 5 name no extract (`extract = none`) and say which
 paper could not be landed, and 10 name a real extract that carries no verdict of
 its own yet.

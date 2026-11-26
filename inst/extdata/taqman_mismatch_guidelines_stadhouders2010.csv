@@ -1,0 +1,10 @@
+key,doi,mismatch_class,position,standard_taq,taq_mmlv_rt,rtth_rt,note
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_purine_cc,terminal,Avoid (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",A-A/A-G/G-A/G-G/C-C at the 3' terminal base
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_purine_cc,penultimate,Avoid (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",A-A/A-G/G-A/G-G/C-C at the 3' penultimate base
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_purine_cc,positions_3_5,Acceptable (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",A-A/A-G/G-A/G-G/C-C at 3' positions 3-5
+stadhouders2010,10.2353/jmoldx.2010.090035,pyrimidine_pyrimidine,terminal,Avoid (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",T-T/T-C/C-T at the 3' terminal base
+stadhouders2010,10.2353/jmoldx.2010.090035,pyrimidine_pyrimidine,penultimate,Acceptable (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",T-T/T-C/C-T at the 3' penultimate base
+stadhouders2010,10.2353/jmoldx.2010.090035,pyrimidine_pyrimidine,positions_3_5,Acceptable (both primers),Acceptable (both primers),"Acceptable in FWD, Avoid in REV",T-T/T-C/C-T at 3' positions 3-5; the only row where the Taq/MMLV setup accepts both primers away from the 3' end
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_pyrimidine,terminal,Acceptable (both primers),"Avoid in FWD, Acceptable in REV","Acceptable in FWD, Avoid in REV",C-A/A-C/G-T/T-G at the 3' terminal base
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_pyrimidine,penultimate,Acceptable (both primers),Acceptable (both primers),"Acceptable in FWD, Avoid in REV",C-A/A-C/G-T/T-G at the 3' penultimate base
+stadhouders2010,10.2353/jmoldx.2010.090035,purine_pyrimidine,positions_3_5,Acceptable (both primers),Acceptable (both primers),"Acceptable in FWD, Avoid in REV",C-A/A-C/G-T/T-G at 3' positions 3-5
