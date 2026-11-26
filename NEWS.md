@@ -6,6 +6,29 @@
 
 ## 0.4.1 (в работе)
 
+### Геном как объявленная стратегия: `genome_index()` (2026-11-26)
+
+- **Класс изменения: новая функциональность; индексный путь больше не угадывается
+  по заполненным слотам.**
+- `R/marker_genome.R` — `genome_index(genome, strategy = c("memory", "bowtie",
+  "blast", "fm"), chroms = NULL, dir = NULL, threads = 1L)` возвращает объект
+  класса `genome_index` с `strategy`, `capabilities` (`seed_scan`,
+  `whole_primer_scan`, `mismatch_tolerant`, `max_mismatch`, `engine`) и
+  обёрнутым `genome`. Таблица возможностей — данные
+  (`GENOME_INDEX_CAPABILITIES`); для индексных стратегий индекс строится лениво
+  в `dir` при первом запросе, не в конструкторе. Добавлен метод
+  `capabilities.genome_index()`.
+- `R/marker_scan.R` — `specificity_of()` диспетчеризует `genome_index` по
+  объявленной стратегии и проставляет `attr(x, "scan")`: `"3'-seed"` для
+  memory и BLAST (у BLAST при `k = NA` — `"whole-primer"`), `"whole-primer"`
+  для bowtie и FM. `max_mismatch` сверх объявленного `max_mismatch` стратегии —
+  именованная ошибка, а не предупреждение с другим вопросом.
+- `tests/testthat/test-genome-index.R` — матрица возможностей; memory и bowtie
+  дают одинаковый вердикт (unique / off-target) на маленькой фикстуре.
+- Остаётся по ROADMAP T1: `manifest`, `scan_question()` как единственный
+  читатель `scan` и отказ `specificity_verdict()` смешивать `"3'-seed"` и
+  `"whole-primer"`.
+
 ### Один шлюз для abort-сообщений: `abort_msg()` (2026-11-26)
 
 - **Класс изменения: рефакторинг; текст и поведение не менялись.**

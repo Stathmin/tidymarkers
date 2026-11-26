@@ -59,6 +59,7 @@ Other input:
 \code{\link[=ensembl_variants]{ensembl_variants()}},
 \code{\link[=fasta_index]{fasta_index()}},
 \code{\link[=genome_chroms]{genome_chroms()}},
+\code{\link[=genome_index]{genome_index()}},
 \code{\link[=genome_length]{genome_length()}},
 \code{\link[=genome_seq]{genome_seq()}},
 \code{\link[=marker_as_granges]{marker_as_granges()}},

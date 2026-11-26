@@ -201,9 +201,10 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #' if you want the read mapper.
 #'
 #' @param primers named character vector of oligos.
-#' @param genome a `marker_genome` (with `bowtie_index` or `blast_db`) or a
-#'   `DNAStringSet`, or a **named** list of such genomes (a pangenome or a
-#'   homoeolog set), answered one genome at a time.
+#' @param genome a `marker_genome` (with `bowtie_index` or `blast_db`), a
+#'   [genome_index()] carrying a declared strategy, or a `DNAStringSet`, or a
+#'   **named** list of such genomes (a pangenome or a homoeolog set), answered
+#'   one genome at a time.
 #' @param k 3'-seed length.
 #' @param max_mismatch mismatches allowed (in-memory path only).
 #' @param BPPARAM optional `BiocParallel` backend.
@@ -214,7 +215,8 @@ specificity_blast <- function(primers, db_path, k = NA_integer_, BPPARAM = NULL)
 #'   `"BLAST+"`, `"Rbowtie"`), and the `engine_stamp` attribute records the
 #'   versions (see [marker_engine_versions()]).  Dispatch is in-memory ->
 #'   [specificity_seed()], `bowtie_index` -> [specificity_bowtie()], `blast_db`
-#'   -> [specificity_blast()].
+#'   -> [specificity_blast()].  A [genome_index()] dispatches on its declared
+#'   `strategy` instead of a slot, so `attr(x, "scan")` is always declared.
 #'
 #'   Given a **named** list, one row per primer **per genome**, with a `genome`
 #'   column first and the rows in list order then primer order; `scan` is a named
@@ -257,6 +259,11 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     names(parts) <- names(genome)
     names(scans) <- names(genome)
     return(structure(dplyr::bind_rows(parts, .id = "genome"), scan = scans))
+  }
+  if (inherits(genome, "genome_index")) {
+    return(genome_index_scan(primers, genome,
+      k = k, max_mismatch = max_mismatch, BPPARAM = BPPARAM
+    ))
   }
   if (!inherits(genome, "marker_genome")) {
     return(structure(

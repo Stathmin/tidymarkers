@@ -85,6 +85,166 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
   )
 }
 
+# The declared capability matrix (ADR 0005).  It is data so a caller can ask
+# what a genome can answer instead of inferring it from populated index slots.
+GENOME_INDEX_CAPABILITIES <- list(
+  memory = list(
+    seed_scan = TRUE, whole_primer_scan = FALSE,
+    mismatch_tolerant = TRUE, max_mismatch = Inf, engine = "Biostrings"
+  ),
+  bowtie = list(
+    seed_scan = TRUE, whole_primer_scan = TRUE,
+    mismatch_tolerant = TRUE, max_mismatch = 3, engine = "Rbowtie"
+  ),
+  blast = list(
+    seed_scan = TRUE, whole_primer_scan = TRUE,
+    mismatch_tolerant = FALSE, max_mismatch = 0, engine = "BLAST+"
+  ),
+  fm = list(
+    seed_scan = FALSE, whole_primer_scan = TRUE,
+    mismatch_tolerant = TRUE, max_mismatch = 2, engine = "Rsubread"
+  )
+)
+
+#' Attach a declared genome-access strategy to a genome
+#'
+#' ADR 0005 makes the genome a strategy, not a set of optional index slots.
+#' `genome_index()` records which strategy will answer a genome-wide scan and
+#' what that strategy can do; [specificity_of()] dispatches on `strategy`
+#' instead of guessing from a non-`NULL` slot, and tags the result with
+#' `attr(x, "scan")`.  A missing index is built lazily on the first query, in
+#' `dir`, so constructing the object never writes a multi-gigabyte index.
+#'
+#' The capability matrix is:
+#'
+#' | strategy | `seed_scan` | `whole_primer_scan` | `mismatch_tolerant` | `max_mismatch` | engine |
+#' | -------- | ----------- | ------------------- | ------------------- | -------------- | ------ |
+#' | memory   | yes         | no                  | yes                 | any            | Biostrings |
+#' | bowtie   | yes         | yes                 | yes                 | 3              | Rbowtie |
+#' | blast    | yes (exact) | yes (exact)         | no                  | 0              | BLAST+ |
+#' | fm       | no          | yes                 | yes                 | 2              | Rsubread |
+#'
+#' @param genome a `DNAStringSet` for `strategy = "memory"`, or a
+#'   `marker_genome`, `DNAStringSet` or `BSgenome` for an index strategy.
+#' @param strategy the declared strategy; never inferred at query time.
+#' @param chroms optional sequence names for a per-chromosome bowtie build
+#'   (see [marker_bowtie_index()]).
+#' @param dir directory for a lazily built index; defaults to [tempdir()].
+#' @param threads threads for an index build.
+#' @return a `genome_index` object with `strategy`, `capabilities` and the
+#'   wrapped `genome`.
+#' @examples
+#' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
+#' idx <- genome_index(genome, strategy = "memory")
+#' idx$strategy
+#' capabilities(idx)
+#' @family input
+#' @export
+genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm"),
+                         chroms = NULL, dir = NULL, threads = 1L) {
+  strategy <- match.arg(strategy)
+  if (identical(strategy, "memory") && !inherits(genome, "DNAStringSet")) {
+    abort_msg(
+      "The memory strategy needs an in-memory {.cls DNAStringSet}.",
+      i = "Use an index strategy for a {.cls marker_genome} or a {.cls BSgenome}."
+    )
+  }
+  structure(
+    list(
+      genome = genome, strategy = strategy,
+      capabilities = GENOME_INDEX_CAPABILITIES[[strategy]],
+      chroms = chroms, dir = dir, threads = as.integer(threads)
+    ),
+    class = "genome_index"
+  )
+}
+
+#' @rdname capabilities
+#' @export
+capabilities.genome_index <- function(engine, capability = NULL, ...) {
+  if (is.null(capability)) {
+    return(engine$capabilities)
+  }
+  value <- engine$capabilities[[capability]]
+  if (is.null(value)) "unknown" else value
+}
+
+# Resolve (and, for an index strategy, lazily build) the handle a scan queries.
+genome_index_handle <- function(index) {
+  g <- index$genome
+  dir <- if (is.null(index$dir)) fs::path_temp() else index$dir
+  switch(index$strategy,
+    bowtie = if (inherits(g, "marker_genome") && !is.null(g$bowtie_index)) {
+      g$bowtie_index
+    } else {
+      marker_bowtie_index(g,
+        basename = fs::path(dir, "genome_index_bowtie"),
+        chroms = index$chroms, threads = index$threads
+      )
+    },
+    blast = if (inherits(g, "marker_genome") && !is.null(g$blast_db)) {
+      g$blast_db
+    } else {
+      marker_blast_index(g, path = fs::path(dir, "genome_index.fa"))
+    },
+    fm = if (inherits(g, "marker_genome") && !is.null(g$fm_index)) {
+      g$fm_index
+    } else {
+      marker_fm_index(g, basename = fs::path(dir, "genome_index_fm"))
+    },
+    abort_msg("The {index$strategy} strategy has no query handle.")
+  )
+}
+
+# The dispatcher: choose the declared strategy and announce the question the
+# returned counts answer.  A capability the request exceeds is an error, never a
+# warning followed by a different question (D2).
+genome_index_scan <- function(primers, index, k = SEED_K,
+                              max_mismatch = SEED_MISMATCH, BPPARAM = NULL) {
+  caps <- index$capabilities
+  if (!is.na(max_mismatch) && max_mismatch > caps$max_mismatch) {
+    abort_msg(
+      "The {index$strategy} strategy supports `max_mismatch <= {caps$max_mismatch}`, not {max_mismatch}.",
+      i = "Its declared capability is `mismatch_tolerant = {caps$mismatch_tolerant}`."
+    )
+  }
+  switch(index$strategy,
+    memory = structure(
+      specificity_seed(primers, index$genome,
+        k = k, max_mismatch = max_mismatch, BPPARAM = BPPARAM
+      ),
+      scan = "3'-seed"
+    ),
+    bowtie = {
+      if (!identical(as.integer(k), as.integer(SEED_K))) {
+        cli::cli_warn(c(
+          gettext("The bowtie path scans the whole primer and ignores `k`."),
+          i = gettext("Use strategy = \"memory\" for the 3'-seed question.")
+        ))
+      }
+      structure(
+        specificity_bowtie(primers, genome_index_handle(index),
+          max_mismatches = max_mismatch,
+          nthreads = if (is.null(BPPARAM)) 4L else 1L
+        ),
+        scan = "whole-primer"
+      )
+    },
+    blast = structure(
+      specificity_blast(primers, genome_index_handle(index),
+        k = k, BPPARAM = BPPARAM
+      ),
+      scan = if (is.na(k)) "whole-primer" else "3'-seed"
+    ),
+    fm = structure(
+      specificity_fm(primers, genome_index_handle(index),
+        max_mismatches = max_mismatch, nthreads = 1L
+      ),
+      scan = "whole-primer"
+    )
+  )
+}
+
 #' Build a `marker_genome` from a `BSgenome` object
 #'
 #' `getSeq()` on a `BSgenome` is the Bioconductor-native way to read reference

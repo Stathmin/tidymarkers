@@ -15,9 +15,10 @@ specificity_of(
 \arguments{
 \item{primers}{named character vector of oligos.}
 
-\item{genome}{a \code{marker_genome} (with \code{bowtie_index} or \code{blast_db}) or a
-\code{DNAStringSet}, or a \strong{named} list of such genomes (a pangenome or a
-homoeolog set), answered one genome at a time.}
+\item{genome}{a \code{marker_genome} (with \code{bowtie_index} or \code{blast_db}), a
+\code{\link[=genome_index]{genome_index()}} carrying a declared strategy, or a \code{DNAStringSet}, or a
+\strong{named} list of such genomes (a pangenome or a homoeolog set), answered
+one genome at a time.}
 
 \item{k}{3'-seed length.}
 
@@ -33,7 +34,8 @@ the in-memory and BLAST paths, \code{"whole-primer"} on the bowtie path.  The
 \code{"BLAST+"}, \code{"Rbowtie"}), and the \code{engine_stamp} attribute records the
 versions (see \code{\link[=marker_engine_versions]{marker_engine_versions()}}).  Dispatch is in-memory ->
 \code{\link[=specificity_seed]{specificity_seed()}}, \code{bowtie_index} -> \code{\link[=specificity_bowtie]{specificity_bowtie()}}, \code{blast_db}
--> \code{\link[=specificity_blast]{specificity_blast()}}.
+-> \code{\link[=specificity_blast]{specificity_blast()}}.  A \code{\link[=genome_index]{genome_index()}} dispatches on its declared
+\code{strategy} instead of a slot, so \code{attr(x, "scan")} is always declared.
 
 Given a \strong{named} list, one row per primer \strong{per genome}, with a \code{genome}
 column first and the rows in list order then primer order; \code{scan} is a named

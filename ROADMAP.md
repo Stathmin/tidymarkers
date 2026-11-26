@@ -3726,7 +3726,7 @@ dir)` пишет crate-профиль поверх существующих че
 рантайм-контракт MCP (ADR 0007). Все три ADR — `proposed`; пункт закрывается
 кодом и гейтом, а не ссылкой на ADR. Формат полей — как в §ZY.
 
-- [ ] **T1. `genome_index()` с явными возможностями.**
+- [~] **T1. `genome_index()` с явными возможностями.**
       правка: `R/marker_genome.R` — `genome_index(genome, strategy =
       c("memory","bowtie","blast","fm"), chroms = NULL, dir = NULL)`;
       объект `genome_index` с `capabilities` (`seed_scan`,
@@ -3743,6 +3743,10 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: нет; золотой набор — TAIR10-фикстура, не пшеница.
       следствие: сегодня индексный геном отвечает не на тот вопрос, а
       вызывающий узнаёт об этом из предупреждения (D2).
+      сделано (2026-11-26): конструктор `genome_index()` с `strategy` и
+      `capabilities`, диспетчер `specificity_of()` по стратегии и `scan` на
+      каждом пути, тест memory vs bowtie; остаются `manifest`,
+      `scan_question()` и отказ `specificity_verdict()` от смеси вопросов.
 
 - [~] **T2. Пер-хромосомные индексы для генома > 21.5 ГБ.**
       правка: `marker_bowtie_index(chroms = )` уже строит набор; довести до
