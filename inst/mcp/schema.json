@@ -1,10 +1,788 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "tidymarkers MCP tools/list result",
-  "description": "The result of a JSON-RPC `tools/list` call on the tidymarkers MCP server (inst/mcp/server.R). Generated from mcp_tool_specs() by dev/mcp-schema.R; tests/testthat/test-mcp.R fails on drift.",
+  "description": "The result of a JSON-RPC `tools/list` call on the tidymarkers MCP server (inst/mcp/server.R). Generated from mcp_tool_specs() by dev/mcp-schema.R; tests/testthat/test-mcp.R fails on drift. `$defs.inputSchemas` maps each tool name to its full argument schema.",
   "type": "object",
   "required": "tools",
   "additionalProperties": false,
+  "$defs": {
+    "inputSchemas": {
+      "primer_tm": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "DNA sequence, 5'->3'"
+          },
+          "salt_method": {
+            "type": "string",
+            "enum": ["Schildkraut2010", "SantaLucia1998-1", "SantaLucia1998-2", "Owczarzy2004", "Owczarzy2008"]
+          },
+          "dnac": {
+            "type": "number",
+            "description": "strand concentration in nM (absent = 25)"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "additionalProperties": false
+      },
+      "oligo_dg": {
+        "type": "object",
+        "properties": {
+          "seq1": {
+            "type": "string",
+            "description": "first oligo, 5'->3'"
+          },
+          "seq2": {
+            "type": "string",
+            "description": "second oligo; absent = self-fold"
+          },
+          "na": {
+            "type": "number",
+            "description": "sodium molarity (default 0.05)"
+          },
+          "temp": {
+            "type": "number",
+            "description": "temperature in Celsius (default 37)"
+          },
+          "oligoarrayaux_dir": {
+            "type": "string",
+            "description": "OligoArrayAux prefix or bin/ (absent = package search)"
+          }
+        },
+        "required": [
+          "seq1"
+        ],
+        "additionalProperties": false
+      },
+      "terminal_dg": {
+        "type": "object",
+        "properties": {
+          "primer": {
+            "type": "string",
+            "description": "primer, 5'->3'"
+          },
+          "n": {
+            "type": "integer",
+            "description": "number of terminal bases (default 5)"
+          },
+          "oligoarrayaux_dir": {
+            "type": "string",
+            "description": "OligoArrayAux prefix or bin/ (absent = package search)"
+          }
+        },
+        "required": [
+          "primer"
+        ],
+        "additionalProperties": false
+      },
+      "marker_schemes": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "marker_criteria": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "enum": ["primer", "snp", "indel", "multi", "duplex", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"],
+            "description": "scheme id (default \"snp\")"
+          }
+        },
+        "additionalProperties": false
+      },
+      "marker_technologies": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "marker_technology": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "technology name"
+          },
+          "base": {
+            "type": "string",
+            "description": "base scheme id (default \"snp\")"
+          },
+          "label": {
+            "type": "string",
+            "description": "human-readable label"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "replace an existing name"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "marker_priors": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "kasp_mix_recipe": {
+        "type": "object",
+        "properties": {
+          "n_reactions": {
+            "type": "integer",
+            "description": "number of reactions (default 96)"
+          },
+          "reaction_uL": {
+            "type": "number",
+            "description": "reaction volume in uL (default 10)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "specificity_policy": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "description": "specificity scheme (default \"pcr\")"
+          },
+          "length": {
+            "type": "integer",
+            "description": "primer length in nt"
+          }
+        },
+        "additionalProperties": false
+      },
+      "genome_info": {
+        "type": "object",
+        "properties": {
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          }
+        },
+        "required": [
+          "genome_path"
+        ],
+        "additionalProperties": false
+      },
+      "read_variants": {
+        "type": "object",
+        "properties": {
+          "variants_path": {
+            "type": "string",
+            "description": "VCF file"
+          },
+          "chrom": {
+            "type": "string",
+            "description": "region chromosome"
+          },
+          "start": {
+            "type": "integer",
+            "description": "region start (1-based)"
+          },
+          "end": {
+            "type": "integer",
+            "description": "region end (inclusive)"
+          }
+        },
+        "required": [
+          "variants_path"
+        ],
+        "additionalProperties": false
+      },
+      "in_silico_pcr": {
+        "type": "object",
+        "properties": {
+          "f_primer": {
+            "type": "string",
+            "description": "forward primer, 5'->3'"
+          },
+          "r_primer": {
+            "type": "string",
+            "description": "reverse primer, 5'->3'"
+          },
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          },
+          "max_mismatch": {
+            "type": "integer",
+            "description": "search radius (default: policy)"
+          },
+          "scheme": {
+            "type": "string",
+            "description": "specificity scheme"
+          },
+          "pam": {
+            "type": "string",
+            "description": "PAM/PFS for a CRISPR scheme"
+          }
+        },
+        "required": [
+          "f_primer",
+          "r_primer",
+          "genome_path"
+        ],
+        "additionalProperties": false
+      },
+      "design_marker": {
+        "type": "object",
+        "properties": {
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          },
+          "chrom": {
+            "type": "string",
+            "description": "locus chromosome"
+          },
+          "pos": {
+            "type": "integer",
+            "description": "locus position (1-based)"
+          },
+          "ref": {
+            "type": "string",
+            "description": "reference allele"
+          },
+          "alt": {
+            "type": "string",
+            "description": "alternate allele"
+          },
+          "schemes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["snp", "indel", "multi", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"]
+            },
+            "description": "scheme ids to try, in order (one per registered designer; \"primer\" is excluded)"
+          }
+        },
+        "required": [
+          "genome_path",
+          "chrom",
+          "pos",
+          "ref",
+          "alt"
+        ],
+        "additionalProperties": false
+      },
+      "variant_type": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "reference allele"
+          },
+          "alt": {
+            "type": "string",
+            "description": "alternate allele"
+          }
+        },
+        "required": [
+          "ref",
+          "alt"
+        ],
+        "additionalProperties": false
+      },
+      "marker_site_class": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "reference allele"
+          },
+          "alts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "alternate alleles"
+          }
+        },
+        "required": [
+          "ref",
+          "alts"
+        ],
+        "additionalProperties": false
+      },
+      "mask_positions": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "DNA sequence"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "description": "1-based positions to mask"
+          }
+        },
+        "required": [
+          "seq",
+          "positions"
+        ],
+        "additionalProperties": false
+      },
+      "asq_limits": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "reaction_conditions": {
+        "type": "object",
+        "properties": {
+          "Na": {
+            "type": "number",
+            "description": "sodium, mM"
+          },
+          "Mg": {
+            "type": "number",
+            "description": "magnesium, mM"
+          },
+          "dNTPs": {
+            "type": "number",
+            "description": "dNTPs, mM"
+          },
+          "DMSO": {
+            "type": "number",
+            "description": "DMSO, percent"
+          },
+          "temperature": {
+            "type": "number",
+            "description": "temperature, Celsius"
+          }
+        },
+        "additionalProperties": false
+      },
+      "scheme_conditions": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "description": "scheme id or pcr/lamp/rpa/ambient (default \"pcr\")"
+          }
+        },
+        "additionalProperties": false
+      },
+      "primer_thermo": {
+        "type": "object",
+        "properties": {
+          "primers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "primers, 5'->3'"
+          }
+        },
+        "required": [
+          "primers"
+        ],
+        "additionalProperties": false
+      },
+      "primer_set_compatibility": {
+        "type": "object",
+        "properties": {
+          "primers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "primers, 5'->3'"
+          },
+          "min_cross_run": {
+            "type": "integer",
+            "description": "minimum cross complementarity run (default 6)"
+          },
+          "max_selfcomp": {
+            "type": "integer",
+            "description": "maximum self complementarity run (default 5)"
+          }
+        },
+        "required": [
+          "primers"
+        ],
+        "additionalProperties": false
+      },
+      "dimer_thermo": {
+        "type": "object",
+        "properties": {
+          "primers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "primers, 5'->3'"
+          }
+        },
+        "required": [
+          "primers"
+        ],
+        "additionalProperties": false
+      },
+      "hairpin_dg_thermo": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "DNA sequence, 5'->3'"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "additionalProperties": false
+      },
+      "fold_amplicon": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "sequence to fold"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["DNA", "RNA"],
+            "description": "nucleic acid (default DNA)"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "additionalProperties": false
+      },
+      "pcr_efficiency": {
+        "type": "object",
+        "properties": {
+          "primers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "primers, 5'->3'"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "reverse-complement of each binding site, same length as primers"
+          },
+          "temp": {
+            "type": "number",
+            "description": "annealing temperature, Celsius"
+          },
+          "cores": {
+            "type": "integer",
+            "description": "processors for the vectorised call"
+          }
+        },
+        "required": [
+          "primers",
+          "targets"
+        ],
+        "additionalProperties": false
+      },
+      "wobble_mismatch": {
+        "type": "object",
+        "properties": {
+          "on_allele": {
+            "type": "string",
+            "description": "on-target allele base"
+          },
+          "off_allele": {
+            "type": "string",
+            "description": "off-target allele base"
+          }
+        },
+        "required": [
+          "on_allele",
+          "off_allele"
+        ],
+        "additionalProperties": false
+      },
+      "find_palindromes": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "DNA sequence"
+          },
+          "min_armlength": {
+            "type": "integer",
+            "description": "minimum arm length (default 4)"
+          },
+          "max_looplength": {
+            "type": "integer",
+            "description": "maximum loop length (default 6)"
+          },
+          "max_mismatch": {
+            "type": "integer",
+            "description": "allowed arm mismatches (default 0)"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "additionalProperties": false
+      },
+      "has_palindrome": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "string",
+            "description": "DNA sequence"
+          },
+          "min_armlength": {
+            "type": "integer",
+            "description": "minimum arm length (default 4)"
+          },
+          "max_looplength": {
+            "type": "integer",
+            "description": "maximum loop length (default 6)"
+          },
+          "max_mismatch": {
+            "type": "integer",
+            "description": "allowed arm mismatches (default 0)"
+          }
+        },
+        "required": [
+          "seq"
+        ],
+        "additionalProperties": false
+      },
+      "find_caps_enzymes": {
+        "type": "object",
+        "properties": {
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          },
+          "chrom": {
+            "type": "string",
+            "description": "locus chromosome"
+          },
+          "pos": {
+            "type": "integer",
+            "description": "locus position (1-based)"
+          },
+          "ref": {
+            "type": "string",
+            "description": "reference allele"
+          },
+          "alt": {
+            "type": "string",
+            "description": "alternate allele"
+          },
+          "flank": {
+            "type": "integer",
+            "description": "window around the locus (default 250)"
+          },
+          "min_gap": {
+            "type": "integer",
+            "description": "minimum resolvable band gap (default 50)"
+          }
+        },
+        "required": [
+          "genome_path",
+          "chrom",
+          "pos",
+          "ref",
+          "alt"
+        ],
+        "additionalProperties": false
+      },
+      "rescue_strategy": {
+        "type": "object",
+        "properties": {
+          "schemes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["snp", "indel", "multi", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"]
+            },
+            "description": "scheme ids to order (one per registered designer; \"primer\" is excluded)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "marker_decision_text": {
+        "type": "object",
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "enum": ["primer", "snp", "indel", "multi", "duplex", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"],
+            "description": "scheme id (default \"snp\")"
+          },
+          "evidence": {
+            "type": "boolean",
+            "description": "include the evidence rung"
+          }
+        },
+        "additionalProperties": false
+      },
+      "screen_snp_targets": {
+        "type": "object",
+        "properties": {
+          "variants_path": {
+            "type": "string",
+            "description": "VCF file"
+          },
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          }
+        },
+        "required": [
+          "variants_path",
+          "genome_path"
+        ],
+        "additionalProperties": false
+      },
+      "engine_status": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "engine_capabilities": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "type": "string",
+            "enum": ["thermo", "specificity"],
+            "description": "engine (default thermo)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "design_chemistries": {
+        "type": "object",
+        "properties": [],
+        "additionalProperties": false
+      },
+      "design_scheme": {
+        "type": "object",
+        "properties": {
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "chrom": {
+            "type": "string",
+            "description": "locus chromosome"
+          },
+          "pos": {
+            "type": "integer",
+            "description": "locus position (1-based)"
+          },
+          "ref": {
+            "type": "string",
+            "description": "reference allele"
+          },
+          "alt": {
+            "type": "string",
+            "description": "alternate allele"
+          },
+          "scheme": {
+            "type": "string",
+            "enum": ["snp", "indel", "multi", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"],
+            "description": "scheme id (default \"snp\"; \"primer\" has no locus-level designer)"
+          },
+          "params": {
+            "type": "object",
+            "description": "extra arguments for the scheme's designer"
+          }
+        },
+        "required": [
+          "genome_path",
+          "chrom",
+          "pos",
+          "ref",
+          "alt"
+        ],
+        "additionalProperties": false
+      },
+      "design_markers": {
+        "type": "object",
+        "properties": {
+          "genome_path": {
+            "type": "string",
+            "description": "FASTA file, plain or gzipped"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
+          },
+          "variants_path": {
+            "type": "string",
+            "description": "VCF file"
+          },
+          "chrom": {
+            "type": "string",
+            "description": "region chromosome"
+          },
+          "start": {
+            "type": "integer",
+            "description": "region start (1-based)"
+          },
+          "end": {
+            "type": "integer",
+            "description": "region end (inclusive)"
+          },
+          "scheme": {
+            "type": "string",
+            "enum": ["snp", "indel", "multi", "asq", "caps", "arms", "hrm", "castpcr", "crispr", "dpcr", "indel_size", "lamp", "lax", "rpa", "sanger", "snapshot", "ssr", "taqman"],
+            "description": "scheme id (default \"snp\"; \"primer\" has no locus-level designer)"
+          },
+          "flank": {
+            "type": "integer",
+            "description": "window around each locus"
+          }
+        },
+        "required": [
+          "genome_path",
+          "variants_path"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
   "properties": {
     "tools": {
       "type": "array",
@@ -12,7 +790,7 @@
       "maxItems": 38,
       "items": {
         "type": "object",
-        "required": ["name", "title", "description", "inputSchema"],
+        "required": ["name", "title", "description", "inputSchema", "annotations"],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -30,7 +808,26 @@
           },
           "inputSchema": {
             "type": "object",
-            "description": "JSON Schema draft 2020-12 for the tool's arguments"
+            "description": "JSON Schema draft 2020-12 for the tool's arguments; the same document is under $defs.inputSchemas"
+          },
+          "annotations": {
+            "type": "object",
+            "required": ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"],
+            "additionalProperties": false,
+            "properties": {
+              "readOnlyHint": {
+                "type": "boolean"
+              },
+              "destructiveHint": {
+                "type": "boolean"
+              },
+              "idempotentHint": {
+                "type": "boolean"
+              },
+              "openWorldHint": {
+                "type": "boolean"
+              }
+            }
           }
         }
       }

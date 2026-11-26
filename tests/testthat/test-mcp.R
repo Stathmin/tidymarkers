@@ -288,8 +288,25 @@ test_that("inst/mcp/schema.json matches the tool registry", {
   expect_setequal(unlist(tools$items$properties$name$enum), names(specs))
   expect_equal(
     unlist(tools$items$required, use.names = FALSE),
-    c("name", "title", "description", "inputSchema")
+    c("name", "title", "description", "inputSchema", "annotations")
   )
+  expect_equal(
+    unlist(tools$items$properties$annotations$required, use.names = FALSE),
+    c("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint")
+  )
+
+  # `$defs.inputSchemas` publishes the full argument schema of every tool, not
+  # just `type: object`; compare it with the registry as JSON so integer vs
+  # numeric and vector vs list cannot blur the difference.
+  defs <- schema[["$defs"]]$inputSchemas
+  expect_setequal(names(defs), names(specs))
+  for (nm in names(specs)) {
+    expect_equal(
+      as.character(jsonlite::toJSON(defs[[nm]], auto_unbox = TRUE, null = "null")),
+      as.character(jsonlite::toJSON(specs[[nm]]$inputSchema, auto_unbox = TRUE, null = "null")),
+      info = nm
+    )
+  }
 
   for (nm in names(specs)) {
     input <- specs[[nm]]$inputSchema

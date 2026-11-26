@@ -52,18 +52,20 @@ build_schema <- function(specs) {
     description = paste(
       "The result of a JSON-RPC `tools/list` call on the tidymarkers MCP",
       "server (inst/mcp/server.R). Generated from mcp_tool_specs() by",
-      "dev/mcp-schema.R; tests/testthat/test-mcp.R fails on drift."
+      "dev/mcp-schema.R; tests/testthat/test-mcp.R fails on drift.",
+      "`$defs.inputSchemas` maps each tool name to its full argument schema."
     ),
     type = "object",
     required = "tools",
     additionalProperties = FALSE,
+    `$defs` = list(inputSchemas = lapply(specs, function(spec) spec$inputSchema)),
     properties = list(tools = list(
       type = "array",
       minItems = as.integer(n),
       maxItems = as.integer(n),
       items = list(
         type = "object",
-        required = c("name", "title", "description", "inputSchema"),
+        required = c("name", "title", "description", "inputSchema", "annotations"),
         additionalProperties = FALSE,
         properties = list(
           name = list(
@@ -75,7 +77,23 @@ build_schema <- function(specs) {
           description = list(type = "string", minLength = 1L),
           inputSchema = list(
             type = "object",
-            description = "JSON Schema draft 2020-12 for the tool's arguments"
+            description = paste(
+              "JSON Schema draft 2020-12 for the tool's arguments;",
+              "the same document is under $defs.inputSchemas"
+            )
+          ),
+          annotations = list(
+            type = "object",
+            required = c(
+              "readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"
+            ),
+            additionalProperties = FALSE,
+            properties = list(
+              readOnlyHint = list(type = "boolean"),
+              destructiveHint = list(type = "boolean"),
+              idempotentHint = list(type = "boolean"),
+              openWorldHint = list(type = "boolean")
+            )
           )
         )
       )
