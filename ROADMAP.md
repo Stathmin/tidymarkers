@@ -2700,7 +2700,8 @@ edges` (`dev/check.R:163`) вливает `package::fn`-узлы и `supersedes`
       `mcp_tool_specs()` плюс round-trip тест.
       правка: `dev/mcp-schema.R` (`--write` / `--check`) пишет draft 2020-12,
       38 инструментов, `minItems`/`maxItems` и enum `name` — из реестра;
-      файл в `inst/mcp/` (1892 Б).
+      файл в `inst/mcp/` (1892 Б). Расширено до полных схем аргументов и
+      `annotations` в T8 (2026-11-26): `$defs.inputSchemas`.
       проверка: `tests/testthat/test-mcp.R` сверяет файл с реестром
       (`expect_setequal` по `name`, `required`, вложенные `required` ⊆
       `properties`); `Rscript dev/test.R mcp` — 7 тестов, все проходят.
@@ -3855,25 +3856,29 @@ dir)` пишет crate-профиль поверх существующих че
       следствие: правка в одном шве тянет 2.5k строк контекста, а линтер и
       ревью не видят границы.
 
-- [ ] **T8. MCP: валидация `tools/call` и `read_only`/`mutating`.**
-      правка: `inst/mcp/tools.R` — `mcp_validate_args()` по
-      `spec$inputSchema` (type/required/properties/enum/min/max/items/pattern,
+- [x] **T8. MCP: валидация `tools/call` и `read_only`/`mutating`.**
+    - сделано: `inst/mcp/tools.R` — `mcp_validate_args()` читает `inputSchema`
+      (type/required/properties/enum/minimum/maximum/pattern/items,
       `additionalProperties = FALSE`); неизвестный инструмент и плохие
-      аргументы — JSON-RPC `-32602` с `data = list(tool, path, expected,
-      got)`, ошибка handler'а — `isError = TRUE`; `annotations`
-      (`readOnlyHint`, `destructiveHint`, `idempotentHint`,
-      `openWorldHint = FALSE`) на 38 инструментов; `protocolVersion`
-      остаётся `2024-11-05`, поле аддитивное. Рантайм валидирует по
-      `inputSchema` из `mcp_tool_specs()`, а `inst/mcp/schema.json`
-      публикует полную схему аргументов каждого инструмента (properties,
-      required, enum), а не только `type: object` (ADR 0004).
-      проверка: `test-mcp-validation.R` — 38/38 инструментов по строке
-      (валидный вызов + невалидный аргумент); `dev/mcp-schema.R --check`;
-      рантайм-валидатор и `schema.json` согласованы на корпусе.
-      блокер: нет.
-      следствие: `schema.json` опубликован, но неполон (только
-      `type: object`) и не читается; handler получает любой JSON, а
-      `tools/call` не различает protocol error и tool error.
+      аргументы — JSON-RPC `-32602` с
+      `data = list(tool, path, expected, got)`; ошибка handler'а приходит как
+      tool error (`isError = TRUE`). `annotations` (`readOnlyHint`, `destructiveHint`,
+      `idempotentHint`, `openWorldHint = FALSE`) на 38 инструментов,
+      `marker_technology` — единственный не-read-only; `tools/list` их отдаёт.
+    - сделано (схема): `dev/mcp-schema.R` публикует `$defs.inputSchemas` —
+      полную схему аргументов каждого инструмента — и объект `annotations`;
+      `inst/mcp/schema.json` пересобран, `--check` зелёный.
+    - проверка: `dev/test.R mcp` — 941 pass, 0 fail;
+      `test-mcp-validation.R` проходит 38/38 инструментов (минимальный
+      валидный вызов и отвергнутый аргумент), проверяет `-32602` с
+      `path/expected/got` и ключевые слова схемы; тест `schema.json`
+      сравнивает каждый `$defs`-вход с реестром.
+    - попутно: enum `scheme_conditions` не содержал документированный default
+      `"pcr"`; enum снят, потому что handler принимает id схемы или
+      температурное семейство и неизвестный id трактует как PCR.
+    - блокер: нет.
+    - следствие: закрыто; `schema.json` — контракт, который читает валидатор
+      (`tools/list` и рантайм отвечают одним документом).
 
 - [ ] **T9. Решить DECIPHER/TmCalculator/ggforce/forcats.**
       правка: ADR 0007 фиксирует: DECIPHER (14 файлов) и TmCalculator

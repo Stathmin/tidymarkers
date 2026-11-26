@@ -1102,9 +1102,9 @@ mcp_validate_value <- function(value, schema, path) {
     }
   }
 
-  if (is.list(value) &&
-    (is.null(names(value)) && length(value) == 0L && identical(type, "object") ||
-      !is.null(names(value)))) {
+  object_like <- is.list(value) && !is.null(names(value))
+  empty_object <- is.list(value) && length(value) == 0L && identical(type, "object")
+  if (object_like || empty_object) {
     required <- unlist(schema$required %||% list(), use.names = FALSE)
     for (nm in required) {
       if (is.null(value[[nm]])) {

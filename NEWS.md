@@ -6,6 +6,28 @@
 
 ## 0.4.1 (в работе)
 
+### MCP: валидация `tools/call` и полная схема инструментов (2026-11-26)
+
+- **Класс изменения: серверный слой `inst/mcp/`, dev-скрипт и тесты; `R/` и
+  `NAMESPACE` не менялись.**
+- `inst/mcp/tools.R` — `mcp_validate_args()` проверяет аргументы по тому же
+  `inputSchema`, который публикует `tools/list`: type, required, properties,
+  enum, minimum/maximum, pattern, items; каждый объект аргументов закрыт
+  (`additionalProperties = FALSE`). Неизвестный инструмент и отвергнутый
+  аргумент — JSON-RPC `-32602` с `data = {tool, path, expected, got}`; ошибка
+  handler'а остаётся `result.isError = TRUE`.
+- `annotations` на всех 38 инструментах (`readOnlyHint`, `destructiveHint`,
+  `idempotentHint`, `openWorldHint = FALSE`); `marker_technology` — единственный
+  не-read-only. `tools/list` возвращает объект.
+- `dev/mcp-schema.R` публикует `$defs.inputSchemas` — полную схему аргументов
+  каждого инструмента — и `annotations`; `inst/mcp/schema.json` пересобран.
+- Попутно: enum `scheme_conditions` не содержал документированный default
+  `"pcr"`; enum снят, потому что handler принимает id схемы или температурное
+  семейство и неизвестный id трактует как PCR.
+- Проверка: `dev/test.R mcp` — 941 pass, 0 fail (`test-mcp-validation.R`
+  проходит 38/38 инструментов, валидный и невалидный вызов);
+  `Rscript dev/mcp-schema.R --check` — файл совпадает с реестром.
+
 ### T7: `marker_specificity.R` разрезан на четыре шва (2026-11-26)
 
 - **Класс изменения: рефакторинг без изменения поведения.** Публичные имена и
