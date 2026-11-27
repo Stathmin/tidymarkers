@@ -360,6 +360,13 @@ as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
       nrow(x)
     ))
   }
+  if (is.na(x$chrom[[1L]]) || !nzchar(x$chrom[[1L]])) {
+    abort_msg("The variant row needs a chromosome name.")
+  }
+  pos_raw <- suppressWarnings(as.integer(x$pos[[1L]]))
+  if (is.na(pos_raw) || pos_raw < 1L) {
+    abort_msg("The variant row needs a positive integer `pos`.")
+  }
   out <- tibble::as_tibble(x[, c("chrom", "pos", "ref", "alt"), drop = FALSE]) |>
     dplyr::mutate(
       chrom = ath_chrom(.data$chrom),

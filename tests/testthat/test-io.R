@@ -556,6 +556,15 @@ test_that("as_variant_row gives exactly one typed row", {
   expect_identical(as_variant_row(two, pos = 10L)$ref, "A")
   expect_error(as_variant_row(two), "exactly one variant")
   expect_error(as_variant_row(two, pos = 99L), "exactly one variant")
+
+  # the selected row is admitted before ath_chrom() can turn "" into "ChrNA"
+  bad <- tibble::tibble(chrom = "", pos = 10L, ref = "A", alt = "G")
+  expect_error(as_variant_row(bad), "chromosome name")
+  bad$chrom <- "Chr1"
+  bad$pos <- 0L
+  expect_error(as_variant_row(bad), "positive integer `pos`")
+  bad$pos <- -1L
+  expect_error(as_variant_row(bad), "positive integer `pos`")
 })
 
 test_that("a VCF POS outside integer range is refused, not silently NA", {
