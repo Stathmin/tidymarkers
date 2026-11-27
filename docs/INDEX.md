@@ -88,6 +88,8 @@ Other vignettes:
   a blocker never stops the programme.
 - [ADR 0013](adr/0013-metrics-gate-is-not-a-green-delta.md) — the metrics
   report is not a green delta; a p95 gate compares comparable samples only.
+- [ADR 0014](adr/0014-benchmark-baseline-is-keyed-by-runner-class.md) — a
+  timing baseline is keyed by runner class, not by hostname.
 
 ## Operator decisions
 

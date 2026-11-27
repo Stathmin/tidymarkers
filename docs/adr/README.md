@@ -24,6 +24,7 @@ the file records the measurement or event that re-tested it).
 | [0011](0011-release-artefact-and-mcp-contract.md)                      | The release artefact and the MCP contract are the product                   | proposed |
 | [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
 | [0013](0013-metrics-gate-is-not-a-green-delta.md)                      | The metrics report is not a gate; a mixed-sample p95 is not a regression     | accepted |
+| [0014](0014-benchmark-baseline-is-keyed-by-runner-class.md)            | A timing baseline is keyed by runner class, not by hostname                  | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
