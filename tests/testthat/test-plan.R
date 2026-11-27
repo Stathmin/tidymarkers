@@ -162,6 +162,10 @@ test_that("marker_costs overrides merge over the defaults", {
   expect_equal(unname(c1[["hrm"]]), 1.2)
   expect_equal(unname(c1[["snp"]]), 1)
   expect_error(marker_costs(1), "named")
+  expect_error(marker_costs(hmr = 2), "Unknown chemistry cost.*hmr")
+  expect_error(marker_costs(hrm = -1), "non-negative")
+  expect_error(marker_costs(hrm = NA_real_), "finite")
+  expect_error(marker_costs(hrm = "1"), "finite")
 })
 
 test_that("a region expands only to its in-block variants and sweeps them", {

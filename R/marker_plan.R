@@ -438,6 +438,16 @@ marker_costs <- function(...) {
     abort_msg("`...` must be named costs, e.g. marker_costs(hrm = 1.2).")
   }
   base <- KASP_TECH_COSTS
+  unknown <- setdiff(names(ov), names(base))
+  if (length(unknown)) {
+    abort_msg(gettextf(
+      "Unknown chemistry cost(s): %s. Known schemes: %s.",
+      paste(unknown, collapse = ", "), paste(names(base), collapse = ", ")
+    ))
+  }
+  if (!is.numeric(ov) || any(!is.finite(ov) | ov < 0)) {
+    abort_msg("Every cost must be one finite, non-negative number.")
+  }
   base[names(ov)] <- as.numeric(ov)
   base
 }
