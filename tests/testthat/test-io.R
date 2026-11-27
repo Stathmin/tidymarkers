@@ -598,6 +598,16 @@ test_that("a VCF record with no chromosome is refused", {
 
   # ath_chrom("") would otherwise produce the plausible "ChrNA" contig
   expect_error(read_variants_vcf(path), "no chromosome name")
+
+  # the genotype reader is the second reader of the same file and must not
+  # invent a contig the variant reader refuses (ZV15 class, chromosome field)
+  gpath <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "\t300\t.\tA\tG\t.\tPASS\t.\tGT\t0/1"
+  ), gpath)
+  expect_error(read_variant_genotypes(gpath), "record 1 has no chromosome")
 })
 
 test_that("a VCF header without ALT names the missing column", {

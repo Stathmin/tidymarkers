@@ -187,6 +187,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
   con <- file(path, "r")
   on.exit(close(con), add = TRUE)
   rows <- list()
+  n_rec <- 0L
   n_multi <- 0L
   n_sym <- 0L
   n_short <- 0L
@@ -198,6 +199,12 @@ read_variant_genotypes <- function(path, samples = NULL) {
     lines <- lines[!startsWith(lines, "#") & nzchar(lines)]
     for (line in lines) {
       f <- strsplit(line, "\t", fixed = TRUE)[[1L]]
+      n_rec <- n_rec + 1L
+      if (is.na(f[[1L]]) || !nzchar(f[[1L]])) {
+        abort_msg(gettextf(
+          "VCF record %d has no chromosome name.", n_rec
+        ))
+      }
       if (length(f) < 9L + length(all_samples)) {
         n_short <- n_short + 1L
         next
