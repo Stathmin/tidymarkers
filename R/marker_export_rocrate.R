@@ -70,6 +70,28 @@ rocrate_encoding <- function(file) {
   )
 }
 
+#' A crate `@id` resolved inside the crate directory
+#'
+#' A crate is a directory that travels: a `File` entity that resolves outside it
+#' describes a file the crate does not carry, so the import refuses the id
+#' instead of hashing whatever the path happens to name on this machine.
+#' @param dir the crate directory.
+#' @param id the `@id` of a graph entity.
+#' @return the absolute path of the declared file.
+#' @keywords internal
+#' @noRd
+rocrate_member_path <- function(dir, id) {
+  root <- fs::path_abs(dir)
+  path <- fs::path_abs(fs::path(root, id))
+  if (!identical(path, root) && !fs::path_has_parent(path, root)) {
+    abort_msg(
+      "The crate declares {.file {id}}, which is outside {.path {dir}}.",
+      i = "A crate names only the files it carries."
+    )
+  }
+  path
+}
+
 #' One `File` entity, hashed from the crate's own copy
 #'
 #' The hash is taken from the copy, not from the artefact directory, so the crate
@@ -305,7 +327,7 @@ marker_import_rocrate <- function(path) {
     if (is.null(declared) || is.na(id) || startsWith(id, "#") || grepl("^[A-Za-z][A-Za-z0-9+.-]*:", id)) {
       next
     }
-    file <- fs::path(dir, id)
+    file <- rocrate_member_path(dir, id)
     if (!fs::file_exists(file)) {
       abort_msg(
         "The crate declares {.file {id}}, but the file is not in {.path {dir}}.",

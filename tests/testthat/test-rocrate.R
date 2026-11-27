@@ -155,6 +155,28 @@ test_that("a crate round-trips back to the same artefact", {
   expect_identical(from_meta$id, art$id)
 })
 
+test_that("a crate cannot declare a file outside its own directory", {
+  art <- rocrate_fixture()$artefact
+  crate <- marker_export_rocrate(art, dir = tempfile("crate"))
+
+  # A crate is the record it carries: an id that leaves the directory would let
+  # an import hash - and thus vouch for - a file the crate does not contain.
+  outside <- fs::path(fs::path_dir(crate), "outside-the-crate.txt")
+  writeLines("not part of the record", outside)
+  meta <- rocrate_meta(crate)
+  meta[["@graph"]][[length(meta[["@graph"]]) + 1L]] <- list(
+    "@id" = paste0("../", fs::path_file(outside)),
+    "@type" = "File",
+    "sha256" = tidymarkers:::hash_file(outside),
+    "encodingFormat" = "text/plain"
+  )
+  writeLines(
+    jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
+    fs::path(crate, "ro-crate-metadata.json")
+  )
+  expect_error(marker_import_rocrate(crate), "outside", class = "rlang_error")
+})
+
 test_that("a tampered sidecar is named rather than read", {
   art <- rocrate_fixture()$artefact
   crate <- marker_export_rocrate(art, dir = tempfile("crate"))
