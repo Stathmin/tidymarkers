@@ -73,6 +73,10 @@ describe itself and not the filesystem around it.
   indistinguishable from ordinary files by path.
 - Any new persisted record (trace, replay, outcome corpus) inherits item 4: a
   reader without an escape test is an open item, not a finished reader.
+- The rule is about names a record supplies. A reader that takes a path from its
+  caller (`marker_trace_read(path)`, `readRDS` of a cache index the package
+  derives itself) is a different contract and stays as it is: there is no record
+  to distrust, only the caller's own argument.
 - Execution is a path out of the record too. An artefact's `solved.rds` is an R
   object, and `readRDS()` runs what the file says; the verdicts are therefore
   also written as `replay.csv` (three character columns), and
