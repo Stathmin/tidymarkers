@@ -389,6 +389,47 @@ if (file.exists(paths_path)) {
   note("missing ", paths_path)
 }
 
+# 6c. the MD counts the same table ------------------------------------------
+md_rows <- regmatches(md, gregexpr("\\| [^|]+ \\| \\*\\*[0-9]+\\*\\* \\|", md))[[1L]]
+md_key <- trimws(sub("^\\| ([^|]+) \\|.*$", "\\1", md_rows))
+md_val <- as.integer(sub(".*\\*\\*([0-9]+)\\*\\*.*", "\\1", md_rows))
+get_count <- function(prefix) {
+  i <- which(startsWith(md_key, prefix))
+  if (length(i) != 1L) NA_integer_ else md_val[[i]]
+}
+expected_counts <- c(
+  "Экспортов в `NAMESPACE`" = sum(api$kind == "export"),
+  "S3-методов" = sum(api$kind == "s3method"),
+  "Всего записей в CSV" = nrow(api),
+  "Пользовательских" = sum(api$user_facing == "TRUE"),
+  "Служебных" = sum(api$user_facing == "FALSE"),
+  "Типизированных рёбер в графе" = nrow(edge),
+  "Точек входа" = sum(nodes$entry_point == "TRUE"),
+  "Листьев" = sum(nodes$leaf == "TRUE"),
+  "Изолятов" = sum(indeg == 0 & outdeg == 0)
+)
+bad_counts <- names(expected_counts)[vapply(
+  names(expected_counts),
+  function(k) {
+    actual <- get_count(k)
+    is.na(actual) || actual != expected_counts[[k]]
+  },
+  logical(1)
+)]
+if (length(bad_counts)) {
+  for (k in bad_counts) {
+    note("MD count is stale for ", k, ": ", get_count(k), " vs ", expected_counts[[k]])
+  }
+} else {
+  ok("MD counts match the computed table")
+}
+graph_line <- regmatches(md, regexpr("Отрисовка графа \\([0-9]+ узлов, [0-9]+ ребр", md))
+graph_ok <- length(graph_line) == 1L &&
+  grepl(paste0("\\(", nrow(nodes), " узлов, ", nrow(edge), " ребр"), graph_line)
+if (!graph_ok) {
+  note("MD graph line is stale: expected ", nrow(nodes), " nodes, ", nrow(edge), " edges")
+}
+
 # 7. summary -----------------------------------------------------------------
 counts <- table(factor(nodes$role, levels = ROLES))
 message(
