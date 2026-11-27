@@ -127,6 +127,34 @@ test_that("the artefact id is a frozen hash of the decision core", {
   expect_identical(tidymarkers:::artefact_id(c(list(noise = TRUE), core)), tidymarkers:::artefact_id(core))
 })
 
+# The id a record stores has to be the hash of the record it stores.  Before the
+# canonical `na = "null"`, an absent engine (`NA_character_` in memory, `null`
+# on disk) hashed as the string "NA" in one form and as `null` in the other, so
+# no reader could re-derive the id of a record it had just read.
+test_that("the artefact id re-derives from the manifest on disk", {
+  art <- new_artefact()
+  read_back <- marker_artefact_read(art$dir)
+  expect_identical(tidymarkers:::artefact_id(read_back$manifest), art$manifest$id)
+
+  # the same manifest with a character NA hashes the same before and after the
+  # JSON round trip, which is the field the reader sees as `null`
+  manifest <- art$manifest
+  manifest$engine_stamp[["absent engine"]] <- NA_character_
+  disk <- jsonlite::fromJSON(
+    as.character(jsonlite::toJSON(
+      manifest,
+      auto_unbox = TRUE, null = "null", na = "null", digits = NA
+    )),
+    simplifyVector = FALSE
+  )
+  expect_identical(tidymarkers:::artefact_id(disk), tidymarkers:::artefact_id(manifest))
+
+  # a changed decision core renumbers; the id is not a constant
+  tampered <- read_back$manifest
+  tampered$contract$scenario <- "J1"
+  expect_false(identical(tidymarkers:::artefact_id(tampered), art$manifest$id))
+})
+
 test_that("a solved plan gives the same trace without writing an artefact", {
   solved <- trace_fixture_solve()
   art <- new_artefact()

@@ -500,7 +500,14 @@ artefact_id <- function(manifest) {
     "schema", "contract", "package", "engine_stamp", "inputs", "plan",
     "parameters", "overrides"
   )]
-  hash_object(jsonlite::toJSON(core, auto_unbox = TRUE, null = "null", digits = NA))
+  # Hash the JSON `artefact.json` actually stores, not an in-memory variant: a
+  # character NA (an absent engine's version) would otherwise hash as "NA" while
+  # the file says null, and the id could never be re-derived from the record.
+  # The explicit `na` is what makes the id checkable; the default is not null.
+  hash_object(jsonlite::toJSON(
+    core,
+    auto_unbox = TRUE, null = "null", na = "null", digits = NA
+  ))
 }
 
 #' The manifest timestamp: explicit value, then SOURCE_DATE_EPOCH, then now
