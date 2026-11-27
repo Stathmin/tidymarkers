@@ -120,6 +120,10 @@ Other vignettes:
 - [ADR 0023](adr/0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md) —
   a refusal a retry cannot fix (bad alphabet) carries a condition class, so a
   reader that refetches a broken cache does not retry the unfixable case.
+- [ADR 0024](adr/0024-a-replay-compares-only-the-records-own-verdicts.md) —
+  a replay compares only the record's own verdicts; a record with no
+  `replay.csv` is refused when replayed with a trusted `solved`, instead of
+  passing on the caller's own solve.
 
 ## Operator decisions
 
