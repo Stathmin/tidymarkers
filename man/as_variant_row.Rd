@@ -19,9 +19,9 @@ A design function needs one locus, and a subset of a variants table is a
 tibble that still claims to be many.  \code{as_variant_row()} selects exactly one
 row and names the contract: columns \code{chrom}, \code{pos}, \code{ref}, \code{alt}, class
 \code{variant}.  Zero or several matching rows is an error, not a silent
-first-row choice.  A symbolic or absent allele (\verb{<DEL>}, \code{*}, \code{.}) is
-refused before \code{normalise_allele()} can turn it into a fake \code{N} (ADR 0016,
-0018); the readers drop such a record, but a selector that asked for one row
+first-row choice.  A symbolic, absent or empty allele (\verb{<DEL>}, \code{*}, \code{.},
+\code{NA}) is refused before \code{normalise_allele()} can turn it into a fake \code{N} (ADR
+0016, 0018, 0019); the readers drop such a record, but a selector that asked for one row
 has no other record to fall back to.
 }
 \examples{

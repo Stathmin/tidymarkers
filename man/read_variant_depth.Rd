@@ -23,8 +23,8 @@ Streams the DP/AD/GT fields of one sample out of a VCF into a tidy table, one
 row per ALT allele (a multi-allelic \code{ALT} is split on \verb{,}; its \code{AD} is
 \verb{ref,alt1,alt2,...}, so the ALT's depth is \code{AD[alt_index + 1]}).  \code{chrom} is
 normalised with \code{ath_chrom()}.  Alleles are admitted by the same rule as
-\code{\link[=read_variants_vcf]{read_variants_vcf()}}: a symbolic or absent ALT (\verb{<DEL>}, \code{*}, \code{.}) is
-dropped and counted, and the kept \code{ref}/\code{alt} are normalised with
+\code{\link[=read_variants_vcf]{read_variants_vcf()}}: a symbolic, absent or empty ALT (\verb{<DEL>}, \code{*}, \code{.},
+\code{""}, \code{NA}) is dropped and counted, and the kept \code{ref}/\code{alt} are normalised with
 \code{\link[=normalise_allele]{normalise_allele()}} (ADR 0018).  When the VCF has no sample columns, the
 reader falls back to \code{INFO/DP} and leaves \code{alt_depth}/\code{genotype} as \code{NA}.
 Missing values stay \code{NA}; an absent DP/AD/GT never errors.

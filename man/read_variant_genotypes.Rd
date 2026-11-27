@@ -25,8 +25,8 @@ A variant table says \emph{what} varies; a genotype table says \emph{who} carrie
 \details{
 The record is biallelic: a multi-allelic site is dropped and counted, because
 a dosage against "the ALT" is ambiguous once a record carries two of them.
-A symbolic or absent ALT (\verb{<DEL>}, \code{*}, \code{.}) is dropped and counted for the
-same reason \code{\link[=read_variants_vcf]{read_variants_vcf()}} drops it: no short oligo exists for it, and
+A symbolic, absent or empty ALT (\verb{<DEL>}, \code{*}, \code{.}, \code{""}) is dropped and
+counted for the same reason \code{\link[=read_variants_vcf]{read_variants_vcf()}} drops it: no short oligo exists for it, and
 \code{normalise_allele()} would otherwise turn it into a fake \code{N} allele.  A
 record with fewer columns than the header names, or with neither \code{GT} nor
 \code{AD}, is dropped and counted: there is nothing left to read.  A \code{POS} that is

@@ -93,8 +93,9 @@ inform_absent_alleles <- function(n) {
 #'   tabix-indexed file are given, `readVcf` streams just that region
 #'   (`ScanVcfParam(which=)`); both backends return the same tibble.
 #' @return a tibble with columns `chrom`, `pos`, `ref`, `alt`, one row per ALT
-#'   allele; symbolic/absent ALT alleles (e.g. `<DEL>`, `*`, `.`) are dropped
-#'   with a message naming how many, and the kept alleles are normalised with
+#'   allele; symbolic/absent ALT alleles (e.g. `<DEL>`, `*`, `.`) and an empty
+#'   or missing REF/ALT are dropped with a message naming how many, and the kept
+#'   alleles are normalised with
 #'   [normalise_allele()].  A short oligo cannot be designed across a
 #'   structural allele, so those records are unrepresentable rather than lost
 #'   in silence.
@@ -155,8 +156,8 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #'
 #' The record is biallelic: a multi-allelic site is dropped and counted, because
 #' a dosage against "the ALT" is ambiguous once a record carries two of them.
-#' A symbolic or absent ALT (`<DEL>`, `*`, `.`) is dropped and counted for the
-#' same reason [read_variants_vcf()] drops it: no short oligo exists for it, and
+#' A symbolic, absent or empty ALT (`<DEL>`, `*`, `.`, `""`) is dropped and
+#' counted for the same reason [read_variants_vcf()] drops it: no short oligo exists for it, and
 #' `normalise_allele()` would otherwise turn it into a fake `N` allele.  A
 #' record with fewer columns than the header names, or with neither `GT` nor
 #' `AD`, is dropped and counted: there is nothing left to read.  A `POS` that is
@@ -346,9 +347,9 @@ vcf_sample_names <- function(path) {
 #' tibble that still claims to be many.  `as_variant_row()` selects exactly one
 #' row and names the contract: columns `chrom`, `pos`, `ref`, `alt`, class
 #' `variant`.  Zero or several matching rows is an error, not a silent
-#' first-row choice.  A symbolic or absent allele (`<DEL>`, `*`, `.`) is
-#' refused before `normalise_allele()` can turn it into a fake `N` (ADR 0016,
-#' 0018); the readers drop such a record, but a selector that asked for one row
+#' first-row choice.  A symbolic, absent or empty allele (`<DEL>`, `*`, `.`,
+#' `NA`) is refused before `normalise_allele()` can turn it into a fake `N` (ADR
+#' 0016, 0018, 0019); the readers drop such a record, but a selector that asked for one row
 #' has no other record to fall back to.
 #' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`).
 #' @param id,chrom,pos optional selectors; give at most what names one row.

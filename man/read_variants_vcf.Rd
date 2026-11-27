@@ -29,8 +29,9 @@ tabix-indexed file are given, \code{readVcf} streams just that region
 }
 \value{
 a tibble with columns \code{chrom}, \code{pos}, \code{ref}, \code{alt}, one row per ALT
-allele; symbolic/absent ALT alleles (e.g. \verb{<DEL>}, \code{*}, \code{.}) are dropped
-with a message naming how many, and the kept alleles are normalised with
+allele; symbolic/absent ALT alleles (e.g. \verb{<DEL>}, \code{*}, \code{.}) and an empty
+or missing REF/ALT are dropped with a message naming how many, and the kept
+alleles are normalised with
 \code{\link[=normalise_allele]{normalise_allele()}}.  A short oligo cannot be designed across a
 structural allele, so those records are unrepresentable rather than lost
 in silence.

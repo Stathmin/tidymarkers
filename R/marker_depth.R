@@ -36,8 +36,8 @@ check_depth_pos <- function(pos, chrom) {
 #' row per ALT allele (a multi-allelic `ALT` is split on `,`; its `AD` is
 #' `ref,alt1,alt2,...`, so the ALT's depth is `AD[alt_index + 1]`).  `chrom` is
 #' normalised with `ath_chrom()`.  Alleles are admitted by the same rule as
-#' [read_variants_vcf()]: a symbolic or absent ALT (`<DEL>`, `*`, `.`) is
-#' dropped and counted, and the kept `ref`/`alt` are normalised with
+#' [read_variants_vcf()]: a symbolic, absent or empty ALT (`<DEL>`, `*`, `.`,
+#' `""`, `NA`) is dropped and counted, and the kept `ref`/`alt` are normalised with
 #' [normalise_allele()] (ADR 0018).  When the VCF has no sample columns, the
 #' reader falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.
 #' Missing values stay `NA`; an absent DP/AD/GT never errors.
