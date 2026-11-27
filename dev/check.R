@@ -11,6 +11,7 @@
 #       dev/prose-tics.R; the contrastive "X, not Y" style is never gated)
 #   2b. every hand-rolled sequence primitive is registered with a reason
 #   2d. the MCP contract is consistent (dev/check-mcp-parity.R)
+#   2e. the exported surface is consistent (dev/check-user-api.R)
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
@@ -211,6 +212,20 @@ step("mcp parity", function() {
     stop("dev/check-mcp-parity.R failed (status ", status, ")")
   }
   ok("MCP contract is consistent")
+})
+
+# 2e. exported surface -------------------------------------------------------
+step("user api", function() {
+  # ADR 0011 section 2: the release gate includes the exported-surface check,
+  # so an export without a row, an unchained edge or a stale DOT fails here
+  status <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("dev/check-user-api.R")
+  )
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-user-api.R failed (status ", status, ")")
+  }
+  ok("exported surface is consistent")
 })
 
 # 3. criterion fixtures + docs/artifacts graph ------------------------------
