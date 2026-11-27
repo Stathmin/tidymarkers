@@ -44,6 +44,8 @@ Other vignettes:
 - [docs/plans/2026-11-27-integration-3day](plans/2026-11-27-integration-3day.md)
   — the three-day integration programme: J1–J7, parallel streams, gates and
   failure criteria.
+- [docs/plans/day-1-gate](plans/day-1-gate.md) — the Day-1 state report and
+  merge-marker evidence.
 - [docs/plans/self-repair-log](plans/self-repair-log.md) — the append-only
   blocker and repair log for the programme.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured

@@ -6,6 +6,7 @@ annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
 as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
+as_variant_row,export,ingest,TRUE,variants,id;chrom;pos,variants,variant,variant,TRUE,TRUE,одна типизированная строка варианта
 asq_limits,export,criteria,FALSE,,amplicon;as_tm;com_tm,none,limits,limits,TRUE,FALSE,пороги ASQ
 assay_amplicons,export,specificity,TRUE,assay;genome,max_mismatch;BPPARAM;products,assay;genome,hits,hits,FALSE,FALSE,продукты по аллелям
 assemble_kasp_assay,export,assembly,TRUE,genome;snp,variants;flank;strands;min_gc;max_gc;tm_range;clean_3p;max_footprint_variants;min_disc;specificity_candidates;pair_screen;linked;haplotypes;run_blast;scheme;on_offtarget;cores;BPPARAM;diagnostic_positions;limits;variant_offset;as_tm_target;com_tm_target;com_tm_range;com_gaps;as_lengths;engines,genome;variant;variants;haplotypes,marker_assay,assay,FALSE,FALSE,полная сборка KASP
@@ -181,6 +182,7 @@ read_genbank,export,ingest,TRUE,path,region,path,features,features,TRUE,FALSE,Ge
 read_genome_fasta,export,ingest,TRUE,path,chrom_map;seqids;use_index,path,marker_genome,genome,TRUE,FALSE,FASTA (+.fai)
 read_transcripts,export,ingest,TRUE,path,merge_accessions,path,haplotypes,haplotypes,TRUE,FALSE,FASTA транскриптов
 read_variant_depth,export,ingest,TRUE,path,sample,path,depth,depth,TRUE,FALSE,DP/AD/GT
+read_variant_genotypes,export,ingest,TRUE,path,samples,path,genotypes,genotypes,TRUE,FALSE,GT/AD в длинный формат
 read_variants_vcf,export,ingest,TRUE,path,chrom;start;end;backend,path,variants,variants,TRUE,FALSE,CHROM/POS/REF/ALT
 render_design_search,export,export,FALSE,assay;variants;snp,path;fps;hold;cores,assay;variants;variant,files,files,FALSE,TRUE,GIF поиска
 rescue_strategy,export,decision,TRUE,,schemes,none,strategy,tibble,TRUE,TRUE,порядок химий

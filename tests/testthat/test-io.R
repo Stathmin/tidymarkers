@@ -433,3 +433,81 @@ test_that("read_genbank folds a wrapped join() location into full start/end", {
   expect_equal(cds$start, 1L)
   expect_equal(cds$end, 300L)
 })
+
+test_that("read_variant_genotypes reads GT/AD into long dosage rows", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1\tL2\tL3",
+    "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD\t0/0:10,0\t0/1:6,4\t1/1:0,9",
+    "1\t250\t.\tA\tG,T\t.\t.\t.\tGT:AD\t1/2:5,5\t0/1:5,5\t0/0:9,0",
+    "1\t300\t.\tC\tT\t.\t.\t.\tAD\t5,5\t0,10\t.",
+    "1\t400\t.\tG\tA\t.\t.\t.\tGT\t./.\t0|1\t1|1"
+  ), vcf)
+
+  expect_message(
+    g <- read_variant_genotypes(vcf),
+    "multi-allelic"
+  )
+  expect_s3_class(g, "genotypes")
+  expect_identical(
+    names(g),
+    c("line", "chrom", "pos", "ref", "alt", "genotype", "depth")
+  )
+  expect_equal(nrow(g), 9L)
+  expect_identical(unique(g$chrom), "Chr1")
+
+  at <- function(pos, line) g$genotype[g$pos == pos & g$line == line]
+  expect_equal(at(250L, "L1")[[1L]], 0)
+  expect_equal(at(250L, "L2")[[1L]], 1)
+  expect_equal(at(250L, "L3")[[1L]], 2)
+  # AD decides the dosage when GT is absent; `.` is no call
+  expect_equal(at(300L, "L1"), 1)
+  expect_equal(at(300L, "L2"), 2)
+  expect_true(is.na(at(300L, "L3")))
+  # a phased call uses the same dosage, a missing call stays NA
+  expect_equal(at(400L, "L2"), 1)
+  expect_equal(at(400L, "L3"), 2)
+  expect_true(is.na(at(400L, "L1")))
+  expect_equal(g$depth[g$pos == 250L & g$line == "L3"], 9)
+
+  one <- read_variant_genotypes(vcf, samples = "L2")
+  expect_equal(nrow(one), 3L)
+  expect_identical(unique(one$line), "L2")
+  expect_error(read_variant_genotypes(vcf, samples = "nope"), "no sample")
+})
+
+test_that("genotypes feed marker_informativeness", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1\tL2\tL3\tL4",
+    "1\t250\t.\tA\tG\t.\t.\t.\tGT\t0/0\t0/1\t1/1\t0/1",
+    "1\t300\t.\tC\tT\t.\t.\t.\tGT\t0/1\t0/0\t0/0\t1/1"
+  ), vcf)
+  g <- read_variant_genotypes(vcf)
+  targets <- tibble::tibble(
+    chrom = "Chr1", pos = c(250L, 300L), ref = c("A", "C"), alt = c("G", "T")
+  )
+  info <- marker_informativeness(targets, genotypes = g, min_lines = 4L)
+  expect_equal(nrow(info), 2L)
+  expect_true(all(info$n_lines >= 4L))
+})
+
+test_that("as_variant_row gives exactly one typed row", {
+  v <- marker_example("SNP")
+  row <- as_variant_row(v, chrom = "Chr1")
+  expect_s3_class(row, "variant")
+  expect_equal(nrow(row), 1L)
+  expect_identical(names(row), c("chrom", "pos", "ref", "alt"))
+
+  two <- tibble::tibble(
+    id = c("a", "b"), chrom = c("1", "1"), pos = c(10L, 20L),
+    ref = c("A", "C"), alt = c("G", "T")
+  )
+  expect_identical(as_variant_row(two, id = "b")$pos, 20L)
+  expect_identical(as_variant_row(two, pos = 10L)$ref, "A")
+  expect_error(as_variant_row(two), "exactly one variant")
+  expect_error(as_variant_row(two, pos = 99L), "exactly one variant")
+})

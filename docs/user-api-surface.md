@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (209 узлов, 949 рёбер): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (211 узлов, 981 ребро): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -71,6 +71,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `read_genome_fasta()` | да | path | chrom_map, seqids, use_index | `path` → `genome` | Read an arbitrary genome FASTA, optionally normalising sequence names |
 | `read_transcripts()` | да | path | merge_accessions | `path` → `haplotypes` | Read a transcript FASTA into a haplotype set |
 | `read_variant_depth()` | да | path | sample | `path` → `depth` | Read per-sample depth (DP/AD/GT) from a VCF |
+| `read_variant_genotypes()` | да | path | samples | `path` → `genotypes` | Read GT/AD as long per-sample dosage rows for `marker_informativeness()` |
 | `read_variants_vcf()` | да | path | chrom, start, end, backend | `path` → `variants` | Read variants from a VCF/BCF file (streaming, memory-mapped) |
 | `snp_template()` | — | genome, chrom, pos | flank | `genome + region` → `sequence` | Extract a DNA window centred on a SNP as a DNAString |
 | `variant_confidence()` | — | depth | min_depth, min_weight | `depth` → `numeric` | Turn DP/AD/GT into a confidence weight |
@@ -95,6 +96,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `design_hrm_marker()` | да | genome, snp | flank, min_product, max_product, lengths, tm_range, gc_range | `genome + variant` → `marker` | Design an HRM marker at a variant |
 | `design_indel_size_marker()` | да | genome, snp | flank, min_gap, min_product, max_product, lengths, tm_range, gc_range, engines | `genome + variant` → `marker` | Design an InDel size-polymorphism marker |
 | `as_marker_solved()` | да | report | — | `report + panel + solved` → `marker_solved` | Continue a batch report or a panel as the typed solved object |
+| `as_variant_row()` | да | x | id, chrom, pos | `variants` → `variant` | Select exactly one variant row as a typed `variant` |
 | `design_kasp_markers()` | да | genome, loci | variants, BPPARAM | `genome + variants` → `report` | Design KASP markers for a table of loci, with a per-locus verdict |
 | `design_lamp_marker()` | да | genome, snp | flank, arm_lengths, outer_lengths, outer_tm, inner_tm, gc_range, min_product, max_product … +2 | `genome + variant` → `marker` | Design a LAMP marker at a variant |
 | `design_lax_marker()` | да | genome, snp | haplotypes | `genome + variant + haplotypes` → `marker` | Design a lax KASP: one ALT primer per haplotype |
@@ -543,12 +545,13 @@ S3-методы не входят в граф как отдельные узлы
    `marker_technologies()`, `marker_priors()` возвращают `tibble`; дизайн
    принимает `character`/`costs`, поэтому пользователь вручную извлекает
    колонку.
-6. **Один `variant` — только из `pick_target_snp()`.** `read_variants_vcf()`
-   даёт `variants`, но выбрать строку для `assemble_kasp_assay()` можно только
-   через `pick_target_snp()` (нужен `gene`) или вручную.
-7. **Нет читателя генотипов.** `marker_informativeness()` принимает
-   `genotypes`, но `read_variants_vcf()` читает только CHROM/POS/REF/ALT;
-   `read_variant_depth()` даёт глубину, не генотипы.
+6. ~~**Один `variant` — только из `pick_target_snp()`.**~~ Закрыто:
+   `as_variant_row(variants, id/chrom/pos)` даёт типизированную одну строку
+   `variant`, не требуя гена.
+7. ~~**Нет читателя генотипов.**~~ Закрыто:
+   `read_variant_genotypes()` читает `GT`/`AD` в длинный `genotypes`
+   (`line`, `chrom`, `pos`, `ref`, `alt`, `genotype`, `depth`), который
+   принимает `marker_informativeness()`.
 8. **Устаревшие алиасы и три батч-входа** (§5) — не ошибка, но каждый новый
    пользователь выбирает наугад.
 

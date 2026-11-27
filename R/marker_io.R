@@ -101,6 +101,214 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
     dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
 }
 
+#' Read per-line genotypes from a VCF (GT/AD)
+#'
+#' A variant table says *what* varies; a genotype table says *who* carries it.
+#' `read_variant_genotypes()` streams the sample columns of a VCF into long
+#' `line`/`chrom`/`pos`/`ref`/`alt` rows, with `genotype` as ALT dosage
+#' (`0`, `1`, `2`, `NA`) and `depth` from `AD` when present.  The result feeds
+#' [marker_informativeness()] directly.
+#'
+#' The record is biallelic: a multi-allelic site is dropped and counted, because
+#' a dosage against "the ALT" is ambiguous once a record carries two of them.
+#' Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
+#' `2 * alt / (ref + alt)`).  A genotype naming an allele other than REF/ALT
+#' is `NA`, never silently folded to the first ALT.
+#' @param path VCF path, plain or bgzipped.
+#' @param samples optional sample names to keep; `NULL` keeps every sample.
+#' @return a tibble with columns `line`, `chrom`, `pos`, `ref`, `alt`,
+#'   `genotype`, `depth`, class `genotypes`; one row per sample and record.
+#' @examples
+#' vcf <- withr::local_tempfile(fileext = ".vcf")
+#' writeLines(c(
+#'   "##fileformat=VCFv4.2",
+#'   paste0(
+#'     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t",
+#'     "L1\tL2"
+#'   ),
+#'   "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD\t0/0:10,0\t0/1:6,4"
+#' ), vcf)
+#' read_variant_genotypes(vcf)
+#' @family input
+#' @export
+read_variant_genotypes <- function(path, samples = NULL) {
+  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
+  all_samples <- vcf_sample_names(path)
+  if (!length(all_samples)) {
+    abort_msg("{path} has no sample columns; there is no genotype to read.")
+  }
+  if (is.null(samples)) {
+    samples <- all_samples
+  } else {
+    samples <- as.character(samples)
+    missing <- setdiff(samples, all_samples)
+    if (length(missing)) {
+      abort_msg("{path} has no sample{?s} {.val {missing}}.")
+    }
+  }
+  idx <- match(samples, all_samples)
+
+  con <- file(path, "r")
+  on.exit(close(con), add = TRUE)
+  rows <- list()
+  n_multi <- 0L
+  n_bad <- 0L
+  repeat {
+    lines <- readLines(con, n = 1000L, warn = FALSE)
+    if (!length(lines)) break
+    lines <- lines[!startsWith(lines, "#") & nzchar(lines)]
+    for (line in lines) {
+      f <- strsplit(line, "\t", fixed = TRUE)[[1L]]
+      if (length(f) < 9L + length(all_samples)) {
+        n_bad <- n_bad + 1L
+        next
+      }
+      if (grepl(",", f[[5L]], fixed = TRUE)) {
+        n_multi <- n_multi + 1L
+        next
+      }
+      fmt <- strsplit(f[[9L]], ":", fixed = TRUE)[[1L]]
+      gi <- match("GT", fmt)
+      ai <- match("AD", fmt)
+      if (is.na(gi) && is.na(ai)) {
+        n_bad <- n_bad + 1L
+        next
+      }
+      calls <- vapply(f[9L + idx], function(field) {
+        v <- strsplit(field, ":", fixed = TRUE)[[1L]]
+        gt <- if (is.na(gi) || gi > length(v)) NA_character_ else v[[gi]]
+        ad <- if (is.na(ai) || ai > length(v)) NA_character_ else v[[ai]]
+        genotype_call(gt, ad)
+      }, c(genotype = NA_real_, depth = NA_real_))
+      rows[[length(rows) + 1L]] <- tibble::tibble(
+        line = samples,
+        chrom = ath_chrom(f[[1L]]),
+        pos = as.integer(f[[2L]]),
+        ref = normalise_allele(f[[4L]]),
+        alt = normalise_allele(f[[5L]]),
+        genotype = unname(calls["genotype", ]),
+        depth = unname(calls["depth", ])
+      )
+    }
+  }
+  if (n_multi > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_multi} multi-allelic VCF record{?s} dropped: ",
+      "ALT dosage is ambiguous with more than one ALT."
+    )))
+  }
+  if (n_bad > 0L) {
+    cli::cli_inform(gettext(
+      "{n_bad} VCF record{?s} dropped: no FORMAT/GT or FORMAT/AD."
+    ))
+  }
+  out <- if (length(rows)) {
+    tibble::as_tibble(do.call(rbind, rows))
+  } else {
+    tibble::tibble(
+      line = character(), chrom = character(), pos = integer(),
+      ref = character(), alt = character(), genotype = numeric(),
+      depth = numeric()
+    )
+  }
+  class(out) <- c("genotypes", class(out))
+  out
+}
+
+#' ALT dosage and depth from one FORMAT field (internal)
+#' @keywords internal
+#' @noRd
+genotype_call <- function(gt, ad) {
+  ref_depth <- alt_depth <- NA_real_
+  if (!is.na(ad) && nzchar(ad) && ad != ".") {
+    d <- suppressWarnings(as.numeric(strsplit(ad, ",", fixed = TRUE)[[1L]]))
+    if (length(d) >= 2L && all(is.finite(d[1:2]))) {
+      ref_depth <- d[[1L]]
+      alt_depth <- d[[2L]]
+    }
+  }
+  depth <- if (is.na(ref_depth)) NA_real_ else ref_depth + alt_depth
+  dosage <- if (is.na(gt) || gt %in% c(".", "./.", ".|.")) {
+    NA_real_
+  } else {
+    alleles <- strsplit(gt, "[/|]", perl = TRUE)[[1L]]
+    a <- suppressWarnings(as.integer(alleles))
+    a <- a[!is.na(a)]
+    if (length(a) != 2L || any(a > 1L)) NA_real_ else sum(a)
+  }
+  if (is.na(dosage) && !is.na(depth) && depth > 0) {
+    dosage <- round(2 * alt_depth / depth)
+  }
+  c(genotype = dosage, depth = depth)
+}
+
+#' The sample names of a VCF, scanned without a line cap (internal)
+#' @keywords internal
+#' @noRd
+vcf_sample_names <- function(path) {
+  con <- file(path, "r")
+  on.exit(close(con), add = TRUE)
+  repeat {
+    line <- readLines(con, n = 1L, warn = FALSE)
+    if (!length(line)) {
+      abort_msg("{path} has no '#CHROM' header line.")
+    }
+    if (startsWith(line, "##") || !nzchar(line)) next
+    if (!startsWith(line, "#CHROM")) {
+      abort_msg("{path}: the first non-'##' line does not start with '#CHROM'.")
+    }
+    nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
+    return(if (length(nms) > 9L) nms[-(1:9)] else character())
+  }
+}
+
+#' One variant row, as a typed input
+#'
+#' A design function needs one locus, and a subset of a variants table is a
+#' tibble that still claims to be many.  `as_variant_row()` selects exactly one
+#' row and names the contract: columns `chrom`, `pos`, `ref`, `alt`, class
+#' `variant`.  Zero or several matching rows is an error, not a silent
+#' first-row choice.
+#' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`).
+#' @param id,chrom,pos optional selectors; give at most what names one row.
+#' @return a one-row tibble of class `variant`.
+#' @examples
+#' as_variant_row(marker_example("SNP"), chrom = "Chr1")
+#' @family input
+#' @export
+as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
+  if (!is.data.frame(x)) abort_msg("`x` must be a variants table.")
+  need_cols(x, c("chrom", "pos", "ref", "alt"))
+  if (!is.null(id)) {
+    need_cols(x, "id", i = gettext("`id` selects on the `id` column."))
+    x <- x[!is.na(x$id) & as.character(x$id) %in% as.character(id), , drop = FALSE]
+  }
+  if (!is.null(chrom)) {
+    x <- x[as.character(x$chrom) == ath_chrom(chrom), , drop = FALSE]
+  }
+  if (!is.null(pos)) {
+    x <- x[as.integer(x$pos) %in% as.integer(pos), , drop = FALSE]
+  }
+  if (nrow(x) != 1L) {
+    abort_msg(gettextf(
+      "`as_variant_row()` needs exactly one variant; %d matched. Give `id`, `chrom` or `pos`.",
+      nrow(x)
+    ))
+  }
+  out <- tibble::as_tibble(x[, c("chrom", "pos", "ref", "alt"), drop = FALSE]) |>
+    dplyr::mutate(
+      chrom = ath_chrom(.data$chrom),
+      pos = as.integer(.data$pos),
+      ref = normalise_allele(.data$ref),
+      alt = normalise_allele(.data$alt)
+    )
+  if (anyNA(out$pos) || any(!nzchar(out$ref)) || any(!nzchar(out$alt))) {
+    abort_msg("The variant row needs a non-missing `pos` and non-empty alleles.")
+  }
+  class(out) <- c("variant", class(out))
+  out
+}
+
 #' Streaming VCF reader (`vroom`): CHROM/POS/REF/ALT, multi-allelic split
 #' @keywords internal
 #' @noRd
