@@ -608,6 +608,13 @@ marker_example <- function(type = NULL) {
   ex
 }
 
+abort_fasta_alphabet <- function(path) {
+  abort_msg(
+    "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently.",
+    class = "tidymarkers_fasta_alphabet"
+  )
+}
+
 read_fasta_strict <- function(path, read) {
   # Biostrings warns and silently drops a letter it does not know; every base
   # after it moves, so a shortened sequence is worse than no sequence
@@ -616,19 +623,13 @@ read_fasta_strict <- function(path, read) {
       read(),
       warning = function(w) {
         if (grepl("invalid one-letter sequence codes", conditionMessage(w))) {
-          abort_msg(
-            "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently.",
-            class = "tidymarkers_fasta_alphabet"
-          )
+          abort_fasta_alphabet(path)
         }
       }
     ),
     error = function(e) {
       if (grepl("invalid DNA letters", conditionMessage(e))) {
-        abort_msg(
-          "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently.",
-          class = "tidymarkers_fasta_alphabet"
-        )
+        abort_fasta_alphabet(path)
       }
       stop(e)
     }
