@@ -1198,7 +1198,7 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
       (`Authors@R` с ORCID, `Imports`/`Suggests` под реальные вызовы), `@param`
       для всех аргументов `\usage`, `.Rbuildignore`, фикстуры; `R CMD check
 --as-cran` — 0 ERROR, 0 WARNING, 1 NOTE (New submission).
-- [x] **`ZV`. Подготовка к CRAN, проход 1.** `.github/workflows/R-CMD-check.yaml` —
+- [x] **`ZV0`. Подготовка к CRAN, проход 1.** `.github/workflows/R-CMD-check.yaml` —
       пять ног (Ubuntu release/oldrel-1/devel, macOS release, Windows release),
       `error-on: warning`; `cran-comments.md`; `revdep/README.md`;
       `CITATION.cff` + «How to cite»; `inst/WORDLIST` (527) + шаг 4 гейта;
@@ -4146,3 +4146,145 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: нет.
     - следствие: граф не гниёт; цена — одна команда `--write` на каждый
       новый экспорт.
+
+## ZV. Интегративная программа 2026-11-27 (три дня)
+
+План: [`docs/plans/2026-11-27-integration-3day.md`](docs/plans/2026-11-27-integration-3day.md).
+Решения: [ADR 0008](docs/adr/0008-user-scenarios-as-contract.md) (J1–J7),
+[ADR 0009](docs/adr/0009-panel-orchestrator-contract.md) (панель),
+[ADR 0010](docs/adr/0010-index-strategy-at-scale.md) (масштаб),
+[ADR 0011](docs/adr/0011-release-artefact-and-mcp-contract.md) (продукт).
+Срез: `ZU` и [`docs/user-api-surface.md`](docs/user-api-surface.md) — 207
+экспортов, 48 S3-методов, 934 типизированных ребра, 29 изолятов. `ZV0` —
+закрытая подготовка к CRAN, проход 1 (`## Прочее`); номера `ZV1`–`ZV10`
+начинаются здесь.
+
+Правило закрытия: пункт закрывается тестом, гейтом и обновлённым
+`docs/user-api-surface.csv`, а не ссылкой на ADR. День без зелёных гейтов не
+переносится на следующий; срезается объём, а не гейт.
+
+- [ ] **ZV1. Сценарии J1–J7 как исполняемый контракт.**
+    - правка: `tests/testthat/test-scenario-j1.R` … `j7.R`;
+      `tests/testthat/fixtures/scenarios/`; `dev/check-user-api.R` — раздел
+      `scenarios`: каждый шаг после первого обязан быть типизированным ребром
+      CSV, каждая названная функция — экспортом или S3-методом; `dev/metrics.R`
+      — writer, validator и report JSONL, baseline на `main` до первой правки.
+      ADR 0008, ADR 0011 §5.
+    - проверка: `Rscript dev/test.R scenario` (J1–J7); `Rscript
+      dev/check-user-api.R` — exit 1 на шаге без ребра; `Rscript
+      dev/metrics.R --check <date>` — схема без содержимого; `Rscript
+      dev/check-docs.R` — таблица сценариев и ссылка из `docs/INDEX.md`.
+    - блокер: нет; `fixtures/panel/`, `fixtures/tair10/` и
+      `sat2_transcripts.fa` уже в дереве.
+    - следствие: 207 экспортов остаются списком без карты; J1/J2 нельзя
+      предъявить как продукт; p95 и стоимость не с чем сравнивать.
+
+- [ ] **ZV2. Батч-отчёт продолжается типизированно (ZU3).**
+    - правка: `R/marker_batch.R`, `R/marker_strategy.R` —
+      `as_marker_solved(report)` возвращает `marker_solved` с `attempts` и
+      `report`; батч-функции сохраняют текущий печатный `report`.
+    - проверка: `test-scenario-j2.R` — `report -> as_marker_solved ->
+      marker_design_checks()`/`marker_export()`; `dev/check-user-api.R` —
+      рёбра `report -> marker_solved` и `marker_solved ->
+      marker_design_checks`.
+    - блокер: `report` хранит list-column; id локуса — `label`, уже есть.
+    - следствие: J2 заканчивается CSV, а не проверяемым объектом; ZU3
+      остаётся.
+
+- [ ] **ZV3. Развести `primers` на два класса (ZU4).**
+    - правка: `R/marker_primers.R`, `R/marker_tubes.R`,
+      `R/marker_assemble*.R` — `primer_candidates` (tibble) и `primer_set`
+      (именованный character); `as_primer_set(x)`; `marker_primers()`
+      возвращает `primer_set`.
+    - проверка: `dev/check-user-api.R` — два класса в CSV; `test-dimer.R`,
+      `test-tubes.R` на `as_primer_set()`; J1/J6 зелёные.
+    - блокер: публичные имена сохраняются; ломаются внутренние вызовы.
+    - следствие: граф рисует ложное ребро `design_as_primers ->
+      dimer_thermo` без преобразования.
+
+- [ ] **ZV4. Мост справочников в дизайн (ZU5).**
+    - правка: `R/marker_decision.R`, `R/marker_technology.R`,
+      `R/marker_priors.R`, `R/marker_checks.R` — `as_scheme_ids()`,
+      `as_limits()` или один `marker_registry`; `marker_tech(marker_schemes())`,
+      `marker_design_checks(marker_criteria())`.
+    - проверка: `dev/check-user-api.R` — рёбра `tibble -> marker_tech` и
+      `criteria -> marker_design_checks`; `test-plan.R`.
+    - блокер: разные типы таблиц (`scheme`, `technology`, `prior`,
+      `criterion`); нужен один класс либо явные адаптеры.
+    - следствие: «выбери химию» остаётся ручной работой с колонками.
+
+- [ ] **ZV5. Генотипы и одна строка варианта (ZU6).**
+    - правка: `R/marker_io.R` — `read_variant_genotypes()` (GT/AD) и
+      `as_variant_row()`; `pick_target_snp()` перестаёт быть единственным
+      производителем `variant`.
+    - проверка: `dev/check-user-api.R` — рёбра `variants -> variant` и
+      `genotypes -> marker_informativeness`; `test-io.R` на VCF с GT.
+    - блокер: VCF/BCF; допустим `vroom`-путь с явно объявленной потерей
+      генотипов.
+    - следствие: `marker_informativeness()` и J3/J5 получают population-вход
+      только вручную собранной матрицей.
+
+- [ ] **ZV6. Панель — промежуточный объект и порядок швов (ZU1, ADR 0009).**
+    - правка: `R/marker_panel.R` — порядок GWAS -> LD -> haplotypes ->
+      chemistry -> artefact, единый `plan$ld` record и блок `panel` в
+      `artefact.json`; `R/marker_pareto.R`, `R/marker_artefact.R`,
+      `R/marker_solve.R` — `as_marker_solved(panel)` для Pareto, артефакта,
+      экспорта и replay.
+    - проверка: `test-scenario-j3.R`; `dev/check-user-api.R` — рёбра `panel
+      -> marker_pareto|marker_artefact|marker_export`; `test-panel.R` —
+      байтовая идентичность и порядок швов.
+    - блокер: нет.
+    - следствие: `panel$solved` вручную; J3 не собирается; ZU1 остаётся.
+
+- [ ] **ZV7. Петля исходов в приоры (ZU2, J5).**
+    - правка: `R/marker_priors.R` — `marker_priors(outcomes = NULL)` добавляет
+      `works`, `fails` и `source` по схеме; `R/marker_plan.R`,
+      `R/marker_solve.R` — приор меняет только порядок попыток, не вердикт;
+      `calibrated = FALSE` остаётся.
+    - проверка: `test-scenario-j5.R`; `dev/check-user-api.R` — ребро
+      `outcomes -> marker_priors`; `test-z8-outcomes.R` — порядок изменился,
+      вердикты на золотом наборе нет.
+    - блокер: нет калиброванной модели; первый шаг — счётчики, не вероятность.
+    - следствие: петля «измерили -> пересобрали» отсутствует.
+
+- [ ] **ZV8. Масштаб и пангеном (ADR 0010, J4).**
+    - правка: `R/marker_genome.R`, `R/marker_index.R` — `build =` у
+      `marker_genome()`, `read_genome_fasta()` и `genome_index()`, ключ шарда
+      `(genome_build, chrom)`, отказ от смеси сборок в `specificity_of()` и
+      `specificity_verdict()`; `dev/perf-gate.R` — бюджет 5 Б/п.н. и 2x.
+    - проверка: `test-scenario-j4.R` (три сборки, 6 шардов, отсутствующий
+      шард называет build и chrom); `test-genome-index.R`;
+      `dev/bench-index-memory.R`; `docs/index-perf.md`.
+    - блокер: 16 ГБ fixpur — не этот хост; синтетическая хромосома 250 Мб и
+      `docs/decisions/0001-16gb-fixpur.md`.
+    - следствие: запрос пангенома молча суммирует A/B/D; RSS не ограничен.
+
+- [ ] **ZV9. Релизный артефакт (ADR 0011, J6).**
+    - правка: `R/marker_artefact.R` — `schema = ...@2`, `contract.version`,
+      `scenario`, `targets` в `inputs`, `files.solved` с причиной исключения;
+      `R/marker_export_rocrate.R` и `R/marker_patent.R` читают `scenario`;
+      `marker_replay()` сравнивает вердикты.
+    - проверка: `test-scenario-j6.R` — два прогона с одним
+      `SOURCE_DATE_EPOCH` байт-в-байт, RO-Crate round trip, ST.26 validate,
+      replay; `NEWS.md`.
+    - блокер: `artefact@1` -> `@2` ломает идентификаторы; нужна заметка о
+      миграции.
+    - следствие: артефакт остаётся отчётом, а не продуктом; J6 не
+      предъявляется.
+
+- [ ] **ZV10. MCP parity и свежесть поверхности (ADR 0011, J7, ZU8).**
+    - правка: `dev/check-mcp-parity.R` — имена инструментов, required и
+      формалы, enum и границы, аннотации, классы в CSV, покрытие J1–J7; шаг в
+      `dev/check.R`; `dev/check-user-api.R` — единственный генератор DOT,
+      новый экспорт без строки CSV = exit 1; `docs/INDEX.md`; итоговый
+      `data/metrics/metrics-<date>.md` с p50/p95, стоимостью на маршрут и
+      дельтой к baseline.
+    - проверка: `Rscript dev/check-mcp-parity.R`; `Rscript
+      dev/check-user-api.R`; `Rscript dev/metrics.R --report <date>`;
+      `Rscript dev/check.R --quick`; `test-mcp.R`.
+    - блокер: нет; `schema.json` — публикуемый контракт, не рантайм-источник.
+    - следствие: schema drift уходит в релиз; агент видит инструмент, которого
+      нет; регрессия p95/стоимости остаётся незамеченной.
+
+Критический путь: ZV1 -> ZV2 -> ZV6 -> ZV9. `ZV3` и `ZV4` — первые кандидаты
+на срез при отставании; `ZV1`, `ZV6`, `ZV9`, `ZV10` не срезаются.

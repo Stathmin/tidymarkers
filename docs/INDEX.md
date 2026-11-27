@@ -41,6 +41,9 @@ Other vignettes:
 - [dev/README](../dev/README.md) — the internal checks, renderers and benchmarks.
 - [dev/dag-rebuild-plan](../dev/dag-rebuild-plan.md) — the decision-DAG rebuild:
   plan, invariants (C1–C14), agent scopes.
+- [docs/plans/2026-11-27-integration-3day](plans/2026-11-27-integration-3day.md)
+  — the three-day integration programme: J1–J7, parallel streams, gates and
+  failure criteria.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
 - [docs/user-api-surface](user-api-surface.md) — the full export inventory,
@@ -66,6 +69,14 @@ Other vignettes:
   orchestrator with falsifiable seams.
 - [ADR 0007](adr/0007-module-seams-and-mcp-contract.md) — module seams
   (contracts, registries, splits) and the MCP runtime contract.
+- [ADR 0008](adr/0008-user-scenarios-as-contract.md) — user scenarios J1–J7
+  are the executable contract.
+- [ADR 0009](adr/0009-panel-orchestrator-contract.md) — the panel orchestrator:
+  GWAS, LD, haplotypes, chemistry, artefact.
+- [ADR 0010](adr/0010-index-strategy-at-scale.md) — the index strategy at
+  scale: shards, builds and a memory budget.
+- [ADR 0011](adr/0011-release-artefact-and-mcp-contract.md) — the release
+  artefact and the MCP contract are the product.
 
 ## Operator decisions
 
