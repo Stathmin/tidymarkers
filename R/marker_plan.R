@@ -477,7 +477,7 @@ marker_costs <- function(...) {
       paste(unknown, collapse = ", "), paste(names(base), collapse = ", ")
     ))
   }
-  if (!is.numeric(ov) || any(!is.finite(ov) | ov < 0)) {
+  if (length(ov) && (!is.numeric(ov) || any(!is.finite(ov) | ov < 0))) {
     abort_msg("Every cost must be one finite, non-negative number.")
   }
   base[names(ov)] <- as.numeric(ov)

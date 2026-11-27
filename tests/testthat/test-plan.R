@@ -158,6 +158,7 @@ test_that("marker_tech orders schemes cheapest-first and honours exclude", {
 })
 
 test_that("marker_costs overrides merge over the defaults", {
+  expect_identical(marker_costs(), tidymarkers:::KASP_TECH_COSTS)
   c1 <- marker_costs(hrm = 1.2)
   expect_equal(unname(c1[["hrm"]]), 1.2)
   expect_equal(unname(c1[["snp"]]), 1)
