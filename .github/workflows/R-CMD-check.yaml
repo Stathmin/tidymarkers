@@ -103,7 +103,7 @@ jobs:
             - uses: r-lib/actions/setup-r-dependencies@v2
               timeout-minutes: 75
               with:
-                  extra-packages: any::rcmdcheck, any::pkgload, any::styler, any::lintr, any::roxygen2
+                  extra-packages: any::rcmdcheck, any::pkgload, any::styler, any::lintr, any::roxygen2, any::bench, any::lobstr
                   needs: check
 
             # docs/decisions/0002: the same gate developers run locally.  It
@@ -166,6 +166,17 @@ jobs:
                   UNAFOLDDAT="$(cygpath -w "$GITHUB_WORKSPACE/.tools/share/oligoarrayaux")" \
                     "$GITHUB_WORKSPACE/.tools/bin/hybrid-min.exe" -n DNA -t 37 -T 37 \
                     -N 0.05 -E -q ACGTACGTACGTACGTACGT ACGTACGTACGTACGTACGT
+
+            # ZV12: a timing baseline belongs to the runner class, not to the
+            # ephemeral hostname GitHub hands out.  The pinned id lets a
+            # baseline captured on ubuntu-latest be compared on the next run;
+            # without one the gate prints `not_run (baseline host ...)` and
+            # exits 0, so a cold first run never pretends a regression.
+            - name: Function benchmark gate (2x)
+              if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+              env:
+                  TIDYMARKERS_BENCH_HOST: github-ubuntu-latest
+              run: Rscript dev/bench.R --gate
 
             # Warm the Atlas/TAIR10 demo cache before R CMD check so the
             # arms/primer3/plan tests run instead of skipping on a cold cache.

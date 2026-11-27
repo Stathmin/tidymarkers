@@ -45,6 +45,9 @@
 - `data/metrics/` — артефакты программы, а не данные пакета: каталог исключён
   из сборки (`.Rbuildignore`), как и `.opencode/` и `.tmp-sdd/`. Ссылка на
   внутренний `index_manifest()` больше не обещает Rd-анкор.
+- CI получил шаг `dev/bench.R --gate` на linux release; `TIDYMARKERS_BENCH_HOST`
+  заменяет эфемерный nodename стабильным ключом раннера, поэтому чужой
+  baseline — это `not_run`, а не ложная регрессия.
 
 ### ZV8: масштаб и пангеном (2026-11-27)
 

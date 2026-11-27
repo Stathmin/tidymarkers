@@ -24,8 +24,9 @@ update <- "--update" %in% commandArgs(trailingOnly = TRUE)
 gate <- "--gate" %in% commandArgs(trailingOnly = TRUE)
 if (update && gate) stop("--update rewrites the baseline; --gate compares against it", call. = FALSE)
 # a timing baseline belongs to one host: the same call differs by an order of
-# magnitude across CPUs, so a foreign baseline is `not_run`, not a regression
-this_host <- Sys.info()[["nodename"]]
+# magnitude across CPUs, so a foreign baseline is `not_run`, not a regression.
+# CI runners get a fresh nodename every run, so the workflow pins a stable id.
+this_host <- Sys.getenv("TIDYMARKERS_BENCH_HOST", Sys.info()[["nodename"]])
 this_r <- paste(R.version$major, R.version$minor, sep = ".")
 
 for (pkg in c("bench", "lobstr")) {
