@@ -75,3 +75,21 @@ test_that("the report names the untimed log lines instead of showing zero repair
     fixed = TRUE
   )
 })
+
+test_that("a malformed or unknown journal row is named, not counted or fatal", {
+  w <- metrics_writer()
+  log <- tempfile("repair-log-", fileext = ".md")
+  writeLines(c(
+    "| time (UTC) | blocker | class | action | result | commit | attempt | status | next task |",
+    "| ---------- | ------- | ----- | ------ | ------ | ------ | ------- | ------ | --------- |",
+    "| 2026-01-01 00:00 | b | logic | a | fixed: x | abc | 1 | fixed | next |",
+    "| 2026-01-01 00:01 | a short row |",
+    "| 2026-01-01 00:02 | b | logic | a | fixed: x | abc | 1 | fixedd | next |"
+  ), log)
+
+  st <- w$repair_stats(log)
+  expect_equal(st$rows, 3L)
+  expect_equal(st$fixed, 1L)
+  expect_equal(st$malformed, 1L)
+  expect_equal(st$unknown, 1L)
+})

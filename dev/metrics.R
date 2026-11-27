@@ -274,6 +274,8 @@ rows_as_df <- function(rows) {
   )
 }
 
+REPAIR_STATUSES <- c("open", "fixed", "bypassed", "quarantined", "watchdog")
+
 repair_stats <- function(log_path = file.path(root_dir(), "docs", "plans", "self-repair-log.md")) {
   if (!file.exists(log_path)) {
     return(list(rows = 0L, resolved = 0L, quarantined = 0L))
@@ -281,13 +283,19 @@ repair_stats <- function(log_path = file.path(root_dir(), "docs", "plans", "self
   lines <- readLines(log_path, warn = FALSE)
   rows <- grep("^\\| [0-9]", lines, value = TRUE)
   cells <- strsplit(rows, "|", fixed = TRUE)
-  status <- vapply(cells, function(x) trimws(x[[9]]), character(1))
+  # the header has nine cells and a leading empty one; a short row would put
+  # `next task` where the status belongs, so it is named and left out, not
+  # silently counted as an unknown status or allowed to crash the report.
+  whole <- lengths(cells) == 10L
+  status <- vapply(cells[whole], function(x) trimws(x[[9]]), character(1))
   list(
     rows = length(rows),
     fixed = sum(status == "fixed"),
     bypassed = sum(status == "bypassed"),
     quarantined = sum(status == "quarantined"),
-    open = sum(status == "open")
+    open = sum(status == "open"),
+    malformed = sum(!whole),
+    unknown = sum(!status %in% REPAIR_STATUSES)
   )
 }
 
@@ -460,6 +468,12 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL,
     ),
     ""
   )
+  if ((rep_stats$malformed %||% 0L) > 0L || (rep_stats$unknown %||% 0L) > 0L) {
+    out <- c(out, sprintf(
+      "- self-repair log: %d malformed row(s) left out, %d row(s) with an unknown status",
+      rep_stats$malformed %||% 0L, rep_stats$unknown %||% 0L
+    ), "")
+  }
   if (rep_stats$rows > 0L && !any(df$stage == "repair")) {
     out <- c(out, sprintf(
       paste0(
