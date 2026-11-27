@@ -93,3 +93,29 @@ test_that("a malformed or unknown journal row is named, not counted or fatal", {
   expect_equal(st$malformed, 1L)
   expect_equal(st$unknown, 1L)
 })
+
+test_that("a baseline stage without a p95 does not stop the report", {
+  w <- metrics_writer()
+  repair_log <- testthat::test_path("..", "..", "docs", "plans", "self-repair-log.md")
+  dir <- tempfile("metrics-")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+
+  rows <- lapply(1:3, function(i) {
+    w$metrics_row(
+      run_id = "run", stage = "ingest", object_id = paste0("i", i),
+      duration_ms = i * 10, status = "ok", language = "en"
+    )
+  })
+  w$write_rows(rows, file.path(dir, "2026-01-01-run.jsonl"))
+  writeLines(
+    '{"stages":[{"stage":"ingest","n":1,"p50":1,"p95":null}]}',
+    file.path(dir, "baseline.json")
+  )
+
+  md <- w$report_md(
+    "2026-01-01", dir,
+    baseline = file.path(dir, "baseline.json"), repair_log = repair_log
+  )$md
+  expect_match(md, "| ingest | 3 |", fixed = TRUE)
+})
