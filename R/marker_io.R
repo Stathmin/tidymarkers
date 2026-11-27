@@ -540,11 +540,13 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 #' @export
 fasta_index <- function(path) {
   rlang::check_installed("Rsamtools", reason = gettext("for indexed FASTA random access"))
-  if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
+  path <- reader_path(path, "FASTA")
   plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
   if (!fs::file_exists(plain)) {
     cli::cli_alert_info(gettext("Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."))
-    Biostrings::writeXStringSet(Biostrings::readDNAStringSet(path), plain)
+    # A dropped base would be baked into the index, not just one read (ADR 0022)
+    plain_seqs <- read_fasta_strict(path, function() Biostrings::readDNAStringSet(path))
+    Biostrings::writeXStringSet(plain_seqs, plain)
   }
   fai <- paste0(plain, ".fai")
   if (!fs::file_exists(fai)) Rsamtools::indexFa(plain)

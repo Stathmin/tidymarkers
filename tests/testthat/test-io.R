@@ -334,6 +334,29 @@ test_that("read_transcripts refuses a base outside the DNA alphabet", {
   expect_equal(as.character(read_transcripts(iupac)[[1L]]), "ACGTRYSWKM")
 })
 
+test_that("fasta_index names a path that is not one existing file", {
+  skip_if_not_installed("Rsamtools")
+  expect_error(
+    fasta_index(NULL), "must be one FASTA file path",
+    class = "rlang_error"
+  )
+  dir <- withr::local_tempdir()
+  expect_error(fasta_index(dir), "names a directory", class = "rlang_error")
+})
+
+test_that("fasta_index refuses an invalid base before writing the plain copy", {
+  skip_if_not_installed("Rsamtools")
+  gz <- withr::local_tempfile(fileext = ".fa.gz")
+  con <- gzfile(gz, "wt")
+  writeLines(c(">Chr1", "ACGTXCGT"), con)
+  close(con)
+  expect_error(
+    fasta_index(gz), "outside the DNA/IUPAC alphabet",
+    class = "rlang_error"
+  )
+  expect_false(file.exists(sub("\\.gz$", "", gz)))
+})
+
 test_that("a FASTA with one name twice is refused on both backends", {
   fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">Chr1", "ACGTACGTAC", ">Chr1", "TTTTGGGGCC"), fa)
