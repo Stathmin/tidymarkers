@@ -66,6 +66,26 @@ test_that("a reader names a path that is not one existing file", {
   }
 })
 
+test_that("a VCF header past 1000 lines is still found", {
+  skip_if_not_installed("vroom")
+  # GATK-style headers carry more than a thousand `##` lines; a 1000-line cap
+  # turned such a legal file into "no '#CHROM' header line" for the depth
+  # reader while `read_variants_vcf()` read it fine (ADR 0021)
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    sprintf("##INFO=<ID=L%04d,Number=1,Type=String,Description=\"line\">", 1:1200),
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
+  ), vcf)
+  d <- suppressMessages(read_variant_depth(vcf))
+  expect_equal(nrow(d), 1L)
+  expect_equal(d$chrom, "Chr1")
+  g <- suppressMessages(read_variant_genotypes(vcf))
+  expect_equal(nrow(g), 1L)
+  expect_equal(g$genotype, 1)
+})
+
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   skip_if_not_installed("vroom")
   vcf <- withr::local_tempfile(fileext = ".vcf")

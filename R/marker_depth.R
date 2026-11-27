@@ -61,9 +61,7 @@ check_depth_pos <- function(pos, chrom) {
 read_variant_depth <- function(path, sample = 1L) {
   rlang::check_installed("vroom", reason = gettext("to read VCF files"))
   path <- reader_path(path, "VCF")
-  hdr <- readr::read_lines(path, n_max = 1000L)
-  hdr <- hdr[startsWith(hdr, "#CHROM")][1L]
-  if (is.na(hdr)) abort_msg("{path} has no '#CHROM' header line.")
+  hdr <- vcf_header_line(path)
   nms <- strsplit(sub("^#", "", hdr), "\t", fixed = TRUE)[[1L]]
 
   fmt_i <- match("FORMAT", nms)

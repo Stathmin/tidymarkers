@@ -327,10 +327,14 @@ genotype_call <- function(gt, ad) {
   c(genotype = dosage, depth = depth)
 }
 
-#' The sample names of a VCF, scanned without a line cap (internal)
+#' The `#CHROM` header line of a VCF, found by scanning (internal)
+#'
+#' A real header is not bounded by a line count: GATK-style VCFs carry more
+#' than a thousand `##INFO`/`##FORMAT` lines.  A cap silently turns a legal
+#' file into "no '#CHROM' header line" (ADR 0021).
 #' @keywords internal
 #' @noRd
-vcf_sample_names <- function(path) {
+vcf_header_line <- function(path) {
   con <- file(path, "r")
   on.exit(close(con), add = TRUE)
   repeat {
@@ -342,9 +346,16 @@ vcf_sample_names <- function(path) {
     if (!startsWith(line, "#CHROM")) {
       abort_msg("{path}: the first non-'##' line does not start with '#CHROM'.")
     }
-    nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
-    return(if (length(nms) > 9L) nms[-(1:9)] else character())
+    return(line)
   }
+}
+
+#' The sample names of a VCF, scanned without a line cap (internal)
+#' @keywords internal
+#' @noRd
+vcf_sample_names <- function(path) {
+  nms <- strsplit(sub("^#", "", vcf_header_line(path)), "\t", fixed = TRUE)[[1L]]
+  if (length(nms) > 9L) nms[-(1:9)] else character()
 }
 
 #' One variant row, as a typed input
