@@ -4139,7 +4139,7 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: `marker_informativeness()` и `marker_pareto()` получают
       population-вход без ручной сборки матрицы.
 
-- [ ] **ZU7. Дубликаты и дрейф описания.**
+- [x] **ZU7. Дубликаты и дрейф описания.**
     - правка: `R/marker_target.R:668` (`design_marker`),
       `R/marker_plots_output.R:92` (`write_kasp_results`) — оставить алиасы,
       но убрать из пользовательских таблиц/подсказок; свести
@@ -4151,14 +4151,20 @@ dir)` пишет crate-профиль поверх существующих че
       of its scheme»; `man/marker_design_checks.Rd` и
       `docs/user-api-surface.md` согласованы; `test-kasp-checks.R`,
       `test-scenario-j2.R`, `test-capabilities.R` зелёные (26 с).
-    - осталось: свести `design_kasp_markers()`/`design_markers()`/
-      `design_marker_batch()` к одному входу с `keep`.
-    - проверка: `Rscript dev/check-user-api.R` — в CSV один пользовательский
-      батч-вход; `Rscript dev/check-docs.R` — roxygen/README не обещают
-      KASP-only.
+    - сделано (2026-11-27): `design_markers()` — это
+      `design_marker_batch(keep = "summary")`, отдельного цикла у неё нет;
+      `keep = "result"` возвращает объекты и диагностику. KASP-вердикт
+      `design_kasp_markers()` — отдельный типизированный вход: его
+      схема (11 колонок, `pass`/`warn`/`error`) и есть контракт J2, а не
+      копия общего батча.
+    - проверка: `Rscript dev/test.R batch` — сводка идентична
+      `design_marker_batch(keep = "summary")`; `Rscript dev/check-user-api.R` —
+      один общий батч-вход и один KASP-вердикт-вход; `dev/check-docs.R` —
+      roxygen/README не обещают KASP-only.
     - блокер: депрекация `design_marker()` уже объявлена; удалять нельзя до
       мажорной версии.
-    - следствие: новый пользователь видит один вход на задачу, а не три.
+    - следствие: у общего батча один вход с `keep`; сводка и объекты не
+      расходятся, потому что это один прогон.
 
 - [x] **ZU8. Держать граф и CSV в актуальном состоянии.**
     - закрыто: `ZV10` — `dev/check-user-api.R` как единственный генератор и

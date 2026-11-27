@@ -263,6 +263,24 @@ test_that("bp_lapply preserves order, groups chunks and can collect errors", {
   expect_identical(collected[[7L]], 7L)
 })
 
+test_that("design_markers is the summary of the same batch run", {
+  skip_if_no_oligoarrayaux()
+  fx <- snp_fixture(600L, seed = 2L, pos = 300L)
+  loci <- batch_loci()[1L, ]
+  summary <- design_marker_batch(
+    fx$genome, loci,
+    design = "snp", flank = 100L, keep = "summary"
+  )
+  expect_identical(
+    names(summary),
+    c("chrom", "pos", "ref", "alt", "scheme", "ok")
+  )
+  expect_identical(
+    design_markers(fx$genome, loci, scheme = "snp", flank = 100L),
+    summary
+  )
+})
+
 test_that("as_marker_solved refuses an object it cannot continue", {
   expect_error(as_marker_solved(1), "must be a marker_batch")
   solved <- structure(list(report = tibble::tibble()), class = "marker_solved")

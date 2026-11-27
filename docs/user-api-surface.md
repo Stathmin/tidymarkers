@@ -104,8 +104,8 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `design_lamp_marker()` | да | genome, snp | flank, arm_lengths, outer_lengths, outer_tm, inner_tm, gc_range, min_product, max_product … +2 | `genome + variant` → `marker` | Design a LAMP marker at a variant |
 | `design_lax_marker()` | да | genome, snp | haplotypes | `genome + variant + haplotypes` → `marker` | Design a lax KASP: one ALT primer per haplotype |
 | `design_marker()` | да | genome, snp | — | `genome + variant` → `auto_result` | Устаревший алиас design_auto_marker |
-| `design_marker_batch()` | да | genome, loci | design, BPPARAM | `genome + variants` → `report` | Run a per-locus design (or any single-locus call) over many loci, in parallel |
-| `design_markers()` | да | genome, loci | scheme, context | `genome + variants` → `report` | Design markers for a table of loci with one chemistry (or the rescue ladder) |
+| `design_marker_batch()` | да | genome, loci | design, BPPARAM, keep | `genome + variants` → `report` | Run a per-locus design (or any single-locus call) over many loci, in parallel |
+| `design_markers()` | да | genome, loci | scheme, context | `genome + variants` → `report` | Design markers for a table of loci with one chemistry (or the rescue ladder); the summary of the same batch |
 | `design_rpa_marker()` | да | genome, snp | flank, primer_len, min_product, max_product, design_probe, probe_len, gc_range, tm_range … +2 | `genome + variant` → `marker` | Design an RPA (recombinase polymerase amplification) marker at a variant |
 | `design_sanger_marker()` | да | genome, snp | flank, min_dist, read_length, min_product, max_product, lengths, tm_range, gc_range … +3 | `genome + variant` → `marker` | Design a Sanger sequencing marker at a variant |
 | `design_snapshot_marker()` | да | genome, snp | flank, amp_lengths, min_amplicon, max_amplicon, amp_tm, amp_gc, ext_lengths, ext_tm … +3 | `genome + variant` → `marker` | Design a SNaPshot / single-base-extension marker at a variant |
@@ -473,7 +473,7 @@ S3-методы не входят в граф как отдельные узлы
 |---|---|---|
 | `design_marker()` → `design_auto_marker()` | `R/marker_target.R:668`, `.Deprecated` | алиас, оставлен для совместимости |
 | `write_kasp_results()` → `write_marker_results()` | `R/marker_plots_output.R:92`, `.Deprecated` | алиас |
-| `design_kasp_markers()` / `design_markers()` / `design_marker_batch()` | `R/marker_batch.R`, `R/marker_strategy.R` | три батч-входа с разной степенью сохранения объектов |
+| `design_kasp_markers()` / `design_markers()` / `design_marker_batch()` | `R/marker_batch.R`, `R/marker_strategy.R` | `design_kasp_markers()` — KASP-вердикты; `design_marker_batch(keep =)` — объекты или сводка; `design_markers()` — тот же батч с `keep = "summary"` |
 | `plot_decision_tree()` vs `marker_decision_graph()` + `decision_render()` | `R/marker_decision.R:407` | обёртка; первый рисует файл, второй даёт граф |
 | `marker_primer_table()` / `marker_primers()` / `export_primers()` | `R/marker_plots_output.R`, `R/marker_tubes.R` | таблица / имена / файлы — три представления одних праймеров |
 | `marker_export()` vs `write_marker_results()` | `R/marker_export.R`, `R/marker_plots_output.R` | bundle `solved` против CSV одного ассея |

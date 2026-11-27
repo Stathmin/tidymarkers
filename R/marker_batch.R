@@ -34,9 +34,15 @@
 #' @param BPPARAM optional `BiocParallel` backend; `NULL` (the default) runs
 #'   serially in this session.
 #' @param ... passed to the per-locus call (e.g. `flank`).
-#' @return a tibble, one row per input locus: the `loci` columns, `status`,
-#'   `scheme`, `message`, `elapsed` (s) and `result` (list-column of the
-#'   returned object, `NULL` when the locus failed).
+#' @param keep `"result"` (the default) keeps the designed object and the
+#'   diagnostics per locus; `"summary"` returns the thin
+#'   `chrom`/`pos`/`ref`/`alt`/`scheme`/`ok` table that
+#'   [design_markers()] returns.  Both are the same run, so the summary cannot
+#'   drift from the batch.
+#' @return with `keep = "result"`, a tibble, one row per input locus: the
+#'   `loci` columns, `status`, `scheme`, `message`, `elapsed` (s) and `result`
+#'   (list-column of the returned object, `NULL` when the locus failed).  With
+#'   `keep = "summary"`, `chrom`, `pos`, `ref`, `alt`, `scheme` and `ok`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' loci <- utils::read.csv(
@@ -49,7 +55,9 @@
 #' @seealso [design_kasp_markers()], [design_markers()], [design_auto_marker()]
 #' @family design
 #' @export
-design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL, ...) {
+design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL,
+                                ..., keep = c("result", "summary")) {
+  keep <- match.arg(keep)
   if (is.null(design) || is.character(design)) {
     need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
   }
@@ -130,6 +138,17 @@ design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL, ...
   out$message <- purrr::map_chr(rows, "message")
   out$elapsed <- vapply(rows, function(r) r$elapsed, numeric(1))
   out$result <- lapply(rows, function(r) r$result[[1L]])
+  if (identical(keep, "summary")) {
+    # `design_markers()` is this table minus the objects and the diagnostics
+    return(tibble::tibble(
+      chrom = as.character(out$chrom),
+      pos = as.integer(out$pos),
+      ref = as.character(out$ref),
+      alt = as.character(out$alt),
+      scheme = out$scheme,
+      ok = vapply(out$result, is_target_designable, logical(1))
+    ))
+  }
   out
 }
 

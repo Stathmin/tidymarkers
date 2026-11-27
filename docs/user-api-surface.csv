@@ -46,7 +46,7 @@ design_kasp_markers,export,design,TRUE,genome;loci,variants;BPPARAM;...,genome;v
 design_lamp_marker,export,design,TRUE,genome;snp,flank;arm_lengths;outer_lengths;outer_tm;inner_tm;gc_range;min_product;max_product;loop_primers;engines,genome;variant,marker_lamp,marker,FALSE,FALSE,LAMP
 design_lax_marker,export,design,TRUE,genome;snp,haplotypes;...,genome;variant;haplotypes,marker_lax,marker,FALSE,FALSE,lax KASP по гаплотипам
 design_marker,export,design,TRUE,genome;snp,...,genome;variant,auto_result,auto_result,FALSE,TRUE,алиас design_auto_marker
-design_marker_batch,export,design,TRUE,genome;loci,design;BPPARAM;...,genome;variants,report,report,FALSE,TRUE,"батч, сохраняет объекты"
+design_marker_batch,export,design,TRUE,genome;loci,design;BPPARAM;keep;...,genome;variants,report,report,FALSE,TRUE,"батч, сохраняет объекты; keep=""summary"" — та же таблица без них"
 design_markers,export,design,TRUE,genome;loci,scheme;context;...,genome;variants,report,report,FALSE,TRUE,батч одной химией/лестницей
 design_rpa_marker,export,design,TRUE,genome;snp,flank;primer_len;min_product;max_product;design_probe;probe_len;gc_range;tm_range;BPPARAM;engines,genome;variant,marker_rpa,marker,FALSE,FALSE,RPA
 design_sanger_marker,export,design,TRUE,genome;snp,flank;min_dist;read_length;min_product;max_product;lengths;tm_range;gc_range;check_unique;population;engines;...,genome;variant,marker_sanger,marker,FALSE,FALSE,Sanger
