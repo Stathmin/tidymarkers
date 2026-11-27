@@ -279,3 +279,37 @@ jobs:
                 config:
                     - { os: ubuntu-latest, r: "devel", engines: unix, cpus: 2 }
         steps: *steps
+
+    # ZV12/T11: the gate compares against a baseline keyed by runner class,
+    # so the `github-ubuntu-latest` block has to be measured on that runner.
+    # A dispatch run measures it and uploads the file; a human commits the
+    # artifact (the workflow cannot push to a protected branch).  `--update`
+    # keeps other hosts' rows, so a local baseline survives.
+    bench-baseline:
+        if: github.event_name == 'workflow_dispatch'
+        name: Benchmark baseline (ubuntu-latest)
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+            TIDYMARKERS_BENCH_HOST: github-ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: r-lib/actions/setup-r@v2
+              with:
+                  r-version: release
+                  use-public-rspm: true
+
+            - uses: r-lib/actions/setup-r-dependencies@v2
+              with:
+                  extra-packages: any::bench, any::lobstr, any::pkgload
+
+            - name: Measure the runner class
+              run: Rscript dev/bench.R --update
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: bench-baseline-github-ubuntu-latest
+                  path: dev/bench-baseline.csv
+                  if-no-files-found: error

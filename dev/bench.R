@@ -96,16 +96,29 @@ cat("\n")
 if (update) {
   tab$host <- this_host
   tab$r_version <- this_r
+  # one file, one block per runner class: capturing the CI baseline must not
+  # overwrite the local host's rows (ADR 0014)
+  if (file.exists(baseline)) {
+    old <- readr::read_csv(baseline, show_col_types = FALSE)
+    if ("host" %in% names(old)) {
+      tab <- rbind(old[old$host != this_host, , drop = FALSE], tab)
+    }
+  }
   readr::write_csv(tab, baseline)
 }
 
 if (!update && file.exists(baseline)) {
-  base <- readr::read_csv(baseline, show_col_types = FALSE)
-  foreign <- gate && (!"host" %in% names(base) || !identical(unique(base$host), this_host))
+  all_base <- readr::read_csv(baseline, show_col_types = FALSE)
+  base <- if ("host" %in% names(all_base)) {
+    all_base[all_base$host == this_host, , drop = FALSE]
+  } else {
+    all_base[0, , drop = FALSE]
+  }
+  foreign <- gate && !nrow(base)
   if (foreign) {
     cat(sprintf(
       "bench-gate: not_run (baseline host %s, this host %s; rerun --update here)\n",
-      if ("host" %in% names(base)) paste(unique(base$host), collapse = ",") else "unknown",
+      if ("host" %in% names(all_base)) paste(unique(all_base$host), collapse = ",") else "unknown",
       this_host
     ))
     base <- base[0, ]
