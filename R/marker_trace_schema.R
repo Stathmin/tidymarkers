@@ -178,13 +178,7 @@ trace_from_solved <- function(solved) {
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
     limitations = I(as.character(artefact_limitations(solved))),
-    counts = list(
-      targets = nrow(solved$report),
-      solved = sum(solved$report$ok),
-      attempts = nrow(decisions),
-      rejected = sum(decisions$outcome == "rejected"),
-      signals = if (is.null(signals)) 0L else nrow(signals)
-    ),
+    counts = artefact_counts(solved, decisions, signals),
     files = NULL
   )
   out$id <- artefact_id(out)

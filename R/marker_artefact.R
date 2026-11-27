@@ -669,13 +669,7 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
     # list in the JSON (`I()` keeps a one-element vector an array), empty when
     # no chosen design uses a deliberate mismatch.
     limitations = I(as.character(artefact_limitations(solved))),
-    counts = list(
-      targets = nrow(solved$report),
-      solved = sum(solved$report$ok),
-      attempts = nrow(decisions),
-      rejected = sum(decisions$outcome == "rejected"),
-      signals = if (is.null(signals)) 0L else nrow(signals)
-    ),
+    counts = artefact_counts(solved, decisions, signals),
     files = list(
       decisions = "decisions.csv",
       checks = if (is.null(checks)) NA_character_ else "checks.csv",
@@ -851,6 +845,18 @@ artefact_dir <- function(artefact) {
 #' Read an artefact's manifest back
 #' @keywords internal
 #' @noRd
+# The trace and the manifest publish the same counts; one definition keeps
+# them from drifting apart.
+artefact_counts <- function(solved, decisions, signals) {
+  list(
+    targets = nrow(solved$report),
+    solved = sum(solved$report$ok),
+    attempts = nrow(decisions),
+    rejected = sum(decisions$outcome == "rejected"),
+    signals = if (is.null(signals)) 0L else nrow(signals)
+  )
+}
+
 artefact_manifest <- function(dir) {
   path <- fs::path(dir, "artefact.json")
   if (!fs::file_exists(path)) {
