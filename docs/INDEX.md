@@ -43,6 +43,8 @@ Other vignettes:
   plan, invariants (C1–C14), agent scopes.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
+- [docs/user-api-surface](user-api-surface.md) — the full export inventory,
+  data classes, composition rules, the connectivity graph and the ZU defects.
 - [docs/index-perf](index-perf.md) — one locus, memory vs per-chromosome bowtie:
   build and query times, and what the index object does not hold.
 
