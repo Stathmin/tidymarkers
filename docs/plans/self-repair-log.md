@@ -32,6 +32,9 @@ Status values: `open`, `fixed`, `bypassed`, `quarantined`, `watchdog`.
 Class values: `transient`, `environment`, `data`, `access`, `logic`, `spec`,
 `external`.
 
-Daily metrics derived from this log and from `stage = "repair"` JSONL:
-blockers/hour, MTTR, auto-resolved share, tasks per blocker. They are written to
-`data/metrics/metrics-<date>.md`.
+Daily metrics: counts and classes come from this log, timings (MTTR) only from
+`stage = "repair"` JSONL — a row written here without an emitted JSONL row is
+counted but has no duration. They are written to
+`data/metrics/metrics-<date>.md` by `Rscript dev/metrics.R --report <date>`.
+The 2026-11-27 rows are markdown-only, so that day's report shows `repair: 0`
+rows; the fix is tracked as `ZV14` in `ROADMAP.md`.
