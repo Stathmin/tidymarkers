@@ -323,7 +323,7 @@ panel_duplicate_guard <- function(targets) {
   if (any(dup)) {
     i <- which(dup)[[1L]]
     abort_msg(
-      "Duplicate target {targets$label[[i]]}: every target must appear once.",
+      gettextf("Duplicate target %s: every target must appear once.", targets$label[[i]]),
       class = "tidymarkers_duplicate_target"
     )
   }
@@ -346,7 +346,10 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
   if (any(dup)) {
     i <- which(dup)[[1L]]
     abort_msg(
-      "Haplotype {h$haplotype[[i]]} has two alleles at {h$chrom[[i]]}:{h$pos[[i]]}; the input is not phased.",
+      gettextf(
+        "Haplotype %s has two alleles at %s:%s; the input is not phased.",
+        h$haplotype[[i]], h$chrom[[i]], h$pos[[i]]
+      ),
       class = "tidymarkers_haplotype_error"
     )
   }
@@ -358,7 +361,10 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
     first <- freq[freq$chrom == chrom, , drop = FALSE][1L, ]
     pos <- h$pos[h$haplotype == first$haplotype & h$chrom == chrom][[1L]]
     abort_msg(
-      "Haplotype frequencies sum to {round(total[[chrom]], 3)} on {chrom} (> 1); first offender {first$haplotype} at {chrom}:{pos}.",
+      gettextf(
+        "Haplotype frequencies sum to %s on %s (> 1); first offender %s at %s:%s.",
+        round(total[[chrom]], 3), chrom, first$haplotype, chrom, pos
+      ),
       class = "tidymarkers_haplotype_error"
     )
   }
@@ -374,7 +380,11 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
     if (any(bad)) {
       j <- which(bad)[[1L]]
       abort_msg(
-        "Haplotype {at$haplotype[[j]]} has {at$ref[[j]]}>{at$alt[[j]]} at {at$chrom[[j]]}:{at$pos[[j]]}, but the target is {t$ref}>{t$alt}.",
+        gettextf(
+          "Haplotype %s has %s>%s at %s:%s, but the target is %s>%s.",
+          at$haplotype[[j]], at$ref[[j]], at$alt[[j]],
+          at$chrom[[j]], at$pos[[j]], t$ref, t$alt
+        ),
         class = "tidymarkers_haplotype_error"
       )
     }
@@ -395,7 +405,10 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
       if (any(bad)) {
         i <- which(elsewhere)[which(bad)[[1L]]]
         abort_msg(
-          "Haplotype {h$haplotype[[i]]} carries {h$ref[[i]]}>{h$alt[[i]]} at {h$chrom[[i]]}:{h$pos[[i]]}, which is not in the variant table.",
+          gettextf(
+            "Haplotype %s carries %s>%s at %s:%s, which is not in the variant table.",
+            h$haplotype[[i]], h$ref[[i]], h$alt[[i]], h$chrom[[i]], h$pos[[i]]
+          ),
           class = "tidymarkers_haplotype_error"
         )
       }

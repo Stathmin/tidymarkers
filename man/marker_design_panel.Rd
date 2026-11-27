@@ -11,6 +11,9 @@ marker_design_panel(
   chemistries,
   targets = NULL,
   region = NULL,
+  ld = NULL,
+  costs = NULL,
+  created = NULL,
   dir = tempdir(),
   ...
 )
@@ -38,6 +41,17 @@ first that designs each target.}
 \item{region}{optional single region (\code{GRanges}, or a data frame with
 \code{chrom}, \code{start}, \code{end}); it expands to the variants the context places
 inside it (\code{\link[=marker_plan]{marker_plan()}}).}
+
+\item{ld}{optional LD step for the target table: \code{NULL} (not applied), a
+numeric \code{r2} threshold computed from \code{haplotypes}, or a linkage table with
+\code{target1}/\code{target2} (labels).  A linked pair keeps the first target; the
+record is written to the artefact (\code{"not_applied"} when \code{NULL}).}
+
+\item{costs}{optional chemistry costs passed to \code{\link[=marker_tech]{marker_tech()}}, so the
+cheapest-first order is a seam (see \code{\link[=marker_costs]{marker_costs()}}).}
+
+\item{created}{optional artefact timestamp; \code{NULL} reads
+\code{SOURCE_DATE_EPOCH}, then the current time (see \code{\link[=marker_artefact]{marker_artefact()}}).}
 
 \item{dir}{directory the artefact is written to (see \code{\link[=marker_artefact]{marker_artefact()}}).}
 

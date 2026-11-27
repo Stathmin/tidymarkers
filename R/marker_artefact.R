@@ -477,7 +477,8 @@ artefact_created <- function(created = NULL) {
   if (is.numeric(created) || grepl("^[0-9]+$", as.character(created[[1L]]))) {
     return(format(
       as.POSIXct(as.numeric(created[[1L]]), origin = "1970-01-01", tz = "UTC"),
-      "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"
+      "%Y-%m-%dT%H:%M:%SZ",
+      tz = "UTC"
     ))
   }
   if (!is.character(created) || length(created) != 1L || is.na(created)) {

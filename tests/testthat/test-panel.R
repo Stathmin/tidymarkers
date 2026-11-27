@@ -191,7 +191,8 @@ test_that("a duplicate target aborts before any chemistry runs", {
   duplicate <- rbind(fixture_targets()[1L, ], fixture_targets()[1L, ])
   err <- tryCatch(
     marker_design_panel(
-      fixture_genome(), chemistries = "snp",
+      fixture_genome(),
+      chemistries = "snp",
       targets = duplicate, haplotypes = fixture_haplotypes()
     ),
     error = function(e) e
@@ -241,7 +242,8 @@ test_that("reversing the chemistry costs changes the chosen scheme", {
   cheap_snp <- design_panel(withr::local_tempdir(), targets = target)
   expect_identical(cheap_snp$targets$scheme, "snp")
   cheap_hrm <- design_panel(
-    withr::local_tempdir(), targets = target,
+    withr::local_tempdir(),
+    targets = target,
     costs = marker_costs(snp = 5, hrm = 1)
   )
   expect_identical(cheap_hrm$targets$scheme, "hrm")

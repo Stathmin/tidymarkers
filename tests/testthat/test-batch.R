@@ -244,7 +244,8 @@ test_that("bp_lapply preserves order, groups chunks and can collect errors", {
   X <- 1:7
   serial <- tidymarkers:::bp_lapply(X, function(x) x * 2L, BiocParallel::SerialParam())
   chunked <- tidymarkers:::bp_lapply(
-    X, function(x) x * 2L, BiocParallel::SerialParam(), chunksize = 3L
+    X, function(x) x * 2L, BiocParallel::SerialParam(),
+    chunksize = 3L
   )
   expect_identical(serial, as.list(X * 2L))
   expect_identical(chunked, serial)
