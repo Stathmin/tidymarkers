@@ -103,8 +103,10 @@ baseline по каждой стадии и маршруту.
 
 **Гейты метрик:**
 
-1. `p95(stage) <= p95_baseline(stage)` для каждой стадии с baseline и `n >= 20`;
-   иначе `not_run` с числом сэмплов и причиной.
+1. `p95(stage, route) <= p95_baseline(stage, route)` для каждой пары с
+   baseline, одинаковым набором `run_id` и `n >= 20` с обеих сторон; иначе
+   `not_run` с числом сэмплов и причиной. Стадийная дельта в отчёте —
+   статистика, не вердикт ([ADR 0013](../adr/0013-metrics-gate-is-not-a-green-delta.md)).
 2. `cost_per_route(JN) <= cost_per_route_baseline(JN)` для J1–J7; если baseline
    равен нулю, любая billed-стоимость — красный.
 3. Повторный прогон байт-идентичен: выход маршрута (`artefact.json`, CSV)

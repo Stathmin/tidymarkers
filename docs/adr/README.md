@@ -23,6 +23,7 @@ the file records the measurement or event that re-tested it).
 | [0010](0010-index-strategy-at-scale.md)                                | The index strategy at scale: shards, builds and a memory budget            | accepted |
 | [0011](0011-release-artefact-and-mcp-contract.md)                      | The release artefact and the MCP contract are the product                   | proposed |
 | [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
+| [0013](0013-metrics-gate-is-not-a-green-delta.md)                      | The metrics report is not a gate; a mixed-sample p95 is not a regression     | proposed |
 
 ## Triage of the 2026-11-26 tool list
 

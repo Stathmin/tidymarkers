@@ -86,6 +86,8 @@ Other vignettes:
   artefact and the MCP contract are the product.
 - [ADR 0012](adr/0012-autonomy-and-self-repair.md) — autonomy and self-repair:
   a blocker never stops the programme.
+- [ADR 0013](adr/0013-metrics-gate-is-not-a-green-delta.md) — the metrics
+  report is not a green delta; a p95 gate compares comparable samples only.
 
 ## Operator decisions
 
