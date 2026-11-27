@@ -255,6 +255,15 @@ test_that("read_genome_fasta normalises and filters sequence names", {
   expect_setequal(names(read_genome_fasta(fa, seqids = "1", use_index = FALSE)), "1")
 })
 
+test_that("a FASTA sequence with no name is refused", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">", "ACGTACGT", ">Chr2", "TTTTGGGG"), fa)
+  expect_error(
+    read_genome_fasta(fa, use_index = FALSE),
+    "sequence with no name \\(record 1\\)"
+  )
+})
+
 test_that("read_genome_fasta reads only requested ids via the FASTA index", {
   skip_if_not_installed("Rsamtools")
   fa <- withr::local_tempfile(fileext = ".fa")

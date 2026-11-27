@@ -43,6 +43,9 @@ Every reader validates the raw identifier first, then normalises it:
   became `Chr` while the variant reader refused the same line.
 - `as_variant_row()` — the selected row must carry a chromosome and `pos >= 1`
   before `ath_chrom()` and before the `variant` class is set.
+- `read_genome_fasta()` — a sequence whose defline carries no name (or only
+  whitespace) is refused before `sub()` can truncate it to `""`, which would
+  otherwise become a `Chr` target for a malformed contig.
 - `genome_index()` / `index_shards()` — a build or chromosome name containing a
   path separator or naming `.`/`..` is refused before a path is built.
 
@@ -83,6 +86,7 @@ vector.
 - `tests/testthat/test-genome-index.R`: build and chromosome names with a path
   separator are refused before a shard path exists.
 - `tests/testthat/test-io.R`: a FASTA that names a sequence twice is refused
-  (`7ea07f8`) — the same admission-before-rename rule on the sequence side.
+  (`7ea07f8`) — the same admission-before-rename rule on the sequence side; a
+  FASTA sequence with no name is refused before the name is truncated.
 - `Rscript dev/test.R "^io$"` — 146 pass, 0 fail; `Rscript dev/check.R --quick
   --no-render` and `Rscript dev/check-docs.R`.

@@ -678,6 +678,13 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))
+    unnamed <- is.na(nm) | !nzchar(nm)
+    if (any(unnamed)) {
+      abort_msg(gettextf(
+        "FASTA %s has a sequence with no name (record %d).",
+        path, which(unnamed)[[1L]]
+      ))
+    }
     dup <- anyDuplicated(nm)
     if (dup) {
       abort_msg(
