@@ -1,0 +1,2 @@
+{"run_id":"repair","stage":"repair","object_id":"read_variant_depth___fails_a_bad_path_in_base_R__not_the_family_s_named_refusal","duration_ms":120000,"status":"ok","retries":0,"tokens_in":null,"tokens_out":null,"cost_usd":null,"cache_hit":false,"queue_depth":0,"gpu_util":null,"language":"en"}
+{"run_id":"repair","stage":"repair","object_id":"read_variant_depth___finds__CHROM_only_in_the_first_1000_lines","duration_ms":120000,"status":"ok","retries":0,"tokens_in":null,"tokens_out":null,"cost_usd":null,"cache_hit":false,"queue_depth":0,"gpu_util":null,"language":"en"}

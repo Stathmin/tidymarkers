@@ -22,6 +22,8 @@ and actions only.
 | 2026-11-27 17:48 | a corpus row's `artefact` column names `../outside-the-corpus` and the export follows it | logic | the row must name a directory under the scanned root, refused before it is read | fixed: `test-outcomes-crate.R`; rule in ADR 0015 | `0fc8497` | 1 | fixed | ZV13.2 symlink limit |
 | 2026-11-27 17:54 | a crate member that is a symlink out of the crate is hashed and accepted | logic | an existing member is resolved with `fs::path_real()` and must stay under the crate's real root | fixed: `test-rocrate.R` | `d7c5c02` | 1 | fixed | ZV13.3 replay RDS |
 | 2026-11-27 18:22 | `read_variants_vcf(NULL)` / `read_genome_fasta(NULL)` fail in base R, and a directory is accepted with a warning | logic | one `reader_path()` names the argument and refuses a directory before any open | fixed: `test-io.R` | в этом коммите | 1 | fixed | next audit |
+| 2026-11-27 22:01 | read_variant_depth() fails a bad path in base R, not the family's named refusal | logic | route the reader through reader_path() before any open | test-depth.R: NULL, character() and a directory are rlang_error with the sibling text | c6b3727 | 1 | fixed | — |
+| 2026-11-27 22:04 | read_variant_depth() finds #CHROM only in the first 1000 lines | logic | one vcf_header_line() scans to #CHROM with no line cap; vcf_sample_names() uses it too | test-io.R: 1200 ##INFO lines, depth and genotypes read | 56df34b | 1 | fixed | — |
 
 The first nine rows are a backfill written 2026-11-27 17:50 UTC from the branch's
 own commit history: the placeholder row ("no blockers recorded yet") was in place
