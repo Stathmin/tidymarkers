@@ -96,6 +96,9 @@ Other vignettes:
   persisted record names only the files inside its own directory.
 - [ADR 0016](adr/0016-one-vcf-admission-rule.md) — the two VCF readers share
   one admission rule, so a symbolic allele cannot become a fake `N`.
+- [ADR 0017](adr/0017-a-raw-identifier-is-admitted-before-normalisation.md) —
+  a raw identifier is admitted before `ath_chrom()` can rename it, so an
+  empty chromosome cannot become a plausible contig.
 
 ## Operator decisions
 
