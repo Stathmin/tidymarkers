@@ -277,3 +277,25 @@ test_that("a fixed created time makes the text artefact byte-identical", {
   # so a byte comparison would test the serializer, not the design
   expect_true(file.exists(file.path(first$artefact$dir, "solved.rds")))
 })
+
+test_that("the panel is a typed input to pareto, artefact and export", {
+  skip_if_no_oligoarrayaux()
+  dir <- withr::local_tempdir()
+  panel <- design_panel(dir, targets = fixture_targets()[1L, ], created = "2026-01-01T00:00:00Z")
+
+  solved <- as_marker_solved(panel)
+  expect_s3_class(solved, "marker_solved")
+  expect_identical(solved, panel$solved)
+
+  front <- marker_pareto(panel)
+  expect_s3_class(front, "tbl_df")
+  expect_true(all(c("label", "cost", "on_front") %in% names(front)))
+
+  export_dir <- withr::local_tempdir()
+  expect_identical(marker_export(panel, dir = export_dir, artefact = FALSE), export_dir)
+  expect_true(all(file.exists(file.path(export_dir, c("markers.csv", "attempts.csv", "primers.csv")))))
+
+  art <- marker_artefact(panel, dir = dir, created = "2026-01-01T00:00:00Z")
+  expect_s3_class(art, "marker_artefact")
+  expect_true(file.exists(file.path(art$dir, "artefact.json")))
+})

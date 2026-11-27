@@ -531,6 +531,9 @@ artefact_created <- function(created = NULL) {
 #' @family plan
 #' @export
 marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
+  if (inherits(solved, "marker_panel")) {
+    solved <- as_marker_solved(solved)
+  }
   if (!inherits(solved, "marker_solved")) {
     abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }

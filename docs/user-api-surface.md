@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (209 узлов, 948 рёбер): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (209 узлов, 949 рёбер): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -28,7 +28,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | Всего записей в CSV | **260** |
 | Пользовательских (`user_facing = TRUE`) | **138** |
 | Служебных (`user_facing = FALSE`) | **122** |
-| Типизированных рёбер в графе | **948** |
+| Типизированных рёбер в графе | **949** |
 | Точек входа (нет типизированных входов) | **58** |
 | Листьев (нет типизированных потребителей) | **116** |
 | Изолятов (ни входа, ни выхода по классам) | **29** |

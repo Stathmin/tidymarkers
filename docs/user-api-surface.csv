@@ -81,7 +81,7 @@ internal_duplex_dg,export,criteria,FALSE,seq1;seq2,na;temp,sequence;sequence,num
 internal_hairpin_dg,export,criteria,FALSE,seq1,na;temp,sequence,numeric,numeric,FALSE,TRUE,NN без OligoArrayAux
 is_marker_assay,export,service,FALSE,x,,any,logical,logical,TRUE,TRUE,предикат класса
 kasp_mix_recipe,export,export,TRUE,,n_reactions;mix_uL;stock_uM;as_uM;com_uM;reaction_uL;master_mix_conc;dna_uL;overfill,numeric,recipe,recipe,TRUE,TRUE,протокол смеси
-marker_artefact,export,artefact,TRUE,solved,dir;created,solved,marker_artefact,artefact,FALSE,TRUE,artefact.json + CSV
+marker_artefact,export,artefact,TRUE,solved;panel,dir;created,solved,marker_artefact,artefact,FALSE,TRUE,artefact.json + CSV
 marker_artefact_read,export,artefact,TRUE,path,,path,marker_artefact,artefact,TRUE,TRUE,чтение артефакта
 marker_as_granges,export,ingest,FALSE,x,extra,variants,GRanges,granges,FALSE,FALSE,tibble <-> GRanges
 marker_attach_haplotypes,export,design,TRUE,marker;haplotypes,snp;min_alt_freq,marker;haplotypes,marker,marker,FALSE,FALSE,гаплотипы к маркеру
@@ -106,7 +106,7 @@ marker_ensdb,export,ingest,TRUE,,gtf;cache;release,path,txdb,txdb,TRUE,FALSE,Ens
 marker_evaluation_stamp,export,artefact,FALSE,x,,any,stamp,stamp,TRUE,FALSE,движки оценки
 marker_example,export,ingest,TRUE,,type,character,variants,variants,TRUE,FALSE,встроенные примеры
 marker_explain,export,criteria,TRUE,x,scheme,marker;checks,explain,explain,FALSE,TRUE,почему маркер
-marker_export,export,export,TRUE,solved,dir;artefact,solved,files,files,FALSE,TRUE,markers/attempts/primers/solved.rds
+marker_export,export,export,TRUE,solved;panel,dir;artefact,solved,files,files,FALSE,TRUE,markers/attempts/primers/solved.rds
 marker_export_outcomes,export,export,TRUE,corpus;dir,trustee,corpus,files,files,FALSE,TRUE,экспорт исходов
 marker_export_rocrate,export,export,TRUE,artefact,dir,artefact,files,files,FALSE,TRUE,RO-Crate
 marker_failure_registry,export,artefact,FALSE,,dir;recursive,path,registry,registry,TRUE,TRUE,реестр отказов
@@ -125,7 +125,7 @@ marker_install_tools,export,service,FALSE,,dest;version;ask;force,none,path,path
 marker_one_pot,export,assembly,TRUE,assays,matrix;max_markers,marker;matrix,marker_one_pot,one_pot,FALSE,TRUE,группировка в мультиплекс
 marker_outcome_corpus,export,artefact,TRUE,dir,,path,corpus,corpus,TRUE,FALSE,исходы по каталогу
 marker_outcomes,export,artefact,TRUE,artefact,,artefact,tibble,outcomes,FALSE,TRUE,исходы артефакта
-marker_pareto,export,decision,TRUE,x,quality;linkage_risk;anchor;recombination;genotypes;haplotypes;min_lines,solved;haplotypes,tibble,pareto,FALSE,TRUE,фронт cost/quality/linkage
+marker_pareto,export,decision,TRUE,x,quality;linkage_risk;anchor;recombination;genotypes;haplotypes;min_lines,solved;panel;haplotypes,tibble,pareto,FALSE,TRUE,фронт cost/quality/linkage
 marker_patent_export,export,export,TRUE,assay_or_solved,format;output;...,marker;solved,files,files,FALSE,TRUE,ST.26/docx
 marker_patent_validate,export,export,FALSE,path,schema,path,logical,logical,TRUE,TRUE,XSD-проверка
 marker_plan,export,decision,TRUE,genome,targets;region,genome;targets,marker_plan,plan,FALSE,FALSE,старт плана

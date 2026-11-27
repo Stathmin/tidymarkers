@@ -866,6 +866,7 @@ digraph user_api {
   "marker_decision_graph" -> "decision_render" [color="#c8c8c8", penwidth=0.6];
   "marker_design_checks" -> "marker_explain" [color="#222222", penwidth=2.2];
   "marker_design_panel" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
+  "marker_design_panel" -> "marker_pareto" [color="#c8c8c8", penwidth=0.6];
   "marker_engine_stamp" -> "marker_engine_stamp_field" [color="#c8c8c8", penwidth=0.6];
   "marker_ensdb" -> "annotate_variants" [color="#c8c8c8", penwidth=0.6];
   "marker_evaluation_stamp" -> "marker_engine_stamp_field" [color="#c8c8c8", penwidth=0.6];
