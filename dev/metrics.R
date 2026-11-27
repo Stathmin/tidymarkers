@@ -270,11 +270,14 @@ summary_of <- function(df) {
     )
   })
   routes <- lapply(paste0("J", 1:7), function(j) {
-    d <- df[df$object_id == paste0("scenario:", j), , drop = FALSE]
+    d <- df[grepl(paste0("^scenario:", tolower(j), "(:|$)"), tolower(df$object_id)), , drop = FALSE]
     runs <- length(unique(d$run_id))
+    # the local engines are unmetered: a route that ran costs 0, not `n/a`
     list(
       route = j, runs = runs,
-      cost_per_run = if (runs && !all(is.na(d$cost_usd))) sum(d$cost_usd, na.rm = TRUE) / runs else NA_real_
+      cost_per_run = if (!runs) NA_real_ else {
+        if (all(is.na(d$cost_usd))) 0 else sum(d$cost_usd, na.rm = TRUE) / runs
+      }
     )
   })
   list(
@@ -314,8 +317,10 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
     delta <- "n/a"
     if (!is.null(base)) {
       b <- Filter(function(x) identical(x$stage, st$stage), base$stages)
-      if (length(b) && !is.na(b[[1L]]$p95) && !is.na(st$p95)) {
-        delta <- fmt(100 * (st$p95 / b[[1L]]$p95 - 1))
+      bp <- if (length(b)) b[[1L]]$p95 else NULL
+      if (is.null(bp)) bp <- NA_real_
+      if (!is.na(bp) && !is.na(st$p95)) {
+        delta <- fmt(100 * (st$p95 / bp - 1))
       } else if (is.na(st$p95)) {
         delta <- "not_run"
       }

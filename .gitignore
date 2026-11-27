@@ -104,3 +104,4 @@ dev/logs/
 .tmp/
 .tmp-*/
 .tmp-probe*
+tests/testthat/fixtures/scenarios/*.fai

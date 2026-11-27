@@ -5,18 +5,21 @@
 
 test_that("J6: the artefact records its contract and replays to the same verdicts", {
   skip_if_no_oligoarrayaux()
-  genome <- read_genome_fasta(scenario_file("j1_genome.fa"))
+  genome <- scenario_step(
+    "j6", "ingest", "genome",
+    read_genome_fasta(scenario_file("j1_genome.fa"))
+  )
   targets <- utils::read.csv(scenario_file("j1_target.csv"))
   plan <- marker_plan(genome) +
     marker_targets(targets) +
     marker_tech(schemes = "snp")
-  solved <- marker_solve(plan, progress = FALSE)
+  solved <- scenario_step("j6", "design", "solved", marker_solve(plan, progress = FALSE))
 
   dir <- withr::local_tempdir("j6-artefact-")
-  art <- marker_artefact(
+  art <- scenario_step("j6", "artefact", "artefact", marker_artefact(
     solved, dir,
     created = "2026-01-01T00:00:00Z", scenario = "J6"
-  )
+  ))
   m <- art$manifest
   expect_identical(m$schema, "tidymarkers/artefact@2")
   expect_identical(m$contract$version, "tidymarkers/contract@1")
@@ -38,10 +41,13 @@ test_that("J6: the artefact records its contract and replays to the same verdict
     m$id
   )
 
-  back <- marker_artefact_read(dir)
+  back <- scenario_step("j6", "artefact", "read", marker_artefact_read(dir))
   expect_identical(back$manifest$contract$scenario, "J6")
 
-  crate <- marker_export_rocrate(art, withr::local_tempdir("j6-crate-"))
+  crate <- scenario_step(
+    "j6", "artefact", "crate",
+    marker_export_rocrate(art, withr::local_tempdir("j6-crate-"))
+  )
   meta <- jsonlite::fromJSON(
     fs::path(crate, "ro-crate-metadata.json"),
     simplifyVector = FALSE
@@ -58,7 +64,7 @@ test_that("J6: the artefact records its contract and replays to the same verdict
   xsd <- tryCatch(marker_patent_validate(st26), error = identity)
   expect_true(inherits(xsd, "error") || isTRUE(xsd))
 
-  replay <- marker_replay(art)
+  replay <- scenario_step("j6", "artefact", "replay", marker_replay(art))
   expect_s3_class(replay, "marker_replay")
   expect_true(replay$match)
   expect_true(all(replay$table$match))

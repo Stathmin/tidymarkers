@@ -48,6 +48,9 @@ Other vignettes:
   merge-marker evidence.
 - [docs/plans/self-repair-log](plans/self-repair-log.md) — the append-only
   blocker and repair log for the programme.
+- [data/metrics/metrics-2026-11-27](../data/metrics/metrics-2026-11-27.md) —
+  the generated run report: stage latencies, J1–J7 cost, failure share and the
+  delta to the baseline.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
 - [docs/user-api-surface](user-api-surface.md) — the full export inventory,
