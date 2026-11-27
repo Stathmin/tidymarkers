@@ -92,6 +92,8 @@ Other vignettes:
   report is not a green delta; a p95 gate compares comparable samples only.
 - [ADR 0014](adr/0014-benchmark-baseline-is-keyed-by-runner-class.md) — a
   timing baseline is keyed by runner class, not by hostname.
+- [ADR 0015](adr/0015-a-record-resolves-only-its-own-directory.md) — a
+  persisted record names only the files inside its own directory.
 
 ## Operator decisions
 

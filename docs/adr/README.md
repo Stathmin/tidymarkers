@@ -25,6 +25,7 @@ the file records the measurement or event that re-tested it).
 | [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
 | [0013](0013-metrics-gate-is-not-a-green-delta.md)                      | The metrics report is not a gate; a mixed-sample p95 is not a regression     | accepted |
 | [0014](0014-benchmark-baseline-is-keyed-by-runner-class.md)            | A timing baseline is keyed by runner class, not by hostname                  | accepted |
+| [0015](0015-a-record-resolves-only-its-own-directory.md)               | A record resolves only the paths inside its own directory                    | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
