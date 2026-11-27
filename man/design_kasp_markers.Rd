@@ -25,9 +25,10 @@ tidy tibble, one row per locus.
 }
 \description{
 Runs \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}} independently over every row of \code{loci}, so one
-hard locus cannot abort the batch: errors are captured as \code{verdict = "fail"},
-warnings or failing acceptance checks give \code{verdict = "warn"}, and a fully
-passing assay gives \code{verdict = "pass"}.  \code{loci} needs columns
+hard locus cannot abort the batch: an error is captured as
+\code{verdict = "error"} (a design that ran and failed is \code{"fail"}), warnings or
+failing acceptance checks give \code{verdict = "warn"}, and a fully passing assay
+gives \code{verdict = "pass"}.  \code{loci} needs columns
 \code{chrom}, \code{pos}, \code{ref}, \code{alt} (as in \code{\link[=read_variants_vcf]{read_variants_vcf()}}).
 }
 \details{
