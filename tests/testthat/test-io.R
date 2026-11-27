@@ -739,3 +739,23 @@ test_that("a truncated VCF record is counted as short, not as missing FORMAT", {
   expect_message(g <- read_variant_genotypes(vcf), "fewer columns")
   expect_identical(g$pos, 100L)
 })
+
+test_that("a VCF with no #CHROM line is refused by name, not read as empty", {
+  skip_if_not_installed("vroom")
+  no_header <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c("##fileformat=VCFv4.2", "##source=test"), no_header)
+  expect_error(
+    read_variant_depth(no_header), "has no '#CHROM' header line",
+    class = "rlang_error"
+  )
+  expect_error(
+    read_variant_genotypes(no_header), "has no '#CHROM' header line",
+    class = "rlang_error"
+  )
+  other_first <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c("##fileformat=VCFv4.2", "not-a-header\t1\t2"), other_first)
+  expect_error(
+    read_variant_depth(other_first), "does not start with '#CHROM'",
+    class = "rlang_error"
+  )
+})

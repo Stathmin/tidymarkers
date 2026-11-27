@@ -55,8 +55,10 @@ decision only covers the read before the first record.
   now fail the same way on the same bad path and read the same legal header.
 - The header scan costs one line per `##`, no memory for the whole header, so a
   large VCF is still streamed.
-- A VCF whose first non-`##` line is not `#CHROM` is refused by name instead of
-  looking like an empty file.
+- In the two line-scanning readers (`read_variant_genotypes()`,
+  `read_variant_depth()`), a VCF whose first non-`##` line is not `#CHROM` is
+  refused by name instead of looking like an empty file. `read_variants_vcf()`
+  keeps the backend's own parse error.
 - Tests: `test-depth.R` ("the depth reader names a path that is not one existing
   file") and `test-io.R` ("a VCF header past 1000 lines is still found", 1200
   `##INFO` lines) fail before this change on both counts.
