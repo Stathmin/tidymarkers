@@ -4,6 +4,7 @@ allele_templates,export,design,FALSE,ref_tmpl;snp_i;ref;alt,,sequence;variant,se
 amplicon_fold_check,export,criteria,TRUE,seq,kind;conditions;min_single_stranded;max_length,sequence,fold,fold,FALSE,TRUE,проверка фолдинга ампликона
 annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,variants,variants,FALSE,FALSE,добавляет контекст транскрипта
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
+as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
 asq_limits,export,criteria,FALSE,,amplicon;as_tm;com_tm,none,limits,limits,TRUE,FALSE,пороги ASQ
 assay_amplicons,export,specificity,TRUE,assay;genome,max_mismatch;BPPARAM;products,assay;genome,hits,hits,FALSE,FALSE,продукты по аллелям
@@ -95,7 +96,7 @@ marker_criteria,export,criteria,TRUE,,limits;scheme,none,marker_criteria,criteri
 marker_decision_graph,export,decision,TRUE,,assay;scheme,marker,tbl_graph,decision,FALSE,TRUE,tidygraph решения
 marker_decision_text,export,decision,TRUE,,scheme;evidence,character,character,character,TRUE,TRUE,"текст решения, не объект"
 marker_defensive_publication,export,export,TRUE,assay_or_solved,...,marker;solved,files,files,FALSE,TRUE,defensive publication
-marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
+marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits;solved,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
 marker_design_panel,export,design,TRUE,genome;chemistries,variants;haplotypes;targets;region;ld;costs;created;dir;...,genome;variants;haplotypes;targets;costs;character,marker_panel,panel,FALSE,TRUE,chemistries — character vector; panel содержит solved и artefact
 marker_engine_stamp,export,artefact,FALSE,,,none,stamp,stamp,TRUE,FALSE,версии движков
 marker_engine_stamp_field,export,service,FALSE,,fmt;stamp,stamp,character,character,FALSE,TRUE,одна колонка
@@ -207,6 +208,10 @@ write_kasp_results,export,export,TRUE,,...,assay;gene,files,files,FALSE,TRUE,dep
 write_marker_results,export,export,TRUE,assay;gene,dir,assay;gene,files,files,FALSE,TRUE,три CSV
 write_variants_vcf,export,export,TRUE,x,path,variants,path,files,FALSE,TRUE,запись VCF
 +.marker_plan,s3method,decision,TRUE,,,plan;targets;context;tech,marker_plan,plan,FALSE,FALSE,S3: композиция слоёв плана
+as_marker_solved.default,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_batch,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_panel,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_solved,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
 capabilities.default,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities
 capabilities.genome_index,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities
 capabilities.marker_engine,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities

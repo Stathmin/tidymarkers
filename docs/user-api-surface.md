@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (208 узлов, 934 ребра): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (209 узлов, 948 рёбер): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -23,12 +23,12 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 
 | Что | Число |
 |---|---|
-| Экспортов в `NAMESPACE` | **207** |
-| S3-методов (включая `+.marker_plan`) | **48** |
-| Всего записей в CSV | **255** |
-| Пользовательских (`user_facing = TRUE`) | **137** |
-| Служебных (`user_facing = FALSE`) | **118** |
-| Типизированных рёбер в графе | **934** |
+| Экспортов в `NAMESPACE` | **208** |
+| S3-методов (включая `+.marker_plan`) | **52** |
+| Всего записей в CSV | **260** |
+| Пользовательских (`user_facing = TRUE`) | **138** |
+| Служебных (`user_facing = FALSE`) | **122** |
+| Типизированных рёбер в графе | **948** |
 | Точек входа (нет типизированных входов) | **58** |
 | Листьев (нет типизированных потребителей) | **116** |
 | Изолятов (ни входа, ни выхода по классам) | **29** |
@@ -42,7 +42,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 
 Полные аргументы — в CSV; таблица ниже обрезает длинные списки после восьми
 позиций. Колонка «Польз.» означает «предназначена пользователю», а не
-«экспортирована»: экспортированы все 207.
+«экспортирована»: экспортированы все 208.
 
 ### 1.1 Ingest — чтение и приведение данных
 
@@ -94,6 +94,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `design_duplex()` | да | genome, loci | readout, homologous | `genome + variants` → `marker` | Design a duplex assay: two loci in one tube |
 | `design_hrm_marker()` | да | genome, snp | flank, min_product, max_product, lengths, tm_range, gc_range | `genome + variant` → `marker` | Design an HRM marker at a variant |
 | `design_indel_size_marker()` | да | genome, snp | flank, min_gap, min_product, max_product, lengths, tm_range, gc_range, engines | `genome + variant` → `marker` | Design an InDel size-polymorphism marker |
+| `as_marker_solved()` | да | report | — | `report + panel + solved` → `marker_solved` | Continue a batch report or a panel as the typed solved object |
 | `design_kasp_markers()` | да | genome, loci | variants, BPPARAM | `genome + variants` → `report` | Design KASP markers for a table of loci, with a per-locus verdict |
 | `design_lamp_marker()` | да | genome, snp | flank, arm_lengths, outer_lengths, outer_tm, inner_tm, gc_range, min_product, max_product … +2 | `genome + variant` → `marker` | Design a LAMP marker at a variant |
 | `design_lax_marker()` | да | genome, snp | haplotypes | `genome + variant + haplotypes` → `marker` | Design a lax KASP: one ALT primer per haplotype |

@@ -262,3 +262,9 @@ test_that("bp_lapply preserves order, groups chunks and can collect errors", {
   expect_identical(collected[[1L]], 1L)
   expect_identical(collected[[7L]], 7L)
 })
+
+test_that("as_marker_solved refuses an object it cannot continue", {
+  expect_error(as_marker_solved(1), "must be a marker_batch")
+  solved <- structure(list(report = tibble::tibble()), class = "marker_solved")
+  expect_identical(as_marker_solved(solved), solved)
+})

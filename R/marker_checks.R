@@ -279,6 +279,9 @@ marker_dosage_gate <- function(marker) {
 #' @family checks
 #' @export
 marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL, engines = NULL) {
+  if (inherits(assay, "marker_solved")) {
+    return(marker_solved_checks(assay, limits = limits, scheme = scheme, engines = engines))
+  }
   scheme <- scheme %||% assay$scheme %||% if (inherits(assay, "marker_assay")) {
     "snp"
   } else {
@@ -1077,4 +1080,30 @@ marker_generic_checks <- function(marker, scheme, genome = NULL, limits = KASP_L
   # ZW2.2: name the engines that produced these numbers, so a drifted model is
   # visible next to the verdict it moved
   marker_with_stamp(out)
+}
+
+#' Checks for every designed marker in a solved object
+#' @keywords internal
+#' @noRd
+marker_solved_checks <- function(solved, limits = KASP_LIMITS, scheme = NULL, engines = NULL) {
+  r <- solved$report
+  idx <- which(r$ok & !vapply(r$marker, is.null, logical(1)))
+  if (!length(idx)) {
+    return(tibble::tibble(
+      label = character(), stage = character(), criterion = character(),
+      observed = numeric(), limit = numeric(), pass = logical(),
+      status = factor(), detail = character(), level = character()
+    ))
+  }
+  parts <- lapply(idx, function(i) {
+    chk <- marker_design_checks(
+      r$marker[[i]], limits = limits,
+      scheme = scheme %||% r$scheme[[i]], engines = engines
+    )
+    chk$label <- r$label[[i]]
+    chk[, c("label", setdiff(names(chk), "label"))]
+  })
+  out <- dplyr::bind_rows(parts)
+  # bind_rows() drops the engine stamp; all parts share one, so re-stamp
+  marker_with_stamp(out, from = parts[[1L]])
 }

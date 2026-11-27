@@ -36,6 +36,7 @@ digraph user_api {
   subgraph cluster_design {
     label="design"; style="rounded,dashed"; color="#cccccc";
     "allele_templates" [label="allele_templates", shape=ellipse, style="filled,dashed", fillcolor="#d9f2d9"];
+    "as_marker_solved" [label="as_marker_solved", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "design_arms_marker" [label="design_arms_marker", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "design_as_primers" [label="design_as_primers", shape=ellipse, style="filled,dashed", fillcolor="#d9f2d9"];
     "design_as_primers_indel" [label="design_as_primers_indel", shape=ellipse, style="filled,dashed", fillcolor="#d9f2d9"];
@@ -263,6 +264,14 @@ digraph user_api {
   "annotate_variants" -> "screen_snp_targets" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "write_variants_vcf" [color="#c8c8c8", penwidth=0.6];
   "as_3p_interval" -> "count_variants_in" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_artefact" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_defensive_publication" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_export" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_pareto" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_patent_export" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_plot" [color="#c8c8c8", penwidth=0.6];
+  "as_marker_solved" -> "marker_tubes" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "design_asq_marker" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "marker_risk" [color="#c8c8c8", penwidth=0.6];
@@ -544,6 +553,7 @@ digraph user_api {
   "design_indel_size_marker" -> "marker_risk" [color="#c8c8c8", penwidth=0.6];
   "design_indel_size_marker" -> "one_pot_compatible" [color="#c8c8c8", penwidth=0.6];
   "design_indel_size_marker" -> "passes_all" [color="#c8c8c8", penwidth=0.6];
+  "design_kasp_markers" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
   "design_lamp_marker" -> "marker_attach_haplotypes" [color="#c8c8c8", penwidth=0.6];
   "design_lamp_marker" -> "marker_decision_graph" [color="#c8c8c8", penwidth=0.6];
   "design_lamp_marker" -> "marker_defensive_publication" [color="#c8c8c8", penwidth=0.6];
@@ -570,6 +580,8 @@ digraph user_api {
   "design_lax_marker" -> "marker_risk" [color="#c8c8c8", penwidth=0.6];
   "design_lax_marker" -> "one_pot_compatible" [color="#c8c8c8", penwidth=0.6];
   "design_lax_marker" -> "passes_all" [color="#c8c8c8", penwidth=0.6];
+  "design_marker_batch" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
+  "design_markers" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
   "design_rpa_marker" -> "marker_attach_haplotypes" [color="#c8c8c8", penwidth=0.6];
   "design_rpa_marker" -> "marker_decision_graph" [color="#c8c8c8", penwidth=0.6];
   "design_rpa_marker" -> "marker_defensive_publication" [color="#c8c8c8", penwidth=0.6];
@@ -853,6 +865,7 @@ digraph user_api {
   "marker_costs" -> "marker_tech" [color="#c8c8c8", penwidth=0.6];
   "marker_decision_graph" -> "decision_render" [color="#c8c8c8", penwidth=0.6];
   "marker_design_checks" -> "marker_explain" [color="#222222", penwidth=2.2];
+  "marker_design_panel" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
   "marker_engine_stamp" -> "marker_engine_stamp_field" [color="#c8c8c8", penwidth=0.6];
   "marker_ensdb" -> "annotate_variants" [color="#c8c8c8", penwidth=0.6];
   "marker_evaluation_stamp" -> "marker_engine_stamp_field" [color="#c8c8c8", penwidth=0.6];
@@ -974,8 +987,10 @@ digraph user_api {
   "marker_primers" -> "specificity_seed" [color="#c8c8c8", penwidth=0.6];
   "marker_run_context" -> "design_auto_marker" [color="#c8c8c8", penwidth=0.6];
   "marker_run_context" -> "+.marker_plan" [color="#c8c8c8", penwidth=0.6];
+  "marker_solve" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];
   "marker_solve" -> "marker_artefact" [color="#222222", penwidth=2.2];
   "marker_solve" -> "marker_defensive_publication" [color="#c8c8c8", penwidth=0.6];
+  "marker_solve" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
   "marker_solve" -> "marker_export" [color="#222222", penwidth=2.2];
   "marker_solve" -> "marker_pareto" [color="#222222", penwidth=2.2];
   "marker_solve" -> "marker_patent_export" [color="#222222", penwidth=2.2];
