@@ -121,7 +121,8 @@ first field a reader sees; `artefact@1` files remain readable by
 interface. It fails, with the offending name, when:
 
 1. the tool names in `mcp_tool_specs()` differ from `schema.json`
-   `$defs.inputSchemas` or from the handlers;
+   `$defs.inputSchemas` or from the handlers, or a published `inputSchema`
+   differs from the runtime registry when both are rendered as JSON;
 2. a schema `required` argument is not a formal of the handler, or a handler
    argument is not declared in the schema;
 3. an `enum`, `minimum`, `maximum`, `pattern` or `additionalProperties` in the
@@ -135,8 +136,12 @@ interface. It fails, with the offending name, when:
    parity table.
 
 The gate is static: it reads files, it does not start a server. Runtime
-behaviour stays in `test-mcp.R` and `test-mcp-validation.R`. A tool that is
-removed or renamed bumps `contract.version` and is a breaking change.
+behaviour stays in `test-mcp.R` and `test-mcp-validation.R`: the former
+compares all 38 published schemas with the registry, the latter sends
+`tools/list` and `tools/call` for five representative tools (`primer_tm`,
+`marker_schemes`, `design_markers`, `screen_snp_targets`, `marker_technology`)
+and checks the wire result. A tool that is removed or renamed bumps
+`contract.version` and is a breaking change.
 
 ### 4. No second interface
 

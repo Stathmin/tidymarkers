@@ -4287,18 +4287,21 @@ dir)` пишет crate-профиль поверх существующих че
       `artefact@1` читается через миграцию; J6 предъявляется.
 
 - [x] **ZV10. MCP parity и свежесть поверхности (ADR 0011, J7, ZU8).**
-    - правка: `dev/check-mcp-parity.R` — имена инструментов, required и
-      формалы, enum и границы, аннотации, классы в CSV, покрытие J1–J7; шаг в
-      `dev/check.R`; `dev/check-user-api.R` — единственный генератор DOT,
-      новый экспорт без строки CSV = exit 1; `docs/INDEX.md`; итоговый
-      `data/metrics/metrics-<date>.md` с p50/p95, стоимостью на маршрут и
-      дельтой к baseline.
+    - правка: `dev/check-mcp-parity.R` — имена инструментов, полное совпадение
+      каждого опубликованного `inputSchema` с рантайм-реестром как JSON,
+      required и формалы, enum и границы, аннотации, классы в CSV, покрытие
+      J1–J7; шаг в `dev/check.R`; `dev/check-user-api.R` — единственный
+      генератор DOT, новый экспорт без строки CSV = exit 1; `docs/INDEX.md`;
+      итоговый `data/metrics/metrics-<date>.md` с p50/p95, стоимостью на
+      маршрут и дельтой к baseline.
     - проверка: `Rscript dev/check-mcp-parity.R`; `Rscript
       dev/check-user-api.R`; `Rscript dev/metrics.R --report <date>`;
-      `Rscript dev/check.R --quick`; `test-mcp.R`.
+      `Rscript dev/check.R --quick`; `test-mcp.R`; `test-mcp-validation.R`
+      (пять инструментов через `tools/list` и `tools/call`).
     - блокер: нет; `schema.json` — публикуемый контракт, не рантайм-источник.
-    - следствие: schema drift ловится до релиза, а не после; агент не видит
-      инструмент, которого нет; `metrics-<date>.md` несёт p50/p95,
+    - следствие: schema drift ловится до релиза, а не после; правка
+      `required` в файле падает гейтом с именем инструмента и ключом; агент
+      не видит инструмент, которого нет; `metrics-<date>.md` несёт p50/p95,
       стоимость на маршрут J1–J7 и дельту к baseline.
 
 Критический путь: ZV1 -> ZV2 -> ZV6 -> ZV9. `ZV3` и `ZV4` — первые кандидаты
