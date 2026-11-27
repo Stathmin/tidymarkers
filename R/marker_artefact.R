@@ -765,6 +765,16 @@ artefact_recorded_replay <- function(dir, manifest) {
       "The artefact's replay table {.val {file}} must carry `label`, `scheme` and `verdict`."
     )
   }
+  if (anyNA(tab$label) || !all(nzchar(tab$label))) {
+    abort_msg("The artefact's replay table {.val {file}} names no target on a row.")
+  }
+  dup <- unique(tab$label[duplicated(tab$label)])
+  if (length(dup)) {
+    # two verdicts for one target: the record does not say which one is its claim
+    abort_msg(
+      "The artefact's replay table {.val {file}} names a target twice: {.val {dup}}."
+    )
+  }
   tab[, c("label", "scheme", "verdict")]
 }
 

@@ -4723,13 +4723,15 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
       у цели, где все попытки отклонены, нет строки `chosen`, поэтому таблицу
       «одна строка на цель» из сайдкара не восстановить. Сверка идёт по
       объединению меток: вердикт, которого в записи нет, и цель, которой нет
-      в пересчёте, дают `match = FALSE`; пустая таблица не проходит.
+      в пересчёте, дают `match = FALSE`; пустая таблица не проходит; строка
+      без метки и повторённая метка — отказ, а не догадка.
     - проверка: `test-plan.R` — «a trusted solve cannot replay a record that
       recorded no verdicts»: отказ по фразе `compared with itself`, затем
       replay без `solved` из собственного RDS даёт `match = TRUE`; «a replay
       checks the record's row set, not just the rows it kept»: удалённая
-      строка, пустая таблица — `match = FALSE`, полная — `TRUE`;
-      `dev/test.R plan` — 207 pass, 0 fail.
+      строка, пустая таблица — `match = FALSE`, полная — `TRUE`; «a replay
+      refuses a table that does not name one verdict per target»: повтор и
+      пустая метка — отказ; `dev/test.R plan` — 209 pass, 0 fail.
     - блокер: нет.
     - следствие: запись без вердиктов больше не проходит на чужом solve;
       правило — ADR 0024.

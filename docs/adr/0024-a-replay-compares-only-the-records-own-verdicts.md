@@ -39,6 +39,8 @@ The recorded side of a replay always comes from the artefact.
 - The comparison covers the union of target labels: a verdict the record
   dropped, and a target the re-solve no longer produces, are both mismatches.
   A table with no rows claims nothing and does not pass.
+- A table is refused, not reconciled, when it names no target on a row or names
+  one target twice: two verdicts do not say which one is the record's claim.
 - `decisions.csv` is not used to rebuild the table: a target whose every
   attempt was rejected has no `chosen` row, so the sidecar cannot reproduce the
   one-row-per-target report exactly.
@@ -54,4 +56,5 @@ The recorded side of a replay always comes from the artefact.
 - Tests: `test-plan.R` — "a trusted solve cannot replay a record that recorded
   no verdicts" (refusal, then the own-RDS path still matches) and "a replay
   checks the record's row set, not just the rows it kept" (a dropped verdict,
-  an empty table and the complete table).
+  an empty table and the complete table) and "a replay refuses a table that
+  does not name one verdict per target" (a duplicated and an empty label).

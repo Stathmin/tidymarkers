@@ -595,6 +595,27 @@ test_that("a replay checks the record's row set, not just the rows it kept", {
   expect_true(suppressWarnings(marker_replay(art, solved = solved))$match)
 })
 
+test_that("a replay refuses a table that does not name one verdict per target", {
+  solved <- rejected_solve()
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  path <- fs::path(dir, "replay.csv")
+  recorded <- utils::read.csv(path, colClasses = "character")
+  fs::file_delete(fs::path(dir, "solved.rds"))
+  # two verdicts for one target: the record does not say which one is its claim
+  utils::write.csv(rbind(recorded, recorded), path, row.names = FALSE)
+  expect_error(
+    suppressWarnings(marker_replay(art, solved = solved)),
+    "names a target twice"
+  )
+  recorded$label[[1L]] <- ""
+  utils::write.csv(recorded, path, row.names = FALSE)
+  expect_error(
+    suppressWarnings(marker_replay(art, solved = solved)),
+    "names no target"
+  )
+})
+
 test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   solved <- rejected_solve()
   dir <- withr::local_tempdir()
