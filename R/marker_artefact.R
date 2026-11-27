@@ -846,6 +846,12 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #' was replaced is reported as such (`inputs_match = FALSE`) and a library upgrade
 #' as an engine change (`engine_match = FALSE`, `engines_changed`), rather than
 #' either being read as a model change.
+#'
+#' `solved.rds` is a serialized R object, and `readRDS()` executes what the file
+#' tells it to. Replay is therefore for an artefact this machine wrote, or one
+#' from a source whose code you would run anyway; [marker_import_rocrate()] never
+#' opens the RDS, so a crate that arrived from a stranger can be inspected
+#' without being trusted with execution.
 #' @param artefact a `marker_artefact` or the directory it was written to.
 #' @param cache an environment to memoise the replay in; pass the original
 #'   solve's `cache` to make replay free, `NULL` (the default) to force the

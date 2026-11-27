@@ -35,6 +35,12 @@ The input hashes and the engine stamp are re-checked first, so a reference that
 was replaced is reported as such (\code{inputs_match = FALSE}) and a library upgrade
 as an engine change (\code{engine_match = FALSE}, \code{engines_changed}), rather than
 either being read as a model change.
+
+\code{solved.rds} is a serialized R object, and \code{readRDS()} executes what the file
+tells it to. Replay is therefore for an artefact this machine wrote, or one
+from a source whose code you would run anyway; \code{\link[=marker_import_rocrate]{marker_import_rocrate()}} never
+opens the RDS, so a crate that arrived from a stranger can be inspected
+without being trusted with execution.
 }
 \examples{
 genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
