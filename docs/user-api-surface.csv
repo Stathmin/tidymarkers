@@ -5,6 +5,7 @@ amplicon_fold_check,export,criteria,TRUE,seq,kind;conditions;min_single_stranded
 annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,variants,variants,FALSE,FALSE,добавляет контекст транскрипта
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
 as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
+as_limits,export,criteria,TRUE,criteria,,criteria;limits,limits,limits,TRUE,TRUE,числовые пороги из таблицы критериев
 as_primer_set,export,export,TRUE,primers,,primers;character,primer_set,primer_set,TRUE,TRUE,мост вектора олиго в типизированный primer_set
 as_scheme_ids,export,decision,TRUE,schemes,,schemes;character,character,schemes,TRUE,TRUE,мост реестра химий в marker_tech
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
@@ -99,7 +100,7 @@ marker_criteria,export,criteria,TRUE,,limits;scheme,none,marker_criteria,criteri
 marker_decision_graph,export,decision,TRUE,,assay;scheme,marker,tbl_graph,decision,FALSE,TRUE,tidygraph решения
 marker_decision_text,export,decision,TRUE,,scheme;evidence,character,character,character,TRUE,TRUE,"текст решения, не объект"
 marker_defensive_publication,export,export,TRUE,assay_or_solved,...,marker;solved,files,files,FALSE,TRUE,defensive publication
-marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits;solved,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
+marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits;solved;criteria,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
 marker_design_panel,export,design,TRUE,genome;chemistries,variants;haplotypes;targets;region;ld;costs;created;dir;...,genome;variants;haplotypes;targets;costs;character,marker_panel,panel,FALSE,TRUE,chemistries — character vector; panel содержит solved и artefact
 marker_engine_stamp,export,artefact,FALSE,,,none,stamp,stamp,TRUE,FALSE,версии движков
 marker_engine_stamp_field,export,service,FALSE,,fmt;stamp,stamp,character,character,FALSE,TRUE,одна колонка

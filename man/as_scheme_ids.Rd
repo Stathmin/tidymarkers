@@ -24,6 +24,7 @@ as_scheme_ids(marker_schemes())
 }
 \seealso{
 Other checks:
+\code{\link[=as_limits]{as_limits()}},
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},

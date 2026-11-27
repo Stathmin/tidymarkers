@@ -279,6 +279,7 @@ marker_dosage_gate <- function(marker) {
 #' @family checks
 #' @export
 marker_design_checks <- function(assay, limits = KASP_LIMITS, scheme = NULL, engines = NULL) {
+  limits <- as_limits(limits)
   if (inherits(assay, "marker_solved")) {
     return(marker_solved_checks(assay, limits = limits, scheme = scheme, engines = engines))
   }

@@ -4207,7 +4207,7 @@ dir)` пишет crate-профиль поверх существующих че
       именованный character; ложное ребро `design_as_primers -> dimer_thermo`
       исчезло, мост называет `as_primer_set()`.
 
-- [ ] **ZV4. Мост справочников в дизайн (ZU5).** Частично: `as_scheme_ids()` закрывает `marker_schemes() -> marker_tech()`; мост `marker_criteria() -> marker_design_checks()` остаётся.
+- [x] **ZV4. Мост справочников в дизайн (ZU5).**
     - правка: `R/marker_decision.R`, `R/marker_technology.R`,
       `R/marker_priors.R`, `R/marker_checks.R` — `as_scheme_ids()`,
       `as_limits()` или один `marker_registry`; `marker_tech(marker_schemes())`,
@@ -4216,7 +4216,7 @@ dir)` пишет crate-профиль поверх существующих че
       `criteria -> marker_design_checks`; `test-plan.R`.
     - блокер: разные типы таблиц (`scheme`, `technology`, `prior`,
       `criterion`); нужен один класс либо явные адаптеры.
-    - следствие: «выбери химию» остаётся ручной работой с колонками.
+    - следствие: «выбери химию» — типизированный вызов: `marker_tech(marker_schemes())` и `marker_design_checks(assay, limits = marker_criteria())`.
 
 - [x] **ZV5. Генотипы и одна строка варианта (ZU6).**
     - правка: `R/marker_io.R` — `read_variant_genotypes()` (GT/AD) и

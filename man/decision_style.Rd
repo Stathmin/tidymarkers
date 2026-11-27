@@ -64,6 +64,7 @@ decision_style(font_size = 11, title = "Selection") # a larger title page
 }
 \seealso{
 Other checks:
+\code{\link[=as_limits]{as_limits()}},
 \code{\link[=as_scheme_ids]{as_scheme_ids()}},
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=marker_criteria]{marker_criteria()}},

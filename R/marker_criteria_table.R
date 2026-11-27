@@ -326,6 +326,29 @@ vec_cast.tbl_df.marker_criteria <- function(x, to, ...) tibble::as_tibble(x)
 vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 # nolint end
 
+#' The thresholds a criteria table was rendered against
+#'
+#' [marker_criteria()] renders a readable `limit` per row, but
+#' [marker_design_checks()] needs the numeric list the table came from.  The
+#' table carries that list as its `limits` attribute, so passing the registry
+#' back to the gate cannot silently use a different set of numbers.
+#' @param x a table from [marker_criteria()] or an existing limits list.
+#' @return the numeric limits list.
+#' @examples
+#' as_limits(marker_criteria())
+#' @family checks
+#' @export
+as_limits <- function(x) {
+  if (is.list(x) && !is.data.frame(x) && all(vapply(x, is.numeric, logical(1)))) {
+    return(x)
+  }
+  lim <- attr(x, "limits", exact = TRUE)
+  if (is.list(lim) && length(lim)) {
+    return(lim)
+  }
+  abort_msg("`x` must be a marker_criteria() table or a numeric limits list.")
+}
+
 #' The criterion registry: one data object per threshold
 #'
 #' Every gate, ranking tier and acceptance check the pipeline applies, as one
@@ -578,8 +601,10 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
       schemes = spec$schemes
     )
   })
+  out <- structure(out, limits = limits, class = c("criteria", class(out)))
   if (is.null(scheme)) {
     return(out)
   }
-  out[vapply(out$schemes, function(s) scheme %in% s, logical(1)), , drop = FALSE]
+  rows <- out[vapply(out$schemes, function(s) scheme %in% s, logical(1)), , drop = FALSE]
+  structure(rows, limits = limits, class = c("criteria", class(rows)))
 }

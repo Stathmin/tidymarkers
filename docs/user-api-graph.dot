@@ -106,6 +106,7 @@ digraph user_api {
   subgraph cluster_criteria {
     label="criteria"; style="rounded,dashed"; color="#cccccc";
     "amplicon_fold_check" [label="amplicon_fold_check", shape=box, style="filled", fillcolor="#fff2b3"];
+    "as_limits" [label="as_limits", shape=invhouse, style="filled", fillcolor="#fff2b3"];
     "asq_limits" [label="asq_limits", shape=invhouse, style="filled,dashed", fillcolor="#fff2b3"];
     "caps_fragments" [label="caps_fragments", shape=box, style="filled,dashed", fillcolor="#fff2b3"];
     "dimer_thermo" [label="dimer_thermo", shape=box, style="filled", fillcolor="#fff2b3"];
@@ -277,6 +278,10 @@ digraph user_api {
   "as_marker_solved" -> "marker_patent_export" [color="#c8c8c8", penwidth=0.6];
   "as_marker_solved" -> "marker_plot" [color="#c8c8c8", penwidth=0.6];
   "as_marker_solved" -> "marker_tubes" [color="#c8c8c8", penwidth=0.6];
+  "as_limits" -> "design_asq_marker" [color="#c8c8c8", penwidth=0.6];
+  "as_limits" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
+  "as_limits" -> "marker_risk" [color="#c8c8c8", penwidth=0.6];
+  "as_limits" -> "passes_all" [color="#c8c8c8", penwidth=0.6];
   "as_primer_set" -> "dimer_thermo" [color="#c8c8c8", penwidth=0.6];
   "as_primer_set" -> "primer_set_compatibility" [color="#c8c8c8", penwidth=0.6];
   "as_variant_row" -> "allele_templates" [color="#c8c8c8", penwidth=0.6];
@@ -306,6 +311,7 @@ digraph user_api {
   "as_variant_row" -> "plot_primers" [color="#c8c8c8", penwidth=0.6];
   "as_variant_row" -> "plot_variant_landscape" [color="#c8c8c8", penwidth=0.6];
   "as_variant_row" -> "render_design_search" [color="#c8c8c8", penwidth=0.6];
+  "asq_limits" -> "as_limits" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "design_asq_marker" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
   "asq_limits" -> "marker_risk" [color="#c8c8c8", penwidth=0.6];
@@ -854,6 +860,8 @@ digraph user_api {
   "marker_context" -> "+.marker_plan" [color="#222222", penwidth=2.2];
   "marker_costs" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "marker_costs" -> "marker_tech" [color="#c8c8c8", penwidth=0.6];
+  "marker_criteria" -> "as_limits" [color="#c8c8c8", penwidth=0.6];
+  "marker_criteria" -> "marker_design_checks" [color="#c8c8c8", penwidth=0.6];
   "marker_decision_graph" -> "decision_render" [color="#c8c8c8", penwidth=0.6];
   "marker_design_checks" -> "marker_explain" [color="#222222", penwidth=2.2];
   "marker_design_panel" -> "as_marker_solved" [color="#c8c8c8", penwidth=0.6];

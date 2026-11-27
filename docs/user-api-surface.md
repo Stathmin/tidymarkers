@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (213 узлов, 934 ребра): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (214 узлов, 941 ребро): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -23,15 +23,15 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 
 | Что | Число |
 |---|---|
-| Экспортов в `NAMESPACE` | **213** |
+| Экспортов в `NAMESPACE` | **214** |
 | S3-методов (включая `+.marker_plan`) | **52** |
-| Всего записей в CSV | **261** |
-| Пользовательских (`user_facing = TRUE`) | **139** |
+| Всего записей в CSV | **262** |
+| Пользовательских (`user_facing = TRUE`) | **140** |
 | Служебных (`user_facing = FALSE`) | **122** |
-| Типизированных рёбер в графе | **934** |
-| Точек входа (нет типизированных входов) | **62** |
-| Листьев (нет типизированных потребителей) | **119** |
-| Изолятов (ни входа, ни выхода по классам) | **28** |
+| Типизированных рёбер в графе | **941** |
+| Точек входа (нет типизированных входов) | **63** |
+| Листьев (нет типизированных потребителей) | **120** |
+| Изолятов (ни входа, ни выхода по классам) | **27** |
 
 Типизированное ребро `A → B` означает: `output_class(A)` совпадает с одним из
 `inputs(B)`; `assay` считается подклассом `marker`. Всё, что имеет класс
@@ -42,7 +42,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 
 Полные аргументы — в CSV; таблица ниже обрезает длинные списки после восьми
 позиций. Колонка «Польз.» означает «предназначена пользователю», а не
-«экспортирована»: экспортированы все 213.
+«экспортирована»: экспортированы все 214.
 
 ### 1.1 Ingest — чтение и приведение данных
 
@@ -96,6 +96,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `design_hrm_marker()` | да | genome, snp | flank, min_product, max_product, lengths, tm_range, gc_range | `genome + variant` → `marker` | Design an HRM marker at a variant |
 | `design_indel_size_marker()` | да | genome, snp | flank, min_gap, min_product, max_product, lengths, tm_range, gc_range, engines | `genome + variant` → `marker` | Design an InDel size-polymorphism marker |
 | `as_marker_solved()` | да | report | — | `report + panel + solved` → `marker_solved` | Continue a batch report or a panel as the typed solved object |
+| `as_limits()` | да | criteria | — | `criteria` → `limits` | Numeric thresholds a criteria table was rendered against |
 | `as_primer_set()` | да | primers | — | `primers` → `primer_set` | Claim a named character vector as the tube layer's typed primer set |
 | `as_variant_row()` | да | x | id, chrom, pos | `variants` → `variant` | Select exactly one variant row as a typed `variant` |
 | `as_scheme_ids()` | да | x | — | `schemes` → `schemes` | Scheme ids from `marker_schemes()` for `marker_tech()` |

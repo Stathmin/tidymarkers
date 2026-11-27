@@ -38,6 +38,7 @@ marker_criteria(scheme = "duplex")
 }
 \seealso{
 Other checks:
+\code{\link[=as_limits]{as_limits()}},
 \code{\link[=as_scheme_ids]{as_scheme_ids()}},
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
