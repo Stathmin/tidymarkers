@@ -1,6 +1,6 @@
 # 0009 — The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-27
 - Supersedes: none
 - Builds on: [ADR 0006](0006-panel-pipeline.md) (the seams)

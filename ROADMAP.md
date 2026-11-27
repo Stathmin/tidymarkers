@@ -4037,7 +4037,10 @@ dir)` пишет crate-профиль поверх существующих че
 Ниже только дефекты, найденные при построении графа 207 экспортов и 48 S3-методов
 по классам вход/выход. Сценарии J1–J7 в этот срез не входят.
 
-- [ ] **ZU1. `marker_panel` — терминальный объект без потребителя.**
+- [x] **ZU1. `marker_panel` — терминальный объект без потребителя.**
+    - закрыто: `ZV6` — `as_marker_solved(panel)` в Pareto/артефакте/экспорте;
+      `tests/testthat/test-panel.R`, ребро `panel -> marker_pareto` в
+      `dev/check-user-api.R`.
     - правка: `R/marker_design_panel.R`, `R/marker_pareto.R`,
       `R/marker_artefact.R` — принимать `marker_panel` в `marker_pareto()`,
       `marker_artefact()` и `marker_export()` (или дать `as_marker_solved()`),
@@ -4050,7 +4053,10 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: панель становится промежуточным объектом, а не отчётом;
       сценарий «панель -> Pareto -> патент» перестаёт требовать обход.
 
-- [ ] **ZU2. Исходы не возвращаются в дизайн.**
+- [x] **ZU2. Исходы не возвращаются в дизайн.**
+    - закрыто: `ZV7` — `marker_priors(outcomes = )` со счётчиками
+      `works`/`fails`; `tests/testthat/test-z8-outcomes.R`,
+      `test-scenario-j5.R`.
     - правка: `R/marker_outcomes.R`, `R/marker_priors.R`, `R/marker_plan.R` —
       дать `marker_priors(outcomes = )` или `marker_context(outcomes = )` и
       учитывать исходы в `marker_tech()`/`marker_solve()`; сейчас
@@ -4063,7 +4069,8 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: петля «измерили -> пересобрали» появляется; `calibrated =
       FALSE` остаётся честным.
 
-- [ ] **ZU3. Батч-`report` нельзя продолжить типизированно.**
+- [x] **ZU3. Батч-`report` нельзя продолжить типизированно.**
+    - закрыто: `ZV2` — `as_marker_solved(report)`; `test-scenario-j2.R`.
     - правка: `R/marker_batch.R`, `R/marker_strategy.R` — добавить
       `as_marker_solved(report)` / `report_markers(report, label)` или
       возвращать список схем в `attr`; сейчас `design_kasp_markers()`,
@@ -4076,7 +4083,9 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: батч-сценарий заканчивается не таблицей, а проверяемым
       объектом.
 
-- [ ] **ZU4. `primers` — два несовместимых контракта под одним классом.**
+- [x] **ZU4. `primers` — два несовместимых контракта под одним классом.**
+    - закрыто: `ZV3` — `primer_candidates` и `primer_set` плюс
+      `as_primer_set()`; `test-primer-set.R`, `test-as-primer.R`.
     - правка: `R/marker_primers.R`, `R/marker_tubes.R` — развести
       `primer_candidates` (tibble) и `primer_set` (именованный character) или
       дать `as_primer_set()`; сейчас `design_as_primers()` и
@@ -4089,7 +4098,9 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: граф перестаёт рисовать ложные рёбра
       `design_as_primers -> dimer_thermo` без преобразования.
 
-- [ ] **ZU5. Справочники не соединяются с дизайном.**
+- [x] **ZU5. Справочники не соединяются с дизайном.**
+    - закрыто: `ZV4` — `marker_tech(marker_schemes())` и
+      `marker_design_checks(marker_criteria())`; `test-plan.R`.
     - правка: `R/marker_decision.R`, `R/marker_technology.R`,
       `R/marker_priors.R`, `R/marker_checks.R` — принимать таблицы
       `marker_schemes()`, `rescue_strategy()`, `marker_technologies()`,
@@ -4104,7 +4115,9 @@ dir)` пишет crate-профиль поверх существующих че
       `criterion`); нужен один `marker_registry`-класс или явные адаптеры.
     - следствие: «выбери химию» перестаёт быть ручной работой с колонками.
 
-- [ ] **ZU6. Вход варианта и генотипов неполон.**
+- [x] **ZU6. Вход варианта и генотипов неполон.**
+    - закрыто: `ZV5` — `read_variant_genotypes()` и `as_variant_row()`;
+      `test-io.R`.
     - правка: `R/marker_io.R` — `read_variants_vcf()` читает только
       CHROM/POS/REF/ALT, `read_variant_depth()` — глубину; нужен
       `read_variant_genotypes()` (GT/AD) и `as_variant_row()` для одной строки
@@ -4133,7 +4146,9 @@ dir)` пишет crate-профиль поверх существующих че
       мажорной версии.
     - следствие: новый пользователь видит один вход на задачу, а не три.
 
-- [ ] **ZU8. Держать граф и CSV в актуальном состоянии.**
+- [x] **ZU8. Держать граф и CSV в актуальном состоянии.**
+    - закрыто: `ZV10` — `dev/check-user-api.R` как единственный генератор и
+      `dev/check-mcp-parity.R`; оба зелёные на `2f855f5`.
     - правка: `dev/check-user-api.R` — единственный генератор
       `docs/user-api-graph.dot`; `docs/user-api-surface.csv` —
       единственный источник классов. Новый экспорт без строки в CSV — ошибка

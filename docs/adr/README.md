@@ -18,9 +18,9 @@ the file records the measurement or event that re-tested it).
 | [0005](0005-index-backed-genome-access.md)                             | Genome access is an index-backed strategy with declared capabilities       | proposed |
 | [0006](0006-panel-pipeline.md)                                         | The panel pipeline is an orchestrator with falsifiable seams                | proposed |
 | [0007](0007-module-seams-and-mcp-contract.md)                          | Module seams (contracts, registries, splits) and the MCP runtime contract   | proposed |
-| [0008](0008-user-scenarios-as-contract.md)                             | User scenarios J1–J7 are the executable contract                            | proposed |
-| [0009](0009-panel-orchestrator-contract.md)                            | The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact           | proposed |
-| [0010](0010-index-strategy-at-scale.md)                                | The index strategy at scale: shards, builds and a memory budget            | proposed |
+| [0008](0008-user-scenarios-as-contract.md)                             | User scenarios J1–J7 are the executable contract                            | accepted |
+| [0009](0009-panel-orchestrator-contract.md)                            | The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact           | accepted |
+| [0010](0010-index-strategy-at-scale.md)                                | The index strategy at scale: shards, builds and a memory budget            | accepted |
 | [0011](0011-release-artefact-and-mcp-contract.md)                      | The release artefact and the MCP contract are the product                   | proposed |
 | [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
 
