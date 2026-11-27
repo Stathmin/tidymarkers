@@ -24,6 +24,8 @@ and actions only.
 | 2026-11-27 18:22 | `read_variants_vcf(NULL)` / `read_genome_fasta(NULL)` fail in base R, and a directory is accepted with a warning | logic | one `reader_path()` names the argument and refuses a directory before any open | fixed: `test-io.R` | в этом коммите | 1 | fixed | next audit |
 | 2026-11-27 22:01 | read_variant_depth() fails a bad path in base R, not the family's named refusal | logic | route the reader through reader_path() before any open | test-depth.R: NULL, character() and a directory are rlang_error with the sibling text | c6b3727 | 1 | fixed | — |
 | 2026-11-27 22:04 | read_variant_depth() finds #CHROM only in the first 1000 lines | logic | one vcf_header_line() scans to #CHROM with no line cap; vcf_sample_names() uses it too | test-io.R: 1200 ##INFO lines, depth and genotypes read | 56df34b | 1 | fixed | — |
+| 2026-11-27 22:11 | read_transcripts() drops an invalid FASTA base with a warning, shifting every later coordinate | logic | wrap the transcript read in read_fasta_strict(), as the genome reader does | test-io.R: ACGTNXYZ refused, ACGTRYSWKM round-trips; 31224 pass, 0 fail | 092843a | 1 | fixed | — |
+| 2026-11-27 22:14 | fasta_index() accepts NULL or a directory, and its .gz index copy silently drops an invalid base | logic | reader_path() plus read_fasta_strict() before the plain copy is written | test-io.R: NULL, a directory and ACGTXCGT.fa.gz refused; 185 pass, 0 fail | 8d48ad5 | 1 | fixed | — |
 
 The first nine rows are a backfill written 2026-11-27 17:50 UTC from the branch's
 own commit history: the placeholder row ("no blockers recorded yet") was in place

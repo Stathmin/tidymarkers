@@ -4662,12 +4662,36 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
 - [x] **ZV22. Оба читателя FASTA отказывают файл с буквой вне алфавита одним
   именованным сообщением.**
     - правка: `R/marker_alignment.R` — `read_transcripts()` оборачивает
-      `readDNAStringSet()` в `read_fasta_strict()`, как геномный читатель.
+      `readDNAStringSet()` в `read_fasta_strict()`, как геномный читатель;
+      `fasta_index()` — `reader_path()` и тот же строгий читатель перед
+      записью plain-копии, иначе сдвиг попадает в сам `.fai`.
     - проверка: `test-io.R` — «read_transcripts refuses a base outside the DNA
       alphabet»: `ACGTNXYZ` даёт `rlang_error` «outside the DNA/IUPAC
       alphabet» (до правки — 7 оснований и предупреждение), `ACGTRYSWKM`
       (IUPAC) читается целиком; `dev/test.R "io|alignment|haplotype|transcript"`
-      — 31224 pass, 0 fail, 3 skip.
+      — 31224 pass, 0 fail, 3 skip; `dev/test.R "^io$"` — 185 pass,
+      0 fail, 3 skip.
     - блокер: нет.
     - следствие: буква вне алфавита — отказ на входе, а не тихо укороченная
       последовательность; правило — ADR 0022.
+    - отдельно: `ath_genome()` разбирает скачанный TAIR10 через
+      `tryCatch(readDNAStringSet(), error = NULL)`; та же буква там молча
+      укоротит эталон, но проверка требует сети или 35 МБ кэша, поэтому
+      строгий читатель туда не поставлен. Открытый `[ ]` ZV23.
+
+## ZV23. Строгий читатель для скачанного TAIR10
+
+`ath_genome()` (`R/marker_core.R:1029`) читает кэш Ensembl через
+`tryCatch(Biostrings::readDNAStringSet(fa), error = function(e) NULL)`.
+Предупреждение «invalid one-letter sequence codes» ошибкой не считается,
+поэтому буква вне алфавита в кэше молча укоротит эталон — уже после того,
+как `read_genome_fasta()` и `read_transcripts()` такой файл отказывают
+(ADR 0022).
+
+- [ ] **ZV23. `ath_genome()` отказывает кэш, который не проходит
+  `read_fasta_strict()`.** Правка: обернуть чтение, различать «файл испорчен»
+  и «сети нет» в ветке перезагрузки, чтобы ошибка не подменялась на
+  «downloading failed». Проверка: временный кэш с `ACGTXCGT` (без сети)
+  должен дать отказ с буквой алфавита, а не молчаливую последовательность в
+  7 оснований. Блокер: тест не должен ходить в сеть — нужен шов для
+  `tair10_download()`.

@@ -41,6 +41,9 @@ name, in every reader, through `read_fasta_strict()`.
   legal: they are part of the alphabet, not an unknown letter.
 - A `.gz` path is still read transparently; the rule is about the letters, not
   the container.
+- `fasta_index()` materialises a `.gz` FASTA as a plain file before indexing;
+  that copy is written from the strict read, so an invalid base is refused
+  before it can be baked into the `.fai`, not only before one read.
 
 ## Consequences
 
@@ -49,4 +52,5 @@ name, in every reader, through `read_fasta_strict()`.
 - A transcript file with a stray `X`/`-`/digit now fails before alignment
   instead of producing a shortened sequence.
 - Tests: `test-io.R` — "read_transcripts refuses a base outside the DNA
-  alphabet" (`ACGTNXYZ` errors, `ACGTRYSWKM` round-trips).
+  alphabet" (`ACGTNXYZ` errors, `ACGTRYSWKM` round-trips) and "fasta_index
+  refuses an invalid base before writing the plain copy".
