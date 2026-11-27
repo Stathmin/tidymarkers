@@ -36,6 +36,9 @@ The recorded side of a replay always comes from the artefact.
   artefact@1 path, local to a trusted RDS.
 - A manifest that names none, replayed **with** `solved`, is refused with a
   sentence that names the limit and the two exits.
+- The comparison covers the union of target labels: a verdict the record
+  dropped, and a target the re-solve no longer produces, are both mismatches.
+  A table with no rows claims nothing and does not pass.
 - `decisions.csv` is not used to rebuild the table: a target whose every
   attempt was rejected has no `chosen` row, so the sidecar cannot reproduce the
   one-row-per-target report exactly.
@@ -48,5 +51,7 @@ The recorded side of a replay always comes from the artefact.
   RDS, never from someone else's `solved`.
 - `marker_replay()`'s `@param solved` and the ZV13.3 note now say which records
   `solved` applies to.
-- Test: `test-plan.R` — "a trusted solve cannot replay a record that recorded
-  no verdicts" (refusal, then the own-RDS path still matches).
+- Tests: `test-plan.R` — "a trusted solve cannot replay a record that recorded
+  no verdicts" (refusal, then the own-RDS path still matches) and "a replay
+  checks the record's row set, not just the rows it kept" (a dropped verdict,
+  an empty table and the complete table).

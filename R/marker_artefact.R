@@ -1008,15 +1008,20 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
     cache = cache, progress = isTRUE(progress)
   )
   rep_ <- again$report
-  j <- match(recorded$label, rep_$label)
-  replayed_verdict <- unname(purrr::map2_chr(rep_$ok[j], rep_$marker[j], artefact_verdict))
-  replayed_scheme <- rep_$scheme[j]
+  # A row missing from either side is a difference, not a silence: a record that
+  # dropped a verdict must not pass by never mentioning that target.
+  labels <- unique(c(recorded$label, rep_$label))
+  rec <- recorded[match(labels, recorded$label), ]
+  rep2 <- rep_[match(labels, rep_$label), ]
+  replayed_verdict <- unname(purrr::map2_chr(rep2$ok, rep2$marker, artefact_verdict))
   tbl <- tibble::tibble(
-    target = recorded$label,
-    recorded_scheme = recorded$scheme, replayed_scheme = replayed_scheme,
-    recorded_verdict = recorded$verdict, replayed_verdict = replayed_verdict
+    target = labels,
+    recorded_scheme = rec$scheme, replayed_scheme = rep2$scheme,
+    recorded_verdict = rec$verdict, replayed_verdict = replayed_verdict
   )
-  tbl$match <- identical_na(tbl$recorded_scheme, tbl$replayed_scheme) &
+  tbl$match <- !is.na(match(labels, recorded$label)) &
+    !is.na(match(labels, rep_$label)) &
+    identical_na(tbl$recorded_scheme, tbl$replayed_scheme) &
     identical_na(tbl$recorded_verdict, tbl$replayed_verdict)
   structure(
     list(

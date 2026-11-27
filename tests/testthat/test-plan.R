@@ -569,6 +569,32 @@ test_that("a trusted solve cannot replay a record that recorded no verdicts", {
   expect_true(rp$match)
 })
 
+test_that("a replay checks the record's row set, not just the rows it kept", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("A", 800L)))
+  plan <- marker_plan(genome) +
+    marker_targets(chrom = "Chr1", pos = c(300L, 500L), ref = "A", alt = "G") +
+    marker_tech(schemes = "snp")
+  solved <- suppressWarnings(marker_solve(plan, min_disc = 0.4, progress = FALSE))
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  path <- fs::path(dir, "replay.csv")
+  recorded <- utils::read.csv(path, colClasses = "character")
+  expect_equal(nrow(recorded), 2L)
+  fs::file_delete(fs::path(dir, "solved.rds"))
+  # a record that dropped a verdict must not pass by never mentioning the target
+  utils::write.csv(recorded[-1L, ], path, row.names = FALSE)
+  rp <- suppressWarnings(marker_replay(art, solved = solved))
+  expect_false(rp$match)
+  expect_equal(nrow(rp$table), 2L)
+  expect_true(any(is.na(rp$table$recorded_verdict)))
+  # a table with a header and no rows claims nothing, so it cannot pass
+  utils::write.csv(recorded[0L, ], path, row.names = FALSE)
+  expect_false(suppressWarnings(marker_replay(art, solved = solved))$match)
+  # the complete record still matches
+  utils::write.csv(recorded, path, row.names = FALSE)
+  expect_true(suppressWarnings(marker_replay(art, solved = solved))$match)
+})
+
 test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   solved <- rejected_solve()
   dir <- withr::local_tempdir()
