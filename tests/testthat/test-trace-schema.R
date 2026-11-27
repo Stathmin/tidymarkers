@@ -310,6 +310,29 @@ test_that("an artefact reader refuses a schema it does not know and names it", {
   expect_match(conditionMessage(err), "No artefact.json", fixed = TRUE)
 })
 
+test_that("an artefact reader refuses a manifest edited after it was written", {
+  art <- new_artefact()
+  path <- fs::path(art$dir, "artefact.json")
+  # the untouched record still reads, id and all
+  expect_identical(marker_artefact_read(art$dir)$id, art$manifest$id)
+
+  json <- jsonlite::fromJSON(readr::read_file(path), simplifyVector = FALSE)
+  json$contract$scenario <- "edited after the fact"
+  writeLines(
+    jsonlite::toJSON(json, auto_unbox = TRUE, null = "null", na = "null", digits = NA),
+    path
+  )
+
+  err <- tryCatch(marker_artefact_read(art$dir), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "does not match its own manifest", fixed = TRUE)
+  expect_match(conditionMessage(err), "edited after it was written", fixed = TRUE)
+
+  err <- tryCatch(marker_trace_from_artefact(art$dir), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "does not match its own manifest", fixed = TRUE)
+})
+
 test_that("migrating a trace@1 is identity and idempotent", {
   tr <- marker_trace_from_artefact(new_artefact())
 

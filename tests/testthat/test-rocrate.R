@@ -79,7 +79,7 @@ test_that("a manifest path cannot escape the artefact directory", {
   )
   manifest$files$decisions <- "../escape.csv"
   writeLines(
-    jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE),
+    jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
     fs::path(dst, "artefact.json")
   )
   expect_error(marker_artefact_read(dst), "unsafe file path")
@@ -116,9 +116,20 @@ test_that("an artefact sidecar cannot link out of the record", {
   outside <- fs::path(withr::local_tempdir(), "outside.csv")
   writeLines("label", outside)
   skip_if_not(file.symlink(outside, fs::path(dir, "decisions.csv")), "this filesystem cannot make a symlink")
+  path <- fs::path(dir, "artefact.json")
   writeLines(
-    '{"schema": "tidymarkers/artefact@2", "id": "x", "files": {"decisions": "decisions.csv"}}',
-    fs::path(dir, "artefact.json")
+    jsonlite::toJSON(
+      list(schema = "tidymarkers/artefact@2", files = list(decisions = "decisions.csv")),
+      auto_unbox = TRUE, null = "null", na = "null", digits = NA
+    ),
+    path
+  )
+  # a record the reader can verify: its id is the hash of what it stores
+  stored <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  stored$id <- tidymarkers:::artefact_id(stored)
+  writeLines(
+    jsonlite::toJSON(stored, auto_unbox = TRUE, null = "null", na = "null", digits = NA),
+    path
   )
 
   # The name is one component but the bytes are not the record's: both the

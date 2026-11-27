@@ -624,6 +624,8 @@ test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   path <- fs::path(dir, "artefact.json")
   json <- jsonlite::fromJSON(path, simplifyVector = FALSE)
   json$engine_stamp[["Biostrings"]] <- "9.9.9"
+  # a record written under that engine would carry its own id; the reader checks it
+  json$id <- tidymarkers:::artefact_id(json)
   writeLines(
     jsonlite::toJSON(json, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
     path

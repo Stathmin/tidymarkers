@@ -918,7 +918,30 @@ artefact_manifest <- function(dir) {
   if (!fs::file_exists(path)) {
     abort_msg("No artefact.json in {.path {dir}}; write one with marker_artefact().")
   }
-  jsonlite::fromJSON(readr::read_file(path), simplifyVector = FALSE)
+  manifest <- jsonlite::fromJSON(readr::read_file(path), simplifyVector = FALSE)
+  artefact_verify_id(manifest, path)
+  manifest
+}
+
+# The id is the hash of the manifest's own core, so a reader can check it. An
+# artefact@1 record predates `contract`, and its core cannot be re-derived;
+# every artefact@2 was written by this package, so the check costs nothing there.
+# A newer schema is refused by the reader for that reason alone, not for its id.
+artefact_verify_id <- function(manifest, path) {
+  parts <- trace_schema_parts(manifest$schema)
+  verifiable <- !is.null(parts) && parts$kind == "artefact" &&
+    parts$version >= 2L && parts$version <= TRACE_FORMATS[["artefact"]]
+  if (!verifiable) {
+    return(invisible(NULL))
+  }
+  expected <- artefact_id(manifest)
+  if (!identical(manifest$id, expected)) {
+    abort_msg(
+      "The id in {.path {path}} does not match its own manifest: {.val {manifest$id}}.",
+      i = "The manifest hashes to {.val {expected}}; it was edited after it was written."
+    )
+  }
+  invisible(NULL)
 }
 
 #' Do the inputs still hash to what the artefact recorded?
