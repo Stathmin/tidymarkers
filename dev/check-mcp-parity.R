@@ -5,8 +5,8 @@
 #  start a server.  Runtime behaviour stays in test-mcp.R and
 #  test-mcp-validation.R.
 #
-#    1. mcp_tool_specs() names == schema.json $defs.inputSchemas, and every
-#       spec has a handler
+#    1. mcp_tool_specs() names == schema.json $defs.inputSchemas, each published
+#       inputSchema equals the runtime one as JSON, and every spec has a handler
 #    2. every schema `required` argument is read by the handler (through
 #       mcp_arg/mcp_int/mcp_chr/mcp_named_chr/mcp_num, following mcp_* helpers)
 #       and every argument the handler reads is declared in `properties`
@@ -62,6 +62,32 @@ if (!setequal(tool_names, published)) {
   for (nm in setdiff(published, tool_names)) note("schema.json tool not in registry: ", nm)
 } else {
   ok("schema.json: ", length(published), " inputSchema(s) match the registry")
+}
+
+# The file is a contract artefact, not a runtime source (ADR 0007 section 4),
+# so the two definitions have to agree byte for byte.  Compare as JSON: integer
+# vs numeric and vector vs list must not blur.
+published_schemas <- schema$`$defs`$inputSchemas
+schema_drift <- 0L
+for (nm in intersect(tool_names, published)) {
+  render <- function(x) {
+    as.character(jsonlite::toJSON(x, auto_unbox = TRUE, null = "null"))
+  }
+  if (identical(render(specs[[nm]]$inputSchema), render(published_schemas[[nm]]))) {
+    next
+  }
+  schema_drift <- schema_drift + 1L
+  keys <- union(names(specs[[nm]]$inputSchema), names(published_schemas[[nm]]))
+  bad <- keys[!vapply(keys, function(k) {
+    identical(render(specs[[nm]]$inputSchema[[k]]), render(published_schemas[[nm]][[k]]))
+  }, logical(1))]
+  note(paste0(
+    nm, ": inputSchema in schema.json differs from the runtime registry at ",
+    if (length(bad)) paste(bad, collapse = ", ") else "a nested value"
+  ))
+}
+if (!schema_drift) {
+  ok("schema.json: every published inputSchema equals the runtime one")
 }
 missing_handler <- tool_names[!vapply(specs, function(s) is.function(s$handler), logical(1))]
 for (nm in missing_handler) note("tool has no handler: ", nm)
@@ -275,8 +301,10 @@ for (i in seq_len(nrow(parity))) {
     if (!is.na(reason) && nzchar(reason)) note(s, ": has a tool path but a human_only reason")
   }
 }
-ok("scenarios: ", sum(!as.logical(parity$human_only)), " with a tool path, ",
-  sum(as.logical(parity$human_only)), " human_only")
+ok(
+  "scenarios: ", sum(!as.logical(parity$human_only)), " with a tool path, ",
+  sum(as.logical(parity$human_only)), " human_only"
+)
 
 # -- summary ----------------------------------------------------------------
 
