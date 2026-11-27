@@ -285,7 +285,38 @@ marker_schemes <- function() {
   )
   # discovered schemes (R/marker_<scheme>.R via scheme_def_*()) are appended here,
   # so a new chemistry is one file, not an edit to this registry
-  dplyr::bind_rows(out, extra_scheme_rows())
+  out <- dplyr::bind_rows(out, extra_scheme_rows())
+  structure(out, class = c("schemes", class(out)))
+}
+
+#' Scheme ids from a registry table or a character vector
+#'
+#' The registry answers "which chemistries exist"; the design layer asks "which
+#' ids may I try".  `as_scheme_ids()` is that typed bridge, so
+#' `marker_tech(marker_schemes())` works without pulling the `scheme` column by
+#' hand.  A plain character vector passes through unchanged.
+#' @param x a table with a `scheme` column (e.g. [marker_schemes()]), a character
+#'   vector of ids, or `NULL`.
+#' @return a character vector of unique scheme ids, or `NULL`.
+#' @examples
+#' as_scheme_ids(marker_schemes())
+#' @family checks
+#' @export
+as_scheme_ids <- function(x) {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  if (is.character(x)) {
+    out <- x
+  } else if (is.data.frame(x) && "scheme" %in% names(x)) {
+    out <- as.character(x$scheme)
+  } else {
+    abort_msg("`x` must be scheme ids or a table with a `scheme` column.")
+  }
+  if (anyNA(out) || any(!nzchar(out))) {
+    abort_msg("`x` must not contain missing or empty scheme ids.")
+  }
+  unique(out)
 }
 
 #' One scheme's row, validated

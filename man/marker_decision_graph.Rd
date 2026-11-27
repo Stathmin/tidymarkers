@@ -30,6 +30,7 @@ head(tidygraph::as_tibble(graph))
 }
 \seealso{
 Other checks:
+\code{\link[=as_scheme_ids]{as_scheme_ids()}},
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},

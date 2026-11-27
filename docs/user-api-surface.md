@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (211 узлов, 981 ребро): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (212 узлов, 982 ребра): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -97,6 +97,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `design_indel_size_marker()` | да | genome, snp | flank, min_gap, min_product, max_product, lengths, tm_range, gc_range, engines | `genome + variant` → `marker` | Design an InDel size-polymorphism marker |
 | `as_marker_solved()` | да | report | — | `report + panel + solved` → `marker_solved` | Continue a batch report or a panel as the typed solved object |
 | `as_variant_row()` | да | x | id, chrom, pos | `variants` → `variant` | Select exactly one variant row as a typed `variant` |
+| `as_scheme_ids()` | да | x | — | `schemes` → `schemes` | Scheme ids from `marker_schemes()` for `marker_tech()` |
 | `design_kasp_markers()` | да | genome, loci | variants, BPPARAM | `genome + variants` → `report` | Design KASP markers for a table of loci, with a per-locus verdict |
 | `design_lamp_marker()` | да | genome, snp | flank, arm_lengths, outer_lengths, outer_tm, inner_tm, gc_range, min_product, max_product … +2 | `genome + variant` → `marker` | Design a LAMP marker at a variant |
 | `design_lax_marker()` | да | genome, snp | haplotypes | `genome + variant + haplotypes` → `marker` | Design a lax KASP: one ALT primer per haplotype |

@@ -5,6 +5,7 @@ amplicon_fold_check,export,criteria,TRUE,seq,kind;conditions;min_single_stranded
 annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,variants,variants,FALSE,FALSE,добавляет контекст транскрипта
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
 as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
+as_scheme_ids,export,decision,TRUE,schemes,,schemes;character,character,schemes,TRUE,TRUE,мост реестра химий в marker_tech
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
 as_variant_row,export,ingest,TRUE,variants,id;chrom;pos,variants,variant,variant,TRUE,TRUE,одна типизированная строка варианта
 asq_limits,export,criteria,FALSE,,amplicon;as_tm;com_tm,none,limits,limits,TRUE,FALSE,пороги ASQ
@@ -140,7 +141,7 @@ marker_replay,export,artefact,TRUE,artefact,cache;progress;tolerance,artefact,ma
 marker_reprex,export,artefact,TRUE,x,path;preserve,marker,files,files,FALSE,TRUE,анонимный репродьюсер
 marker_risk,export,criteria,TRUE,assay,limits,marker;limits,risk,risk,FALSE,TRUE,риск-вердикт
 marker_run_context,export,design,TRUE,,genome;variants;population;haplotypes;conditions;engines;options,genome;variants;haplotypes,context,context,FALSE,FALSE,контекст запуска
-marker_schemes,export,decision,TRUE,,,none,tibble,tibble,TRUE,TRUE,химии пакета
+marker_schemes,export,decision,TRUE,,,none,schemes,schemes,TRUE,TRUE,химии пакета
 marker_site_class,export,criteria,FALSE,ref;alts,,character;character,character,character,TRUE,TRUE,класс аллелей
 marker_solve,export,decision,TRUE,plan,cache;all;progress;...,plan,marker_solved,solved,FALSE,FALSE,перебор химий
 marker_targets,export,design,TRUE,,data;chrom;pos;ref;alt;alt2;type;label;strand,variants,targets,targets,FALSE,FALSE,слой целей

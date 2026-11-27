@@ -4206,7 +4206,7 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: граф рисует ложное ребро `design_as_primers ->
       dimer_thermo` без преобразования.
 
-- [ ] **ZV4. Мост справочников в дизайн (ZU5).**
+- [ ] **ZV4. Мост справочников в дизайн (ZU5).** Частично: `as_scheme_ids()` закрывает `marker_schemes() -> marker_tech()`; мост `marker_criteria() -> marker_design_checks()` остаётся.
     - правка: `R/marker_decision.R`, `R/marker_technology.R`,
       `R/marker_priors.R`, `R/marker_checks.R` — `as_scheme_ids()`,
       `as_limits()` или один `marker_registry`; `marker_tech(marker_schemes())`,

@@ -344,6 +344,8 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' @family plan
 #' @export
 marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL) {
+  schemes <- as_scheme_ids(schemes)
+  exclude <- if (is.null(exclude)) NULL else as_scheme_ids(exclude)
   if (!is.null(preset)) {
     preset <- match.arg(preset, names(KASP_TECH_PRESETS))
     schemes <- KASP_TECH_PRESETS[[preset]]

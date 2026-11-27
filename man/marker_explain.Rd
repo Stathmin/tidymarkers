@@ -38,6 +38,7 @@ head(marker_explain(assay))
 \code{\link[=marker_design_checks]{marker_design_checks()}}, \code{\link[=marker_artefact]{marker_artefact()}}
 
 Other checks:
+\code{\link[=as_scheme_ids]{as_scheme_ids()}},
 \code{\link[=decision_palette]{decision_palette()}},
 \code{\link[=decision_style]{decision_style()}},
 \code{\link[=marker_criteria]{marker_criteria()}},

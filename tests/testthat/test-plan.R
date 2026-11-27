@@ -588,3 +588,21 @@ test_that("every non-KASP second pass continues the same ladder pass it screened
     }
   }
 })
+
+test_that("the scheme registry is a typed input to marker_tech", {
+  schemes <- marker_schemes()
+  expect_s3_class(schemes, "schemes")
+  ids <- as_scheme_ids(schemes)
+  expect_identical(ids, unique(schemes$scheme))
+  expect_identical(as_scheme_ids(c("snp", "snp", "hrm")), c("snp", "hrm"))
+  expect_null(as_scheme_ids(NULL))
+  expect_error(as_scheme_ids(tibble::tibble(x = 1)), "scheme")
+  expect_error(as_scheme_ids(c("snp", NA_character_)), "missing")
+
+  genome <- read_genome_fasta(system.file(
+    "extdata", "example_region.fa",
+    package = "tidymarkers"
+  ))
+  plan <- marker_plan(genome) + marker_tech(schemes = schemes)
+  expect_identical(plan$schemes, ids)
+})
