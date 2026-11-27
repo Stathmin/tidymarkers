@@ -619,15 +619,7 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
     "decisions.csv", "checks.csv", "why.csv", "signals.csv", "targets.csv",
     "replay.csv", "artefact.json", "solved.rds"
   )
-  linked <- written[fs::is_link(fs::path(dir, written))]
-  if (length(linked)) {
-    abort_msg(
-      c(
-        "The record writes {.file {linked[[1L]]}}, which is a link.",
-        i = "A record creates its own files; remove the link first."
-      )
-    )
-  }
+  refuse_links(dir, written)
   pkg_dir <- artefact_pkg_root()
   knobs <- solved$knobs %||% list()
   decisions <- artefact_decisions(solved)
@@ -759,6 +751,25 @@ artefact_member_path <- function(dir, file) {
     }
   }
   path
+}
+
+#' Refuse to write a record member through an existing link
+#'
+#' The writer creates each member.  A link at the name would send the write to
+#' its target, and a dangling link would create the target outside the record.
+#' @keywords internal
+#' @noRd
+refuse_links <- function(dir, names) {
+  linked <- names[fs::is_link(fs::path(dir, names))]
+  if (length(linked)) {
+    abort_msg(
+      c(
+        "The record writes {.file {linked[[1L]]}}, which is a link.",
+        i = "A record creates its own files; remove the link first."
+      )
+    )
+  }
+  invisible(NULL)
 }
 
 artefact_sidecar <- function(dir, file, empty) {

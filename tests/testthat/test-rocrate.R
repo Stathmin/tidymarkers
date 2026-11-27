@@ -96,6 +96,21 @@ test_that("the artefact writer refuses to write through a link", {
   expect_identical(readLines(outside), "keep")
 })
 
+test_that("the crate export refuses to write through a link", {
+  fixture <- rocrate_fixture()
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "decisions.csv")
+  writeLines("keep", outside)
+  skip_if_not(file.symlink(outside, fs::path(dir, "decisions.csv")), "this filesystem cannot make a symlink")
+
+  expect_error(
+    marker_export_rocrate(fixture$artefact, dir = dir),
+    "which is a link",
+    class = "rlang_error"
+  )
+  expect_identical(readLines(outside), "keep")
+})
+
 test_that("an artefact sidecar cannot link out of the record", {
   dir <- withr::local_tempdir()
   outside <- fs::path(withr::local_tempdir(), "outside.csv")

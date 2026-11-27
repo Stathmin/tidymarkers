@@ -262,6 +262,7 @@ marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
   }
   fs::dir_create(dir)
   files <- rocrate_files(artefact$manifest)
+  refuse_links(dir, c(files, "ro-crate-metadata.json"))
   for (file in files) {
     from <- artefact_member_path(src, file)
     if (!fs::file_exists(from)) {
