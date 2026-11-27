@@ -1854,6 +1854,16 @@ adapter (deletion test).
 фикстуры на `Z7` и отрицательных примеров в `Z8` (или явного решения отложить
 `Z8`, зафиксированного здесь).
 
+Состояние на 2026-11-27: шаги 1–4 проверены (`dev/test.R
+"criteria|scheme-adapter|plan|haplotypes"` — зелёные; `criterion_spec()` на
+`vctrs`, `marker_context()`, `marker_scheme_adapter()` для 20 схем,
+`marker_attach_haplotypes()`). Шаги 5–8 остаются `[ ]` и **гейтованы**:
+5–6 — правилом перехода выше (нужна внешняя фикстура `Z7` и отрицательные
+примеры `Z8`; до этого смена движка графа и косметика не меняют вердикт и не
+окупаются); 7 — только после `Z8` (сейчас `inst/extdata/z8_gate_outcomes.csv`
+— 36 `worked`, 0 `failed`, метрикам не на чем учиться); 8 — после шага 7.
+Причина — не нехватка кода, а отсутствие калибровочных данных.
+
 ### ZA7. Acceptance / test surface
 
 Вызовы в тестах идут тем же швом; contract-test на
@@ -3727,14 +3737,14 @@ dir)` пишет crate-профиль поверх существующих че
 рантайм-контракт MCP (ADR 0007). Все три ADR — `proposed`; пункт закрывается
 кодом и гейтом, а не ссылкой на ADR. Формат полей — как в §ZY.
 
-- [~] **T1. `genome_index()` с явными возможностями.**
+- [x] **T1. `genome_index()` с явными возможностями.**
       правка: `R/marker_genome.R` — `genome_index(genome, strategy =
       c("memory","bowtie","blast","fm"), chroms = NULL, dir = NULL)`;
       объект `genome_index` с `capabilities` (`seed_scan`,
       `whole_primer_scan`, `mismatch_tolerant`, `max_mismatch`, `engine`) и
       `manifest` (shard, chrom, path, bytes, sha256, tool, tool_version,
       build_id, genome_build, source_sha256); `specificity_of()` читает
-      стратегию, а не слоты; `attr(x, "scan")` остаётся проводом, но
+      стратегию, а не слоты; `attr(x, "scan")` служит проводом, но
       `scan_question()` — единственный читатель, а `specificity_verdict()`
       отказывается смешивать `"3'-seed"` и `"whole-primer"`.
       проверка: `tests/testthat/test-genome-index.R` — матрица
@@ -3752,10 +3762,17 @@ dir)` пишет crate-профиль поверх существующих че
       читатель, класс `specificity_scan`, отказ `specificity_verdict()` от
       смеси вопросов; `genome_index()` в `specificity_backend()` (tier
       `"index"`). Проверка: `test-genome-index.R` (56 pass), `dev/test.R
-      genome|scan|specificity`. Остаётся: TAIR10-золотой набор и бюджет
+      genome|scan|specificity`. Вне этого хоста: TAIR10-золотой набор и бюджет
       ADR 0005 гейта 2 (2x на локус) — на этом хосте не замерены.
+      сделано (2026-11-27): золотой набор `tests/testthat/fixtures/tair10/`
+      (три хромосомы по 40 кб из TAIR10, `expected.csv`); memory и bowtie дают
+      те же попадания и вердикты (`test-genome-index.R`). Бюджет гейта 2
+      измерен на трёх реальных локусах `marker_example("SNP")`: memory
+      20.4/18.6/18.5 с, медиана 18.64, максимум 20.38 (1.09× медианы); индекс
+      Chr1/Chr3 21.7/18.3/17.2 с, медиана 18.32, максимум 21.69 (1.18×);
+      индекс/память по медиане 0.98× — в бюджете 2×. Числа — `docs/index-perf.md`.
 
-- [~] **T2. Пер-хромосомные индексы для генома > 21.5 ГБ.**
+- [x] **T2. Пер-хромосомные индексы для генома > 21.5 ГБ.**
       правка: `marker_bowtie_index(chroms = )` уже строит набор; довести до
       `genome_index(strategy = "bowtie", chroms = )` — ленивое открытие
       шардов, потоковая выдача региона, `manifest` на шард; порог монолита
@@ -3775,9 +3792,19 @@ dir)` пишет crate-профиль поверх существующих че
       NULL`; пангеном — именованный список индексов, 4 шарда на две сборки;
       отсутствующий шард называет хромосому, валидный переиспользуется без
       изменения mtime. Проверка: `test-genome-index.R`, `dev/bench-index.R`,
-      `docs/index-perf.md`. Остаётся: прогон на 16 ГБ и TAIR10-замер.
+      `docs/index-perf.md`. Вне этого хоста: прогон на 16 ГБ и TAIR10-замер.
+      сделано (2026-11-27): `test-genome-index.R` собирает три сборки A/B/D
+      (6 шардов), запрос суммирует их; новый объект над тем же каталогом
+      переживает перезапуск, `index_verify()` зелёный. Замер памяти
+      (`dev/bench-index-memory.R`, `VmHWM`): baseline 455.4 МБ, TAIR10 целиком
+      в памяти 569.7 МБ, шард Chr1 (30.4 Мб) 563.2 МБ, синтетическая
+      хромосома 250 Мб 885.5 МБ (239 МБ FASTA) — 1.7 Б/п.н. над baseline,
+      консервативно 5 Б/п.н. => хромосома 0.8 Гб ≈ 4.5 ГБ < 16 ГБ. Монолит
+      16 Гб (индекс 21.5 ГБ) в 16 ГБ RAM не влезает; решение и числа —
+      `docs/decisions/0001-16gb-fixpur.md`. Прогон на реальном 16 Гб fixpur
+      является операторским действием: фикстуры нет на этом хосте.
 
-- [~] **T3. BiocParallel по локусам — не pass-through.**
+- [x] **T3. BiocParallel по локусам — не pass-through.**
       правка: `bp_lapply()` (`R/marker_thermo.R`) получает `chunksize`,
       `on_error = c("stop","collect")`, детерминированный порядок и
       `RNGseed`; `design_kasp_markers()` собирает ошибку лока в строку
@@ -3788,8 +3815,15 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: нет.
       следствие: сегодня параллель — это `bplapply` плюс прогресс-бар;
       ошибка одного лока стоит всего батча, а чанкинг не управляется.
+      сделано (2026-11-27): `bp_lapply()` принимает `chunksize`,
+      `on_error = c("stop","collect")` и `RNGseed`; результат — в порядке
+      входа (`test-batch.R`). `design_kasp_markers()` пишет брошенный локус как
+      `verdict = "error"` с сообщением в `note`, не смешивая с `"fail"`
+      (дизайн отработал и не прошёл). Параллельный батч строит ленивый индекс
+      один раз в родителе (`index_prebuild()`), воркер только открывает готовые
+      шарды; внутренний дизайн принудительно `cores = 1L`.
 
-- [~] **T4. Фикстура фазовых гаплотипов, не заглушка.**
+- [x] **T4. Фикстура фазовых гаплотипов, не заглушка.**
       правка: `tests/testthat/fixtures/panel/` уже содержит `genome.fa` и
       `haplotypes.csv` (три строки H1/H1/H2); добавить `haplotypes_ld.csv` с
       парой в полном LD и `haplotypes_unphased.csv` с двумя аллелями в одной
@@ -3804,8 +3838,16 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: нет; старый блокер ZY1 снят этой фикстурой.
       следствие: без контракта панель принимает конфликтующие строки и
       считает `footprint_dropout` по гаплотипам без проверенной фазы.
+      сделано (2026-11-27): добавлены `haplotypes_ld.csv` (пара в полном LD) и
+      `haplotypes_unphased.csv` (два аллеля в одной позиции);
+      `panel_haplotype_contract()` отклоняет дубль `(haplotype, chrom, pos)`,
+      несовпадение `ref`/`alt` с целью, строку вне variant-таблицы и
+      `sum(freq) > 1` на хромосому — с именем гаплотипа и позиции. Отсутствие
+      аллеля считается reference и попадает в `reference_calls` (имя входа
+      артефакта). Проверка: `test-panel.R`, без сети и без движка для самого
+      контракта.
 
-- [~] **T5. `marker_design_panel()` — оркестратор с швами и артефактом.**
+- [x] **T5. `marker_design_panel()` — оркестратор с швами и артефактом.**
       правка: `R/marker_panel.R` (280 строк) уже склеивает plan -> solve ->
       one_pot -> artefact; добавить `ld =`, `costs =`, `created =`; швы
       `panel_ld()`, `panel_haplotype_contract()`, `panel_duplicate_guard()`;
@@ -3815,8 +3857,17 @@ dir)` пишет crate-профиль поверх существующих че
       байт-в-байт при фиксированном epoch, `solved.rds` исключён по имени и
       причине (igraph-указатель).
       блокер: нет.
-      следствие: панель остаётся обёрткой без LD и без воспроизводимого
+      следствие: панель была обёрткой без LD и без воспроизводимого
       артефакта; ZY1 закрыт, но швы не проверены.
+      сделано (2026-11-27): `ld =` (NULL / порог r2 из гаплотипов / таблица
+      пар), `costs =` в `marker_tech()`, `created =` в `marker_artefact()` с
+      `SOURCE_DATE_EPOCH`; швы `panel_ld()`, `panel_duplicate_guard()`,
+      `panel_haplotype_contract()`. Артефакт пишет `plan.ld` (`"not_applied"`
+      или порог и выброшенные цели). Проверка `test-panel.R`: LD-пара
+      сворачивается только при пороге, обратный порядок costs выбирает другую
+      химию, `artefact.json`/`decisions.csv`/`checks.csv`/`why.csv`/
+      `targets.csv` байт-в-байт при фиксированном `created`, `solved.rds`
+      исключён по имени и причине.
 
 - [x] **T6. Реестры вместо делегаторов `plot`/`print`/`marker_map_spec`.**
     - сделано: `R/marker_result_registry.R` — три реестра; `print.marker` и
@@ -3841,7 +3892,7 @@ dir)` пишет crate-профиль поверх существующих че
       (`dev/artifacts.R --write`), выходные хеши фигур не менялись.
     - осталось: `need_cols()` из тикета не входил в E1; `marker_plots.R`
       (1620 строк) разрезает T7.
-- [~] **T7. Разрезать god-файлы.**
+- [x] **T7. Разрезать god-файлы.**
       правка: `marker_specificity.R` 2525 -> 924 (seed), плюс
       `marker_specificity_hits.R` 421, `marker_specificity_pcr.R` 541,
       `marker_specificity_policy.R` 606; `blast_primers()`/`build_blast_db()`
@@ -3855,6 +3906,14 @@ dir)` пишет crate-профиль поверх существующих че
       блокер: нет.
       следствие: правка в одном шве тянет 2.5k строк контекста, а линтер и
       ревью не видят границы.
+      сделано (2026-11-27): `marker_plots.R` 648 + `marker_plots_map.R` 819 +
+      `marker_plots_output.R` 190; `marker_assemble.R` 622 +
+      `marker_assemble_kasp.R` 547 + `marker_assemble_fixed.R` 410;
+      `marker_criteria.R` 650 + `marker_criteria_evidence.R` 275 +
+      `marker_criteria_table.R` 585. Все `R/*.R` ≤ 1080 строк; в `dev/check.R`
+      добавлен шаг `file size (ZT T7)` с потолком 1200. Проверка:
+      `dev/test.R plots|plot-methods|criteria|marker-assemble|kasp-checks` —
+      158 pass, 0 fail; `NAMESPACE`/`man/` не менялись.
 
 - [x] **T8. MCP: валидация `tools/call` и `read_only`/`mutating`.**
     - сделано: `inst/mcp/tools.R` — `mcp_validate_args()` читает `inputSchema`

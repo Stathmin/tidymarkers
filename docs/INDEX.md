@@ -65,6 +65,15 @@ Other vignettes:
 - [ADR 0007](adr/0007-module-seams-and-mcp-contract.md) — module seams
   (contracts, registries, splits) and the MCP runtime contract.
 
+## Operator decisions
+
+- [decisions/README](decisions/README.md) — dated operator decisions that close
+  a queue item with a measurement or a policy.
+- [Decision 0001](decisions/0001-16gb-fixpur.md) — a 16 Gb fixpur is a disk job
+  on per-chromosome shards (measured peak RSS), not a 21.5 GB RAM job.
+- [Decision 0002](decisions/0002-ci-strict-gate.md) — CI fails when a linter, a
+  test runner or the test files are absent; the release leg runs the local gate.
+
 ## Docs and artifacts layer
 
 - [docs/INDEX](INDEX.md) — this page.
