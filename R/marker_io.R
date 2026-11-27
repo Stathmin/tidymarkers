@@ -307,7 +307,11 @@ genotype_call <- function(gt, ad) {
     }
   }
   depth <- if (is.na(ref_depth)) NA_real_ else ref_depth + alt_depth
-  dosage <- if (is.na(gt) || gt %in% c(".", "./.", ".|.")) {
+  # A GT that names an allele this biallelic record does not have is not
+  # estimable: `2/2` is not "hom alt", and AD must not answer in its place
+  # (ADR 0020).  Only an absent or no-call GT leaves AD to decide.
+  no_call <- is.na(gt) || !nzchar(gt) || gt %in% c(".", "./.", ".|.")
+  dosage <- if (no_call) {
     NA_real_
   } else {
     alleles <- strsplit(gt, "[/|]", perl = TRUE)[[1L]]
@@ -315,7 +319,7 @@ genotype_call <- function(gt, ad) {
     a <- a[!is.na(a)]
     if (length(a) != 2L || any(a > 1L)) NA_real_ else sum(a)
   }
-  if (is.na(dosage) && !is.na(depth) && depth > 0) {
+  if (no_call && !is.na(depth) && depth > 0) {
     dosage <- round(2 * alt_depth / depth)
   }
   c(genotype = dosage, depth = depth)

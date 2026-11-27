@@ -533,6 +533,31 @@ test_that("read_variant_genotypes reads GT/AD into long dosage rows", {
   expect_error(read_variant_genotypes(vcf, samples = "nope"), "no sample")
 })
 
+test_that("a GT naming a missing allele is NA, not a guess from AD", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    # biallelic records: allele `2` does not exist, so these GTs are not calls
+    "1\t500\t.\tA\tG\t.\t.\t.\tGT:AD\t2/2:6,4",
+    "1\t600\t.\tA\tG\t.\t.\t.\tGT:AD\t0/2:6,4",
+    "1\t700\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:6,4",
+    # an absent call is not an invalid one: AD still decides it
+    "1\t800\t.\tA\tG\t.\t.\t.\tGT:AD\t.:6,4",
+    "1\t900\t.\tA\tG\t.\t.\t.\tGT:AD\t./.:6,4"
+  ), vcf)
+  g <- read_variant_genotypes(vcf)
+  at <- function(pos) g$genotype[g$pos == pos][[1L]]
+  expect_true(is.na(at(500L)))
+  expect_true(is.na(at(600L)))
+  expect_equal(at(700L), 1)
+  expect_equal(at(800L), 1)
+  # a no-call is not an invalid call: AD still fills it, as it always did
+  expect_equal(at(900L), 1)
+  # the read is dropped from the dosage, not from the depth
+  expect_equal(g$depth, rep(10, 5))
+})
+
 test_that("genotypes feed marker_informativeness", {
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
