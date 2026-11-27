@@ -47,6 +47,8 @@ Other vignettes:
   data classes, composition rules, the connectivity graph and the ZU defects.
 - [docs/index-perf](index-perf.md) — one locus, memory vs per-chromosome bowtie:
   build and query times, and what the index object does not hold.
+- [docs/deps-audit](deps-audit.md) — the R deptry/vulture analogue
+  (`dev/audit-deps.R`): unused imports, duplicate names, dead internals.
 
 ## Architecture decisions
 
