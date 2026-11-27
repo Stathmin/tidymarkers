@@ -36,6 +36,11 @@ Every reader validates the raw identifier first, then normalises it:
   before `ath_chrom()` and names the record. Found in the review of this ADR:
   the reader had kept the pre-fix order and returned the invented contig `Chr`
   for the same file the variant reader refused.
+- `read_variant_depth()` — both the sample and the sites/INFO path call
+  `check_depth_pos()`, which now refuses an empty or `NA` `CHROM` before the
+  `ath_chrom()` of the returned tibble. Found by sweeping the other VCF readers
+  for this ADR: the depth reader had no admission at all, so an empty `CHROM`
+  became `Chr` while the variant reader refused the same line.
 - `as_variant_row()` — the selected row must carry a chromosome and `pos >= 1`
   before `ath_chrom()` and before the `variant` class is set.
 - `genome_index()` / `index_shards()` — a build or chromosome name containing a
@@ -71,9 +76,10 @@ vector.
 
 - `tests/testthat/test-io.R`: `read_variants_vcf()` and
   `read_variant_genotypes()` both refuse a VCF record with no chromosome
-  (commit `6474452`); the variant row refuses an empty chromosome and
-  `pos < 1` (`d1fcd18`); the VCF reader refuses `POS` outside integer range
-  (`e5c2c87`).
+  (commit `6474452`); `tests/testthat/test-depth.R` checks the same line on
+  both `read_variant_depth()` paths (sample and INFO/DP); the variant row
+  refuses an empty chromosome and `pos < 1` (`d1fcd18`); the VCF reader
+  refuses `POS` outside integer range (`e5c2c87`).
 - `tests/testthat/test-genome-index.R`: build and chromosome names with a path
   separator are refused before a shard path exists.
 - `tests/testthat/test-io.R`: a FASTA that names a sequence twice is refused

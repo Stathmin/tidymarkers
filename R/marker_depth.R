@@ -11,8 +11,15 @@
 # =============================================================================
 
 # a POS that vroom could not cast to integer is NA; without this guard the
-# locus silently disappears or collides with a real one
+# locus silently disappears or collides with a real one.  An absent CHROM is
+# refused before ath_chrom(), like the other VCF readers (ADR 0017).
 check_depth_pos <- function(pos, chrom) {
+  bad_chrom <- is.na(chrom) | !nzchar(chrom)
+  if (any(bad_chrom)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad_chrom)[[1L]]
+    ))
+  }
   bad <- is.na(pos) | pos < 1L
   if (any(bad)) {
     abort_msg(gettextf(
