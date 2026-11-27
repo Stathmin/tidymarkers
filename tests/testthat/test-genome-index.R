@@ -126,6 +126,12 @@ test_that("a valid shard is reused without touching its mtime", {
   before <- fs::file_info(shard)$modification_time
   build()
   expect_identical(fs::file_info(shard)$modification_time, before)
+  # a fresh object over the same directory is the manifest after a restart
+  restarted <- genome_index(marker_genome(fa), "bowtie",
+    chroms = c("chr1", "chr2"), dir = dir
+  )
+  expect_identical(restarted$manifest$path, first$manifest$path)
+  expect_no_error(index_verify(restarted))
 })
 
 test_that("a missing shard names the chromosome, a changed one names the shard", {
@@ -232,7 +238,7 @@ test_that("a pangenome is a named list of per-chromosome shards", {
       chr2 = rand(500L)
     ))
   }
-  fa <- vapply(c(A = TRUE, B = FALSE), function(site_in) {
+  fa <- vapply(c(A = TRUE, B = FALSE, D = FALSE), function(site_in) {
     p <- tempfile(fileext = ".fa")
     Biostrings::writeXStringSet(make_assembly(site_in), p)
     p
@@ -250,10 +256,42 @@ test_that("a pangenome is a named list of per-chromosome shards", {
     expect_identical(idx$manifest$chrom, c("chr1", "chr2"))
     expect_identical(nrow(idx$manifest), 2L)
   }
-  expect_length(unique(unlist(lapply(pan, function(x) x$manifest$path))), 4L)
+  expect_length(unique(unlist(lapply(pan, function(x) x$manifest$path))), 6L)
 
   res <- specificity_of(c(AS = site), pan, k = 15L, max_mismatch = 0L)
-  expect_identical(res$genome, c("A", "B"))
-  expect_identical(res$hits, c(1L, 0L))
-  expect_identical(scan_question(res), c(A = "whole-primer", B = "whole-primer"))
+  expect_identical(res$genome, c("A", "B", "D"))
+  expect_identical(res$hits, c(1L, 0L, 0L))
+  expect_identical(scan_question(res), c(A = "whole-primer", B = "whole-primer", D = "whole-primer"))
+})
+
+test_that("the TAIR10 gold set gives the same verdict on memory and bowtie", {
+  skip_if_not_installed("Rbowtie")
+  fa <- testthat::test_path("fixtures", "tair10", "genome.fa")
+  expected <- utils::read.csv(
+    testthat::test_path("fixtures", "tair10", "expected.csv"),
+    stringsAsFactors = FALSE
+  )
+  primers <- c(
+    Chr1_unique = "GGTTATAAATTATTAGAAGTTTTC",
+    Chr2_unique = "ATTCGTCGACCAGGACGGCGGAAT",
+    Chr3_unique = "CGTCGTATTCGGAAGTTTGCTCGA",
+    Chr1_twice = "GTCATTTGGAGATACGAAATCAAA"
+  )
+  mem <- specificity_of(
+    primers, genome_index(Biostrings::readDNAStringSet(fa), "memory"),
+    k = SEED_K, max_mismatch = 0L
+  )
+  idx <- specificity_of(
+    primers,
+    genome_index(marker_genome(fa), "bowtie",
+      chroms = c("Chr1", "Chr2", "Chr3"), dir = withr::local_tempdir()
+    ),
+    k = SEED_K, max_mismatch = 0L
+  )
+  verdict <- function(hits) ifelse(hits == 1L, "unique", "off-target")
+  expect_identical(mem$primer, expected$primer)
+  expect_identical(mem$hits, expected$hits)
+  expect_identical(idx$hits, expected$hits)
+  expect_identical(verdict(mem$hits), verdict(expected$hits))
+  expect_identical(verdict(idx$hits), verdict(expected$hits))
 })
