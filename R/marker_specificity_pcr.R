@@ -105,7 +105,7 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
 #'
 #' The pairing half of [in_silico_pcr()], factored out so a caller that scanned
 #' several primers in one pass can pair each pair from its slice of that one
-#' table ([pcr_products_batch()]).
+#' table (`pcr_products_from_hits()`).
 #' @param fh_all forward-primer hit table (`primer_hit_table(side = "f")` on the
 #'   primer itself).
 #' @param rh_all reverse-primer hit table, searched side (`side = "r"` on the

@@ -66,7 +66,7 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
 #' instead, with the columns the callers index.  `strand` is required so a new
 #' call site cannot shift the windows into its place.
 #' @param seq,starts,lengths,strand,tm_range,gc_range,conditions see
-#'   [primer_candidates()].
+#'   `primer_candidates()`.
 #' @keywords internal
 #' @noRd
 safe_candidates <- function(seq, starts, lengths, strand, tm_range, gc_range,

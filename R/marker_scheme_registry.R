@@ -28,7 +28,7 @@ scheme_registry_token <- function() {
 #'
 #' Memoised: the answer is fixed once the package is loaded, and the design path
 #' asks for it per candidate (a 6-target KASP design called it ~500 times).
-#' The key carries [scheme_registry_token()], so composing or removing a scheme
+#' The key carries `scheme_registry_token()`, so composing or removing a scheme
 #' changes the key rather than only clearing the cache.
 #' @return a named list of scheme specs (name = scheme id).
 #' @keywords internal

@@ -200,7 +200,7 @@ index_manifest_row <- function(row, source_sha256) {
 #' Fills the ADR 0005 manifest columns from the shards on disk: byte size, a
 #' SHA-256 over the artefact set, the source hash and the creation time.  Rows
 #' for a shard that has not been built keep `NA` bytes/hash.  Called by tests,
-#' [index_verify()] and anyone who wants to record what a run used; opening the
+#' `index_verify()` and anyone who wants to record what a run used; opening the
 #' index never reads the shards.
 #' @param index a `genome_index`.
 #' @return a tibble with `INDEX_MANIFEST_COLUMNS`.

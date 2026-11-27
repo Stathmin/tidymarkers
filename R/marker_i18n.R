@@ -41,7 +41,7 @@ abort_msg <- function(message, ..., class = NULL,
 
 #' Translate and raise a user-facing warning
 #'
-#' Same contract as [abort_msg()], but raises a warning instead of an error.
+#' Same contract as `abort_msg()`, but raises a warning instead of an error.
 #' @param message a single message literal.
 #' @param ... named bullet literals.
 #' @keywords internal
