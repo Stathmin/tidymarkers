@@ -82,4 +82,5 @@ describe itself and not the filesystem around it.
   also written as `replay.csv` (three character columns), and
   `marker_replay(artefact, solved = <trusted>)` compares against that table
   without opening the RDS. A record without `replay.csv` can still be replayed
-  only where its RDS is trusted (`ZV13.3`).
+  only where its RDS is trusted (`ZV13.3`); a caller's own `solved` is not a
+  substitute for the record's verdicts ([ADR 0024](0024-a-replay-compares-only-the-records-own-verdicts.md)).
