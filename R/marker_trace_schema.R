@@ -171,7 +171,8 @@ trace_from_solved <- function(solved) {
       layers = solved$plan$layers,
       targets = nrow(tg),
       schemes_available = solved$schemes,
-      costs = as.list(solved$plan$costs %||% NA)
+      costs = as.list(solved$plan$costs %||% NA),
+      ld = solved$plan$ld %||% "not_applied"
     ),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
