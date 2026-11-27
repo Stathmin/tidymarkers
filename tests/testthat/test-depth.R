@@ -135,3 +135,12 @@ test_that("a depth VCF POS outside integer range is refused, not NA", {
   ), sites)
   expect_error(suppressWarnings(read_variant_depth(sites)), "positive integer range")
 })
+
+test_that("a confidence threshold is a real number in its range", {
+  d <- tibble::tibble(chrom = "Chr1", pos = 10L, depth = 10L)
+  expect_error(variant_confidence(d, min_depth = Inf), "positive number")
+  expect_error(variant_confidence(d, min_weight = 1.5), "\\[0, 1\\]")
+  expect_error(variant_confidence(d, min_weight = NA_real_), "\\[0, 1\\]")
+  expect_error(variant_confidence(d, min_weight = "high"), "\\[0, 1\\]")
+  expect_equal(nrow(variant_confidence(d, min_weight = 1)), 1L)
+})

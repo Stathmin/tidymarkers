@@ -228,8 +228,14 @@ clean_vcf_value <- function(x) {
 #' @family QC
 #' @export
 variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
-  if (!is.numeric(min_depth) || length(min_depth) != 1L || is.na(min_depth) || min_depth <= 0) {
+  if (!is.numeric(min_depth) || length(min_depth) != 1L || !is.finite(min_depth) || min_depth <= 0) {
     abort_msg("`min_depth` must be a single positive number.")
+  }
+  if (
+    !is.numeric(min_weight) || length(min_weight) != 1L || !is.finite(min_weight) ||
+      min_weight < 0 || min_weight > 1
+  ) {
+    abort_msg("`min_weight` must be one number in [0, 1].")
   }
   x <- tibble::as_tibble(depth)
   need_cols(x, c("chrom", "pos", "depth"), arg = "depth")
