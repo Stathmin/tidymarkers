@@ -58,6 +58,33 @@ test_that("export copies exactly the files the manifest names", {
   expect_false("stray.txt" %in% actual)
 })
 
+test_that("a manifest path cannot escape the artefact directory", {
+  art <- rocrate_fixture()$artefact
+
+  # the manifest is input, not trusted state: a path that leaves the directory
+  # is refused before any file is copied
+  tampered <- art
+  tampered$manifest$files$decisions <- "../escape.csv"
+  expect_error(
+    marker_export_rocrate(tampered, dir = tempfile("crate")),
+    "unsafe file path"
+  )
+
+  # the reader refuses the same name in a persisted artefact
+  dst <- withr::local_tempdir()
+  fs::file_copy(fs::dir_ls(art$dir, type = "file"), dst)
+  manifest <- jsonlite::fromJSON(
+    fs::path(art$dir, "artefact.json"),
+    simplifyVector = FALSE
+  )
+  manifest$files$decisions <- "../escape.csv"
+  writeLines(
+    jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE),
+    fs::path(dst, "artefact.json")
+  )
+  expect_error(marker_artefact_read(dst), "unsafe file path")
+})
+
 test_that("the metadata graph describes one run over the manifest inputs", {
   art <- rocrate_fixture()$artefact
   crate <- marker_export_rocrate(art, dir = tempfile("crate"))

@@ -54,6 +54,7 @@ rocrate_files <- function(manifest) {
   files <- unlist(declared, use.names = FALSE)
   files <- as.character(files)
   files <- files[!is.na(files) & nzchar(files)]
+  files <- vapply(files, artefact_safe_name, character(1), USE.NAMES = FALSE)
   unique(c("artefact.json", files))
 }
 

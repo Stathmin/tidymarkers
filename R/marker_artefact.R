@@ -681,10 +681,22 @@ print.marker_artefact <- function(x, ...) {
 # A sidecar is named by the manifest and may be absent (`NA` in `files`); a
 # missing file is an empty table, never an error -- a solve that produced no row
 # still wrote a record.
+artefact_safe_name <- function(file) {
+  # the manifest is a file a stranger can hand us: never resolve a path out of
+  # the artefact directory
+  ok <- is.character(file) && length(file) == 1L && !is.na(file) && nzchar(file) &&
+    !grepl("[/\\\\]", file) && !file %in% c(".", "..")
+  if (!ok) {
+    abort_msg("The manifest names an unsafe file path: {.val {file}}.")
+  }
+  file
+}
+
 artefact_sidecar <- function(dir, file, empty) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     return(empty())
   }
+  file <- artefact_safe_name(file)
   path <- fs::path(dir, file)
   if (!fs::file_exists(path)) {
     return(empty())
