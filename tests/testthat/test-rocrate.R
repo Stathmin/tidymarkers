@@ -150,6 +150,10 @@ test_that("a crate round-trips back to the same artefact", {
   expect_identical(back$manifest$counts, ref$manifest$counts)
   expect_identical(back$manifest$inputs, ref$manifest$inputs)
 
+  # the declared verdicts travel too, so an imported crate replays without its RDS
+  expect_identical(fs::path_file(back$manifest$files$replay), "replay.csv")
+  expect_true(fs::file_exists(fs::path(back$dir, "replay.csv")))
+
   # The descriptor inside a crate is also a valid entry point.
   from_meta <- marker_import_rocrate(fs::path(crate, "ro-crate-metadata.json"))
   expect_identical(from_meta$id, art$id)
