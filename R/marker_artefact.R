@@ -842,9 +842,6 @@ artefact_dir <- function(artefact) {
   abort_msg("`artefact` must be a marker_artefact or a directory.")
 }
 
-#' Read an artefact's manifest back
-#' @keywords internal
-#' @noRd
 # The trace and the manifest publish the same counts; one definition keeps
 # them from drifting apart.
 artefact_counts <- function(solved, decisions, signals) {
@@ -857,6 +854,9 @@ artefact_counts <- function(solved, decisions, signals) {
   )
 }
 
+#' Read an artefact's manifest back
+#' @keywords internal
+#' @noRd
 artefact_manifest <- function(dir) {
   path <- fs::path(dir, "artefact.json")
   if (!fs::file_exists(path)) {
