@@ -47,6 +47,12 @@ One file, one admitted set, in all three readers:
   folded to `N`), so the join key means one thing.
 - A `POS` outside the positive integer range stops the read and names the
   record, in all three readers. No reader returns a partial table for it.
+- A one-row selector refuses rather than drops. `as_variant_row()` asks for one
+  variant, so a symbolic or absent allele is an error that names the allele:
+  there is no second record to fall back to. Before this decision the row
+  passed through `normalise_allele()` and became `NNNNN`, the fake `N` the
+  readers already refuse to produce. Found by sweeping the non-streaming
+  entrance to the same `variant` class.
 - Differences remain only where the table shape forces them, as ADR 0016
   states: the genotype reader drops a multi-allelic record (a dosage against
   "the ALT" is ambiguous), a line shorter than the header (nothing to read)
@@ -84,5 +90,7 @@ One file, one admitted set, in all three readers:
   `R` yields a depth table whose `(chrom, pos, ref, alt)` equals the variant
   table's (symbolic dropped, `G`/`N` normalised), on the sample path and the
   `INFO/DP` path.
+- `tests/testthat/test-io.R`: `as_variant_row()` refuses `<DEL>`, `*`, `.` and
+  `NA` with "concrete REF and ALT" instead of returning `N`.
 - `Rscript dev/test.R "^(io|depth)$"` — 184 pass, 0 fail;
   `Rscript dev/test.R "scenario|plan"` — 316 pass, 0 fail.
