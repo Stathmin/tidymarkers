@@ -939,7 +939,8 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #' @param solved a `marker_solved` you trust (see [marker_solve()]).  When given,
 #'   its plan is re-solved and compared with the recorded `replay.csv`, and
 #'   `solved.rds` is never read.  This is the way to replay a record from an
-#'   untrusted source.
+#'   untrusted source.  A record that names no `replay.csv` has no verdicts of
+#'   its own to compare, so it is refused instead of passing on your own solve.
 #' @return a `marker_replay`: `id`, `match` (one logical for the whole run),
 #'   `inputs_match`, `engine_match` (`NA` when the artefact recorded no stamp),
 #'   `engines_changed` (names whose version differs), and `table` (one row per
@@ -961,7 +962,8 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
   dir <- artefact_dir(artefact)
   manifest <- artefact_manifest(dir)
   recorded <- artefact_recorded_replay(dir, manifest)
-  if (is.null(solved)) {
+  trusted <- !is.null(solved)
+  if (!trusted) {
     path <- fs::path(dir, "solved.rds")
     if (!fs::file_exists(path)) {
       abort_msg(
@@ -978,6 +980,14 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
     abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   if (is.null(recorded)) {
+    if (trusted) {
+      # Without a replay.csv the record's verdicts live only in its RDS, and a
+      # trusted `solved` replayed against itself always matches (ADR 0024).
+      abort_msg(
+        "The artefact records no verdicts of its own, so a trusted `solved` would be compared with itself.",
+        i = "Replay it without `solved` to read its own `solved.rds`, or use a record that names `replay.csv`."
+      )
+    }
     recorded <- artefact_replay_table(solved)
   }
   inputs_match <- artefact_inputs_match(manifest$inputs, solved$plan)

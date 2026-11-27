@@ -553,6 +553,22 @@ test_that("a replay from replay.csv never opens solved.rds (ZV13.3)", {
   expect_identical(rp2$table$recorded_verdict, "pass")
 })
 
+test_that("a trusted solve cannot replay a record that recorded no verdicts", {
+  # artefact@1 has no replay.csv: its verdicts live only in its own RDS, so a
+  # trusted `solved` would be compared with itself and always match
+  solved <- rejected_solve()
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  fs::file_delete(fs::path(dir, "replay.csv"))
+  expect_error(
+    suppressWarnings(marker_replay(art, solved = solved)),
+    "compared with itself"
+  )
+  # its own RDS is the documented artefact@1 path and still replays
+  rp <- suppressWarnings(marker_replay(art))
+  expect_true(rp$match)
+})
+
 test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   solved <- rejected_solve()
   dir <- withr::local_tempdir()
