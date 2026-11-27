@@ -43,6 +43,10 @@ Rscript dev/check.R --quick --no-render
 - `Rscript dev/check.R --full`: `R CMD check` чистый, 2 NOTE (CRAN incoming
   feasibility и время примеров); BiocCheck чистый; 210/210 примеров без
   OligoArrayAux; полный набор — `PASS 40963`, `FAIL 0`, `WARN 3`, `SKIP 28`.
+- Повторный полный прогон после поздних правок: `PASS 41079`, `FAIL 0`,
+  `WARN 4`, `SKIP 28`; `R CMD check` чистый, те же 2 NOTE; 210/210 примеров.
+  Прогон поймал регрессию: `marker_costs()` без аргументов падал на пустом
+  векторе (`e53946a`), теперь проверка применяется только к переданным стоимостям.
 - `Rscript dev/bench.R --gate`: все кейсы в пределах 2x, peak RSS 689 MB.
 - `ZU7` закрыт: `design_marker_batch(keep=)` — один батч, `design_markers()` —
   его сводка; `design_kasp_markers()` остаётся отдельным типизированным
