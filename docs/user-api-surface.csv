@@ -5,6 +5,7 @@ amplicon_fold_check,export,criteria,TRUE,seq,kind;conditions;min_single_stranded
 annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,variants,variants,FALSE,FALSE,добавляет контекст транскрипта
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
 as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
+as_primer_set,export,export,TRUE,primers,,primers;character,primer_set,primer_set,TRUE,TRUE,мост вектора олиго в типизированный primer_set
 as_scheme_ids,export,decision,TRUE,schemes,,schemes;character,character,schemes,TRUE,TRUE,мост реестра химий в marker_tech
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
 as_variant_row,export,ingest,TRUE,variants,id;chrom;pos,variants,variant,variant,TRUE,TRUE,одна типизированная строка варианта
@@ -28,13 +29,13 @@ decision_palette,export,service,FALSE,,,none,palette,palette,TRUE,TRUE,цвет�
 decision_render,export,export,FALSE,graph,style;out,decision;style,svg,files,FALSE,TRUE,рендер графа в SVG
 decision_style,export,service,FALSE,,palette;font_size;line_height;wrap;pad_x;pad_y;margin;segment_penalty;target_penalty;crossing_penalty;shape_buffer;nudge;title;subtitle;caption;legend,none,style,style,TRUE,FALSE,стиль фигуры
 design_arms_marker,export,design,TRUE,genome;snp,flank;min_band_gap;...,genome;variant,marker_arms,marker,FALSE,FALSE,тетра-праймер ARMS
-design_as_primers,export,design,FALSE,window;v_start;ref;alt,strands;lengths;stab_ats;temp;P;ions;linked;gc_range;tm_range;BPPARAM;conditions;variant_offset,sequence;numeric,primers,primers,FALSE,FALSE,поиск AS-праймеров
-design_as_primers_indel,export,design,FALSE,ref_tmpl;snp_i;ref;alt,strands;lengths;temp;P;ions;gc_range;tm_range;BPPARAM;conditions,sequences,primers,primers,FALSE,FALSE,AS для инделя
+design_as_primers,export,design,FALSE,window;v_start;ref;alt,strands;lengths;stab_ats;temp;P;ions;linked;gc_range;tm_range;BPPARAM;conditions;variant_offset,sequence;numeric,primer_candidates,primer_candidates,FALSE,FALSE,поиск AS-праймеров
+design_as_primers_indel,export,design,FALSE,ref_tmpl;snp_i;ref;alt,strands;lengths;temp;P;ions;gc_range;tm_range;BPPARAM;conditions,sequences,primer_candidates,primer_candidates,FALSE,FALSE,AS для инделя
 design_asq_marker,export,design,TRUE,genome;snp,variants;haplotypes;flank;BPPARAM;...,genome;variant;limits,marker_assay,assay,FALSE,FALSE,ASQ/PACE
 design_auto_marker,export,design,TRUE,genome;snp,strategy;schemes;context;...,genome;variant;context,auto_result,auto_result,FALSE,TRUE,лестница химий до первого успеха
 design_caps_marker,export,design,TRUE,genome;snp,flank;enzymes;min_gap;haplotypes,genome;variant;enzyme_table,marker_caps,marker,FALSE,FALSE,CAPS/dCAPS
 design_castpcr_marker,export,design,TRUE,genome;snp,flank;as_lengths;mate_lengths;probe_lengths;blocker_lengths;probe_margin;probe_tm_max;min_product;max_product;tm_range;gc_range,genome;variant,marker_castpcr,marker,FALSE,FALSE,castPCR
-design_common_primers,export,design,FALSE,window;snp_i,strand;lengths;gaps;target_tm;min_gc;max_gc;tm_range;n;conditions,sequence,primers,primers,FALSE,FALSE,общий праймер
+design_common_primers,export,design,FALSE,window;snp_i,strand;lengths;gaps;target_tm;min_gc;max_gc;tm_range;n;conditions,sequence,primer_candidates,primer_candidates,FALSE,FALSE,общий праймер
 design_crispr_marker,export,design,TRUE,genome;snp,flank;cas;strand;spacer_lengths;gc_range;specificity_max;preamp;min_product;max_product;haplotypes;BPPARAM,genome;variant,marker_crispr,marker,FALSE,FALSE,CRISPR-Dx
 design_dpcr_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;lengths;tm_range;gc_range;probe_lengths;probe_gc;probe_tm_margin;engines,genome;variant,marker_dpcr,marker,FALSE,FALSE,dPCR
 design_duplex,export,design,TRUE,genome;loci,readout;homologous;...,genome;variants,marker_duplex,marker,FALSE,FALSE,дуплекс двух локусов
@@ -52,7 +53,7 @@ design_search_frames,export,service,FALSE,assay;variants;snp,,assay;variants,fra
 design_snapshot_marker,export,design,TRUE,genome;snp,flank;amp_lengths;min_amplicon;max_amplicon;amp_tm;amp_gc;ext_lengths;ext_tm;ext_gc;limits;engines,genome;variant,marker_snapshot,marker,FALSE,FALSE,SNaPshot
 design_ssr_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;lengths;units;min_copies;tm_range;gc_range;...,genome;variant,marker_ssr,marker,FALSE,FALSE,SSR
 design_taqman_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;primer_lengths;probe_lengths;primer_tm;probe_tm;probe_modification;gc_range;min_centrality;engines;...,genome;variant,marker_taqman,marker,FALSE,FALSE,TaqMan
-dimer_thermo,export,criteria,TRUE,primers,BPPARAM;conditions,primers;conditions,thermo,thermo,FALSE,TRUE,димеры всех пар
+dimer_thermo,export,criteria,TRUE,primer_set,BPPARAM;conditions,primer_set;conditions,thermo,thermo,FALSE,TRUE,димеры всех пар
 duplex_dg_thermo,export,criteria,FALSE,seq1;seq2,conditions;BPPARAM,sequence;sequence,numeric,numeric,FALSE,TRUE,dG дуплекса
 ensembl_gene,export,ingest,TRUE,gene_id,species;cache,character,gene,gene,TRUE,FALSE,"Ensembl Plants, сеть/кэш"
 ensembl_variants,export,ingest,TRUE,chrom;start;end,species;cache,region,variants,variants,FALSE,FALSE,"1001 Genomes, сеть/кэш"
@@ -69,7 +70,7 @@ genome_index,export,specificity,FALSE,genome,strategy;chroms;dir;threads,genome,
 genome_length,export,service,TRUE,genome;chrom,,genome;character,integer,integer,FALSE,TRUE,длина хромосомы
 genome_seq,export,ingest,TRUE,genome;chrom,start;end,genome;region,sequence,sequence,FALSE,FALSE,чтение региона
 hairpin_dg_thermo,export,criteria,TRUE,seq,conditions;BPPARAM,sequence;conditions,numeric,numeric,FALSE,TRUE,dG шпильки
-haplotype_cover,export,design,TRUE,haplotypes;snp;design,window,haplotypes;variant,primers,primers,FALSE,FALSE,ALT на группу
+haplotype_cover,export,design,TRUE,haplotypes;snp;design,window,haplotypes;variant,primer_candidates,primer_candidates,FALSE,FALSE,ALT на группу
 haplotype_groups,export,design,TRUE,haplotypes;snp,window,haplotypes;variant,groups,groups,FALSE,TRUE,группы по окну
 haplotypes_from_alignment,export,ingest,TRUE,seqs,reference;chrom;freq;maf;...,sequences,haplotypes,haplotypes,FALSE,FALSE,вызов гаплотипов
 has_blast,export,service,FALSE,,,none,logical,logical,TRUE,TRUE,проверка движка
@@ -133,7 +134,7 @@ marker_patent_validate,export,export,FALSE,path,schema,path,logical,logical,TRUE
 marker_plan,export,decision,TRUE,genome,targets;region,genome;targets,marker_plan,plan,FALSE,FALSE,старт плана
 marker_plot,export,export,TRUE,solved,...,solved,plot,plot,FALSE,TRUE,карта решения
 marker_primer_table,export,export,TRUE,assay;gene,,assay;gene,tibble,tibble,FALSE,TRUE,олиго с хвостами
-marker_primers,export,export,TRUE,marker,...,marker,character,primers,FALSE,FALSE,имена праймеров; для marker_assay читает $assay
+marker_primers,export,export,TRUE,marker,...,marker,character,primer_set,FALSE,FALSE,имена праймеров; для marker_assay читает $assay
 marker_priors,export,criteria,FALSE,,,none,tibble,tibble,TRUE,TRUE,происхождение порогов
 marker_readout,export,criteria,TRUE,marker,,marker,readout,readout,FALSE,TRUE,модель считывания
 marker_record_outcome,export,artefact,TRUE,artefact,result;target;notes,artefact,outcomes,outcomes,FALSE,TRUE,запись исхода
@@ -175,7 +176,7 @@ plot_self_complementarity,export,export,FALSE,seq,,sequence,plot,plot,FALSE,TRUE
 plot_snp_screen,export,export,TRUE,screen,gene;threshold,screen;gene,plot,plot,FALSE,TRUE,экран целей
 plot_variant_landscape,export,export,TRUE,gene;variants;snp;assay,,gene;variants;variant;assay,plot,plot,FALSE,TRUE,ландшафт вариантов
 primer_interval,export,service,FALSE,snp_pos;strand;length,gap;role,numeric,interval,interval,TRUE,FALSE,геометрия праймера
-primer_set_compatibility,export,criteria,TRUE,primers,min_cross_run;max_selfcomp;conditions,primers;conditions,tibble,compatibility,FALSE,TRUE,кросс-димеры
+primer_set_compatibility,export,criteria,TRUE,primer_set,min_cross_run;max_selfcomp;conditions,primer_set;conditions,tibble,compatibility,FALSE,TRUE,кросс-димеры
 primer_thermo,export,criteria,TRUE,primer,BPPARAM,sequence;conditions,thermo,thermo,FALSE,TRUE,профиль праймера
 primer_tm,export,criteria,TRUE,seq,DMSO;nn_table;conditions;salt_method;dnac,sequence;conditions,numeric,numeric,FALSE,TRUE,Tm
 reaction_conditions,export,criteria,FALSE,,Na;Mg;dNTPs;DMSO;temperature,numeric,conditions,conditions,TRUE,FALSE,условия реакции

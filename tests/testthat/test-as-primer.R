@@ -67,6 +67,8 @@ test_that("several ALTs are scored conservatively and carry a degenerate code", 
     ref = ref, alt = alts[1], lengths = 20:21, stab_ats = NA, strands = "+"
   )
   expect_gt(nrow(multi), 0L)
+  expect_s3_class(multi, "primer_candidates")
+  expect_s3_class(dplyr::filter(multi, .data$as_length == 20L), "primer_candidates")
   # min-on / max-off over the ALTs is never more optimistic than a single ALT
   m <- multi$discrimination[order(multi$as_length)]
   o <- one$discrimination[order(one$as_length)]

@@ -4195,7 +4195,7 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: `report` хранит list-column; id локуса — `label`, уже есть.
     - следствие: J2 заканчивается проверяемым `marker_solved`; ZU3 закрыт.
 
-- [ ] **ZV3. Развести `primers` на два класса (ZU4).**
+- [x] **ZV3. Развести `primers` на два класса (ZU4).**
     - правка: `R/marker_primers.R`, `R/marker_tubes.R`,
       `R/marker_assemble*.R` — `primer_candidates` (tibble) и `primer_set`
       (именованный character); `as_primer_set(x)`; `marker_primers()`
@@ -4203,8 +4203,9 @@ dir)` пишет crate-профиль поверх существующих че
     - проверка: `dev/check-user-api.R` — два класса в CSV; `test-dimer.R`,
       `test-tubes.R` на `as_primer_set()`; J1/J6 зелёные.
     - блокер: публичные имена сохраняются; ломаются внутренние вызовы.
-    - следствие: граф рисует ложное ребро `design_as_primers ->
-      dimer_thermo` без преобразования.
+    - следствие: `primer_candidates` — таблица кандидатов, `primer_set` —
+      именованный character; ложное ребро `design_as_primers -> dimer_thermo`
+      исчезло, мост называет `as_primer_set()`.
 
 - [ ] **ZV4. Мост справочников в дизайн (ZU5).** Частично: `as_scheme_ids()` закрывает `marker_schemes() -> marker_tech()`; мост `marker_criteria() -> marker_design_checks()` остаётся.
     - правка: `R/marker_decision.R`, `R/marker_technology.R`,
