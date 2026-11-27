@@ -114,6 +114,9 @@ Other vignettes:
 - [ADR 0021](adr/0021-one-path-and-one-header-rule-for-three-vcf-readers.md) —
   all three VCF readers name a bad path the same way and find the `#CHROM`
   line by scanning, not by a 1000-line cap.
+- [ADR 0022](adr/0022-a-fasta-base-outside-the-alphabet-is-refused-by-every-reader.md) —
+  a FASTA base outside the DNA/IUPAC alphabet is a named refusal in the
+  transcript reader too, not a silently shortened sequence.
 
 ## Operator decisions
 

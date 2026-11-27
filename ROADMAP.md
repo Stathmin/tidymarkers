@@ -4647,3 +4647,27 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - блокер: нет.
     - следствие: путь и шапка — часть контракта семейства, а не деталь
       реализации одного читателя; правило — ADR 0021.
+
+## ZV22. Буква FASTA вне алфавита — это отказ у всех читателей
+
+`read_transcripts()` — третий читатель FASTA — звал
+`Biostrings::readDNAStringSet()` напрямую. На `ACGTXCGTACGT` Biostrings
+предупреждает `ignored 1 invalid one-letter sequence codes` и возвращает
+последовательность без буквы: 12 оснований приходят как 11, и каждая
+последующая координата съезжает на единицу. `read_genome_fasta()` это уже
+отказывает через `read_fasta_strict()`, читатель транскриптов — нет, а его
+выход идёт в выравнивание и гаплотипы, где сдвиг не виден по
+последовательности.
+
+- [x] **ZV22. Оба читателя FASTA отказывают файл с буквой вне алфавита одним
+  именованным сообщением.**
+    - правка: `R/marker_alignment.R` — `read_transcripts()` оборачивает
+      `readDNAStringSet()` в `read_fasta_strict()`, как геномный читатель.
+    - проверка: `test-io.R` — «read_transcripts refuses a base outside the DNA
+      alphabet»: `ACGTNXYZ` даёт `rlang_error` «outside the DNA/IUPAC
+      alphabet» (до правки — 7 оснований и предупреждение), `ACGTRYSWKM`
+      (IUPAC) читается целиком; `dev/test.R "io|alignment|haplotype|transcript"`
+      — 31224 pass, 0 fail, 3 skip.
+    - блокер: нет.
+    - следствие: буква вне алфавита — отказ на входе, а не тихо укороченная
+      последовательность; правило — ADR 0022.
