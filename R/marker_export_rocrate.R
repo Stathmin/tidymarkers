@@ -89,6 +89,16 @@ rocrate_member_path <- function(dir, id) {
       i = "A crate names only the files it carries."
     )
   }
+  if (fs::file_exists(path)) {
+    target <- fs::path_real(path)
+    real_root <- fs::path_real(root)
+    if (!identical(target, real_root) && !fs::path_has_parent(target, real_root)) {
+      abort_msg(
+        "The crate declares {.file {id}}, which resolves to {.path {target}} outside {.path {dir}}.",
+        i = "A crate carries files, not links out of itself."
+      )
+    }
+  }
   path
 }
 

@@ -177,6 +177,20 @@ test_that("a crate cannot declare a file outside its own directory", {
   expect_error(marker_import_rocrate(crate), "outside", class = "rlang_error")
 })
 
+test_that("a crate cannot carry a link out of itself", {
+  art <- rocrate_fixture()$artefact
+  crate <- marker_export_rocrate(art, dir = tempfile("crate"))
+
+  # The id is inside the crate but the bytes are not: a link would let the
+  # import vouch for whatever the link happens to point at.
+  outside <- fs::path(fs::path_dir(crate), "linked-outside.txt")
+  writeLines("not part of the record", outside)
+  member <- fs::path(crate, "decisions.csv")
+  fs::file_delete(member)
+  skip_if_not(file.symlink(outside, member), "this filesystem cannot make a symlink")
+  expect_error(marker_import_rocrate(crate), "resolves to", class = "rlang_error")
+})
+
 test_that("a tampered sidecar is named rather than read", {
   art <- rocrate_fixture()$artefact
   crate <- marker_export_rocrate(art, dir = tempfile("crate"))

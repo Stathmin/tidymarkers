@@ -65,10 +65,11 @@ describe itself and not the filesystem around it.
 - A crate that escapes is a named error (`The crate declares "../x", which is
   outside ...`), not a silent hash of a neighbour. Test:
   `test-rocrate.R`, "a crate cannot declare a file outside its own directory".
-- The rule is lexical: a symlink or hard link placed inside an artefact
-  directory by its owner still points outside, and the import follows it. That
-  is a property of the directory the operator created, not of the record; a
-  future reader that untars untrusted archives must extend the check to
-  `fs::path_real()`.
+- The rule is lexical first, then physical: an `@id` is checked as a path, and
+  a member that exists is also resolved with `fs::path_real()` and compared with
+  the crate's real root, so a symlink (or a file reached through a linked
+  directory) out of the crate is refused instead of hashed. A dangling link is
+  refused as a missing member. Residual limit: hard links, which are
+  indistinguishable from ordinary files by path.
 - Any new persisted record (trace, replay, outcome corpus) inherits item 4: a
   reader without an escape test is an open item, not a finished reader.
