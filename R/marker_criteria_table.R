@@ -167,20 +167,6 @@ marker_family_check_spec <- function() {
   )
 }
 
-# `marker_family_check_rows()`' legacy shape (stage/role/label/level/hard/limit),
-# built from the registry so the family vocabulary cannot fork.
-marker_family_check_rows <- function() {
-  fam <- marker_family_check_ways()
-  tibble::tibble(
-    stage = "assay",
-    role = "check",
-    label = fam$label,
-    level = fam$level,
-    hard = FALSE,
-    limit = fam$limit
-  )
-}
-
 # Every rule in the SNaPshot provenance table, as a registry row.  One row per
 # CSV rule id, `moderate` / `weak` / `none` mapped DOWN the ladder by
 # CRITERION_TIER_EVIDENCE (never upgraded).  `source` names the registry key of
