@@ -73,8 +73,16 @@ if you want the read mapper.
 genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 specificity_of(c(AS = "ACGTACGT"), genome)
 pangenome <- list(
-  A = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
-  B = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA"))
+  A = genome_index(
+    Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
+    "memory",
+    build = "A"
+  ),
+  B = genome_index(
+    Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA")),
+    "memory",
+    build = "B"
+  )
 )
 specificity_of(c(AS = "AAAACCCCGGGGTTTT"), pangenome)
 }
