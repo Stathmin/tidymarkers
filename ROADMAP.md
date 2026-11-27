@@ -4029,3 +4029,120 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: нет.
     - следствие: снято; зелёный гейт снова означает «линт прогнан», а не
       «линтера не было».
+
+## ZU. Инвентарь пользовательского API и граф соединимости (2026-11-27)
+
+Срез: `docs/user-api-surface.md`, `docs/user-api-surface.csv`,
+`docs/user-api-graph.dot`; проверка — `Rscript dev/check-user-api.R`.
+Ниже только дефекты, найденные при построении графа 207 экспортов и 48 S3-методов
+по классам вход/выход. Сценарии J1–J7 в этот срез не входят.
+
+- [ ] **ZU1. `marker_panel` — терминальный объект без потребителя.**
+    - правка: `R/marker_design_panel.R`, `R/marker_pareto.R`,
+      `R/marker_artefact.R` — принимать `marker_panel` в `marker_pareto()`,
+      `marker_artefact()` и `marker_export()` (или дать `as_marker_solved()`),
+      чтобы `panel$solved` не вынимали вручную.
+    - проверка: `Rscript dev/check-user-api.R` — ребро `panel -> marker_pareto`
+      появляется в графе; новый тест `tests/testthat/test-panel.R` на
+      `marker_pareto(panel)` и `marker_export(panel)`.
+    - блокер: нет; `marker_panel` уже содержит `$solved`, вопрос только в
+      контракте.
+    - следствие: панель становится промежуточным объектом, а не отчётом;
+      сценарий «панель -> Pareto -> патент» перестаёт требовать обход.
+
+- [ ] **ZU2. Исходы не возвращаются в дизайн.**
+    - правка: `R/marker_outcomes.R`, `R/marker_priors.R`, `R/marker_plan.R` —
+      дать `marker_priors(outcomes = )` или `marker_context(outcomes = )` и
+      учитывать исходы в `marker_tech()`/`marker_solve()`; сейчас
+      `marker_priors()` статичен, а `outcomes` не читает ни один дизайн.
+    - проверка: `Rscript dev/check-user-api.R` — ребро `outcomes -> marker_priors`
+      (или `context`); тест `tests/testthat/test-z8-outcomes.R` на влияние
+      исхода на выбор схемы; артефакт `docs/generated` не нужен.
+    - блокер: нет калиброванной модели; первый шаг — счётчик `works/fails` как
+      prior, без вероятности успеха.
+    - следствие: петля «измерили -> пересобрали» появляется; `calibrated =
+      FALSE` остаётся честным.
+
+- [ ] **ZU3. Батч-`report` нельзя продолжить типизированно.**
+    - правка: `R/marker_batch.R`, `R/marker_strategy.R` — добавить
+      `as_marker_solved(report)` / `report_markers(report, label)` или
+      возвращать список схем в `attr`; сейчас `design_kasp_markers()`,
+      `design_markers()` и `design_marker_batch()` дают `report`, из которого
+      нет выхода в `marker_design_checks()`/`marker_export()`.
+    - проверка: `Rscript dev/check-user-api.R` — `report` перестаёт быть
+      листом; тест `tests/testthat/test-batch.R` на извлечение одного маркера
+      и его проверку.
+    - блокер: нет; форма `report` уже содержит list-column маркеров.
+    - следствие: батч-сценарий заканчивается не таблицей, а проверяемым
+      объектом.
+
+- [ ] **ZU4. `primers` — два несовместимых контракта под одним классом.**
+    - правка: `R/marker_primers.R`, `R/marker_tubes.R` — развести
+      `primer_candidates` (tibble) и `primer_set` (именованный character) или
+      дать `as_primer_set()`; сейчас `design_as_primers()` и
+      `design_common_primers()` возвращают tibble, а `marker_primers()` —
+      character, и оба помечены `primers`.
+    - проверка: `Rscript dev/check-user-api.R` — два класса в CSV; тест
+      `tests/testthat/test-dimer.R` на `as_primer_set()` и `dimer_thermo()`.
+    - блокер: нет; правка ломает только внутренние вызовы, публичные имена
+      сохраняются.
+    - следствие: граф перестаёт рисовать ложные рёбра
+      `design_as_primers -> dimer_thermo` без преобразования.
+
+- [ ] **ZU5. Справочники не соединяются с дизайном.**
+    - правка: `R/marker_decision.R`, `R/marker_technology.R`,
+      `R/marker_priors.R`, `R/marker_checks.R` — принимать таблицы
+      `marker_schemes()`, `rescue_strategy()`, `marker_technologies()`,
+      `marker_priors()`, `marker_criteria()` в `marker_tech()`,
+      `design_auto_marker()` и `marker_design_checks()` (или дать
+      `as_scheme_ids()`/`as_limits()`); сейчас пользователь вручную берёт
+      `$scheme`.
+    - проверка: `Rscript dev/check-user-api.R` — рёбра `tibble -> marker_tech`
+      и `criteria -> marker_design_checks`; тест
+      `tests/testthat/test-plan.R` на `marker_tech(marker_schemes())`.
+    - блокер: типы таблиц разные (`scheme`, `technology`, `prior`,
+      `criterion`); нужен один `marker_registry`-класс или явные адаптеры.
+    - следствие: «выбери химию» перестаёт быть ручной работой с колонками.
+
+- [ ] **ZU6. Вход варианта и генотипов неполон.**
+    - правка: `R/marker_io.R` — `read_variants_vcf()` читает только
+      CHROM/POS/REF/ALT, `read_variant_depth()` — глубину; нужен
+      `read_variant_genotypes()` (GT/AD) и `as_variant_row()` для одной строки
+      `variants` (сейчас единственный типизированный производитель
+      `variant` — `pick_target_snp()`, и ему нужен `gene`).
+    - проверка: `Rscript dev/check-user-api.R` — `variants -> variant` и
+      `genotypes -> marker_informativeness`; новый тест
+      `tests/testthat/test-io.R` на VCF с GT.
+    - блокер: формат VCF/BCF и опциональный `VariantAnnotation`; можно
+      ограничиться `vroom`-путём и явно объявить потерю генотипов.
+    - следствие: `marker_informativeness()` и `marker_pareto()` получают
+      population-вход без ручной сборки матрицы.
+
+- [ ] **ZU7. Дубликаты и дрейф описания.**
+    - правка: `R/marker_target.R:668` (`design_marker`),
+      `R/marker_plots_output.R:92` (`write_kasp_results`) — оставить алиасы,
+      но убрать из пользовательских таблиц/подсказок; свести
+      `design_kasp_markers()`/`design_markers()`/`design_marker_batch()` к
+      одному входу с параметром `keep`; поправить заголовок
+      `marker_design_checks()` («KASP acceptance criteria» -> «scheme
+      criteria»), потому что функция уже проверяет не-KASP схемы.
+    - проверка: `Rscript dev/check-user-api.R` — в CSV один пользовательский
+      батч-вход; `Rscript dev/check-docs.R` — roxygen/README не обещают
+      KASP-only.
+    - блокер: депрекация `design_marker()` уже объявлена; удалять нельзя до
+      мажорной версии.
+    - следствие: новый пользователь видит один вход на задачу, а не три.
+
+- [ ] **ZU8. Держать граф и CSV в актуальном состоянии.**
+    - правка: `dev/check-user-api.R` — единственный генератор
+      `docs/user-api-graph.dot`; `docs/user-api-surface.csv` —
+      единственный источник классов. Новый экспорт без строки в CSV — ошибка
+      гейта, а не предупреждение. Ручная правка DOT запрещена.
+    - проверка: `Rscript dev/check-user-api.R` (exit 1 на пропавшем экспорте,
+      stale DOT, неизвестном классе или подтверждённом ребре, не
+      стыкующемся по классам); `Rscript dev/check-docs.R` (ссылка из
+      `docs/INDEX.md`); после `--write` — `git diff --exit-code
+      docs/user-api-graph.dot`.
+    - блокер: нет.
+    - следствие: граф не гниёт; цена — одна команда `--write` на каждый
+      новый экспорт.
