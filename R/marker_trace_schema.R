@@ -167,12 +167,7 @@ trace_from_solved <- function(solved) {
     ),
     engine_stamp = as.list(marker_engine_stamp()),
     inputs = artefact_inputs(solved$plan),
-    plan = list(
-      layers = solved$plan$layers,
-      targets = nrow(tg),
-      schemes_available = solved$schemes,
-      costs = as.list(solved$plan$costs %||% NA)
-    ),
+    plan = artefact_plan(solved, tg),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
     limitations = I(as.character(artefact_limitations(solved))),

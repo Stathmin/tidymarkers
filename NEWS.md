@@ -22,6 +22,14 @@
   покрытие J1–J7 в `docs/mcp-parity.csv`. Шаг `2d` в `dev/check.R`.
 - `mcp_genome()` читает `blast_db` и `fm_index`; инструменты, которые его
   вызывают, теперь объявляют эти аргументы в `inputSchema` и `schema.json`.
+- **Класс изменения: контракт панели (ADR 0009).** `marker_design_panel()`
+  применяет LD до контракта гаплотипов: нерядированная строка в снятой цели
+  больше не прерывает панель. `plan$ld` — единая запись
+  `{method, threshold|pairs, dropped, reason}`; `artefact.json` получает блок
+  `panel` (порядок швов, GWAS, LD, гаплотипы, химии, one-pot). `as_marker_solved(panel)`
+  несёт запись панели в атрибуте `panel`; `marker_pareto()`, `marker_artefact()`
+  и `marker_export()` принимают панель напрямую. J3 зелёный на коммиченной
+  фикстуре, поэтому `marker_panel$experimental` теперь `FALSE`.
 
 ### ZT: масштаб, швы панели и гейт (2026-11-27)
 

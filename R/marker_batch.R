@@ -184,7 +184,11 @@ as_marker_solved <- function(x) {
 as_marker_solved.marker_solved <- function(x) x
 
 #' @export
-as_marker_solved.marker_panel <- function(x) x$solved
+as_marker_solved.marker_panel <- function(x) {
+  out <- x$solved
+  attr(out, "panel") <- x$artefact$manifest$plan$panel
+  out
+}
 
 #' @export
 as_marker_solved.marker_batch <- function(x) {

@@ -21,6 +21,7 @@ indexed `marker_genome()`, a `DNAStringSet` or a Bioconductor `BSgenome`) and
 variation (a VCF or the tidy variant table), designs allele-specific and common
 primers on either strand, scores them against hard gates, and returns the
 candidate that survived together with the reason every other candidate did not.
+
 It covers KASP, CAPS/dCAPS, tetra-primer ARMS, HRM, Sanger, SSR, InDel-size,
 TaqMan/dPCR, SNaPshot, LAMP/RPA and CRISPR-Dx under one grammar, with
 thermodynamics from `TmCalculator` and OligoArrayAux, Taq-aware discrimination

@@ -454,6 +454,21 @@ artefact_limitations <- function(solved) {
 #' A stable id for the design, independent of when it was written
 #' @keywords internal
 #' @noRd
+#' The `plan` block shared by the artefact and the trace
+#' @keywords internal
+#' @noRd
+artefact_plan <- function(solved, targets) {
+  list(
+    layers = solved$plan$layers,
+    targets = nrow(targets),
+    schemes_available = solved$schemes,
+    costs = as.list(solved$plan$costs %||% NA),
+    ld = solved$plan$ld %||% "not_applied",
+    # written by marker_design_panel(), absent for a plain solved plan
+    panel = solved$plan$panel
+  )
+}
+
 artefact_id <- function(manifest) {
   core <- manifest[c(
     "schema", "package", "engine_stamp", "inputs", "plan", "parameters", "overrides"
@@ -580,13 +595,7 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
     ),
     engine_stamp = as.list(marker_engine_stamp()),
     inputs = artefact_inputs(solved$plan),
-    plan = list(
-      layers = solved$plan$layers,
-      targets = nrow(tg),
-      schemes_available = solved$schemes,
-      costs = as.list(solved$plan$costs %||% NA),
-      ld = solved$plan$ld %||% "not_applied"
-    ),
+    plan = artefact_plan(solved, tg),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
     # Z7.6: a limit of the readout model that is not a design bug.  Always a

@@ -44,8 +44,9 @@ inside it (\code{\link[=marker_plan]{marker_plan()}}).}
 
 \item{ld}{optional LD step for the target table: \code{NULL} (not applied), a
 numeric \code{r2} threshold computed from \code{haplotypes}, or a linkage table with
-\code{target1}/\code{target2} (labels).  A linked pair keeps the first target; the
-record is written to the artefact (\code{"not_applied"} when \code{NULL}).}
+\code{target1}/\code{target2} (labels).  A linked pair keeps the first target.  LD
+runs before the haplotype contract, and every dropped target is recorded
+with \code{reason = "ld"} (one record shape for all three inputs).}
 
 \item{costs}{optional chemistry costs passed to \code{\link[=marker_tech]{marker_tech()}}, so the
 cheapest-first order is a seam (see \code{\link[=marker_costs]{marker_costs()}}).}
@@ -72,8 +73,9 @@ alleles are read on the KASP channels, which is not modelled, so \code{channel}
 is \code{NA} and the amplicon gap is the conservative rule);
 \item \code{artefact} - the \code{\link[=marker_artefact]{marker_artefact()}} decision record;
 \item \code{solved} - the underlying \code{marker_solved};
-\item \code{experimental} - \code{TRUE}: the one-pot grouping is a bench proposal, not a
-validated mix (reagent compatibility and channel overlap are not modelled).
+\item \code{experimental} - \code{FALSE}: J3 is green on a committed fixture with a
+byte-identical artefact (the graduation condition of ADR 0009); the
+one-pot grouping is still not a validated wet-lab mix.
 }
 
 If no chemistry designs any target the call aborts with every target and every

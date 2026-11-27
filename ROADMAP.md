@@ -4228,7 +4228,7 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: `marker_informativeness()` и J3/J5 получают population-вход
       только вручную собранной матрицей.
 
-- [ ] **ZV6. Панель — промежуточный объект и порядок швов (ZU1, ADR 0009).**
+- [x] **ZV6. Панель — промежуточный объект и порядок швов (ZU1, ADR 0009).**
     - правка: `R/marker_panel.R` — порядок GWAS -> LD -> haplotypes ->
       chemistry -> artefact, единый `plan$ld` record и блок `panel` в
       `artefact.json`; `R/marker_pareto.R`, `R/marker_artefact.R`,
@@ -4238,7 +4238,7 @@ dir)` пишет crate-профиль поверх существующих че
       -> marker_pareto|marker_artefact|marker_export`; `test-panel.R` —
       байтовая идентичность и порядок швов.
     - блокер: нет.
-    - следствие: `panel$solved` вручную; J3 не собирается; ZU1 остаётся.
+    - следствие: J3 собирается без `panel$solved`; `ZU1` закрыт.
 
 - [ ] **ZV7. Петля исходов в приоры (ZU2, J5).**
     - правка: `R/marker_priors.R` — `marker_priors(outcomes = NULL)` добавляет
