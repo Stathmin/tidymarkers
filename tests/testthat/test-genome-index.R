@@ -303,6 +303,19 @@ test_that("a build is explicit and survives read_genome_fasta()", {
   )
 })
 
+test_that("a build or chromosome name cannot leave the index directory", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  expect_error(marker_genome(gs, build = "../escape"), "one short release id")
+  expect_error(
+    tidymarkers:::index_shards(gs, "bowtie", "a/b", tempdir()),
+    "path separator"
+  )
+  expect_error(
+    tidymarkers:::index_shards(gs, "bowtie", "..", tempdir()),
+    "path separator"
+  )
+})
+
 test_that("the TAIR10 gold set gives the same verdict on memory and bowtie", {
   skip_if_not_installed("Rbowtie")
   fa <- testthat::test_path("fixtures", "tair10", "genome.fa")

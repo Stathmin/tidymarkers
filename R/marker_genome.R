@@ -378,6 +378,9 @@ check_genome_build <- function(build) {
   if (!is.character(build) || length(build) != 1L || is.na(build) || !nzchar(build)) {
     abort_msg("`build` must be one short release id, e.g. \"A\" or \"TAIR10\".")
   }
+  if (grepl("[/\\\\]", build) || build %in% c(".", "..")) {
+    abort_msg("`build` must be one short release id, e.g. \"A\" or \"TAIR10\".")
+  }
   build
 }
 

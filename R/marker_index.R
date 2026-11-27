@@ -88,6 +88,17 @@ index_attached <- function(genome, slot) {
 index_shards <- function(genome, strategy, chroms, dir) {
   dir <- dir %||% fs::path_temp()
   build <- index_genome_build(genome)
+  # a build or chromosome name becomes a path segment; a separator would put
+  # the shard outside `dir`, so refuse it before any file is written
+  for (nm in c(build, chroms)) {
+    if (
+      !is.na(nm) && (grepl("[/\\\\]", nm) || nm %in% c(".", ".."))
+    ) {
+      abort_msg(
+        gettextf("An index name cannot contain a path separator: %s.", nm)
+      )
+    }
+  }
   id <- hash_object(list(index_source_id(genome), strategy, chroms, build))
   id <- substr(id, 1L, 12L)
   # two builds may share a chromosome name, so the build is part of the path
