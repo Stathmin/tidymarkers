@@ -1,6 +1,6 @@
 # 0013 — The metrics report is not a gate, and a mixed-sample p95 is not a regression
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-27
 - Supersedes: none
 - Builds on: [ADR 0011](0011-release-artefact-and-mcp-contract.md) (the daily

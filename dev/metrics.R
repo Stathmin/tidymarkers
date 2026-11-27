@@ -107,34 +107,62 @@ validate_row <- function(row, where = "row") {
   }
   add <- function(cond, msg) if (!isTRUE(cond)) problems <<- c(problems, paste0(where, ": ", msg))
 
-  add(length(row$run_id) == 1L && nzchar(row$run_id) && !grepl("[[:space:]]", row$run_id),
-    "run_id must be one non-empty token")
-  add(length(row$stage) == 1L && row$stage %in% STAGES,
-    paste0("stage must be one of ", paste(STAGES, collapse = ", ")))
-  add(length(row$object_id) == 1L && grepl("^[A-Za-z0-9_:.@/+<>-]{1,120}$", row$object_id),
-    "object_id must be an id (letters, digits, _ : . @ / + < > -), at most 120 chars")
-  add(!(nchar(row$object_id) > 60L && grepl("^[ACGTNacgtn]+$", row$object_id)),
-    "object_id looks like a nucleotide sequence")
-  add(length(row$duration_ms) == 1L && !is.na(row$duration_ms) && row$duration_ms >= 0,
-    "duration_ms must be a non-negative integer")
-  add(length(row$status) == 1L && row$status %in% STATUSES,
-    paste0("status must be one of ", paste(STATUSES, collapse = ", ")))
-  add(length(row$retries) == 1L && !is.na(row$retries) && row$retries >= 0,
-    "retries must be a non-negative integer")
-  add(is.null(row$tokens_in) || (length(row$tokens_in) == 1L && (is.na(row$tokens_in) || row$tokens_in >= 0)),
-    "tokens_in must be null or a non-negative integer")
-  add(is.null(row$tokens_out) || (length(row$tokens_out) == 1L && (is.na(row$tokens_out) || row$tokens_out >= 0)),
-    "tokens_out must be null or a non-negative integer")
-  add(is.null(row$cost_usd) || (length(row$cost_usd) == 1L && (is.na(row$cost_usd) || row$cost_usd >= 0)),
-    "cost_usd must be null or a non-negative number")
-  add(is.logical(row$cache_hit) && length(row$cache_hit) == 1L && !is.na(row$cache_hit),
-    "cache_hit must be TRUE or FALSE")
-  add(length(row$queue_depth) == 1L && !is.na(row$queue_depth) && row$queue_depth >= 0,
-    "queue_depth must be a non-negative integer")
-  add(is.null(row$gpu_util) || (length(row$gpu_util) == 1L && (is.na(row$gpu_util) || (row$gpu_util >= 0 && row$gpu_util <= 100))),
-    "gpu_util must be null or a percentage in [0, 100]")
-  add(length(row$language) == 1L && row$language %in% LANGUAGES,
-    paste0("language must be one of ", paste(LANGUAGES, collapse = ", ")))
+  add(
+    length(row$run_id) == 1L && nzchar(row$run_id) && !grepl("[[:space:]]", row$run_id),
+    "run_id must be one non-empty token"
+  )
+  add(
+    length(row$stage) == 1L && row$stage %in% STAGES,
+    paste0("stage must be one of ", paste(STAGES, collapse = ", "))
+  )
+  add(
+    length(row$object_id) == 1L && grepl("^[A-Za-z0-9_:.@/+<>-]{1,120}$", row$object_id),
+    "object_id must be an id (letters, digits, _ : . @ / + < > -), at most 120 chars"
+  )
+  add(
+    !(nchar(row$object_id) > 60L && grepl("^[ACGTNacgtn]+$", row$object_id)),
+    "object_id looks like a nucleotide sequence"
+  )
+  add(
+    length(row$duration_ms) == 1L && !is.na(row$duration_ms) && row$duration_ms >= 0,
+    "duration_ms must be a non-negative integer"
+  )
+  add(
+    length(row$status) == 1L && row$status %in% STATUSES,
+    paste0("status must be one of ", paste(STATUSES, collapse = ", "))
+  )
+  add(
+    length(row$retries) == 1L && !is.na(row$retries) && row$retries >= 0,
+    "retries must be a non-negative integer"
+  )
+  add(
+    is.null(row$tokens_in) || (length(row$tokens_in) == 1L && (is.na(row$tokens_in) || row$tokens_in >= 0)),
+    "tokens_in must be null or a non-negative integer"
+  )
+  add(
+    is.null(row$tokens_out) || (length(row$tokens_out) == 1L && (is.na(row$tokens_out) || row$tokens_out >= 0)),
+    "tokens_out must be null or a non-negative integer"
+  )
+  add(
+    is.null(row$cost_usd) || (length(row$cost_usd) == 1L && (is.na(row$cost_usd) || row$cost_usd >= 0)),
+    "cost_usd must be null or a non-negative number"
+  )
+  add(
+    is.logical(row$cache_hit) && length(row$cache_hit) == 1L && !is.na(row$cache_hit),
+    "cache_hit must be TRUE or FALSE"
+  )
+  add(
+    length(row$queue_depth) == 1L && !is.na(row$queue_depth) && row$queue_depth >= 0,
+    "queue_depth must be a non-negative integer"
+  )
+  add(
+    is.null(row$gpu_util) || (length(row$gpu_util) == 1L && (is.na(row$gpu_util) || (row$gpu_util >= 0 && row$gpu_util <= 100))),
+    "gpu_util must be null or a percentage in [0, 100]"
+  )
+  add(
+    length(row$language) == 1L && row$language %in% LANGUAGES,
+    paste0("language must be one of ", paste(LANGUAGES, collapse = ", "))
+  )
   problems
 }
 
@@ -177,7 +205,9 @@ read_rows <- function(path) {
 }
 
 files_for <- function(date, dir = metrics_dir()) {
-  if (!dir.exists(dir)) return(character())
+  if (!dir.exists(dir)) {
+    return(character())
+  }
   list.files(dir, pattern = paste0("^", date, "-.*[.]jsonl$"), full.names = TRUE)
 }
 
@@ -208,7 +238,9 @@ check_date <- function(date, dir = metrics_dir()) {
 
 nearest_rank <- function(x, p) {
   x <- sort(x[!is.na(x)])
-  if (!length(x)) return(NA_real_)
+  if (!length(x)) {
+    return(NA_real_)
+  }
   x[[max(1L, ceiling(p * length(x)))]]
 }
 
@@ -243,7 +275,9 @@ rows_as_df <- function(rows) {
 }
 
 repair_stats <- function(log_path = file.path(root_dir(), "docs", "plans", "self-repair-log.md")) {
-  if (!file.exists(log_path)) return(list(rows = 0L, resolved = 0L, quarantined = 0L))
+  if (!file.exists(log_path)) {
+    return(list(rows = 0L, resolved = 0L, quarantined = 0L))
+  }
   lines <- readLines(log_path, warn = FALSE)
   rows <- grep("^\\| [0-9]", lines, value = TRUE)
   cells <- strsplit(rows, "|", fixed = TRUE)
@@ -257,6 +291,12 @@ repair_stats <- function(log_path = file.path(root_dir(), "docs", "plans", "self
   )
 }
 
+route_of <- function(object_id) {
+  m <- regmatches(tolower(object_id), regexec("^scenario:(j[1-7])(:|$)", tolower(object_id)))
+  out <- vapply(m, function(x) if (length(x) > 1L) x[[2L]] else "core", character(1))
+  out
+}
+
 summary_of <- function(df) {
   stages <- lapply(STAGES, function(s) {
     d <- df[df$stage == s, , drop = FALSE]
@@ -266,7 +306,19 @@ summary_of <- function(df) {
       p50 = if (n >= 20L) nearest_rank(d$duration_ms, 0.50) else NA_real_,
       p95 = if (n >= 20L) nearest_rank(d$duration_ms, 0.95) else NA_real_,
       fail_share = if (n) pct(d$status %in% c("fail", "error"), n) else NA_real_,
-      cost = if (n && !all(is.na(d$cost_usd))) sum(d$cost_usd, na.rm = TRUE) else NA_real_
+      cost = if (n && !all(is.na(d$cost_usd))) sum(d$cost_usd, na.rm = TRUE) else NA_real_,
+      run_ids = sort(unique(d$run_id))
+    )
+  })
+  # a gate cell is one stage on one route: pooling routes changes the sample
+  cell_key <- paste(df$stage, route_of(df$object_id), sep = "|")
+  cells <- lapply(sort(unique(cell_key)), function(k) {
+    d <- df[cell_key == k, , drop = FALSE]
+    n <- nrow(d)
+    list(
+      stage = d$stage[[1L]], route = sub("^[^|]*\\|", "", k), n = n,
+      p95 = if (n >= 20L) nearest_rank(d$duration_ms, 0.95) else NA_real_,
+      run_ids = sort(unique(d$run_id))
     )
   })
   routes <- lapply(paste0("J", 1:7), function(j) {
@@ -275,13 +327,15 @@ summary_of <- function(df) {
     # the local engines are unmetered: a route that ran costs 0, not `n/a`
     list(
       route = j, runs = runs,
-      cost_per_run = if (!runs) NA_real_ else {
+      cost_per_run = if (!runs) {
+        NA_real_
+      } else {
         if (all(is.na(d$cost_usd))) 0 else sum(d$cost_usd, na.rm = TRUE) / runs
       }
     )
   })
   list(
-    stages = stages, routes = routes, rows = nrow(df),
+    stages = stages, routes = routes, cells = cells, rows = nrow(df),
     runs = length(unique(df$run_id)),
     fail_share = if (nrow(df)) pct(df$status %in% c("fail", "error"), nrow(df)) else NA_real_,
     cache_hit_rate = if (nrow(df)) 100 * mean(df$cache_hit) else NA_real_,
@@ -336,8 +390,65 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
   for (r in s$routes) {
     out <- c(out, sprintf("| %s | %d | %s |", r$route, r$runs, if (r$runs && !is.na(r$cost_per_run)) fmt(r$cost_per_run, 4) else "not_run"))
   }
+  # --- gate: a comparable cell only ----------------------------------------
+  gate <- list()
+  gate_failed <- FALSE
+  if (is.null(base)) {
+    gate <- list(list(stage = "-", route = "-", status = "not_run", reason = "no baseline.json"))
+  } else if (is.null(base$cells) || !length(base$cells)) {
+    gate <- list(list(
+      stage = "-", route = "-", status = "not_run",
+      reason = "baseline predates per-route cells; rerun --baseline"
+    ))
+  } else {
+    for (b in base$cells) {
+      cur <- Filter(
+        function(x) identical(x$stage, b$stage) && identical(x$route, b$route),
+        s$cells
+      )
+      if (!length(cur)) {
+        gate[[length(gate) + 1L]] <- list(
+          stage = b$stage, route = b$route, status = "not_run", reason = "no current rows"
+        )
+        next
+      }
+      cur <- cur[[1L]]
+      bruns <- sort(unlist(b$run_ids %||% character()))
+      status <- "not_run"
+      reason <- sprintf("n %d vs baseline %d", cur$n, b$n)
+      if (!length(bruns) || !identical(bruns, cur$run_ids)) {
+        reason <- sprintf(
+          "run sets differ: baseline %s, current %s",
+          paste(bruns, collapse = ","), paste(cur$run_ids, collapse = ",")
+        )
+      } else if (cur$n < 20L || b$n < 20L) {
+        reason <- sprintf("n %d vs baseline %d", cur$n, b$n)
+      } else if (!is.na(cur$p95) && !is.na(b$p95) && cur$p95 > b$p95) {
+        status <- "fail"
+        gate_failed <- TRUE
+        reason <- sprintf("p95 %.0f > %.0f", cur$p95, b$p95)
+      } else if (!is.na(cur$p95) && !is.na(b$p95)) {
+        status <- "ok"
+        reason <- sprintf("p95 %.0f <= %.0f", cur$p95, b$p95)
+      }
+      gate[[length(gate) + 1L]] <- list(stage = b$stage, route = b$route, status = status, reason = reason)
+    }
+  }
+  out <- c(
+    out, "", "## Gate", "",
+    "| stage | route | status | reason |", "| --- | --- | --- | --- |"
+  )
+  for (g in gate) {
+    out <- c(out, sprintf("| %s | %s | %s | %s |", g$stage, g$route, g$status, g$reason))
+  }
   out <- c(
     out, "",
+    "_A cell is comparable when the run ids match and both samples have n >= 20._",
+    "_The stage rows above pool routes: their delta is a statistic, not a verdict._",
+    ""
+  )
+  out <- c(
+    out,
     sprintf("- failure share: %s%% (%d fail/error of %d rows)", fmt(s$fail_share), failures, s$rows),
     sprintf("- cache-hit rate: %s%%", fmt(s$cache_hit_rate)),
     sprintf("- p95 queue depth: %s", fmt(s$queue_p95, 0)),
@@ -351,7 +462,7 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
   if (is.null(base)) {
     out <- c(out, "_No baseline.json: deltas are not_run, not zero._", "")
   }
-  paste(out, collapse = "\n")
+  list(md = paste(out, collapse = "\n"), failed = gate_failed)
 }
 
 # --- CLI --------------------------------------------------------------------
@@ -400,10 +511,14 @@ main <- function() {
   if ("--report" %in% args) {
     d <- arg_value(args, "--report", format(Sys.Date()))
     if (identical(d, TRUE)) d <- format(Sys.Date())
-    md <- report_md(d, dir, arg_value(args, "--baseline"))
+    res <- report_md(d, dir, arg_value(args, "--baseline"))
     path <- file.path(dir, paste0("metrics-", d, ".md"))
-    writeLines(md, path)
-    cat("ok report ", path, "\n")
+    writeLines(res$md, path)
+    cat("ok report ", path, "\n", sep = "")
+    if (res$failed) {
+      cat("FAIL metrics gate: a comparable cell is above its baseline (see ## Gate)\n")
+      quit(status = 1L)
+    }
     return(invisible(NULL))
   }
 
@@ -416,7 +531,8 @@ main <- function() {
     s <- summary_of(rows_as_df(rows))
     s$date <- d
     s$commit <- arg_value(args, "--commit", NA)
-    writeLines(as.character(jsonlite::toJSON(s, auto_unbox = TRUE, na = "null", digits = NA)),
+    writeLines(
+      as.character(jsonlite::toJSON(s, auto_unbox = TRUE, na = "null", digits = NA)),
       file.path(dir, "baseline.json")
     )
     cat("ok baseline ", file.path(dir, "baseline.json"), "\n")
