@@ -26,7 +26,8 @@ design to run again - which is the only version that tests anything.}
 \item{solved}{a \code{marker_solved} you trust (see \code{\link[=marker_solve]{marker_solve()}}).  When given,
 its plan is re-solved and compared with the recorded \code{replay.csv}, and
 \code{solved.rds} is never read.  This is the way to replay a record from an
-untrusted source.}
+untrusted source.  A record that names no \code{replay.csv} has no verdicts of
+its own to compare, so it is refused instead of passing on your own solve.}
 }
 \value{
 a \code{marker_replay}: \code{id}, \code{match} (one logical for the whole run),
