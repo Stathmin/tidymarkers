@@ -10,6 +10,7 @@
 #   2a. prose is free of filler phrases and comment antipatterns (see
 #       dev/prose-tics.R; the contrastive "X, not Y" style is never gated)
 #   2b. every hand-rolled sequence primitive is registered with a reason
+#   2d. the MCP contract is consistent (dev/check-mcp-parity.R)
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
 #       are consistent and fresh
@@ -195,6 +196,21 @@ step("licences", function() {
     stop("dev/check-licenses.R failed (status ", status, ")")
   }
   ok("every installed dependency has a permissive licence")
+})
+
+# 2d. MCP contract ----------------------------------------------------------
+step("mcp parity", function() {
+  # the registry, the published schema, the handler arguments, the annotations,
+  # the user-facing inventory and the J1-J7 tool paths are one contract
+  # (ADR 0011 section 3); the gate is static and cheap enough for --quick
+  status <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("dev/check-mcp-parity.R")
+  )
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-mcp-parity.R failed (status ", status, ")")
+  }
+  ok("MCP contract is consistent")
 })
 
 # 3. criterion fixtures + docs/artifacts graph ------------------------------

@@ -4193,8 +4193,7 @@ dir)` пишет crate-профиль поверх существующих че
       рёбра `report -> marker_solved` и `marker_solved ->
       marker_design_checks`.
     - блокер: `report` хранит list-column; id локуса — `label`, уже есть.
-    - следствие: J2 заканчивается CSV, а не проверяемым объектом; ZU3
-      остаётся.
+    - следствие: J2 заканчивается проверяемым `marker_solved`; ZU3 закрыт.
 
 - [ ] **ZV3. Развести `primers` на два класса (ZU4).**
     - правка: `R/marker_primers.R`, `R/marker_tubes.R`,

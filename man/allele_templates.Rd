@@ -28,6 +28,7 @@ allele_templates(Biostrings::DNAString("ACGTACGTACGT"), 5L, "G", "TT")
 }
 \seealso{
 Other design:
+\code{\link[=as_marker_solved]{as_marker_solved()}},
 \code{\link[=asq_limits]{asq_limits()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},

@@ -1097,7 +1097,8 @@ marker_solved_checks <- function(solved, limits = KASP_LIMITS, scheme = NULL, en
   }
   parts <- lapply(idx, function(i) {
     chk <- marker_design_checks(
-      r$marker[[i]], limits = limits,
+      r$marker[[i]],
+      limits = limits,
       scheme = scheme %||% r$scheme[[i]], engines = engines
     )
     chk$label <- r$label[[i]]

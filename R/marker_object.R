@@ -200,8 +200,12 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
             )
           }
         },
-        error = function(e) list(row = row(verdict = "error", note = conditionMessage(e)),
-                                 marker = NULL)
+        error = function(e) {
+          list(
+            row = row(verdict = "error", note = conditionMessage(e)),
+            marker = NULL
+          )
+        }
       ),
       warning = function(w) {
         cap$warns <- c(cap$warns, conditionMessage(w))

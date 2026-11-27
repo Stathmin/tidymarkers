@@ -16,6 +16,12 @@
   (`tests/testthat/fixtures/scenarios/`); `dev/check-user-api.R` проверяет
   `paths.csv` как типизированный DAG, а `dev/metrics.R` пишет и проверяет
   JSONL-метрики прогона.
+- `dev/check-mcp-parity.R` — статический гейт MCP-контракта (ADR 0011 §3):
+  имена инструментов против `schema.json`, аргументы против тела handler,
+  ключевые слова схемы, аннотации, экспорты в `user-api-surface.csv` и
+  покрытие J1–J7 в `docs/mcp-parity.csv`. Шаг `2d` в `dev/check.R`.
+- `mcp_genome()` читает `blast_db` и `fm_index`; инструменты, которые его
+  вызывают, теперь объявляют эти аргументы в `inputSchema` и `schema.json`.
 
 ### ZT: масштаб, швы панели и гейт (2026-11-27)
 
