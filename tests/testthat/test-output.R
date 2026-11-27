@@ -48,4 +48,9 @@ test_that("write_marker_results writes grouped files and order subsets", {
     write_kasp_results(assay, list(symbol = "FRI"), dir = dir),
     "deprecated"
   )
+
+  # a path-like gene symbol cannot write outside `dir`
+  escaped <- write_marker_results(assay, list(symbol = "../../escape"), dir = dir)
+  expect_true(all(startsWith(normalizePath(escaped), normalizePath(dir))))
+  expect_false(file.exists(file.path(dirname(dir), "escape_Chr4_269090_tidy.csv")))
 })
