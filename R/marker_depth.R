@@ -163,15 +163,7 @@ depth_from_samples <- function(d, sample_col) {
 # normalised, so a join on (chrom, pos, ref, alt) means one thing.
 depth_admit_alleles <- function(x) {
   drop <- vcf_symbolic_allele(x$ref) | vcf_symbolic_allele(x$alt)
-  drop[is.na(drop)] <- TRUE
-  n_dropped <- sum(drop)
-  if (n_dropped > 0L) {
-    cli::cli_inform(gettext(paste0(
-      "{n_dropped} VCF record{?s} with a symbolic or absent ALT ",
-      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
-      "across structural alleles."
-    )))
-  }
+  inform_absent_alleles(sum(drop))
   x <- x[!drop, , drop = FALSE]
   x$ref <- normalise_allele(x$ref)
   x$alt <- normalise_allele(x$alt)

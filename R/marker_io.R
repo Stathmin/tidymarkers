@@ -57,10 +57,27 @@ normalise_allele <- function(x) {
   gsub("[^ACGTN]", "N", x)
 }
 
-# The one admission rule both VCF readers apply: a symbolic REF/ALT (`<DEL>`)
-# or an absent allele (`*`, `.`) is unrepresentable, because
-# `normalise_allele()` would turn it into a fake `N`.
-vcf_symbolic_allele <- function(x) stringr::str_detect(x, "^<|[*.]")
+# The one admission rule both VCF readers apply: a symbolic REF/ALT (`<DEL>`),
+# an absent allele (`*`, `.`) or a missing one (`NA`, an empty field) is
+# unrepresentable, because `normalise_allele()` would turn it into a fake `N`.
+# A missing value is admitted here too: `NA` in a logical test is not a
+# "keep", it is `if (NA > 0L)` and a base-R error (ADR 0019).
+vcf_symbolic_allele <- function(x) {
+  is.na(x) | !nzchar(x) | stringr::str_detect(x, "^<|[*.]")
+}
+
+# Counted message for that rule, one text for all three readers (ADR 0018/19).
+inform_absent_alleles <- function(n) {
+  if (n == 0L) {
+    return(invisible(n))
+  }
+  cli::cli_inform(gettext(paste0(
+    "{n} VCF record{?s} with a symbolic or absent ALT ",
+    "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+    "across structural alleles."
+  )))
+  invisible(n)
+}
 
 #' Read variants from a VCF/BCF file (streaming, memory-mapped)
 #'
@@ -113,17 +130,11 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
   if (!is.null(end)) v <- dplyr::filter(v, .data$pos <= end)
 
-  # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation, so
-  # they are not mangled into a fake `N` allele - and say how many went
+  # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) and a missing one before
+  # normalisation, so they are not mangled into a fake `N` allele - and say how
+  # many went
   drop_sym <- vcf_symbolic_allele(v$ref) | vcf_symbolic_allele(v$alt)
-  n_dropped <- sum(drop_sym)
-  if (n_dropped > 0L) {
-    cli::cli_inform(gettext(paste0(
-      "{n_dropped} VCF record{?s} with a symbolic or absent ALT ",
-      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
-      "across structural alleles."
-    )))
-  }
+  inform_absent_alleles(sum(drop_sym))
 
   v |>
     dplyr::filter(!drop_sym) |>
@@ -257,11 +268,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
     )))
   }
   if (n_sym > 0L) {
-    cli::cli_inform(gettext(paste0(
-      "{n_sym} VCF record{?s} with a symbolic or absent ALT ",
-      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
-      "across structural alleles."
-    )))
+    inform_absent_alleles(n_sym)
   }
   if (n_short > 0L) {
     cli::cli_inform(gettext(
@@ -377,7 +384,7 @@ as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
     abort_msg("The variant row needs a positive integer `pos`.")
   }
   alleles <- c(x$ref[[1L]], x$alt[[1L]])
-  bad <- is.na(alleles) | vcf_symbolic_allele(alleles)
+  bad <- vcf_symbolic_allele(alleles)
   if (any(bad)) {
     abort_msg(gettextf(
       "The variant row needs concrete REF and ALT alleles; got %s.",

@@ -656,6 +656,30 @@ test_that("read_variant_genotypes drops a symbolic or absent ALT like the varian
   expect_identical(v$pos, g$pos)
 })
 
+test_that("an absent REF or ALT is dropped by every reader, not a raw failure", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t100\t.\tA\t\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t200\t.\t\tG\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,5"
+  ), vcf)
+
+  # an empty field used to reach `if (NA > 0L)` in the variant reader and
+  # raise a base-R error; the other two readers disagreed (one kept the row)
+  expect_message(v <- read_variants_vcf(vcf), "2 VCF records")
+  expect_message(g <- read_variant_genotypes(vcf), "2 VCF records")
+  d <- suppressMessages(read_variant_depth(vcf))
+
+  expect_identical(v$pos, 300L)
+  expect_identical(g$pos, 300L)
+  expect_identical(d$pos, 300L)
+  expect_identical(d$ref, "A")
+  expect_false(anyNA(v$ref) || anyNA(v$alt) || any(!nzchar(v$alt)))
+})
+
 test_that("a truncated VCF record is counted as short, not as missing FORMAT", {
   vcf <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
