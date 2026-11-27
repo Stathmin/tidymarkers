@@ -122,9 +122,17 @@ criterion_parse_bound <- function(text, kind) {
     return(NULL)
   }
   if (kind == "numeric" && grepl("^c\\(", text)) {
-    out <- tryCatch(eval(parse(text = text)), error = function(e) NULL)
-    if (is.numeric(out)) {
-      return(out)
+    # parse and inspect before evaluating: the text is a package constant, but a
+    # bound is a threshold, never a call that could run code
+    expr <- tryCatch(parse(text = text)[[1L]], error = function(e) NULL)
+    if (
+      is.call(expr) && identical(expr[[1L]], as.name("c")) &&
+        all(vapply(as.list(expr)[-1L], is.numeric, logical(1)))
+    ) {
+      out <- eval(expr)
+      if (is.numeric(out)) {
+        return(out)
+      }
     }
   }
   text
@@ -156,20 +164,6 @@ marker_family_check_spec <- function() {
     evaluator = ways$evaluator,
     hard = FALSE,
     limit = ways$limit
-  )
-}
-
-# `marker_family_check_rows()`' legacy shape (stage/role/label/level/hard/limit),
-# built from the registry so the family vocabulary cannot fork.
-marker_family_check_rows <- function() {
-  fam <- marker_family_check_ways()
-  tibble::tibble(
-    stage = "assay",
-    role = "check",
-    label = fam$label,
-    level = fam$level,
-    hard = FALSE,
-    limit = fam$limit
   )
 }
 
@@ -325,6 +319,53 @@ vec_cast.tbl_df.marker_criteria <- function(x, to, ...) tibble::as_tibble(x)
 #' @exportS3Method vctrs::vec_cast
 vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 # nolint end
+
+#' The thresholds a criteria table was rendered against
+#'
+#' [marker_criteria()] renders a readable `limit` per row, but
+#' [marker_design_checks()] needs the numeric list the table came from.  The
+#' table carries that list as its `limits` attribute, so passing the registry
+#' back to the gate cannot silently use a different set of numbers.
+#' @param x a table from [marker_criteria()] or an existing limits list.
+#' @return the numeric limits list.
+#' @examples
+#' as_limits(marker_criteria())
+#' @family checks
+#' @export
+as_limits <- function(x) {
+  if (is.list(x) && !is.data.frame(x) && all(vapply(x, is.numeric, logical(1)))) {
+    return(check_limit_values(x))
+  }
+  lim <- attr(x, "limits", exact = TRUE)
+  if (is.list(lim) && length(lim)) {
+    return(check_limit_values(lim))
+  }
+  abort_msg("`x` must be a marker_criteria() table or a numeric limits list.")
+}
+
+#' Refuse a limits list that cannot mean what its names say
+#' @keywords internal
+#' @noRd
+check_limit_values <- function(lim) {
+  if (is.null(names(lim)) || any(!nzchar(names(lim)))) {
+    abort_msg("Every limit needs a name, e.g. `amplicon = c(50, 100)`.")
+  }
+  unknown <- setdiff(names(lim), names(KASP_LIMITS))
+  if (length(unknown)) {
+    abort_msg(gettextf(
+      "Unknown limit(s): %s. Known limits: %s.",
+      paste(unknown, collapse = ", "), paste(names(KASP_LIMITS), collapse = ", ")
+    ))
+  }
+  bad <- vapply(lim, function(v) !length(v) || any(!is.finite(v)), logical(1))
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "Limit(s) %s must be finite numbers.",
+      paste(names(lim)[bad], collapse = ", ")
+    ))
+  }
+  lim
+}
 
 #' The criterion registry: one data object per threshold
 #'
@@ -578,8 +619,10 @@ marker_criteria <- function(limits = KASP_LIMITS, scheme = NULL) {
       schemes = spec$schemes
     )
   })
+  out <- structure(out, limits = limits, class = c("criteria", class(out)))
   if (is.null(scheme)) {
     return(out)
   }
-  out[vapply(out$schemes, function(s) scheme %in% s, logical(1)), , drop = FALSE]
+  rows <- out[vapply(out$schemes, function(s) scheme %in% s, logical(1)), , drop = FALSE]
+  structure(rows, limits = limits, class = c("criteria", class(rows)))
 }

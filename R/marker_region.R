@@ -44,7 +44,10 @@ normalise_region <- function(region) {
       "`region` must be a GRanges or a data frame with `chrom`, `start`, `end`."
     )
   }
-  if (anyNA(c(out$chrom, out$start, out$end)) || out$start < 1L || out$end < out$start) {
+  if (
+    anyNA(c(out$chrom, out$start, out$end)) || !nzchar(out$chrom) ||
+      out$start < 1L || out$end < out$start
+  ) {
     abort_msg("`region` needs a chromosome and a valid 1-based start <= end.")
   }
   out

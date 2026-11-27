@@ -301,8 +301,16 @@ build_blast_db <- function(genome, path = NULL) {
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' specificity_of(c(AS = "ACGTACGT"), genome)
 #' pangenome <- list(
-#'   A = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
-#'   B = Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA"))
+#'   A = genome_index(
+#'     Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGTTTTAAAACCCC")),
+#'     "memory",
+#'     build = "A"
+#'   ),
+#'   B = genome_index(
+#'     Biostrings::DNAStringSet(c(Chr1 = "AAAACCCCGGGGAAAACCCCAAA")),
+#'     "memory",
+#'     build = "B"
+#'   )
 #' )
 #' specificity_of(c(AS = "AAAACCCCGGGGTTTT"), pangenome)
 #' @family specificity
@@ -316,6 +324,23 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
       abort_msg(
         "`genome` must be a named list of genomes, one name per element.",
         i = "Name every genome, e.g. list(A = , B = , D = )."
+      )
+    }
+    builds <- vapply(genome, function(g) {
+      if (inherits(g, "genome_index")) index_result_build(g) else index_genome_build(g)
+    }, character(1))
+    if (anyNA(builds)) {
+      abort_msg(
+        "Every pangenome component must name its build (`genome_index(..., build = )`).",
+        i = "A hit that cannot be attributed to a build is not evidence about any build.",
+        class = "tidymarkers_mixed_build_error"
+      )
+    }
+    dup <- unique(builds[duplicated(builds)])
+    if (length(dup)) {
+      abort_msg(
+        "The pangenome names build{?s} {.val {dup}} more than once.",
+        class = "tidymarkers_mixed_build_error"
       )
     }
     parts <- vector("list", length(genome))
@@ -332,6 +357,7 @@ specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISM
     names(scans) <- names(genome)
     out <- dplyr::bind_rows(parts, .id = "genome")
     attr(out, "scan") <- scans
+    attr(out, "genome_build") <- rlang::set_names(unname(builds), names(genome))
     class(out) <- c("specificity_scan", class(out))
     return(out)
   }

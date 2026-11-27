@@ -1,6 +1,6 @@
 # 0010 — The index strategy at scale: shards, builds and a memory budget
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-27
 - Supersedes: none
 - Builds on: [ADR 0005](0005-index-backed-genome-access.md) (the strategy)

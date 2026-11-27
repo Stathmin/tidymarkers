@@ -77,6 +77,54 @@ test_that("a multi-allelic site is declarable in the grammar form (1602)", {
   expect_true(is.na(one$targets$alt2))
 })
 
+test_that("a target row needs a chromosome and a positive POS", {
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 0L, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is 0"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = "Chr1", pos = NA_integer_, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is NA"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = NA_character_, pos = 4L, ref = "A", alt = "G"),
+    "no chromosome name"
+  )
+  # a data table goes through the same admission, not only the grammar form
+  expect_error(
+    dummy_plan() + marker_targets(data = tibble::tibble(
+      chrom = "Chr1", pos = -1L, ref = "A", alt = "G"
+    )),
+    "positive integer `pos`"
+  )
+})
+
+test_that("a target needs two DNA alleles that differ", {
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = "A"),
+    "`ref` equal to `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = ""),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = NA),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "XYZ", alt = "G"),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = "G", alt2 = "A?"),
+    "`alt2` = A\\?"
+  )
+})
+
 test_that("a plan composes in layers with + and prints without solving", {
   p <- dummy_plan() +
     marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "A") +
@@ -110,10 +158,22 @@ test_that("marker_tech orders schemes cheapest-first and honours exclude", {
 })
 
 test_that("marker_costs overrides merge over the defaults", {
+  expect_identical(marker_costs(), tidymarkers:::KASP_TECH_COSTS)
   c1 <- marker_costs(hrm = 1.2)
   expect_equal(unname(c1[["hrm"]]), 1.2)
   expect_equal(unname(c1[["snp"]]), 1)
   expect_error(marker_costs(1), "named")
+  expect_error(marker_costs(hmr = 2), "Unknown chemistry cost.*hmr")
+  expect_error(marker_costs(hrm = -1), "non-negative")
+  expect_error(marker_costs(hrm = NA_real_), "finite")
+  expect_error(marker_costs(hrm = "1"), "finite")
+})
+
+test_that("a tech layer refuses a malformed cost vector", {
+  expect_error(marker_tech(costs = c(1, 2)), "named numeric")
+  expect_error(marker_tech(costs = c(hmr = 1)), "Unknown chemistry cost")
+  expect_error(marker_tech(costs = c(snp = -1)), "non-negative")
+  expect_error(marker_tech(costs = c(snp = NA_real_)), "finite")
 })
 
 test_that("a region expands only to its in-block variants and sweeps them", {
@@ -152,6 +212,11 @@ test_that("a region expands only to its in-block variants and sweeps them", {
   # and a region without context is refused
   bare <- marker_plan(genome, region = region)
   expect_error(region_targets(bare), "variant context")
+  # an empty chromosome name is not a region on the unnamed sequence
+  expect_error(
+    tidymarkers:::normalise_region(list(chrom = "", start = 1L, end = 10L)),
+    "valid 1-based"
+  )
 })
 
 test_that("a solved region carries a haplotype -> signal table inside the block", {
@@ -312,7 +377,7 @@ test_that("the artefact records its inputs, its id and every rejection's reason"
   expect_s3_class(art, "marker_artefact")
   expect_match(art$id, "^[0-9a-f]{64}$")
   m <- art$manifest
-  expect_identical(m$schema, "tidymarkers/artefact@1")
+  expect_identical(m$schema, "tidymarkers/artefact@2")
   expect_equal(m$counts$targets, 1L)
   expect_equal(m$counts$rejected, 1L)
   # the reference is named and hashed, and an installed engine is never dropped
@@ -466,6 +531,28 @@ test_that("marker_replay re-runs the design and compares the verdicts", {
   expect_false(any(out$calibrated))
 })
 
+test_that("a replay from replay.csv never opens solved.rds (ZV13.3)", {
+  solved <- rejected_solve()
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  expect_identical(art$manifest$files$replay, "replay.csv")
+  path <- fs::path(dir, "replay.csv")
+  recorded <- utils::read.csv(path, colClasses = "character")
+  expect_named(recorded, c("label", "scheme", "verdict"))
+  fs::file_delete(fs::path(dir, "solved.rds"))
+  # without a trusted solve the record names the limit instead of executing anything
+  expect_error(marker_replay(art), "solved.rds")
+  rp <- suppressWarnings(marker_replay(art, solved = solved))
+  expect_true(rp$match)
+  expect_identical(rp$table$recorded_verdict, rp$table$replayed_verdict)
+  # a record's claim is what is checked: a changed row is a DIFFERENT replay
+  recorded$verdict[[1L]] <- "pass"
+  utils::write.csv(recorded, path, row.names = FALSE)
+  rp2 <- suppressWarnings(marker_replay(art, solved = solved))
+  expect_false(rp2$match)
+  expect_identical(rp2$table$recorded_verdict, "pass")
+})
+
 test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   solved <- rejected_solve()
   dir <- withr::local_tempdir()
@@ -587,4 +674,22 @@ test_that("every non-KASP second pass continues the same ladder pass it screened
       expect_equal(runs$screened, 0L, label = paste(sc, "doomed before the screen"))
     }
   }
+})
+
+test_that("the scheme registry is a typed input to marker_tech", {
+  schemes <- marker_schemes()
+  expect_s3_class(schemes, "schemes")
+  ids <- as_scheme_ids(schemes)
+  expect_identical(ids, unique(schemes$scheme))
+  expect_identical(as_scheme_ids(c("snp", "snp", "hrm")), c("snp", "hrm"))
+  expect_null(as_scheme_ids(NULL))
+  expect_error(as_scheme_ids(tibble::tibble(x = 1)), "scheme")
+  expect_error(as_scheme_ids(c("snp", NA_character_)), "missing")
+
+  genome <- read_genome_fasta(system.file(
+    "extdata", "example_region.fa",
+    package = "tidymarkers"
+  ))
+  plan <- marker_plan(genome) + marker_tech(schemes = schemes)
+  expect_identical(plan$schemes, ids)
 })

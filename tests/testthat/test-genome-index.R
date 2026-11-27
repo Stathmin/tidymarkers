@@ -245,23 +245,75 @@ test_that("a pangenome is a named list of per-chromosome shards", {
   }, character(1))
   dir <- withr::local_tempdir()
   pan <- lapply(names(fa), function(nm) {
-    genome_index(marker_genome(fa[[nm]]), "bowtie",
+    genome_index(marker_genome(fa[[nm]], build = nm), "bowtie",
       chroms = c("chr1", "chr2"), dir = file.path(dir, nm)
     )
   })
   names(pan) <- names(fa)
 
   # one shard per (genome_build, chrom), never one monolithic build
-  for (idx in pan) {
+  for (nm in names(pan)) {
+    idx <- pan[[nm]]
     expect_identical(idx$manifest$chrom, c("chr1", "chr2"))
     expect_identical(nrow(idx$manifest), 2L)
+    expect_identical(idx$build, nm)
+    expect_true(all(idx$manifest$genome_build == nm))
   }
+  # a build is in the path, so two builds cannot share a shard file
   expect_length(unique(unlist(lapply(pan, function(x) x$manifest$path))), 6L)
 
   res <- specificity_of(c(AS = site), pan, k = 15L, max_mismatch = 0L)
   expect_identical(res$genome, c("A", "B", "D"))
   expect_identical(res$hits, c(1L, 0L, 0L))
+  expect_identical(res$build, c("A", "B", "D"))
   expect_identical(scan_question(res), c(A = "whole-primer", B = "whole-primer", D = "whole-primer"))
+  # a table spanning builds has no single verdict
+  expect_error(
+    specificity_verdict(res, "pcr"),
+    class = "tidymarkers_mixed_build_error"
+  )
+})
+
+test_that("a build is explicit and survives read_genome_fasta()", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  fa <- withr::local_tempfile(fileext = ".fa")
+  Biostrings::writeXStringSet(gs, fa)
+
+  genome <- read_genome_fasta(fa, build = "A")
+  expect_identical(S4Vectors::metadata(genome)$genome_build, "A")
+  idx <- genome_index(genome, "memory")
+  expect_identical(idx$build, "A")
+  expect_identical(idx$manifest$genome_build, "A")
+
+  expect_error(marker_genome(fa, build = c("A", "B")), "one short release id")
+  expect_error(genome_index(gs, "memory", build = 1), "one short release id")
+  expect_error(
+    genome_index(list(A = gs), "memory"),
+    "one index per build"
+  )
+
+  # an unnamed component cannot join a pangenome
+  unnamed <- list(
+    A = genome_index(read_genome_fasta(fa, build = "A"), "memory"),
+    B = genome_index(gs, "memory")
+  )
+  expect_error(
+    specificity_of(c(AS = "ACGTACGTACGT"), unnamed),
+    class = "tidymarkers_mixed_build_error"
+  )
+})
+
+test_that("a build or chromosome name cannot leave the index directory", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  expect_error(marker_genome(gs, build = "../escape"), "one short release id")
+  expect_error(
+    tidymarkers:::index_shards(gs, "bowtie", "a/b", tempdir()),
+    "path separator"
+  )
+  expect_error(
+    tidymarkers:::index_shards(gs, "bowtie", "..", tempdir()),
+    "path separator"
+  )
 })
 
 test_that("the TAIR10 gold set gives the same verdict on memory and bowtie", {

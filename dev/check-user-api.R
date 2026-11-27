@@ -295,7 +295,183 @@ if (write_dot) {
   }
 }
 
-# 6. summary -----------------------------------------------------------------
+# 6. executable scenarios ----------------------------------------------------
+# ADR 0008: a scenario is a typed path, not a script.  Every named function is
+# on the surface, every declared class is the one the CSV promises, and a day-1
+# step after the first consumes an earlier step's output (a DAG, because J1
+# branches assay -> results and assay -> primers).
+paths_path <- file.path(root, "tests", "testthat", "fixtures", "scenarios", "paths.csv")
+if (file.exists(paths_path)) {
+  paths <- read.csv(paths_path, colClasses = "character", check.names = FALSE)
+  need <- c("scenario", "day", "step", "function", "input_class", "output_class")
+  miss <- setdiff(need, names(paths))
+  if (length(miss)) {
+    note("scenario paths.csv is missing columns: ", paste(miss, collapse = ", "))
+  } else {
+    allowed_service <- c("mcp_dispatch")
+    api_out <- setNames(api$output_class, api[['function']])
+    api_in <- setNames(api$inputs, api[['function']])
+    bad_fn <- paths[['function']][
+      !paths[['function']] %in% c(exports, s3, allowed_service)
+    ]
+    if (length(bad_fn)) {
+      note("scenario names a function outside the export/S3 surface: ",
+        paste(unique(bad_fn), collapse = ", "))
+    }
+    bad_out <- paths[['function']][
+      paths[['function']] %in% names(api_out) &
+        paths$output_class != api_out[paths[['function']]]
+    ]
+    if (length(bad_out)) {
+      note("scenario output_class disagrees with the CSV: ",
+        paste(unique(bad_out), collapse = ", "))
+    }
+    bad_in <- paths[['function']][
+      paths[['function']] %in% names(api_in) &
+        !vapply(seq_len(nrow(paths)), function(i) {
+          fn <- paths[['function']][[i]]
+          if (!fn %in% names(api_in)) {
+            return(TRUE)
+          }
+          want <- paths$input_class[[i]]
+          want %in% c(UNTYPED, split_inputs(api_in[[fn]])) || fits(want, split_inputs(api_in[[fn]]))
+        }, logical(1))
+    ]
+    if (length(bad_in)) {
+      note("scenario input_class is not an input of the function: ",
+        paste(unique(bad_in), collapse = ", "))
+    }
+    day1 <- paths[paths$day == "1", , drop = FALSE]
+    bad_edge <- character()
+    for (sc in unique(day1$scenario)) {
+      s <- day1[day1$scenario == sc, , drop = FALSE]
+      seen <- character()
+      for (i in seq_len(nrow(s))) {
+        if (i > 1L && !s$input_class[[i]] %in% seen) {
+          bad_edge <- c(bad_edge, paste0(sc, ":", s$step[[i]], " ", s[['function']][[i]]))
+        }
+        seen <- c(seen, s$output_class[[i]])
+      }
+    }
+    if (length(bad_edge)) {
+      note("scenario step does not consume an earlier output: ",
+        paste(bad_edge, collapse = ", "))
+    }
+    missing_test <- character()
+    no_metrics <- character()
+    for (sc in unique(paths$scenario)) {
+      f <- file.path(root, "tests", "testthat", paste0("test-scenario-", tolower(sc), ".R"))
+      if (!file.exists(f)) {
+        missing_test <- c(missing_test, basename(f))
+        next
+      }
+      # ADR 0008 §2: the run writes a per-scenario duration row, so the daily
+      # report can compute p95 and cost per route
+      if (!any(grepl(paste0("scenario_timer\\(\"", sc, "\"\\)"), readLines(f, warn = FALSE)))) {
+        no_metrics <- c(no_metrics, basename(f))
+      }
+    }
+    if (length(missing_test)) {
+      note("scenario has no test: ", paste(missing_test, collapse = ", "))
+    }
+    if (length(no_metrics)) {
+      note("scenario has no stage=scenario timer: ", paste(no_metrics, collapse = ", "))
+    }
+    if (!length(bad_fn) && !length(bad_out) && !length(bad_in) &&
+      !length(bad_edge) && !length(missing_test) && !length(no_metrics)) {
+      ok(
+        "scenario paths: ", length(unique(paths$scenario)), " scenarios, ",
+        nrow(day1), " day-1 step(s), all typed, each with a run timer"
+      )
+    }
+  }
+} else {
+  note("missing ", paths_path)
+}
+
+# 6c. the MD counts the same table ------------------------------------------
+md_rows <- regmatches(md, gregexpr("\\| [^|]+ \\| \\*\\*[0-9]+\\*\\* \\|", md))[[1L]]
+md_key <- trimws(sub("^\\| ([^|]+) \\|.*$", "\\1", md_rows))
+md_val <- as.integer(sub(".*\\*\\*([0-9]+)\\*\\*.*", "\\1", md_rows))
+get_count <- function(prefix) {
+  i <- which(startsWith(md_key, prefix))
+  if (length(i) != 1L) NA_integer_ else md_val[[i]]
+}
+expected_counts <- c(
+  "Экспортов в `NAMESPACE`" = sum(api$kind == "export"),
+  "S3-методов" = sum(api$kind == "s3method"),
+  "Всего записей в CSV" = nrow(api),
+  "Пользовательских" = sum(api$user_facing == "TRUE"),
+  "Служебных" = sum(api$user_facing == "FALSE"),
+  "Типизированных рёбер в графе" = nrow(edge),
+  "Точек входа" = sum(nodes$entry_point == "TRUE"),
+  "Листьев" = sum(nodes$leaf == "TRUE"),
+  "Изолятов" = sum(indeg == 0 & outdeg == 0)
+)
+bad_counts <- names(expected_counts)[vapply(
+  names(expected_counts),
+  function(k) {
+    actual <- get_count(k)
+    is.na(actual) || actual != expected_counts[[k]]
+  },
+  logical(1)
+)]
+if (length(bad_counts)) {
+  for (k in bad_counts) {
+    note("MD count is stale for ", k, ": ", get_count(k), " vs ", expected_counts[[k]])
+  }
+} else {
+  ok("MD counts match the computed table")
+}
+graph_line <- regmatches(md, regexpr("Отрисовка графа \\([0-9]+ узлов, [0-9]+ ребр", md))
+graph_ok <- length(graph_line) == 1L &&
+  grepl(paste0("\\(", nrow(nodes), " узлов, ", nrow(edge), " ребр"), graph_line)
+if (!graph_ok) {
+  note("MD graph line is stale: expected ", nrow(nodes), " nodes, ", nrow(edge), " edges")
+}
+
+# 6d. prose snapshots carry a machine-checked marker --------------------------
+# The queue header and the plan quoted the surface counts by hand and drifted
+# (207/48/934/29 against the 213/52/941/63/120/27 this script computes).
+# A file that states the counts must carry `<!-- api-counts: ... -->` with the
+# numbers in the order below; the gate compares the marker, not the prose.
+count_order <- c(
+  "exports" = sum(api$kind == "export"),
+  "s3methods" = sum(api$kind == "s3method"),
+  "csv_rows" = nrow(api),
+  "user_facing" = sum(api$user_facing == "TRUE"),
+  "edges" = nrow(edge),
+  "entries" = sum(nodes$entry_point == "TRUE"),
+  "leaves" = sum(nodes$leaf == "TRUE"),
+  "isolates" = sum(indeg == 0 & outdeg == 0)
+)
+want_marker <- paste0(
+  "<!-- api-counts: ",
+  paste(as.integer(count_order), collapse = "/"), " -->"
+)
+marker_files <- c("ROADMAP.md", "docs/plans/2026-11-27-integration-3day.md")
+bad_marker <- character()
+for (f in marker_files) {
+  p <- file.path(root, f)
+  if (!file.exists(p)) next
+  got <- regmatches(
+    readLines(p, warn = FALSE),
+    regexpr("<!-- api-counts: [0-9/]+ -->", readLines(p, warn = FALSE))
+  )
+  got <- unique(got[nzchar(got)])
+  if (length(got) != 1L) {
+    bad_marker <- c(bad_marker, paste0(f, ": expected one api-counts marker"))
+  } else if (!identical(got, want_marker)) {
+    bad_marker <- c(bad_marker, paste0(f, ": ", got, " is stale, want ", want_marker))
+  }
+}
+if (length(bad_marker)) {
+  for (b in bad_marker) note(b)
+} else {
+  ok("prose api-counts markers match the computed table")
+}
+
+# 7. summary -----------------------------------------------------------------
 counts <- table(factor(nodes$role, levels = ROLES))
 message(
   "  api  ", nrow(nodes), " nodes, ", nrow(edge), " typed edges; roles: ",

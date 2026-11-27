@@ -10,6 +10,8 @@
 #       actually reference it, and vice versa
 #    5. an Rd topic that is not exported carries no \examples{} -- R CMD check
 #       attaches only the exports, so such an example dies at check time
+#    6. the ADR index and each ADR record agree on status -- the index is what
+#       a reader trusts without opening every file
 #
 #  Scope: README/AGENTS/CONTRIBUTING/ROADMAP/NEWS/VALIDATION, vignettes/*.Rmd,
 #  dev/*.md and docs/**/*.md.  dev/lecture/ is out of scope (its includes are
@@ -403,6 +405,34 @@ for (path in c(
     ok(path, ": carries the three-step Tm decomposition")
   } else {
     note(path, ": does not carry the three-step Tm decomposition (-16.9/-9.6/-5.4)")
+  }
+}
+
+# The ADR index and each record must agree on status ------------------------
+#  The 2026-11-27 shift found docs/adr/README.md saying 0010 `proposed` while
+#  the record said `accepted`.  A reader trusts the index without opening
+#  thirteen files, so the two cannot drift silently.
+adr_index <- readLines("docs/adr/README.md", warn = FALSE, encoding = "UTF-8")
+for (row in grep("^\\| \\[[0-9]{4}\\]", adr_index, value = TRUE)) {
+  cells <- trimws(strsplit(row, "|", fixed = TRUE)[[1L]])
+  cells <- cells[nzchar(cells)]
+  num <- sub("^\\[([0-9]{4})\\].*$", "\\1", cells[[1L]])
+  indexed <- cells[[length(cells)]]
+  file <- list.files("docs/adr", pattern = paste0("^", num, "-.*[.]md$"), full.names = TRUE)
+  if (length(file) != 1L) {
+    note("docs/adr/README.md: ADR ", num, " matches ", length(file), " file(s)")
+    next
+  }
+  status_line <- grep("^- Status:", readLines(file, warn = FALSE), value = TRUE)
+  if (!length(status_line)) {
+    note(file, ": no `- Status:` line")
+    next
+  }
+  status <- trimws(sub("^- Status:", "", status_line[[1L]]))
+  if (identical(status, indexed)) {
+    ok("ADR ", num, ": index and record agree on `", status, "`")
+  } else {
+    note("ADR ", num, ": index says `", indexed, "`, record says `", status, "`")
   }
 }
 

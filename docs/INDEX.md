@@ -44,14 +44,23 @@ Other vignettes:
 - [docs/plans/2026-11-27-integration-3day](plans/2026-11-27-integration-3day.md)
   — the three-day integration programme: J1–J7, parallel streams, gates and
   failure criteria.
+- [docs/plans/day-1-gate](plans/day-1-gate.md) — the Day-1 state report and
+  merge-marker evidence.
+- [docs/plans/day-2-gate](plans/day-2-gate.md) — the Day-2 panel, loop and
+  scale gate: runs, counts and the two open items.
 - [docs/plans/self-repair-log](plans/self-repair-log.md) — the append-only
   blocker and repair log for the programme.
+- [data/metrics/metrics-2026-11-27](../data/metrics/metrics-2026-11-27.md) —
+  the generated run report: stage latencies, J1–J7 cost, failure share and the
+  delta to the baseline.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
 - [docs/user-api-surface](user-api-surface.md) — the full export inventory,
   data classes, composition rules, the connectivity graph and the ZU defects.
 - [docs/index-perf](index-perf.md) — one locus, memory vs per-chromosome bowtie:
   build and query times, and what the index object does not hold.
+- [docs/ci-bench-baseline](ci-bench-baseline.md) — the runbook for capturing
+  the `github-ubuntu-latest` timing baseline on CI and committing it.
 
 ## Architecture decisions
 
@@ -81,6 +90,20 @@ Other vignettes:
   artefact and the MCP contract are the product.
 - [ADR 0012](adr/0012-autonomy-and-self-repair.md) — autonomy and self-repair:
   a blocker never stops the programme.
+- [ADR 0013](adr/0013-metrics-gate-is-not-a-green-delta.md) — the metrics
+  report is not a green delta; a p95 gate compares comparable samples only.
+- [ADR 0014](adr/0014-benchmark-baseline-is-keyed-by-runner-class.md) — a
+  timing baseline is keyed by runner class, not by hostname.
+- [ADR 0015](adr/0015-a-record-resolves-only-its-own-directory.md) — a
+  persisted record names only the files inside its own directory.
+- [ADR 0016](adr/0016-one-vcf-admission-rule.md) — the two VCF readers share
+  one admission rule, so a symbolic allele cannot become a fake `N`.
+- [ADR 0017](adr/0017-a-raw-identifier-is-admitted-before-normalisation.md) —
+  a raw identifier is admitted before `ath_chrom()` can rename it, so an
+  empty chromosome cannot become a plausible contig.
+- [ADR 0018](adr/0018-one-allele-and-position-rule-for-three-vcf-readers.md) —
+  all three VCF readers admit the same alleles and refuse the same positions,
+  so a depth table and a variant table join on one key.
 
 ## Operator decisions
 

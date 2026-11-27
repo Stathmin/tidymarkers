@@ -54,6 +54,18 @@ test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through V
 
 # Input readers: VCF (SNP/MNP/InDel/multiallelic) and arbitrary FASTA.
 
+test_that("a reader names a path that is not one existing file", {
+  readers <- list(read_variants_vcf, read_variant_genotypes, read_genome_fasta)
+  for (reader in readers) {
+    # `file_exists(NULL)` is a base R error, and a directory passes it: both
+    # must be the reader's own named refusal, not "argument is not a character
+    # vector" or an empty tibble with a warning.
+    expect_error(reader(NULL), "must be one", class = "rlang_error")
+    expect_error(reader(character()), "must be one", class = "rlang_error")
+    expect_error(reader(tempdir()), "names a directory", class = "rlang_error")
+  }
+})
+
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   skip_if_not_installed("vroom")
   vcf <- withr::local_tempfile(fileext = ".vcf")
@@ -243,6 +255,15 @@ test_that("read_genome_fasta normalises and filters sequence names", {
   expect_setequal(names(read_genome_fasta(fa, seqids = "1", use_index = FALSE)), "1")
 })
 
+test_that("a FASTA sequence with no name is refused", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">", "ACGTACGT", ">Chr2", "TTTTGGGG"), fa)
+  expect_error(
+    read_genome_fasta(fa, use_index = FALSE),
+    "sequence with no name \\(record 1\\)"
+  )
+})
+
 test_that("read_genome_fasta reads only requested ids via the FASTA index", {
   skip_if_not_installed("Rsamtools")
   fa <- withr::local_tempfile(fileext = ".fa")
@@ -260,6 +281,40 @@ test_that("read_genome_fasta map+index keeps only mapped, requested chroms", {
   g <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, seqids = "Chr2")
   expect_equal(names(g), "Chr2")
   expect_equal(as.character(g[["Chr2"]]), "TTTTGGGG")
+})
+
+test_that("read_genome_fasta refuses a base outside the DNA alphabet", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">Chr1", "ACGTNXYZ"), fa)
+  expect_error(
+    read_genome_fasta(fa, use_index = FALSE),
+    "outside the DNA/IUPAC alphabet"
+  )
+  # the indexed path reaches the same guard through scanFa
+  expect_error(
+    suppressWarnings(read_genome_fasta(fa, seqids = "Chr1")),
+    "outside the DNA/IUPAC alphabet"
+  )
+})
+
+test_that("a FASTA with one name twice is refused on both backends", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">Chr1", "ACGTACGTAC", ">Chr1", "TTTTGGGGCC"), fa)
+  for (use_index in c(FALSE, TRUE)) {
+    expect_error(
+      read_genome_fasta(fa, seqids = "Chr1", use_index = use_index),
+      "names sequence Chr1 more than once",
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  # two source names mapping to one target name is the same ambiguity
+  two <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">1", "ACGT", ">2", "ACGT"), two)
+  expect_error(
+    read_genome_fasta(two, chrom_map = c("1" = "Chr1", "2" = "Chr1")),
+    "more than once after mapping",
+    class = "tidymarkers_duplicate_sequence_error"
+  )
 })
 
 test_that("marker_example carries one of each target type", {
@@ -432,4 +487,183 @@ test_that("read_genbank folds a wrapped join() location into full start/end", {
   cds <- x[x$type == "CDS", ]
   expect_equal(cds$start, 1L)
   expect_equal(cds$end, 300L)
+})
+
+test_that("read_variant_genotypes reads GT/AD into long dosage rows", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1\tL2\tL3",
+    "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD\t0/0:10,0\t0/1:6,4\t1/1:0,9",
+    "1\t250\t.\tA\tG,T\t.\t.\t.\tGT:AD\t1/2:5,5\t0/1:5,5\t0/0:9,0",
+    "1\t300\t.\tC\tT\t.\t.\t.\tAD\t5,5\t0,10\t.",
+    "1\t400\t.\tG\tA\t.\t.\t.\tGT\t./.\t0|1\t1|1"
+  ), vcf)
+
+  expect_message(
+    g <- read_variant_genotypes(vcf),
+    "multi-allelic"
+  )
+  expect_s3_class(g, "genotypes")
+  expect_identical(
+    names(g),
+    c("line", "chrom", "pos", "ref", "alt", "genotype", "depth")
+  )
+  expect_equal(nrow(g), 9L)
+  expect_identical(unique(g$chrom), "Chr1")
+
+  at <- function(pos, line) g$genotype[g$pos == pos & g$line == line]
+  expect_equal(at(250L, "L1")[[1L]], 0)
+  expect_equal(at(250L, "L2")[[1L]], 1)
+  expect_equal(at(250L, "L3")[[1L]], 2)
+  # AD decides the dosage when GT is absent; `.` is no call
+  expect_equal(at(300L, "L1"), 1)
+  expect_equal(at(300L, "L2"), 2)
+  expect_true(is.na(at(300L, "L3")))
+  # a phased call uses the same dosage, a missing call stays NA
+  expect_equal(at(400L, "L2"), 1)
+  expect_equal(at(400L, "L3"), 2)
+  expect_true(is.na(at(400L, "L1")))
+  expect_equal(g$depth[g$pos == 250L & g$line == "L3"], 9)
+
+  one <- read_variant_genotypes(vcf, samples = "L2")
+  expect_equal(nrow(one), 3L)
+  expect_identical(unique(one$line), "L2")
+  expect_error(read_variant_genotypes(vcf, samples = "nope"), "no sample")
+})
+
+test_that("genotypes feed marker_informativeness", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1\tL2\tL3\tL4",
+    "1\t250\t.\tA\tG\t.\t.\t.\tGT\t0/0\t0/1\t1/1\t0/1",
+    "1\t300\t.\tC\tT\t.\t.\t.\tGT\t0/1\t0/0\t0/0\t1/1"
+  ), vcf)
+  g <- read_variant_genotypes(vcf)
+  targets <- tibble::tibble(
+    chrom = "Chr1", pos = c(250L, 300L), ref = c("A", "C"), alt = c("G", "T")
+  )
+  info <- marker_informativeness(targets, genotypes = g, min_lines = 4L)
+  expect_equal(nrow(info), 2L)
+  expect_true(all(info$n_lines >= 4L))
+})
+
+test_that("as_variant_row gives exactly one typed row", {
+  v <- marker_example("SNP")
+  row <- as_variant_row(v, chrom = "Chr1")
+  expect_s3_class(row, "variant")
+  expect_equal(nrow(row), 1L)
+  expect_identical(names(row), c("chrom", "pos", "ref", "alt"))
+
+  two <- tibble::tibble(
+    id = c("a", "b"), chrom = c("1", "1"), pos = c(10L, 20L),
+    ref = c("A", "C"), alt = c("G", "T")
+  )
+  expect_identical(as_variant_row(two, id = "b")$pos, 20L)
+  expect_identical(as_variant_row(two, pos = 10L)$ref, "A")
+  expect_error(as_variant_row(two), "exactly one variant")
+  expect_error(as_variant_row(two, pos = 99L), "exactly one variant")
+
+  # the selected row is admitted before ath_chrom() can turn "" into "ChrNA"
+  bad <- tibble::tibble(chrom = "", pos = 10L, ref = "A", alt = "G")
+  expect_error(as_variant_row(bad), "chromosome name")
+  bad$chrom <- "Chr1"
+  bad$pos <- 0L
+  expect_error(as_variant_row(bad), "positive integer `pos`")
+  bad$pos <- -1L
+  expect_error(as_variant_row(bad), "positive integer `pos`")
+
+  # a symbolic or absent allele is refused, not renamed to a fake N (ADR 0018)
+  bad$pos <- 10L
+  for (alt in c("<DEL>", "*", ".", NA_character_)) {
+    bad$alt <- alt
+    expect_error(as_variant_row(bad), "concrete REF and ALT")
+  }
+})
+
+test_that("a VCF POS outside integer range is refused by every reader", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "Chr1\t0\t.\tA\tC\t.\t.\t.\tGT\t0/1"
+  ), path)
+
+  expect_error(read_variants_vcf(path), "positive integer range")
+
+  # the streaming reader once dropped the record and said why; a record one
+  # reader refuses must not become an empty table in another (ADR 0016, 0018)
+  expect_error(
+    read_variant_genotypes(path),
+    "record 1 has a POS outside the positive integer range"
+  )
+  expect_error(read_variant_depth(path), "positive integer range")
+})
+
+test_that("a VCF record with no chromosome is refused", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "\t300\t.\tA\tG\t.\tPASS\t."
+  ), path)
+
+  # ath_chrom("") would otherwise produce the plausible "ChrNA" contig
+  expect_error(read_variants_vcf(path), "no chromosome name")
+
+  # the genotype reader is the second reader of the same file and must not
+  # invent a contig the variant reader refuses (ZV15 class, chromosome field)
+  gpath <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "\t300\t.\tA\tG\t.\tPASS\t.\tGT\t0/1"
+  ), gpath)
+  expect_error(read_variant_genotypes(gpath), "record 1 has no chromosome")
+})
+
+test_that("a VCF header without ALT names the missing column", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF"
+  ), path)
+
+  expect_error(read_variants_vcf(path), "missing column.*ALT")
+})
+
+test_that("read_variant_genotypes drops a symbolic or absent ALT like the variant reader", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1",
+    "1\t100\t.\tA\t<DEL>\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t200\t.\tA\t.\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,5"
+  ), vcf)
+
+  expect_message(
+    g <- read_variant_genotypes(vcf),
+    "symbolic or absent ALT"
+  )
+  # no fake `N` allele survives, and both readers keep the same records
+  expect_identical(g$pos, 300L)
+  expect_identical(g$alt, "G")
+  v <- suppressMessages(read_variants_vcf(vcf))
+  expect_identical(v$pos, g$pos)
+})
+
+test_that("a truncated VCF record is counted as short, not as missing FORMAT", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t200\t.\tA\tG\t.\t.\t."
+  ), vcf)
+  expect_message(g <- read_variant_genotypes(vcf), "fewer columns")
+  expect_identical(g$pos, 100L)
 })

@@ -41,3 +41,6 @@
 ^\.tmp$
 ^\.tmp/
 ^\.tools/bin$
+^data/metrics$
+^\.opencode$
+^\.tmp-sdd$

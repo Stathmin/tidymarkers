@@ -4,7 +4,14 @@
 \alias{design_marker_batch}
 \title{Run a per-locus design (or any single-locus call) over many loci, in parallel}
 \usage{
-design_marker_batch(genome, loci, design = NULL, BPPARAM = NULL, ...)
+design_marker_batch(
+  genome,
+  loci,
+  design = NULL,
+  BPPARAM = NULL,
+  ...,
+  keep = c("result", "summary")
+)
 }
 \arguments{
 \item{genome}{a \code{marker_genome} or \code{DNAStringSet}.}
@@ -20,11 +27,18 @@ to keep.}
 serially in this session.}
 
 \item{...}{passed to the per-locus call (e.g. \code{flank}).}
+
+\item{keep}{\code{"result"} (the default) keeps the designed object and the
+diagnostics per locus; \code{"summary"} returns the thin
+\code{chrom}/\code{pos}/\code{ref}/\code{alt}/\code{scheme}/\code{ok} table that
+\code{\link[=design_markers]{design_markers()}} returns.  Both are the same run, so the summary cannot
+drift from the batch.}
 }
 \value{
-a tibble, one row per input locus: the \code{loci} columns, \code{status},
-\code{scheme}, \code{message}, \code{elapsed} (s) and \code{result} (list-column of the
-returned object, \code{NULL} when the locus failed).
+with \code{keep = "result"}, a tibble, one row per input locus: the
+\code{loci} columns, \code{status}, \code{scheme}, \code{message}, \code{elapsed} (s) and \code{result}
+(list-column of the returned object, \code{NULL} when the locus failed).  With
+\code{keep = "summary"}, \code{chrom}, \code{pos}, \code{ref}, \code{alt}, \code{scheme} and \code{ok}.
 }
 \description{
 \code{design_markers()} is the summary of a design table; this is the batch that
@@ -60,6 +74,7 @@ batch[, c("chrom", "pos", "status", "scheme")]
 
 Other design:
 \code{\link[=allele_templates]{allele_templates()}},
+\code{\link[=as_marker_solved]{as_marker_solved()}},
 \code{\link[=asq_limits]{asq_limits()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},

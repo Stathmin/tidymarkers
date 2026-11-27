@@ -67,6 +67,7 @@ marker_failure_summary(reg)
 \code{\link[=marker_artefact]{marker_artefact()}}, \code{\link[=marker_explain]{marker_explain()}}
 
 Other plan:
+\code{\link[=as_primer_set]{as_primer_set()}},
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},

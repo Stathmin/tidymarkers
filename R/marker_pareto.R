@@ -72,6 +72,9 @@
 marker_pareto <- function(x, quality = NULL, linkage_risk = NULL, anchor = NULL,
                           recombination = 1e-8, genotypes = NULL,
                           haplotypes = NULL, min_lines = 4L) {
+  if (inherits(x, "marker_panel")) {
+    x <- as_marker_solved(x)
+  }
   cand <- pareto_candidates(
     x, quality, linkage_risk, anchor, recombination,
     genotypes, haplotypes, min_lines

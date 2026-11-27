@@ -7,6 +7,16 @@
 #  Output helpers
 # =============================================================================
 
+# A gene symbol or chromosome becomes part of a file name: keep it inside
+# `dir` even when the caller passes a path-like label.
+safe_name_part <- function(x) {
+  x <- gsub("[^A-Za-z0-9._-]", "_", paste(as.character(x), collapse = "_"))
+  if (!nzchar(x) || x %in% c(".", "..")) {
+    abort_msg("The output name is empty after sanitising; give a real gene symbol.")
+  }
+  x
+}
+
 #' Write the assay results as a few consolidated files
 #'
 #' Works for any assembled assay, not only KASP: every `marker_assay` carries the
@@ -44,7 +54,7 @@
 #' @export
 write_marker_results <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
-  base <- glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}")
+  base <- safe_name_part(glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}"))
 
   design <- assay$assay |>
     dplyr::select(
@@ -168,7 +178,7 @@ marker_primer_table <- function(assay, gene) {
 export_primers <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
   tbl <- marker_primer_table(assay, gene)
-  base <- glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}")
+  base <- safe_name_part(glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}"))
 
   tbl |>
     dplyr::transmute(

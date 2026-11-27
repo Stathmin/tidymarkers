@@ -46,8 +46,9 @@
 #' @param dir directory the artefact is written to (see [marker_artefact()]).
 #' @param ld optional LD step for the target table: `NULL` (not applied), a
 #'   numeric `r2` threshold computed from `haplotypes`, or a linkage table with
-#'   `target1`/`target2` (labels).  A linked pair keeps the first target; the
-#'   record is written to the artefact (`"not_applied"` when `NULL`).
+#'   `target1`/`target2` (labels).  A linked pair keeps the first target.  LD
+#'   runs before the haplotype contract, and every dropped target is recorded
+#'   with `reason = "ld"` (one record shape for all three inputs).
 #' @param costs optional chemistry costs passed to [marker_tech()], so the
 #'   cheapest-first order is a seam (see [marker_costs()]).
 #' @param created optional artefact timestamp; `NULL` reads
@@ -66,8 +67,9 @@
 #'   is `NA` and the amplicon gap is the conservative rule);
 #' * `artefact` - the [marker_artefact()] decision record;
 #' * `solved` - the underlying `marker_solved`;
-#' * `experimental` - `TRUE`: the one-pot grouping is a bench proposal, not a
-#'   validated mix (reagent compatibility and channel overlap are not modelled).
+#' * `experimental` - `FALSE`: J3 is green on a committed fixture with a
+#'   byte-identical artefact (the graduation condition of ADR 0009); the
+#'   one-pot grouping is still not a validated wet-lab mix.
 #'
 #' If no chemistry designs any target the call aborts with every target and every
 #' attempt's cause.
@@ -129,11 +131,22 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
     abort_msg("`targets` or `region` must resolve to at least one target.")
   }
   panel_duplicate_guard(target_tbl)
+  # LD reads the raw dosage first: the full contract then judges only the
+  # targets that survive the prune (ADR 0009)
+  before <- target_tbl
+  ldres <- panel_ld(before, haplotypes, ld)
+  target_tbl <- ldres$targets
   if (!is.null(haplotypes)) {
+    # a pruned locus leaves the contract entirely: its rows are irrelevant to
+    # the surviving design, so an unphased row there must not abort
+    gone <- before[!before$label %in% target_tbl$label, , drop = FALSE]
+    if (nrow(gone)) {
+      locus <- function(d) paste(d$chrom, d$pos, sep = "\r")
+      gone_loci <- setdiff(locus(gone), locus(target_tbl))
+      haplotypes <- haplotypes[!locus(haplotypes) %in% gone_loci, , drop = FALSE]
+    }
     haplotypes <- panel_haplotype_contract(haplotypes, target_tbl, variants)
   }
-  ldres <- panel_ld(target_tbl, haplotypes, ld)
-  target_tbl <- ldres$targets
   # a region stays a region only when nothing pruned its targets; after an LD
   # prune the survivors are solved explicitly
   use_region <- if (is.null(targets) && is.null(ld)) region else NULL
@@ -147,6 +160,7 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
   plan$ld <- ldres$record
 
   solved <- marker_solve(plan, progress = FALSE, ...)
+  solved$scenario <- "J3"
   targets_tbl <- panel_targets(solved)
   if (!any(targets_tbl$ok)) {
     cli::cli_abort(c(
@@ -155,14 +169,46 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
     ))
   }
 
+  one_pot <- panel_one_pot(targets_tbl)
+  # ADR 0009 §3: the panel writes the pipeline record, and it enters the
+  # artefact identity through the plan
+  solved$plan$panel <- list(
+    order = c("gwas", "ld", "haplotypes", "chemistry", "artefact"),
+    gwas = list(
+      n_signals = nrow(before),
+      columns = if (is.data.frame(targets)) {
+        as.list(names(targets))
+      } else {
+        as.list(c("label", "chrom", "pos", "ref", "alt"))
+      }
+    ),
+    ld = ldres$record,
+    haplotypes = list(
+      n = if (is.null(haplotypes)) 0L else nrow(haplotypes),
+      reference_calls = if (is.null(haplotypes)) 0L else attr(haplotypes, "reference_calls"),
+      outside_variants = 0L
+    ),
+    chemistry = list(
+      costs = as.list(chemistries),
+      chosen = as.list(stats::setNames(
+        targets_tbl$scheme[targets_tbl$ok],
+        targets_tbl$target[targets_tbl$ok]
+      ))
+    ),
+    one_pot = list(groups = one_pot$n_groups, unassigned = nrow(one_pot$unassigned))
+  )
+
   structure(
     list(
       targets = targets_tbl,
-      one_pot = panel_one_pot(targets_tbl),
-      artefact = marker_artefact(solved, dir = dir, created = created),
+      one_pot = one_pot,
+      artefact = marker_artefact(
+        solved,
+        dir = dir, created = created, scenario = "J3"
+      ),
       solved = solved,
       ld = ldres$record,
-      experimental = TRUE
+      experimental = FALSE
     ),
     class = "marker_panel"
   )
@@ -430,15 +476,16 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
 
 #' The opt-in LD step: collapse targets linked at or above a threshold
 #'
-#' `ld = NULL` records `"not_applied"`.  A numeric threshold computes pairwise
-#' `r2` from the phased haplotypes (carrier indicator per haplotype); a linkage
-#' table names the pairs (`target1`, `target2` labels) to collapse.  The first
-#' target of a pair is kept, so the order is the input order.
+#' `ld = NULL` records `list(method = "not_applied")`.  A numeric threshold
+#' computes pairwise `r2` from the phased haplotypes (carrier indicator per
+#' haplotype); a linkage table names the pairs (`target1`, `target2` labels) to
+#' collapse.  The first target of a pair is kept, so the order is the input
+#' order.  Every pruned target is named with `reason = "ld"`.
 #' @keywords internal
 #' @noRd
 panel_ld <- function(targets, haplotypes = NULL, ld = NULL) {
   if (is.null(ld)) {
-    return(list(targets = targets, record = "not_applied"))
+    return(list(targets = targets, record = list(method = "not_applied")))
   }
   keep <- rep(TRUE, nrow(targets))
   if (is.data.frame(ld)) {
@@ -451,7 +498,10 @@ panel_ld <- function(targets, haplotypes = NULL, ld = NULL) {
       }
       keep[second] <- FALSE
     }
-    record <- list(table = ld)
+    record <- list(
+      method = "table", pairs = ld,
+      dropped = targets$label[!keep], reason = "ld"
+    )
   } else if (is.numeric(ld) && length(ld) == 1L && is.finite(ld) && ld >= 0 && ld <= 1) {
     if (is.null(haplotypes)) {
       abort_msg("A numeric `ld` threshold needs `haplotypes` to compute r2.")
@@ -476,7 +526,10 @@ panel_ld <- function(targets, haplotypes = NULL, ld = NULL) {
         }
       }
     }
-    record <- list(threshold = ld, dropped = targets$label[!keep])
+    record <- list(
+      method = "threshold", threshold = ld,
+      dropped = targets$label[!keep], reason = "ld"
+    )
   } else {
     abort_msg("`ld` must be NULL, one `r2` threshold in [0, 1], or a linkage table.")
   }

@@ -71,4 +71,27 @@ arithmetic are in `docs/decisions/0001-16gb-fixpur.md`. The actual 16 Gb run is
 an operator action because no such reference is on this host.
 
 Not measured here: a 16 Gb wheat build (no such reference on this host), a
-pan-genome A/B/D run.
+full-size pan-genome A/B/D run.
+
+### Builds and the pangenome
+
+A build is an explicit id on the genome (`marker_genome(build =)` or
+`read_genome_fasta(build =)`), written into every manifest row and into the
+shard path, so `(genome_build, chrom)` is the shard key and two builds cannot
+share a file.  `genome_index(build =)` also accepts the id; a pangenome is a
+named list of `genome_index` objects, one per build, and every component must
+name its build.  A scan carries `build` on each row; `specificity_verdict()`
+refuses a table that spans builds with `tidymarkers_mixed_build_error`, so A/B/D
+are N queries and N verdicts, never one pooled verdict.  J4 exercises this on
+the committed three-build fixture (six shards); the missing-shard error names
+both the build and the chromosome.
+
+### Budget gate
+
+`Rscript dev/perf-gate.R [--json <path>]` enforces ADR 0010: a shard may use
+`baseline + 5 bytes/base` (`TIDYMARKERS_PERF_BASELINE_MB`, default 455.4) and a
+golden-locus query may take at most 2x the memory-path median.  Measurements
+come from `dev/bench-index-memory.R ... --json <path>`; without them the gate
+prints `not_run` and its reason and still catches a monolith attempted above
+`BOWTIE_MONOLITH_LIMIT` without `chroms`.  Records below 1 Mb are `not_run`:
+process overhead dominates a fixture and cannot test a per-base budget.

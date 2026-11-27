@@ -208,6 +208,7 @@ assemble_kasp_assay(genome, snp)
 \seealso{
 Other design:
 \code{\link[=allele_templates]{allele_templates()}},
+\code{\link[=as_marker_solved]{as_marker_solved()}},
 \code{\link[=asq_limits]{asq_limits()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},

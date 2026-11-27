@@ -1,6 +1,6 @@
 # 0008 — User scenarios J1–J7 are the executable contract
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-27
 - Supersedes: none
 

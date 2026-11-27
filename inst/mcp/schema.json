@@ -164,6 +164,14 @@
             "type": "string",
             "description": "FASTA file, plain or gzipped"
           },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
+          },
           "chrom_map": {
             "type": "object",
             "description": "optional defline -> name map"
@@ -214,6 +222,14 @@
             "type": "string",
             "description": "FASTA file, plain or gzipped"
           },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
+          },
           "chrom_map": {
             "type": "object",
             "description": "optional defline -> name map"
@@ -244,6 +260,14 @@
           "genome_path": {
             "type": "string",
             "description": "FASTA file, plain or gzipped"
+          },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
           },
           "chrom_map": {
             "type": "object",
@@ -578,6 +602,14 @@
             "type": "string",
             "description": "FASTA file, plain or gzipped"
           },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
+          },
           "chrom_map": {
             "type": "object",
             "description": "optional defline -> name map"
@@ -656,6 +688,14 @@
             "type": "string",
             "description": "FASTA file, plain or gzipped"
           },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
+          },
           "chrom_map": {
             "type": "object",
             "description": "optional defline -> name map"
@@ -695,13 +735,17 @@
             "type": "string",
             "description": "FASTA file, plain or gzipped"
           },
-          "chrom_map": {
-            "type": "object",
-            "description": "optional defline -> name map"
-          },
           "blast_db": {
             "type": "string",
             "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
+          },
+          "chrom_map": {
+            "type": "object",
+            "description": "optional defline -> name map"
           },
           "chrom": {
             "type": "string",
@@ -744,6 +788,14 @@
           "genome_path": {
             "type": "string",
             "description": "FASTA file, plain or gzipped"
+          },
+          "blast_db": {
+            "type": "string",
+            "description": "optional BLAST database prefix"
+          },
+          "fm_index": {
+            "type": "string",
+            "description": "optional FM-index prefix"
           },
           "chrom_map": {
             "type": "object",

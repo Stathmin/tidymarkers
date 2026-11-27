@@ -48,6 +48,9 @@
 #' @param bowtie_index optional prebuilt bowtie1 index basename for the indexed
 #'   genome-wide scan (see [marker_bowtie_index()] / [specificity_bowtie()]);
 #'   this is the indexed path [specificity_of()] prefers.
+#' @param build optional release id (`"A"`, `"B"`, `"D"`, `"TAIR10"`).  One
+#'   genome may omit it; a pangenome component must name it, so a scan of that
+#'   component carries the build and builds cannot be pooled by accident.
 #' @param bsgenome a `BSgenome` object (or a package name) to read from instead
 #'   of a FASTA (e.g. `"BSgenome.Athaliana.TAIR.TAIR9"`).  Sequencing works, but
 #'   a BSgenome genome has no FASTA on disk, so the index builders
@@ -62,9 +65,13 @@
 #' @family input
 #' @export
 marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
-                          bsgenome = NULL, fm_index = NULL, bowtie_index = NULL) {
+                          bsgenome = NULL, fm_index = NULL, bowtie_index = NULL,
+                          build = NULL) {
+  build <- check_genome_build(build)
   if (!is.null(bsgenome)) {
-    return(bsgenome_kasp_genome(bsgenome, chrom_map, blast_db, fm_index, bowtie_index))
+    return(bsgenome_kasp_genome(
+      bsgenome, chrom_map, blast_db, fm_index, bowtie_index, build
+    ))
   }
   plain <- fasta_index(path)
   fa <- Rsamtools::FaFile(plain)
@@ -79,6 +86,7 @@ marker_genome <- function(path = NULL, chrom_map = NULL, blast_db = NULL,
       path = plain, fa = fa, seqnames = seqnames,
       lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
       blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index,
+      build = build,
       cache = if (isTRUE(getOption("tidymarkers.genome_cache", TRUE))) new.env(parent = emptyenv()) else NULL
     ),
     class = "marker_genome"
@@ -121,7 +129,7 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' version but not the hashes, so opening a 16 Gb genome does not read it;
 #' Chromosome shards of a bowtie index with `chroms`; above
 #' `BOWTIE_MONOLITH_LIMIT` the shards are chosen even when `chroms` is `NULL`.
-#' [index_manifest()] refreshes the measured columns from disk.  Above
+#' `index_manifest()` refreshes the measured columns from disk.  Above
 #' `BOWTIE_MONOLITH_LIMIT` (21.5 GB, 1.34 bytes per base) a bowtie strategy with
 #' `chroms = NULL` is sharded per chromosome, and each shard is built from one
 #' chromosome at a time (`index_chrom_seq()`), never from the whole FASTA.
@@ -143,8 +151,12 @@ GENOME_INDEX_CAPABILITIES <- list(
 #'   `BOWTIE_MONOLITH_LIMIT` is sharded into per-chromosome shards anyway.
 #' @param dir directory for a lazily built index; defaults to [tempdir()].
 #' @param threads threads for an index build.
-#' @return a `genome_index` object with `strategy`, `capabilities`, `manifest`
-#'   and the wrapped `genome`.
+#' @param build optional release id; when given it is written into every
+#'   manifest row (and into the shard paths), and a `genome_index` over a
+#'   pangenome component must have one.  A plain list is not an index: build one
+#'   index per element.
+#' @return a `genome_index` object with `strategy`, `capabilities`, `manifest`,
+#'   `build` and the wrapped `genome`.
 #' @examples
 #' genome <- Biostrings::DNAStringSet(c(Chr1 = "ACGTACGTACGTACGTACGT"))
 #' idx <- genome_index(genome, strategy = "memory")
@@ -153,8 +165,26 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' @family input
 #' @export
 genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm"),
-                         chroms = NULL, dir = NULL, threads = 1L) {
+                         chroms = NULL, dir = NULL, threads = 1L, build = NULL) {
   strategy <- match.arg(strategy)
+  build <- check_genome_build(build)
+  if (is.list(genome) && !is.object(genome)) {
+    abort_msg(
+      "A pangenome is one index per build, not one index over a list.",
+      i = "Call genome_index() once per element, each with its own `build =`."
+    )
+  }
+  if (!is.null(build)) {
+    if (inherits(genome, "marker_genome")) {
+      genome$build <- build
+    } else if (inherits(genome, "DNAStringSet")) {
+      md <- S4Vectors::metadata(genome) %||% list()
+      md$genome_build <- build
+      S4Vectors::metadata(genome) <- md
+    } else {
+      abort_msg("`build` needs a {.cls marker_genome} or a {.cls DNAStringSet}.")
+    }
+  }
   if (identical(strategy, "memory") && !inherits(genome, "DNAStringSet")) {
     abort_msg(
       "The memory strategy needs an in-memory {.cls DNAStringSet}.",
@@ -171,6 +201,7 @@ genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm")
       genome = genome, strategy = strategy,
       capabilities = GENOME_INDEX_CAPABILITIES[[strategy]],
       chroms = chroms, dir = dir, threads = as.integer(threads),
+      build = index_genome_build(genome),
       manifest = index_shards(genome, strategy, chroms, dir)
     ),
     class = "genome_index"
@@ -180,11 +211,7 @@ genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm")
 #' @rdname capabilities
 #' @export
 capabilities.genome_index <- function(engine, capability = NULL, ...) {
-  if (is.null(capability)) {
-    return(engine$capabilities)
-  }
-  value <- engine$capabilities[[capability]]
-  if (is.null(value)) "unknown" else value
+  capability_value(engine, capability)
 }
 
 # Resolve (and, for an index strategy, lazily build) the handle a scan queries.
@@ -217,7 +244,7 @@ genome_index_scan <- function(primers, index, k = SEED_K,
       class = "tidymarkers_capability_error"
     )
   }
-  switch(index$strategy,
+  out <- switch(index$strategy,
     memory = mark_scan(
       specificity_seed(primers, index$genome,
         k = k, max_mismatch = max_mismatch, BPPARAM = BPPARAM
@@ -255,6 +282,10 @@ genome_index_scan <- function(primers, index, k = SEED_K,
       "whole-primer"
     )
   )
+  # every row names the build it answers for; `NA` is an unnamed single genome
+  out$build <- index_result_build(index)
+  attr(out, "genome_build") <- index_result_build(index)
+  out
 }
 
 # Tag a specificity table with the question it answers.  The attribute is the
@@ -315,7 +346,7 @@ scan_question <- function(x) {
 #' @keywords internal
 #' @noRd
 bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
-                                 bowtie_index = NULL) {
+                                 bowtie_index = NULL, build = NULL) {
   load_namespace_quietly("BSgenome", reason = gettext("for a BSgenome genome source"))
   if (is.character(bsgenome)) {
     load_namespace_quietly(bsgenome, reason = gettext("for the BSgenome genome source"))
@@ -331,10 +362,26 @@ bsgenome_kasp_genome <- function(bsgenome, chrom_map, blast_db, fm_index = NULL,
     list(
       path = NULL, fa = NULL, bsgenome = bsgenome, seqnames = seqnames,
       lengths = rlang::set_names(unname(len[raw[keep]]), names(seqnames)),
-      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index
+      blast_db = blast_db, fm_index = fm_index, bowtie_index = bowtie_index,
+      build = build
     ),
     class = "marker_genome"
   )
+}
+
+# One release id per genome. A pangenome names each component; an unnamed
+# build is `NA` and can still be queried alone, never pooled with another.
+check_genome_build <- function(build) {
+  if (is.null(build)) {
+    return(NULL)
+  }
+  if (!is.character(build) || length(build) != 1L || is.na(build) || !nzchar(build)) {
+    abort_msg("`build` must be one short release id, e.g. \"A\" or \"TAIR10\".")
+  }
+  if (grepl("[/\\\\]", build) || build %in% c(".", "..")) {
+    abort_msg("`build` must be one short release id, e.g. \"A\" or \"TAIR10\".")
+  }
+  build
 }
 
 # `genome_signature()` keys a BSgenome by names and lengths only (its class is

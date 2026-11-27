@@ -98,6 +98,7 @@ assay$assay[, c("as_ref", "as_alt", "com", "amplicon")]
 \seealso{
 Other design:
 \code{\link[=allele_templates]{allele_templates()}},
+\code{\link[=as_marker_solved]{as_marker_solved()}},
 \code{\link[=asq_limits]{asq_limits()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},

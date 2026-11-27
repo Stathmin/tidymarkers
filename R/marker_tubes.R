@@ -8,6 +8,27 @@
 #  solved markers - the multiplex layer on top of the per-target design.
 # =============================================================================
 
+#' Claim a named character vector as a primer set
+#'
+#' The tube layer takes a `primer_set` -- a named character vector of oligos --
+#' not the candidate table a design step returns.  An object that already is one
+#' passes through, so the accessor and its consumers agree on the type.
+#' @param x a named character vector of oligos.
+#' @return `x` with class `"primer_set"`.
+#' @examples
+#' as_primer_set(c(forward = "ACGT", reverse = "TGCA"))
+#' @family plan
+#' @export
+as_primer_set <- function(x) {
+  if (inherits(x, "primer_set")) {
+    return(x)
+  }
+  if (!is.character(x)) {
+    abort_msg("`x` must be a named character vector of oligos (a primer_set).")
+  }
+  structure(x, class = c("primer_set", "character"))
+}
+
 #' The oligos a designed marker would put in a tube
 #'
 #' One accessor over every chemistry's object, so the tube layer never has to know
@@ -35,16 +56,21 @@ marker_primers <- function(marker, ...) UseMethod("marker_primers")
 #' @export
 marker_primers.default <- function(marker, ...) {
   p <- marker$primers
-  if (is.list(p) && all(c("forward", "reverse") %in% names(p))) {
-    return(c(forward = p$forward, reverse = p$reverse))
+  out <- if (is.list(p) && all(c("forward", "reverse") %in% names(p))) {
+    c(forward = p$forward, reverse = p$reverse)
+  } else {
+    character(0)
   }
-  character(0)
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_assay <- function(marker, ...) {
-  a <- marker$assay
-  c(AS_ref = a$as_ref[1L], AS_alt = a$as_alt[1L], COM = a$com[1L])
+  out <- {
+    a <- marker$assay
+    c(AS_ref = a$as_ref[1L], AS_alt = a$as_alt[1L], COM = a$com[1L])
+  }
+  as_primer_set(out)
 }
 
 #' The oligos of every assay in a multi-assay marker, named by assay
@@ -69,19 +95,23 @@ primers_by_assay <- function(assays) {
 
 #' @export
 marker_primers.marker_lax <- function(marker, ...) {
-  if (!is.null(marker$pool)) {
-    return(marker$pool)
+  out <- if (!is.null(marker$pool)) {
+    marker$pool
+  } else if (!is.null(marker$base)) {
+    marker_primers(marker$base)
+  } else {
+    # the no-haplotype form: one plain KASP assay per (single) ALT
+    primers_by_assay(marker$assays)
   }
-  if (!is.null(marker$base)) {
-    return(marker_primers(marker$base))
-  }
-  # the no-haplotype form: one plain KASP assay per (single) ALT
-  primers_by_assay(marker$assays)
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_duplex <- function(marker, ...) {
-  primers_by_assay(marker$assays)
+  out <- {
+    primers_by_assay(marker$assays)
+  }
+  as_primer_set(out)
 }
 
 #' The flanking pair and the hydrolysis probes of a probe-based marker
@@ -100,71 +130,89 @@ probe_primers <- function(marker) {
 }
 
 #' @export
-marker_primers.marker_taqman <- function(marker, ...) probe_primers(marker)
+marker_primers.marker_taqman <- function(marker, ...) as_primer_set(probe_primers(marker))
 
 #' @export
-marker_primers.marker_dpcr <- function(marker, ...) probe_primers(marker)
+marker_primers.marker_dpcr <- function(marker, ...) as_primer_set(probe_primers(marker))
 
 #' @export
 marker_primers.marker_castpcr <- function(marker, ...) {
-  c(
-    AS = marker$primers$as_primer, forward = marker$primers$forward,
-    reverse = marker$primers$reverse, probe = marker$probe$sequence
-  )
+  out <- {
+    c(
+      AS = marker$primers$as_primer, forward = marker$primers$forward,
+      reverse = marker$primers$reverse, probe = marker$probe$sequence
+    )
+  }
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_rpa <- function(marker, ...) {
-  out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
-  if (!is.null(marker$probe)) out[["probe"]] <- marker$probe$sequence
-  out
+  out <- {
+    out <- c(forward = marker$primers$forward, reverse = marker$primers$reverse)
+    if (!is.null(marker$probe)) out[["probe"]] <- marker$probe$sequence
+    out
+  }
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_snapshot <- function(marker, ...) {
-  amp <- marker$amplification
-  ext <- marker$extension
-  c(
-    forward = if (!is.null(amp)) amp$forward else NULL,
-    reverse = if (!is.null(amp)) amp$reverse else NULL,
-    extension = if (!is.null(ext)) ext$primer else NULL
-  )
+  out <- {
+    amp <- marker$amplification
+    ext <- marker$extension
+    c(
+      forward = if (!is.null(amp)) amp$forward else NULL,
+      reverse = if (!is.null(amp)) amp$reverse else NULL,
+      extension = if (!is.null(ext)) ext$primer else NULL
+    )
+  }
+  as_primer_set(out)
 }
 
 #' @export
-marker_primers.marker_lamp <- function(marker, ...) unlist(marker$primers)
+marker_primers.marker_lamp <- function(marker, ...) as_primer_set(unlist(marker$primers))
 
 #' @export
 marker_primers.marker_arms <- function(marker, ...) {
-  c(
-    outer_forward = marker$outer$forward, outer_reverse = marker$outer$reverse,
-    AS_ref = marker$inner$ref$primer, AS_alt = marker$inner$alt$primer
-  )
+  out <- {
+    c(
+      outer_forward = marker$outer$forward, outer_reverse = marker$outer$reverse,
+      AS_ref = marker$inner$ref$primer, AS_alt = marker$inner$alt$primer
+    )
+  }
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_crispr <- function(marker, ...) {
-  amp <- marker$amplicon
-  out <- c(guide = marker$guide)
-  if (!is.null(amp) && all(c("forward", "reverse") %in% names(amp))) {
-    out <- c(forward = amp$forward, reverse = amp$reverse, out)
+  out <- {
+    amp <- marker$amplicon
+    out <- c(guide = marker$guide)
+    if (!is.null(amp) && all(c("forward", "reverse") %in% names(amp))) {
+      out <- c(forward = amp$forward, reverse = amp$reverse, out)
+    }
+    out
   }
-  out
+  as_primer_set(out)
 }
 
 #' @export
 marker_primers.marker_sanger <- function(marker, ...) {
-  out <- c(PCR_F = marker$primers$forward, PCR_R = marker$primers$reverse)
-  sp <- marker$seq_primers
-  if (!is.null(sp)) {
-    if (!identical(sp$forward, marker$primers$forward)) {
-      out <- c(out, read_F = sp$forward)
+  out <- {
+    out <- c(PCR_F = marker$primers$forward, PCR_R = marker$primers$reverse)
+    sp <- marker$seq_primers
+    if (!is.null(sp)) {
+      if (!identical(sp$forward, marker$primers$forward)) {
+        out <- c(out, read_F = sp$forward)
+      }
+      if (!identical(sp$reverse, marker$primers$reverse)) {
+        out <- c(out, read_R = sp$reverse)
+      }
     }
-    if (!identical(sp$reverse, marker$primers$reverse)) {
-      out <- c(out, read_R = sp$reverse)
-    }
+    out
   }
-  out
+  as_primer_set(out)
 }
 
 #' Which solved markers can share one tube without interfering

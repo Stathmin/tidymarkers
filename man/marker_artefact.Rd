@@ -4,7 +4,12 @@
 \alias{marker_artefact}
 \title{Write a self-documenting artefact for a solved plan}
 \usage{
-marker_artefact(solved, dir = tempdir(), created = NULL)
+marker_artefact(
+  solved,
+  dir = tempdir(),
+  created = NULL,
+  scenario = "unspecified"
+)
 }
 \arguments{
 \item{solved}{a \code{marker_solved} (see \code{\link[=marker_solve]{marker_solve()}}).  Its \code{cache} is where
@@ -16,6 +21,11 @@ round-tripped through \code{saveRDS()} keeps it.}
 \item{created}{artefact timestamp: \code{NULL} reads \code{SOURCE_DATE_EPOCH}, then the
 current time; a \code{POSIXct}, an epoch string/number, or an ISO timestamp is
 used as given.  A fixed value makes the text files byte-identical on rerun.}
+
+\item{scenario}{the executable scenario this record belongs to (\code{"J1"}–\code{"J7"},
+or \code{"unspecified"}).  It is written into \code{contract} and hashed into \code{id};
+a wrong attribution is worse than an explicit gap, so callers state it
+rather than guess.}
 }
 \value{
 a \code{marker_artefact}: \code{id}, \code{dir}, \code{manifest}, \code{decisions}.
@@ -30,7 +40,7 @@ phased block), \code{targets.csv} and, when it is not already there, \code{solve
 }
 \details{
 The manifest records what the numbers cannot say for themselves: the hashed
-reference and variant table, the package version and git SHA, every engine
+reference, variant and target table, the package version and git SHA, every engine
 version (an absent engine is \code{NA}, never omitted), the design knobs, and -
 as its own field - the knobs that differ from the designer defaults.  An
 overridden threshold is visible without diffing \code{parameters} against a
@@ -57,6 +67,7 @@ marker_replay(art)$match
 }
 \seealso{
 Other plan:
+\code{\link[=as_primer_set]{as_primer_set()}},
 \code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},
 \code{\link[=marker_costs]{marker_costs()}},

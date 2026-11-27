@@ -84,7 +84,6 @@ Suggests:
     xml2,
     officer,
     crisprVerse,
-    parallelly,
     spelling
 VignetteBuilder: knitr
 biocViews: Software, Genetics, GenomicVariation, SNP, VariantDetection, IndelDetection, qPCR, CRISPR, ReportWriting, Visualization

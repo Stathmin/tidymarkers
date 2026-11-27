@@ -121,6 +121,54 @@ empty_targets <- function() {
   )
 }
 
+#' Refuse a target row that cannot name a locus
+#'
+#' A missing chromosome or a POS that is not a positive integer would reach the
+#' designer as `NA`/`0` and produce a verdict about a place that does not exist.
+#' @keywords internal
+#' @noRd
+check_target_loci <- function(x) {
+  bad_chrom <- is.na(x$chrom) | !nzchar(x$chrom)
+  if (any(bad_chrom)) {
+    abort_msg(gettextf(
+      "A target has no chromosome name (row %d).", which(bad_chrom)[[1L]]
+    ))
+  }
+  bad_pos <- is.na(x$pos) | x$pos < 1L
+  if (any(bad_pos)) {
+    i <- which(bad_pos)[[1L]]
+    abort_msg(gettextf(
+      "Every target needs a positive integer `pos`; row %d is %s.",
+      i, format(x$pos[[i]])
+    ))
+  }
+  dna <- function(v) !is.na(v) & nzchar(v) & grepl("^[ACGTN]+$", v)
+  bad_allele <- !dna(x$ref) | !dna(x$alt)
+  if (any(bad_allele)) {
+    i <- which(bad_allele)[[1L]]
+    abort_msg(gettextf(
+      "Target row %d needs DNA alleles in `ref` and `alt` (ACGTN); got %s/%s.",
+      i, format(x$ref[[i]]), format(x$alt[[i]])
+    ))
+  }
+  bad_alt2 <- !is.na(x$alt2) & !dna(x$alt2)
+  if (any(bad_alt2)) {
+    i <- which(bad_alt2)[[1L]]
+    abort_msg(gettextf(
+      "Target row %d has `alt2` = %s, not a DNA allele (ACGTN).",
+      i, format(x$alt2[[i]])
+    ))
+  }
+  same <- x$ref == x$alt
+  if (any(same)) {
+    abort_msg(gettextf(
+      "Target row %d has `ref` equal to `alt` (%s); that is not a variant.",
+      which(same)[[1L]], x$ref[[which(same)[[1L]]]]
+    ))
+  }
+  invisible(x)
+}
+
 #' Normalise a target table (derive a `label` if absent)
 #' @keywords internal
 #' @noRd
@@ -143,7 +191,7 @@ normalise_targets <- function(x) {
   if (!"type" %in% names(x)) x$type <- NA_character_
   if (!"strand" %in% names(x)) x$strand <- "+"
   x$strand <- as.character(x$strand)
-  x[, target_cols()]
+  check_target_loci(x[, target_cols()])
 }
 
 #' One row (or a table) of target loci for [marker_targets()]
@@ -169,7 +217,7 @@ target_rows <- function(chrom, pos, ref, alt, alt2 = NULL, data, type, label,
   out$alt2 <- if (is.null(alt2)) NA_character_ else toupper(as.character(alt2))
   out$type <- if (is.null(type)) NA_character_ else as.character(type)
   out$strand <- as.character(strand)
-  out[, target_cols()]
+  check_target_loci(out[, target_cols()])
 }
 
 #' A plan layer (internal; layers are added with `+`)
@@ -337,13 +385,56 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' @param preset a bundle name in `KASP_TECH_PRESETS` (`"kasp"`, `"gel"`,
 #'   `"lab"`, `"field"`).
 #' @param exclude scheme ids to drop from the allowed set.
+#' @param priors a table from [marker_priors()] with `outcomes = `; it moves a
+#'   scheme with more laboratory successes ahead of one with more failures.
+#'   Ordering only: no scheme is dropped and no verdict changes.
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
 #' @family plan
 #' @export
-marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL) {
+marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL,
+                        priors = NULL) {
+  schemes <- as_scheme_ids(schemes)
+  exclude <- if (is.null(exclude)) NULL else as_scheme_ids(exclude)
+  if (!is.null(priors)) {
+    if (!is.data.frame(priors) || !all(c("scheme", "works", "fails") %in% names(priors))) {
+      abort_msg("`priors` must be a table from marker_priors(outcomes = ).")
+    }
+    unknown <- setdiff(as.character(priors$scheme), marker_schemes()$scheme)
+    if (length(unknown)) {
+      abort_msg(gettextf(
+        "Unknown scheme(s) in `priors`: %s. See marker_schemes().",
+        paste(unknown, collapse = ", ")
+      ))
+    }
+    bad <- !is.numeric(priors$works) || !is.numeric(priors$fails)
+    if (!bad) {
+      bad <- any(
+        !is.finite(priors$works) | priors$works < 0 |
+          !is.finite(priors$fails) | priors$fails < 0
+      )
+    }
+    if (bad) {
+      abort_msg("`priors$works` and `priors$fails` must be finite, non-negative counts.")
+    }
+  }
+  if (!is.null(costs)) {
+    if (!is.numeric(costs) || is.null(names(costs)) || any(!nzchar(names(costs)))) {
+      abort_msg("`costs` must be a named numeric vector (see marker_costs()).")
+    }
+    unknown <- setdiff(names(costs), names(KASP_TECH_COSTS))
+    if (length(unknown)) {
+      abort_msg(gettextf(
+        "Unknown chemistry cost(s): %s. Known schemes: %s.",
+        paste(unknown, collapse = ", "), paste(names(KASP_TECH_COSTS), collapse = ", ")
+      ))
+    }
+    if (any(!is.finite(costs) | costs < 0)) {
+      abort_msg("Every cost must be one finite, non-negative number.")
+    }
+  }
   if (!is.null(preset)) {
     preset <- match.arg(preset, names(KASP_TECH_PRESETS))
     schemes <- KASP_TECH_PRESETS[[preset]]
@@ -353,6 +444,7 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
       if (!is.null(schemes)) plan$schemes <- schemes
       if (!is.null(costs)) plan$costs <- costs
       if (!is.null(exclude)) plan$exclude <- exclude
+      if (!is.null(priors)) plan$priors <- priors
       plan
     },
     label = "tech"
@@ -378,6 +470,16 @@ marker_costs <- function(...) {
     abort_msg("`...` must be named costs, e.g. marker_costs(hrm = 1.2).")
   }
   base <- KASP_TECH_COSTS
+  unknown <- setdiff(names(ov), names(base))
+  if (length(unknown)) {
+    abort_msg(gettextf(
+      "Unknown chemistry cost(s): %s. Known schemes: %s.",
+      paste(unknown, collapse = ", "), paste(names(base), collapse = ", ")
+    ))
+  }
+  if (length(ov) && (!is.numeric(ov) || any(!is.finite(ov) | ov < 0))) {
+    abort_msg("Every cost must be one finite, non-negative number.")
+  }
   base[names(ov)] <- as.numeric(ov)
   base
 }
@@ -432,6 +534,15 @@ plan_schemes <- function(plan) {
   costs <- plan$costs %||% KASP_TECH_COSTS
   cost <- unname(costs[allowed])
   cost[is.na(cost)] <- Inf
+  # a prior orders the attempts, it does not remove one: each net success
+  # halves the effective cost and each net failure doubles it.  The verdict is
+  # unchanged because every scheme is still tried.
+  if (!is.null(plan$priors) && nrow(plan$priors)) {
+    net <- plan$priors$works - plan$priors$fails
+    adj <- stats::setNames(as.numeric(net), plan$priors$scheme)[allowed]
+    adj[is.na(adj)] <- 0
+    cost <- cost * ifelse(adj > 0, 1 / (1 + adj), 1 + pmax(-adj, 0))
+  }
   reg <- marker_schemes()$scheme
   allowed[order(cost, match(allowed, reg))]
 }

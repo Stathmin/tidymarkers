@@ -4,7 +4,12 @@ allele_templates,export,design,FALSE,ref_tmpl;snp_i;ref;alt,,sequence;variant,se
 amplicon_fold_check,export,criteria,TRUE,seq,kind;conditions;min_single_stranded;max_length,sequence,fold,fold,FALSE,TRUE,проверка фолдинга ампликона
 annotate_variants,export,ingest,TRUE,variants,txdb;seqsource;gene,variants;txdb,variants,variants,FALSE,FALSE,добавляет контекст транскрипта
 as_3p_interval,export,service,FALSE,snp_pos;strand,window,numeric,interval,interval,TRUE,FALSE,геометрия 3'-окна
+as_marker_solved,export,design,TRUE,report,,report;panel;solved,marker_solved,solved,FALSE,FALSE,мост батч-отчёта и панели в marker_solved
+as_limits,export,criteria,TRUE,criteria,,criteria;limits,limits,limits,TRUE,TRUE,числовые пороги из таблицы критериев
+as_primer_set,export,export,TRUE,primers,,primers;character,primer_set,primer_set,TRUE,TRUE,мост вектора олиго в типизированный primer_set
+as_scheme_ids,export,decision,TRUE,schemes,,schemes;character,character,schemes,TRUE,TRUE,мост реестра химий в marker_tech
 as_anchor,export,service,FALSE,v_start;ref_len;strand,variant_offset,numeric,integer,integer,TRUE,TRUE,геометрия якоря
+as_variant_row,export,ingest,TRUE,variants,id;chrom;pos,variants,variant,variant,TRUE,TRUE,одна типизированная строка варианта
 asq_limits,export,criteria,FALSE,,amplicon;as_tm;com_tm,none,limits,limits,TRUE,FALSE,пороги ASQ
 assay_amplicons,export,specificity,TRUE,assay;genome,max_mismatch;BPPARAM;products,assay;genome,hits,hits,FALSE,FALSE,продукты по аллелям
 assemble_kasp_assay,export,assembly,TRUE,genome;snp,variants;flank;strands;min_gc;max_gc;tm_range;clean_3p;max_footprint_variants;min_disc;specificity_candidates;pair_screen;linked;haplotypes;run_blast;scheme;on_offtarget;cores;BPPARAM;diagnostic_positions;limits;variant_offset;as_tm_target;com_tm_target;com_tm_range;com_gaps;as_lengths;engines,genome;variant;variants;haplotypes,marker_assay,assay,FALSE,FALSE,полная сборка KASP
@@ -25,13 +30,13 @@ decision_palette,export,service,FALSE,,,none,palette,palette,TRUE,TRUE,цвет�
 decision_render,export,export,FALSE,graph,style;out,decision;style,svg,files,FALSE,TRUE,рендер графа в SVG
 decision_style,export,service,FALSE,,palette;font_size;line_height;wrap;pad_x;pad_y;margin;segment_penalty;target_penalty;crossing_penalty;shape_buffer;nudge;title;subtitle;caption;legend,none,style,style,TRUE,FALSE,стиль фигуры
 design_arms_marker,export,design,TRUE,genome;snp,flank;min_band_gap;...,genome;variant,marker_arms,marker,FALSE,FALSE,тетра-праймер ARMS
-design_as_primers,export,design,FALSE,window;v_start;ref;alt,strands;lengths;stab_ats;temp;P;ions;linked;gc_range;tm_range;BPPARAM;conditions;variant_offset,sequence;numeric,primers,primers,FALSE,FALSE,поиск AS-праймеров
-design_as_primers_indel,export,design,FALSE,ref_tmpl;snp_i;ref;alt,strands;lengths;temp;P;ions;gc_range;tm_range;BPPARAM;conditions,sequences,primers,primers,FALSE,FALSE,AS для инделя
+design_as_primers,export,design,FALSE,window;v_start;ref;alt,strands;lengths;stab_ats;temp;P;ions;linked;gc_range;tm_range;BPPARAM;conditions;variant_offset,sequence;numeric,primer_candidates,primer_candidates,FALSE,FALSE,поиск AS-праймеров
+design_as_primers_indel,export,design,FALSE,ref_tmpl;snp_i;ref;alt,strands;lengths;temp;P;ions;gc_range;tm_range;BPPARAM;conditions,sequences,primer_candidates,primer_candidates,FALSE,FALSE,AS для инделя
 design_asq_marker,export,design,TRUE,genome;snp,variants;haplotypes;flank;BPPARAM;...,genome;variant;limits,marker_assay,assay,FALSE,FALSE,ASQ/PACE
 design_auto_marker,export,design,TRUE,genome;snp,strategy;schemes;context;...,genome;variant;context,auto_result,auto_result,FALSE,TRUE,лестница химий до первого успеха
 design_caps_marker,export,design,TRUE,genome;snp,flank;enzymes;min_gap;haplotypes,genome;variant;enzyme_table,marker_caps,marker,FALSE,FALSE,CAPS/dCAPS
 design_castpcr_marker,export,design,TRUE,genome;snp,flank;as_lengths;mate_lengths;probe_lengths;blocker_lengths;probe_margin;probe_tm_max;min_product;max_product;tm_range;gc_range,genome;variant,marker_castpcr,marker,FALSE,FALSE,castPCR
-design_common_primers,export,design,FALSE,window;snp_i,strand;lengths;gaps;target_tm;min_gc;max_gc;tm_range;n;conditions,sequence,primers,primers,FALSE,FALSE,общий праймер
+design_common_primers,export,design,FALSE,window;snp_i,strand;lengths;gaps;target_tm;min_gc;max_gc;tm_range;n;conditions,sequence,primer_candidates,primer_candidates,FALSE,FALSE,общий праймер
 design_crispr_marker,export,design,TRUE,genome;snp,flank;cas;strand;spacer_lengths;gc_range;specificity_max;preamp;min_product;max_product;haplotypes;BPPARAM,genome;variant,marker_crispr,marker,FALSE,FALSE,CRISPR-Dx
 design_dpcr_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;lengths;tm_range;gc_range;probe_lengths;probe_gc;probe_tm_margin;engines,genome;variant,marker_dpcr,marker,FALSE,FALSE,dPCR
 design_duplex,export,design,TRUE,genome;loci,readout;homologous;...,genome;variants,marker_duplex,marker,FALSE,FALSE,дуплекс двух локусов
@@ -41,7 +46,7 @@ design_kasp_markers,export,design,TRUE,genome;loci,variants;BPPARAM;...,genome;v
 design_lamp_marker,export,design,TRUE,genome;snp,flank;arm_lengths;outer_lengths;outer_tm;inner_tm;gc_range;min_product;max_product;loop_primers;engines,genome;variant,marker_lamp,marker,FALSE,FALSE,LAMP
 design_lax_marker,export,design,TRUE,genome;snp,haplotypes;...,genome;variant;haplotypes,marker_lax,marker,FALSE,FALSE,lax KASP по гаплотипам
 design_marker,export,design,TRUE,genome;snp,...,genome;variant,auto_result,auto_result,FALSE,TRUE,алиас design_auto_marker
-design_marker_batch,export,design,TRUE,genome;loci,design;BPPARAM;...,genome;variants,report,report,FALSE,TRUE,"батч, сохраняет объекты"
+design_marker_batch,export,design,TRUE,genome;loci,design;BPPARAM;keep;...,genome;variants,report,report,FALSE,TRUE,"батч, сохраняет объекты; keep=""summary"" — та же таблица без них"
 design_markers,export,design,TRUE,genome;loci,scheme;context;...,genome;variants,report,report,FALSE,TRUE,батч одной химией/лестницей
 design_rpa_marker,export,design,TRUE,genome;snp,flank;primer_len;min_product;max_product;design_probe;probe_len;gc_range;tm_range;BPPARAM;engines,genome;variant,marker_rpa,marker,FALSE,FALSE,RPA
 design_sanger_marker,export,design,TRUE,genome;snp,flank;min_dist;read_length;min_product;max_product;lengths;tm_range;gc_range;check_unique;population;engines;...,genome;variant,marker_sanger,marker,FALSE,FALSE,Sanger
@@ -49,7 +54,7 @@ design_search_frames,export,service,FALSE,assay;variants;snp,,assay;variants,fra
 design_snapshot_marker,export,design,TRUE,genome;snp,flank;amp_lengths;min_amplicon;max_amplicon;amp_tm;amp_gc;ext_lengths;ext_tm;ext_gc;limits;engines,genome;variant,marker_snapshot,marker,FALSE,FALSE,SNaPshot
 design_ssr_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;lengths;units;min_copies;tm_range;gc_range;...,genome;variant,marker_ssr,marker,FALSE,FALSE,SSR
 design_taqman_marker,export,design,TRUE,genome;snp,flank;min_product;max_product;primer_lengths;probe_lengths;primer_tm;probe_tm;probe_modification;gc_range;min_centrality;engines;...,genome;variant,marker_taqman,marker,FALSE,FALSE,TaqMan
-dimer_thermo,export,criteria,TRUE,primers,BPPARAM;conditions,primers;conditions,thermo,thermo,FALSE,TRUE,димеры всех пар
+dimer_thermo,export,criteria,TRUE,primer_set,BPPARAM;conditions,primer_set;conditions,thermo,thermo,FALSE,TRUE,димеры всех пар
 duplex_dg_thermo,export,criteria,FALSE,seq1;seq2,conditions;BPPARAM,sequence;sequence,numeric,numeric,FALSE,TRUE,dG дуплекса
 ensembl_gene,export,ingest,TRUE,gene_id,species;cache,character,gene,gene,TRUE,FALSE,"Ensembl Plants, сеть/кэш"
 ensembl_variants,export,ingest,TRUE,chrom;start;end,species;cache,region,variants,variants,FALSE,FALSE,"1001 Genomes, сеть/кэш"
@@ -66,7 +71,7 @@ genome_index,export,specificity,FALSE,genome,strategy;chroms;dir;threads,genome,
 genome_length,export,service,TRUE,genome;chrom,,genome;character,integer,integer,FALSE,TRUE,длина хромосомы
 genome_seq,export,ingest,TRUE,genome;chrom,start;end,genome;region,sequence,sequence,FALSE,FALSE,чтение региона
 hairpin_dg_thermo,export,criteria,TRUE,seq,conditions;BPPARAM,sequence;conditions,numeric,numeric,FALSE,TRUE,dG шпильки
-haplotype_cover,export,design,TRUE,haplotypes;snp;design,window,haplotypes;variant,primers,primers,FALSE,FALSE,ALT на группу
+haplotype_cover,export,design,TRUE,haplotypes;snp;design,window,haplotypes;variant,primer_candidates,primer_candidates,FALSE,FALSE,ALT на группу
 haplotype_groups,export,design,TRUE,haplotypes;snp,window,haplotypes;variant,groups,groups,FALSE,TRUE,группы по окну
 haplotypes_from_alignment,export,ingest,TRUE,seqs,reference;chrom;freq;maf;...,sequences,haplotypes,haplotypes,FALSE,FALSE,вызов гаплотипов
 has_blast,export,service,FALSE,,,none,logical,logical,TRUE,TRUE,проверка движка
@@ -80,7 +85,7 @@ internal_duplex_dg,export,criteria,FALSE,seq1;seq2,na;temp,sequence;sequence,num
 internal_hairpin_dg,export,criteria,FALSE,seq1,na;temp,sequence,numeric,numeric,FALSE,TRUE,NN без OligoArrayAux
 is_marker_assay,export,service,FALSE,x,,any,logical,logical,TRUE,TRUE,предикат класса
 kasp_mix_recipe,export,export,TRUE,,n_reactions;mix_uL;stock_uM;as_uM;com_uM;reaction_uL;master_mix_conc;dna_uL;overfill,numeric,recipe,recipe,TRUE,TRUE,протокол смеси
-marker_artefact,export,artefact,TRUE,solved,dir;created,solved,marker_artefact,artefact,FALSE,TRUE,artefact.json + CSV
+marker_artefact,export,artefact,TRUE,solved;panel,dir;created,solved,marker_artefact,artefact,FALSE,TRUE,artefact.json + CSV
 marker_artefact_read,export,artefact,TRUE,path,,path,marker_artefact,artefact,TRUE,TRUE,чтение артефакта
 marker_as_granges,export,ingest,FALSE,x,extra,variants,GRanges,granges,FALSE,FALSE,tibble <-> GRanges
 marker_attach_haplotypes,export,design,TRUE,marker;haplotypes,snp;min_alt_freq,marker;haplotypes,marker,marker,FALSE,FALSE,гаплотипы к маркеру
@@ -95,7 +100,7 @@ marker_criteria,export,criteria,TRUE,,limits;scheme,none,marker_criteria,criteri
 marker_decision_graph,export,decision,TRUE,,assay;scheme,marker,tbl_graph,decision,FALSE,TRUE,tidygraph решения
 marker_decision_text,export,decision,TRUE,,scheme;evidence,character,character,character,TRUE,TRUE,"текст решения, не объект"
 marker_defensive_publication,export,export,TRUE,assay_or_solved,...,marker;solved,files,files,FALSE,TRUE,defensive publication
-marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
+marker_design_checks,export,criteria,TRUE,assay,limits;scheme;engines,marker;limits;solved;criteria,checks,checks,FALSE,FALSE,KASP assay и не-KASP scheme; один evaluator
 marker_design_panel,export,design,TRUE,genome;chemistries,variants;haplotypes;targets;region;ld;costs;created;dir;...,genome;variants;haplotypes;targets;costs;character,marker_panel,panel,FALSE,TRUE,chemistries — character vector; panel содержит solved и artefact
 marker_engine_stamp,export,artefact,FALSE,,,none,stamp,stamp,TRUE,FALSE,версии движков
 marker_engine_stamp_field,export,service,FALSE,,fmt;stamp,stamp,character,character,FALSE,TRUE,одна колонка
@@ -105,7 +110,7 @@ marker_ensdb,export,ingest,TRUE,,gtf;cache;release,path,txdb,txdb,TRUE,FALSE,Ens
 marker_evaluation_stamp,export,artefact,FALSE,x,,any,stamp,stamp,TRUE,FALSE,движки оценки
 marker_example,export,ingest,TRUE,,type,character,variants,variants,TRUE,FALSE,встроенные примеры
 marker_explain,export,criteria,TRUE,x,scheme,marker;checks,explain,explain,FALSE,TRUE,почему маркер
-marker_export,export,export,TRUE,solved,dir;artefact,solved,files,files,FALSE,TRUE,markers/attempts/primers/solved.rds
+marker_export,export,export,TRUE,solved;panel,dir;artefact,solved,files,files,FALSE,TRUE,markers/attempts/primers/solved.rds
 marker_export_outcomes,export,export,TRUE,corpus;dir,trustee,corpus,files,files,FALSE,TRUE,экспорт исходов
 marker_export_rocrate,export,export,TRUE,artefact,dir,artefact,files,files,FALSE,TRUE,RO-Crate
 marker_failure_registry,export,artefact,FALSE,,dir;recursive,path,registry,registry,TRUE,TRUE,реестр отказов
@@ -124,25 +129,25 @@ marker_install_tools,export,service,FALSE,,dest;version;ask;force,none,path,path
 marker_one_pot,export,assembly,TRUE,assays,matrix;max_markers,marker;matrix,marker_one_pot,one_pot,FALSE,TRUE,группировка в мультиплекс
 marker_outcome_corpus,export,artefact,TRUE,dir,,path,corpus,corpus,TRUE,FALSE,исходы по каталогу
 marker_outcomes,export,artefact,TRUE,artefact,,artefact,tibble,outcomes,FALSE,TRUE,исходы артефакта
-marker_pareto,export,decision,TRUE,x,quality;linkage_risk;anchor;recombination;genotypes;haplotypes;min_lines,solved;haplotypes,tibble,pareto,FALSE,TRUE,фронт cost/quality/linkage
+marker_pareto,export,decision,TRUE,x,quality;linkage_risk;anchor;recombination;genotypes;haplotypes;min_lines,solved;panel;haplotypes,tibble,pareto,FALSE,TRUE,фронт cost/quality/linkage
 marker_patent_export,export,export,TRUE,assay_or_solved,format;output;...,marker;solved,files,files,FALSE,TRUE,ST.26/docx
 marker_patent_validate,export,export,FALSE,path,schema,path,logical,logical,TRUE,TRUE,XSD-проверка
 marker_plan,export,decision,TRUE,genome,targets;region,genome;targets,marker_plan,plan,FALSE,FALSE,старт плана
 marker_plot,export,export,TRUE,solved,...,solved,plot,plot,FALSE,TRUE,карта решения
 marker_primer_table,export,export,TRUE,assay;gene,,assay;gene,tibble,tibble,FALSE,TRUE,олиго с хвостами
-marker_primers,export,export,TRUE,marker,...,marker,character,primers,FALSE,FALSE,имена праймеров; для marker_assay читает $assay
-marker_priors,export,criteria,FALSE,,,none,tibble,tibble,TRUE,TRUE,происхождение порогов
+marker_primers,export,export,TRUE,marker,...,marker,character,primer_set,FALSE,FALSE,имена праймеров; для marker_assay читает $assay
+marker_priors,export,criteria,FALSE,,outcomes,outcomes,tibble,priors,TRUE,TRUE,происхождение порогов
 marker_readout,export,criteria,TRUE,marker,,marker,readout,readout,FALSE,TRUE,модель считывания
 marker_record_outcome,export,artefact,TRUE,artefact,result;target;notes,artefact,outcomes,outcomes,FALSE,TRUE,запись исхода
 marker_replay,export,artefact,TRUE,artefact,cache;progress;tolerance,artefact,marker_replay,replay,FALSE,TRUE,повтор и сравнение
 marker_reprex,export,artefact,TRUE,x,path;preserve,marker,files,files,FALSE,TRUE,анонимный репродьюсер
 marker_risk,export,criteria,TRUE,assay,limits,marker;limits,risk,risk,FALSE,TRUE,риск-вердикт
 marker_run_context,export,design,TRUE,,genome;variants;population;haplotypes;conditions;engines;options,genome;variants;haplotypes,context,context,FALSE,FALSE,контекст запуска
-marker_schemes,export,decision,TRUE,,,none,tibble,tibble,TRUE,TRUE,химии пакета
+marker_schemes,export,decision,TRUE,,,none,schemes,schemes,TRUE,TRUE,химии пакета
 marker_site_class,export,criteria,FALSE,ref;alts,,character;character,character,character,TRUE,TRUE,класс аллелей
 marker_solve,export,decision,TRUE,plan,cache;all;progress;...,plan,marker_solved,solved,FALSE,FALSE,перебор химий
 marker_targets,export,design,TRUE,,data;chrom;pos;ref;alt;alt2;type;label;strand,variants,targets,targets,FALSE,FALSE,слой целей
-marker_tech,export,decision,TRUE,,schemes;costs;preset;exclude,character;costs,tech,tech,FALSE,FALSE,слой химий и стоимости
+marker_tech,export,decision,TRUE,,schemes;costs;preset;exclude;priors,character;costs;priors,tech,tech,FALSE,FALSE,слой химий и стоимости
 marker_technologies,export,decision,FALSE,,,none,tibble,tibble,TRUE,TRUE,технологии сессии
 marker_technology,export,decision,FALSE,name,base;params;blocks;specificity;label;verdict;overwrite,spec,technology,technology,FALSE,TRUE,регистрация в сессии
 marker_trace_from_artefact,export,artefact,TRUE,x,,artefact,trace,trace,FALSE,FALSE,trace из артефакта
@@ -172,7 +177,7 @@ plot_self_complementarity,export,export,FALSE,seq,,sequence,plot,plot,FALSE,TRUE
 plot_snp_screen,export,export,TRUE,screen,gene;threshold,screen;gene,plot,plot,FALSE,TRUE,экран целей
 plot_variant_landscape,export,export,TRUE,gene;variants;snp;assay,,gene;variants;variant;assay,plot,plot,FALSE,TRUE,ландшафт вариантов
 primer_interval,export,service,FALSE,snp_pos;strand;length,gap;role,numeric,interval,interval,TRUE,FALSE,геометрия праймера
-primer_set_compatibility,export,criteria,TRUE,primers,min_cross_run;max_selfcomp;conditions,primers;conditions,tibble,compatibility,FALSE,TRUE,кросс-димеры
+primer_set_compatibility,export,criteria,TRUE,primer_set,min_cross_run;max_selfcomp;conditions,primer_set;conditions,tibble,compatibility,FALSE,TRUE,кросс-димеры
 primer_thermo,export,criteria,TRUE,primer,BPPARAM,sequence;conditions,thermo,thermo,FALSE,TRUE,профиль праймера
 primer_tm,export,criteria,TRUE,seq,DMSO;nn_table;conditions;salt_method;dnac,sequence;conditions,numeric,numeric,FALSE,TRUE,Tm
 reaction_conditions,export,criteria,FALSE,,Na;Mg;dNTPs;DMSO;temperature,numeric,conditions,conditions,TRUE,FALSE,условия реакции
@@ -180,6 +185,7 @@ read_genbank,export,ingest,TRUE,path,region,path,features,features,TRUE,FALSE,Ge
 read_genome_fasta,export,ingest,TRUE,path,chrom_map;seqids;use_index,path,marker_genome,genome,TRUE,FALSE,FASTA (+.fai)
 read_transcripts,export,ingest,TRUE,path,merge_accessions,path,haplotypes,haplotypes,TRUE,FALSE,FASTA транскриптов
 read_variant_depth,export,ingest,TRUE,path,sample,path,depth,depth,TRUE,FALSE,DP/AD/GT
+read_variant_genotypes,export,ingest,TRUE,path,samples,path,genotypes,genotypes,TRUE,FALSE,GT/AD в длинный формат
 read_variants_vcf,export,ingest,TRUE,path,chrom;start;end;backend,path,variants,variants,TRUE,FALSE,CHROM/POS/REF/ALT
 render_design_search,export,export,FALSE,assay;variants;snp,path;fps;hold;cores,assay;variants;variant,files,files,FALSE,TRUE,GIF поиска
 rescue_strategy,export,decision,TRUE,,schemes,none,strategy,tibble,TRUE,TRUE,порядок химий
@@ -207,6 +213,10 @@ write_kasp_results,export,export,TRUE,,...,assay;gene,files,files,FALSE,TRUE,dep
 write_marker_results,export,export,TRUE,assay;gene,dir,assay;gene,files,files,FALSE,TRUE,три CSV
 write_variants_vcf,export,export,TRUE,x,path,variants,path,files,FALSE,TRUE,запись VCF
 +.marker_plan,s3method,decision,TRUE,,,plan;targets;context;tech,marker_plan,plan,FALSE,FALSE,S3: композиция слоёв плана
+as_marker_solved.default,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_batch,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_panel,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
+as_marker_solved.marker_solved,s3method,service,FALSE,,,any,marker_solved,solved,FALSE,FALSE,S3: as_marker_solved
 capabilities.default,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities
 capabilities.genome_index,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities
 capabilities.marker_engine,s3method,service,FALSE,,,any,internal,none,FALSE,FALSE,S3: capabilities

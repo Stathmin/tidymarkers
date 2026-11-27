@@ -367,6 +367,8 @@ mcp_tool_specs <- function() {
         type = "object",
         properties = list(
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map")
         ),
         required = list("genome_path")
@@ -422,6 +424,8 @@ mcp_tool_specs <- function() {
           f_primer = list(type = "string", description = "forward primer, 5'->3'"),
           r_primer = list(type = "string", description = "reverse primer, 5'->3'"),
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map"),
           max_mismatch = list(type = "integer", description = "search radius (default: policy)"),
           scheme = list(type = "string", description = "specificity scheme"),
@@ -451,6 +455,8 @@ mcp_tool_specs <- function() {
         type = "object",
         properties = list(
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map"),
           chrom = list(type = "string", description = "locus chromosome"),
           pos = list(type = "integer", description = "locus position (1-based)"),
@@ -769,6 +775,8 @@ mcp_tool_specs <- function() {
         type = "object",
         properties = list(
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map"),
           chrom = list(type = "string", description = "locus chromosome"),
           pos = list(type = "integer", description = "locus position (1-based)"),
@@ -840,6 +848,8 @@ mcp_tool_specs <- function() {
         properties = list(
           variants_path = list(type = "string", description = "VCF file"),
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map")
         ),
         required = list("variants_path", "genome_path")
@@ -904,8 +914,9 @@ mcp_tool_specs <- function() {
         type = "object",
         properties = list(
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
-          chrom_map = list(type = "object", description = "optional defline -> name map"),
           blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
+          chrom_map = list(type = "object", description = "optional defline -> name map"),
           chrom = list(type = "string", description = "locus chromosome"),
           pos = list(type = "integer", description = "locus position (1-based)"),
           ref = list(type = "string", description = "reference allele"),
@@ -945,6 +956,8 @@ mcp_tool_specs <- function() {
         type = "object",
         properties = list(
           genome_path = list(type = "string", description = "FASTA file, plain or gzipped"),
+          blast_db = list(type = "string", description = "optional BLAST database prefix"),
+          fm_index = list(type = "string", description = "optional FM-index prefix"),
           chrom_map = list(type = "object", description = "optional defline -> name map"),
           variants_path = list(type = "string", description = "VCF file"),
           chrom = list(type = "string", description = "region chromosome"),

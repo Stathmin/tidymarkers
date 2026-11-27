@@ -10,8 +10,8 @@ marker_outcomes(artefact)
 \item{artefact}{a \code{marker_artefact} or its directory.}
 }
 \value{
-a tibble with \code{id}, \code{recorded}, \code{target}, \code{result}, \code{notes}, and
-\code{calibrated}.
+a tibble with \code{id}, \code{recorded}, \code{target}, \code{scheme}, \code{result},
+\code{notes}, and \code{calibrated}.
 }
 \description{
 Reads \code{outcomes.csv} back as a tibble.  An artefact with no recorded
@@ -37,6 +37,7 @@ marker_outcomes(art)
 }
 \seealso{
 Other plan:
+\code{\link[=as_primer_set]{as_primer_set()}},
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},

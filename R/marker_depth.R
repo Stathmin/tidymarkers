@@ -10,14 +10,37 @@
 #  `filter_targets_by_depth()` gates the solver on the confident rows.
 # =============================================================================
 
+# a POS that vroom could not cast to integer is NA; without this guard the
+# locus silently disappears or collides with a real one.  An absent CHROM is
+# refused before ath_chrom(), like the other VCF readers (ADR 0017).
+check_depth_pos <- function(pos, chrom) {
+  bad_chrom <- is.na(chrom) | !nzchar(chrom)
+  if (any(bad_chrom)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad_chrom)[[1L]]
+    ))
+  }
+  bad <- is.na(pos) | pos < 1L
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "%s VCF record(s) have a POS outside the positive integer range (first on %s).",
+      sum(bad), chrom[[which(bad)[[1L]]]]
+    ))
+  }
+  invisible(pos)
+}
+
 #' Read per-sample depth (DP/AD/GT) from a VCF
 #'
 #' Streams the DP/AD/GT fields of one sample out of a VCF into a tidy table, one
 #' row per ALT allele (a multi-allelic `ALT` is split on `,`; its `AD` is
 #' `ref,alt1,alt2,...`, so the ALT's depth is `AD[alt_index + 1]`).  `chrom` is
-#' normalised with `ath_chrom()`.  When the VCF has no sample columns, the reader
-#' falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.  Missing
-#' values stay `NA`; an absent DP/AD/GT never errors.
+#' normalised with `ath_chrom()`.  Alleles are admitted by the same rule as
+#' [read_variants_vcf()]: a symbolic or absent ALT (`<DEL>`, `*`, `.`) is
+#' dropped and counted, and the kept `ref`/`alt` are normalised with
+#' [normalise_allele()] (ADR 0018).  When the VCF has no sample columns, the
+#' reader falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.
+#' Missing values stay `NA`; an absent DP/AD/GT never errors.
 #' @param path VCF path; plain (`vcf`) or bgzipped (`vcf.gz`) are both read by
 #'   `vroom`.
 #' @param sample which sample column to read: an index (default `1L`, the first)
@@ -94,6 +117,7 @@ resolve_depth_sample <- function(sample, sample_names) {
 #' @keywords internal
 #' @noRd
 depth_from_samples <- function(d, sample_col) {
+  check_depth_pos(d$POS, d$CHROM)
   alts <- stringr::str_split(d$ALT, ",")
   n_alt <- lengths(alts)
   idx <- rep(seq_len(nrow(d)), n_alt)
@@ -130,7 +154,28 @@ depth_from_samples <- function(d, sample_col) {
     depth = as.numeric(depth),
     alt_depth = as.numeric(alt_depth),
     genotype = genotype
-  )
+  ) |>
+    depth_admit_alleles()
+}
+
+# One allele admission rule for all three VCF readers (ADR 0016, ADR 0018): a
+# symbolic or absent allele is dropped and counted, and the kept alleles are
+# normalised, so a join on (chrom, pos, ref, alt) means one thing.
+depth_admit_alleles <- function(x) {
+  drop <- vcf_symbolic_allele(x$ref) | vcf_symbolic_allele(x$alt)
+  drop[is.na(drop)] <- TRUE
+  n_dropped <- sum(drop)
+  if (n_dropped > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_dropped} VCF record{?s} with a symbolic or absent ALT ",
+      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+      "across structural alleles."
+    )))
+  }
+  x <- x[!drop, , drop = FALSE]
+  x$ref <- normalise_allele(x$ref)
+  x$alt <- normalise_allele(x$alt)
+  x
 }
 
 #' Sites-only VCF: `INFO/DP`, no per-sample fields
@@ -146,6 +191,7 @@ read_variant_depth_sites <- function(path, nms) {
     comment = "#", col_names = nms, col_types = cols,
     progress = FALSE
   )
+  check_depth_pos(d$POS, d$CHROM)
   alts <- stringr::str_split(d$ALT, ",")
   n_alt <- lengths(alts)
   idx <- rep(seq_len(nrow(d)), n_alt)
@@ -157,7 +203,8 @@ read_variant_depth_sites <- function(path, nms) {
     depth = as.numeric(info_dp(d$INFO[idx])),
     alt_depth = NA_real_,
     genotype = NA_character_
-  )
+  ) |>
+    depth_admit_alleles()
 }
 
 #' `DP=` out of an INFO field (`NA` when absent)
@@ -213,8 +260,14 @@ clean_vcf_value <- function(x) {
 #' @family QC
 #' @export
 variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
-  if (!is.numeric(min_depth) || length(min_depth) != 1L || is.na(min_depth) || min_depth <= 0) {
+  if (!is.numeric(min_depth) || length(min_depth) != 1L || !is.finite(min_depth) || min_depth <= 0) {
     abort_msg("`min_depth` must be a single positive number.")
+  }
+  if (
+    !is.numeric(min_weight) || length(min_weight) != 1L || !is.finite(min_weight) ||
+      min_weight < 0 || min_weight > 1
+  ) {
+    abort_msg("`min_weight` must be one number in [0, 1].")
   }
   x <- tibble::as_tibble(depth)
   need_cols(x, c("chrom", "pos", "depth"), arg = "depth")
