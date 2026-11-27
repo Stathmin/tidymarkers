@@ -55,4 +55,6 @@ Daily metrics: counts and classes come from this log, timings (MTTR) only from
 counted but has no duration. They are written to
 `data/metrics/metrics-<date>.md` by `Rscript dev/metrics.R --report <date>`.
 The 2026-11-27 rows are markdown-only, so that day's report shows `repair: 0`
-rows; the fix is tracked as `ZV14` in `ROADMAP.md`.
+rows. `ZV14` is closed: `dev/repair.R` now emits the matching
+`stage = "repair"` row for every line it writes. A line written by hand still
+has no duration, so it is counted from the log and never as `0 ms`.

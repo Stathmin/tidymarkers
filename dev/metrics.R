@@ -478,7 +478,8 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL,
     out <- c(out, sprintf(
       paste0(
         "_repair rows: 0 of %d log line(s). A line without a start time has no ",
-        "MTTR, so it is not counted as 0 ms; ZV14 in ROADMAP.md names the gap._"
+        "MTTR, so it is not counted as 0 ms; dev/repair.R emits the row for ",
+        "every line it writes._"
       ),
       rep_stats$rows
     ), "")
