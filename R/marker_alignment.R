@@ -33,7 +33,9 @@
 #' @export
 read_transcripts <- function(path, merge_accessions = TRUE) {
   path <- reader_path(path, "FASTA")
-  s <- Biostrings::readDNAStringSet(path)
+  # Biostrings warns and drops an unknown letter, moving every later base
+  # (ADR 0022); the genome reader already refuses that file (ZV16)
+  s <- read_fasta_strict(path, function() Biostrings::readDNAStringSet(path))
   if (!merge_accessions) {
     return(s)
   }

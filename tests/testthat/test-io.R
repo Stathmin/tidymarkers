@@ -320,6 +320,20 @@ test_that("read_genome_fasta refuses a base outside the DNA alphabet", {
   )
 })
 
+test_that("read_transcripts refuses a base outside the DNA alphabet", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">t1", "ACGTNXYZ"), fa)
+  expect_error(
+    read_transcripts(fa),
+    "outside the DNA/IUPAC alphabet",
+    class = "rlang_error"
+  )
+  # IUPAC ambiguity is still a legal transcript base
+  iupac <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">t1", "ACGTRYSWKM"), iupac)
+  expect_equal(as.character(read_transcripts(iupac)[[1L]]), "ACGTRYSWKM")
+})
+
 test_that("a FASTA with one name twice is refused on both backends", {
   fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">Chr1", "ACGTACGTAC", ">Chr1", "TTTTGGGGCC"), fa)
