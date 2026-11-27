@@ -10,6 +10,19 @@
 #  `filter_targets_by_depth()` gates the solver on the confident rows.
 # =============================================================================
 
+# a POS that vroom could not cast to integer is NA; without this guard the
+# locus silently disappears or collides with a real one
+check_depth_pos <- function(pos, chrom) {
+  bad <- is.na(pos) | pos < 1L
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "%s VCF record(s) have a POS outside the positive integer range (first on %s).",
+      sum(bad), chrom[[which(bad)[[1L]]]]
+    ))
+  }
+  invisible(pos)
+}
+
 #' Read per-sample depth (DP/AD/GT) from a VCF
 #'
 #' Streams the DP/AD/GT fields of one sample out of a VCF into a tidy table, one
@@ -94,6 +107,7 @@ resolve_depth_sample <- function(sample, sample_names) {
 #' @keywords internal
 #' @noRd
 depth_from_samples <- function(d, sample_col) {
+  check_depth_pos(d$POS, d$CHROM)
   alts <- stringr::str_split(d$ALT, ",")
   n_alt <- lengths(alts)
   idx <- rep(seq_len(nrow(d)), n_alt)
@@ -146,6 +160,7 @@ read_variant_depth_sites <- function(path, nms) {
     comment = "#", col_names = nms, col_types = cols,
     progress = FALSE
   )
+  check_depth_pos(d$POS, d$CHROM)
   alts <- stringr::str_split(d$ALT, ",")
   n_alt <- lengths(alts)
   idx <- rep(seq_len(nrow(d)), n_alt)

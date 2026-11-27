@@ -117,3 +117,21 @@ test_that("an empty plan aborts with 'no targets', not the depth gate", {
   p <- marker_plan(fx$genome) + marker_context(depth = d)
   expect_error(marker_solve(p, cores = 1L, progress = FALSE), "no targets")
 })
+
+test_that("a depth VCF POS outside integer range is refused, not NA", {
+  with_sample <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "Chr1\t3000000000\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
+  ), with_sample)
+  expect_error(suppressWarnings(read_variant_depth(with_sample)), "positive integer range")
+
+  sites <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "Chr1\t3000000000\t.\tA\tG\t.\t.\tDP=5"
+  ), sites)
+  expect_error(suppressWarnings(read_variant_depth(sites)), "positive integer range")
+})
