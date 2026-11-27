@@ -38,10 +38,21 @@ Rscript dev/check.R --quick --no-render
 классифицирует запись как `not_run` — это ожидаемо и названо в
 `docs/index-perf.md`.
 
+## Закалка после гейта
+
+- `Rscript dev/check.R --full`: `R CMD check` чистый, 2 NOTE (CRAN incoming
+  feasibility и время примеров); BiocCheck чистый; 210/210 примеров без
+  OligoArrayAux; полный набор — `PASS 40963`, `FAIL 0`, `WARN 3`, `SKIP 28`.
+- `Rscript dev/bench.R --gate`: все кейсы в пределах 2x, peak RSS 689 MB.
+- `ZU7` закрыт: `design_marker_batch(keep=)` — один батч, `design_markers()` —
+  его сводка; `design_kasp_markers()` остаётся отдельным типизированным
+  вердиктом J2.
+- Найденные и исправленные дефекты ввода: VCF POS вне `integer` (ошибка, не
+  `NA`), неизвестная буква FASTA (ошибка, не сдвиг координат), имя файла из
+  `artefact.json` не выходит из каталога.
+
 ## Открыто
 
 - ZV12 / T11: шаг `dev/bench.R --gate` в CI стоит; baseline для
   `github-ubuntu-latest` снимается первым прогоном на раннере (ADR 0014).
-- ZU7: остаётся свести три батч-входа к одному с параметром `keep`; алиасы
-  `design_marker()`/`write_kasp_results()` не удаляются до мажорной версии.
 - Блокеров нет; `docs/plans/self-repair-log.md` пуст.
