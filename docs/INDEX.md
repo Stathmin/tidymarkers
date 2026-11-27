@@ -94,6 +94,8 @@ Other vignettes:
   timing baseline is keyed by runner class, not by hostname.
 - [ADR 0015](adr/0015-a-record-resolves-only-its-own-directory.md) — a
   persisted record names only the files inside its own directory.
+- [ADR 0016](adr/0016-one-vcf-admission-rule.md) — the two VCF readers share
+  one admission rule, so a symbolic allele cannot become a fake `N`.
 
 ## Operator decisions
 

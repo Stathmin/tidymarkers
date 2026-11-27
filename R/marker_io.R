@@ -57,6 +57,11 @@ normalise_allele <- function(x) {
   gsub("[^ACGTN]", "N", x)
 }
 
+# The one admission rule both VCF readers apply: a symbolic REF/ALT (`<DEL>`)
+# or an absent allele (`*`, `.`) is unrepresentable, because
+# `normalise_allele()` would turn it into a fake `N`.
+vcf_symbolic_allele <- function(x) stringr::str_detect(x, "^<|[*.]")
+
 #' Read variants from a VCF/BCF file (streaming, memory-mapped)
 #'
 #' @param path VCF path; plain (`vcf`) or bgzipped (`vcf.gz`) are both read by
@@ -110,8 +115,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 
   # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation, so
   # they are not mangled into a fake `N` allele - and say how many went
-  drop_sym <- stringr::str_detect(v$ref, "^<|[*.]") |
-    stringr::str_detect(v$alt, "^<|[*.]")
+  drop_sym <- vcf_symbolic_allele(v$ref) | vcf_symbolic_allele(v$alt)
   n_dropped <- sum(drop_sym)
   if (n_dropped > 0L) {
     cli::cli_inform(gettext(paste0(
@@ -201,7 +205,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
         n_multi <- n_multi + 1L
         next
       }
-      if (grepl("^<|[*.]", f[[4L]]) || grepl("^<|[*.]", f[[5L]])) {
+      if (vcf_symbolic_allele(f[[4L]]) || vcf_symbolic_allele(f[[5L]])) {
         n_sym <- n_sym + 1L
         next
       }
@@ -558,6 +562,60 @@ read_fasta_strict <- function(path, read) {
   )
 }
 
+# Duplicate names are not cosmetic: `g[["Chr1"]]` would pick one record while
+# the indexer picks another, so the sequence behind a coordinate depends on the
+# backend.  The header scan catches the raw file; the object check catches a
+# `chrom_map` that sends two records to one name.
+fasta_duplicate_name <- function(path) {
+  con <- if (grepl("[.]gz$", path, ignore.case = TRUE)) gzfile(path, "r") else file(path, "r")
+  on.exit(close(con))
+  seen <- character(0)
+  repeat {
+    lines <- readLines(con, n = 100000L, warn = FALSE)
+    if (!length(lines)) {
+      break
+    }
+    heads <- sub("^>", "", lines[startsWith(lines, ">")])
+    if (length(heads)) {
+      nm <- sub("\\s.*$", "", heads)
+      dup <- anyDuplicated(c(seen, nm))
+      if (dup) {
+        return(nm[[dup - length(seen)]])
+      }
+      seen <- c(seen, nm)
+    }
+  }
+  NULL
+}
+
+check_unique_fasta_names <- function(path) {
+  dup <- fasta_duplicate_name(path)
+  if (!is.null(dup)) {
+    abort_msg(
+      gettextf(
+        "FASTA %s names sequence %s more than once; chromosome names must be unique.",
+        path, dup
+      ),
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  invisible(path)
+}
+
+check_unique_sequences <- function(g, path) {
+  dup <- anyDuplicated(names(g))
+  if (dup) {
+    abort_msg(
+      gettextf(
+        "FASTA %s names sequence %s more than once after mapping; chromosome names must be unique.",
+        path, names(g)[[dup]]
+      ),
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  invisible(g)
+}
+
 #' Read an arbitrary genome FASTA, optionally normalising sequence names
 #'
 #' @param path FASTA path (gzipped is fine).
@@ -586,6 +644,16 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))
+    dup <- anyDuplicated(nm)
+    if (dup) {
+      abort_msg(
+        gettextf(
+          "FASTA %s names sequence %s more than once; chromosome names must be unique.",
+          path, nm[[dup]]
+        ),
+        class = "tidymarkers_duplicate_sequence_error"
+      )
+    }
     if (!is.null(chrom_map)) {
       keep <- nm %in% names(chrom_map)
       g <- g[keep]
@@ -593,16 +661,19 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
     } else {
       names(g) <- nm
     }
-    if (!is.null(seqids)) g <- g[intersect(seqids, names(g))]
+    # a name lookup would pick the first duplicate; filtering is positional
+    if (!is.null(seqids)) g <- g[names(g) %in% seqids]
     if (!is.null(build)) {
       md <- S4Vectors::metadata(g) %||% list()
       md$genome_build <- build
       S4Vectors::metadata(g) <- md
     }
+    check_unique_sequences(g, path)
     g
   }
 
   if (isTRUE(use_index) && !is.null(seqids)) {
+    check_unique_fasta_names(path)
     plain <- fasta_index(path)
     fai <- readr::read_tsv(paste0(plain, ".fai"),
       show_col_types = FALSE,
