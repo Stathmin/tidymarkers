@@ -31,6 +31,7 @@ the file records the measurement or event that re-tested it).
 | [0018](0018-one-allele-and-position-rule-for-three-vcf-readers.md)      | One allele and `POS` rule for all three VCF readers                          | accepted |
 | [0019](0019-an-absent-allele-is-not-a-base.md)                         | An absent allele is absent before it is normalised                           | accepted |
 | [0020](0020-a-gt-that-names-a-missing-allele-is-not-a-call.md)          | A GT that names a missing allele is not a call                               | accepted |
+| [0021](0021-one-path-and-one-header-rule-for-three-vcf-readers.md)      | One path and one header rule for three VCF readers                           | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

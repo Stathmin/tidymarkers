@@ -111,6 +111,9 @@ Other vignettes:
 - [ADR 0020](adr/0020-a-gt-that-names-a-missing-allele-is-not-a-call.md) — a
   `GT` naming an allele the record does not have is `NA`; the `AD` fallback
   answers only for an absent or no-call `GT`.
+- [ADR 0021](adr/0021-one-path-and-one-header-rule-for-three-vcf-readers.md) —
+  all three VCF readers name a bad path the same way and find the `#CHROM`
+  line by scanning, not by a 1000-line cap.
 
 ## Operator decisions
 

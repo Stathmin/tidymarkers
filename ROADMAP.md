@@ -4619,3 +4619,31 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - блокер: нет.
     - следствие: доза — это вызов или `NA`, а не оценка вместо вызова,
       которому запись противоречит; правило — ADR 0020, развивает ADR 0018–0019.
+
+## ZV21. Путь и шапка VCF читаются по одному правилу
+
+`read_variant_depth()` — третий читатель VCF — не получил две непро-записные
+правила семейства. Путь он проверял голым `fs::file_exists()`:
+`read_variant_depth(NULL)` падал в `enc2utf8()`, каталог — в `file()` с
+предупреждением, тогда как соседние читатели возвращали именованный
+`rlang_error`. Шапку он искал в первых 1000 строках
+(`readr::read_lines(n_max = 1000L)`), поэтому легальный GATK-подобный VCF с
+1200 строками `##INFO` получал «has no '#CHROM' header line», а
+`read_variants_vcf()` читал тот же файл.
+
+- [x] **ZV21. Все три читателя VCF начинают с `reader_path()` и находят
+  `#CHROM` построчным сканом без лимита.**
+    - правка: `R/marker_depth.R` — `path <- reader_path(path, "VCF")` вместо
+      `fs::file_exists()`; `read_variant_depth()` берёт шапку из
+      `vcf_header_line()`; `R/marker_io.R` — новый `vcf_header_line()` (скан
+      до `#CHROM`, отказ на первой не-`##` строке), `vcf_sample_names()` берёт
+      строку оттуда же, вместо своей копии цикла.
+    - проверка: `test-depth.R` — «the depth reader names a path that is not
+      one existing file»: `NULL`, `character()` и каталог дают `rlang_error`
+      с тем же текстом, что у соседей (до правки — base-R ошибки);
+      `test-io.R` — «a VCF header past 1000 lines is still found»: 1200
+      `##INFO`-строк, глубина и генотипы читаются (до правки глубина
+      падала); `dev/test.R "io|depth"` — 31158 pass, 0 fail, 3 skip.
+    - блокер: нет.
+    - следствие: путь и шапка — часть контракта семейства, а не деталь
+      реализации одного читателя; правило — ADR 0021.
