@@ -124,6 +124,10 @@ Other vignettes:
   a replay compares only the record's own verdicts; a record with no
   `replay.csv` is refused when replayed with a trusted `solved`, instead of
   passing on the caller's own solve.
+- [ADR 0025](adr/0025-a-record-member-is-resolved-not-only-named.md) — every
+  member a record names (sidecar, outcomes, targets, crate descriptor, copied
+  file) is resolved under the record's real root before it is opened; a
+  symlink out is a named refusal, not a read of the neighbour's file.
 
 ## Operator decisions
 
