@@ -95,3 +95,14 @@ test_that("J6: the text artefact is byte-identical and excludes the RDS", {
   expect_identical(a$manifest$files$solved$name, "solved.rds")
   expect_identical(a$manifest$id, b$manifest$id)
 })
+
+test_that("a malformed artefact timestamp is refused", {
+  ac <- tidymarkers:::artefact_created
+  expect_identical(ac("2026-01-01T00:00:00Z"), "2026-01-01T00:00:00Z")
+  expect_identical(ac(0), "1970-01-01T00:00:00Z")
+  expect_error(ac("yesterday"), "ISO timestamp")
+  expect_error(ac(Inf), "finite")
+  expect_error(ac(-1), "finite")
+  expect_error(ac(c(1, 2)), "one POSIXct")
+  expect_error(ac(as.POSIXct(NA)), "must not be NA")
+})

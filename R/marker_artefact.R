@@ -496,20 +496,44 @@ artefact_created <- function(created = NULL) {
   if (is.null(created) || !length(created) || (is.character(created) && !nzchar(created[[1L]]))) {
     return(format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"))
   }
+  if (!length(created) || length(created) != 1L) {
+    abort_msg("`created` must be NULL, one POSIXct, one epoch, or one ISO timestamp.")
+  }
   if (inherits(created, "POSIXt")) {
+    if (is.na(created)) {
+      abort_msg("`created` must not be NA.")
+    }
     return(format(created, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"))
   }
-  if (is.numeric(created) || grepl("^[0-9]+$", as.character(created[[1L]]))) {
+  epoch <- if (is.numeric(created)) {
+    created
+  } else if (is.character(created) && grepl("^[0-9]+$", created)) {
+    as.numeric(created)
+  } else {
+    NULL
+  }
+  if (!is.null(epoch)) {
+    if (!is.finite(epoch) || epoch < 0) {
+      abort_msg("`created` epoch must be one finite, non-negative number.")
+    }
     return(format(
-      as.POSIXct(as.numeric(created[[1L]]), origin = "1970-01-01", tz = "UTC"),
+      as.POSIXct(epoch, origin = "1970-01-01", tz = "UTC"),
       "%Y-%m-%dT%H:%M:%SZ",
       tz = "UTC"
     ))
   }
-  if (!is.character(created) || length(created) != 1L || is.na(created)) {
+  if (!is.character(created) || is.na(created)) {
     abort_msg("`created` must be NULL, a POSIXct, an epoch, or an ISO timestamp.")
   }
-  created
+  at <- as.POSIXct(
+    created,
+    format = "%Y-%m-%dT%H:%M:%SZ",
+    tz = "UTC"
+  )
+  if (is.na(at)) {
+    abort_msg("`created` must be an ISO timestamp such as 2026-01-01T00:00:00Z.")
+  }
+  format(at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 }
 
 #' Write a self-documenting artefact for a solved plan
