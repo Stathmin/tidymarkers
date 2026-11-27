@@ -497,6 +497,31 @@ marker_example <- function(type = NULL) {
   ex
 }
 
+read_fasta_strict <- function(path, read) {
+  # Biostrings warns and silently drops a letter it does not know; every base
+  # after it moves, so a shortened sequence is worse than no sequence
+  tryCatch(
+    withCallingHandlers(
+      read(),
+      warning = function(w) {
+        if (grepl("invalid one-letter sequence codes", conditionMessage(w))) {
+          abort_msg(
+            "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+          )
+        }
+      }
+    ),
+    error = function(e) {
+      if (grepl("invalid DNA letters", conditionMessage(e))) {
+        abort_msg(
+          "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+        )
+      }
+      stop(e)
+    }
+  )
+}
+
 #' Read an arbitrary genome FASTA, optionally normalising sequence names
 #'
 #' @param path FASTA path (gzipped is fine).
@@ -555,10 +580,14 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
       return(normalise(Biostrings::DNAStringSet()))
     }
     gr <- GenomicRanges::GRanges(sel$name, IRanges::IRanges(1L, sel$length))
-    g <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    g <- read_fasta_strict(path, function() {
+      Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    })
     return(normalise(g))
   }
-  normalise(Biostrings::readDNAStringSet(path))
+  normalise(read_fasta_strict(path, function() {
+    Biostrings::readDNAStringSet(path)
+  }))
 }
 
 # =============================================================================

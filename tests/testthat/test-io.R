@@ -262,6 +262,20 @@ test_that("read_genome_fasta map+index keeps only mapped, requested chroms", {
   expect_equal(as.character(g[["Chr2"]]), "TTTTGGGG")
 })
 
+test_that("read_genome_fasta refuses a base outside the DNA alphabet", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">Chr1", "ACGTNXYZ"), fa)
+  expect_error(
+    read_genome_fasta(fa, use_index = FALSE),
+    "outside the DNA/IUPAC alphabet"
+  )
+  # the indexed path reaches the same guard through scanFa
+  expect_error(
+    suppressWarnings(read_genome_fasta(fa, seqids = "Chr1")),
+    "outside the DNA/IUPAC alphabet"
+  )
+})
+
 test_that("marker_example carries one of each target type", {
   ex <- marker_example()
   expect_setequal(unique(ex$type), c("SNP", "MNP", "insertion", "deletion"))
