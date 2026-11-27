@@ -29,6 +29,18 @@ while the fixes above were already committed. Times are commit times converted t
 UTC; the commit column is the evidence. Nothing here was re-timed or re-worded
 after the fact — a later correction would be a new row.
 
+New rows are written and timed in one command:
+
+```sh
+Rscript dev/repair.R --blocker "<what broke>" --class logic \
+  --action "<what changed>" --result "<evidence>" --commit <sha> \
+  --status fixed --start "2026-11-27 18:40" --end "2026-11-27 19:05"
+```
+
+It appends the row after the last table line and emits the matching
+`stage = "repair"` metric; a missing or reversed pair of times is an error, not
+`duration_ms = 0`.
+
 Status values: `open`, `fixed`, `bypassed`, `quarantined`, `watchdog`.
 Class values: `transient`, `environment`, `data`, `access`, `logic`, `spec`,
 `external`.
