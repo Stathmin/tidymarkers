@@ -168,7 +168,7 @@ One JSON object per line, one line per stage event. The fields are fixed:
 | Field | Type | Meaning |
 | ----- | ---- | ------- |
 | `run_id` | string | stable id of the run; deterministic for a reproducibility run |
-| `stage` | enum | `scenario`, `ingest`, `design`, `specificity`, `thermo`, `checks`, `artefact`, `mcp`, `gate` |
+| `stage` | enum | `scenario`, `ingest`, `design`, `specificity`, `thermo`, `checks`, `artefact`, `mcp`, `gate`, `repair` |
 | `object_id` | string | stable id, artefact id or `scenario:JN`; never free text |
 | `duration_ms` | integer | wall-clock duration of the stage |
 | `status` | enum | `ok`, `warn`, `fail`, `skip`, `error` |

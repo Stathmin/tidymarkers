@@ -22,6 +22,7 @@ the file records the measurement or event that re-tested it).
 | [0009](0009-panel-orchestrator-contract.md)                            | The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact           | proposed |
 | [0010](0010-index-strategy-at-scale.md)                                | The index strategy at scale: shards, builds and a memory budget            | proposed |
 | [0011](0011-release-artefact-and-mcp-contract.md)                      | The release artefact and the MCP contract are the product                   | proposed |
+| [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
 
 ## Triage of the 2026-11-26 tool list
 

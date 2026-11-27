@@ -44,6 +44,8 @@ Other vignettes:
 - [docs/plans/2026-11-27-integration-3day](plans/2026-11-27-integration-3day.md)
   — the three-day integration programme: J1–J7, parallel streams, gates and
   failure criteria.
+- [docs/plans/self-repair-log](plans/self-repair-log.md) — the append-only
+  blocker and repair log for the programme.
 - [dev/lang_purity](../dev/lang_purity.md) — the prose-tic audit: measured
   tiers, per-tier triage, and the verbosity meter roadmap.
 - [docs/user-api-surface](user-api-surface.md) — the full export inventory,
@@ -77,6 +79,8 @@ Other vignettes:
   scale: shards, builds and a memory budget.
 - [ADR 0011](adr/0011-release-artefact-and-mcp-contract.md) — the release
   artefact and the MCP contract are the product.
+- [ADR 0012](adr/0012-autonomy-and-self-repair.md) — autonomy and self-repair:
+  a blocker never stops the programme.
 
 ## Operator decisions
 
