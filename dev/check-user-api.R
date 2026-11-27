@@ -358,18 +358,30 @@ if (file.exists(paths_path)) {
         paste(bad_edge, collapse = ", "))
     }
     missing_test <- character()
-    for (sc in unique(day1$scenario)) {
+    no_metrics <- character()
+    for (sc in unique(paths$scenario)) {
       f <- file.path(root, "tests", "testthat", paste0("test-scenario-", tolower(sc), ".R"))
-      if (!file.exists(f)) missing_test <- c(missing_test, basename(f))
+      if (!file.exists(f)) {
+        missing_test <- c(missing_test, basename(f))
+        next
+      }
+      # ADR 0008 §2: the run writes a per-scenario duration row, so the daily
+      # report can compute p95 and cost per route
+      if (!any(grepl(paste0("scenario_timer\\(\"", sc, "\"\\)"), readLines(f, warn = FALSE)))) {
+        no_metrics <- c(no_metrics, basename(f))
+      }
     }
     if (length(missing_test)) {
-      note("day-1 scenario has no test: ", paste(missing_test, collapse = ", "))
+      note("scenario has no test: ", paste(missing_test, collapse = ", "))
+    }
+    if (length(no_metrics)) {
+      note("scenario has no stage=scenario timer: ", paste(no_metrics, collapse = ", "))
     }
     if (!length(bad_fn) && !length(bad_out) && !length(bad_in) &&
-      !length(bad_edge) && !length(missing_test)) {
+      !length(bad_edge) && !length(missing_test) && !length(no_metrics)) {
       ok(
         "scenario paths: ", length(unique(paths$scenario)), " scenarios, ",
-        nrow(day1), " day-1 step(s), all typed"
+        nrow(day1), " day-1 step(s), all typed, each with a run timer"
       )
     }
   }
