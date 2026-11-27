@@ -550,6 +550,43 @@ test_that("ZY25.3: a target table cannot link out of the record", {
   expect_error(marker_record_outcome(dir, "works", target = "t1"), "resolves to", class = "rlang_error")
 })
 
+test_that("ZY25.4: recording an outcome does not write through a link", {
+  root <- withr::local_tempdir()
+  dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  marker_record_outcome(dir, "works", target = "t1")
+  outside <- fs::path(withr::local_tempdir(), "outcomes.csv")
+  fs::file_copy(fs::path(dir, "outcomes.csv"), outside)
+  fs::file_delete(fs::path(dir, "outcomes.csv"))
+  skip_if_not(file.symlink(outside, fs::path(dir, "outcomes.csv")), "this filesystem cannot make a symlink")
+  before <- nrow(utils::read.csv(outside))
+
+  expect_error(marker_record_outcome(dir, "works", target = "t2"), "which is a link", class = "rlang_error")
+  expect_equal(nrow(utils::read.csv(outside)), before)
+})
+
+test_that("ZY25.5: exporting outcomes does not write through a link", {
+  root <- withr::local_tempdir()
+  dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  marker_record_outcome(dir, "works", target = "t1")
+  corpus <- marker_outcome_corpus(root)
+
+  first <- tempfile("handover-")
+  marker_export_outcomes(corpus, first, trustee = "lab-a")
+  name <- fs::path_file(fs::dir_ls(fs::path(first, "crates")))
+  second <- tempfile("handover-")
+  crate <- fs::dir_create(fs::path(second, "crates", name))
+  outside <- fs::path(withr::local_tempdir(), "outcomes.csv")
+  writeLines("keep", outside)
+  skip_if_not(file.symlink(outside, fs::path(crate, "outcomes.csv")), "this filesystem cannot make a symlink")
+
+  expect_error(
+    marker_export_outcomes(corpus, second, trustee = "lab-a"),
+    "which is a link",
+    class = "rlang_error"
+  )
+  expect_identical(readLines(outside), "keep")
+})
+
 test_that("ZY25.1: an outcomes table cannot link out of the record", {
   root <- withr::local_tempdir()
   dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")

@@ -52,7 +52,9 @@ the file the name resolves to is what the reader trusts.
    `artefact.json`, `solved.rds`) is a named refusal. A dangling `solved.rds`
    link would otherwise create its target outside the record.
    `marker_export_rocrate()` applies the same check to every member it copies
-   and to the descriptor it writes.
+   and to the descriptor it writes. `marker_record_outcome()` refuses a linked
+   `outcomes.csv` before appending, and the outcome export refuses one in the
+   crate before copying.
 
 ## Alternatives
 
@@ -77,7 +79,8 @@ the file the name resolves to is what the reader trusts.
   a link.`), including a dangling `solved.rds` that `saveRDS()` would otherwise
   create outside the record. Test: "the artefact writer refuses to write
   through a link". `marker_export_rocrate()` shares the check and the message;
-  test: "the crate export refuses to write through a link".
+  test: "the crate export refuses to write through a link". The outcome writer
+  and export share it too; tests: ZY25.4 and ZY25.5 in `test-z8-outcomes.R`.
 - The rule now matches ADR 0015's crate consequence: lexical first, physical
   for an existing member. Hard links remain indistinguishable by path and stay
   a recorded limit.

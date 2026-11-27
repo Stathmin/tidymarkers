@@ -187,6 +187,7 @@ marker_record_outcome <- function(artefact,
   )
 
   path <- fs::path(dir, "outcomes.csv")
+  refuse_links(dir, "outcomes.csv")
   if (fs::file_exists(path)) {
     header <- names(utils::read.csv(path, nrows = 1L))
     if (!identical(header, outcome_columns())) {

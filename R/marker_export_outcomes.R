@@ -211,6 +211,7 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
       marker_artefact_read(adir),
       fs::path(dir, "crates", pseudonyms[[i]])
     )
+    refuse_links(crate, "outcomes.csv")
     fs::file_copy(
       artefact_member_path(adir, "outcomes.csv"),
       fs::path(crate, "outcomes.csv"),
