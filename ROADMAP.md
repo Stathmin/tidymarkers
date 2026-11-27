@@ -4789,3 +4789,16 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - блокер: нет.
     - следствие: ссылка наружу отвергается на входе крата так же, как на его
       членах; правило — ADR 0025.
+
+- [x] **ZV25.3. Таблицы целей и решений читает тот же резолвер.**
+    - правка: `R/marker_outcomes.R` — `artefact_scheme()` открывает
+      `decisions.csv`, `artefact_targets()` — `targets.csv` и `decisions.csv`
+      через `artefact_member_path()`; имена литеральные, поэтому
+      `artefact_safe_name()` не нужен.
+    - проверка: `test-z8-outcomes.R` — «ZY25.3: a target table cannot link out
+      of the record»: `targets.csv` — ссылка на файл рядом,
+      `marker_record_outcome()` отказывает по фразе `resolves to`; до правки
+      читал чужую таблицу и принимал `t1`.
+    - блокер: нет.
+    - следствие: запись исхода не подтверждает цель по чужому файлу; правило —
+      ADR 0025.

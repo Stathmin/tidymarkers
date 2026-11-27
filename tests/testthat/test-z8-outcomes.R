@@ -538,6 +538,18 @@ test_that("ZY26: a corpus takes a directory", {
   expect_error(marker_outcome_corpus(tempfile("absent")), "directory")
 })
 
+test_that("ZY25.3: a target table cannot link out of the record", {
+  root <- withr::local_tempdir()
+  dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  outside <- fs::path(withr::local_tempdir(), "targets.csv")
+  fs::file_copy(fs::path(dir, "targets.csv"), outside)
+  fs::file_delete(fs::path(dir, "targets.csv"))
+  skip_if_not(file.symlink(outside, fs::path(dir, "targets.csv")), "this filesystem cannot make a symlink")
+
+  # Recording an outcome validates the target against the record's own table.
+  expect_error(marker_record_outcome(dir, "works", target = "t1"), "resolves to", class = "rlang_error")
+})
+
 test_that("ZY25.1: an outcomes table cannot link out of the record", {
   root <- withr::local_tempdir()
   dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")

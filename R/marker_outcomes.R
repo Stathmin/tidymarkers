@@ -59,7 +59,7 @@ artefact_scheme <- function(dir, target) {
   if (is.null(target)) {
     return(NA_character_)
   }
-  path <- fs::path(dir, "decisions.csv")
+  path <- artefact_member_path(dir, "decisions.csv")
   if (!fs::file_exists(path)) {
     return(NA_character_)
   }
@@ -85,7 +85,7 @@ artefact_scheme <- function(dir, target) {
 #' @noRd
 artefact_targets <- function(dir) {
   for (name in c("targets.csv", "decisions.csv")) {
-    path <- fs::path(dir, name)
+    path <- artefact_member_path(dir, name)
     if (!fs::file_exists(path)) next
     tbl <- tryCatch(
       utils::read.csv(path, stringsAsFactors = FALSE),
