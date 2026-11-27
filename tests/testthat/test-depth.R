@@ -118,6 +118,15 @@ test_that("an empty plan aborts with 'no targets', not the depth gate", {
   expect_error(marker_solve(p, cores = 1L, progress = FALSE), "no targets")
 })
 
+test_that("the depth reader names a path that is not one existing file", {
+  skip_if_not_installed("vroom")
+  # the same contract as read_variants_vcf() and read_variant_genotypes():
+  # `file_exists(NULL)` is a base R error, and a directory passes it
+  expect_error(read_variant_depth(NULL), "must be one", class = "rlang_error")
+  expect_error(read_variant_depth(character()), "must be one", class = "rlang_error")
+  expect_error(read_variant_depth(tempdir()), "names a directory", class = "rlang_error")
+})
+
 test_that("a depth VCF POS outside integer range is refused, not NA", {
   with_sample <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
