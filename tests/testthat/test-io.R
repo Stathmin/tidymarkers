@@ -574,6 +574,13 @@ test_that("as_variant_row gives exactly one typed row", {
   expect_error(as_variant_row(bad), "positive integer `pos`")
   bad$pos <- -1L
   expect_error(as_variant_row(bad), "positive integer `pos`")
+
+  # a symbolic or absent allele is refused, not renamed to a fake N (ADR 0018)
+  bad$pos <- 10L
+  for (alt in c("<DEL>", "*", ".", NA_character_)) {
+    bad$alt <- alt
+    expect_error(as_variant_row(bad), "concrete REF and ALT")
+  }
 })
 
 test_that("a VCF POS outside integer range is refused by every reader", {
@@ -581,7 +588,7 @@ test_that("a VCF POS outside integer range is refused by every reader", {
   writeLines(c(
     "##fileformat=VCFv4.2",
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
-    "Chr1\t3000000000\t.\tA\tC\t.\t.\t.\tGT\t0/1"
+    "Chr1\t0\t.\tA\tC\t.\t.\t.\tGT\t0/1"
   ), path)
 
   expect_error(read_variants_vcf(path), "positive integer range")

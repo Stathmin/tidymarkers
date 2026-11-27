@@ -339,7 +339,10 @@ vcf_sample_names <- function(path) {
 #' tibble that still claims to be many.  `as_variant_row()` selects exactly one
 #' row and names the contract: columns `chrom`, `pos`, `ref`, `alt`, class
 #' `variant`.  Zero or several matching rows is an error, not a silent
-#' first-row choice.
+#' first-row choice.  A symbolic or absent allele (`<DEL>`, `*`, `.`) is
+#' refused before `normalise_allele()` can turn it into a fake `N` (ADR 0016,
+#' 0018); the readers drop such a record, but a selector that asked for one row
+#' has no other record to fall back to.
 #' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`).
 #' @param id,chrom,pos optional selectors; give at most what names one row.
 #' @return a one-row tibble of class `variant`.
@@ -372,6 +375,14 @@ as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
   pos_raw <- suppressWarnings(as.integer(x$pos[[1L]]))
   if (is.na(pos_raw) || pos_raw < 1L) {
     abort_msg("The variant row needs a positive integer `pos`.")
+  }
+  alleles <- c(x$ref[[1L]], x$alt[[1L]])
+  bad <- is.na(alleles) | vcf_symbolic_allele(alleles)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "The variant row needs concrete REF and ALT alleles; got %s.",
+      paste0("`", alleles[bad], "`", collapse = ", ")
+    ))
   }
   out <- tibble::as_tibble(x[, c("chrom", "pos", "ref", "alt"), drop = FALSE]) |>
     dplyr::mutate(
