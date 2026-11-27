@@ -32,9 +32,7 @@
 #' @family haplotypes
 #' @export
 read_transcripts <- function(path, merge_accessions = TRUE) {
-  if (!fs::file_exists(path)) {
-    abort_msg("FASTA not found: {path}")
-  }
+  path <- reader_path(path, "FASTA")
   s <- Biostrings::readDNAStringSet(path)
   if (!merge_accessions) {
     return(s)

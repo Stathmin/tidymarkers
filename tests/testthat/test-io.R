@@ -55,7 +55,10 @@ test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through V
 # Input readers: VCF (SNP/MNP/InDel/multiallelic) and arbitrary FASTA.
 
 test_that("a reader names a path that is not one existing file", {
-  readers <- list(read_variants_vcf, read_variant_genotypes, read_genome_fasta)
+  readers <- list(
+    read_variants_vcf, read_variant_genotypes, read_genome_fasta,
+    read_transcripts, marker_features, read_genbank
+  )
   for (reader in readers) {
     # `file_exists(NULL)` is a base R error, and a directory passes it: both
     # must be the reader's own named refusal, not "argument is not a character

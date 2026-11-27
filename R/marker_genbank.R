@@ -57,10 +57,10 @@
 #' @family input
 #' @export
 read_genbank <- function(path, region = NULL) {
+  path <- reader_path(path, "GenBank")
   if (grepl("\\.gz$", path)) {
     abort_msg("{.file {path}} is gzipped; gunzip it first")
   }
-  if (!fs::file_exists(path)) abort_msg("GenBank not found: {path}")
 
   reg <- if (is.null(region)) NULL else normalise_region(region)
 

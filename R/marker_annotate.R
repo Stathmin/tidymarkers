@@ -360,10 +360,7 @@ gff_attribute <- function(attributes) {
 #' @family annotation
 #' @export
 marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NULL) {
-  path <- fs::path(path)
-  if (!fs::file_exists(path)) {
-    abort_msg("`path` does not exist: {.path {path}}.")
-  }
+  path <- reader_path(path, "GFF")
   open_con <- function() if (grepl("\\.gz$", path)) gzfile(path, "rt") else file(path, "rt")
   read_head <- function(n) {
     con <- open_con()
