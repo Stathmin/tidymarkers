@@ -345,7 +345,8 @@ summary_of <- function(df) {
 
 fmt <- function(x, digits = 1) if (is.na(x)) "n/a" else formatC(x, format = "f", digits = digits)
 
-report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
+report_md <- function(date, dir = metrics_dir(), baseline = NULL,
+                      repair_log = file.path(root_dir(), "docs", "plans", "self-repair-log.md")) {
   chk <- check_date(date, dir)
   if (length(chk$problems)) {
     stop(paste(chk$problems, collapse = "\n"), call. = FALSE)
@@ -353,7 +354,7 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
   rows <- unlist(lapply(chk$files, function(f) lapply(read_rows(f), `[[`, "row")), recursive = FALSE)
   df <- rows_as_df(rows)
   s <- summary_of(df)
-  rep_stats <- repair_stats()
+  rep_stats <- repair_stats(repair_log)
   failures <- sum(df$status %in% c("fail", "error"))
 
   base <- NULL
@@ -459,6 +460,15 @@ report_md <- function(date, dir = metrics_dir(), baseline = NULL) {
     ),
     ""
   )
+  if (rep_stats$rows > 0L && !any(df$stage == "repair")) {
+    out <- c(out, sprintf(
+      paste0(
+        "_repair rows: 0 of %d log line(s). A line without a start time has no ",
+        "MTTR, so it is not counted as 0 ms; ZV14 in ROADMAP.md names the gap._"
+      ),
+      rep_stats$rows
+    ), "")
+  }
   if (is.null(base)) {
     out <- c(out, "_No baseline.json: deltas are not_run, not zero._", "")
   }
@@ -474,11 +484,17 @@ main <- function() {
 
   if ("--emit" %in% args || "--append" %in% args) {
     run <- arg_value(args, "--run", "run")
+    # A duration that was not measured is not zero: a repair row with no MTTR
+    # must fail here instead of entering p95 as an instant fix.
+    ms <- arg_value(args, "--ms", NULL)
+    if (is.null(ms)) {
+      stop("--emit needs --ms: an unmeasured duration is not 0 ms", call. = FALSE)
+    }
     row <- metrics_row(
       run_id = run,
       stage = arg_value(args, "--stage", "gate"),
       object_id = arg_value(args, "--object", "gate"),
-      duration_ms = arg_value(args, "--ms", "0"),
+      duration_ms = ms,
       status = arg_value(args, "--status", "ok"),
       retries = arg_value(args, "--retries", "0"),
       tokens_in = arg_value(args, "--tokens-in", NA),
