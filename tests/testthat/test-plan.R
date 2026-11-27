@@ -168,6 +168,13 @@ test_that("marker_costs overrides merge over the defaults", {
   expect_error(marker_costs(hrm = "1"), "finite")
 })
 
+test_that("a tech layer refuses a malformed cost vector", {
+  expect_error(marker_tech(costs = c(1, 2)), "named numeric")
+  expect_error(marker_tech(costs = c(hmr = 1)), "Unknown chemistry cost")
+  expect_error(marker_tech(costs = c(snp = -1)), "non-negative")
+  expect_error(marker_tech(costs = c(snp = NA_real_)), "finite")
+})
+
 test_that("a region expands only to its in-block variants and sweeps them", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
   variants <- tibble::tibble(

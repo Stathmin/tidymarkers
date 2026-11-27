@@ -403,6 +403,21 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
       abort_msg("`priors` must be a table from marker_priors(outcomes = ).")
     }
   }
+  if (!is.null(costs)) {
+    if (!is.numeric(costs) || is.null(names(costs)) || any(!nzchar(names(costs)))) {
+      abort_msg("`costs` must be a named numeric vector (see marker_costs()).")
+    }
+    unknown <- setdiff(names(costs), names(KASP_TECH_COSTS))
+    if (length(unknown)) {
+      abort_msg(gettextf(
+        "Unknown chemistry cost(s): %s. Known schemes: %s.",
+        paste(unknown, collapse = ", "), paste(names(KASP_TECH_COSTS), collapse = ", ")
+      ))
+    }
+    if (any(!is.finite(costs) | costs < 0)) {
+      abort_msg("Every cost must be one finite, non-negative number.")
+    }
+  }
   if (!is.null(preset)) {
     preset <- match.arg(preset, names(KASP_TECH_PRESETS))
     schemes <- KASP_TECH_PRESETS[[preset]]
