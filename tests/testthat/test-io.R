@@ -579,6 +579,18 @@ test_that("a VCF POS outside integer range is refused, not silently NA", {
   expect_s3_class(g, "genotypes")
 })
 
+test_that("a VCF record with no chromosome is refused", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "\t300\t.\tA\tG\t.\tPASS\t."
+  ), path)
+
+  # ath_chrom("") would otherwise produce the plausible "ChrNA" contig
+  expect_error(read_variants_vcf(path), "no chromosome name")
+})
+
 test_that("a VCF header without ALT names the missing column", {
   path <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(

@@ -385,10 +385,17 @@ read_variants_vcf_vroom <- function(path) {
     .default = vroom::col_skip(),
     CHROM = "c", POS = "i", REF = "c", ALT = "c"
   )
-  vroom::vroom(path,
+  raw <- vroom::vroom(path,
     comment = "#", col_names = nms, col_types = ct,
     col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE
-  ) |>
+  )
+  bad <- is.na(raw$CHROM) | !nzchar(raw$CHROM)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad)[[1L]]
+    ))
+  }
+  raw |>
     dplyr::transmute(
       chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
       ref = .data$REF, alt = .data$ALT
@@ -453,8 +460,15 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
   }
   vcf <- VariantAnnotation::readVcf(path, param = param)
   rng <- SummarizedExperiment::rowRanges(vcf)
+  seq <- as.character(GenomicRanges::seqnames(rng))
+  bad <- is.na(seq) | !nzchar(seq)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad)[[1L]]
+    ))
+  }
   tibble::tibble(
-    chrom = ath_chrom(as.character(GenomicRanges::seqnames(rng))),
+    chrom = ath_chrom(seq),
     pos   = as.integer(GenomicRanges::start(rng)),
     ref   = as.character(VariantAnnotation::ref(vcf)),
     alt   = purrr::map(VariantAnnotation::alt(vcf), as.character)
