@@ -590,3 +590,15 @@ test_that("read_variant_genotypes drops a symbolic or absent ALT like the varian
   v <- suppressMessages(read_variants_vcf(vcf))
   expect_identical(v$pos, g$pos)
 })
+
+test_that("a truncated VCF record is counted as short, not as missing FORMAT", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t200\t.\tA\tG\t.\t.\t."
+  ), vcf)
+  expect_message(g <- read_variant_genotypes(vcf), "fewer columns")
+  expect_identical(g$pos, 100L)
+})

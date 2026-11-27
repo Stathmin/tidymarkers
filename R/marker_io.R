@@ -189,6 +189,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
   rows <- list()
   n_multi <- 0L
   n_sym <- 0L
+  n_short <- 0L
   n_bad <- 0L
   n_bad_pos <- 0L
   repeat {
@@ -198,7 +199,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
     for (line in lines) {
       f <- strsplit(line, "\t", fixed = TRUE)[[1L]]
       if (length(f) < 9L + length(all_samples)) {
-        n_bad <- n_bad + 1L
+        n_short <- n_short + 1L
         next
       }
       if (grepl(",", f[[5L]], fixed = TRUE)) {
@@ -254,6 +255,11 @@ read_variant_genotypes <- function(path, samples = NULL) {
   if (n_bad_pos > 0L) {
     cli::cli_inform(gettext(
       "{n_bad_pos} VCF record{?s} dropped: POS is not a positive integer."
+    ))
+  }
+  if (n_short > 0L) {
+    cli::cli_inform(gettext(
+      "{n_short} VCF record{?s} dropped: fewer columns than the header names."
     ))
   }
   if (n_bad > 0L) {
