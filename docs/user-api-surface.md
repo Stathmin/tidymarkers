@@ -175,7 +175,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `internal_hairpin_dg()` | — | seq1 | na, temp | `sequence` → `numeric` | Hairpin dG of a single strand without OligoArrayAux (pure R screen) |
 | `marker_costs()` | — | — | — | `—` → `costs` | A cost schema for the chemistries |
 | `marker_criteria()` | да | — | limits, scheme | `—` → `criteria` | The registry of every candidate evaluation |
-| `marker_design_checks()` | да | assay | limits, scheme, engines | `marker + limits` → `checks` | Check an assembled assay against the KASP acceptance criteria |
+| `marker_design_checks()` | да | assay | limits, scheme, engines | `marker + limits` → `checks` | Check an assembled assay against the criteria of its scheme |
 | `marker_explain()` | да | x | scheme | `marker + checks` → `explain` | Why this marker: the design checks as ordered, readable reasons |
 | `marker_informativeness()` | да | targets | genotypes, haplotypes, min_lines | `targets + haplotypes` → `informativeness` | How informative a marker is on an available panel |
 | `marker_priors()` | — | — | outcomes | `outcomes` → `priors` | Provenance of every KASP threshold; with outcomes, counts per chemistry |

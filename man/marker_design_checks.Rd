@@ -2,7 +2,7 @@
 % Please edit documentation in R/marker_checks.R
 \name{marker_design_checks}
 \alias{marker_design_checks}
-\title{Check an assembled assay against the KASP acceptance criteria}
+\title{Check an assembled assay against the criteria of its scheme}
 \usage{
 marker_design_checks(
   assay,

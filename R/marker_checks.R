@@ -216,7 +216,7 @@ marker_dosage_gate <- function(marker) {
   )
 }
 
-#' Check an assembled assay against the KASP acceptance criteria
+#' Check an assembled assay against the criteria of its scheme
 #'
 #' Turns the prose design manual into a tidy pass/fail table so "good" and
 #' "bad" assays are graded the same way every time (thresholds: `KASP_LIMITS`).

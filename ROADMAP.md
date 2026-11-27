@@ -4145,6 +4145,12 @@ dir)` пишет crate-профиль поверх существующих че
       одному входу с параметром `keep`; поправить заголовок
       `marker_design_checks()` («KASP acceptance criteria» -> «scheme
       criteria»), потому что функция уже проверяет не-KASP схемы.
+    - сделано (2026-11-27): заголовок `marker_design_checks()` — «the criteria
+      of its scheme»; `man/marker_design_checks.Rd` и
+      `docs/user-api-surface.md` согласованы; `test-kasp-checks.R`,
+      `test-scenario-j2.R`, `test-capabilities.R` зелёные (26 с).
+    - осталось: свести `design_kasp_markers()`/`design_markers()`/
+      `design_marker_batch()` к одному входу с `keep`.
     - проверка: `Rscript dev/check-user-api.R` — в CSV один пользовательский
       батч-вход; `Rscript dev/check-docs.R` — roxygen/README не обещают
       KASP-only.
