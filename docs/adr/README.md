@@ -29,6 +29,7 @@ the file records the measurement or event that re-tested it).
 | [0016](0016-one-vcf-admission-rule.md)                                 | One VCF admission rule, shared by both readers                               | accepted |
 | [0017](0017-a-raw-identifier-is-admitted-before-normalisation.md)       | A raw identifier is admitted before a normaliser may rename it               | accepted |
 | [0018](0018-one-allele-and-position-rule-for-three-vcf-readers.md)      | One allele and `POS` rule for all three VCF readers                          | accepted |
+| [0019](0019-an-absent-allele-is-not-a-base.md)                         | An absent allele is absent before it is normalised                           | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

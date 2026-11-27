@@ -104,6 +104,10 @@ Other vignettes:
 - [ADR 0018](adr/0018-one-allele-and-position-rule-for-three-vcf-readers.md) —
   all three VCF readers admit the same alleles and refuse the same positions,
   so a depth table and a variant table join on one key.
+- [ADR 0019](adr/0019-an-absent-allele-is-not-a-base.md) — a missing or empty
+  REF/ALT is the absent state, dropped by the same rule before
+  normalisation, so an empty field cannot become a base-R error or an empty
+  allele.
 
 ## Operator decisions
 
