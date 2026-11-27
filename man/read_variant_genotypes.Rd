@@ -27,8 +27,11 @@ The record is biallelic: a multi-allelic site is dropped and counted, because
 a dosage against "the ALT" is ambiguous once a record carries two of them.
 A symbolic or absent ALT (\verb{<DEL>}, \code{*}, \code{.}) is dropped and counted for the
 same reason \code{\link[=read_variants_vcf]{read_variants_vcf()}} drops it: no short oligo exists for it, and
-\code{normalise_allele()} would otherwise turn it into a fake \code{N} allele.
-Dosage comes from \code{GT}; when \code{GT} is missing, \code{AD} decides it (rounded
+\code{normalise_allele()} would otherwise turn it into a fake \code{N} allele.  A
+record with fewer columns than the header names, or with neither \code{GT} nor
+\code{AD}, is dropped and counted: there is nothing left to read.  A \code{POS} that is
+not a positive integer is an error, as in the other two VCF readers (ADR
+0018).  Dosage comes from \code{GT}; when \code{GT} is missing, \code{AD} decides it (rounded
 \code{2 * alt / (ref + alt)}).  A genotype naming an allele other than REF/ALT
 is \code{NA}, never silently folded to the first ALT.
 }

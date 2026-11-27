@@ -146,8 +146,11 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #' a dosage against "the ALT" is ambiguous once a record carries two of them.
 #' A symbolic or absent ALT (`<DEL>`, `*`, `.`) is dropped and counted for the
 #' same reason [read_variants_vcf()] drops it: no short oligo exists for it, and
-#' `normalise_allele()` would otherwise turn it into a fake `N` allele.
-#' Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
+#' `normalise_allele()` would otherwise turn it into a fake `N` allele.  A
+#' record with fewer columns than the header names, or with neither `GT` nor
+#' `AD`, is dropped and counted: there is nothing left to read.  A `POS` that is
+#' not a positive integer is an error, as in the other two VCF readers (ADR
+#' 0018).  Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
 #' `2 * alt / (ref + alt)`).  A genotype naming an allele other than REF/ALT
 #' is `NA`, never silently folded to the first ALT.
 #' @param path VCF path, plain or bgzipped.
@@ -192,7 +195,6 @@ read_variant_genotypes <- function(path, samples = NULL) {
   n_sym <- 0L
   n_short <- 0L
   n_bad <- 0L
-  n_bad_pos <- 0L
   repeat {
     lines <- readLines(con, n = 1000L, warn = FALSE)
     if (!length(lines)) break
@@ -219,8 +221,10 @@ read_variant_genotypes <- function(path, samples = NULL) {
       }
       pos <- suppressWarnings(as.integer(f[[2L]]))
       if (is.na(pos) || pos < 1L) {
-        n_bad_pos <- n_bad_pos + 1L
-        next
+        abort_msg(gettextf(
+          "VCF record %d has a POS outside the positive integer range.",
+          n_rec
+        ))
       }
       fmt <- strsplit(f[[9L]], ":", fixed = TRUE)[[1L]]
       gi <- match("GT", fmt)
@@ -258,11 +262,6 @@ read_variant_genotypes <- function(path, samples = NULL) {
       "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
       "across structural alleles."
     )))
-  }
-  if (n_bad_pos > 0L) {
-    cli::cli_inform(gettext(
-      "{n_bad_pos} VCF record{?s} dropped: POS is not a positive integer."
-    ))
   }
   if (n_short > 0L) {
     cli::cli_inform(gettext(

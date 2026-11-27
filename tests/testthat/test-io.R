@@ -576,7 +576,7 @@ test_that("as_variant_row gives exactly one typed row", {
   expect_error(as_variant_row(bad), "positive integer `pos`")
 })
 
-test_that("a VCF POS outside integer range is refused, not silently NA", {
+test_that("a VCF POS outside integer range is refused by every reader", {
   path <- withr::local_tempfile(fileext = ".vcf")
   writeLines(c(
     "##fileformat=VCFv4.2",
@@ -586,15 +586,13 @@ test_that("a VCF POS outside integer range is refused, not silently NA", {
 
   expect_error(read_variants_vcf(path), "positive integer range")
 
-  # the streaming reader drops the record and says why, rather than emitting
-  # a row whose pos is NA and poisoning every downstream comparison
-  expect_message(
+  # the streaming reader once dropped the record and said why; a record one
+  # reader refuses must not become an empty table in another (ADR 0016, 0018)
+  expect_error(
     read_variant_genotypes(path),
-    "POS is not a positive integer"
+    "record 1 has a POS outside the positive integer range"
   )
-  g <- suppressMessages(read_variant_genotypes(path))
-  expect_equal(nrow(g), 0L)
-  expect_s3_class(g, "genotypes")
+  expect_error(read_variant_depth(path), "positive integer range")
 })
 
 test_that("a VCF record with no chromosome is refused", {

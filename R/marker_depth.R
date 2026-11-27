@@ -35,9 +35,12 @@ check_depth_pos <- function(pos, chrom) {
 #' Streams the DP/AD/GT fields of one sample out of a VCF into a tidy table, one
 #' row per ALT allele (a multi-allelic `ALT` is split on `,`; its `AD` is
 #' `ref,alt1,alt2,...`, so the ALT's depth is `AD[alt_index + 1]`).  `chrom` is
-#' normalised with `ath_chrom()`.  When the VCF has no sample columns, the reader
-#' falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.  Missing
-#' values stay `NA`; an absent DP/AD/GT never errors.
+#' normalised with `ath_chrom()`.  Alleles are admitted by the same rule as
+#' [read_variants_vcf()]: a symbolic or absent ALT (`<DEL>`, `*`, `.`) is
+#' dropped and counted, and the kept `ref`/`alt` are normalised with
+#' [normalise_allele()] (ADR 0018).  When the VCF has no sample columns, the
+#' reader falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.
+#' Missing values stay `NA`; an absent DP/AD/GT never errors.
 #' @param path VCF path; plain (`vcf`) or bgzipped (`vcf.gz`) are both read by
 #'   `vroom`.
 #' @param sample which sample column to read: an index (default `1L`, the first)
@@ -151,7 +154,28 @@ depth_from_samples <- function(d, sample_col) {
     depth = as.numeric(depth),
     alt_depth = as.numeric(alt_depth),
     genotype = genotype
-  )
+  ) |>
+    depth_admit_alleles()
+}
+
+# One allele admission rule for all three VCF readers (ADR 0016, ADR 0018): a
+# symbolic or absent allele is dropped and counted, and the kept alleles are
+# normalised, so a join on (chrom, pos, ref, alt) means one thing.
+depth_admit_alleles <- function(x) {
+  drop <- vcf_symbolic_allele(x$ref) | vcf_symbolic_allele(x$alt)
+  drop[is.na(drop)] <- TRUE
+  n_dropped <- sum(drop)
+  if (n_dropped > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_dropped} VCF record{?s} with a symbolic or absent ALT ",
+      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+      "across structural alleles."
+    )))
+  }
+  x <- x[!drop, , drop = FALSE]
+  x$ref <- normalise_allele(x$ref)
+  x$alt <- normalise_allele(x$alt)
+  x
 }
 
 #' Sites-only VCF: `INFO/DP`, no per-sample fields
@@ -179,7 +203,8 @@ read_variant_depth_sites <- function(path, nms) {
     depth = as.numeric(info_dp(d$INFO[idx])),
     alt_depth = NA_real_,
     genotype = NA_character_
-  )
+  ) |>
+    depth_admit_alleles()
 }
 
 #' `DP=` out of an INFO field (`NA` when absent)
