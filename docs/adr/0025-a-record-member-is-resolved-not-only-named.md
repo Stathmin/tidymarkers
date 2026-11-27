@@ -35,9 +35,10 @@ the file the name resolves to is what the reader trusts.
    If the path exists, it is also resolved with `fs::path_real()` and must stay
    under the record's real root; a link out is refused with both paths named.
 2. **Every member read goes through the same resolver.** `artefact.json`,
-   every manifest sidecar, `replay.csv` and `solved.rds` are resolved by
-   `artefact_member_path()` before they are opened. The crate writer uses it
-   before copying, so a record cannot smuggle a neighbour's bytes into a crate.
+   every manifest sidecar, `replay.csv`, `solved.rds` and `outcomes.csv` are
+   resolved by `artefact_member_path()` before they are opened. The crate
+   writer and the outcome export use it before copying, so a record cannot
+   smuggle a neighbour's bytes into a crate.
 3. **A dangling link is a missing member, not a read.** `fs::file_exists()` is
    false for a dangling link, so the reader returns its declared empty table or
    names the missing file — it does not follow the link.

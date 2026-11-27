@@ -206,12 +206,13 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
         i = "A corpus row describes a directory under {.path {root}}."
       )
     }
+    adir <- artefact_member_path(root, rel)
     crate <- marker_export_rocrate(
       marker_artefact_read(adir),
       fs::path(dir, "crates", pseudonyms[[i]])
     )
     fs::file_copy(
-      fs::path(adir, "outcomes.csv"),
+      artefact_member_path(adir, "outcomes.csv"),
       fs::path(crate, "outcomes.csv"),
       overwrite = TRUE
     )

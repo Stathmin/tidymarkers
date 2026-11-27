@@ -537,3 +537,23 @@ test_that("ZY26: a row's recorded id is not relabelled by its directory", {
 test_that("ZY26: a corpus takes a directory", {
   expect_error(marker_outcome_corpus(tempfile("absent")), "directory")
 })
+
+test_that("ZY25.1: an outcomes table cannot link out of the record", {
+  root <- withr::local_tempdir()
+  dir <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  marker_record_outcome(dir, "works", target = "t1")
+  outside <- fs::path(withr::local_tempdir(), "outcomes.csv")
+  fs::file_copy(fs::path(dir, "outcomes.csv"), outside)
+  fs::file_delete(fs::path(dir, "outcomes.csv"))
+  skip_if_not(file.symlink(outside, fs::path(dir, "outcomes.csv")), "this filesystem cannot make a symlink")
+
+  expect_error(marker_outcomes(dir), "resolves to", class = "rlang_error")
+
+  corpus <- tibble::tibble(artefact = "batch-a", artefact_id = "aaaaaaaaaaaaaaaa")
+  attr(corpus, "root") <- root
+  expect_error(
+    marker_export_outcomes(corpus, tempfile("handover"), trustee = "lab-a"),
+    "resolves to",
+    class = "rlang_error"
+  )
+})

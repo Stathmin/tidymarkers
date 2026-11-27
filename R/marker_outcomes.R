@@ -242,7 +242,7 @@ marker_record_outcome <- function(artefact,
 #' @export
 marker_outcomes <- function(artefact) {
   dir <- artefact_dir(artefact)
-  path <- fs::path(dir, "outcomes.csv")
+  path <- artefact_member_path(dir, "outcomes.csv")
   if (!fs::file_exists(path)) {
     return(outcome_empty())
   }

@@ -4762,3 +4762,18 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - блокер: нет.
     - следствие: артефакт и крат отвечают на вопрос о ссылке одинаково;
       правило — ADR 0025, развивает ADR 0015.
+
+- [x] **ZV25.1. Таблицу исходов читает тот же резолвер.**
+    - правка: `R/marker_outcomes.R` — `marker_outcomes()` открывает
+      `outcomes.csv` через `artefact_member_path()`;
+      `R/marker_export_outcomes.R` — каталог строки корпуса разрешается
+      физически перед `marker_artefact_read()`, копия `outcomes.csv` — тоже.
+      Обход корпуса ссылки не перечисляет (`fs::dir_ls(type = "file")` не
+      отдаёт симлинк), поэтому правки там нет.
+    - проверка: `test-z8-outcomes.R` — «ZY25.1: an outcomes table cannot link
+      out of the record»: `outcomes.csv` — ссылка на файл рядом,
+      `marker_outcomes()` и `marker_export_outcomes()` отказывают по фразе
+      `resolves to`; до правки оба читали цель.
+    - блокер: нет.
+    - следствие: у всех четырёх читателей записи один ответ на ссылку;
+      ADR 0025 п.2 называет `outcomes.csv` явно.
