@@ -11,6 +11,15 @@ dg_panel <- c(
   "ATGATGATGATGATGATGAT"
 )
 
+test_that("an oligo reaches the engine as DNA, never as shell syntax", {
+  expect_error(oligo_dg("ACGT; echo pwn"), "one DNA oligo")
+  expect_error(oligo_dg("ACGT ACGT"), "one DNA oligo")
+  expect_error(oligo_dg("ACGT", "--help"), "one DNA oligo")
+  expect_error(oligo_dg("ACGT", temp = "37; echo pwn"), "one finite number")
+  expect_error(oligo_dg("ACGT", na = NA_real_), "one finite number")
+  expect_error(oligo_dg(c("ACGT", "TGCA")), "one DNA oligo")
+})
+
 dg_panel_rc <- function(seqs = dg_panel) {
   as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(seqs)))
 }

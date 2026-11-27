@@ -529,6 +529,25 @@ engine_has <- function(capability, engines = NULL) {
   isTRUE(capabilities(engines$thermo, capability))
 }
 
+# The sequence reaches system2() as an argument, so a space or `;` would be
+# read by the shell, not by the engine: admit only DNA letters here.
+check_oligo_seq <- function(x, arg) {
+  if (
+    !is.character(x) || length(x) != 1L || is.na(x) || !nzchar(x) ||
+      !grepl("^[ACGTNacgtn]+$", x)
+  ) {
+    abort_msg("`{arg}` must be one DNA oligo of A, C, G, T or N.")
+  }
+  toupper(x)
+}
+
+check_oligo_number <- function(x, arg) {
+  if (!is.numeric(x) || length(x) != 1L || !is.finite(x)) {
+    abort_msg("`{arg}` must be one finite number.")
+  }
+  x
+}
+
 #' OligoArrayAux duplex / hairpin free energy
 #'
 #' The DNA engine DECIPHER already uses: `hybrid-min` (duplex of two strands) or
@@ -556,6 +575,10 @@ engine_has <- function(capability, engines = NULL) {
 #' @family thermodynamics
 #' @export
 oligo_dg <- function(seq1, seq2 = NULL, na = 0.05, temp = 37) {
+  seq1 <- check_oligo_seq(seq1, "seq1")
+  if (!is.null(seq2)) seq2 <- check_oligo_seq(seq2, "seq2")
+  na <- check_oligo_number(na, "na")
+  temp <- check_oligo_number(temp, "temp")
   bin <- if (is.null(seq2)) "hybrid-ss-min" else "hybrid-min"
   paths <- oligoarrayaux_paths()
   nm <- if (.Platform$OS.type == "windows") paste0(bin, ".exe") else bin
