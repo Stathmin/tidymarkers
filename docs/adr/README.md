@@ -33,6 +33,7 @@ the file records the measurement or event that re-tested it).
 | [0020](0020-a-gt-that-names-a-missing-allele-is-not-a-call.md)          | A GT that names a missing allele is not a call                               | accepted |
 | [0021](0021-one-path-and-one-header-rule-for-three-vcf-readers.md)      | One path and one header rule for three VCF readers                           | accepted |
 | [0022](0022-a-fasta-base-outside-the-alphabet-is-refused-by-every-reader.md) | A FASTA base outside the alphabet is refused by every reader                 | accepted |
+| [0023](0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md)       | A refusal that a retry cannot fix carries a class                            | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

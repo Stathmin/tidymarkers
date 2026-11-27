@@ -61,3 +61,4 @@ name, in every reader, through `read_fasta_strict()`.
   (report the file, never mask it as a download failure). Test:
   `test-ath-genome-cache.R` with `ACGTXCGT` and a mocked download that must not
   run.
+- The refusal class and the retry rule are [ADR 0023](0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md).

@@ -117,6 +117,9 @@ Other vignettes:
 - [ADR 0022](adr/0022-a-fasta-base-outside-the-alphabet-is-refused-by-every-reader.md) —
   a FASTA base outside the DNA/IUPAC alphabet is a named refusal in the
   transcript reader too, not a silently shortened sequence.
+- [ADR 0023](adr/0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md) —
+  a refusal a retry cannot fix (bad alphabet) carries a condition class, so a
+  reader that refetches a broken cache does not retry the unfixable case.
 
 ## Operator decisions
 
