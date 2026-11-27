@@ -211,6 +211,11 @@ test_that("a region expands only to its in-block variants and sweeps them", {
   # and a region without context is refused
   bare <- marker_plan(genome, region = region)
   expect_error(region_targets(bare), "variant context")
+  # an empty chromosome name is not a region on the unnamed sequence
+  expect_error(
+    tidymarkers:::normalise_region(list(chrom = "", start = 1L, end = 10L)),
+    "valid 1-based"
+  )
 })
 
 test_that("a solved region carries a haplotype -> signal table inside the block", {
