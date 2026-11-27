@@ -99,6 +99,9 @@ Other vignettes:
 - [ADR 0017](adr/0017-a-raw-identifier-is-admitted-before-normalisation.md) —
   a raw identifier is admitted before `ath_chrom()` can rename it, so an
   empty chromosome cannot become a plausible contig.
+- [ADR 0018](adr/0018-one-allele-and-position-rule-for-three-vcf-readers.md) —
+  all three VCF readers admit the same alleles and refuse the same positions,
+  so a depth table and a variant table join on one key.
 
 ## Operator decisions
 
