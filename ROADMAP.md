@@ -4176,14 +4176,17 @@ dir)` пишет crate-профиль поверх существующих че
       — writer, validator и report JSONL, baseline на `main` до первой правки.
       ADR 0008, ADR 0011 §5.
     - проверка: `Rscript dev/test.R scenario` (J1–J7); `Rscript
-      dev/check-user-api.R` — exit 1 на шаге без ребра; `Rscript
-      dev/metrics.R --check <date>` — схема без содержимого; `Rscript
-      dev/check-docs.R` — таблица сценариев и ссылка из `docs/INDEX.md`.
+      dev/check-user-api.R` — exit 1 на шаге без ребра или на сценарии без
+      `scenario_timer()`; `Rscript dev/metrics.R --check <date>` — схема без
+      содержимого; `Rscript dev/check-docs.R` — таблица сценариев и ссылка из
+      `docs/INDEX.md`.
     - блокер: нет; `fixtures/panel/`, `fixtures/tair10/` и
       `sat2_transcripts.fa` уже в дереве.
-    - следствие: все семь сценариев — исполняемые тесты на фикстурах;
-      `dev/check-user-api.R` не пропускает шаг без типизированного ребра, а
-      `data/metrics/` хранит baseline для p95 и стоимости.
+    - следствие: все семь сценариев — исполняемые тесты на фикстурах; каждый
+      прогон пишет строку `stage = "scenario"` с длительностью маршрута;
+      `dev/check-user-api.R` не пропускает шаг без типизированного ребра или
+      сценарий без таймера, а `data/metrics/` хранит baseline для p95 и
+      стоимости.
 
 - [x] **ZV2. Батч-отчёт продолжается типизированно (ZU3).**
     - правка: `R/marker_batch.R`, `R/marker_strategy.R` —
