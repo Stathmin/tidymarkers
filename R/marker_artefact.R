@@ -468,9 +468,11 @@ artefact_limitations <- function(solved) {
 #' @noRd
 artefact_replay_table <- function(solved) {
   r <- solved$report
+  # A named `scheme` would carry its names into the table, so a replay from a
+  # replay.csv (unnamed) and one from solved.rds (named) would not be identical.
   tibble::tibble(
-    label = r$label,
-    scheme = r$scheme,
+    label = unname(r$label),
+    scheme = unname(r$scheme),
     verdict = unname(purrr::map2_chr(r$ok, r$marker, artefact_verdict))
   )
 }
