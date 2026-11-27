@@ -288,6 +288,26 @@ test_that("read_genome_fasta refuses a base outside the DNA alphabet", {
   )
 })
 
+test_that("a FASTA with one name twice is refused on both backends", {
+  fa <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">Chr1", "ACGTACGTAC", ">Chr1", "TTTTGGGGCC"), fa)
+  for (use_index in c(FALSE, TRUE)) {
+    expect_error(
+      read_genome_fasta(fa, seqids = "Chr1", use_index = use_index),
+      "names sequence Chr1 more than once",
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  # two source names mapping to one target name is the same ambiguity
+  two <- withr::local_tempfile(fileext = ".fa")
+  writeLines(c(">1", "ACGT", ">2", "ACGT"), two)
+  expect_error(
+    read_genome_fasta(two, chrom_map = c("1" = "Chr1", "2" = "Chr1")),
+    "more than once after mapping",
+    class = "tidymarkers_duplicate_sequence_error"
+  )
+})
+
 test_that("marker_example carries one of each target type", {
   ex <- marker_example()
   expect_setequal(unique(ex$type), c("SNP", "MNP", "insertion", "deletion"))
