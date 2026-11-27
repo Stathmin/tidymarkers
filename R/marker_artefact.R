@@ -475,9 +475,6 @@ artefact_replay_table <- function(solved) {
   )
 }
 
-#' A stable id for the design, independent of when it was written
-#' @keywords internal
-#' @noRd
 #' The `plan` block shared by the artefact and the trace
 #' @keywords internal
 #' @noRd
@@ -493,6 +490,9 @@ artefact_plan <- function(solved, targets) {
   )
 }
 
+#' A stable id for the design, independent of when it was written
+#' @keywords internal
+#' @noRd
 artefact_id <- function(manifest) {
   core <- manifest[c(
     "schema", "contract", "package", "engine_stamp", "inputs", "plan",
