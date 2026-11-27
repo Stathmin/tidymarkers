@@ -4,6 +4,7 @@
 
 test_that("J4: an index scan feeds the next design decision", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J4")
   genome <- read_genome_fasta(scenario_file("j1_genome.fa"))
   index <- scenario_step(
     "j4", "specificity", "index",
@@ -41,6 +42,7 @@ test_that("J4: an index scan feeds the next design decision", {
 
 test_that("J4: three builds, six shards, and a missing shard names both", {
   skip_if_not_installed("Rbowtie")
+  scenario_timer("J4")
   # committed fixture: the site is on A only, so a pooled scan would invent it
   site <- "AAGTCTGGGCAGAACCTTCACCAA"
   fa <- c(

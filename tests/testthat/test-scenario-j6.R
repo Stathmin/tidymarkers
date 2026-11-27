@@ -5,6 +5,7 @@
 
 test_that("J6: the artefact records its contract and replays to the same verdicts", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J6")
   genome <- scenario_step(
     "j6", "ingest", "genome",
     read_genome_fasta(scenario_file("j1_genome.fa"))
@@ -72,6 +73,7 @@ test_that("J6: the artefact records its contract and replays to the same verdict
 
 test_that("J6: the text artefact is byte-identical and excludes the RDS", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J6")
   genome <- read_genome_fasta(scenario_file("j1_genome.fa"))
   targets <- utils::read.csv(scenario_file("j1_target.csv"))
   solved <- marker_solve(

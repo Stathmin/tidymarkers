@@ -3,6 +3,7 @@
 
 test_that("J2: VCF to a solved batch with checks and exported tables", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J2")
   genome <- read_genome_fasta(scenario_file("j1_genome.fa"))
   variants <- scenario_step(
     "J2", "ingest", "variants",

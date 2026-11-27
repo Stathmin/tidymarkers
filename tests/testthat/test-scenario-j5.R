@@ -4,6 +4,7 @@
 
 test_that("J5: a recorded outcome reorders the next solve and keeps its verdict", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J5")
   genome <- read_genome_fasta(scenario_file("j1_genome.fa"))
   target <- utils::read.csv(scenario_file("j1_target.csv"), stringsAsFactors = FALSE)
   target$pos <- as.integer(target$pos)

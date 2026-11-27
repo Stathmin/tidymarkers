@@ -3,6 +3,7 @@
 
 test_that("J1: genome to checked, explained and exported marker", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J1")
   genome <- scenario_step("J1", "ingest", "genome", read_genome_fasta(scenario_file("j1_genome.fa")))
   expect_scenario_class(genome, "genome")
 

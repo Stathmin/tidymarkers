@@ -20,6 +20,51 @@ scenario_metrics_writer <- function() {
   NULL
 }
 
+#' Write one metrics row for a scenario, when a run is named
+#' @keywords internal
+#' @noRd
+scenario_row <- function(scenario, stage, object_id, duration_ms) {
+  run <- Sys.getenv("TIDYMARKERS_METRICS")
+  if (!nzchar(run)) {
+    return(invisible(NULL))
+  }
+  w <- scenario_metrics_writer()
+  if (is.null(w)) {
+    return(invisible(NULL))
+  }
+  row <- w$env$metrics_row(
+    run_id = run, stage = stage, object_id = object_id,
+    duration_ms = duration_ms, status = "ok", language = "en"
+  )
+  w$env$append_row(
+    row, file.path(w$root, "data", "metrics", paste0(Sys.Date(), "-", run, ".jsonl"))
+  )
+  invisible(NULL)
+}
+
+#' Time the whole scenario, not one step
+#'
+#' Registers an exit handler, so the row is written when the test body returns.
+#' `stage = "scenario"` and `object_id = "scenario:JN"` are the contract's
+#' per-route sample (§0.1); the per-step rows stay the stage breakdown.
+#' @param scenario scenario id (`"J1"`, `"J2"`, ...).
+#' @keywords internal
+#' @noRd
+scenario_timer <- function(scenario) {
+  if (!nzchar(Sys.getenv("TIDYMARKERS_METRICS"))) {
+    return(invisible(NULL))
+  }
+  t0 <- proc.time()[[3L]]
+  withr::defer(
+    scenario_row(
+      scenario, "scenario", paste0("scenario:", scenario),
+      round(1000 * (proc.time()[[3L]] - t0))
+    ),
+    envir = parent.frame()
+  )
+  invisible(NULL)
+}
+
 #' Record one scenario step
 #'
 #' Returns the step's value, so a test reads as the pipeline it proves.  The
@@ -31,23 +76,12 @@ scenario_metrics_writer <- function() {
 #' @keywords internal
 #' @noRd
 scenario_step <- function(scenario, stage, object_id, code) {
-  run <- Sys.getenv("TIDYMARKERS_METRICS")
   t0 <- proc.time()[[3L]]
   out <- force(code)
   ms <- round(1000 * (proc.time()[[3L]] - t0))
-  if (nzchar(run)) {
-    w <- scenario_metrics_writer()
-    if (!is.null(w)) {
-      row <- w$env$metrics_row(
-        run_id = run, stage = stage,
-        object_id = paste0("scenario:", scenario, ":", object_id),
-        duration_ms = ms, status = "ok", language = "en"
-      )
-      w$env$append_row(
-        row, file.path(w$root, "data", "metrics", paste0(Sys.Date(), "-", run, ".jsonl"))
-      )
-    }
-  }
+  scenario_row(
+    scenario, stage, paste0("scenario:", scenario, ":", object_id), ms
+  )
   out
 }
 

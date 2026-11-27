@@ -4,6 +4,7 @@
 
 test_that("J7: tools/list serves every scenario tool and tools/call answers", {
   skip_if_not_installed("jsonlite")
+  scenario_timer("J7")
   env <- .mcp_env()
   listed <- scenario_step(
     "j7", "mcp", "tools_list",

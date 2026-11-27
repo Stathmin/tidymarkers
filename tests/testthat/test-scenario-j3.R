@@ -4,6 +4,7 @@
 
 test_that("J3: a panel is a typed step to pareto, artefact and export", {
   skip_if_no_oligoarrayaux()
+  scenario_timer("J3")
   genome_path <- scenario_file("j1_genome.fa")
   targets_path <- scenario_file("j1_target.csv")
   haplotypes_path <- scenario_file("j3_haplotypes.csv")
