@@ -37,8 +37,9 @@ the file the name resolves to is what the reader trusts.
 2. **Every member read goes through the same resolver.** `artefact.json`,
    every manifest sidecar, `replay.csv`, `solved.rds` and `outcomes.csv` are
    resolved by `artefact_member_path()` before they are opened. The crate
-   writer and the outcome export use it before copying, so a record cannot
-   smuggle a neighbour's bytes into a crate.
+   descriptor and every copied member use it too, and the outcome export
+   resolves the row directory before reading, so a record cannot smuggle a
+   neighbour's bytes into a crate.
 3. **A dangling link is a missing member, not a read.** `fs::file_exists()` is
    false for a dangling link, so the reader returns its declared empty table or
    names the missing file — it does not follow the link.
@@ -62,7 +63,7 @@ the file the name resolves to is what the reader trusts.
 ## Consequences
 
 - A linked member is a named error:
-  `The artefact names "decisions.csv", which resolves to "/…/outside.csv" outside "/…/artefact"`.
+  `The record names "decisions.csv", which resolves to "/…/outside.csv" outside "/…/artefact"`.
   Test: `test-rocrate.R`, "an artefact sidecar cannot link out of the record";
   the reader and `marker_export_rocrate()` both refuse it.
 - The rule now matches ADR 0015's crate consequence: lexical first, physical

@@ -311,7 +311,7 @@ marker_import_rocrate <- function(path) {
     abort_msg("`path` must be one crate directory or its ro-crate-metadata.json.")
   }
   dir <- if (fs::is_dir(path)) path else fs::path_dir(path)
-  meta_path <- fs::path(dir, "ro-crate-metadata.json")
+  meta_path <- artefact_member_path(dir, "ro-crate-metadata.json")
   if (!fs::file_exists(meta_path)) {
     abort_msg("No ro-crate-metadata.json at {.path {meta_path}}.")
   }

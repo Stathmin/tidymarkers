@@ -740,8 +740,8 @@ artefact_member_path <- function(dir, file) {
     root <- fs::path_real(dir)
     if (!identical(target, root) && !fs::path_has_parent(target, root)) {
       abort_msg(
-        "The artefact names {.file {file}}, which resolves to {.path {target}} outside {.path {dir}}.",
-        i = "An artefact carries files, not links out of itself."
+        "The record names {.file {file}}, which resolves to {.path {target}} outside {.path {dir}}.",
+        i = "A record carries files, not links out of itself."
       )
     }
   }

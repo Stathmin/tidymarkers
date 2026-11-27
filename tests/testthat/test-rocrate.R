@@ -105,6 +105,17 @@ test_that("an artefact sidecar cannot link out of the record", {
   expect_error(marker_export_rocrate(art, dir = tempfile("crate")), "resolves to", class = "rlang_error")
 })
 
+test_that("a crate descriptor cannot link out of the crate", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "ro-crate-metadata.json")
+  writeLines('{"@context":"https://w3id.org/ro/crate/1.1/context","@graph":[]}', outside)
+  skip_if_not(file.symlink(outside, fs::path(dir, "ro-crate-metadata.json")), "this filesystem cannot make a symlink")
+
+  # The descriptor is the crate's own file; a link would make the import read
+  # and vouch for metadata the crate does not carry.
+  expect_error(marker_import_rocrate(dir), "resolves to", class = "rlang_error")
+})
+
 test_that("the metadata graph describes one run over the manifest inputs", {
   art <- rocrate_fixture()$artefact
   crate <- marker_export_rocrate(art, dir = tempfile("crate"))
