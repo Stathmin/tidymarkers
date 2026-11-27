@@ -45,7 +45,7 @@ instead of guessing from a non-\code{NULL} slot, and tags the result with
 version but not the hashes, so opening a 16 Gb genome does not read it;
 Chromosome shards of a bowtie index with \code{chroms}; above
 \code{BOWTIE_MONOLITH_LIMIT} the shards are chosen even when \code{chroms} is \code{NULL}.
-\code{\link[=index_manifest]{index_manifest()}} refreshes the measured columns from disk.  Above
+\code{index_manifest()} refreshes the measured columns from disk.  Above
 \code{BOWTIE_MONOLITH_LIMIT} (21.5 GB, 1.34 bytes per base) a bowtie strategy with
 \code{chroms = NULL} is sharded per chromosome, and each shard is built from one
 chromosome at a time (\code{index_chrom_seq()}), never from the whole FASTA.

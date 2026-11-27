@@ -121,7 +121,7 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' version but not the hashes, so opening a 16 Gb genome does not read it;
 #' Chromosome shards of a bowtie index with `chroms`; above
 #' `BOWTIE_MONOLITH_LIMIT` the shards are chosen even when `chroms` is `NULL`.
-#' [index_manifest()] refreshes the measured columns from disk.  Above
+#' `index_manifest()` refreshes the measured columns from disk.  Above
 #' `BOWTIE_MONOLITH_LIMIT` (21.5 GB, 1.34 bytes per base) a bowtie strategy with
 #' `chroms = NULL` is sharded per chromosome, and each shard is built from one
 #' chromosome at a time (`index_chrom_seq()`), never from the whole FASTA.
