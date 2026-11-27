@@ -731,12 +731,28 @@ artefact_safe_name <- function(file) {
   file
 }
 
+# A sidecar name inside the record can still be a link that leaves it: the
+# lexical check above is not enough for a record a stranger wrote.
+artefact_member_path <- function(dir, file) {
+  path <- fs::path(dir, file)
+  if (fs::file_exists(path)) {
+    target <- fs::path_real(path)
+    root <- fs::path_real(dir)
+    if (!identical(target, root) && !fs::path_has_parent(target, root)) {
+      abort_msg(
+        "The artefact names {.file {file}}, which resolves to {.path {target}} outside {.path {dir}}.",
+        i = "An artefact carries files, not links out of itself."
+      )
+    }
+  }
+  path
+}
+
 artefact_sidecar <- function(dir, file, empty) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     return(empty())
   }
-  file <- artefact_safe_name(file)
-  path <- fs::path(dir, file)
+  path <- artefact_member_path(dir, artefact_safe_name(file))
   if (!fs::file_exists(path)) {
     return(empty())
   }
@@ -750,8 +766,7 @@ artefact_recorded_replay <- function(dir, manifest) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     return(NULL)
   }
-  file <- artefact_safe_name(file)
-  path <- fs::path(dir, file)
+  path <- artefact_member_path(dir, artefact_safe_name(file))
   if (!fs::file_exists(path)) {
     return(NULL)
   }
@@ -868,7 +883,7 @@ artefact_counts <- function(solved, decisions, signals) {
 #' @keywords internal
 #' @noRd
 artefact_manifest <- function(dir) {
-  path <- fs::path(dir, "artefact.json")
+  path <- artefact_member_path(dir, "artefact.json")
   if (!fs::file_exists(path)) {
     abort_msg("No artefact.json in {.path {dir}}; write one with marker_artefact().")
   }
@@ -974,7 +989,7 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
   recorded <- artefact_recorded_replay(dir, manifest)
   trusted <- !is.null(solved)
   if (!trusted) {
-    path <- fs::path(dir, "solved.rds")
+    path <- artefact_member_path(dir, "solved.rds")
     if (!fs::file_exists(path)) {
       abort_msg(
         "No solved.rds in {.path {dir}}; the artefact cannot be replayed.",

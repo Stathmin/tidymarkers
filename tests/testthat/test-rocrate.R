@@ -85,6 +85,26 @@ test_that("a manifest path cannot escape the artefact directory", {
   expect_error(marker_artefact_read(dst), "unsafe file path")
 })
 
+test_that("an artefact sidecar cannot link out of the record", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "outside.csv")
+  writeLines("label", outside)
+  skip_if_not(file.symlink(outside, fs::path(dir, "decisions.csv")), "this filesystem cannot make a symlink")
+  writeLines(
+    '{"schema": "tidymarkers/artefact@2", "id": "x", "files": {"decisions": "decisions.csv"}}',
+    fs::path(dir, "artefact.json")
+  )
+
+  # The name is one component but the bytes are not the record's: both the
+  # reader and the crate writer refuse the link instead of following it.
+  expect_error(marker_artefact_read(dir), "resolves to", class = "rlang_error")
+  art <- structure(
+    list(id = "x", dir = dir, manifest = list(files = list(decisions = "decisions.csv"))),
+    class = "marker_artefact"
+  )
+  expect_error(marker_export_rocrate(art, dir = tempfile("crate")), "resolves to", class = "rlang_error")
+})
+
 test_that("the metadata graph describes one run over the manifest inputs", {
   art <- rocrate_fixture()$artefact
   crate <- marker_export_rocrate(art, dir = tempfile("crate"))

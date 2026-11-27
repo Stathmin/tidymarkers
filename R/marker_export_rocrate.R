@@ -263,7 +263,7 @@ marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
   fs::dir_create(dir)
   files <- rocrate_files(artefact$manifest)
   for (file in files) {
-    from <- fs::path(src, file)
+    from <- artefact_member_path(src, file)
     if (!fs::file_exists(from)) {
       abort_msg(
         "The manifest names {.file {file}}, but the artefact does not contain it.",
