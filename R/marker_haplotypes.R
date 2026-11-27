@@ -35,11 +35,29 @@ normalise_haplotypes <- function(haplotypes) {
       ref = toupper(as.character(.data$ref)),
       alt = toupper(as.character(.data$alt))
     )
+  if (any(!is.finite(h$freq) | h$freq < 0 | h$freq > 1)) {
+    abort_msg("`freq` must be one finite value in [0, 1] per haplotype.")
+  }
   bad <- h |>
     dplyr::summarise(lo = min(.data$freq), hi = max(.data$freq), .by = "haplotype") |>
-    dplyr::filter(.data$lo != .data$hi | .data$lo < 0 | .data$hi > 1)
+    dplyr::filter(.data$lo != .data$hi)
   if (nrow(bad)) {
     abort_msg("`freq` must be one value in [0, 1] per haplotype.")
+  }
+  loci_bad <- is.na(h$chrom) | !nzchar(h$chrom) | is.na(h$pos) | h$pos < 1L
+  if (any(loci_bad)) {
+    i <- which(loci_bad)[[1L]]
+    abort_msg(gettextf(
+      "Haplotype row %d needs a chromosome and a positive integer `pos`.", i
+    ))
+  }
+  allele_bad <- is.na(h$ref) | is.na(h$alt) |
+    !grepl("^[ACGTN]+$", h$ref) | !grepl("^[ACGTN]+$", h$alt)
+  if (any(allele_bad)) {
+    i <- which(allele_bad)[[1L]]
+    abort_msg(gettextf(
+      "Haplotype row %d needs DNA alleles in `ref` and `alt` (ACGTN).", i
+    ))
   }
   h
 }
