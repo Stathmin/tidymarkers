@@ -194,6 +194,16 @@ genome_index_handle <- function(index) {
   index_build(index)
 }
 
+# Build a lazy index once, before an outer parallel pool starts.  A worker then
+# only opens the shards the manifest names; it never races another worker to
+# build the same shard.  Returns the input unchanged for a plain genome.
+index_prebuild <- function(genome) {
+  if (inherits(genome, "genome_index")) {
+    invisible(index_build(genome))
+  }
+  genome
+}
+
 # The dispatcher: choose the declared strategy and announce the question the
 # returned counts answer.  A capability the request exceeds is an error, never a
 # warning followed by a different question (D2).

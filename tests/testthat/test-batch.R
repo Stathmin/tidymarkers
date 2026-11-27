@@ -22,7 +22,7 @@ test_that("design_kasp_markers returns a tidy per-locus verdict without aborting
   ref2 <- as.character(Biostrings::subseq(W, p2, p2))
   loci <- tibble::tibble(
     chrom = c("Chr1", "Chr1", "Chr1"),
-    pos   = c(p1, p2, 5L), # last one is un-designable
+    pos   = c(p1, p2, 5L), # last one is out of range (an error, not a design)
     ref   = c(ref1, ref2, "A"),
     alt   = c(alt1, paste0(ref2, "GG"), "G")
   )
@@ -30,13 +30,14 @@ test_that("design_kasp_markers returns a tidy per-locus verdict without aborting
   expect_equal(nrow(res), 3L)
   expect_true(all(c("chrom", "pos", "ref", "alt", "type", "verdict", "note") %in% names(res)))
   expect_equal(res$type, c("SNP", "insertion", "SNP"))
-  # the un-designable edge locus is captured as a failure, not thrown ...
-  expect_equal(res$verdict[3L], "fail")
+  # the out-of-range locus is captured as an error, not thrown and not confused
+  # with a design that ran and failed ...
+  expect_equal(res$verdict[3L], "error")
   expect_true(is.na(res$strand[3L]))
   expect_true(nzchar(res$note[3L]))
-  # ... and the verdict wiring is consistent: an assay exists iff the locus did
-  # not fail, with finite coordinates and discrimination
-  built <- res$verdict != "fail"
+  # ... and the verdict wiring is consistent: an assay exists iff the locus
+  # produced a pass or a warning, with finite coordinates and discrimination
+  built <- res$verdict %in% c("pass", "warn")
   expect_gte(sum(built), 1L)
   expect_false(any(is.na(res$strand[built])))
   expect_true(all(is.finite(res$discrimination[built])))
@@ -236,4 +237,27 @@ test_that("design_kasp_markers' verdict schema does not see alt2/strand", {
   expect_equal(res$strand, "+")
   expect_equal(res$verdict, "warn")
   expect_equal(res$n_fail, 1L)
+})
+
+test_that("bp_lapply preserves order, groups chunks and can collect errors", {
+  skip_if_not_installed("BiocParallel")
+  X <- 1:7
+  serial <- tidymarkers:::bp_lapply(X, function(x) x * 2L, BiocParallel::SerialParam())
+  chunked <- tidymarkers:::bp_lapply(
+    X, function(x) x * 2L, BiocParallel::SerialParam(), chunksize = 3L
+  )
+  expect_identical(serial, as.list(X * 2L))
+  expect_identical(chunked, serial)
+
+  collected <- tidymarkers:::bp_lapply(
+    X,
+    function(x) if (x == 3L) stop("boom") else x,
+    BiocParallel::SerialParam(),
+    on_error = "collect"
+  )
+  expect_length(collected, 7L)
+  expect_s3_class(collected[[3L]], "tidymarkers_task_error")
+  expect_match(collected[[3L]]$message, "boom", fixed = TRUE)
+  expect_identical(collected[[1L]], 1L)
+  expect_identical(collected[[7L]], 7L)
 })
