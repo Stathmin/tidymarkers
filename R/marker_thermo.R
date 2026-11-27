@@ -166,7 +166,8 @@ worker_biostrings <- function() requireNamespace("Biostrings", quietly = TRUE)
 #' @keywords internal
 #' @noRd
 bp_lapply <- function(X, FUN, BPPARAM, chunksize = NULL,
-                      on_error = c("stop", "collect"), RNGseed = NULL) {
+                      on_error = c("stop", "collect"),
+                      RNGseed = NULL) { # nolint: object_name_linter.
   on_error <- match.arg(on_error)
   if (length(X) == 0L) {
     return(list())

@@ -112,6 +112,32 @@ step("documentation in sync", function() {
 })
 
 # 2. style + lint -----------------------------------------------------------
+step("test surface", function() {
+  # the strict CI policy (docs/decisions/0002): a gate with no tests to run is
+  # not a green gate, and a missing testthat is a failure, not a skip
+  if (!requireNamespace("testthat", quietly = TRUE)) {
+    stop("testthat is required for the merge gate; install.packages(\"testthat\")")
+  }
+  tests <- list.files("tests/testthat", pattern = "^test-.*[.]R$")
+  if (!length(tests)) stop("no tests/testthat/test-*.R files - the gate has nothing to run")
+  ok(length(tests), " test file(s) present")
+})
+
+step("file size (ZT T7)", function() {
+  # a file past 1200 lines is a seam the reviewer cannot see; the god-files were
+  # split so this stays a real ceiling, not a snapshot of today's sizes
+  files <- list.files("R", pattern = "[.]R$", full.names = TRUE)
+  lines <- vapply(files, function(f) length(readLines(f, warn = FALSE)), integer(1))
+  over <- files[lines > 1200L]
+  if (length(over)) {
+    stop(
+      "R/ file(s) over 1200 lines: ",
+      paste0(basename(over), " (", lines[lines > 1200L], ")", collapse = ", ")
+    )
+  }
+  ok("no R/ file over 1200 lines")
+})
+
 step("style (styler)", function() {
   if (!requireNamespace("styler", quietly = TRUE)) stop("styler is required for the merge gate; install.packages(\"styler\")")
   styler::style_dir("R", dry = "fail")
