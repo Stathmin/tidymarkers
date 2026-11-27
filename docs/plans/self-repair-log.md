@@ -30,6 +30,7 @@ and actions only.
 | 2026-11-28 01:53 | marker_replay() with a trusted solved compared that solve with itself when the record had no replay.csv | logic | refuse when files$replay is absent and solved is supplied; own-RDS path unchanged (ADR 0024) | test-plan.R: refusal by phrase, own-RDS replay still match TRUE; dev/test.R plan 207 pass | 46c9a66 | 1 | fixed | ZV24 |
 | 2026-11-28 02:00 | a replay compared only the rows the record kept, so a dropped verdict or an empty replay.csv passed | logic | compare the union of target labels; a row missing on either side is a mismatch (ADR 0024) | test-plan.R row-set test: dropped row and empty table match FALSE, full table TRUE; plan 207 pass | e8b700a | 1 | fixed | ZV24 |
 | 2026-11-28 02:03 | a replay table that named no target or one target twice was read as if it were a claim | logic | refuse an empty label and a repeated label in artefact_recorded_replay() (ADR 0024) | test-plan.R: both cases refused by phrase; plan 209 pass | 34e541e | 1 | fixed | ZV24 |
+| 2026-11-28 02:20 | artefact sidecar names a symlink out of the record and the reader follows it | logic | resolve every record member with fs::path_real() under the record's real root before opening or copying (ADR 0025) | test-rocrate.R: reader and crate export refuse by 'resolves to'; rocrate 53 pass | 0a8d751 | 1 | fixed | — |
 
 The first nine rows are a backfill written 2026-11-27 17:50 UTC from the branch's
 own commit history: the placeholder row ("no blockers recorded yet") was in place
