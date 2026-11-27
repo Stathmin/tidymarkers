@@ -371,3 +371,13 @@ test_that("a criteria table carries the limits it rendered and feeds them back",
   by_list <- marker_design_checks(assay, limits = KASP_LIMITS)
   expect_identical(by_table, by_list)
 })
+
+test_that("a numeric bound is parsed, never executed", {
+  parse_bound <- tidymarkers:::criterion_parse_bound
+  expect_equal(parse_bound("c(0.4, 0.6)", "numeric"), c(0.4, 0.6))
+  # a call hiding behind c() stays text: a threshold is data, not code
+  expect_identical(
+    parse_bound("c(1, system('true'))", "numeric"),
+    "c(1, system('true'))"
+  )
+})

@@ -122,9 +122,17 @@ criterion_parse_bound <- function(text, kind) {
     return(NULL)
   }
   if (kind == "numeric" && grepl("^c\\(", text)) {
-    out <- tryCatch(eval(parse(text = text)), error = function(e) NULL)
-    if (is.numeric(out)) {
-      return(out)
+    # parse and inspect before evaluating: the text is a package constant, but a
+    # bound is a threshold, never a call that could run code
+    expr <- tryCatch(parse(text = text)[[1L]], error = function(e) NULL)
+    if (
+      is.call(expr) && identical(expr[[1L]], as.name("c")) &&
+        all(vapply(as.list(expr)[-1L], is.numeric, logical(1)))
+    ) {
+      out <- eval(expr)
+      if (is.numeric(out)) {
+        return(out)
+      }
     }
   }
   text
