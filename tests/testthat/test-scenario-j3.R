@@ -45,7 +45,7 @@ test_that("J3: a panel is a typed step to pareto, artefact and export", {
 
   artefact <- scenario_step(
     "j3", "artefact", "artefact",
-    marker_artefact(solved, dir = dir, created = created)
+    marker_artefact(solved, dir = dir, created = created, scenario = "J3")
   )
   expect_scenario_class(artefact, "marker_artefact")
   expect_true(file.exists(file.path(dir, "artefact.json")))

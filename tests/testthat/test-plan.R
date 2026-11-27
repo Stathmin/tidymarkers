@@ -312,7 +312,7 @@ test_that("the artefact records its inputs, its id and every rejection's reason"
   expect_s3_class(art, "marker_artefact")
   expect_match(art$id, "^[0-9a-f]{64}$")
   m <- art$manifest
-  expect_identical(m$schema, "tidymarkers/artefact@1")
+  expect_identical(m$schema, "tidymarkers/artefact@2")
   expect_equal(m$counts$targets, 1L)
   expect_equal(m$counts$rejected, 1L)
   # the reference is named and hashed, and an installed engine is never dropped

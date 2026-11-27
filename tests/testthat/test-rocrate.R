@@ -34,7 +34,10 @@ rocrate_fixture <- local({
 })
 
 rocrate_manifest_files <- function(artefact) {
-  files <- unlist(artefact$manifest$files, use.names = FALSE)
+  # an excluded file is a record (name + reason), not a sidecar the crate copies
+  declared <- artefact$manifest$files
+  declared <- declared[vapply(declared, is.character, logical(1))]
+  files <- unlist(declared, use.names = FALSE)
   files <- as.character(files)
   c("artefact.json", files[!is.na(files) & nzchar(files)])
 }

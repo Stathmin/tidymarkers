@@ -144,6 +144,15 @@ artefact_inputs <- function(plan) {
       bytes = NA_integer_
     )
   }
+  targets <- plan$targets
+  if (!is.null(targets) && nrow(targets)) {
+    out[[length(out) + 1L]] <- list(
+      role = "targets", source = "table",
+      name = paste0(nrow(targets), " target(s)"),
+      path = NA_character_, sha256 = hash_object(targets),
+      bytes = NA_integer_
+    )
+  }
   if (!is.null(plan$haplotypes)) {
     ref_calls <- attr(plan$haplotypes, "reference_calls")
     ref_note <- if (is.null(ref_calls)) "" else paste0(", ", ref_calls, " reference call(s)")
@@ -471,7 +480,8 @@ artefact_plan <- function(solved, targets) {
 
 artefact_id <- function(manifest) {
   core <- manifest[c(
-    "schema", "package", "engine_stamp", "inputs", "plan", "parameters", "overrides"
+    "schema", "contract", "package", "engine_stamp", "inputs", "plan",
+    "parameters", "overrides"
   )]
   hash_object(jsonlite::toJSON(core, auto_unbox = TRUE, null = "null", digits = NA))
 }
@@ -512,7 +522,7 @@ artefact_created <- function(created = NULL) {
 #' (the faithful copy [marker_replay()] re-runs).
 #'
 #' The manifest records what the numbers cannot say for themselves: the hashed
-#' reference and variant table, the package version and git SHA, every engine
+#' reference, variant and target table, the package version and git SHA, every engine
 #' version (an absent engine is `NA`, never omitted), the design knobs, and -
 #' as its own field - the knobs that differ from the designer defaults.  An
 #' overridden threshold is visible without diffing `parameters` against a
@@ -530,6 +540,10 @@ artefact_created <- function(created = NULL) {
 #' @param created artefact timestamp: `NULL` reads `SOURCE_DATE_EPOCH`, then the
 #'   current time; a `POSIXct`, an epoch string/number, or an ISO timestamp is
 #'   used as given.  A fixed value makes the text files byte-identical on rerun.
+#' @param scenario the executable scenario this record belongs to (`"J1"`–`"J7"`,
+#'   or `"unspecified"`).  It is written into `contract` and hashed into `id`;
+#'   a wrong attribution is worse than an explicit gap, so callers state it
+#'   rather than guess.
 #' @return a `marker_artefact`: `id`, `dir`, `manifest`, `decisions`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
@@ -545,12 +559,19 @@ artefact_created <- function(created = NULL) {
 #' marker_replay(art)$match
 #' @family plan
 #' @export
-marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
+marker_artefact <- function(solved, dir = tempdir(), created = NULL,
+                            scenario = "unspecified") {
   if (inherits(solved, "marker_panel")) {
     solved <- as_marker_solved(solved)
   }
   if (!inherits(solved, "marker_solved")) {
     abort_msg("`solved` must be a marker_solved (see marker_solve()).")
+  }
+  if (
+    !is.character(scenario) || length(scenario) != 1L || is.na(scenario) ||
+      !scenario %in% c(paste0("J", 1:7), "unspecified")
+  ) {
+    abort_msg("`scenario` must be one of J1-J7 or \"unspecified\".")
   }
   fs::dir_create(dir)
   pkg_dir <- artefact_pkg_root()
@@ -575,8 +596,12 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
   )
 
   manifest <- list(
-    schema = "tidymarkers/artefact@1",
+    schema = "tidymarkers/artefact@2",
     trace_schema = marker_trace_schema(),
+    contract = list(
+      version = "tidymarkers/contract@1",
+      scenario = scenario
+    ),
     created = artefact_created(created),
     package = list(
       name = "tidymarkers",
@@ -615,7 +640,9 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
       why = if (is.null(why)) NA_character_ else "why.csv",
       signals = if (is.null(signals) || !nrow(signals)) NA_character_ else "signals.csv",
       targets = "targets.csv",
-      solved = "solved.rds"
+      # excluded by name and reason: an igraph pointer and a random id make
+      # the RDS byte-unstable, so it is not part of the reproducible set
+      solved = list(name = "solved.rds", excluded = "igraph pointer and random id")
     )
   )
   manifest$id <- artefact_id(manifest)
@@ -709,8 +736,7 @@ marker_artefact_read <- function(path) {
       i = "Update tidymarkers to read it."
     )
   }
-  if (parts$version < current) {
-    # no such version was ever written; treating it as current would guess
+  if (parts$version < 1L) {
     trace_abort_unknown(manifest$schema)
   }
   files <- manifest$files %||% list()

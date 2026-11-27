@@ -160,6 +160,7 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
   plan$ld <- ldres$record
 
   solved <- marker_solve(plan, progress = FALSE, ...)
+  solved$scenario <- "J3"
   targets_tbl <- panel_targets(solved)
   if (!any(targets_tbl$ok)) {
     cli::cli_abort(c(
@@ -201,7 +202,10 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
     list(
       targets = targets_tbl,
       one_pot = one_pot,
-      artefact = marker_artefact(solved, dir = dir, created = created),
+      artefact = marker_artefact(
+        solved,
+        dir = dir, created = created, scenario = "J3"
+      ),
       solved = solved,
       ld = ldres$record,
       experimental = FALSE

@@ -48,7 +48,10 @@ ROCRATE_CONTEXT <- "https://w3id.org/ro/crate/1.1/context"
 #' @keywords internal
 #' @noRd
 rocrate_files <- function(manifest) {
-  files <- unlist(manifest$files %||% list(), use.names = FALSE)
+  # an excluded file is a named record (name + reason), not a sidecar to copy
+  declared <- manifest$files %||% list()
+  declared <- declared[vapply(declared, is.character, logical(1))]
+  files <- unlist(declared, use.names = FALSE)
   files <- as.character(files)
   files <- files[!is.na(files) & nzchar(files)]
   unique(c("artefact.json", files))
@@ -140,6 +143,8 @@ rocrate_graph <- function(artefact, dir) {
     "name" = "tidymarkers design artefact",
     "identifier" = m$id,
     "datePublished" = m$created,
+    "version" = m$contract$version %||% NA_character_,
+    "keywords" = c("tidymarkers", paste0("scenario:", m$contract$scenario %||% "unspecified")),
     "conformsTo" = list("@id" = ROCRATE_PROFILE),
     "hasPart" = lapply(files, function(file) list("@id" = file))
   )
