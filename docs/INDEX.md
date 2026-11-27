@@ -46,6 +46,8 @@ Other vignettes:
   failure criteria.
 - [docs/plans/day-1-gate](plans/day-1-gate.md) — the Day-1 state report and
   merge-marker evidence.
+- [docs/plans/day-2-gate](plans/day-2-gate.md) — the Day-2 panel, loop and
+  scale gate: runs, counts and the two open items.
 - [docs/plans/self-repair-log](plans/self-repair-log.md) — the append-only
   blocker and repair log for the programme.
 - [data/metrics/metrics-2026-11-27](../data/metrics/metrics-2026-11-27.md) —
