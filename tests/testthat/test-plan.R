@@ -101,6 +101,30 @@ test_that("a target row needs a chromosome and a positive POS", {
   )
 })
 
+test_that("a target needs two DNA alleles that differ", {
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = "A"),
+    "`ref` equal to `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = ""),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = NA),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 4L, ref = "XYZ", alt = "G"),
+    "needs DNA alleles in `ref` and `alt`"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = "Chr1", pos = 4L, ref = "A", alt = "G", alt2 = "A?"),
+    "`alt2` = A\\?"
+  )
+})
+
 test_that("a plan composes in layers with + and prints without solving", {
   p <- dummy_plan() +
     marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "A") +

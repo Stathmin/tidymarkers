@@ -142,6 +142,30 @@ check_target_loci <- function(x) {
       i, format(x$pos[[i]])
     ))
   }
+  dna <- function(v) !is.na(v) & nzchar(v) & grepl("^[ACGTN]+$", v)
+  bad_allele <- !dna(x$ref) | !dna(x$alt)
+  if (any(bad_allele)) {
+    i <- which(bad_allele)[[1L]]
+    abort_msg(gettextf(
+      "Target row %d needs DNA alleles in `ref` and `alt` (ACGTN); got %s/%s.",
+      i, format(x$ref[[i]]), format(x$alt[[i]])
+    ))
+  }
+  bad_alt2 <- !is.na(x$alt2) & !dna(x$alt2)
+  if (any(bad_alt2)) {
+    i <- which(bad_alt2)[[1L]]
+    abort_msg(gettextf(
+      "Target row %d has `alt2` = %s, not a DNA allele (ACGTN).",
+      i, format(x$alt2[[i]])
+    ))
+  }
+  same <- x$ref == x$alt
+  if (any(same)) {
+    abort_msg(gettextf(
+      "Target row %d has `ref` equal to `alt` (%s); that is not a variant.",
+      which(same)[[1L]], x$ref[[which(same)[[1L]]]]
+    ))
+  }
   invisible(x)
 }
 
