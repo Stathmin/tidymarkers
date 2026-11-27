@@ -211,11 +211,7 @@ genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm")
 #' @rdname capabilities
 #' @export
 capabilities.genome_index <- function(engine, capability = NULL, ...) {
-  if (is.null(capability)) {
-    return(engine$capabilities)
-  }
-  value <- engine$capabilities[[capability]]
-  if (is.null(value)) "unknown" else value
+  capability_value(engine, capability)
 }
 
 # Resolve (and, for an index strategy, lazily build) the handle a scan queries.

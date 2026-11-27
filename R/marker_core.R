@@ -459,14 +459,25 @@ capabilities <- function(engine, capability = NULL, ...) {
   UseMethod("capabilities")
 }
 
-#' @rdname capabilities
-#' @export
-capabilities.marker_engine <- function(engine, capability = NULL, ...) {
+#' One capability of an engine, or every declared one
+#'
+#' Both the thermo/chemistry adapter and the genome index answer the same way,
+#' so the body lives once: a missing capability is `"unknown"`, never `NULL`
+#' and never an error.
+#' @keywords internal
+#' @noRd
+capability_value <- function(engine, capability) {
   if (is.null(capability)) {
     return(engine$capabilities)
   }
   value <- engine$capabilities[[capability]]
   if (is.null(value)) "unknown" else value
+}
+
+#' @rdname capabilities
+#' @export
+capabilities.marker_engine <- function(engine, capability = NULL, ...) {
+  capability_value(engine, capability)
 }
 
 #' @keywords internal
