@@ -21,6 +21,7 @@ and actions only.
 | 2026-11-27 17:47 | RO-Crate `@id` `../outside-the-crate.txt` is hashed and accepted | logic | graph id resolves inside the crate directory or the import refuses it | fixed: `test-rocrate.R`; rule in ADR 0015 | `3944ca2` | 1 | fixed | ZV13.1 other readers |
 | 2026-11-27 17:48 | a corpus row's `artefact` column names `../outside-the-corpus` and the export follows it | logic | the row must name a directory under the scanned root, refused before it is read | fixed: `test-outcomes-crate.R`; rule in ADR 0015 | `0fc8497` | 1 | fixed | ZV13.2 symlink limit |
 | 2026-11-27 17:54 | a crate member that is a symlink out of the crate is hashed and accepted | logic | an existing member is resolved with `fs::path_real()` and must stay under the crate's real root | fixed: `test-rocrate.R` | `d7c5c02` | 1 | fixed | ZV13.3 replay RDS |
+| 2026-11-27 18:22 | `read_variants_vcf(NULL)` / `read_genome_fasta(NULL)` fail in base R, and a directory is accepted with a warning | logic | one `reader_path()` names the argument and refuses a directory before any open | fixed: `test-io.R` | в этом коммите | 1 | fixed | next audit |
 
 The first nine rows are a backfill written 2026-11-27 17:50 UTC from the branch's
 own commit history: the placeholder row ("no blockers recorded yet") was in place

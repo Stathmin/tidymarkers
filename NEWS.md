@@ -6,6 +6,17 @@
 
 ## 0.4.1 (в работе)
 
+### Читатели называют путь, а не падают в base R (2026-11-27)
+
+- **Класс изменения: чтение входных файлов.**
+- `read_variants_vcf(NULL)`, `read_variant_genotypes(NULL)` и
+  `read_genome_fasta(NULL)` падали с `argument is not a character vector`, а
+  каталог проходил проверку существования и возвращал пустую таблицу с
+  предупреждением readr. Теперь один `reader_path()` говорит «`path` must be
+  one VCF/FASTA file path» и отказывает каталогу по имени.
+- Проверка: `test-io.R` — «a reader names a path that is not one existing file»;
+  `test-io.R` 132 pass, 0 fail.
+
 ### Гигиена: одна реализация `capabilities()` для движка и индекса (2026-11-27)
 
 - **Класс изменения: внутренний рефакторинг, поведение то же.**

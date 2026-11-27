@@ -17,6 +17,27 @@
 #  by hand downstream.
 # =============================================================================
 
+#' A reader's input file, checked before anything opens it
+#'
+#' `file_exists()` on `NULL` or a vector is a base R error, and a directory
+#' passes the existence test while every reader wants a file.  One guard names
+#' the argument and the path for all three readers.
+#' @param path the caller's `path`.
+#' @param what the record kind, for the message: `"VCF"` or `"FASTA"`.
+#' @return `path`, unchanged, when it is one existing file.
+#' @keywords internal
+#' @noRd
+reader_path <- function(path, what) {
+  if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
+    abort_msg("`path` must be one {what} file path.")
+  }
+  if (!fs::file_exists(path)) abort_msg("{what} not found: {path}")
+  if (fs::is_dir(path)) {
+    abort_msg("`path` names a directory, not a {what} file: {path}")
+  }
+  path
+}
+
 #' Normalise an allele string to plain `ACGTN`
 #'
 #' Upper-cases the string and folds any IUPAC ambiguity code (R, Y, S, W, K,
@@ -68,7 +89,7 @@ normalise_allele <- function(x) {
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
   backend <- match.arg(backend)
-  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
+  path <- reader_path(path, "VCF")
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
@@ -140,7 +161,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #' @family input
 #' @export
 read_variant_genotypes <- function(path, samples = NULL) {
-  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
+  path <- reader_path(path, "VCF")
   all_samples <- vcf_sample_names(path)
   if (!length(all_samples)) {
     abort_msg("{path} has no sample columns; there is no genotype to read.")
@@ -545,7 +566,7 @@ read_fasta_strict <- function(path, read) {
 #' @export
 read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
                               use_index = TRUE, build = NULL) {
-  if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
+  path <- reader_path(path, "FASTA")
   build <- check_genome_build(build)
 
   normalise <- function(g) {

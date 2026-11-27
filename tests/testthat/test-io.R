@@ -54,6 +54,18 @@ test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through V
 
 # Input readers: VCF (SNP/MNP/InDel/multiallelic) and arbitrary FASTA.
 
+test_that("a reader names a path that is not one existing file", {
+  readers <- list(read_variants_vcf, read_variant_genotypes, read_genome_fasta)
+  for (reader in readers) {
+    # `file_exists(NULL)` is a base R error, and a directory passes it: both
+    # must be the reader's own named refusal, not "argument is not a character
+    # vector" or an empty tibble with a warning.
+    expect_error(reader(NULL), "must be one", class = "rlang_error")
+    expect_error(reader(character()), "must be one", class = "rlang_error")
+    expect_error(reader(tempdir()), "names a directory", class = "rlang_error")
+  }
+})
+
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   skip_if_not_installed("vroom")
   vcf <- withr::local_tempfile(fileext = ".vcf")
