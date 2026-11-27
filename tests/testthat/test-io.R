@@ -568,3 +568,25 @@ test_that("a VCF header without ALT names the missing column", {
 
   expect_error(read_variants_vcf(path), "missing column.*ALT")
 })
+
+test_that("read_variant_genotypes drops a symbolic or absent ALT like the variant reader", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tL1",
+    "1\t100\t.\tA\t<DEL>\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t200\t.\tA\t.\t.\t.\t.\tGT:AD\t0/1:5,5",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,5"
+  ), vcf)
+
+  expect_message(
+    g <- read_variant_genotypes(vcf),
+    "symbolic or absent ALT"
+  )
+  # no fake `N` allele survives, and both readers keep the same records
+  expect_identical(g$pos, 300L)
+  expect_identical(g$alt, "G")
+  v <- suppressMessages(read_variants_vcf(vcf))
+  expect_identical(v$pos, g$pos)
+})

@@ -140,6 +140,9 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #'
 #' The record is biallelic: a multi-allelic site is dropped and counted, because
 #' a dosage against "the ALT" is ambiguous once a record carries two of them.
+#' A symbolic or absent ALT (`<DEL>`, `*`, `.`) is dropped and counted for the
+#' same reason [read_variants_vcf()] drops it: no short oligo exists for it, and
+#' `normalise_allele()` would otherwise turn it into a fake `N` allele.
 #' Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
 #' `2 * alt / (ref + alt)`).  A genotype naming an allele other than REF/ALT
 #' is `NA`, never silently folded to the first ALT.
@@ -181,6 +184,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
   on.exit(close(con), add = TRUE)
   rows <- list()
   n_multi <- 0L
+  n_sym <- 0L
   n_bad <- 0L
   n_bad_pos <- 0L
   repeat {
@@ -195,6 +199,10 @@ read_variant_genotypes <- function(path, samples = NULL) {
       }
       if (grepl(",", f[[5L]], fixed = TRUE)) {
         n_multi <- n_multi + 1L
+        next
+      }
+      if (grepl("^<|[*.]", f[[4L]]) || grepl("^<|[*.]", f[[5L]])) {
+        n_sym <- n_sym + 1L
         next
       }
       pos <- suppressWarnings(as.integer(f[[2L]]))
@@ -230,6 +238,13 @@ read_variant_genotypes <- function(path, samples = NULL) {
     cli::cli_inform(gettext(paste0(
       "{n_multi} multi-allelic VCF record{?s} dropped: ",
       "ALT dosage is ambiguous with more than one ALT."
+    )))
+  }
+  if (n_sym > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_sym} VCF record{?s} with a symbolic or absent ALT ",
+      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+      "across structural alleles."
     )))
   }
   if (n_bad_pos > 0L) {
