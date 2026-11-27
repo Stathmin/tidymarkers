@@ -77,6 +77,30 @@ test_that("a multi-allelic site is declarable in the grammar form (1602)", {
   expect_true(is.na(one$targets$alt2))
 })
 
+test_that("a target row needs a chromosome and a positive POS", {
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 0L, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is 0"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = "Chr1", pos = NA_integer_, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is NA"
+  )
+  expect_error(
+    dummy_plan() +
+      marker_targets(chrom = NA_character_, pos = 4L, ref = "A", alt = "G"),
+    "no chromosome name"
+  )
+  # a data table goes through the same admission, not only the grammar form
+  expect_error(
+    dummy_plan() + marker_targets(data = tibble::tibble(
+      chrom = "Chr1", pos = -1L, ref = "A", alt = "G"
+    )),
+    "positive integer `pos`"
+  )
+})
+
 test_that("a plan composes in layers with + and prints without solving", {
   p <- dummy_plan() +
     marker_targets(chrom = "Chr1", pos = 4L, ref = "T", alt = "A") +

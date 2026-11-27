@@ -121,6 +121,30 @@ empty_targets <- function() {
   )
 }
 
+#' Refuse a target row that cannot name a locus
+#'
+#' A missing chromosome or a POS that is not a positive integer would reach the
+#' designer as `NA`/`0` and produce a verdict about a place that does not exist.
+#' @keywords internal
+#' @noRd
+check_target_loci <- function(x) {
+  bad_chrom <- is.na(x$chrom) | !nzchar(x$chrom)
+  if (any(bad_chrom)) {
+    abort_msg(gettextf(
+      "A target has no chromosome name (row %d).", which(bad_chrom)[[1L]]
+    ))
+  }
+  bad_pos <- is.na(x$pos) | x$pos < 1L
+  if (any(bad_pos)) {
+    i <- which(bad_pos)[[1L]]
+    abort_msg(gettextf(
+      "Every target needs a positive integer `pos`; row %d is %s.",
+      i, format(x$pos[[i]])
+    ))
+  }
+  invisible(x)
+}
+
 #' Normalise a target table (derive a `label` if absent)
 #' @keywords internal
 #' @noRd
@@ -143,7 +167,7 @@ normalise_targets <- function(x) {
   if (!"type" %in% names(x)) x$type <- NA_character_
   if (!"strand" %in% names(x)) x$strand <- "+"
   x$strand <- as.character(x$strand)
-  x[, target_cols()]
+  check_target_loci(x[, target_cols()])
 }
 
 #' One row (or a table) of target loci for [marker_targets()]
@@ -169,7 +193,7 @@ target_rows <- function(chrom, pos, ref, alt, alt2 = NULL, data, type, label,
   out$alt2 <- if (is.null(alt2)) NA_character_ else toupper(as.character(alt2))
   out$type <- if (is.null(type)) NA_character_ else as.character(type)
   out$strand <- as.character(strand)
-  out[, target_cols()]
+  check_target_loci(out[, target_cols()])
 }
 
 #' A plan layer (internal; layers are added with `+`)
