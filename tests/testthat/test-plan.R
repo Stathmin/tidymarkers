@@ -531,6 +531,28 @@ test_that("marker_replay re-runs the design and compares the verdicts", {
   expect_false(any(out$calibrated))
 })
 
+test_that("a replay from replay.csv never opens solved.rds (ZV13.3)", {
+  solved <- rejected_solve()
+  dir <- withr::local_tempdir()
+  art <- marker_artefact(solved, dir = dir)
+  expect_identical(art$manifest$files$replay, "replay.csv")
+  path <- fs::path(dir, "replay.csv")
+  recorded <- utils::read.csv(path, colClasses = "character")
+  expect_named(recorded, c("label", "scheme", "verdict"))
+  fs::file_delete(fs::path(dir, "solved.rds"))
+  # without a trusted solve the record names the limit instead of executing anything
+  expect_error(marker_replay(art), "solved.rds")
+  rp <- suppressWarnings(marker_replay(art, solved = solved))
+  expect_true(rp$match)
+  expect_identical(rp$table$recorded_verdict, rp$table$replayed_verdict)
+  # a record's claim is what is checked: a changed row is a DIFFERENT replay
+  recorded$verdict[[1L]] <- "pass"
+  utils::write.csv(recorded, path, row.names = FALSE)
+  rp2 <- suppressWarnings(marker_replay(art, solved = solved))
+  expect_false(rp2$match)
+  expect_identical(rp2$table$recorded_verdict, "pass")
+})
+
 test_that("a replay names the engine that moved, not the model (ZW2.3)", {
   solved <- rejected_solve()
   dir <- withr::local_tempdir()

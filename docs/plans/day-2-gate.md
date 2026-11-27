@@ -67,7 +67,8 @@ Rscript dev/check.R --quick --no-render
 
 - ZV12 / T11: шаг `dev/bench.R --gate` в CI стоит; baseline для
   `github-ubuntu-latest` снимается первым прогоном на раннере (ADR 0014).
-- Известный предел: ZV13.3 — `marker_replay()` читает RDS, названный записью;
-  безопасного `readRDS()` нет, предел назван в ADR 0015.
+- Известный предел: ZV13.3 закрыт для новых записей — `replay.csv` плюс
+  `marker_replay(solved = )` проверяют вердикты без исполнения RDS; запись без
+  `replay.csv` (artefact@1) по-прежнему читает RDS и потому локален.
 - Журнал саморемонта не пуст: 12 строк (10 fixed, 1 bypassed, 1 quarantined);
   новые блокеры пишутся через `dev/repair.R` и несут измеренную длительность.

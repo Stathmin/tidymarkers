@@ -460,6 +460,21 @@ artefact_limitations <- function(solved) {
   unname(ARTEFACT_READOUT_LIMITS)
 }
 
+#' The recorded verdicts in a declared format
+#'
+#' One row per target, all three columns character, so a reader can check a
+#' record without opening its `solved.rds` (ZV13.3).
+#' @keywords internal
+#' @noRd
+artefact_replay_table <- function(solved) {
+  r <- solved$report
+  tibble::tibble(
+    label = r$label,
+    scheme = r$scheme,
+    verdict = unname(purrr::map2_chr(r$ok, r$marker, artefact_verdict))
+  )
+}
+
 #' A stable id for the design, independent of when it was written
 #' @keywords internal
 #' @noRd
@@ -618,6 +633,7 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
     tg[, intersect(c("label", "chrom", "pos", "ref", "alt", "type", "id"), names(tg)), drop = FALSE],
     fs::path(dir, "targets.csv")
   )
+  readr::write_csv(artefact_replay_table(solved), fs::path(dir, "replay.csv"))
 
   manifest <- list(
     schema = "tidymarkers/artefact@2",
@@ -664,6 +680,9 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
       why = if (is.null(why)) NA_character_ else "why.csv",
       signals = if (is.null(signals) || !nrow(signals)) NA_character_ else "signals.csv",
       targets = "targets.csv",
+      # the recorded verdicts in a declared format: a record from a stranger can
+      # be checked by passing a trusted solve, without opening its RDS (ZV13.3)
+      replay = "replay.csv",
       # excluded by name and reason: an igraph pointer and a random id make
       # the RDS byte-unstable, so it is not part of the reproducible set
       solved = list(name = "solved.rds", excluded = "igraph pointer and random id")
@@ -726,6 +745,31 @@ artefact_sidecar <- function(dir, file, empty) {
     return(empty())
   }
   readr::read_csv(path, show_col_types = FALSE)
+}
+
+# The recorded verdicts, when the manifest names them.  A record written before
+# the sidecar existed returns NULL and the caller falls back to the RDS.
+artefact_recorded_replay <- function(dir, manifest) {
+  file <- manifest$files$replay
+  if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
+    return(NULL)
+  }
+  file <- artefact_safe_name(file)
+  path <- fs::path(dir, file)
+  if (!fs::file_exists(path)) {
+    return(NULL)
+  }
+  tab <- readr::read_csv(
+    path,
+    col_types = readr::cols(label = "c", scheme = "c", verdict = "c"),
+    show_col_types = FALSE
+  )
+  if (!all(c("label", "scheme", "verdict") %in% names(tab))) {
+    abort_msg(
+      "The artefact's replay table {.val {file}} must carry `label`, `scheme` and `verdict`."
+    )
+  }
+  tab[, c("label", "scheme", "verdict")]
 }
 
 #' Read a persisted artefact back
@@ -861,10 +905,10 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 
 #' Re-run the design an artefact recorded and compare
 #'
-#' Reads `solved.rds`, re-solves its plan with the recorded knobs, and compares
-#' the chosen chemistry and verdict per target.  This is what turns "we logged
-#' everything" into a claim that can be checked: a mismatch names the target and
-#' both verdicts instead of silently returning a different design.
+#' Re-solves the recorded plan with the recorded knobs and compares the chosen
+#' chemistry and verdict per target.  This is what turns "we logged everything"
+#' into a claim that can be checked: a mismatch names the target and both
+#' verdicts instead of silently returning a different design.
 #'
 #' The input hashes and the engine stamp are re-checked first, so a reference that
 #' was replaced is reported as such (`inputs_match = FALSE`) and a library upgrade
@@ -873,15 +917,21 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #'
 #' `solved.rds` is a serialized R object, and `readRDS()` executes what the file
 #' tells it to. Replay is therefore for an artefact this machine wrote, or one
-#' from a source whose code you would run anyway; [marker_import_rocrate()] never
-#' opens the RDS, so a crate that arrived from a stranger can be inspected
-#' without being trusted with execution.
+#' from a source whose code you would run anyway. A record written by
+#' [marker_artefact()] also names its verdicts in `replay.csv`; pass a trusted
+#' `solved` and the replay compares against that file without opening the RDS.
+#' [marker_import_rocrate()] never opens the RDS, so a crate that arrived from a
+#' stranger can be inspected without being trusted with execution.
 #' @param artefact a `marker_artefact` or the directory it was written to.
 #' @param cache an environment to memoise the replay in; pass the original
 #'   solve's `cache` to make replay free, `NULL` (the default) to force the
 #'   design to run again - which is the only version that tests anything.
 #' @param progress show a progress bar (default: not, the replay is a check).
 #' @param tolerance accepted; reserved for numeric comparison of the markers.
+#' @param solved a `marker_solved` you trust (see [marker_solve()]).  When given,
+#'   its plan is re-solved and compared with the recorded `replay.csv`, and
+#'   `solved.rds` is never read.  This is the way to replay a record from an
+#'   untrusted source.
 #' @return a `marker_replay`: `id`, `match` (one logical for the whole run),
 #'   `inputs_match`, `engine_match` (`NA` when the artefact recorded no stamp),
 #'   `engines_changed` (names whose version differs), and `table` (one row per
@@ -898,14 +948,30 @@ artefact_engine_match <- function(recorded, now = marker_engine_stamp()) {
 #' marker_replay(art)$match
 #' @family plan
 #' @export
-marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = NULL) {
+marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = NULL,
+                          solved = NULL) {
   dir <- artefact_dir(artefact)
   manifest <- artefact_manifest(dir)
-  path <- fs::path(dir, "solved.rds")
-  if (!fs::file_exists(path)) {
-    abort_msg("No solved.rds in {.path {dir}}; the artefact cannot be replayed.")
+  recorded <- artefact_recorded_replay(dir, manifest)
+  if (is.null(solved)) {
+    path <- fs::path(dir, "solved.rds")
+    if (!fs::file_exists(path)) {
+      abort_msg(
+        "No solved.rds in {.path {dir}}; the artefact cannot be replayed.",
+        i = if (is.null(recorded)) {
+          NULL
+        } else {
+          "Pass `solved =` a marker_solved you trust to replay from `replay.csv` without opening an RDS."
+        }
+      )
+    }
+    solved <- readRDS(path)
+  } else if (!inherits(solved, "marker_solved")) {
+    abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
-  solved <- readRDS(path)
+  if (is.null(recorded)) {
+    recorded <- artefact_replay_table(solved)
+  }
   inputs_match <- artefact_inputs_match(manifest$inputs, solved$plan)
   if (isFALSE(inputs_match)) {
     warn_msg("The reference or variant table no longer matches the artefact's hash; \\
@@ -923,16 +989,14 @@ marker_replay <- function(artefact, cache = NULL, progress = FALSE, tolerance = 
     marker_solve, solved$plan, !!!knobs,
     cache = cache, progress = isTRUE(progress)
   )
-  rec <- solved$report
   rep_ <- again$report
-  j <- match(rec$label, rep_$label)
-  recorded_verdict <- purrr::map2_chr(rec$ok, rec$marker, artefact_verdict)
-  replayed_verdict <- purrr::map2_chr(rep_$ok[j], rep_$marker[j], artefact_verdict)
+  j <- match(recorded$label, rep_$label)
+  replayed_verdict <- unname(purrr::map2_chr(rep_$ok[j], rep_$marker[j], artefact_verdict))
   replayed_scheme <- rep_$scheme[j]
   tbl <- tibble::tibble(
-    target = rec$label,
-    recorded_scheme = rec$scheme, replayed_scheme = replayed_scheme,
-    recorded_verdict = recorded_verdict, replayed_verdict = replayed_verdict
+    target = recorded$label,
+    recorded_scheme = recorded$scheme, replayed_scheme = replayed_scheme,
+    recorded_verdict = recorded$verdict, replayed_verdict = replayed_verdict
   )
   tbl$match <- identical_na(tbl$recorded_scheme, tbl$replayed_scheme) &
     identical_na(tbl$recorded_verdict, tbl$replayed_verdict)
