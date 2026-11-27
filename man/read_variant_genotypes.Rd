@@ -33,7 +33,9 @@ record with fewer columns than the header names, or with neither \code{GT} nor
 not a positive integer is an error, as in the other two VCF readers (ADR
 0018).  Dosage comes from \code{GT}; when \code{GT} is missing, \code{AD} decides it (rounded
 \code{2 * alt / (ref + alt)}).  A genotype naming an allele other than REF/ALT
-is \code{NA}, never silently folded to the first ALT.
+is \code{NA}, never silently folded to the first ALT — and never replaced by the
+\code{AD} estimate, which is only a fallback for an absent or no-call \code{GT} (ADR
+0020).
 }
 \examples{
 vcf <- withr::local_tempfile(fileext = ".vcf")

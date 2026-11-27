@@ -108,6 +108,9 @@ Other vignettes:
   REF/ALT is the absent state, dropped by the same rule before
   normalisation, so an empty field cannot become a base-R error or an empty
   allele.
+- [ADR 0020](adr/0020-a-gt-that-names-a-missing-allele-is-not-a-call.md) — a
+  `GT` naming an allele the record does not have is `NA`; the `AD` fallback
+  answers only for an absent or no-call `GT`.
 
 ## Operator decisions
 

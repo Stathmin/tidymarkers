@@ -164,7 +164,9 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 #' not a positive integer is an error, as in the other two VCF readers (ADR
 #' 0018).  Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
 #' `2 * alt / (ref + alt)`).  A genotype naming an allele other than REF/ALT
-#' is `NA`, never silently folded to the first ALT.
+#' is `NA`, never silently folded to the first ALT — and never replaced by the
+#' `AD` estimate, which is only a fallback for an absent or no-call `GT` (ADR
+#' 0020).
 #' @param path VCF path, plain or bgzipped.
 #' @param samples optional sample names to keep; `NULL` keeps every sample.
 #' @return a tibble with columns `line`, `chrom`, `pos`, `ref`, `alt`,
