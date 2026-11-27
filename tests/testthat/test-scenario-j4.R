@@ -38,3 +38,51 @@ test_that("J4: an index scan feeds the next design decision", {
   clean <- specificity_of(c(unique = "TTTTTTTTTTTTTTTTTTTT"), index)
   expect_equal(clean$hits, 0L)
 })
+
+test_that("J4: three builds, six shards, and a missing shard names both", {
+  skip_if_not_installed("Rbowtie")
+  # committed fixture: the site is on A only, so a pooled scan would invent it
+  site <- "AAGTCTGGGCAGAACCTTCACCAA"
+  fa <- c(
+    A = scenario_file("j4_a.fa"),
+    B = scenario_file("j4_b.fa"),
+    D = scenario_file("j4_d.fa")
+  )
+  dir <- withr::local_tempdir()
+
+  pan <- lapply(names(fa), function(build) {
+    genome_index(
+      marker_genome(fa[[build]], build = build),
+      "bowtie",
+      chroms = c("chr1", "chr2"),
+      dir = file.path(dir, build)
+    )
+  })
+  names(pan) <- names(fa)
+
+  expect_identical(
+    sum(vapply(pan, function(x) nrow(x$manifest), integer(1))),
+    6L
+  )
+  for (build in names(pan)) {
+    expect_true(all(pan[[build]]$manifest$genome_build == build))
+    expect_identical(pan[[build]]$build, build)
+  }
+
+  hits <- specificity_of(c(AS = site), pan$A, k = 15L, max_mismatch = 0L)
+  expect_identical(unique(hits$build), "A")
+  expect_identical(hits$hits, 1L)
+  for (build in c("B", "D")) {
+    other <- specificity_of(c(AS = site), pan[[build]], k = 15L, max_mismatch = 0L)
+    expect_identical(unique(other$build), build)
+    expect_identical(other$hits, 0L)
+  }
+
+  # a missing B shard names the build and the chromosome
+  b_chr2 <- pan$B$manifest$path[pan$B$manifest$chrom == "chr2"]
+  unlink(Sys.glob(paste0(b_chr2, "*")))
+  err <- tryCatch(index_verify(pan$B), error = identity)
+  expect_s3_class(err, "tidymarkers_index_missing_error")
+  expect_match(conditionMessage(err), "build B")
+  expect_match(conditionMessage(err), "chr2")
+})

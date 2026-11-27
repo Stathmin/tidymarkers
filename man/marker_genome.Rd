@@ -10,7 +10,8 @@ marker_genome(
   blast_db = NULL,
   bsgenome = NULL,
   fm_index = NULL,
-  bowtie_index = NULL
+  bowtie_index = NULL,
+  build = NULL
 )
 }
 \arguments{
@@ -39,6 +40,10 @@ genome-wide scan (see \code{\link[=marker_fm_index]{marker_fm_index()}} / \code{
 \item{bowtie_index}{optional prebuilt bowtie1 index basename for the indexed
 genome-wide scan (see \code{\link[=marker_bowtie_index]{marker_bowtie_index()}} / \code{\link[=specificity_bowtie]{specificity_bowtie()}});
 this is the indexed path \code{\link[=specificity_of]{specificity_of()}} prefers.}
+
+\item{build}{optional release id (\code{"A"}, \code{"B"}, \code{"D"}, \code{"TAIR10"}).  One
+genome may omit it; a pangenome component must name it, so a scan of that
+component carries the build and builds cannot be pooled by accident.}
 }
 \value{
 a \code{marker_genome} object.

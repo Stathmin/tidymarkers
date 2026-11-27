@@ -9,7 +9,8 @@ genome_index(
   strategy = c("memory", "bowtie", "blast", "fm"),
   chroms = NULL,
   dir = NULL,
-  threads = 1L
+  threads = 1L,
+  build = NULL
 )
 }
 \arguments{
@@ -25,10 +26,15 @@ BLAST); \code{NULL} leaves the whole-genome default, which a bowtie genome above
 \item{dir}{directory for a lazily built index; defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{threads}{threads for an index build.}
+
+\item{build}{optional release id; when given it is written into every
+manifest row (and into the shard paths), and a \code{genome_index} over a
+pangenome component must have one.  A plain list is not an index: build one
+index per element.}
 }
 \value{
-a \code{genome_index} object with \code{strategy}, \code{capabilities}, \code{manifest}
-and the wrapped \code{genome}.
+a \code{genome_index} object with \code{strategy}, \code{capabilities}, \code{manifest},
+\code{build} and the wrapped \code{genome}.
 }
 \description{
 ADR 0005 makes the genome a strategy, not a set of optional index slots.

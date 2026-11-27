@@ -480,6 +480,21 @@ specificity_verdict <- function(hits, scheme = "pcr", genome = NULL, pam = NULL,
       )
     }
   }
+  # one verdict answers for one build: a table that spans builds has no single
+  # meaning, so refuse it instead of pooling A/B/D
+  seen <- if (!is.null(hits) && "build" %in% names(hits)) {
+    unique(as.character(hits$build))
+  } else {
+    as.character(attr(hits, "genome_build") %||% character(0))
+  }
+  seen <- seen[!is.na(seen)]
+  if (length(seen) > 1L) {
+    abort_msg(
+      "This table mixes builds {.val {seen}}; a specificity verdict answers for one build.",
+      i = "Grade each build separately: one specificity_of() call and one verdict per build.",
+      class = "tidymarkers_mixed_build_error"
+    )
+  }
   products <- if (is.null(hits)) {
     empty_pcr_products()
   } else {

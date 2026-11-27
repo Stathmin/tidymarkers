@@ -4256,17 +4256,19 @@ dir)` пишет crate-профиль поверх существующих че
       считает `works`/`fails`, `marker_tech(priors = )` меняет порядок попыток;
       вердикт не меняется, `calibrated` ложно.
 
-- [ ] **ZV8. Масштаб и пангеном (ADR 0010, J4).**
+- [x] **ZV8. Масштаб и пангеном (ADR 0010, J4).**
     - правка: `R/marker_genome.R`, `R/marker_index.R` — `build =` у
       `marker_genome()`, `read_genome_fasta()` и `genome_index()`, ключ шарда
       `(genome_build, chrom)`, отказ от смеси сборок в `specificity_of()` и
       `specificity_verdict()`; `dev/perf-gate.R` — бюджет 5 Б/п.н. и 2x.
     - проверка: `test-scenario-j4.R` (три сборки, 6 шардов, отсутствующий
       шард называет build и chrom); `test-genome-index.R`;
-      `dev/bench-index-memory.R`; `docs/index-perf.md`.
+      `dev/bench-index-memory.R --json`; `dev/perf-gate.R`; `docs/index-perf.md`.
     - блокер: 16 ГБ fixpur — не этот хост; синтетическая хромосома 250 Мб и
       `docs/decisions/0001-16gb-fixpur.md`.
-    - следствие: запрос пангенома молча суммирует A/B/D; RSS не ограничен.
+    - следствие: каждый запрос называет одну сборку и получает один вердикт;
+      `specificity_verdict()` отказывает таблице, смешавшей A/B/D; бюджет
+      5 Б/п.н. и 2x проверяет `dev/perf-gate.R`.
 
 - [x] **ZV9. Релизный артефакт (ADR 0011, J6).**
     - правка: `R/marker_artefact.R` — `schema = ...@2`, `contract.version`,

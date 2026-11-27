@@ -4,7 +4,13 @@
 \alias{read_genome_fasta}
 \title{Read an arbitrary genome FASTA, optionally normalising sequence names}
 \usage{
-read_genome_fasta(path, chrom_map = NULL, seqids = NULL, use_index = TRUE)
+read_genome_fasta(
+  path,
+  chrom_map = NULL,
+  seqids = NULL,
+  use_index = TRUE,
+  build = NULL
+)
 }
 \arguments{
 \item{path}{FASTA path (gzipped is fine).}
@@ -18,6 +24,9 @@ reading (a cheap subset when only a few chromosomes are needed).}
 \item{use_index}{when \code{TRUE} and \code{seqids} is given, read only those sequences
 through the \code{Rsamtools} FASTA index (random access, no whole-genome load);
 otherwise the whole file is read with \code{Biostrings}.}
+
+\item{build}{optional release id; stored as \code{genome_build} metadata so a
+\code{\link[=genome_index]{genome_index()}} made from the result carries it.}
 }
 \value{
 a \code{DNAStringSet}; sequence names are stripped of their deflines and,

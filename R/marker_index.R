@@ -65,8 +65,17 @@ index_source_sha256 <- function(genome) {
 }
 
 index_genome_build <- function(genome) {
-  if (inherits(genome, "marker_genome")) genome$build %||% NA_character_ else NA_character_
+  if (inherits(genome, "marker_genome")) {
+    return(genome$build %||% NA_character_)
+  }
+  if (inherits(genome, "DNAStringSet")) {
+    return(S4Vectors::metadata(genome)$genome_build %||% NA_character_)
+  }
+  NA_character_
 }
+
+# The build a result belongs to; an unnamed genome is `NA`, never guessed.
+index_result_build <- function(index) index$build %||% NA_character_
 
 # an attached legacy index slot, if this genome carries one
 index_attached <- function(genome, slot) {
@@ -79,8 +88,10 @@ index_attached <- function(genome, slot) {
 index_shards <- function(genome, strategy, chroms, dir) {
   dir <- dir %||% fs::path_temp()
   build <- index_genome_build(genome)
-  id <- hash_object(list(index_source_id(genome), strategy, chroms))
+  id <- hash_object(list(index_source_id(genome), strategy, chroms, build))
   id <- substr(id, 1L, 12L)
+  # two builds may share a chromosome name, so the build is part of the path
+  tag <- if (is.na(build)) "" else paste0("_", build)
   rows <- switch(strategy,
     memory = data.frame(
       shard = "memory", chrom = NA_character_, strategy = "memory",
@@ -90,13 +101,13 @@ index_shards <- function(genome, strategy, chroms, dir) {
       data.frame(
         shard = "bowtie", chrom = NA_character_, strategy = "bowtie",
         path = index_attached(genome, "bowtie_index") %||%
-          as.character(fs::path(dir, "genome_index_bowtie")),
+          as.character(fs::path(dir, paste0("genome_index_bowtie", tag))),
         stringsAsFactors = FALSE
       )
     } else {
       data.frame(
         shard = paste0("bowtie_", chroms), chrom = chroms, strategy = "bowtie",
-        path = as.character(fs::path(dir, paste0("genome_index_bowtie_", chroms))),
+        path = as.character(fs::path(dir, paste0("genome_index_bowtie", tag, "_", chroms))),
         stringsAsFactors = FALSE
       )
     },
@@ -105,13 +116,13 @@ index_shards <- function(genome, strategy, chroms, dir) {
         shard = "blast", chrom = NA_character_, strategy = "blast",
         path = index_attached(genome, "blast_db") %||%
           index_attached(genome, "path") %||%
-          as.character(fs::path(dir, "genome_index_blast", "genome.fa")),
+          as.character(fs::path(dir, paste0("genome_index_blast", tag), "genome.fa")),
         stringsAsFactors = FALSE
       )
     } else {
       data.frame(
         shard = paste0("blast_", chroms), chrom = chroms, strategy = "blast",
-        path = as.character(fs::path(dir, paste0("genome_index_blast_", chroms), "genome.fa")),
+        path = as.character(fs::path(dir, paste0("genome_index_blast", tag, "_", chroms), "genome.fa")),
         stringsAsFactors = FALSE
       )
     },
@@ -199,18 +210,23 @@ index_manifest <- function(index) {
   out[, INDEX_MANIFEST_COLUMNS]
 }
 
-# A missing shard names the chromosome; a changed one names the shard.
+# A missing shard names its build and chromosome; a changed one names the shard.
 index_abort_missing <- function(row) {
+  build <- row$genome_build[[1L]]
+  where <- if (is.na(build)) "" else paste0(" for build ", build)
+  lead <- paste0(
+    "The ", row$strategy[[1L]], " index shard ", row$shard[[1L]], where
+  )
   if (is.na(row$chrom[[1L]])) {
     abort_msg(
-      "The {row$strategy} index shard {row$shard} is missing.",
-      i = "Build it again with `genome_index(strategy = \"{row$strategy}\")`.",
+      paste0(lead, " is missing."),
+      i = "Build it again with `genome_index(strategy = \"{row$strategy}\")` and its build.",
       class = "tidymarkers_index_missing_error"
     )
   }
   abort_msg(
-    "The {row$strategy} index shard {row$shard} is missing: chromosome {row$chrom}.",
-    i = "Build it again with `genome_index(strategy = \"{row$strategy}\")`.",
+    paste0(lead, " is missing: chromosome ", row$chrom[[1L]], "."),
+    i = "Build it again with `genome_index(strategy = \"{row$strategy}\")` and its build.",
     class = "tidymarkers_index_missing_error"
   )
 }

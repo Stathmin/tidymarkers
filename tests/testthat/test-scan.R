@@ -128,8 +128,16 @@ test_that("marker_blast_index keys an in-memory genome by content (D4)", {
 
 test_that("specificity_of answers a named genome set one genome at a time", {
   genomes <- list(
-    A = Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT")),
-    B = Biostrings::DNAStringSet(c(chr1 = strrep("G", 24L)))
+    A = genome_index(
+      Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT")),
+      "memory",
+      build = "A"
+    ),
+    B = genome_index(
+      Biostrings::DNAStringSet(c(chr1 = strrep("G", 24L))),
+      "memory",
+      build = "B"
+    )
   )
   primers <- c(P = "TTTTTTAAACCCGGG", Q = "GGGGGGGGGGGGGGGG")
   res <- specificity_of(primers, genomes, k = 9L, max_mismatch = 0L)

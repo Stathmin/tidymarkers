@@ -488,6 +488,8 @@ marker_example <- function(type = NULL) {
 #' @param use_index when `TRUE` and `seqids` is given, read only those sequences
 #'   through the `Rsamtools` FASTA index (random access, no whole-genome load);
 #'   otherwise the whole file is read with `Biostrings`.
+#' @param build optional release id; stored as `genome_build` metadata so a
+#'   [genome_index()] made from the result carries it.
 #' @return a `DNAStringSet`; sequence names are stripped of their deflines and,
 #'   when `chrom_map` is given, replaced by the mapped names (only mapped
 #'   sequences are kept).
@@ -497,8 +499,10 @@ marker_example <- function(type = NULL) {
 #' read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
 #' @family input
 #' @export
-read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
+read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
+                              use_index = TRUE, build = NULL) {
   if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
+  build <- check_genome_build(build)
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))
@@ -510,6 +514,11 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
       names(g) <- nm
     }
     if (!is.null(seqids)) g <- g[intersect(seqids, names(g))]
+    if (!is.null(build)) {
+      md <- S4Vectors::metadata(g) %||% list()
+      md$genome_build <- build
+      S4Vectors::metadata(g) <- md
+    }
     g
   }
 
@@ -524,7 +533,7 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
     keep <- (tok %in% seqids) | (!is.na(mapped) & mapped %in% seqids)
     sel <- fai[keep, , drop = FALSE]
     if (nrow(sel) == 0L) {
-      return(Biostrings::DNAStringSet())
+      return(normalise(Biostrings::DNAStringSet()))
     }
     gr <- GenomicRanges::GRanges(sel$name, IRanges::IRanges(1L, sel$length))
     g <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
