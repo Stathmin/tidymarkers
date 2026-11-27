@@ -1,6 +1,6 @@
 # 0002 — `targets` stays a dev-only freshness holder
 
-- Status: accepted
+- Status: accepted (amended)
 - Date: 2026-11-26
 - Supersedes: none
 

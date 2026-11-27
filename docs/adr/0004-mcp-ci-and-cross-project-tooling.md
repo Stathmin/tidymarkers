@@ -1,6 +1,6 @@
 # 0004 — Keep the MCP server in R, the gate local, and the schema unpublished
 
-- Status: accepted
+- Status: accepted (amended)
 - Date: 2026-11-26
 - Supersedes: none
 
