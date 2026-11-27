@@ -383,7 +383,6 @@ marker_print_dpcr <- function(x, ...) {
 #' @return a list describing the `dpcr` scheme.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_dpcr <- function(marker, scheme = NULL, ...) {
   probe_map_spec(marker)
 }

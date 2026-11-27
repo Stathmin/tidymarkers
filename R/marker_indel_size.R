@@ -276,7 +276,6 @@ marker_print_indel_size <- function(x, ...) {
 #' @return a list describing the `indel_size` scheme.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_indel_size <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]

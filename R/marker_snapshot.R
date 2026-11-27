@@ -336,7 +336,6 @@ design_extension_primer <- function(seq, si, lengths, tm_range, gc_range, limits
 #' The SNaPshot scheme definition (gates, tiers, labels)
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_snapshot <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]

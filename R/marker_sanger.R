@@ -733,7 +733,6 @@ marker_print_sanger <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_sanger <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]

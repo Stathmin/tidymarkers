@@ -566,7 +566,6 @@ marker_print_crispr <- function(x, ...) {
 #'   the label / limit lookups the decision graph and text export need.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_crispr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   guide <- list(spec_row(

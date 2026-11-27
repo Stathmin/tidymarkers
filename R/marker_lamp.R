@@ -132,7 +132,6 @@ LAMP_3P_DG_MAX <- -0.5
 #'   registry's schemes).
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_lamp <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]

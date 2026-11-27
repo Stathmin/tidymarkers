@@ -356,7 +356,6 @@ marker_print_taqman <- function(x, ...) {
 #' @return a named list with the scheme row fields plus the gate/tier vocabulary.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_taqman <- function(marker, scheme = NULL, ...) {
   probe_map_spec(marker)
 }

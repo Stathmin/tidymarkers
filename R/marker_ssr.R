@@ -340,7 +340,6 @@ marker_print_ssr <- function(x, ...) {
 #'   `stage_label`).
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_ssr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   tract <- if (!is.null(marker[["repeat"]])) {

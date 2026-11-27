@@ -694,7 +694,6 @@ marker_print_rpa <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_rpa <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   probe <- if (!is.null(marker$probe)) {

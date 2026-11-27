@@ -434,7 +434,6 @@ marker_print_castpcr <- function(x, ...) {
 #' @return a named list describing the scheme.
 #' @keywords internal
 #' @noRd
-#' @noRd
 marker_map_castpcr <- function(marker, scheme = NULL, ...) {
   sp <- map_amplicon(marker)
   start <- sp[["start"]]
