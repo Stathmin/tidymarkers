@@ -135,7 +135,7 @@ marker_plan,export,decision,TRUE,genome,targets;region,genome;targets,marker_pla
 marker_plot,export,export,TRUE,solved,...,solved,plot,plot,FALSE,TRUE,карта решения
 marker_primer_table,export,export,TRUE,assay;gene,,assay;gene,tibble,tibble,FALSE,TRUE,олиго с хвостами
 marker_primers,export,export,TRUE,marker,...,marker,character,primer_set,FALSE,FALSE,имена праймеров; для marker_assay читает $assay
-marker_priors,export,criteria,FALSE,,,none,tibble,tibble,TRUE,TRUE,происхождение порогов
+marker_priors,export,criteria,FALSE,,outcomes,outcomes,tibble,priors,TRUE,TRUE,происхождение порогов
 marker_readout,export,criteria,TRUE,marker,,marker,readout,readout,FALSE,TRUE,модель считывания
 marker_record_outcome,export,artefact,TRUE,artefact,result;target;notes,artefact,outcomes,outcomes,FALSE,TRUE,запись исхода
 marker_replay,export,artefact,TRUE,artefact,cache;progress;tolerance,artefact,marker_replay,replay,FALSE,TRUE,повтор и сравнение
@@ -146,7 +146,7 @@ marker_schemes,export,decision,TRUE,,,none,schemes,schemes,TRUE,TRUE,химии 
 marker_site_class,export,criteria,FALSE,ref;alts,,character;character,character,character,TRUE,TRUE,класс аллелей
 marker_solve,export,decision,TRUE,plan,cache;all;progress;...,plan,marker_solved,solved,FALSE,FALSE,перебор химий
 marker_targets,export,design,TRUE,,data;chrom;pos;ref;alt;alt2;type;label;strand,variants,targets,targets,FALSE,FALSE,слой целей
-marker_tech,export,decision,TRUE,,schemes;costs;preset;exclude,character;costs,tech,tech,FALSE,FALSE,слой химий и стоимости
+marker_tech,export,decision,TRUE,,schemes;costs;preset;exclude;priors,character;costs;priors,tech,tech,FALSE,FALSE,слой химий и стоимости
 marker_technologies,export,decision,FALSE,,,none,tibble,tibble,TRUE,TRUE,технологии сессии
 marker_technology,export,decision,FALSE,name,base;params;blocks;specificity;label;verdict;overwrite,spec,technology,technology,FALSE,TRUE,регистрация в сессии
 marker_trace_from_artefact,export,artefact,TRUE,x,,artefact,trace,trace,FALSE,FALSE,trace из артефакта

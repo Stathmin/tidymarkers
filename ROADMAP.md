@@ -4242,16 +4242,18 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: нет.
     - следствие: J3 собирается без `panel$solved`; `ZU1` закрыт.
 
-- [ ] **ZV7. Петля исходов в приоры (ZU2, J5).**
+- [x] **ZV7. Петля исходов в приоры (ZU2, J5).**
     - правка: `R/marker_priors.R` — `marker_priors(outcomes = NULL)` добавляет
       `works`, `fails` и `source` по схеме; `R/marker_plan.R`,
       `R/marker_solve.R` — приор меняет только порядок попыток, не вердикт;
-      `calibrated = FALSE` остаётся.
+      `calibrated = FALSE` не меняется.
     - проверка: `test-scenario-j5.R`; `dev/check-user-api.R` — ребро
       `outcomes -> marker_priors`; `test-z8-outcomes.R` — порядок изменился,
       вердикты на золотом наборе нет.
     - блокер: нет калиброванной модели; первый шаг — счётчики, не вероятность.
-    - следствие: петля «измерили -> пересобрали» отсутствует.
+    - следствие: петля «измерили -> пересобрали» закрыта: `marker_priors(outcomes = )`
+      считает `works`/`fails`, `marker_tech(priors = )` меняет порядок попыток;
+      вердикт не меняется, `calibrated` ложно.
 
 - [ ] **ZV8. Масштаб и пангеном (ADR 0010, J4).**
     - правка: `R/marker_genome.R`, `R/marker_index.R` — `build =` у

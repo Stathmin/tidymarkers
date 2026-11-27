@@ -20,7 +20,9 @@ J4,2,2,specificity_of,genome,hits
 J4,2,3,design_kasp_markers,variants,report
 J5,3,1,marker_artefact_read,path,artefact
 J5,3,2,marker_outcomes,artefact,outcomes
-J5,3,3,marker_solve,plan,solved
+J5,3,3,marker_priors,outcomes,priors
+J5,3,4,marker_tech,priors,tech
+J5,3,5,marker_solve,plan,solved
 J6,3,1,marker_artefact,solved,artefact
 J6,3,2,marker_export_rocrate,artefact,files
 J6,3,3,marker_patent_export,solved,files

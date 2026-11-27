@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (213 узлов, 931 ребро): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (213 узлов, 934 ребра): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -28,10 +28,10 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | Всего записей в CSV | **261** |
 | Пользовательских (`user_facing = TRUE`) | **139** |
 | Служебных (`user_facing = FALSE`) | **122** |
-| Типизированных рёбер в графе | **931** |
+| Типизированных рёбер в графе | **934** |
 | Точек входа (нет типизированных входов) | **62** |
 | Листьев (нет типизированных потребителей) | **119** |
-| Изолятов (ни входа, ни выхода по классам) | **29** |
+| Изолятов (ни входа, ни выхода по классам) | **28** |
 
 Типизированное ребро `A → B` означает: `output_class(A)` совпадает с одним из
 `inputs(B)`; `assay` считается подклассом `marker`. Всё, что имеет класс
@@ -177,7 +177,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `marker_design_checks()` | да | assay | limits, scheme, engines | `marker + limits` → `checks` | Check an assembled assay against the KASP acceptance criteria |
 | `marker_explain()` | да | x | scheme | `marker + checks` → `explain` | Why this marker: the design checks as ordered, readable reasons |
 | `marker_informativeness()` | да | targets | genotypes, haplotypes, min_lines | `targets + haplotypes` → `informativeness` | How informative a marker is on an available panel |
-| `marker_priors()` | — | — | — | `—` → `tibble` | Provenance of every KASP threshold |
+| `marker_priors()` | — | — | outcomes | `outcomes` → `priors` | Provenance of every KASP threshold; with outcomes, counts per chemistry |
 | `marker_readout()` | да | marker | — | `marker` → `readout` | The readout a marker's scheme models (or says it does not) |
 | `marker_risk()` | да | assay | limits | `marker + limits` → `risk` | An experimenter-facing risk verdict for an assay |
 | `marker_site_class()` | — | ref, alts | — | `character + character` → `character` | Classify a site's allele set for KASP design |
@@ -207,7 +207,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `marker_plan()` | да | genome | targets, region | `genome + targets` → `plan` | Start a marker-design plan |
 | `marker_schemes()` | да | — | — | `—` → `tibble` | The marker chemistries this package can describe |
 | `marker_solve()` | да | plan | cache, all, progress | `plan` → `solved` | Solve a marker-design plan |
-| `marker_tech()` | да | — | schemes, costs, preset, exclude | `character + costs` → `tech` | Declare which chemistries a plan may use, and their costs |
+| `marker_tech()` | да | — | schemes, costs, preset, exclude, priors | `character + costs + priors` → `tech` | Declare which chemistries a plan may use, and their costs |
 | `marker_technologies()` | — | — | — | `—` → `tibble` | List the composed technologies of this session |
 | `marker_technology()` | — | name | base, params, blocks, specificity, label, verdict, overwrite | `spec` → `technology` | Compose a technology from a base chemistry |
 | `rescue_strategy()` | да | — | schemes | `—` → `tibble` | The rescue policy: which chemistries to try, in order |
@@ -453,9 +453,10 @@ S3-методы не входят в граф как отдельные узлы
 Большинство — намеренные примитивы (`has_*`, `marker_cache_dir`,
 `with_unafloddat`, `as_anchor`). Реальные дефекты среди них:
 
-- `marker_schemes()`, `rescue_strategy()`, `marker_technologies()`,
-  `marker_priors()` возвращают `tibble`; чтобы передать их в дизайн, надо
-  вручную вынуть `$scheme`. Типизированного моста нет.
+- `rescue_strategy()`, `marker_technologies()` возвращают `tibble`; чтобы
+  передать их в дизайн, надо вручную вынуть `$scheme`. У `marker_schemes()`
+  мост есть (`as_scheme_ids()`), у `marker_priors(outcomes = )` — приор прямо
+  в `marker_tech(priors = )`.
 - `marker_criteria()` возвращает таблицу критериев, но `marker_design_checks()`
   принимает `limits`, а не этот объект.
 - `marker_technology()` создаёт объект технологии, но ни `marker_tech()`, ни
@@ -534,19 +535,17 @@ S3-методы не входят в граф как отдельные узлы
    ни одна экспортированная функция его не принимает; работать дальше можно
    только через `panel$solved` или `panel$artefact` — это не типизированный
    стык.
-2. **`outcomes` — тупик.** `marker_record_outcome()` и `marker_outcomes()`
-   дают таблицу исходов, но ни `marker_priors()`, ни `marker_plan()`, ни
-   `marker_solve()` её не читают. Петля «результат → следующий дизайн»
-   отсутствует.
+2. ~~**`outcomes` — тупик.**~~ Закрыто: `marker_outcomes()` →
+   `marker_priors(outcomes = )` считает `works`/`fails` по схеме, а
+   `marker_tech(priors = )` меняет порядок попыток. Вердикт не меняется.
 3. **`report` — тупик.** Батч-функции возвращают `report`, но из него нельзя
    типизированно достать отдельный `marker`/`assay` для проверки или экспорта.
-4. **`primers` — два разных объекта.** `design_as_primers()` и
-   `design_common_primers()` возвращают tibble кандидатов; `marker_primers()`
-   возвращает именованный `character`. Один класс на два контракта.
-5. **Справочники без моста.** `marker_schemes()`, `rescue_strategy()`,
-   `marker_technologies()`, `marker_priors()` возвращают `tibble`; дизайн
-   принимает `character`/`costs`, поэтому пользователь вручную извлекает
-   колонку.
+4. ~~**`primers` — два разных объекта.**~~ Закрыто: кандидаты —
+   `primer_candidates`, набор олиго — `primer_set` через `as_primer_set()`.
+5. **Справочники без моста.** `rescue_strategy()` и
+   `marker_technologies()` возвращают `tibble`; дизайн принимает
+   `character`/`costs`, поэтому пользователь вручную извлекает колонку.
+   `marker_schemes()` и `marker_priors()` мост имеют.
 6. ~~**Один `variant` — только из `pick_target_snp()`.**~~ Закрыто:
    `as_variant_row(variants, id/chrom/pos)` даёт типизированную одну строку
    `variant`, не требуя гена.

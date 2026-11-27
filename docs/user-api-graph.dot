@@ -966,10 +966,13 @@ digraph user_api {
   "marker_ingest_literature" -> "marker_ingest_approve" [color="#c8c8c8", penwidth=0.6];
   "marker_ingest_registry" -> "marker_failure_summary" [color="#c8c8c8", penwidth=0.6];
   "marker_outcome_corpus" -> "marker_export_outcomes" [color="#222222", penwidth=2.2];
+  "marker_outcomes" -> "marker_priors" [color="#c8c8c8", penwidth=0.6];
   "marker_plan" -> "marker_solve" [color="#222222", penwidth=2.2];
   "marker_plan" -> "+.marker_plan" [color="#c8c8c8", penwidth=0.6];
   "marker_primers" -> "dimer_thermo" [color="#c8c8c8", penwidth=0.6];
   "marker_primers" -> "primer_set_compatibility" [color="#c8c8c8", penwidth=0.6];
+  "marker_priors" -> "marker_tech" [color="#c8c8c8", penwidth=0.6];
+  "marker_record_outcome" -> "marker_priors" [color="#c8c8c8", penwidth=0.6];
   "marker_run_context" -> "design_auto_marker" [color="#c8c8c8", penwidth=0.6];
   "marker_run_context" -> "+.marker_plan" [color="#c8c8c8", penwidth=0.6];
   "marker_schemes" -> "as_scheme_ids" [color="#c8c8c8", penwidth=0.6];

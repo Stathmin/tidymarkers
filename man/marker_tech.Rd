@@ -4,7 +4,13 @@
 \alias{marker_tech}
 \title{Declare which chemistries a plan may use, and their costs}
 \usage{
-marker_tech(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL)
+marker_tech(
+  schemes = NULL,
+  costs = NULL,
+  preset = NULL,
+  exclude = NULL,
+  priors = NULL
+)
 }
 \arguments{
 \item{schemes}{scheme ids to allow (see \code{\link[=marker_schemes]{marker_schemes()}}); \code{NULL} = all.}
@@ -15,6 +21,10 @@ marker_tech(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL)
 \code{"lab"}, \code{"field"}).}
 
 \item{exclude}{scheme ids to drop from the allowed set.}
+
+\item{priors}{a table from \code{\link[=marker_priors]{marker_priors()}} with \verb{outcomes = }; it moves a
+scheme with more laboratory successes ahead of one with more failures.
+Ordering only: no scheme is dropped and no verdict changes.}
 }
 \value{
 a plan layer (add it with \code{+}).

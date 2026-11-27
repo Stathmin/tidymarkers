@@ -337,15 +337,24 @@ marker_context <- function(variants = NULL, haplotypes = NULL,
 #' @param preset a bundle name in `KASP_TECH_PRESETS` (`"kasp"`, `"gel"`,
 #'   `"lab"`, `"field"`).
 #' @param exclude scheme ids to drop from the allowed set.
+#' @param priors a table from [marker_priors()] with `outcomes = `; it moves a
+#'   scheme with more laboratory successes ahead of one with more failures.
+#'   Ordering only: no scheme is dropped and no verdict changes.
 #' @return a plan layer (add it with `+`).
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' marker_plan(genome) + marker_tech(preset = "lab", costs = marker_costs(hrm = 1.2))
 #' @family plan
 #' @export
-marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL) {
+marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = NULL,
+                        priors = NULL) {
   schemes <- as_scheme_ids(schemes)
   exclude <- if (is.null(exclude)) NULL else as_scheme_ids(exclude)
+  if (!is.null(priors)) {
+    if (!is.data.frame(priors) || !all(c("scheme", "works", "fails") %in% names(priors))) {
+      abort_msg("`priors` must be a table from marker_priors(outcomes = ).")
+    }
+  }
   if (!is.null(preset)) {
     preset <- match.arg(preset, names(KASP_TECH_PRESETS))
     schemes <- KASP_TECH_PRESETS[[preset]]
@@ -355,6 +364,7 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
       if (!is.null(schemes)) plan$schemes <- schemes
       if (!is.null(costs)) plan$costs <- costs
       if (!is.null(exclude)) plan$exclude <- exclude
+      if (!is.null(priors)) plan$priors <- priors
       plan
     },
     label = "tech"
@@ -434,6 +444,15 @@ plan_schemes <- function(plan) {
   costs <- plan$costs %||% KASP_TECH_COSTS
   cost <- unname(costs[allowed])
   cost[is.na(cost)] <- Inf
+  # a prior orders the attempts, it does not remove one: each net success
+  # halves the effective cost and each net failure doubles it.  The verdict is
+  # unchanged because every scheme is still tried.
+  if (!is.null(plan$priors) && nrow(plan$priors)) {
+    net <- plan$priors$works - plan$priors$fails
+    adj <- stats::setNames(as.numeric(net), plan$priors$scheme)[allowed]
+    adj[is.na(adj)] <- 0
+    cost <- cost * ifelse(adj > 0, 1 / (1 + adj), 1 + pmax(-adj, 0))
+  }
   reg <- marker_schemes()$scheme
   allowed[order(cost, match(allowed, reg))]
 }

@@ -4,15 +4,26 @@
 \alias{marker_priors}
 \title{Provenance of every KASP threshold}
 \usage{
-marker_priors()
+marker_priors(outcomes = NULL)
+}
+\arguments{
+\item{outcomes}{a table from \code{\link[=marker_outcomes]{marker_outcomes()}} or
+\code{\link[=marker_outcome_corpus]{marker_outcome_corpus()}}, or \code{NULL} for the threshold provenance.}
 }
 \value{
-tibble with \code{parameter}, \code{value} and \code{source}.
+\code{NULL}: tibble with \code{parameter}, \code{value} and \code{source}.  Outcomes:
+one row per scheme with \code{works}, \code{fails}, \code{unknown}, \code{source} and
+\code{calibrated}.
 }
 \description{
 A tidy table of the parameters in \code{KASP_LIMITS} (with the design window and
 the thermodynamic model) mapped to the source each value follows.  It is the
 audit trail for \code{\link[=marker_design_checks]{marker_design_checks()}}: a number with no source is a bug.
+With \code{outcomes}, it answers a different question instead: how often each
+chemistry worked or failed in the laboratory.  The counts are ordinal
+evidence, not a success probability, and \code{calibrated} stays \code{FALSE}; the
+solver only uses them to try a working chemistry earlier, never to change a
+verdict.
 }
 \examples{
 marker_priors()
