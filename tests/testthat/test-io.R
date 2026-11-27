@@ -546,3 +546,13 @@ test_that("a VCF POS outside integer range is refused, not silently NA", {
   expect_equal(nrow(g), 0L)
   expect_s3_class(g, "genotypes")
 })
+
+test_that("a VCF header without ALT names the missing column", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF"
+  ), path)
+
+  expect_error(read_variants_vcf(path), "missing column.*ALT")
+})

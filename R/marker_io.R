@@ -375,7 +375,7 @@ vcf_header_names <- function(path) {
     missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
     if (length(missing)) {
       abort_msg(
-        "{path}: the '#CHROM' header is missing {.val {missing}}.",
+        "{path}: the '#CHROM' header is missing column {.val {missing}}.",
         i = "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
       )
     }
