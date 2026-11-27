@@ -423,7 +423,7 @@ artifacts:
   inputs:
   - R/marker_arms.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: bd81cc6380e5a8c1fa375f9ac8d50544
+  input_hash: f0aeedd48f890803032359e7e20a2c4c
   output_hash: eca75cf5afcb1b4b4b949b96828f9186
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -438,7 +438,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 246e8f434f55e7b9c7aaa483179714a8
+  input_hash: 277eeb4fa0544693337adeb37feabd2f
   output_hash: 79395d4fc68731baed3db629dc891423
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -453,7 +453,7 @@ artifacts:
   inputs:
   - R/marker_caps.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 0367048ab61b336ce44f38d3c103643f
+  input_hash: 042034beedf02a0646cc121054f326ad
   output_hash: b2bff013f7bed45cef400c34e3c0861e
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -468,7 +468,7 @@ artifacts:
   inputs:
   - R/marker_castpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 24bc539cc00bd4d52c48b920d337244f
+  input_hash: 0712e564d64608f1670d4eff5b241fd1
   output_hash: 521a35be33589f5a163bfc9b00097c28
   docs: vignettes/markers-probe.Rmd
   status: verified
@@ -483,7 +483,7 @@ artifacts:
   inputs:
   - R/marker_crispr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 2f6fec5e775c8042f273995bdf032db1
+  input_hash: 0e387ae0e5d9d0e9f61d6f38a9fbad42
   output_hash: a5ea64e553f82e01b1b7ef383ecd6771
   docs: vignettes/markers-crispr-sequencing.Rmd
   status: verified
@@ -498,7 +498,7 @@ artifacts:
   inputs:
   - R/marker_dpcr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: f51563b47f6115fa6c18643638b32f6d
+  input_hash: 393342b6bfef69b8f08747c3cbbfc6fc
   output_hash: b7fefb625629a3ddb2bd9a1023d64efe
   docs: vignettes/markers-probe.Rmd
   status: verified
@@ -513,7 +513,7 @@ artifacts:
   inputs:
   - R/marker_duplex.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: cf2f4d1a5d17b500e7140cbeeda77b2f
+  input_hash: 2d7bb4ab3cc59463a1cd528ddb7c4f77
   output_hash: 9bfabb0b64e4e14321bc5efd2eccb70e
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -528,7 +528,7 @@ artifacts:
   inputs:
   - R/marker_hrm.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 30abd7350b7d1261469962ada11a3d6d
+  input_hash: dd07a296f056f4e5137dcd5a81b64910
   output_hash: 24d9b1e01cc22e031cfe062890d5769d
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -543,7 +543,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 246e8f434f55e7b9c7aaa483179714a8
+  input_hash: 277eeb4fa0544693337adeb37feabd2f
   output_hash: 78ff43f063599f1f5e72419eea377859
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -558,7 +558,7 @@ artifacts:
   inputs:
   - R/marker_indel_size.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: dc43e8758be8e6a821c37b9942b9fa55
+  input_hash: 1579ab23e1436c1f1e6b9fc5fca37c21
   output_hash: a7aabc46a26ff3cff2f52e4509e776b5
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -573,7 +573,7 @@ artifacts:
   inputs:
   - R/marker_lamp.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: dc15f0e8b92ce5a2d0954a3eca3a61c9
+  input_hash: 251d4546aefaa7a28b096c0772d24ce3
   output_hash: 7e348f49173bdc0d47e09d636ebd244f
   docs: vignettes/markers-isothermal.Rmd
   status: verified
@@ -588,7 +588,7 @@ artifacts:
   inputs:
   - R/marker_lax.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: a3cc627ed2821c3d2d3878114a5b2397
+  input_hash: c3cc5e2bfa74d48fa967056672c20108
   output_hash: 8dfd8211687f4b3c44476ae20432d999
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -603,7 +603,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 246e8f434f55e7b9c7aaa483179714a8
+  input_hash: 277eeb4fa0544693337adeb37feabd2f
   output_hash: edb0f50908b47c58f9273d6c2206cd81
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -618,7 +618,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 246e8f434f55e7b9c7aaa483179714a8
+  input_hash: 277eeb4fa0544693337adeb37feabd2f
   output_hash: 90ada4c3fd6d9e968a9344045f48e0ba
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -633,7 +633,7 @@ artifacts:
   inputs:
   - R/marker_rpa.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 85a01e43fbb765160edce967ed6af2c7
+  input_hash: 8a1054aeb2d180ed03025ba38b0555eb
   output_hash: 0f40e6a07c947cc63924e2942a6d722e
   docs: vignettes/markers-isothermal.Rmd
   status: verified
@@ -648,7 +648,7 @@ artifacts:
   inputs:
   - R/marker_sanger.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 03b2c5f347a6a344d0303cc4e04573b4
+  input_hash: b4e288babcca32707b99754673c3bf93
   output_hash: a5d03a4a537903e51aa04932670258ed
   docs: vignettes/markers-crispr-sequencing.Rmd
   status: verified
@@ -663,7 +663,7 @@ artifacts:
   inputs:
   - R/marker_snapshot.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 27c69e1f922f98b14a712b2432fc9ccb
+  input_hash: 7cee00265c3bbe882279525156f73038
   output_hash: 86a50dcf7503de7a0f84bd63d03f8ad4
   docs: vignettes/markers-probe.Rmd
   status: verified
@@ -678,7 +678,7 @@ artifacts:
   inputs:
   - R/marker_assemble.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 246e8f434f55e7b9c7aaa483179714a8
+  input_hash: 277eeb4fa0544693337adeb37feabd2f
   output_hash: 8c899e4bed16a8cbba4f9e4ee7f63f4c
   docs: vignettes/markers-kasp.Rmd
   status: verified
@@ -693,7 +693,7 @@ artifacts:
   inputs:
   - R/marker_ssr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 0dde1e563d15f1d0184a4b4528e4426a
+  input_hash: 0f086f50387542e77ce5c98809570a3a
   output_hash: ddaeac932c1596e48592e872cc63e089
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -708,7 +708,7 @@ artifacts:
   inputs:
   - R/marker_taqman.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: f9c4bc14e53ec58df663d9c5786a036c
+  input_hash: 3d3a9e4f9f8b76d4cf288baaa1ca2cca
   output_hash: 4ebfba5b335a7ca0cc16e7b61c65e06a
   docs: vignettes/markers-probe.Rmd
   status: verified
