@@ -27,7 +27,7 @@ rocrate_fixture <- local({
       plan <- marker_plan(genome) + marker_targets(loci) + marker_tech(schemes = "hrm")
       solved <- suppressWarnings(marker_solve(plan, progress = FALSE))
       artefact <- marker_artefact(solved, dir = tempfile("rocrate-ref"))
-      value <<- list(artefact = artefact)
+      value <<- list(artefact = artefact, solved = solved)
     }
     value
   }
@@ -83,6 +83,17 @@ test_that("a manifest path cannot escape the artefact directory", {
     fs::path(dst, "artefact.json")
   )
   expect_error(marker_artefact_read(dst), "unsafe file path")
+})
+
+test_that("the artefact writer refuses to write through a link", {
+  fixture <- rocrate_fixture()
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "decisions.csv")
+  writeLines("keep", outside)
+  skip_if_not(file.symlink(outside, fs::path(dir, "decisions.csv")), "this filesystem cannot make a symlink")
+
+  expect_error(marker_artefact(fixture$solved, dir = dir), "which is a link", class = "rlang_error")
+  expect_identical(readLines(outside), "keep")
 })
 
 test_that("an artefact sidecar cannot link out of the record", {

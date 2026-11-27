@@ -4802,3 +4802,16 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - блокер: нет.
     - следствие: запись исхода не подтверждает цель по чужому файлу; правило —
       ADR 0025.
+
+- [x] **ZV25.4. Писатель создаёт файлы, а не пишет по ссылке.**
+    - правка: `R/marker_artefact.R` — до первой записи проверяет
+      `fs::is_link()` для каждого создаваемого имени (`decisions.csv`,
+      `checks.csv`, `why.csv`, `signals.csv`, `targets.csv`, `replay.csv`,
+      `artefact.json`, `solved.rds`) и отказывает, называя имя.
+    - проверка: `test-rocrate.R` — «the artefact writer refuses to write
+      through a link»: `decisions.csv` — ссылка на файл рядом, запись
+      отказывает по фразе `which is a link`, внешний файл не изменён; до
+      правки запись проходила и перезаписывала его.
+    - блокер: нет.
+    - следствие: висячая ссылка `solved.rds` больше не создаёт файл вне
+      записи; правило — ADR 0025, пункт 5.

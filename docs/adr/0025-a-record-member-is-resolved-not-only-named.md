@@ -46,6 +46,11 @@ the file the name resolves to is what the reader trusts.
 4. **The test is part of the contract.** A record reader that accepts a name
    from the record gets a test with a link out; the artefact reader and the
    crate writer share one test in `test-rocrate.R`.
+5. **The writer creates its members; it does not write through a link.** Before
+   `marker_artefact()` writes, a link at any name it creates (`decisions.csv`,
+   `checks.csv`, `why.csv`, `signals.csv`, `targets.csv`, `replay.csv`,
+   `artefact.json`, `solved.rds`) is a named refusal. A dangling `solved.rds`
+   link would otherwise create its target outside the record.
 
 ## Alternatives
 
@@ -66,6 +71,10 @@ the file the name resolves to is what the reader trusts.
   `The record names "decisions.csv", which resolves to "/…/outside.csv" outside "/…/artefact"`.
   Test: `test-rocrate.R`, "an artefact sidecar cannot link out of the record";
   the reader and `marker_export_rocrate()` both refuse it.
+- The writer refuses a link too (`The record writes "decisions.csv", which is
+  a link.`), including a dangling `solved.rds` that `saveRDS()` would otherwise
+  create outside the record. Test: "the artefact writer refuses to write
+  through a link".
 - The rule now matches ADR 0015's crate consequence: lexical first, physical
   for an existing member. Hard links remain indistinguishable by path and stay
   a recorded limit.

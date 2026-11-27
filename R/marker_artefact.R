@@ -615,6 +615,19 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
     abort_msg("`scenario` must be one of J1-J7 or \"unspecified\".")
   }
   fs::dir_create(dir)
+  written <- c(
+    "decisions.csv", "checks.csv", "why.csv", "signals.csv", "targets.csv",
+    "replay.csv", "artefact.json", "solved.rds"
+  )
+  linked <- written[fs::is_link(fs::path(dir, written))]
+  if (length(linked)) {
+    abort_msg(
+      c(
+        "The record writes {.file {linked[[1L]]}}, which is a link.",
+        i = "A record creates its own files; remove the link first."
+      )
+    )
+  }
   pkg_dir <- artefact_pkg_root()
   knobs <- solved$knobs %||% list()
   decisions <- artefact_decisions(solved)
