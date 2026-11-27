@@ -402,6 +402,23 @@ marker_tech <- function(schemes = NULL, costs = NULL, preset = NULL, exclude = N
     if (!is.data.frame(priors) || !all(c("scheme", "works", "fails") %in% names(priors))) {
       abort_msg("`priors` must be a table from marker_priors(outcomes = ).")
     }
+    unknown <- setdiff(as.character(priors$scheme), marker_schemes()$scheme)
+    if (length(unknown)) {
+      abort_msg(gettextf(
+        "Unknown scheme(s) in `priors`: %s. See marker_schemes().",
+        paste(unknown, collapse = ", ")
+      ))
+    }
+    bad <- !is.numeric(priors$works) || !is.numeric(priors$fails)
+    if (!bad) {
+      bad <- any(
+        !is.finite(priors$works) | priors$works < 0 |
+          !is.finite(priors$fails) | priors$fails < 0
+      )
+    }
+    if (bad) {
+      abort_msg("`priors$works` and `priors$fails` must be finite, non-negative counts.")
+    }
   }
   if (!is.null(costs)) {
     if (!is.numeric(costs) || is.null(names(costs)) || any(!nzchar(names(costs)))) {

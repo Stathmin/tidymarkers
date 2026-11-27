@@ -74,4 +74,11 @@ test_that("a prior reorders attempts without changing the verdict", {
     marker_tech(priors = tibble::tibble(x = 1)),
     "marker_priors"
   )
+  bad <- function(scheme, works, fails) {
+    tibble::tibble(scheme = scheme, works = works, fails = fails)
+  }
+  expect_error(marker_tech(priors = bad("hmr", 1L, 0L)), "Unknown scheme")
+  expect_error(marker_tech(priors = bad("snp", -1L, 0L)), "non-negative")
+  expect_error(marker_tech(priors = bad("snp", NA_integer_, 0L)), "finite")
+  expect_error(marker_tech(priors = bad("snp", "1", 0L)), "non-negative")
 })
