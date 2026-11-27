@@ -4704,3 +4704,28 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - следствие: испорченный скачанный эталон — отказ на входе, а не тихо
       укороченная хромосома; правило ADR 0022 действует и на кэш, класс
       отказа и правило повтора — ADR 0023.
+
+## ZV24. Replay без `replay.csv` не сверяется с чужим `solved`
+
+Найдено ночной сменой 2026-11-28: `marker_replay(artefact, solved = )` для
+записи без `replay.csv` брал «записанные» вердикты из переданного
+`solved` (`recorded <- artefact_replay_table(solved)`), то есть сверял
+доверенный solve сам с собой. Измерено до правки: у артефакта удалены
+`replay.csv` и `solved.rds`, передан `solved =` — replay вернул
+`match = TRUE`, `recorded_verdict = replayed_verdict = "doomed"`.
+
+- [x] **ZV24. Записанная сторона replay всегда приходит из записи.**
+    - правка: `R/marker_artefact.R` — `marker_replay()` запоминает, пришёл ли
+      `solved` от вызывающего; если `files$replay` нет и `solved` передан,
+      replay отказывает («would be compared with itself») и называет два
+      выхода; путь без `solved` по-прежнему читает собственный `solved.rds`
+      (artefact@1, локальный, ADR 0015). `decisions.csv` не используется:
+      у цели, где все попытки отклонены, нет строки `chosen`, поэтому таблицу
+      «одна строка на цель» из сайдкара не восстановить.
+    - проверка: `test-plan.R` — «a trusted solve cannot replay a record that
+      recorded no verdicts»: отказ по фразе `compared with itself`, затем
+      replay без `solved` из собственного RDS даёт `match = TRUE`;
+      `dev/test.R plan` — 201 pass, 0 fail.
+    - блокер: нет.
+    - следствие: запись без вердиктов больше не проходит на чужом solve;
+      правило — ADR 0024.

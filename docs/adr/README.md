@@ -34,6 +34,7 @@ the file records the measurement or event that re-tested it).
 | [0021](0021-one-path-and-one-header-rule-for-three-vcf-readers.md)      | One path and one header rule for three VCF readers                           | accepted |
 | [0022](0022-a-fasta-base-outside-the-alphabet-is-refused-by-every-reader.md) | A FASTA base outside the alphabet is refused by every reader                 | accepted |
 | [0023](0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md)       | A refusal that a retry cannot fix carries a class                            | accepted |
+| [0024](0024-a-replay-compares-only-the-records-own-verdicts.md)        | A replay compares only the record's own verdicts                            | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
