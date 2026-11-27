@@ -15,6 +15,7 @@
   **941 типизированное ребро**, 63 точки входа, 120 листьев, 27 изолятов
   (замер 2026-11-27, `dev/check-user-api.R`; числа в заголовке стареют, истина
   в сгенерированном срезе).
+<!-- api-counts: 213/52/265/143/941/63/120/27 -->
 
 ## 0. Что уже есть и что не входит
 
@@ -519,8 +520,8 @@ Repair-lane идёт параллельно всем трём дням и не �
 
 - [`ROADMAP.md` §ZU](../../ROADMAP.md) — инвентарь и дефекты поверхности.
 - [`ROADMAP.md` §ZV](../../ROADMAP.md) — очередь ZV1–ZV10.
-- [`docs/user-api-surface.md`](../user-api-surface.md) — 214/52, классы, граф,
-  §8.
+- [`docs/user-api-surface.md`](../user-api-surface.md) — 214 узлов / 941
+  ребро, классы, граф, §8.
 - [`docs/user-api-surface.csv`](../user-api-surface.csv) — машинный срез.
 - [`docs/adr/0008`](../adr/0008-user-scenarios-as-contract.md),
   [`0009`](../adr/0009-panel-orchestrator-contract.md),

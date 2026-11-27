@@ -430,6 +430,47 @@ if (!graph_ok) {
   note("MD graph line is stale: expected ", nrow(nodes), " nodes, ", nrow(edge), " edges")
 }
 
+# 6d. prose snapshots carry a machine-checked marker --------------------------
+# The queue header and the plan quoted the surface counts by hand and drifted
+# (207/48/934/29 against the 213/52/941/63/120/27 this script computes).
+# A file that states the counts must carry `<!-- api-counts: ... -->` with the
+# numbers in the order below; the gate compares the marker, not the prose.
+count_order <- c(
+  "exports" = sum(api$kind == "export"),
+  "s3methods" = sum(api$kind == "s3method"),
+  "csv_rows" = nrow(api),
+  "user_facing" = sum(api$user_facing == "TRUE"),
+  "edges" = nrow(edge),
+  "entries" = sum(nodes$entry_point == "TRUE"),
+  "leaves" = sum(nodes$leaf == "TRUE"),
+  "isolates" = sum(indeg == 0 & outdeg == 0)
+)
+want_marker <- paste0(
+  "<!-- api-counts: ",
+  paste(as.integer(count_order), collapse = "/"), " -->"
+)
+marker_files <- c("ROADMAP.md", "docs/plans/2026-11-27-integration-3day.md")
+bad_marker <- character()
+for (f in marker_files) {
+  p <- file.path(root, f)
+  if (!file.exists(p)) next
+  got <- regmatches(
+    readLines(p, warn = FALSE),
+    regexpr("<!-- api-counts: [0-9/]+ -->", readLines(p, warn = FALSE))
+  )
+  got <- unique(got[nzchar(got)])
+  if (length(got) != 1L) {
+    bad_marker <- c(bad_marker, paste0(f, ": expected one api-counts marker"))
+  } else if (!identical(got, want_marker)) {
+    bad_marker <- c(bad_marker, paste0(f, ": ", got, " is stale, want ", want_marker))
+  }
+}
+if (length(bad_marker)) {
+  for (b in bad_marker) note(b)
+} else {
+  ok("prose api-counts markers match the computed table")
+}
+
 # 7. summary -----------------------------------------------------------------
 counts <- table(factor(nodes$role, levels = ROLES))
 message(
