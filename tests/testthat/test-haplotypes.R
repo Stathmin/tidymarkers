@@ -145,7 +145,10 @@ test_that("a haplotype row is admitted only with a real frequency and locus", {
     haplotype = "H1", freq = 0.5, chrom = "Chr1", pos = 250L, ref = "A", alt = "G"
   )
   expect_equal(nrow(do.call(hp, ok)), 1L)
-  expect_error(do.call(hp, utils::modifyList(ok, list(freq = NA_real_))), "finite value")
+  # NA is an unmeasured frequency, not a bad number
+  expect_equal(nrow(do.call(hp, utils::modifyList(ok, list(freq = NA_real_)))), 1L)
+  expect_error(do.call(hp, utils::modifyList(ok, list(freq = NaN))), "finite value")
+  expect_error(do.call(hp, utils::modifyList(ok, list(freq = Inf))), "finite value")
   expect_error(do.call(hp, utils::modifyList(ok, list(freq = -0.1))), "\\[0, 1\\]")
   expect_error(do.call(hp, utils::modifyList(ok, list(pos = 0L))), "positive integer")
   expect_error(do.call(hp, utils::modifyList(ok, list(chrom = ""))), "chromosome")

@@ -35,10 +35,12 @@ normalise_haplotypes <- function(haplotypes) {
       ref = toupper(as.character(.data$ref)),
       alt = toupper(as.character(.data$alt))
     )
-  if (any(!is.finite(h$freq) | h$freq < 0 | h$freq > 1)) {
-    abort_msg("`freq` must be one finite value in [0, 1] per haplotype.")
+  known <- !is.na(h$freq) & is.finite(h$freq) & h$freq >= 0 & h$freq <= 1
+  if (any(is.nan(h$freq) | (!is.na(h$freq) & !known))) {
+    abort_msg("`freq` must be NA or one finite value in [0, 1] per haplotype.")
   }
   bad <- h |>
+    dplyr::filter(!is.na(.data$freq)) |>
     dplyr::summarise(lo = min(.data$freq), hi = max(.data$freq), .by = "haplotype") |>
     dplyr::filter(.data$lo != .data$hi)
   if (nrow(bad)) {
