@@ -13,6 +13,12 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
+Отрисовка графа (208 узлов, 934 ребра): `dot -Tsvg docs/user-api-graph.dot
+-o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
+docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
+руками не правится: единственный генератор — `Rscript dev/check-user-api.R
+--write`.
+
 ## 0. Что посчитано
 
 | Что | Число |
