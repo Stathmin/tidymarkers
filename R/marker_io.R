@@ -617,7 +617,8 @@ read_fasta_strict <- function(path, read) {
       warning = function(w) {
         if (grepl("invalid one-letter sequence codes", conditionMessage(w))) {
           abort_msg(
-            "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+            "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently.",
+            class = "tidymarkers_fasta_alphabet"
           )
         }
       }
@@ -625,7 +626,8 @@ read_fasta_strict <- function(path, read) {
     error = function(e) {
       if (grepl("invalid DNA letters", conditionMessage(e))) {
         abort_msg(
-          "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+          "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently.",
+          class = "tidymarkers_fasta_alphabet"
         )
       }
       stop(e)

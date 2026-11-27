@@ -4688,10 +4688,18 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
 как `read_genome_fasta()` и `read_transcripts()` такой файл отказывают
 (ADR 0022).
 
-- [ ] **ZV23. `ath_genome()` отказывает кэш, который не проходит
-  `read_fasta_strict()`.** Правка: обернуть чтение, различать «файл испорчен»
-  и «сети нет» в ветке перезагрузки, чтобы ошибка не подменялась на
-  «downloading failed». Проверка: временный кэш с `ACGTXCGT` (без сети)
-  должен дать отказ с буквой алфавита, а не молчаливую последовательность в
-  7 оснований. Блокер: тест не должен ходить в сеть — нужен шов для
-  `tair10_download()`.
+- [x] **ZV23. `ath_genome()` отказывает кэш, который не проходит
+  `read_fasta_strict()`.**
+    - правка: `R/marker_core.R` — `ath_genome()` читает кэш через
+      `read_fasta_strict()`; `read_fasta_strict()` (`R/marker_io.R`) помечает
+      отказ классом `tidymarkers_fasta_alphabet`, а `ath_genome()` различает
+      «буква вне алфавита» (без перезагрузки, ошибка называет файл) и
+      «файл испорчен/укорочен» (один refetch, как раньше).
+    - проверка: `test-ath-genome-cache.R` — «a cache with a base outside the
+      alphabet is refused, not refetched»: кэш `ACGTXCGT` без сети даёт
+      `outside the DNA/IUPAC alphabet`, а мок `tair10_download()` не
+      вызывается; два прежних теста (truncated → refetch, readable → no
+      download) зелёные.
+    - блокер: нет; шов — `local_mocked_bindings(tair10_download = )`.
+    - следствие: испорченный скачанный эталон — отказ на входе, а не тихо
+      укороченная хромосома; правило ADR 0022 действует и на кэш.

@@ -54,3 +54,10 @@ name, in every reader, through `read_fasta_strict()`.
 - Tests: `test-io.R` — "read_transcripts refuses a base outside the DNA
   alphabet" (`ACGTNXYZ` errors, `ACGTRYSWKM` round-trips) and "fasta_index
   refuses an invalid base before writing the plain copy".
+- `ath_genome()` reads its cached TAIR10 download through the same helper, so a
+  cached genome with a bad base is refused by name rather than shortened. The
+  refusal carries class `tidymarkers_fasta_alphabet`, which lets
+  `ath_genome()` tell a corrupt cache (refetch once) from a bad alphabet
+  (report the file, never mask it as a download failure). Test:
+  `test-ath-genome-cache.R` with `ACGTXCGT` and a mocked download that must not
+  run.

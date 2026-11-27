@@ -52,3 +52,20 @@ test_that("a readable cache is used and the download is never called", {
   g <- ath_genome(cache = cache)
   expect_equal(length(g), 7L)
 })
+
+test_that("a cache with a base outside the alphabet is refused, not refetched", {
+  cache <- withr::local_tempdir()
+  con <- gzfile(tair10_cache_path(cache), "w")
+  writeLines(c(">1 dna:chromosome", "ACGTXCGT"), con)
+  close(con)
+
+  local_mocked_bindings(
+    tair10_download = function(...) stop("a bad base must not trigger a download"),
+    .package = "tidymarkers"
+  )
+
+  expect_error(
+    ath_genome(cache = cache),
+    "outside the DNA/IUPAC alphabet"
+  )
+})

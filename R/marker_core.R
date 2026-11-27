@@ -1026,10 +1026,7 @@ ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
   fa <- fs::path(cache, "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz")
   need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   parse <- function() {
-    g <- tryCatch(Biostrings::readDNAStringSet(fa), error = function(e) NULL)
-    if (is.null(g)) {
-      return(NULL)
-    }
+    g <- read_fasta_strict(fa, function() Biostrings::readDNAStringSet(fa))
     nm <- sub("\\s.*$", "", names(g)) # keep only the first token of the defline
     dropped <- nm[!nm %in% names(ATH_CHROM_MAP)]
     if (length(dropped)) {
@@ -1041,23 +1038,29 @@ ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
     names(g) <- unname(ATH_CHROM_MAP[nm[nm %in% names(ATH_CHROM_MAP)]])
     g
   }
+  read_cache <- function() tryCatch(parse(), error = function(e) e)
   if (!fs::file_exists(fa)) {
     tair10_download(fa, release)
   }
-  g <- parse()
-  if (is.null(g) || !all(need %in% names(g))) {
+  g <- read_cache()
+  if (inherits(g, "tidymarkers_fasta_alphabet")) {
+    # Refetching returns the same letters; report the file, not the network.
+    stop(g)
+  }
+  if (inherits(g, "condition") || !all(need %in% names(g))) {
     # A truncated or renamed cache is otherwise permanent: file_exists() stays
     # TRUE forever, so refetch once before reporting the failure.
     if (fs::file_exists(fa)) {
       fs::file_delete(fa)
     }
     tair10_download(fa, release)
-    g <- parse()
+    g <- read_cache()
   }
-  if (is.null(g)) {
+  if (inherits(g, "condition")) {
     abort_msg(
       "ath_genome(): TAIR10 FASTA could not be read from {.path {fa}}.",
-      i = "Delete the cached file and retry."
+      i = "Delete the cached file and retry.",
+      parent = g
     )
   }
   missing <- setdiff(need, names(g))
