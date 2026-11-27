@@ -34,6 +34,41 @@ primer, i.e. the same verdict (`unique`).
   `"3'-seed"` for memory and `"whole-primer"` for bowtie; the verification
   compares the verdict and the failing criterion ids, not raw counts.
 
+### TAIR10 gold set and the per-locus budget (ADR 0005 gate 2)
+
+Three real TAIR10 SNP targets (`marker_example("SNP")` rows: Chr1:18,519,408,
+Chr3:6,475,771, Chr3:3,229,835), the KASP designer at `flank = 150`, R 4.6.1.
+The budget is the measured ratio, not a wall-clock number from another host:
+the index path must stay within 2x of the in-memory path per locus.
+
+| path | per-locus (s) | median (s) | max / median |
+| --- | --- | --- | --- |
+| memory (`DNAStringSet`) | 20.4, 18.6, 18.5 | 18.64 | 1.09 |
+| bowtie (Chr1/Chr3 shards) | 21.7, 18.3, 17.2 | 18.32 | 1.18 |
+
+Index / memory median is **0.98x**; every locus is inside 2x. The golden index
+set itself is `tests/testthat/fixtures/tair10/` (three 40 kb TAIR10 chromosomes
+and `expected.csv`): memory and bowtie return the same hit count and the same
+verdict for a unique primer on each chromosome and for a primer that occurs
+twice.
+
+### Peak memory of the two paths (16 Gb decision)
+
+`Rscript dev/bench-index-memory.R` reports `VmHWM` on this host (29 GB RAM):
+
+| case | peak RSS |
+| --- | --- |
+| R + package baseline | 455.4 MB |
+| whole TAIR10 FASTA in memory (116 MB) | 569.7 MB |
+| one TAIR10 chromosome shard (30.4 Mb) | 563.2 MB |
+| one synthetic chromosome shard (250 Mb, 239 MB FASTA) | 885.5 MB |
+
+The shard path holds one chromosome, not the genome: 1.7 bytes per base of peak
+above the baseline, 5 bytes/base conservative. The largest wheat chromosome is
+about 0.8 Gb, so the measured shard path needs about 4.5 GB, which fits a 16 GB
+host; a monolithic 16 Gb index (21.5 GB) does not. The decision and the disk
+arithmetic are in `docs/decisions/0001-16gb-fixpur.md`. The actual 16 Gb run is
+an operator action because no such reference is on this host.
+
 Not measured here: a 16 Gb wheat build (no such reference on this host), a
-pan-genome A/B/D run, and the 2x per-locus budget in ADR 0005 gate 2 (that gate
-needs the TAIR10 gold set).
+pan-genome A/B/D run.

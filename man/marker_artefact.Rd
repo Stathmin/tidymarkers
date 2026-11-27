@@ -4,7 +4,7 @@
 \alias{marker_artefact}
 \title{Write a self-documenting artefact for a solved plan}
 \usage{
-marker_artefact(solved, dir = tempdir())
+marker_artefact(solved, dir = tempdir(), created = NULL)
 }
 \arguments{
 \item{solved}{a \code{marker_solved} (see \code{\link[=marker_solve]{marker_solve()}}).  Its \code{cache} is where
@@ -12,6 +12,10 @@ the rejected candidates' reasons are read from; a solve that has been
 round-tripped through \code{saveRDS()} keeps it.}
 
 \item{dir}{output directory (default: a temp dir).}
+
+\item{created}{artefact timestamp: \code{NULL} reads \code{SOURCE_DATE_EPOCH}, then the
+current time; a \code{POSIXct}, an epoch string/number, or an ISO timestamp is
+used as given.  A fixed value makes the text files byte-identical on rerun.}
 }
 \value{
 a \code{marker_artefact}: \code{id}, \code{dir}, \code{manifest}, \code{decisions}.

@@ -149,19 +149,68 @@ worker_biostrings <- function() requireNamespace("Biostrings", quietly = TRUE)
 #' code in the worker -- the same call that works serially fails there with
 #' "unused argument".  For a **serial** backend the task runs in this session,
 #' where the namespace is already current, so nothing is rewritten.
+#'
+#' `chunksize` groups the input into tasks of that size, which is the unit a
+#' worker receives; the result is flattened back into input order.  With
+#' `on_error = "collect"` a failing element becomes a `tidymarkers_task_error`
+#' (its `index` and `message`) and the rest still run; the default `"stop"`
+#' keeps the historical fail-fast behaviour.  `RNGseed` is set on the backend
+#' when given, because `bpoptions(RNGseed = )` is not supported by BiocParallel.
+#' @param X input vector/list.
+#' @param FUN function of one element.
+#' @param BPPARAM a [BiocParallel::BiocParallelParam()] object.
+#' @param chunksize elements per task; `NULL` keeps one task per element.
+#' @param on_error `"stop"` (default) or `"collect"`.
+#' @param RNGseed optional backend RNG seed.
+#' @return a list in input order.
 #' @keywords internal
 #' @noRd
-bp_lapply <- function(X, FUN, BPPARAM) {
+bp_lapply <- function(X, FUN, BPPARAM, chunksize = NULL,
+                      on_error = c("stop", "collect"),
+                      RNGseed = NULL) { # nolint: object_name_linter.
+  on_error <- match.arg(on_error)
+  if (length(X) == 0L) {
+    return(list())
+  }
+  if (!is.null(RNGseed)) {
+    BiocParallel::bpRNGseed(BPPARAM) <- as.integer(RNGseed)
+  }
+  run_one <- if (on_error == "stop") {
+    FUN
+  } else {
+    function(x) {
+      tryCatch(
+        FUN(x),
+        error = function(e) {
+          structure(
+            list(message = conditionMessage(e)),
+            class = "tidymarkers_task_error"
+          )
+        }
+      )
+    }
+  }
   if (!serial_backend(BPPARAM)) {
     # a worker process resolves every package name against the *installed* copy;
     # hand it this session's definitions instead (see source_carrier())
-    FUN <- rebind(FUN, source_carrier(FUN))
+    run_one <- rebind(run_one, source_carrier(run_one))
   }
-  BiocParallel::bplapply(
-    X, FUN,
+  n <- length(X)
+  chunks <- if (is.null(chunksize)) {
+    as.list(seq_len(n))
+  } else {
+    chunksize <- as.integer(chunksize)
+    if (is.na(chunksize) || chunksize < 1L) {
+      abort_msg("`chunksize` must be a positive integer.")
+    }
+    unname(split(seq_len(n), ceiling(seq_len(n) / chunksize)))
+  }
+  parts <- BiocParallel::bplapply(
+    chunks, function(ii) lapply(ii, function(i) run_one(X[[i]])),
     BPPARAM = BPPARAM,
     BPOPTIONS = BiocParallel::bpoptions(progressbar = interactive())
   )
+  unlist(parts, recursive = FALSE, use.names = FALSE)
 }
 
 #' Does this backend run the task in this session?

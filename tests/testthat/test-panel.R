@@ -25,13 +25,17 @@ fixture_targets <- function() {
 }
 
 design_panel <- function(dir, targets = fixture_targets(), chemistries = c("snp", "hrm"),
-                         variants = NULL, haplotypes = fixture_haplotypes()) {
+                         variants = NULL, haplotypes = fixture_haplotypes(),
+                         ld = NULL, costs = NULL, created = NULL) {
   marker_design_panel(
     fixture_genome(),
     variants = variants,
     haplotypes = haplotypes,
     chemistries = chemistries,
     targets = targets,
+    ld = ld,
+    costs = costs,
+    created = created,
     dir = dir
   )
 }
@@ -129,4 +133,147 @@ test_that("the same call twice gives the same targets and one-pot estimate", {
   expect_identical(p1$targets$ok, p2$targets$ok)
   expect_identical(p1$targets$assay[[1L]]$assay, p2$targets$assay[[1L]]$assay)
   expect_identical(p1$one_pot, p2$one_pot)
+})
+
+# -- the seams (T4/T5) -------------------------------------------------------
+
+fixture_panel_file <- function(name) {
+  readr::read_csv(test_path("fixtures", "panel", name), show_col_types = FALSE)
+}
+
+ld_targets <- function() {
+  tidymarkers:::normalise_targets(tibble::tibble(
+    chrom = c("Chr1", "Chr1"), pos = c(300L, 500L),
+    ref = c("A", "T"), alt = c("C", "G")
+  ))
+}
+
+test_that("the haplotype contract rejects unphased input and a frequency sum above one", {
+  targets <- tidymarkers:::normalise_targets(
+    tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "C")
+  )
+  unphased <- fixture_panel_file("haplotypes_unphased.csv")
+  err <- tryCatch(
+    tidymarkers:::panel_haplotype_contract(unphased, targets),
+    error = function(e) e
+  )
+  expect_s3_class(err, "tidymarkers_haplotype_error")
+  expect_match(conditionMessage(err), "H1", fixed = TRUE)
+  expect_match(conditionMessage(err), "Chr1:300", fixed = TRUE)
+
+  over <- tibble::tibble(
+    haplotype = c("H1", "H2"), freq = c(0.7, 0.6), chrom = "Chr1",
+    pos = c(300L, 100L), ref = c("A", "C"), alt = c("C", "G")
+  )
+  err <- tryCatch(
+    tidymarkers:::panel_haplotype_contract(over, targets),
+    error = function(e) e
+  )
+  expect_s3_class(err, "tidymarkers_haplotype_error")
+  expect_match(conditionMessage(err), "Chr1", fixed = TRUE)
+
+  # absence at a target is reference and is counted, not silently invented
+  h <- fixture_panel_file("haplotypes.csv")
+  ct <- tidymarkers:::panel_haplotype_contract(h, targets)
+  expect_identical(attr(ct, "reference_calls"), 1L)
+
+  # a non-target row must exist in the supplied variant table
+  variants <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = "C", alt = "A")
+  err <- tryCatch(
+    tidymarkers:::panel_haplotype_contract(h, targets, variants = variants),
+    error = function(e) e
+  )
+  expect_s3_class(err, "tidymarkers_haplotype_error")
+  expect_match(conditionMessage(err), "Chr1:100", fixed = TRUE)
+})
+
+test_that("a duplicate target aborts before any chemistry runs", {
+  duplicate <- rbind(fixture_targets()[1L, ], fixture_targets()[1L, ])
+  err <- tryCatch(
+    marker_design_panel(
+      fixture_genome(),
+      chemistries = "snp",
+      targets = duplicate, haplotypes = fixture_haplotypes()
+    ),
+    error = function(e) e
+  )
+  expect_s3_class(err, "tidymarkers_duplicate_target")
+  expect_match(conditionMessage(err), "Duplicate target", fixed = TRUE)
+})
+
+test_that("the LD seam collapses a perfect pair only when a threshold is given", {
+  h <- fixture_panel_file("haplotypes_ld.csv")
+  targets <- ld_targets()
+
+  not_applied <- tidymarkers:::panel_ld(targets, h, NULL)
+  expect_equal(nrow(not_applied$targets), 2L)
+  expect_identical(not_applied$record, "not_applied")
+
+  pruned <- tidymarkers:::panel_ld(targets, h, 0.8)
+  expect_equal(nrow(pruned$targets), 1L)
+  expect_equal(pruned$targets$pos, 300L)
+  expect_equal(pruned$record$threshold, 0.8)
+  expect_identical(pruned$record$dropped, "Chr1:500 T>G")
+
+  # an explicit linkage table needs no threshold
+  table_ld <- tibble::tibble(target1 = "Chr1:300 A>C", target2 = "Chr1:500 T>G")
+  expect_equal(nrow(tidymarkers:::panel_ld(targets, h, table_ld)$targets), 1L)
+})
+
+test_that("the panel applies LD and writes the record into the artefact", {
+  skip_if_no_oligoarrayaux()
+  h <- fixture_panel_file("haplotypes_ld.csv")
+  targets <- ld_targets()
+
+  both <- design_panel(withr::local_tempdir(), targets = targets, haplotypes = h)
+  expect_equal(nrow(both$targets), 2L)
+  expect_identical(both$ld, "not_applied")
+  expect_identical(both$artefact$manifest$plan$ld, "not_applied")
+
+  one <- design_panel(withr::local_tempdir(), targets = targets, haplotypes = h, ld = 0.8)
+  expect_equal(nrow(one$targets), 1L)
+  expect_identical(one$targets$target, "Chr1:300 A>C")
+  expect_equal(one$artefact$manifest$plan$ld$threshold, 0.8)
+})
+
+test_that("reversing the chemistry costs changes the chosen scheme", {
+  skip_if_no_oligoarrayaux()
+  target <- fixture_targets()[1L, ]
+  cheap_snp <- design_panel(withr::local_tempdir(), targets = target)
+  expect_identical(cheap_snp$targets$scheme, "snp")
+  cheap_hrm <- design_panel(
+    withr::local_tempdir(),
+    targets = target,
+    costs = marker_costs(snp = 5, hrm = 1)
+  )
+  expect_identical(cheap_hrm$targets$scheme, "hrm")
+})
+
+test_that("a fixed created time makes the text artefact byte-identical", {
+  expect_identical(
+    tidymarkers:::artefact_created("2026-01-01T00:00:00Z"),
+    "2026-01-01T00:00:00Z"
+  )
+  expect_identical(tidymarkers:::artefact_created(0), "1970-01-01T00:00:00Z")
+  withr::with_envvar(c(SOURCE_DATE_EPOCH = "86400"), {
+    expect_identical(tidymarkers:::artefact_created(), "1970-01-02T00:00:00Z")
+  })
+
+  skip_if_no_oligoarrayaux()
+  target <- fixture_targets()[1L, ]
+  created <- as.POSIXct("2026-01-01 00:00:00", tz = "UTC")
+  first <- design_panel(withr::local_tempdir(), targets = target, created = created)
+  second <- design_panel(withr::local_tempdir(), targets = target, created = created)
+
+  files <- c("artefact.json", "decisions.csv", "checks.csv", "why.csv", "targets.csv")
+  for (file in files) {
+    expect_identical(
+      readBin(file.path(first$artefact$dir, file), "raw", file.size(file.path(first$artefact$dir, file))),
+      readBin(file.path(second$artefact$dir, file), "raw", file.size(file.path(second$artefact$dir, file))),
+      info = file
+    )
+  }
+  # excluded by name: solved.rds serialises an igraph pointer and a random id,
+  # so a byte comparison would test the serializer, not the design
+  expect_true(file.exists(file.path(first$artefact$dir, "solved.rds")))
 })

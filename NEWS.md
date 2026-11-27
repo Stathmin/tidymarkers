@@ -6,6 +6,26 @@
 
 ## 0.4.1 (в работе)
 
+### ZT: масштаб, швы панели и гейт (2026-11-27)
+
+- **Класс изменения: новая функциональность панели + внутренний рефакторинг.**
+- `bp_lapply()` принимает `chunksize`, `on_error = "collect"` и `RNGseed`;
+  `design_kasp_markers()` пишет брошенный локус как `verdict = "error"` (не
+  `"fail"`); параллельный батч строит ленивый индекс в родителе, воркеры только
+  открывают шарды.
+- `marker_design_panel()` принимает `ld=`, `costs=` и `created=`;
+  `panel_duplicate_guard()`, `panel_haplotype_contract()` и `panel_ld()`
+  проверяют дубли целей, фазу, частоты и LD. `marker_artefact(created=)` чтит
+  `SOURCE_DATE_EPOCH`, текстовые файлы байт-стабильны.
+- Индекс: золотой набор TAIR10 в `tests/testthat/fixtures/tair10/`; бюджет
+  2x на локус измерен (индекс/память 0.98x по медиане). Память шардов измерена
+  (`dev/bench-index-memory.R`): 250 Мб хромосома — 885.5 МБ peak, 16 Гб
+  fixpur — дисковая задача, не 21.5 ГБ RAM (`docs/decisions/0001`).
+- Разрезаны `marker_plots.R`, `marker_assemble.R`, `marker_criteria.R`; в
+  `dev/check.R` добавлен потолок 1200 строк и шаг `test surface`. CI запускает
+  тот же гейт на release-ноге; отсутствие styler/lintr/testthat/тестов — провал
+  (`docs/decisions/0002`).
+
 ### T10: внешние процессы получают таймаут (2026-11-26)
 
 - **Класс изменения: внутренний рефакторинг; поведение без зависаний то же.**

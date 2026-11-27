@@ -103,8 +103,16 @@ jobs:
             - uses: r-lib/actions/setup-r-dependencies@v2
               timeout-minutes: 75
               with:
-                  extra-packages: any::rcmdcheck, any::pkgload
+                  extra-packages: any::rcmdcheck, any::pkgload, any::styler, any::lintr, any::roxygen2
                   needs: check
+
+            # docs/decisions/0002: the same gate developers run locally.  It
+            # fails when styler, lintr, testthat or the test files are absent,
+            # so a green leg cannot mean "the linter did not run".  Style and
+            # lint are platform-independent; one release leg is enough.
+            - name: Local merge gate (strict)
+              if: matrix.config.os == 'ubuntu-latest' && matrix.config.r == 'release'
+              run: Rscript dev/check.R --quick --no-render
 
             # ROADMAP ZY18, the Commons licensing invariant: MIT, no weaponized
             # licence additions. dev/check-licenses.R scans the dependencies

@@ -145,9 +145,11 @@ artefact_inputs <- function(plan) {
     )
   }
   if (!is.null(plan$haplotypes)) {
+    ref_calls <- attr(plan$haplotypes, "reference_calls")
+    ref_note <- if (is.null(ref_calls)) "" else paste0(", ", ref_calls, " reference call(s)")
     out[[length(out) + 1L]] <- list(
       role = "haplotypes", source = "table",
-      name = paste0(nrow(plan$haplotypes), " haplotype row(s)"),
+      name = paste0(nrow(plan$haplotypes), " haplotype row(s)", ref_note),
       path = NA_character_, sha256 = hash_object(plan$haplotypes),
       bytes = NA_integer_
     )
@@ -459,6 +461,32 @@ artefact_id <- function(manifest) {
   hash_object(jsonlite::toJSON(core, auto_unbox = TRUE, null = "null", digits = NA))
 }
 
+#' The manifest timestamp: explicit value, then SOURCE_DATE_EPOCH, then now
+#' @keywords internal
+#' @noRd
+artefact_created <- function(created = NULL) {
+  if (is.null(created)) {
+    created <- Sys.getenv("SOURCE_DATE_EPOCH", unset = "")
+  }
+  if (is.null(created) || !length(created) || (is.character(created) && !nzchar(created[[1L]]))) {
+    return(format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"))
+  }
+  if (inherits(created, "POSIXt")) {
+    return(format(created, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"))
+  }
+  if (is.numeric(created) || grepl("^[0-9]+$", as.character(created[[1L]]))) {
+    return(format(
+      as.POSIXct(as.numeric(created[[1L]]), origin = "1970-01-01", tz = "UTC"),
+      "%Y-%m-%dT%H:%M:%SZ",
+      tz = "UTC"
+    ))
+  }
+  if (!is.character(created) || length(created) != 1L || is.na(created)) {
+    abort_msg("`created` must be NULL, a POSIXct, an epoch, or an ISO timestamp.")
+  }
+  created
+}
+
 #' Write a self-documenting artefact for a solved plan
 #'
 #' Writes, into `dir`: `artefact.json` (the manifest), `decisions.csv` (one row
@@ -484,6 +512,9 @@ artefact_id <- function(manifest) {
 #'   the rejected candidates' reasons are read from; a solve that has been
 #'   round-tripped through `saveRDS()` keeps it.
 #' @param dir output directory (default: a temp dir).
+#' @param created artefact timestamp: `NULL` reads `SOURCE_DATE_EPOCH`, then the
+#'   current time; a `POSIXct`, an epoch string/number, or an ISO timestamp is
+#'   used as given.  A fixed value makes the text files byte-identical on rerun.
 #' @return a `marker_artefact`: `id`, `dir`, `manifest`, `decisions`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
@@ -499,7 +530,7 @@ artefact_id <- function(manifest) {
 #' marker_replay(art)$match
 #' @family plan
 #' @export
-marker_artefact <- function(solved, dir = tempdir()) {
+marker_artefact <- function(solved, dir = tempdir(), created = NULL) {
   if (!inherits(solved, "marker_solved")) {
     abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
@@ -528,7 +559,7 @@ marker_artefact <- function(solved, dir = tempdir()) {
   manifest <- list(
     schema = "tidymarkers/artefact@1",
     trace_schema = marker_trace_schema(),
-    created = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    created = artefact_created(created),
     package = list(
       name = "tidymarkers",
       version = as.character(utils::packageVersion("tidymarkers")),
@@ -550,7 +581,8 @@ marker_artefact <- function(solved, dir = tempdir()) {
       layers = solved$plan$layers,
       targets = nrow(tg),
       schemes_available = solved$schemes,
-      costs = as.list(solved$plan$costs %||% NA)
+      costs = as.list(solved$plan$costs %||% NA),
+      ld = solved$plan$ld %||% "not_applied"
     ),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),

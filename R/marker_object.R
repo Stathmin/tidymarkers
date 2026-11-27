@@ -132,9 +132,10 @@ variant_type <- function(ref, alt) {
 #' Design KASP markers for a table of loci, with a per-locus verdict
 #'
 #' Runs [assemble_kasp_assay()] independently over every row of `loci`, so one
-#' hard locus cannot abort the batch: errors are captured as `verdict = "fail"`,
-#' warnings or failing acceptance checks give `verdict = "warn"`, and a fully
-#' passing assay gives `verdict = "pass"`.  `loci` needs columns
+#' hard locus cannot abort the batch: an error is captured as
+#' `verdict = "error"` (a design that ran and failed is `"fail"`), warnings or
+#' failing acceptance checks give `verdict = "warn"`, and a fully passing assay
+#' gives `verdict = "pass"`.  `loci` needs columns
 #' `chrom`, `pos`, `ref`, `alt` (as in [read_variants_vcf()]).
 #'
 #' This is the KASP batch: it runs the full KASP assembly and acceptance checks,
@@ -196,7 +197,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
             )
           }
         },
-        error = function(e) row(note = conditionMessage(e))
+        error = function(e) row(verdict = "error", note = conditionMessage(e))
       ),
       warning = function(w) {
         cap$warns <- c(cap$warns, conditionMessage(w))
@@ -204,7 +205,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
       }
     )
     # surface any assembly warnings on an otherwise built assay
-    if (res$verdict != "fail" && length(cap$warns)) {
+    if (res$verdict %in% c("pass", "warn") && length(cap$warns)) {
       res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
       res$note <- paste(c(res$note, cap$warns), collapse = "; ")
     }
@@ -224,6 +225,8 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     cli::cli_progress_done(id = id)
     res
   } else {
+    # one parent build, then every worker only opens an existing shard
+    index_prebuild(genome)
     res <- bp_lapply(seq_len(nrow(loci)), function(i) {
       worker_biostrings()
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i], cores = 1L)

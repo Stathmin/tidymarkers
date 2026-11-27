@@ -44,6 +44,14 @@
 #'   `chrom`, `start`, `end`); it expands to the variants the context places
 #'   inside it ([marker_plan()]).
 #' @param dir directory the artefact is written to (see [marker_artefact()]).
+#' @param ld optional LD step for the target table: `NULL` (not applied), a
+#'   numeric `r2` threshold computed from `haplotypes`, or a linkage table with
+#'   `target1`/`target2` (labels).  A linked pair keeps the first target; the
+#'   record is written to the artefact (`"not_applied"` when `NULL`).
+#' @param costs optional chemistry costs passed to [marker_tech()], so the
+#'   cheapest-first order is a seam (see [marker_costs()]).
+#' @param created optional artefact timestamp; `NULL` reads
+#'   `SOURCE_DATE_EPOCH`, then the current time (see [marker_artefact()]).
 #' @param ... passed to the per-scheme designer through [marker_solve()] (e.g.
 #'   `flank`, `cores`).
 #' @return A `marker_panel` list:
@@ -84,6 +92,7 @@
 #' @export
 marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
                                 chemistries, targets = NULL, region = NULL,
+                                ld = NULL, costs = NULL, created = NULL,
                                 dir = tempdir(), ...) {
   if (!inherits(genome, "DNAStringSet") && !inherits(genome, "marker_genome")) {
     abort_msg(
@@ -106,11 +115,36 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
   variants <- panel_variants(variants)
   haplotypes <- panel_haplotypes(haplotypes)
 
-  plan <- marker_plan(genome, targets = targets, region = region) +
-    marker_tech(schemes = chemistries)
+  # resolve the target rows before the LD and haplotype seams, so each seam
+  # checks the same table the solver will design
+  target_tbl <- if (!is.null(targets)) normalise_targets(targets) else NULL
+  if (is.null(target_tbl) && !is.null(region)) {
+    seed <- marker_plan(genome, region = region)
+    if (!is.null(variants) || !is.null(haplotypes)) {
+      seed <- seed + marker_context(variants = variants, haplotypes = haplotypes)
+    }
+    target_tbl <- region_targets(seed)
+  }
+  if (is.null(target_tbl) || !nrow(target_tbl)) {
+    abort_msg("`targets` or `region` must resolve to at least one target.")
+  }
+  panel_duplicate_guard(target_tbl)
+  if (!is.null(haplotypes)) {
+    haplotypes <- panel_haplotype_contract(haplotypes, target_tbl, variants)
+  }
+  ldres <- panel_ld(target_tbl, haplotypes, ld)
+  target_tbl <- ldres$targets
+  # a region stays a region only when nothing pruned its targets; after an LD
+  # prune the survivors are solved explicitly
+  use_region <- if (is.null(targets) && is.null(ld)) region else NULL
+  use_targets <- if (is.null(use_region)) target_tbl else NULL
+
+  plan <- marker_plan(genome, targets = use_targets, region = use_region) +
+    marker_tech(schemes = chemistries, costs = costs)
   if (!is.null(variants) || !is.null(haplotypes)) {
     plan <- plan + marker_context(variants = variants, haplotypes = haplotypes)
   }
+  plan$ld <- ldres$record
 
   solved <- marker_solve(plan, progress = FALSE, ...)
   targets_tbl <- panel_targets(solved)
@@ -125,8 +159,9 @@ marker_design_panel <- function(genome, variants = NULL, haplotypes = NULL,
     list(
       targets = targets_tbl,
       one_pot = panel_one_pot(targets_tbl),
-      artefact = marker_artefact(solved, dir = dir),
+      artefact = marker_artefact(solved, dir = dir, created = created),
       solved = solved,
+      ld = ldres$record,
       experimental = TRUE
     ),
     class = "marker_panel"
@@ -277,4 +312,173 @@ panel_failure_lines <- function(targets_tbl) {
     },
     failed$target, failed$cause
   ))
+}
+
+#' Reject a target table with two rows for the same locus
+#' @keywords internal
+#' @noRd
+panel_duplicate_guard <- function(targets) {
+  key <- paste(targets$chrom, targets$pos, targets$ref, targets$alt, sep = "\r")
+  dup <- duplicated(key)
+  if (any(dup)) {
+    i <- which(dup)[[1L]]
+    abort_msg(
+      gettextf("Duplicate target %s: every target must appear once.", targets$label[[i]]),
+      class = "tidymarkers_duplicate_target"
+    )
+  }
+  invisible(targets)
+}
+
+#' The phased-haplotype contract of the panel
+#'
+#' Checks the input before it reaches a designer: one allele per
+#' `(haplotype, chrom, pos)`, `sum(freq) <= 1` per chromosome, a target-position
+#' row whose `ref`/`alt` match the target, and (when a variant table is given)
+#' every other row present in that table.  Absence at a target is reference; the
+#' number of such calls is attached as `reference_calls`.
+#' @keywords internal
+#' @noRd
+panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
+  h <- normalise_haplotypes(haplotypes)
+  key <- paste(h$haplotype, h$chrom, h$pos, sep = "\r")
+  dup <- duplicated(key)
+  if (any(dup)) {
+    i <- which(dup)[[1L]]
+    abort_msg(
+      gettextf(
+        "Haplotype %s has two alleles at %s:%s; the input is not phased.",
+        h$haplotype[[i]], h$chrom[[i]], h$pos[[i]]
+      ),
+      class = "tidymarkers_haplotype_error"
+    )
+  }
+  freq <- unique(h[, c("haplotype", "chrom", "freq")])
+  total <- tapply(freq$freq, freq$chrom, sum)
+  over <- names(total)[total > 1 + 1e-8]
+  if (length(over)) {
+    chrom <- over[[1L]]
+    first <- freq[freq$chrom == chrom, , drop = FALSE][1L, ]
+    pos <- h$pos[h$haplotype == first$haplotype & h$chrom == chrom][[1L]]
+    abort_msg(
+      gettextf(
+        "Haplotype frequencies sum to %s on %s (> 1); first offender %s at %s:%s.",
+        round(total[[chrom]], 3), chrom, first$haplotype, chrom, pos
+      ),
+      class = "tidymarkers_haplotype_error"
+    )
+  }
+  tg <- tibble::as_tibble(targets)
+  for (i in seq_len(nrow(tg))) {
+    t <- tg[i, , drop = FALSE]
+    at <- h[h$chrom == t$chrom & h$pos == t$pos, , drop = FALSE]
+    if (!nrow(at)) {
+      next
+    }
+    allowed <- c(t$alt, if ("alt2" %in% names(t)) t$alt2[!is.na(t$alt2)] else character(0))
+    bad <- at$ref != t$ref | !at$alt %in% allowed
+    if (any(bad)) {
+      j <- which(bad)[[1L]]
+      abort_msg(
+        gettextf(
+          "Haplotype %s has %s>%s at %s:%s, but the target is %s>%s.",
+          at$haplotype[[j]], at$ref[[j]], at$alt[[j]],
+          at$chrom[[j]], at$pos[[j]], t$ref, t$alt
+        ),
+        class = "tidymarkers_haplotype_error"
+      )
+    }
+  }
+  if (!is.null(variants)) {
+    v <- tibble::as_tibble(variants)
+    need_cols(v, c("chrom", "pos", "ref", "alt"), arg = "variants")
+    target_key <- paste(tg$chrom, tg$pos, sep = "\r")
+    elsewhere <- !paste(h$chrom, h$pos, sep = "\r") %in% target_key
+    if (any(elsewhere)) {
+      vk <- paste(v$chrom, as.integer(v$pos), toupper(v$ref), toupper(v$alt), sep = "\r")
+      hk <- paste(
+        h$chrom[elsewhere], h$pos[elsewhere],
+        h$ref[elsewhere], h$alt[elsewhere],
+        sep = "\r"
+      )
+      bad <- !hk %in% vk
+      if (any(bad)) {
+        i <- which(elsewhere)[which(bad)[[1L]]]
+        abort_msg(
+          gettextf(
+            "Haplotype %s carries %s>%s at %s:%s, which is not in the variant table.",
+            h$haplotype[[i]], h$ref[[i]], h$alt[[i]], h$chrom[[i]], h$pos[[i]]
+          ),
+          class = "tidymarkers_haplotype_error"
+        )
+      }
+    }
+  }
+  ref_calls <- 0L
+  for (i in seq_len(nrow(tg))) {
+    t <- tg[i, , drop = FALSE]
+    on_chrom <- unique(h$haplotype[h$chrom == t$chrom])
+    allowed <- c(t$alt, if ("alt2" %in% names(t)) t$alt2[!is.na(t$alt2)] else character(0))
+    carriers <- unique(h$haplotype[
+      h$chrom == t$chrom & h$pos == t$pos & h$alt %in% allowed
+    ])
+    ref_calls <- ref_calls + length(setdiff(on_chrom, carriers))
+  }
+  attr(h, "reference_calls") <- ref_calls
+  h
+}
+
+#' The opt-in LD step: collapse targets linked at or above a threshold
+#'
+#' `ld = NULL` records `"not_applied"`.  A numeric threshold computes pairwise
+#' `r2` from the phased haplotypes (carrier indicator per haplotype); a linkage
+#' table names the pairs (`target1`, `target2` labels) to collapse.  The first
+#' target of a pair is kept, so the order is the input order.
+#' @keywords internal
+#' @noRd
+panel_ld <- function(targets, haplotypes = NULL, ld = NULL) {
+  if (is.null(ld)) {
+    return(list(targets = targets, record = "not_applied"))
+  }
+  keep <- rep(TRUE, nrow(targets))
+  if (is.data.frame(ld)) {
+    need_cols(ld, c("target1", "target2"), arg = "ld")
+    for (i in seq_len(nrow(ld))) {
+      first <- match(as.character(ld$target1[[i]]), targets$label)
+      second <- match(as.character(ld$target2[[i]]), targets$label)
+      if (is.na(first) || is.na(second)) {
+        abort_msg("The LD table names a target that is not in `targets`.")
+      }
+      keep[second] <- FALSE
+    }
+    record <- list(table = ld)
+  } else if (is.numeric(ld) && length(ld) == 1L && is.finite(ld) && ld >= 0 && ld <= 1) {
+    if (is.null(haplotypes)) {
+      abort_msg("A numeric `ld` threshold needs `haplotypes` to compute r2.")
+    }
+    if (nrow(targets) > 1L) {
+      hap <- unique(haplotypes$haplotype)
+      dosage <- vapply(seq_len(nrow(targets)), function(i) {
+        t <- targets[i, , drop = FALSE]
+        allowed <- c(t$alt, if ("alt2" %in% names(t)) t$alt2[!is.na(t$alt2)] else character(0))
+        carriers <- unique(haplotypes$haplotype[
+          haplotypes$chrom == t$chrom & haplotypes$pos == t$pos &
+            haplotypes$alt %in% allowed
+        ])
+        as.numeric(hap %in% carriers)
+      }, numeric(length(hap)))
+      dosage <- matrix(dosage, nrow = length(hap))
+      r2 <- suppressWarnings(stats::cor(dosage)^2)
+      for (j in seq_len(nrow(targets))) {
+        linked <- which(keep & seq_len(nrow(targets)) < j)
+        if (length(linked) && any(r2[linked, j] >= ld, na.rm = TRUE)) {
+          keep[[j]] <- FALSE
+        }
+      }
+    }
+    record <- list(threshold = ld, dropped = targets$label[!keep])
+  } else {
+    abort_msg("`ld` must be NULL, one `r2` threshold in [0, 1], or a linkage table.")
+  }
+  list(targets = targets[keep, , drop = FALSE], record = record)
 }

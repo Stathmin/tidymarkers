@@ -115,6 +115,8 @@ design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL, ...
   if (is.null(BPPARAM) || marker_ncores(BPPARAM) == 1L) {
     rows <- purrr::map(seq_len(nrow(loci)), one)
   } else {
+    # one parent build, then every worker only opens an existing shard
+    index_prebuild(genome)
     rows <- bp_lapply(seq_len(nrow(loci)), function(i) {
       worker_biostrings()
       one(i)
