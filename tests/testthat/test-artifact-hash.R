@@ -37,3 +37,24 @@ test_that("the input hash covers the code sources, not just generator + inputs",
     expect_identical(artifact_input_hash(entry), base)
   })
 })
+
+test_that("a comment-only edit leaves the artifact input hash alone", {
+  dir <- withr::local_tempdir()
+  code <- c("f <- function(x) x + 1", "# a note", "g <- function(y) y")
+  writeLines("generator", file.path(dir, "gen.R"))
+  writeLines(code, file.path(dir, "code.R"))
+  writeLines("artifact", file.path(dir, "figure.svg"))
+  entry <- list(path = "figure.svg", generator = "gen.R", inputs = character(), code = "code.R")
+
+  withr::with_dir(dir, {
+    base <- artifact_input_hash(entry)
+
+    # comments and layout are not behaviour, so they must not mark a figure stale
+    writeLines(c("f <- function(x)  x + 1", "# another note", "g <- function(y) y"), file.path(dir, "code.R"))
+    expect_identical(artifact_input_hash(entry), base)
+
+    # a real edit still does
+    writeLines(c("f <- function(x) x + 2", "# another note", "g <- function(y) y"), file.path(dir, "code.R"))
+    expect_false(identical(artifact_input_hash(entry), base))
+  })
+})

@@ -50,6 +50,28 @@ md5_file <- function(path) {
   unname(tools::md5sum(path))
 }
 
+# The hash of what an R file computes, not of its bytes: a comment or an
+# indentation edit cannot change the output, so hashing the parsed code keeps a
+# cosmetic edit from invalidating every figure that lists the file.  A file
+# that does not parse is hashed as bytes -- a broken source must still fail.
+md5_code <- function(path) {
+  code <- tryCatch(
+    paste(deparse(parse(path, keep.source = FALSE), width.cutoff = 500L), collapse = "\n"),
+    error = function(e) NULL
+  )
+  if (is.null(code)) {
+    return(md5_file(path))
+  }
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(code, tmp, useBytes = TRUE)
+  unname(tools::md5sum(tmp))
+}
+
+md5_source <- function(path) {
+  if (grepl("[.][Rr]$", path) && file.exists(path)) md5_code(path) else md5_file(path)
+}
+
 # Content hash over files and directories.  Directories are expanded
 # recursively and the relative file list is part of the hash, so deleting or
 # renaming a source file also invalidates the artifact.
@@ -62,10 +84,10 @@ hash_paths <- function(paths) {
       if (!length(rel)) parts <- c(parts, paste0(p, "/:<empty>"))
       for (r in rel) {
         f <- file.path(p, r)
-        parts <- c(parts, paste0(normalize_slashes(f), ":", md5_file(f)))
+        parts <- c(parts, paste0(normalize_slashes(f), ":", md5_source(f)))
       }
     } else {
-      parts <- c(parts, paste0(normalize_slashes(p), ":", md5_file(p)))
+      parts <- c(parts, paste0(normalize_slashes(p), ":", md5_source(p)))
     }
   }
   tmp <- tempfile()
