@@ -200,6 +200,12 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   for (i in seq_along(sites)) {
     rel <- sites[[i]]
     adir <- fs::path(root, rel)
+    if (!identical(fs::path_abs(adir), root) && !fs::path_has_parent(fs::path_abs(adir), root)) {
+      abort_msg(
+        "The corpus names an artefact outside its scanned root: {.val {rel}}.",
+        i = "A corpus row describes a directory under {.path {root}}."
+      )
+    }
     crate <- marker_export_rocrate(
       marker_artefact_read(adir),
       fs::path(dir, "crates", pseudonyms[[i]])

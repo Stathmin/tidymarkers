@@ -120,6 +120,16 @@ test_that("the pseudonym is reproducible from the salt alone", {
   expect_identical(again$pseudonym, fx$map$pseudonym)
 })
 
+test_that("a corpus row cannot name a directory outside the scanned root", {
+  fx <- outcomes_corpus_fixture()
+  tampered <- fx$corpus
+  tampered$artefact[[1L]] <- "../outside-the-corpus"
+  expect_error(
+    marker_export_outcomes(tampered, paste0(tempfile("handover"), "/out")),
+    "outside its scanned root"
+  )
+})
+
 test_that("a corpus without a scanned root or an export inside it is refused", {
   fx <- outcomes_corpus_fixture()
   hand_built <- tibble::tibble(artefact = "x", artefact_id = "y")
