@@ -75,6 +75,14 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
     VariantAnnotation = read_variants_vcf_va(path, chrom, start, end)
   )
 
+  bad_pos <- is.na(v$pos) | v$pos < 1L
+  if (any(bad_pos)) {
+    abort_msg(gettextf(
+      "%s VCF record(s) have a POS outside the positive integer range (first on %s).",
+      sum(bad_pos), v$chrom[[which(bad_pos)[[1L]]]]
+    ))
+  }
+
   if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
   if (!is.null(end)) v <- dplyr::filter(v, .data$pos <= end)
@@ -153,6 +161,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
   rows <- list()
   n_multi <- 0L
   n_bad <- 0L
+  n_bad_pos <- 0L
   repeat {
     lines <- readLines(con, n = 1000L, warn = FALSE)
     if (!length(lines)) break
@@ -165,6 +174,11 @@ read_variant_genotypes <- function(path, samples = NULL) {
       }
       if (grepl(",", f[[5L]], fixed = TRUE)) {
         n_multi <- n_multi + 1L
+        next
+      }
+      pos <- suppressWarnings(as.integer(f[[2L]]))
+      if (is.na(pos) || pos < 1L) {
+        n_bad_pos <- n_bad_pos + 1L
         next
       }
       fmt <- strsplit(f[[9L]], ":", fixed = TRUE)[[1L]]
@@ -183,7 +197,7 @@ read_variant_genotypes <- function(path, samples = NULL) {
       rows[[length(rows) + 1L]] <- tibble::tibble(
         line = samples,
         chrom = ath_chrom(f[[1L]]),
-        pos = as.integer(f[[2L]]),
+        pos = pos,
         ref = normalise_allele(f[[4L]]),
         alt = normalise_allele(f[[5L]]),
         genotype = unname(calls["genotype", ]),
@@ -196,6 +210,11 @@ read_variant_genotypes <- function(path, samples = NULL) {
       "{n_multi} multi-allelic VCF record{?s} dropped: ",
       "ALT dosage is ambiguous with more than one ALT."
     )))
+  }
+  if (n_bad_pos > 0L) {
+    cli::cli_inform(gettext(
+      "{n_bad_pos} VCF record{?s} dropped: POS is not a positive integer."
+    ))
   }
   if (n_bad > 0L) {
     cli::cli_inform(gettext(

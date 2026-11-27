@@ -511,3 +511,24 @@ test_that("as_variant_row gives exactly one typed row", {
   expect_error(as_variant_row(two), "exactly one variant")
   expect_error(as_variant_row(two, pos = 99L), "exactly one variant")
 })
+
+test_that("a VCF POS outside integer range is refused, not silently NA", {
+  path <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "Chr1\t3000000000\t.\tA\tC\t.\t.\t.\tGT\t0/1"
+  ), path)
+
+  expect_error(read_variants_vcf(path), "positive integer range")
+
+  # the streaming reader drops the record and says why, rather than emitting
+  # a row whose pos is NA and poisoning every downstream comparison
+  expect_message(
+    read_variant_genotypes(path),
+    "POS is not a positive integer"
+  )
+  g <- suppressMessages(read_variant_genotypes(path))
+  expect_equal(nrow(g), 0L)
+  expect_s3_class(g, "genotypes")
+})
