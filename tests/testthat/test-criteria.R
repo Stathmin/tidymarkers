@@ -357,6 +357,9 @@ test_that("a criteria table carries the limits it rendered and feeds them back",
   expect_identical(as_limits(crit), KASP_LIMITS)
   expect_identical(as_limits(KASP_LIMITS), KASP_LIMITS)
   expect_error(as_limits(data.frame(x = 1)), "marker_criteria")
+  expect_error(as_limits(list(ampliconn = c(50, 100))), "Unknown limit")
+  expect_error(as_limits(list(amplicon = c(50, NA))), "finite")
+  expect_error(as_limits(list(c(50, 100))), "needs a name")
 
   w <- Biostrings::DNAString(bseq(600L, 2L))
   genome <- Biostrings::DNAStringSet(c(Chr1 = w))

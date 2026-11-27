@@ -348,13 +348,37 @@ vec_cast.marker_criteria.tbl_df <- function(x, to, ...) new_marker_criteria(x)
 #' @export
 as_limits <- function(x) {
   if (is.list(x) && !is.data.frame(x) && all(vapply(x, is.numeric, logical(1)))) {
-    return(x)
+    return(check_limit_values(x))
   }
   lim <- attr(x, "limits", exact = TRUE)
   if (is.list(lim) && length(lim)) {
-    return(lim)
+    return(check_limit_values(lim))
   }
   abort_msg("`x` must be a marker_criteria() table or a numeric limits list.")
+}
+
+#' Refuse a limits list that cannot mean what its names say
+#' @keywords internal
+#' @noRd
+check_limit_values <- function(lim) {
+  if (is.null(names(lim)) || any(!nzchar(names(lim)))) {
+    abort_msg("Every limit needs a name, e.g. `amplicon = c(50, 100)`.")
+  }
+  unknown <- setdiff(names(lim), names(KASP_LIMITS))
+  if (length(unknown)) {
+    abort_msg(gettextf(
+      "Unknown limit(s): %s. Known limits: %s.",
+      paste(unknown, collapse = ", "), paste(names(KASP_LIMITS), collapse = ", ")
+    ))
+  }
+  bad <- vapply(lim, function(v) !length(v) || any(!is.finite(v)), logical(1))
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "Limit(s) %s must be finite numbers.",
+      paste(names(lim)[bad], collapse = ", ")
+    ))
+  }
+  lim
 }
 
 #' The criterion registry: one data object per threshold
