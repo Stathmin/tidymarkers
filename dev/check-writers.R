@@ -45,8 +45,11 @@ write_pattern <- paste0(
     "file.rename", "writeBin", "utils::write.csv", "utils::write.table"
   ), collapse = "|"), ")\\s*\\("
 )
+# A guard refuses a name; it does not merely report one. `cache_present()` is a
+# hit test (ZV44), so a body that asks it and then writes is still undeclared
+# (ADR 0035).
 guard_pattern <- paste0(
-  "refuse_links\\(|declared_path\\(|declared_index\\(|cache_present\\("
+  "refuse_links\\(|declared_path\\(|declared_index\\("
 )
 
 # Top-level `name <- function(...)` bodies in R/.  Parsed, not grepped, so a
@@ -114,15 +117,24 @@ check_writers <- function(registry, hits) {
 self_test <- function() {
   bodies <- c(
     undeclared = "function(path) writeLines(\"x\", path)",
+    cached = "function(path) { if (cache_present(path)) return(path); writeLines(\"x\", path) }",
     declared = "function(dir) { refuse_links(dir, \"a.csv\"); readr::write_csv(x, dir) }"
   )
   hits <- scan_writers(bodies)
   empty <- check_writers(list(), hits)
-  if (!identical(empty, "undeclared writer (guard it, or add to dev/writers.yml): undeclared")) {
+  expected <- paste0(
+    "undeclared writer (guard it, or add to dev/writers.yml): ",
+    c("cached", "undeclared")
+  )
+  if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded writer was not caught")
   }
   ok <- check_writers(
-    list(list(symbol = "undeclared", reason = "self-test")), hits
+    list(
+      list(symbol = "undeclared", reason = "self-test"),
+      list(symbol = "cached", reason = "self-test")
+    ),
+    hits
   )
   if (length(ok)) {
     stop("self-test: a guarded body or a registered writer was flagged")
