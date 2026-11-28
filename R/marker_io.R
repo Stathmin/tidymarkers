@@ -887,6 +887,14 @@ marker_as_granges <- function(x, extra = NULL) {
   if (any(is.na(ref) | !nzchar(ref))) {
     abort_msg("`ref` must be a non-empty allele string on every row.")
   }
+  bad <- bad_position(df$pos)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(gettextf(
+      "Variant %d has a POS outside the positive integer range (%s).",
+      i, encodeString(as.character(df$pos[[i]]))
+    ))
+  }
   gr <- GenomicRanges::GRanges(
     seqnames = as.character(df$chrom),
     ranges = IRanges::IRanges(as.integer(df$pos), width = nchar(ref))

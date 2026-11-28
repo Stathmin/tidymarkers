@@ -1053,3 +1053,11 @@ test_that("a GT allele index is whole in its spelling (ADR 0074)", {
   expect_equal(g$genotype, c(NA, NA, NA, NA, 1, 2))
   expect_equal(g$depth, rep(10, 6))
 })
+
+test_that("marker_as_granges refuses a position that is not whole", {
+  skip_if_not_installed("GenomicRanges")
+  v <- tibble::tibble(chrom = "Chr1", pos = 10.9, ref = "A", alt = "G")
+  expect_error(marker_as_granges(v), "positive integer range")
+  v$pos <- -5
+  expect_error(marker_as_granges(v), "positive integer range")
+})
