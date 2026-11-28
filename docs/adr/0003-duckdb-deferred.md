@@ -1,6 +1,6 @@
 # 0003 — DuckDB/`duckplyr` is deferred until an aggregation is measured
 
-- Status: accepted
+- Status: accepted (amended)
 - Date: 2026-11-26
 - Supersedes: none
 

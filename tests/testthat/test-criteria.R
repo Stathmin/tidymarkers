@@ -350,3 +350,37 @@ test_that("the criterion constructor refuses a table missing a documented column
   expect_error(tidymarkers:::new_marker_criteria(bad), "missing column")
   expect_error(tidymarkers:::new_marker_criteria(spec[, c("id", "label")]), "missing column")
 })
+
+test_that("a criteria table carries the limits it rendered and feeds them back", {
+  crit <- marker_criteria()
+  expect_s3_class(crit, "criteria")
+  expect_identical(as_limits(crit), KASP_LIMITS)
+  expect_identical(as_limits(KASP_LIMITS), KASP_LIMITS)
+  expect_error(as_limits(data.frame(x = 1)), "marker_criteria")
+  expect_error(as_limits(list(ampliconn = c(50, 100))), "Unknown limit")
+  expect_error(as_limits(list(amplicon = c(50, NA))), "finite")
+  expect_error(as_limits(list(c(50, 100))), "needs a name")
+
+  w <- Biostrings::DNAString(bseq(600L, 2L))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = w))
+  target <- tibble::tibble(
+    chrom = "Chr1", pos = 300L,
+    ref = as.character(Biostrings::subseq(w, 300L, 300L)), alt = "G"
+  )
+  if (identical(target$ref, "G")) target$alt <- "A"
+  assay <- assemble_kasp_assay(genome, target, flank = 150L, cores = 1L)
+  if (inherits(assay, "marker_doomed")) skip("fixture target is not designable")
+  by_table <- marker_design_checks(assay, limits = crit)
+  by_list <- marker_design_checks(assay, limits = KASP_LIMITS)
+  expect_identical(by_table, by_list)
+})
+
+test_that("a numeric bound is parsed, never executed", {
+  parse_bound <- tidymarkers:::criterion_parse_bound
+  expect_equal(parse_bound("c(0.4, 0.6)", "numeric"), c(0.4, 0.6))
+  # a call hiding behind c() stays text: a threshold is data, not code
+  expect_identical(
+    parse_bound("c(1, system('true'))", "numeric"),
+    "c(1, system('true'))"
+  )
+})

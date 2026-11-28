@@ -4,7 +4,13 @@
 \alias{marker_replay}
 \title{Re-run the design an artefact recorded and compare}
 \usage{
-marker_replay(artefact, cache = NULL, progress = FALSE, tolerance = NULL)
+marker_replay(
+  artefact,
+  cache = NULL,
+  progress = FALSE,
+  tolerance = NULL,
+  solved = NULL
+)
 }
 \arguments{
 \item{artefact}{a \code{marker_artefact} or the directory it was written to.}
@@ -16,6 +22,11 @@ design to run again - which is the only version that tests anything.}
 \item{progress}{show a progress bar (default: not, the replay is a check).}
 
 \item{tolerance}{accepted; reserved for numeric comparison of the markers.}
+
+\item{solved}{a \code{marker_solved} you trust (see \code{\link[=marker_solve]{marker_solve()}}).  When given,
+its plan is re-solved and compared with the recorded \code{replay.csv}, and
+\code{solved.rds} is never read.  This is the way to replay a record from an
+untrusted source.}
 }
 \value{
 a \code{marker_replay}: \code{id}, \code{match} (one logical for the whole run),
@@ -25,16 +36,24 @@ target: \code{target}, \code{recorded_scheme}, \code{replayed_scheme},
 \code{recorded_verdict}, \code{replayed_verdict}, \code{match}).
 }
 \description{
-Reads \code{solved.rds}, re-solves its plan with the recorded knobs, and compares
-the chosen chemistry and verdict per target.  This is what turns "we logged
-everything" into a claim that can be checked: a mismatch names the target and
-both verdicts instead of silently returning a different design.
+Re-solves the recorded plan with the recorded knobs and compares the chosen
+chemistry and verdict per target.  This is what turns "we logged everything"
+into a claim that can be checked: a mismatch names the target and both
+verdicts instead of silently returning a different design.
 }
 \details{
 The input hashes and the engine stamp are re-checked first, so a reference that
 was replaced is reported as such (\code{inputs_match = FALSE}) and a library upgrade
 as an engine change (\code{engine_match = FALSE}, \code{engines_changed}), rather than
 either being read as a model change.
+
+\code{solved.rds} is a serialized R object, and \code{readRDS()} executes what the file
+tells it to. Replay is therefore for an artefact this machine wrote, or one
+from a source whose code you would run anyway. A record written by
+\code{\link[=marker_artefact]{marker_artefact()}} also names its verdicts in \code{replay.csv}; pass a trusted
+\code{solved} and the replay compares against that file without opening the RDS.
+\code{\link[=marker_import_rocrate]{marker_import_rocrate()}} never opens the RDS, so a crate that arrived from a
+stranger can be inspected without being trusted with execution.
 }
 \examples{
 genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
@@ -48,6 +67,7 @@ marker_replay(art)$match
 }
 \seealso{
 Other plan:
+\code{\link[=as_primer_set]{as_primer_set()}},
 \code{\link[=marker_artefact]{marker_artefact()}},
 \code{\link[=marker_artefact_read]{marker_artefact_read()}},
 \code{\link[=marker_context]{marker_context()}},

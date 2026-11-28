@@ -27,10 +27,10 @@ trace_fixture_solve <- local({
   }
 })
 
-# The 15 fields a trace carries, in order, spelled out rather than read back from
+# The 16 fields a trace carries, in order, spelled out rather than read back from
 # the package constant: a field silently dropped from the constant must fail here.
 TRACE_NAMES <- c(
-  "schema", "created", "package", "platform", "engine_stamp", "inputs", "plan",
+  "schema", "contract", "created", "package", "platform", "engine_stamp", "inputs", "plan",
   "parameters", "overrides", "limitations", "counts", "files", "id",
   "decisions", "signals"
 )
@@ -87,7 +87,7 @@ test_that("a trace from an artefact carries every field and its decisions", {
 test_that("an artefact manifest names the trace version it maps to", {
   art <- new_artefact()
 
-  expect_identical(art$manifest$schema, "tidymarkers/artefact@1")
+  expect_identical(art$manifest$schema, "tidymarkers/artefact@2")
   expect_identical(art$manifest$trace_schema, marker_trace_schema())
   json <- jsonlite::fromJSON(
     readr::read_file(fs::path(art$dir, "artefact.json")),
@@ -104,10 +104,11 @@ test_that("an artefact manifest names the trace version it maps to", {
 # The id pins the serialisation, not just its self-consistency: a change to
 # `auto_unbox`/`null`/`digits` in `artefact_id()` renumbers every artefact.
 test_that("the artefact id is a frozen hash of the decision core", {
-  # a hand-built core: `artefact_id()` keeps these seven fields and drops the
+  # a hand-built core: `artefact_id()` keeps these eight fields and drops the
   # rest, so this needs no solve, no genome and no temp dir
   core <- list(
-    schema = "tidymarkers/artefact@1",
+    schema = "tidymarkers/artefact@2",
+    contract = list(version = "tidymarkers/contract@1", scenario = "unspecified"),
     package = "tidymarkers",
     engine_stamp = list(tidymarkers = "0.0.0.9000", primer3 = NA),
     inputs = list(list(role = "reference", name = "ref.fa", sha256 = "abc", bytes = 600L)),
@@ -120,7 +121,7 @@ test_that("the artefact id is a frozen hash of the decision core", {
   # decision core or its exact JSON serialisation changes on purpose
   expect_identical(
     tidymarkers:::artefact_id(core),
-    "a5a78bef0d3761a0ed905ffe3031818689624a2368a05ed36b895dc31db73b3c"
+    "275eb1097b756ca3730bcb77093b6389f15d82cea300c9bee3a09486acd266cd"
   )
   # an unnamed extra field is not part of the core, so it cannot renumber the id
   expect_identical(tidymarkers:::artefact_id(c(list(noise = TRUE), core)), tidymarkers:::artefact_id(core))
@@ -264,16 +265,16 @@ test_that("an artefact directory migrates to a trace without losing its decision
 
 test_that("an artefact reader refuses a schema it does not know and names it", {
   dir <- withr::local_tempdir("future-artefact-")
-  writeLines('{"schema": "tidymarkers/artefact@2"}', fs::path(dir, "artefact.json"))
+  writeLines('{"schema": "tidymarkers/artefact@3"}', fs::path(dir, "artefact.json"))
 
   err <- tryCatch(marker_artefact_read(dir), error = identity)
   expect_s3_class(err, "error")
-  expect_match(conditionMessage(err), "tidymarkers/artefact@2", fixed = TRUE)
+  expect_match(conditionMessage(err), "tidymarkers/artefact@3", fixed = TRUE)
   expect_match(conditionMessage(err), "Update tidymarkers", fixed = TRUE)
 
   err <- tryCatch(marker_trace_from_artefact(dir), error = identity)
   expect_s3_class(err, "error")
-  expect_match(conditionMessage(err), "tidymarkers/artefact@2", fixed = TRUE)
+  expect_match(conditionMessage(err), "tidymarkers/artefact@3", fixed = TRUE)
 
   empty <- withr::local_tempdir("empty-artefact-")
   err <- tryCatch(marker_artefact_read(empty), error = identity)
@@ -306,9 +307,9 @@ test_that("an unknown or newer schema aborts and names the version", {
   expect_s3_class(err, "error")
   expect_match(conditionMessage(err), "tidymarkers/trace@2", fixed = TRUE)
 
-  err <- tryCatch(marker_trace_migrate(list(schema = "tidymarkers/artefact@2")), error = identity)
+  err <- tryCatch(marker_trace_migrate(list(schema = "tidymarkers/artefact@3")), error = identity)
   expect_s3_class(err, "error")
-  expect_match(conditionMessage(err), "tidymarkers/artefact@2", fixed = TRUE)
+  expect_match(conditionMessage(err), "tidymarkers/artefact@3", fixed = TRUE)
 })
 
 # --- the aggregation contract ------------------------------------------------

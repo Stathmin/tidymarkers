@@ -92,7 +92,8 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
   }
   cand |>
     dplyr::slice_head(n = n) |>
-    dplyr::mutate(rank = dplyr::row_number())
+    dplyr::mutate(rank = dplyr::row_number()) |>
+    new_primer_candidates()
 }
 
 
@@ -502,7 +503,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   wide |>
     dplyr::select(dplyr::all_of(AS_PRIMER_COLS), ".policy_rank") |>
     dplyr::arrange(.data$.policy_rank, dplyr::desc(.data$discrimination)) |>
-    dplyr::select(-".policy_rank")
+    dplyr::select(-".policy_rank") |>
+    new_primer_candidates()
 }
 
 #' Can any AS primer clear the caller's GC/Tm window at all?
@@ -562,7 +564,7 @@ AS_PRIMER_COLS <- c(
 #' @keywords internal
 #' @noRd
 empty_as_primers <- function() {
-  tibble::tibble(
+  new_primer_candidates(tibble::tibble(
     strand = character(), as_length = integer(), stab_at = integer(),
     stab_base = character(), ref_primer = character(), alt_primer = character(),
     alt_degen = character(),
@@ -570,7 +572,14 @@ empty_as_primers <- function() {
     discrimination = numeric(), tm = numeric(), gc = numeric(), dg_3p = numeric(),
     tmpl_start = integer(), tmpl_end = integer(), weak_terminal = logical(),
     stab_policy = character()
-  )[AS_PRIMER_COLS]
+  )[AS_PRIMER_COLS])
+}
+
+#' Mark a candidate table as such
+#' @keywords internal
+#' @noRd
+new_primer_candidates <- function(x) {
+  structure(x, class = c("primer_candidates", class(x)))
 }
 
 

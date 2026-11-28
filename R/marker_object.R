@@ -185,19 +185,27 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
         {
           a <- rlang::exec(assemble_kasp_assay, genome, snp, variants = variants, !!!dots)
           if (is_kasp_doomed(a)) {
-            row(note = a$reason)
+            list(row = row(note = a$reason), marker = NULL)
           } else {
             chk <- marker_design_checks(a)
-            row(
-              strand = a$strand, amplicon = a$assay$amplicon[1],
-              discrimination = a$efficiency$discrimination[1],
-              n_fail = sum(!chk$pass),
-              verdict = if (all(chk$pass)) "pass" else "warn",
-              note = paste(chk$criterion[!chk$pass], collapse = "; ")
+            list(
+              row = row(
+                strand = a$strand, amplicon = a$assay$amplicon[1],
+                discrimination = a$efficiency$discrimination[1],
+                n_fail = sum(!chk$pass),
+                verdict = if (all(chk$pass)) "pass" else "warn",
+                note = paste(chk$criterion[!chk$pass], collapse = "; ")
+              ),
+              marker = a
             )
           }
         },
-        error = function(e) row(verdict = "error", note = conditionMessage(e))
+        error = function(e) {
+          list(
+            row = row(verdict = "error", note = conditionMessage(e)),
+            marker = NULL
+          )
+        }
       ),
       warning = function(w) {
         cap$warns <- c(cap$warns, conditionMessage(w))
@@ -205,9 +213,9 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
       }
     )
     # surface any assembly warnings on an otherwise built assay
-    if (res$verdict %in% c("pass", "warn") && length(cap$warns)) {
-      res$verdict <- if (res$verdict == "pass") "warn" else res$verdict
-      res$note <- paste(c(res$note, cap$warns), collapse = "; ")
+    if (res$row$verdict %in% c("pass", "warn") && length(cap$warns)) {
+      res$row$verdict <- if (res$row$verdict == "pass") "warn" else res$row$verdict
+      res$row$note <- paste(c(res$row$note, cap$warns), collapse = "; ")
     }
     res
   }
@@ -215,22 +223,25 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
   if (is.null(BPPARAM)) {
     n <- nrow(loci)
     id <- cli::cli_progress_bar(gettext("Designing KASP markers"), total = n)
-    res <- purrr::imap(seq_len(n), function(i, ...) {
+    parts <- purrr::imap(seq_len(n), function(i, ...) {
       cli::cli_progress_update(id = id)
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i],
         cores = getOption("tidymarkers.cores", 1L)
       )
-    }) |>
-      purrr::list_rbind()
+    })
     cli::cli_progress_done(id = id)
-    res
   } else {
     # one parent build, then every worker only opens an existing shard
     index_prebuild(genome)
-    res <- bp_lapply(seq_len(nrow(loci)), function(i) {
+    parts <- bp_lapply(seq_len(nrow(loci)), function(i) {
       worker_biostrings()
       one(loci$chrom[i], loci$pos[i], loci$ref[i], loci$alt[i], cores = 1L)
     }, BPPARAM)
-    purrr::list_rbind(res)
   }
+  # the assays travel as an attribute: the verdict schema stays exactly the one
+  # callers already parse, while `as_marker_solved()` can still reach the designs
+  out <- purrr::list_rbind(lapply(parts, `[[`, "row"))
+  attr(out, "markers") <- lapply(parts, `[[`, "marker")
+  class(out) <- c("marker_batch", class(out))
+  out
 }

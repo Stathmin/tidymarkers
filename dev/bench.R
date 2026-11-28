@@ -7,18 +7,27 @@
 #  (object sizes); both are pinned in renv.lock.
 #
 #  Compares against dev/bench-baseline.csv when it exists; refresh it with
-#  `--update` after an intended change.
+#  `--update` after an intended change.  `--gate` makes the comparison a gate:
+#  exit 1 when a case is more than 2x its baseline, and an explicit `not_run`
+#  (exit 0) when the baseline is missing.
 #
 #  Needs OligoArrayAux for the thermodynamic rows (see
 #  data-raw/install-oligoarrayaux.R); without it those rows are skipped.
 #
-#  Run:  Rscript dev/bench.R [--update]
+#  Run:  Rscript dev/bench.R [--update|--gate]
 # =============================================================================
 
 script <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (length(script)) dirname(dirname(normalizePath(sub("^--file=", "", script[[1L]])))) else getwd()
 setwd(root)
 update <- "--update" %in% commandArgs(trailingOnly = TRUE)
+gate <- "--gate" %in% commandArgs(trailingOnly = TRUE)
+if (update && gate) stop("--update rewrites the baseline; --gate compares against it", call. = FALSE)
+# a timing baseline belongs to one host: the same call differs by an order of
+# magnitude across CPUs, so a foreign baseline is `not_run`, not a regression.
+# CI runners get a fresh nodename every run, so the workflow pins a stable id.
+this_host <- Sys.getenv("TIDYMARKERS_BENCH_HOST", Sys.info()[["nodename"]])
+this_r <- paste(R.version$major, R.version$minor, sep = ".")
 
 for (pkg in c("bench", "lobstr")) {
   if (!requireNamespace(pkg, quietly = TRUE)) stop("dev/bench.R needs '", pkg, "'; run renv::restore()")
@@ -77,20 +86,57 @@ used_fallback <- tab$fallback
 tab <- tab[, c("fn", "ms", "bytes")]
 
 # --- report -----------------------------------------------------------------
+baseline <- file.path(root, "dev", "bench-baseline.csv")
 cat("tidymarkers function benchmark (bench)\n")
 if (!nzchar(Sys.which("hybrid-min"))) cat("note: OligoArrayAux not on PATH - thermodynamic rows skipped\n")
+if (gate && !file.exists(baseline)) cat("bench-gate: not_run (dev/bench-baseline.csv missing; run --update once)\n")
 if (any(used_fallback)) cat("note: bench mem_alloc is unavailable on this R build - bytes are the case's heap delta (retained, not peak)\n")
 cat("\n")
 
-baseline <- file.path(root, "dev", "bench-baseline.csv")
-if (update) readr::write_csv(tab, baseline)
+if (update) {
+  tab$host <- this_host
+  tab$r_version <- this_r
+  # one file, one block per runner class: capturing the CI baseline must not
+  # overwrite the local host's rows (ADR 0014)
+  if (file.exists(baseline)) {
+    old <- readr::read_csv(baseline, show_col_types = FALSE)
+    if ("host" %in% names(old)) {
+      tab <- rbind(old[old$host != this_host, , drop = FALSE], tab)
+    }
+  }
+  readr::write_csv(tab, baseline)
+}
 
 if (!update && file.exists(baseline)) {
-  base <- readr::read_csv(baseline, show_col_types = FALSE)
+  all_base <- readr::read_csv(baseline, show_col_types = FALSE)
+  base <- if ("host" %in% names(all_base)) {
+    all_base[all_base$host == this_host, , drop = FALSE]
+  } else {
+    all_base[0, , drop = FALSE]
+  }
+  foreign <- gate && !nrow(base)
+  if (foreign) {
+    cat(sprintf(
+      "bench-gate: not_run (baseline host %s, this host %s; rerun --update here)\n",
+      if ("host" %in% names(all_base)) paste(unique(all_base$host), collapse = ",") else "unknown",
+      this_host
+    ))
+    base <- base[0, ]
+  }
   tab$time_x <- tab$ms / base$ms[match(tab$fn, base$fn)]
   for (i in seq_len(nrow(tab))) {
     flag <- if (!is.na(tab$time_x[i]) && tab$time_x[i] > 1.5) "   <- slower" else ""
-    cat(sprintf("  %-18s %9.3f ms  x%-5.2f %10s%s\n", tab$fn[i], tab$ms[i], tab$time_x[i], fmt_bytes(tab$bytes[i]), flag))
+    x <- if (foreign) "   " else sprintf("x%-5.2f", tab$time_x[i])
+    cat(sprintf("  %-18s %9.3f ms  %s %10s%s\n", tab$fn[i], tab$ms[i], x, fmt_bytes(tab$bytes[i]), flag))
+  }
+  if (gate && !foreign) {
+    slow <- tab$fn[!is.na(tab$time_x) & tab$time_x > 2]
+    if (length(slow)) {
+      cat("\nbench-gate: FAIL\n")
+      for (fn in slow) cat(sprintf("  - %s is x%.2f the baseline\n", fn, tab$time_x[tab$fn == fn]))
+      quit(status = 1L)
+    }
+    cat("\nbench-gate: ok (every case within 2x of dev/bench-baseline.csv)\n")
   }
 } else {
   for (i in seq_len(nrow(tab))) {

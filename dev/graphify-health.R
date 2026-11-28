@@ -127,7 +127,15 @@ self_loops <- sum(src == tgt)
 self_idx <- which(src == tgt)
 self_recursive <- rel[self_idx] %in% c("calls", "calls_from")
 duplicate_edges <- sum(duplicated(paste(src, tgt, rel, sep = "\r")))
-collapsed <- sum(duplicated(paste(pmin(src, tgt), pmax(src, tgt), sep = "\r")))
+pair <- paste(pmin(src, tgt), pmax(src, tgt), sep = "\r")
+# two functions that call each other are mutual recursion, not a collapsed
+# edge: the pair is one real cycle (design_checks <-> solved_checks)
+mutual_calls <- vapply(
+  split(seq_along(pair), pair),
+  function(ix) length(ix) > 1L && all(rel[ix] %in% c("calls", "calls_from")),
+  logical(1)
+)
+collapsed <- sum(duplicated(pair) & !pair %in% names(mutual_calls)[mutual_calls])
 
 # --- import cycles (Tarjan SCC on the import subgraph) ------------------------
 import_edges <- which(rel %in% c("imports", "imports_from"))
@@ -462,6 +470,7 @@ report <- c(
   rows("dangling endpoints", fmt(dangling)),
   rows("exact duplicate edges", fmt(duplicate_edges)),
   rows("same-endpoint (collapsed) edges", fmt(collapsed)),
+  rows("mutual calls (accepted)", fmt(sum(mutual_calls))),
   rows("import cycles", fmt(length(import_cycles))),
   rows("unexpected self-loops", fmt(unexpected_self_loops)),
   rows("recursive calls (accepted)", fmt(recursive_calls)),

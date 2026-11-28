@@ -18,6 +18,17 @@ the file records the measurement or event that re-tested it).
 | [0005](0005-index-backed-genome-access.md)                             | Genome access is an index-backed strategy with declared capabilities       | proposed |
 | [0006](0006-panel-pipeline.md)                                         | The panel pipeline is an orchestrator with falsifiable seams                | proposed |
 | [0007](0007-module-seams-and-mcp-contract.md)                          | Module seams (contracts, registries, splits) and the MCP runtime contract   | proposed |
+| [0008](0008-user-scenarios-as-contract.md)                             | User scenarios J1–J7 are the executable contract                            | accepted |
+| [0009](0009-panel-orchestrator-contract.md)                            | The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact           | accepted |
+| [0010](0010-index-strategy-at-scale.md)                                | The index strategy at scale: shards, builds and a memory budget            | accepted |
+| [0011](0011-release-artefact-and-mcp-contract.md)                      | The release artefact and the MCP contract are the product                   | proposed |
+| [0012](0012-autonomy-and-self-repair.md)                               | Autonomy and self-repair: a blocker never stops the programme               | proposed |
+| [0013](0013-metrics-gate-is-not-a-green-delta.md)                      | The metrics report is not a gate; a mixed-sample p95 is not a regression     | accepted |
+| [0014](0014-benchmark-baseline-is-keyed-by-runner-class.md)            | A timing baseline is keyed by runner class, not by hostname                  | accepted |
+| [0015](0015-a-record-resolves-only-its-own-directory.md)               | A record resolves only the paths inside its own directory                    | accepted |
+| [0016](0016-one-vcf-admission-rule.md)                                 | One VCF admission rule, shared by both readers                               | accepted |
+| [0017](0017-a-raw-identifier-is-admitted-before-normalisation.md)       | A raw identifier is admitted before a normaliser may rename it               | accepted |
+| [0018](0018-one-allele-and-position-rule-for-three-vcf-readers.md)      | One allele and `POS` rule for all three VCF readers                          | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

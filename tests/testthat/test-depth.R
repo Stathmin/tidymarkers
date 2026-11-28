@@ -117,3 +117,86 @@ test_that("an empty plan aborts with 'no targets', not the depth gate", {
   p <- marker_plan(fx$genome) + marker_context(depth = d)
   expect_error(marker_solve(p, cores = 1L, progress = FALSE), "no targets")
 })
+
+test_that("a depth VCF POS outside integer range is refused, not NA", {
+  with_sample <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "Chr1\t3000000000\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
+  ), with_sample)
+  expect_error(suppressWarnings(read_variant_depth(with_sample)), "positive integer range")
+
+  sites <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "Chr1\t3000000000\t.\tA\tG\t.\t.\tDP=5"
+  ), sites)
+  expect_error(suppressWarnings(read_variant_depth(sites)), "positive integer range")
+})
+
+test_that("the depth reader admits the same alleles as the variant reader", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t100\t.\tA\t<DEL>\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10",
+    "1\t200\t.\tA\t*\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10",
+    "1\t300\t.\ta\tg\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10",
+    "1\t400\t.\tA\tR\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
+  ), vcf)
+
+  # one file, one admitted allele set: (chrom, pos, ref, alt) must agree
+  v <- suppressMessages(read_variants_vcf(vcf))
+  d <- suppressMessages(read_variant_depth(vcf))
+  expect_equal(
+    d[, c("chrom", "pos", "ref", "alt")],
+    v[, c("chrom", "pos", "ref", "alt")]
+  )
+  expect_equal(d$alt, c("G", "N")) # lowercase normalised, IUPAC folded
+
+  expect_message(
+    read_variant_depth(vcf),
+    "2 VCF records with a symbolic or absent ALT"
+  )
+
+  # the sites/INFO path applies the same rule
+  sites <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "1\t100\t.\tA\t<DEL>\t.\t.\tDP=5",
+    "1\t300\t.\tA\tg\t.\t.\tDP=5"
+  ), sites)
+  s <- suppressMessages(read_variant_depth(sites))
+  expect_equal(s$pos, 300L)
+  expect_equal(s$alt, "G")
+})
+
+test_that("a depth VCF record with no chromosome is refused", {
+  with_sample <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "\t10\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10"
+  ), with_sample)
+  expect_error(read_variant_depth(with_sample), "record 1 has no chromosome")
+
+  sites <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "\t10\t.\tA\tG\t.\t.\tDP=5"
+  ), sites)
+  expect_error(read_variant_depth(sites), "record 1 has no chromosome")
+})
+
+test_that("a confidence threshold is a real number in its range", {
+  d <- tibble::tibble(chrom = "Chr1", pos = 10L, depth = 10L)
+  expect_error(variant_confidence(d, min_depth = Inf), "positive number")
+  expect_error(variant_confidence(d, min_weight = 1.5), "\\[0, 1\\]")
+  expect_error(variant_confidence(d, min_weight = NA_real_), "\\[0, 1\\]")
+  expect_error(variant_confidence(d, min_weight = "high"), "\\[0, 1\\]")
+  expect_equal(nrow(variant_confidence(d, min_weight = 1)), 1L)
+})

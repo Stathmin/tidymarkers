@@ -17,13 +17,25 @@
 #' A tidy table of the parameters in `KASP_LIMITS` (with the design window and
 #' the thermodynamic model) mapped to the source each value follows.  It is the
 #' audit trail for [marker_design_checks()]: a number with no source is a bug.
-#' @return tibble with `parameter`, `value` and `source`.
+#' With `outcomes`, it answers a different question instead: how often each
+#' chemistry worked or failed in the laboratory.  The counts are ordinal
+#' evidence, not a success probability, and `calibrated` stays `FALSE`; the
+#' solver only uses them to try a working chemistry earlier, never to change a
+#' verdict.
+#' @param outcomes a table from [marker_outcomes()] or
+#'   [marker_outcome_corpus()], or `NULL` for the threshold provenance.
+#' @return `NULL`: tibble with `parameter`, `value` and `source`.  Outcomes:
+#'   one row per scheme with `works`, `fails`, `unknown`, `source` and
+#'   `calibrated`.
 #' @examples
 #' marker_priors()
 #' @family checks
 #' @export
-marker_priors <- function() {
-  tibble::tribble(
+marker_priors <- function(outcomes = NULL) {
+  if (!is.null(outcomes)) {
+    return(prior_counts(outcomes))
+  }
+  structure(tibble::tribble(
     ~parameter, ~value, ~source,
     "as_tm (C)", paste(KASP_LIMITS$as_tm, collapse = "-"), "EasyKASP 2025; LGC KASP manual",
     "com_tm (C)", paste(KASP_LIMITS$com_tm, collapse = "-"), "LGC (COM Tm >= AS Tm, ~60 C)",
@@ -43,7 +55,43 @@ marker_priors <- function() {
     "Tm salt correction", TM_SALT_METHOD,
     "design coordinate (windows on it); reference = SantaLucia 1998-2 (Primer3/oligotm)",
     "dG model", "OligoArrayAux (hybrid-min / hybrid-ss-min)", "DECIPHER's engine"
-  )
+  ), class = c("priors", "tbl_df", "tbl", "data.frame"))
+}
+
+#' Count laboratory outcomes per chemistry
+#'
+#' An outcome row names a target and a scheme; the count is a plain tally, so a
+#' scheme with no recorded run is absent rather than assumed.  Nothing is
+#' pooled across artefact ids: the same `source` (the artefact ids that
+#' contributed) is carried so a caller can see where the count came from.
+#' @keywords internal
+#' @noRd
+prior_counts <- function(outcomes) {
+  if (!is.data.frame(outcomes) || !all(c("result", "scheme") %in% names(outcomes))) {
+    abort_msg(
+      "`outcomes` must be a table from marker_outcomes() with `scheme` and `result`."
+    )
+  }
+  o <- outcomes[!is.na(outcomes$scheme) & nzchar(outcomes$scheme), , drop = FALSE]
+  if (!nrow(o)) {
+    return(structure(tibble::tibble(
+      scheme = character(0), works = integer(0), fails = integer(0),
+      unknown = integer(0), source = character(0), calibrated = logical(0)
+    ), class = c("priors", "tbl_df", "tbl", "data.frame")))
+  }
+  schemes <- sort(unique(o$scheme))
+  structure(tibble::tibble(
+    scheme = schemes,
+    works = unname(vapply(schemes, function(s) sum(o$scheme == s & o$result == "works"), integer(1))),
+    fails = unname(vapply(schemes, function(s) sum(o$scheme == s & o$result == "fails"), integer(1))),
+    unknown = unname(vapply(schemes, function(s) sum(o$scheme == s & o$result == "unknown"), integer(1))),
+    source = vapply(schemes, function(s) {
+      ids <- if ("id" %in% names(o)) unique(o$id[o$scheme == s]) else character(0)
+      ids <- ids[!is.na(ids)]
+      if (!length(ids)) "outcomes" else paste(ids, collapse = ",")
+    }, character(1)),
+    calibrated = FALSE
+  ), class = c("priors", "tbl_df", "tbl", "data.frame"))
 }
 
 #' Independent thermodynamic cross-check of a window's Tm across NN tables

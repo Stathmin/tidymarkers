@@ -1,0 +1,8 @@
+scenario,human_only,tools,reason
+J1,FALSE,genome_info;design_marker;marker_criteria;marker_decision_text,
+J2,FALSE,read_variants;design_marker;design_markers;marker_criteria,
+J3,FALSE,design_markers;design_scheme;marker_criteria,
+J4,FALSE,in_silico_pcr;design_marker;screen_snp_targets,
+J5,FALSE,marker_priors;marker_decision_text;marker_technology,
+J6,TRUE,,"the artefact and its exports write files; the MCP surface is read-only"
+J7,TRUE,,"the scenario exercises tools/list itself, which is not a tool"

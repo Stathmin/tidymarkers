@@ -1198,7 +1198,7 @@ SKIP 43 | PASS 9843 ]`, оба `WARNING` — `replacing previous import
       (`Authors@R` с ORCID, `Imports`/`Suggests` под реальные вызовы), `@param`
       для всех аргументов `\usage`, `.Rbuildignore`, фикстуры; `R CMD check
 --as-cran` — 0 ERROR, 0 WARNING, 1 NOTE (New submission).
-- [x] **`ZV`. Подготовка к CRAN, проход 1.** `.github/workflows/R-CMD-check.yaml` —
+- [x] **`ZV0`. Подготовка к CRAN, проход 1.** `.github/workflows/R-CMD-check.yaml` —
       пять ног (Ubuntu release/oldrel-1/devel, macOS release, Windows release),
       `error-on: warning`; `cran-comments.md`; `revdep/README.md`;
       `CITATION.cff` + «How to cite»; `inst/WORDLIST` (527) + шаг 4 гейта;
@@ -3997,6 +3997,14 @@ dir)` пишет crate-профиль поверх существующих че
       бюджет 2× от 5.7 с (1 ядро) и 1.1 с (6 ядер); `dev/bench.R --gate`;
       шаг в `.github/workflows/R-CMD-check.yaml` после тестов, linux release;
       при отсутствии baseline — `not_run` с причиной, не молчание.
+      сделано (2026-11-27): `--gate` в `dev/bench.R` — 2x к
+      `dev/bench-baseline.csv`, exit 1 с именем функции; baseline несёт
+      `host`/`r_version`, чужая машина даёт `not_run` с обеими именами;
+      прогон замедления падает, текущий baseline зелёный, шаг 25 с.
+      сделано: шаг в CI на linux release стоит после движков; ключ раннера —
+      `TIDYMARKERS_BENCH_HOST` (ADR 0014).
+      осталось: baseline для `github-ubuntu-latest` снимается на раннере; без
+      него шаг честно печатает `not_run`.
       проверка: прогон с искусственным замедлением падает таблицей; текущий
       baseline зелёный; время шага < 2 мин.
       блокер: пшеничный бюджет — фикспур 16 ГБ (`ZX3`).
@@ -4037,7 +4045,10 @@ dir)` пишет crate-профиль поверх существующих че
 Ниже только дефекты, найденные при построении графа 207 экспортов и 48 S3-методов
 по классам вход/выход. Сценарии J1–J7 в этот срез не входят.
 
-- [ ] **ZU1. `marker_panel` — терминальный объект без потребителя.**
+- [x] **ZU1. `marker_panel` — терминальный объект без потребителя.**
+    - закрыто: `ZV6` — `as_marker_solved(panel)` в Pareto/артефакте/экспорте;
+      `tests/testthat/test-panel.R`, ребро `panel -> marker_pareto` в
+      `dev/check-user-api.R`.
     - правка: `R/marker_design_panel.R`, `R/marker_pareto.R`,
       `R/marker_artefact.R` — принимать `marker_panel` в `marker_pareto()`,
       `marker_artefact()` и `marker_export()` (или дать `as_marker_solved()`),
@@ -4050,7 +4061,10 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: панель становится промежуточным объектом, а не отчётом;
       сценарий «панель -> Pareto -> патент» перестаёт требовать обход.
 
-- [ ] **ZU2. Исходы не возвращаются в дизайн.**
+- [x] **ZU2. Исходы не возвращаются в дизайн.**
+    - закрыто: `ZV7` — `marker_priors(outcomes = )` со счётчиками
+      `works`/`fails`; `tests/testthat/test-z8-outcomes.R`,
+      `test-scenario-j5.R`.
     - правка: `R/marker_outcomes.R`, `R/marker_priors.R`, `R/marker_plan.R` —
       дать `marker_priors(outcomes = )` или `marker_context(outcomes = )` и
       учитывать исходы в `marker_tech()`/`marker_solve()`; сейчас
@@ -4061,9 +4075,10 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: нет калиброванной модели; первый шаг — счётчик `works/fails` как
       prior, без вероятности успеха.
     - следствие: петля «измерили -> пересобрали» появляется; `calibrated =
-      FALSE` остаётся честным.
+      FALSE` — честный статус, а не заглушка.
 
-- [ ] **ZU3. Батч-`report` нельзя продолжить типизированно.**
+- [x] **ZU3. Батч-`report` нельзя продолжить типизированно.**
+    - закрыто: `ZV2` — `as_marker_solved(report)`; `test-scenario-j2.R`.
     - правка: `R/marker_batch.R`, `R/marker_strategy.R` — добавить
       `as_marker_solved(report)` / `report_markers(report, label)` или
       возвращать список схем в `attr`; сейчас `design_kasp_markers()`,
@@ -4076,7 +4091,9 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: батч-сценарий заканчивается не таблицей, а проверяемым
       объектом.
 
-- [ ] **ZU4. `primers` — два несовместимых контракта под одним классом.**
+- [x] **ZU4. `primers` — два несовместимых контракта под одним классом.**
+    - закрыто: `ZV3` — `primer_candidates` и `primer_set` плюс
+      `as_primer_set()`; `test-primer-set.R`, `test-as-primer.R`.
     - правка: `R/marker_primers.R`, `R/marker_tubes.R` — развести
       `primer_candidates` (tibble) и `primer_set` (именованный character) или
       дать `as_primer_set()`; сейчас `design_as_primers()` и
@@ -4089,7 +4106,9 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: граф перестаёт рисовать ложные рёбра
       `design_as_primers -> dimer_thermo` без преобразования.
 
-- [ ] **ZU5. Справочники не соединяются с дизайном.**
+- [x] **ZU5. Справочники не соединяются с дизайном.**
+    - закрыто: `ZV4` — `marker_tech(marker_schemes())` и
+      `marker_design_checks(marker_criteria())`; `test-plan.R`.
     - правка: `R/marker_decision.R`, `R/marker_technology.R`,
       `R/marker_priors.R`, `R/marker_checks.R` — принимать таблицы
       `marker_schemes()`, `rescue_strategy()`, `marker_technologies()`,
@@ -4104,7 +4123,9 @@ dir)` пишет crate-профиль поверх существующих че
       `criterion`); нужен один `marker_registry`-класс или явные адаптеры.
     - следствие: «выбери химию» перестаёт быть ручной работой с колонками.
 
-- [ ] **ZU6. Вход варианта и генотипов неполон.**
+- [x] **ZU6. Вход варианта и генотипов неполон.**
+    - закрыто: `ZV5` — `read_variant_genotypes()` и `as_variant_row()`;
+      `test-io.R`.
     - правка: `R/marker_io.R` — `read_variants_vcf()` читает только
       CHROM/POS/REF/ALT, `read_variant_depth()` — глубину; нужен
       `read_variant_genotypes()` (GT/AD) и `as_variant_row()` для одной строки
@@ -4118,7 +4139,7 @@ dir)` пишет crate-профиль поверх существующих че
     - следствие: `marker_informativeness()` и `marker_pareto()` получают
       population-вход без ручной сборки матрицы.
 
-- [ ] **ZU7. Дубликаты и дрейф описания.**
+- [x] **ZU7. Дубликаты и дрейф описания.**
     - правка: `R/marker_target.R:668` (`design_marker`),
       `R/marker_plots_output.R:92` (`write_kasp_results`) — оставить алиасы,
       но убрать из пользовательских таблиц/подсказок; свести
@@ -4126,14 +4147,28 @@ dir)` пишет crate-профиль поверх существующих че
       одному входу с параметром `keep`; поправить заголовок
       `marker_design_checks()` («KASP acceptance criteria» -> «scheme
       criteria»), потому что функция уже проверяет не-KASP схемы.
-    - проверка: `Rscript dev/check-user-api.R` — в CSV один пользовательский
-      батч-вход; `Rscript dev/check-docs.R` — roxygen/README не обещают
-      KASP-only.
+    - сделано (2026-11-27): заголовок `marker_design_checks()` — «the criteria
+      of its scheme»; `man/marker_design_checks.Rd` и
+      `docs/user-api-surface.md` согласованы; `test-kasp-checks.R`,
+      `test-scenario-j2.R`, `test-capabilities.R` зелёные (26 с).
+    - сделано (2026-11-27): `design_markers()` — это
+      `design_marker_batch(keep = "summary")`, отдельного цикла у неё нет;
+      `keep = "result"` возвращает объекты и диагностику. KASP-вердикт
+      `design_kasp_markers()` — отдельный типизированный вход: его
+      схема (11 колонок, `pass`/`warn`/`error`) и есть контракт J2, а не
+      копия общего батча.
+    - проверка: `Rscript dev/test.R batch` — сводка идентична
+      `design_marker_batch(keep = "summary")`; `Rscript dev/check-user-api.R` —
+      один общий батч-вход и один KASP-вердикт-вход; `dev/check-docs.R` —
+      roxygen/README не обещают KASP-only.
     - блокер: депрекация `design_marker()` уже объявлена; удалять нельзя до
       мажорной версии.
-    - следствие: новый пользователь видит один вход на задачу, а не три.
+    - следствие: у общего батча один вход с `keep`; сводка и объекты не
+      расходятся, потому что это один прогон.
 
-- [ ] **ZU8. Держать граф и CSV в актуальном состоянии.**
+- [x] **ZU8. Держать граф и CSV в актуальном состоянии.**
+    - закрыто: `ZV10` — `dev/check-user-api.R` как единственный генератор и
+      `dev/check-mcp-parity.R`; оба зелёные на `2f855f5`.
     - правка: `dev/check-user-api.R` — единственный генератор
       `docs/user-api-graph.dot`; `docs/user-api-surface.csv` —
       единственный источник классов. Новый экспорт без строки в CSV — ошибка
@@ -4146,3 +4181,389 @@ dir)` пишет crate-профиль поверх существующих че
     - блокер: нет.
     - следствие: граф не гниёт; цена — одна команда `--write` на каждый
       новый экспорт.
+
+## ZV. Интегративная программа 2026-11-27 (три дня)
+
+План: [`docs/plans/2026-11-27-integration-3day.md`](docs/plans/2026-11-27-integration-3day.md).
+Решения: [ADR 0008](docs/adr/0008-user-scenarios-as-contract.md) (J1–J7),
+[ADR 0009](docs/adr/0009-panel-orchestrator-contract.md) (панель),
+[ADR 0010](docs/adr/0010-index-strategy-at-scale.md) (масштаб),
+[ADR 0011](docs/adr/0011-release-artefact-and-mcp-contract.md) (продукт).
+Срез: `ZU` и [`docs/user-api-surface.md`](docs/user-api-surface.md) — 213
+экспортов, 52 S3-метода, 941 типизированное ребро, 63 точки входа, 120
+листьев, 27 изолятов (замер 2026-11-27; истина — `dev/check-user-api.R`).
+<!-- api-counts: 213/52/265/143/941/63/120/27 -->
+`ZV0` — закрытая подготовка к CRAN, проход 1 (`## Прочее`); номера `ZV1`–`ZV10`
+начинаются здесь.
+
+Правило закрытия: пункт закрывается тестом, гейтом и обновлённым
+`docs/user-api-surface.csv`, а не ссылкой на ADR. Красный гейт — это блокер: он
+уходит в repair-lane, а не останавливает день; срезается объём, а не гейт.
+
+Самопочинка: [ADR 0012](docs/adr/0012-autonomy-and-self-repair.md). Блокер не
+останавливает программу: классификация, repair-задача с бюджетом 30 мин × 3,
+починка/обход, quarantine с вопросом человеку и сразу следующая задача. Журнал —
+[`docs/plans/self-repair-log.md`](docs/plans/self-repair-log.md).
+
+- [x] **ZV1. Сценарии J1–J7 как исполняемый контракт.**
+    - правка: `tests/testthat/test-scenario-j1.R` … `j7.R`;
+      `tests/testthat/fixtures/scenarios/`; `dev/check-user-api.R` — раздел
+      `scenarios`: каждый шаг после первого обязан быть типизированным ребром
+      CSV, каждая названная функция — экспортом или S3-методом; `dev/metrics.R`
+      — writer, validator и report JSONL, baseline на `main` до первой правки.
+      ADR 0008, ADR 0011 §5.
+    - проверка: `Rscript dev/test.R scenario` (J1–J7); `Rscript
+      dev/check-user-api.R` — exit 1 на шаге без ребра или на сценарии без
+      `scenario_timer()`; `Rscript dev/metrics.R --check <date>` — схема без
+      содержимого; `Rscript dev/check-docs.R` — таблица сценариев и ссылка из
+      `docs/INDEX.md`.
+    - блокер: нет; `fixtures/panel/`, `fixtures/tair10/` и
+      `sat2_transcripts.fa` уже в дереве.
+    - следствие: все семь сценариев — исполняемые тесты на фикстурах; каждый
+      прогон пишет строку `stage = "scenario"` с длительностью маршрута;
+      `dev/check-user-api.R` не пропускает шаг без типизированного ребра или
+      сценарий без таймера, а `data/metrics/` хранит baseline для p95 и
+      стоимости.
+
+- [x] **ZV2. Батч-отчёт продолжается типизированно (ZU3).**
+    - правка: `R/marker_batch.R`, `R/marker_strategy.R` —
+      `as_marker_solved(report)` возвращает `marker_solved` с `attempts` и
+      `report`; батч-функции сохраняют текущий печатный `report`.
+    - проверка: `test-scenario-j2.R` — `report -> as_marker_solved ->
+      marker_design_checks()`/`marker_export()`; `dev/check-user-api.R` —
+      рёбра `report -> marker_solved` и `marker_solved ->
+      marker_design_checks`.
+    - блокер: `report` хранит list-column; id локуса — `label`, уже есть.
+    - следствие: J2 заканчивается проверяемым `marker_solved`; ZU3 закрыт.
+
+- [x] **ZV3. Развести `primers` на два класса (ZU4).**
+    - правка: `R/marker_primers.R`, `R/marker_tubes.R`,
+      `R/marker_assemble*.R` — `primer_candidates` (tibble) и `primer_set`
+      (именованный character); `as_primer_set(x)`; `marker_primers()`
+      возвращает `primer_set`.
+    - проверка: `dev/check-user-api.R` — два класса в CSV; `test-dimer.R`,
+      `test-tubes.R` на `as_primer_set()`; J1/J6 зелёные.
+    - блокер: публичные имена сохраняются; ломаются внутренние вызовы.
+    - следствие: `primer_candidates` — таблица кандидатов, `primer_set` —
+      именованный character; ложное ребро `design_as_primers -> dimer_thermo`
+      исчезло, мост называет `as_primer_set()`.
+
+- [x] **ZV4. Мост справочников в дизайн (ZU5).**
+    - правка: `R/marker_decision.R`, `R/marker_technology.R`,
+      `R/marker_priors.R`, `R/marker_checks.R` — `as_scheme_ids()`,
+      `as_limits()` или один `marker_registry`; `marker_tech(marker_schemes())`,
+      `marker_design_checks(marker_criteria())`.
+    - проверка: `dev/check-user-api.R` — рёбра `tibble -> marker_tech` и
+      `criteria -> marker_design_checks`; `test-plan.R`.
+    - блокер: разные типы таблиц (`scheme`, `technology`, `prior`,
+      `criterion`); нужен один класс либо явные адаптеры.
+    - следствие: «выбери химию» — типизированный вызов: `marker_tech(marker_schemes())` и `marker_design_checks(assay, limits = marker_criteria())`.
+
+- [x] **ZV5. Генотипы и одна строка варианта (ZU6).**
+    - правка: `R/marker_io.R` — `read_variant_genotypes()` (GT/AD) и
+      `as_variant_row()`; `pick_target_snp()` перестаёт быть единственным
+      производителем `variant`.
+    - проверка: `dev/check-user-api.R` — рёбра `variants -> variant` и
+      `genotypes -> marker_informativeness`; `test-io.R` на VCF с GT.
+    - блокер: VCF/BCF; допустим `vroom`-путь с явно объявленной потерей
+      генотипов.
+    - следствие: ~~`marker_informativeness()` и J3/J5 получают population-вход
+      только вручную собранной матрицей~~ — закрыто: `genotypes` приходит из
+      VCF, `variant` — из `as_variant_row()`.
+
+- [x] **ZV6. Панель — промежуточный объект и порядок швов (ZU1, ADR 0009).**
+    - правка: `R/marker_panel.R` — порядок GWAS -> LD -> haplotypes ->
+      chemistry -> artefact, единый `plan$ld` record и блок `panel` в
+      `artefact.json`; `R/marker_pareto.R`, `R/marker_artefact.R`,
+      `R/marker_solve.R` — `as_marker_solved(panel)` для Pareto, артефакта,
+      экспорта и replay.
+    - проверка: `test-scenario-j3.R`; `dev/check-user-api.R` — рёбра `panel
+      -> marker_pareto|marker_artefact|marker_export`; `test-panel.R` —
+      байтовая идентичность и порядок швов.
+    - блокер: нет.
+    - следствие: J3 собирается без `panel$solved`; `ZU1` закрыт.
+
+- [x] **ZV7. Петля исходов в приоры (ZU2, J5).**
+    - правка: `R/marker_priors.R` — `marker_priors(outcomes = NULL)` добавляет
+      `works`, `fails` и `source` по схеме; `R/marker_plan.R`,
+      `R/marker_solve.R` — приор меняет только порядок попыток, не вердикт;
+      `calibrated = FALSE` не меняется.
+    - проверка: `test-scenario-j5.R`; `dev/check-user-api.R` — ребро
+      `outcomes -> marker_priors`; `test-z8-outcomes.R` — порядок изменился,
+      вердикты на золотом наборе нет.
+    - блокер: нет калиброванной модели; первый шаг — счётчики, не вероятность.
+    - следствие: петля «измерили -> пересобрали» закрыта: `marker_priors(outcomes = )`
+      считает `works`/`fails`, `marker_tech(priors = )` меняет порядок попыток;
+      вердикт не меняется, `calibrated` ложно.
+
+- [x] **ZV8. Масштаб и пангеном (ADR 0010, J4).**
+    - правка: `R/marker_genome.R`, `R/marker_index.R` — `build =` у
+      `marker_genome()`, `read_genome_fasta()` и `genome_index()`, ключ шарда
+      `(genome_build, chrom)`, отказ от смеси сборок в `specificity_of()` и
+      `specificity_verdict()`; `dev/perf-gate.R` — бюджет 5 Б/п.н. и 2x.
+    - проверка: `test-scenario-j4.R` (три сборки, 6 шардов, отсутствующий
+      шард называет build и chrom); `test-genome-index.R`;
+      `dev/bench-index-memory.R --json`; `dev/perf-gate.R`; `docs/index-perf.md`.
+    - блокер: 16 ГБ fixpur — не этот хост; синтетическая хромосома 250 Мб и
+      `docs/decisions/0001-16gb-fixpur.md`.
+    - следствие: каждый запрос называет одну сборку и получает один вердикт;
+      `specificity_verdict()` отказывает таблице, смешавшей A/B/D; бюджет
+      5 Б/п.н. и 2x проверяет `dev/perf-gate.R`.
+
+- [x] **ZV9. Релизный артефакт (ADR 0011, J6).**
+    - правка: `R/marker_artefact.R` — `schema = ...@2`, `contract.version`,
+      `scenario`, `targets` в `inputs`, `files.solved` с причиной исключения;
+      `R/marker_export_rocrate.R` и `R/marker_patent.R` читают `scenario`;
+      `marker_replay()` сравнивает вердикты.
+    - проверка: `test-scenario-j6.R` — два прогона с одним
+      `SOURCE_DATE_EPOCH` байт-в-байт, RO-Crate round trip, ST.26 validate,
+      replay; `NEWS.md`.
+    - блокер: `artefact@1` -> `@2` ломает идентификаторы; нужна заметка о
+      миграции.
+    - следствие: `artefact@2` несёт сценарий и цели; id меняется один раз,
+      `artefact@1` читается через миграцию; J6 предъявляется.
+
+- [x] **ZV10. MCP parity и свежесть поверхности (ADR 0011, J7, ZU8).**
+    - правка: `dev/check-mcp-parity.R` — имена инструментов, полное совпадение
+      каждого опубликованного `inputSchema` с рантайм-реестром как JSON,
+      required и формалы, enum и границы, аннотации, классы в CSV, покрытие
+      J1–J7; шаг в `dev/check.R`; `dev/check-user-api.R` — единственный
+      генератор DOT, новый экспорт без строки CSV = exit 1; `docs/INDEX.md`;
+      итоговый `data/metrics/metrics-<date>.md` с p50/p95, стоимостью на
+      маршрут и дельтой к baseline.
+    - проверка: `Rscript dev/check-mcp-parity.R`; `Rscript
+      dev/check-user-api.R`; `Rscript dev/metrics.R --report <date>`;
+      `Rscript dev/check.R --quick`; `test-mcp.R`; `test-mcp-validation.R`
+      (пять инструментов через `tools/list` и `tools/call`).
+    - блокер: нет; `schema.json` — публикуемый контракт, не рантайм-источник.
+    - следствие: schema drift ловится до релиза, а не после; правка
+      `required` в файле падает гейтом с именем инструмента и ключом; агент
+      не видит инструмент, которого нет; `metrics-<date>.md` несёт p50/p95,
+      стоимость на маршрут J1–J7 и дельту к baseline.
+
+Критический путь: ZV1 -> ZV2 -> ZV6 -> ZV9. `ZV3` и `ZV4` — первые кандидаты
+на срез при отставании; `ZV1`, `ZV6`, `ZV9`, `ZV10` не срезаются.
+
+## ZV11–ZV12. После трёх дней: наблюдаемость, которая не врёт
+
+Решение: [ADR 0013](docs/adr/0013-metrics-gate-is-not-a-green-delta.md).
+
+- [x] **ZV11. Гейт p95 сравнивает сравнимые выборки и падает на регрессии.**
+    - правка: `dev/metrics.R` — `baseline.json` получает список `run_id` на
+      стадию; `--report` пишет блок `## Gate` по `(stage, route)` с
+      `ok`/`fail`/`not_run` и двумя размерами выборки; сравнимый p95 выше
+      baseline — `exit 1`; несравнимый — `not_run`, не `ok`.
+    - проверка: фикстура с равным набором `run_id` и p95 в 2x падает
+      (`exit 1`), та же фикстура в пределах baseline — `exit 0`, разные
+      `n` — `exit 0` с `not_run`; `Rscript dev/metrics.R --check <date>`
+      по-прежнему отвергает неизвестный ключ и содержимое; гейт дня вызывает
+      `--report`, а не только `--check`.
+    - сделано (2026-11-27): `summary_of()` даёт `cells` (stage x route,
+      `run_ids`, p95 при n>=20); `baseline.json` пересобран из
+      `2026-11-27-baseline-15a3c41.jsonl`; `--report` пишет `## Gate` и
+      выходит 1 только на сравнимой регрессии. Проверено: фикстура 2x —
+      `exit 1`, та же в baseline — 0, другой `run_id` — `not_run`, n=19 —
+      `not_run` «n 19 vs baseline 20». Реальный отчёт: core-ячейки `ok`,
+      сценарные — `not_run` с обоими наборами `run_id`.
+    - блокер: нет; нужен повторный прогон J1–J7 с теми же `run_id`, чтобы
+      сценарные ячейки стали сравнимыми.
+    - следствие: дельта стадии — статистика, а вердикт гейта называет
+      маршрут, выборку и причину `not_run`; «зелёный» отчёт больше не может
+      означать «регрессию не считали».
+
+- [ ] **ZV12. Baseline времени в CI снимается на том же раннере.**
+    - правка: `dev/bench.R --gate` уже падает на 2x и даёт `not_run` на чужой
+      машине (2026-11-27); шаг в `.github/workflows/R-CMD-check.yaml` на
+      linux release после тестов плюс baseline, снятый на том раннере
+      (`ubuntu-latest`, тот же R).
+    - проверка: шаг печатает `bench-gate: ok` на раннере, чей `host` совпал;
+      подмена одной строки baseline в 2x краснит шаг с именем функции.
+    - сделано (2026-11-27): шаг «Function benchmark gate (2x)» стоит только
+      на linux release после установки движков; `bench`/`lobstr` добавлены в
+      `extra-packages`. `TIDYMARKERS_BENCH_HOST=github-ubuntu-latest` даёт
+      стабильный ключ вместо эфемерного nodename; локальная проверка с чужим
+      ключом печатает `not_run` и выходит 0. `--update` хранит по блоку на
+      раннер, поэтому съём baseline в CI не стирает локальные строки; job
+      `bench-baseline` на `workflow_dispatch` измеряет класс и отдаёт
+      `dev/bench-baseline.csv` артефактом для коммита.
+    - блокер: baseline для `github-ubuntu-latest` снимается первым зелёным
+      прогоном (`--update` на раннере), а с этого хоста CI недоступен; без
+      него шаг честно `not_run`, а не зелёный. Ключ и правило — ADR 0014,
+      порядок съёма — `docs/ci-bench-baseline.md`.
+    - следствие: регрессия времени ловится после мержа, а не в следующей
+      волне; остаток `T11` закрыт.
+
+## ZV13. Запись не выходит из своего каталога
+
+Решение: [ADR 0015](docs/adr/0015-a-record-resolves-only-its-own-directory.md).
+Найдено ночной сменой 2026-11-27: два побега одного класса.
+
+- [x] **ZV13. `artefact.json` и `ro-crate-metadata.json` не называют чужих
+  файлов.**
+    - правка: `R/marker_artefact.R` — `artefact_safe_name()` (b431859);
+      `R/marker_export_rocrate.R` — `rocrate_member_path()`, `@id` графа
+      разрешается только внутри каталога крата (3944ca2).
+    - проверка: `test-rocrate.R` — имя sidecar `../escape.csv` отвергается
+      при чтении и экспорте; `@id` `../outside-the-crate.txt` с совпадающим
+      `sha256` отвергается импортом. До правки оба проходили молча.
+    - блокер: нет.
+    - следствие: запись ручается только за то, что несёт; чужой файл нельзя
+      ни прочитать, ни упаковать, ни заверить хешем.
+
+- [x] **ZV13.1. Остальные читатели записей проходят тот же тест.**
+    - правка: `R/marker_export_outcomes.R` — строка корпуса проверяется на
+      вложенность в просканированный корень до чтения каталога;
+      `R/marker_outcomes.R`, `R/marker_trace_schema.R` проверены: имена там
+      литеральные (`outcomes.csv`, `decisions.csv`) или из схемы пакета, а не
+      из записи, поэтому правки нет.
+    - проверка: `test-outcomes-crate.R` — строка с `../outside-the-corpus`
+      отвергается; прежние тесты читателей остаются зелёными (202 pass).
+    - блокер: нет.
+    - следствие: ADR 0015 п.4 стало гейтом для каждого читателя, у которого
+      имя файла приходит из записи, а не из литерала или схемы.
+
+- [x] **ZV13.2. Симлинк наружу отвергается, а не читается.**
+    - правка: `rocrate_member_path()` после лексической проверки разрешает
+      существующий член через `fs::path_real()` и сверяет с реальным корнем
+      крата; ссылка (в том числе через каталог-ссылку) даёт ошибку «resolves
+      to … outside», а не хеш цели.
+    - проверка: `test-rocrate.R` — «a crate cannot carry a link out of itself»:
+      член крата заменён симлинком на файл рядом с кратом, импорт отказывает.
+      46 pass, 0 fail.
+    - блокер: нет для крата; датированная ссылка (`file_exists()` ложен)
+      попадает в обычную ошибку «не несёт файл», а не читается.
+    - следствие: ADR 0015 «Consequences» обновлён: правило больше не только
+      лексическое для существующих членов.
+- [x] **ZV13.3. `marker_replay()` не исполняет RDS чужой записи.**
+    - правка: `marker_artefact()` пишет `replay.csv` (`label`, `scheme`,
+      `verdict`, все три — character) и называет файл в `files$replay`;
+      `marker_replay(solved = )` принимает доверенный `marker_solved`, решает
+      его план и сравнивает с таблицей записи, не открывая `solved.rds`.
+    - проверка: `test-plan.R` — запись без `solved.rds` отказывает с именем
+      предела; с `solved =` replay совпадает; подменённая строка `replay.csv`
+      даёт `match = FALSE` и называет вердикт; `dev/test.R plan` — 199 pass,
+      0 fail (включая прежние replay и ZW2.3).
+    - блокер: нет для новых записей. Предел относится к записи без
+      `replay.csv` (artefact@1 и записи до правки): её replay по-прежнему
+      читает RDS и потому локален.
+    - следствие: чужой артефакт можно проверить, передав свой `solved`;
+      исполнение RDS больше не единственный путь к вердиктам.
+
+## ZV14. Строка журнала ремонта попадает в метрики
+
+Найдено ночной сменой 2026-11-27: `docs/plans/self-repair-log.md` обещал, что
+дневные метрики считаются «из журнала и из `stage = "repair"` JSONL», но
+`metrics-2026-11-27.md` показывает `repair: 0` при девяти записанных строках —
+читает он только JSONL, а журнал никто не эмитит.
+
+- [x] **ZV14. Блокер, записанный в журнал, эмитит `repair`-строку.**
+    - правка: `dev/repair.R --blocker <text> --class <c> --action <a>
+      --result <r> --commit <sha> --status <s> --start "<UTC>" --end "<UTC>"`
+      дописывает строку журнала и эмитит `repair`-метрику из той же пары
+      времён; `dev/metrics.R --emit --stage repair --ms <MTTR>` — ручной
+      путь. Журнал и JSONL ссылаются друг на друга по `object_id`
+      (очищенному до допустимого id).
+    - проверка: `Rscript dev/test.R repair-log` (строка журнала, JSONL,
+      отказ без `--end`, отказ при конце раньше начала);
+      `Rscript dev/metrics.R --check 2026-11-27` принимает строки; `--report`
+      считает p50/p95 только по измеренным длительностям и печатает
+      `not_run`, когда их нет.
+    - сделано (2026-11-27, ночная смена): `--emit` без `--ms` падает с
+      «an unmeasured duration is not 0 ms», а не пишет `duration_ms = 0`;
+      `--report` при пустой стадии `repair` печатает «repair rows: 0 of N log
+      line(s)» и почему MTTR — `not_run`, а не ноль; `test-metrics-repair.R`
+      (3 теста) прогоняет emit -> check -> report на 20 строках с
+      длительностями и проверяет отказ без `--ms`. Заодно найдено: статус
+      журнала `fixed` не входит в `STATUSES` метрик — команда исправлена на
+      `--status ok`, соответствие статусов названо явно. Полный путь теперь
+      один: `dev/repair.R` пишет журнал и метрику из одной пары времён, а
+      `test-repair-log.R` (3 теста) проверяет строку, JSONL и отказы.
+    - блокер: у девяти строк 2026-11-27 есть только время фикса, не начала —
+      MTTR восстановить нельзя, а выдумывать `--ms` значит испортить p95;
+      поэтому исторические строки остаются markdown-only, и это печатает сам
+      отчёт. Новые блокеры идут через `dev/repair.R` в момент фикса.
+    - следствие: «сколько стоит один блокер» измеряется с этого дня; для
+      исторических строк отчёт честно говорит `not_run`, а не ноль.
+
+## ZV15. Два читателя одного VCF не расходятся в наборе записей
+
+Найдено ночной сменой 2026-11-27: `read_variants_vcf()` отбрасывал
+символические и отсутствующие ALT, а `read_variant_genotypes()` оставлял их, и
+`normalise_allele()` превращал `<DEL>` в `NNNNN`, а `.` — в `N`. Два читателя
+одного файла возвращали разные наборы записей.
+
+- [x] **ZV15. `read_variant_genotypes()` отбрасывает то же, что читатель
+  вариантов.**
+    - правка: `R/marker_io.R` — та же проверка `^<|[*.]` по REF/ALT, счётчик и
+      сообщение, что и у `read_variants_vcf()`.
+    - проверка: `test-io.R` — символический и отсутствующий ALT дают 0 строк,
+      `alt` не содержит `N`, набор `pos` совпадает у двух читателей;
+      `dev/test.R "^io$"` — 136 pass, 0 fail.
+    - блокер: нет.
+    - следствие: genotype-таблица не несёт строк для аллеля, которого нет в
+      variant-таблице; `marker_informativeness()` не считает `N` аллелем.
+      Общее правило приёма записей — ADR 0016, один предикат
+      `vcf_symbolic_allele()`.
+
+## ZV16. Срез поверхности в прозе не отстаёт от генератора
+
+Найдено ночной сменой 2026-11-27: заголовок §ZV называл 207 экспортов,
+48 S3-методов, 934 ребра и 29 изолятов, а `dev/check-user-api.R` считал
+213/52/941/63/120/27; план §10 называл «214/52», смешивая узлы графа с
+методами. Числа в `docs/user-api-surface.md` гейт сверял, числа в прозе —
+никто.
+
+- [x] **ZV16. Прозаический срез несёт машинно-проверяемый маркер.**
+    - правка: `dev/check-user-api.R` шаг 6d — файл, который называет счёт,
+      обязан нести `<!-- api-counts: exports/s3methods/csv_rows/user_facing/edges/entries/leaves/isolates -->`;
+      гейт сравнивает маркер, а не прозу. Маркеры стоят в `ROADMAP.md` §ZV и
+      в заголовке плана; устаревшие числа заменены на посчитанные.
+    - проверка: подмена маркера в `ROADMAP.md` на прежние 207/48/934/29 даёт
+      `FAIL user-api` с именем файла и обоими значениями; без подмены —
+      `ok prose api-counts markers match the computed table`.
+    - блокер: нет.
+    - следствие: счёт в очереди и плане не может разойтись с генератором
+      молча; следующая правка экспорта краснит гейт, пока маркер не обновлён.
+
+## ZV17. Третий читатель VCF принимает тот же набор аллелей
+
+Найдено ночной сменой 2026-11-27: ADR 0016 назвал два читателя, а их три.
+`read_variant_depth()` на обоих путях (сэмплы и `INFO/DP`) оставлял
+символический ALT (`<DEL>`, `*`) как есть и не нормализовал `ref`/`alt`;
+таблица глубины несла аллель, которого не было в таблице вариантов, и
+соединение по `(chrom, pos, ref, alt)` молча теряло строки. `POS` вне
+положительного диапазона при этом уже отвергали вариант и глубина, а
+`read_variant_genotypes()` отбрасывал запись и возвращал пустую таблицу.
+
+- [x] **ZV17. Все три читателя применяют одно правило приёма аллелей и `POS`.**
+    - правка: `R/marker_depth.R` — общий `depth_admit_alleles()` для обоих
+      путей: символический или отсутствующий REF/ALT отбрасывается со
+      счётчиком, оставшиеся нормализуются `normalise_allele()`;
+      `R/marker_io.R` — `read_variant_genotypes()` отвергает `POS` вне
+      диапазона с именем записи, как два других читателя.
+    - проверка: `test-io.R` — один файл и три читателя, `POS = 3000000000`
+      отвергают все; `test-depth.R` — набор `(chrom, pos, ref, alt)` глубины
+      равен набору вариантов на сэмпловом и `INFO/DP` путях;
+      `dev/test.R "^(io|depth)$"` — 184 pass, 0 fail;
+      `dev/test.R "scenario|plan"` — 316 pass, 0 fail.
+    - блокер: нет.
+    - следствие: файл, открытый любым читателем, даёт один набор записей;
+      общее правило — ADR 0018, развивает ADR 0016 и 0017.
+
+## ZV18. Одна строка варианта не изобретает `N` из символического аллеля
+
+Найдено ночной сменой 2026-11-27 при обходе тех же входов, что ZV17:
+`as_variant_row()` — не поток, а выбор одной строки — нормализовал `<DEL>` в
+`NNNNN` и возвращал её как `variant`, то есть производил ровно тот фальшивый
+`N`, который читатели VCF перестали производить по ADR 0016.
+
+- [x] **ZV18. `as_variant_row()` отвергает символический или отсутствующий
+  аллель, называя его.**
+    - правка: `R/marker_io.R` — проверка `is.na() | vcf_symbolic_allele()`
+      после допуска `chrom`/`pos` и до `normalise_allele()`; сообщение
+      «concrete REF and ALT alleles; got `<DEL>`».
+    - проверка: `test-io.R` — `<DEL>`, `*`, `.` и `NA` дают ошибку
+      «concrete REF and ALT»; `dev/test.R "^io$"` — 150 pass, 0 fail, 0 warn.
+    - блокер: нет.
+    - следствие: класс `variant` с любого входа несёт только конкретные
+      аллели; правило — ADR 0018, пункт про селектор.

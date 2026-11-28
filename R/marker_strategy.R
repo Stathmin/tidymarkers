@@ -93,27 +93,10 @@ rescue_strategy <- function(schemes = NULL) {
 #' @family design
 #' @export
 design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
-  need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
-  purrr::map(seq_len(nrow(loci)), function(i) {
-    snp <- locus_row(loci[i, , drop = FALSE])
-    if (is.null(scheme)) {
-      d <- design_auto_marker(genome, snp, ..., context = context)
-      chosen <- d$scheme
-      ok <- is_target_designable(d$marker)
-    } else {
-      m <- tryCatch(
-        suppressWarnings(marker_design_at(genome, snp, scheme, ..., context = context)),
-        error = function(e) NULL
-      )
-      chosen <- scheme
-      ok <- is_target_designable(m)
-    }
-    tibble::tibble(
-      chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt,
-      scheme = if (is.na(chosen)) NA_character_ else chosen, ok = ok
-    )
-  }) |>
-    purrr::list_rbind()
+  design_marker_batch(
+    genome, loci,
+    design = scheme, keep = "summary", ..., context = context
+  )
 }
 
 #' The canonical one-row `snp` input every locus designer reads

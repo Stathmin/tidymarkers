@@ -147,8 +147,9 @@ required list and enums), not just `type: object`, so the file can validate a
 call. The server still validates against `spec$inputSchema`, the object the file
 is generated from; parsing the serialised copy at run time would create a second
 source of truth. `test-mcp-validation.R` proves the published per-tool schema
-and the runtime schema are the same object, and `dev/mcp-schema.R --check` fails
-on drift. This keeps ADR 0004's boundary: `inst/mcp/schema.json` is a contract
+and the `tools/list` response are the same object on five representative tools,
+`test-mcp.R` proves it for all 38, and `dev/mcp-schema.R --check` fails on
+drift. This keeps ADR 0004's boundary: `inst/mcp/schema.json` is a contract
 artefact, not a runtime dependency, and there is still one definition of a
 tool's input.
 

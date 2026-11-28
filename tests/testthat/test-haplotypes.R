@@ -136,3 +136,21 @@ test_that("a context with known haplotypes attaches $population on design", {
   marker <- marker_attach_haplotypes(list(snp = f$snp), args$haplotypes, f$snp)
   expect_equal(marker$population$alt_freq, 0.5)
 })
+
+test_that("a haplotype row is admitted only with a real frequency and locus", {
+  hp <- function(...) {
+    tidymarkers:::normalise_haplotypes(tibble::tibble(...))
+  }
+  ok <- list(
+    haplotype = "H1", freq = 0.5, chrom = "Chr1", pos = 250L, ref = "A", alt = "G"
+  )
+  expect_equal(nrow(do.call(hp, ok)), 1L)
+  # NA is an unmeasured frequency, not a bad number
+  expect_equal(nrow(do.call(hp, utils::modifyList(ok, list(freq = NA_real_)))), 1L)
+  expect_error(do.call(hp, utils::modifyList(ok, list(freq = NaN))), "finite value")
+  expect_error(do.call(hp, utils::modifyList(ok, list(freq = Inf))), "finite value")
+  expect_error(do.call(hp, utils::modifyList(ok, list(freq = -0.1))), "\\[0, 1\\]")
+  expect_error(do.call(hp, utils::modifyList(ok, list(pos = 0L))), "positive integer")
+  expect_error(do.call(hp, utils::modifyList(ok, list(chrom = ""))), "chromosome")
+  expect_error(do.call(hp, utils::modifyList(ok, list(alt = "G?"))), "DNA alleles")
+})

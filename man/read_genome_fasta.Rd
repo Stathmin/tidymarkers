@@ -4,7 +4,13 @@
 \alias{read_genome_fasta}
 \title{Read an arbitrary genome FASTA, optionally normalising sequence names}
 \usage{
-read_genome_fasta(path, chrom_map = NULL, seqids = NULL, use_index = TRUE)
+read_genome_fasta(
+  path,
+  chrom_map = NULL,
+  seqids = NULL,
+  use_index = TRUE,
+  build = NULL
+)
 }
 \arguments{
 \item{path}{FASTA path (gzipped is fine).}
@@ -18,6 +24,9 @@ reading (a cheap subset when only a few chromosomes are needed).}
 \item{use_index}{when \code{TRUE} and \code{seqids} is given, read only those sequences
 through the \code{Rsamtools} FASTA index (random access, no whole-genome load);
 otherwise the whole file is read with \code{Biostrings}.}
+
+\item{build}{optional release id; stored as \code{genome_build} metadata so a
+\code{\link[=genome_index]{genome_index()}} made from the result carries it.}
 }
 \value{
 a \code{DNAStringSet}; sequence names are stripped of their deflines and,
@@ -34,6 +43,7 @@ read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
 }
 \seealso{
 Other input:
+\code{\link[=as_variant_row]{as_variant_row()}},
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -55,6 +65,7 @@ Other input:
 \code{\link[=print.marker_genome]{print.marker_genome()}},
 \code{\link[=read_genbank]{read_genbank()}},
 \code{\link[=read_variant_depth]{read_variant_depth()}},
+\code{\link[=read_variant_genotypes]{read_variant_genotypes()}},
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}

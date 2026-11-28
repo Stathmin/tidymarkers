@@ -20,7 +20,7 @@
 #' @keywords internal
 #' @noRd
 outcome_columns <- function() {
-  c("id", "recorded", "target", "result", "notes", "calibrated")
+  c("id", "recorded", "target", "scheme", "result", "notes", "calibrated")
 }
 
 #' @keywords internal
@@ -30,6 +30,7 @@ outcome_types <- function() {
     id = readr::col_character(),
     recorded = readr::col_character(),
     target = readr::col_character(),
+    scheme = readr::col_character(),
     result = readr::col_character(),
     notes = readr::col_character(),
     calibrated = readr::col_logical()
@@ -41,8 +42,39 @@ outcome_types <- function() {
 outcome_empty <- function() {
   tibble::tibble(
     id = character(0), recorded = character(0), target = character(0),
-    result = character(0), notes = character(0), calibrated = logical(0)
+    scheme = character(0), result = character(0), notes = character(0),
+    calibrated = logical(0)
   )
+}
+
+#' The chemistry a target was designed with, read from the artefact
+#'
+#' `targets.csv` does not carry the scheme; `decisions.csv` does.  The chosen
+#' attempt is the one the record marks `chosen`; a target with no chosen row
+#' falls back to its first attempt.  A whole-artefact outcome has no target and
+#' therefore no scheme.
+#' @keywords internal
+#' @noRd
+artefact_scheme <- function(dir, target) {
+  if (is.null(target)) {
+    return(NA_character_)
+  }
+  path <- fs::path(dir, "decisions.csv")
+  if (!fs::file_exists(path)) {
+    return(NA_character_)
+  }
+  d <- utils::read.csv(path, stringsAsFactors = FALSE)
+  if (!all(c("target", "scheme") %in% names(d))) {
+    return(NA_character_)
+  }
+  at <- d[d$target == target, , drop = FALSE]
+  if (!nrow(at)) {
+    return(NA_character_)
+  }
+  if ("chosen" %in% names(at) && any(at$chosen %in% TRUE)) {
+    at <- at[at$chosen, , drop = FALSE]
+  }
+  as.character(at$scheme[[1L]])
 }
 
 #' The targets an artefact recorded
@@ -148,6 +180,7 @@ marker_record_outcome <- function(artefact,
     id = as.character(manifest$id %||% NA_character_),
     recorded = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     target = if (is.null(target)) NA_character_ else as.character(target),
+    scheme = artefact_scheme(dir, target),
     result = result,
     notes = notes,
     calibrated = FALSE
@@ -193,8 +226,8 @@ marker_record_outcome <- function(artefact,
 #' mistake [the Z8 tests](https://github.com/Stathmin/tidymarkers/blob/main/tests/testthat/test-z8-outcomes.R)
 #' exist to prevent.
 #' @param artefact a `marker_artefact` or its directory.
-#' @return a tibble with `id`, `recorded`, `target`, `result`, `notes`, and
-#'   `calibrated`.
+#' @return a tibble with `id`, `recorded`, `target`, `scheme`, `result`,
+#'   `notes`, and `calibrated`.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
 #' loci <- utils::read.csv(

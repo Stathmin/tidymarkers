@@ -1,0 +1,3 @@
+{"run_id":"zv8-j4","stage":"specificity","object_id":"scenario:j4:index","duration_ms":5,"status":"ok","retries":0,"tokens_in":null,"tokens_out":null,"cost_usd":null,"cache_hit":false,"queue_depth":0,"gpu_util":null,"language":"en"}
+{"run_id":"zv8-j4","stage":"specificity","object_id":"scenario:j4:scan","duration_ms":1694,"status":"ok","retries":0,"tokens_in":null,"tokens_out":null,"cost_usd":null,"cache_hit":false,"queue_depth":0,"gpu_util":null,"language":"en"}
+{"run_id":"zv8-j4","stage":"design","object_id":"scenario:j4:report","duration_ms":4405,"status":"ok","retries":0,"tokens_in":null,"tokens_out":null,"cost_usd":null,"cache_hit":false,"queue_depth":0,"gpu_util":null,"language":"en"}

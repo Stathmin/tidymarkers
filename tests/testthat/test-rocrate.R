@@ -34,7 +34,10 @@ rocrate_fixture <- local({
 })
 
 rocrate_manifest_files <- function(artefact) {
-  files <- unlist(artefact$manifest$files, use.names = FALSE)
+  # an excluded file is a record (name + reason), not a sidecar the crate copies
+  declared <- artefact$manifest$files
+  declared <- declared[vapply(declared, is.character, logical(1))]
+  files <- unlist(declared, use.names = FALSE)
   files <- as.character(files)
   c("artefact.json", files[!is.na(files) & nzchar(files)])
 }
@@ -53,6 +56,33 @@ test_that("export copies exactly the files the manifest names", {
   actual <- sort(basename(fs::dir_ls(crate, type = "file")))
   expect_setequal(actual, expected)
   expect_false("stray.txt" %in% actual)
+})
+
+test_that("a manifest path cannot escape the artefact directory", {
+  art <- rocrate_fixture()$artefact
+
+  # the manifest is input, not trusted state: a path that leaves the directory
+  # is refused before any file is copied
+  tampered <- art
+  tampered$manifest$files$decisions <- "../escape.csv"
+  expect_error(
+    marker_export_rocrate(tampered, dir = tempfile("crate")),
+    "unsafe file path"
+  )
+
+  # the reader refuses the same name in a persisted artefact
+  dst <- withr::local_tempdir()
+  fs::file_copy(fs::dir_ls(art$dir, type = "file"), dst)
+  manifest <- jsonlite::fromJSON(
+    fs::path(art$dir, "artefact.json"),
+    simplifyVector = FALSE
+  )
+  manifest$files$decisions <- "../escape.csv"
+  writeLines(
+    jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE),
+    fs::path(dst, "artefact.json")
+  )
+  expect_error(marker_artefact_read(dst), "unsafe file path")
 })
 
 test_that("the metadata graph describes one run over the manifest inputs", {
@@ -123,6 +153,42 @@ test_that("a crate round-trips back to the same artefact", {
   # The descriptor inside a crate is also a valid entry point.
   from_meta <- marker_import_rocrate(fs::path(crate, "ro-crate-metadata.json"))
   expect_identical(from_meta$id, art$id)
+})
+
+test_that("a crate cannot declare a file outside its own directory", {
+  art <- rocrate_fixture()$artefact
+  crate <- marker_export_rocrate(art, dir = tempfile("crate"))
+
+  # A crate is the record it carries: an id that leaves the directory would let
+  # an import hash - and thus vouch for - a file the crate does not contain.
+  outside <- fs::path(fs::path_dir(crate), "outside-the-crate.txt")
+  writeLines("not part of the record", outside)
+  meta <- rocrate_meta(crate)
+  meta[["@graph"]][[length(meta[["@graph"]]) + 1L]] <- list(
+    "@id" = paste0("../", fs::path_file(outside)),
+    "@type" = "File",
+    "sha256" = tidymarkers:::hash_file(outside),
+    "encodingFormat" = "text/plain"
+  )
+  writeLines(
+    jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
+    fs::path(crate, "ro-crate-metadata.json")
+  )
+  expect_error(marker_import_rocrate(crate), "outside", class = "rlang_error")
+})
+
+test_that("a crate cannot carry a link out of itself", {
+  art <- rocrate_fixture()$artefact
+  crate <- marker_export_rocrate(art, dir = tempfile("crate"))
+
+  # The id is inside the crate but the bytes are not: a link would let the
+  # import vouch for whatever the link happens to point at.
+  outside <- fs::path(fs::path_dir(crate), "linked-outside.txt")
+  writeLines("not part of the record", outside)
+  member <- fs::path(crate, "decisions.csv")
+  fs::file_delete(member)
+  skip_if_not(file.symlink(outside, member), "this filesystem cannot make a symlink")
+  expect_error(marker_import_rocrate(crate), "resolves to", class = "rlang_error")
 })
 
 test_that("a tampered sidecar is named rather than read", {

@@ -33,6 +33,7 @@ asq_limits()
 \seealso{
 Other design:
 \code{\link[=allele_templates]{allele_templates()}},
+\code{\link[=as_marker_solved]{as_marker_solved()}},
 \code{\link[=assemble_kasp_assay]{assemble_kasp_assay()}},
 \code{\link[=assemble_primer_assay]{assemble_primer_assay()}},
 \code{\link[=design_as_primers]{design_as_primers()}},

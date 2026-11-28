@@ -17,6 +17,27 @@
 #  by hand downstream.
 # =============================================================================
 
+#' A reader's input file, checked before anything opens it
+#'
+#' `file_exists()` on `NULL` or a vector is a base R error, and a directory
+#' passes the existence test while every reader wants a file.  One guard names
+#' the argument and the path for all three readers.
+#' @param path the caller's `path`.
+#' @param what the record kind, for the message: `"VCF"` or `"FASTA"`.
+#' @return `path`, unchanged, when it is one existing file.
+#' @keywords internal
+#' @noRd
+reader_path <- function(path, what) {
+  if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
+    abort_msg("`path` must be one {what} file path.")
+  }
+  if (!fs::file_exists(path)) abort_msg("{what} not found: {path}")
+  if (fs::is_dir(path)) {
+    abort_msg("`path` names a directory, not a {what} file: {path}")
+  }
+  path
+}
+
 #' Normalise an allele string to plain `ACGTN`
 #'
 #' Upper-cases the string and folds any IUPAC ambiguity code (R, Y, S, W, K,
@@ -35,6 +56,11 @@ normalise_allele <- function(x) {
   x <- chartr("RYSWKMBDHV", "NNNNNNNNNN", x) # IUPAC ambiguity -> N
   gsub("[^ACGTN]", "N", x)
 }
+
+# The one admission rule both VCF readers apply: a symbolic REF/ALT (`<DEL>`)
+# or an absent allele (`*`, `.`) is unrepresentable, because
+# `normalise_allele()` would turn it into a fake `N`.
+vcf_symbolic_allele <- function(x) stringr::str_detect(x, "^<|[*.]")
 
 #' Read variants from a VCF/BCF file (streaming, memory-mapped)
 #'
@@ -68,12 +94,20 @@ normalise_allele <- function(x) {
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
   backend <- match.arg(backend)
-  if (!fs::file_exists(path)) abort_msg("VCF not found: {path}")
+  path <- reader_path(path, "VCF")
 
   v <- switch(backend,
     vroom = read_variants_vcf_vroom(path),
     VariantAnnotation = read_variants_vcf_va(path, chrom, start, end)
   )
+
+  bad_pos <- is.na(v$pos) | v$pos < 1L
+  if (any(bad_pos)) {
+    abort_msg(gettextf(
+      "%s VCF record(s) have a POS outside the positive integer range (first on %s).",
+      sum(bad_pos), v$chrom[[which(bad_pos)[[1L]]]]
+    ))
+  }
 
   if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
@@ -81,8 +115,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
 
   # drop symbolic/absent alleles (`<DEL>`, `*`, `.`) before normalisation, so
   # they are not mangled into a fake `N` allele - and say how many went
-  drop_sym <- stringr::str_detect(v$ref, "^<|[*.]") |
-    stringr::str_detect(v$alt, "^<|[*.]")
+  drop_sym <- vcf_symbolic_allele(v$ref) | vcf_symbolic_allele(v$alt)
   n_dropped <- sum(drop_sym)
   if (n_dropped > 0L) {
     cli::cli_inform(gettext(paste0(
@@ -101,6 +134,270 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
     dplyr::filter(nzchar(.data$ref), nzchar(.data$alt))
 }
 
+#' Read per-line genotypes from a VCF (GT/AD)
+#'
+#' A variant table says *what* varies; a genotype table says *who* carries it.
+#' `read_variant_genotypes()` streams the sample columns of a VCF into long
+#' `line`/`chrom`/`pos`/`ref`/`alt` rows, with `genotype` as ALT dosage
+#' (`0`, `1`, `2`, `NA`) and `depth` from `AD` when present.  The result feeds
+#' [marker_informativeness()] directly.
+#'
+#' The record is biallelic: a multi-allelic site is dropped and counted, because
+#' a dosage against "the ALT" is ambiguous once a record carries two of them.
+#' A symbolic or absent ALT (`<DEL>`, `*`, `.`) is dropped and counted for the
+#' same reason [read_variants_vcf()] drops it: no short oligo exists for it, and
+#' `normalise_allele()` would otherwise turn it into a fake `N` allele.  A
+#' record with fewer columns than the header names, or with neither `GT` nor
+#' `AD`, is dropped and counted: there is nothing left to read.  A `POS` that is
+#' not a positive integer is an error, as in the other two VCF readers (ADR
+#' 0018).  Dosage comes from `GT`; when `GT` is missing, `AD` decides it (rounded
+#' `2 * alt / (ref + alt)`).  A genotype naming an allele other than REF/ALT
+#' is `NA`, never silently folded to the first ALT.
+#' @param path VCF path, plain or bgzipped.
+#' @param samples optional sample names to keep; `NULL` keeps every sample.
+#' @return a tibble with columns `line`, `chrom`, `pos`, `ref`, `alt`,
+#'   `genotype`, `depth`, class `genotypes`; one row per sample and record.
+#' @examples
+#' vcf <- withr::local_tempfile(fileext = ".vcf")
+#' writeLines(c(
+#'   "##fileformat=VCFv4.2",
+#'   paste0(
+#'     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t",
+#'     "L1\tL2"
+#'   ),
+#'   "1\t250\t.\tA\tG\t.\t.\t.\tGT:AD\t0/0:10,0\t0/1:6,4"
+#' ), vcf)
+#' read_variant_genotypes(vcf)
+#' @family input
+#' @export
+read_variant_genotypes <- function(path, samples = NULL) {
+  path <- reader_path(path, "VCF")
+  all_samples <- vcf_sample_names(path)
+  if (!length(all_samples)) {
+    abort_msg("{path} has no sample columns; there is no genotype to read.")
+  }
+  if (is.null(samples)) {
+    samples <- all_samples
+  } else {
+    samples <- as.character(samples)
+    missing <- setdiff(samples, all_samples)
+    if (length(missing)) {
+      abort_msg("{path} has no sample{?s} {.val {missing}}.")
+    }
+  }
+  idx <- match(samples, all_samples)
+
+  con <- file(path, "r")
+  on.exit(close(con), add = TRUE)
+  rows <- list()
+  n_rec <- 0L
+  n_multi <- 0L
+  n_sym <- 0L
+  n_short <- 0L
+  n_bad <- 0L
+  repeat {
+    lines <- readLines(con, n = 1000L, warn = FALSE)
+    if (!length(lines)) break
+    lines <- lines[!startsWith(lines, "#") & nzchar(lines)]
+    for (line in lines) {
+      f <- strsplit(line, "\t", fixed = TRUE)[[1L]]
+      n_rec <- n_rec + 1L
+      if (is.na(f[[1L]]) || !nzchar(f[[1L]])) {
+        abort_msg(gettextf(
+          "VCF record %d has no chromosome name.", n_rec
+        ))
+      }
+      if (length(f) < 9L + length(all_samples)) {
+        n_short <- n_short + 1L
+        next
+      }
+      if (grepl(",", f[[5L]], fixed = TRUE)) {
+        n_multi <- n_multi + 1L
+        next
+      }
+      if (vcf_symbolic_allele(f[[4L]]) || vcf_symbolic_allele(f[[5L]])) {
+        n_sym <- n_sym + 1L
+        next
+      }
+      pos <- suppressWarnings(as.integer(f[[2L]]))
+      if (is.na(pos) || pos < 1L) {
+        abort_msg(gettextf(
+          "VCF record %d has a POS outside the positive integer range.",
+          n_rec
+        ))
+      }
+      fmt <- strsplit(f[[9L]], ":", fixed = TRUE)[[1L]]
+      gi <- match("GT", fmt)
+      ai <- match("AD", fmt)
+      if (is.na(gi) && is.na(ai)) {
+        n_bad <- n_bad + 1L
+        next
+      }
+      calls <- vapply(f[9L + idx], function(field) {
+        v <- strsplit(field, ":", fixed = TRUE)[[1L]]
+        gt <- if (is.na(gi) || gi > length(v)) NA_character_ else v[[gi]]
+        ad <- if (is.na(ai) || ai > length(v)) NA_character_ else v[[ai]]
+        genotype_call(gt, ad)
+      }, c(genotype = NA_real_, depth = NA_real_))
+      rows[[length(rows) + 1L]] <- tibble::tibble(
+        line = samples,
+        chrom = ath_chrom(f[[1L]]),
+        pos = pos,
+        ref = normalise_allele(f[[4L]]),
+        alt = normalise_allele(f[[5L]]),
+        genotype = unname(calls["genotype", ]),
+        depth = unname(calls["depth", ])
+      )
+    }
+  }
+  if (n_multi > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_multi} multi-allelic VCF record{?s} dropped: ",
+      "ALT dosage is ambiguous with more than one ALT."
+    )))
+  }
+  if (n_sym > 0L) {
+    cli::cli_inform(gettext(paste0(
+      "{n_sym} VCF record{?s} with a symbolic or absent ALT ",
+      "(e.g. `<DEL>`, `*`) dropped: short oligos cannot be designed ",
+      "across structural alleles."
+    )))
+  }
+  if (n_short > 0L) {
+    cli::cli_inform(gettext(
+      "{n_short} VCF record{?s} dropped: fewer columns than the header names."
+    ))
+  }
+  if (n_bad > 0L) {
+    cli::cli_inform(gettext(
+      "{n_bad} VCF record{?s} dropped: no FORMAT/GT or FORMAT/AD."
+    ))
+  }
+  out <- if (length(rows)) {
+    tibble::as_tibble(do.call(rbind, rows))
+  } else {
+    tibble::tibble(
+      line = character(), chrom = character(), pos = integer(),
+      ref = character(), alt = character(), genotype = numeric(),
+      depth = numeric()
+    )
+  }
+  class(out) <- c("genotypes", class(out))
+  out
+}
+
+#' ALT dosage and depth from one FORMAT field (internal)
+#' @keywords internal
+#' @noRd
+genotype_call <- function(gt, ad) {
+  ref_depth <- alt_depth <- NA_real_
+  if (!is.na(ad) && nzchar(ad) && ad != ".") {
+    d <- suppressWarnings(as.numeric(strsplit(ad, ",", fixed = TRUE)[[1L]]))
+    if (length(d) >= 2L && all(is.finite(d[1:2]))) {
+      ref_depth <- d[[1L]]
+      alt_depth <- d[[2L]]
+    }
+  }
+  depth <- if (is.na(ref_depth)) NA_real_ else ref_depth + alt_depth
+  dosage <- if (is.na(gt) || gt %in% c(".", "./.", ".|.")) {
+    NA_real_
+  } else {
+    alleles <- strsplit(gt, "[/|]", perl = TRUE)[[1L]]
+    a <- suppressWarnings(as.integer(alleles))
+    a <- a[!is.na(a)]
+    if (length(a) != 2L || any(a > 1L)) NA_real_ else sum(a)
+  }
+  if (is.na(dosage) && !is.na(depth) && depth > 0) {
+    dosage <- round(2 * alt_depth / depth)
+  }
+  c(genotype = dosage, depth = depth)
+}
+
+#' The sample names of a VCF, scanned without a line cap (internal)
+#' @keywords internal
+#' @noRd
+vcf_sample_names <- function(path) {
+  con <- file(path, "r")
+  on.exit(close(con), add = TRUE)
+  repeat {
+    line <- readLines(con, n = 1L, warn = FALSE)
+    if (!length(line)) {
+      abort_msg("{path} has no '#CHROM' header line.")
+    }
+    if (startsWith(line, "##") || !nzchar(line)) next
+    if (!startsWith(line, "#CHROM")) {
+      abort_msg("{path}: the first non-'##' line does not start with '#CHROM'.")
+    }
+    nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
+    return(if (length(nms) > 9L) nms[-(1:9)] else character())
+  }
+}
+
+#' One variant row, as a typed input
+#'
+#' A design function needs one locus, and a subset of a variants table is a
+#' tibble that still claims to be many.  `as_variant_row()` selects exactly one
+#' row and names the contract: columns `chrom`, `pos`, `ref`, `alt`, class
+#' `variant`.  Zero or several matching rows is an error, not a silent
+#' first-row choice.  A symbolic or absent allele (`<DEL>`, `*`, `.`) is
+#' refused before `normalise_allele()` can turn it into a fake `N` (ADR 0016,
+#' 0018); the readers drop such a record, but a selector that asked for one row
+#' has no other record to fall back to.
+#' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`).
+#' @param id,chrom,pos optional selectors; give at most what names one row.
+#' @return a one-row tibble of class `variant`.
+#' @examples
+#' as_variant_row(marker_example("SNP"), chrom = "Chr1")
+#' @family input
+#' @export
+as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
+  if (!is.data.frame(x)) abort_msg("`x` must be a variants table.")
+  need_cols(x, c("chrom", "pos", "ref", "alt"))
+  if (!is.null(id)) {
+    need_cols(x, "id", i = gettext("`id` selects on the `id` column."))
+    x <- x[!is.na(x$id) & as.character(x$id) %in% as.character(id), , drop = FALSE]
+  }
+  if (!is.null(chrom)) {
+    x <- x[as.character(x$chrom) == ath_chrom(chrom), , drop = FALSE]
+  }
+  if (!is.null(pos)) {
+    x <- x[as.integer(x$pos) %in% as.integer(pos), , drop = FALSE]
+  }
+  if (nrow(x) != 1L) {
+    abort_msg(gettextf(
+      "`as_variant_row()` needs exactly one variant; %d matched. Give `id`, `chrom` or `pos`.",
+      nrow(x)
+    ))
+  }
+  if (is.na(x$chrom[[1L]]) || !nzchar(x$chrom[[1L]])) {
+    abort_msg("The variant row needs a chromosome name.")
+  }
+  pos_raw <- suppressWarnings(as.integer(x$pos[[1L]]))
+  if (is.na(pos_raw) || pos_raw < 1L) {
+    abort_msg("The variant row needs a positive integer `pos`.")
+  }
+  alleles <- c(x$ref[[1L]], x$alt[[1L]])
+  bad <- is.na(alleles) | vcf_symbolic_allele(alleles)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "The variant row needs concrete REF and ALT alleles; got %s.",
+      paste0("`", alleles[bad], "`", collapse = ", ")
+    ))
+  }
+  out <- tibble::as_tibble(x[, c("chrom", "pos", "ref", "alt"), drop = FALSE]) |>
+    dplyr::mutate(
+      chrom = ath_chrom(.data$chrom),
+      pos = as.integer(.data$pos),
+      ref = normalise_allele(.data$ref),
+      alt = normalise_allele(.data$alt)
+    )
+  if (anyNA(out$pos) || any(!nzchar(out$ref)) || any(!nzchar(out$alt))) {
+    abort_msg("The variant row needs a non-missing `pos` and non-empty alleles.")
+  }
+  class(out) <- c("variant", class(out))
+  out
+}
+
 #' Streaming VCF reader (`vroom`): CHROM/POS/REF/ALT, multi-allelic split
 #' @keywords internal
 #' @noRd
@@ -112,10 +409,17 @@ read_variants_vcf_vroom <- function(path) {
     .default = vroom::col_skip(),
     CHROM = "c", POS = "i", REF = "c", ALT = "c"
   )
-  vroom::vroom(path,
+  raw <- vroom::vroom(path,
     comment = "#", col_names = nms, col_types = ct,
     col_select = c("CHROM", "POS", "REF", "ALT"), progress = FALSE
-  ) |>
+  )
+  bad <- is.na(raw$CHROM) | !nzchar(raw$CHROM)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad)[[1L]]
+    ))
+  }
+  raw |>
     dplyr::transmute(
       chrom = ath_chrom(.data$CHROM), pos = as.integer(.data$POS),
       ref = .data$REF, alt = .data$ALT
@@ -148,7 +452,7 @@ vcf_header_names <- function(path) {
     missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
     if (length(missing)) {
       abort_msg(
-        "{path}: the '#CHROM' header is missing {.val {missing}}.",
+        "{path}: the '#CHROM' header is missing column {.val {missing}}.",
         i = "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
       )
     }
@@ -180,8 +484,15 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
   }
   vcf <- VariantAnnotation::readVcf(path, param = param)
   rng <- SummarizedExperiment::rowRanges(vcf)
+  seq <- as.character(GenomicRanges::seqnames(rng))
+  bad <- is.na(seq) | !nzchar(seq)
+  if (any(bad)) {
+    abort_msg(gettextf(
+      "VCF record %d has no chromosome name.", which(bad)[[1L]]
+    ))
+  }
   tibble::tibble(
-    chrom = ath_chrom(as.character(GenomicRanges::seqnames(rng))),
+    chrom = ath_chrom(seq),
     pos   = as.integer(GenomicRanges::start(rng)),
     ref   = as.character(VariantAnnotation::ref(vcf)),
     alt   = purrr::map(VariantAnnotation::alt(vcf), as.character)
@@ -270,6 +581,85 @@ marker_example <- function(type = NULL) {
   ex
 }
 
+read_fasta_strict <- function(path, read) {
+  # Biostrings warns and silently drops a letter it does not know; every base
+  # after it moves, so a shortened sequence is worse than no sequence
+  tryCatch(
+    withCallingHandlers(
+      read(),
+      warning = function(w) {
+        if (grepl("invalid one-letter sequence codes", conditionMessage(w))) {
+          abort_msg(
+            "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+          )
+        }
+      }
+    ),
+    error = function(e) {
+      if (grepl("invalid DNA letters", conditionMessage(e))) {
+        abort_msg(
+          "FASTA {path} has bases outside the DNA/IUPAC alphabet; refusing to shift coordinates silently."
+        )
+      }
+      stop(e)
+    }
+  )
+}
+
+# Duplicate names are not cosmetic: `g[["Chr1"]]` would pick one record while
+# the indexer picks another, so the sequence behind a coordinate depends on the
+# backend.  The header scan catches the raw file; the object check catches a
+# `chrom_map` that sends two records to one name.
+fasta_duplicate_name <- function(path) {
+  con <- if (grepl("[.]gz$", path, ignore.case = TRUE)) gzfile(path, "r") else file(path, "r")
+  on.exit(close(con))
+  seen <- character(0)
+  repeat {
+    lines <- readLines(con, n = 100000L, warn = FALSE)
+    if (!length(lines)) {
+      break
+    }
+    heads <- sub("^>", "", lines[startsWith(lines, ">")])
+    if (length(heads)) {
+      nm <- sub("\\s.*$", "", heads)
+      dup <- anyDuplicated(c(seen, nm))
+      if (dup) {
+        return(nm[[dup - length(seen)]])
+      }
+      seen <- c(seen, nm)
+    }
+  }
+  NULL
+}
+
+check_unique_fasta_names <- function(path) {
+  dup <- fasta_duplicate_name(path)
+  if (!is.null(dup)) {
+    abort_msg(
+      gettextf(
+        "FASTA %s names sequence %s more than once; chromosome names must be unique.",
+        path, dup
+      ),
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  invisible(path)
+}
+
+check_unique_sequences <- function(g, path) {
+  dup <- anyDuplicated(names(g))
+  if (dup) {
+    abort_msg(
+      gettextf(
+        "FASTA %s names sequence %s more than once after mapping; chromosome names must be unique.",
+        path, names(g)[[dup]]
+      ),
+      class = "tidymarkers_duplicate_sequence_error"
+    )
+  }
+  invisible(g)
+}
+
 #' Read an arbitrary genome FASTA, optionally normalising sequence names
 #'
 #' @param path FASTA path (gzipped is fine).
@@ -280,6 +670,8 @@ marker_example <- function(type = NULL) {
 #' @param use_index when `TRUE` and `seqids` is given, read only those sequences
 #'   through the `Rsamtools` FASTA index (random access, no whole-genome load);
 #'   otherwise the whole file is read with `Biostrings`.
+#' @param build optional release id; stored as `genome_build` metadata so a
+#'   [genome_index()] made from the result carries it.
 #' @return a `DNAStringSet`; sequence names are stripped of their deflines and,
 #'   when `chrom_map` is given, replaced by the mapped names (only mapped
 #'   sequences are kept).
@@ -289,11 +681,30 @@ marker_example <- function(type = NULL) {
 #' read_genome_fasta(fa, chrom_map = c("1" = "Chr1"))
 #' @family input
 #' @export
-read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index = TRUE) {
-  if (!fs::file_exists(path)) abort_msg("FASTA not found: {path}")
+read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL,
+                              use_index = TRUE, build = NULL) {
+  path <- reader_path(path, "FASTA")
+  build <- check_genome_build(build)
 
   normalise <- function(g) {
     nm <- sub("\\s.*$", "", names(g))
+    unnamed <- is.na(nm) | !nzchar(nm)
+    if (any(unnamed)) {
+      abort_msg(gettextf(
+        "FASTA %s has a sequence with no name (record %d).",
+        path, which(unnamed)[[1L]]
+      ))
+    }
+    dup <- anyDuplicated(nm)
+    if (dup) {
+      abort_msg(
+        gettextf(
+          "FASTA %s names sequence %s more than once; chromosome names must be unique.",
+          path, nm[[dup]]
+        ),
+        class = "tidymarkers_duplicate_sequence_error"
+      )
+    }
     if (!is.null(chrom_map)) {
       keep <- nm %in% names(chrom_map)
       g <- g[keep]
@@ -301,11 +712,19 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
     } else {
       names(g) <- nm
     }
-    if (!is.null(seqids)) g <- g[intersect(seqids, names(g))]
+    # a name lookup would pick the first duplicate; filtering is positional
+    if (!is.null(seqids)) g <- g[names(g) %in% seqids]
+    if (!is.null(build)) {
+      md <- S4Vectors::metadata(g) %||% list()
+      md$genome_build <- build
+      S4Vectors::metadata(g) <- md
+    }
+    check_unique_sequences(g, path)
     g
   }
 
   if (isTRUE(use_index) && !is.null(seqids)) {
+    check_unique_fasta_names(path)
     plain <- fasta_index(path)
     fai <- readr::read_tsv(paste0(plain, ".fai"),
       show_col_types = FALSE,
@@ -316,13 +735,17 @@ read_genome_fasta <- function(path, chrom_map = NULL, seqids = NULL, use_index =
     keep <- (tok %in% seqids) | (!is.na(mapped) & mapped %in% seqids)
     sel <- fai[keep, , drop = FALSE]
     if (nrow(sel) == 0L) {
-      return(Biostrings::DNAStringSet())
+      return(normalise(Biostrings::DNAStringSet()))
     }
     gr <- GenomicRanges::GRanges(sel$name, IRanges::IRanges(1L, sel$length))
-    g <- Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    g <- read_fasta_strict(path, function() {
+      Rsamtools::scanFa(Rsamtools::FaFile(plain), gr)
+    })
     return(normalise(g))
   }
-  normalise(Biostrings::readDNAStringSet(path))
+  normalise(read_fasta_strict(path, function() {
+    Biostrings::readDNAStringSet(path)
+  }))
 }
 
 # =============================================================================

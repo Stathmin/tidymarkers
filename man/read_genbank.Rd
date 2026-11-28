@@ -54,6 +54,7 @@ read_genbank(gb)
 }
 \seealso{
 Other input:
+\code{\link[=as_variant_row]{as_variant_row()}},
 \code{\link[=ath_genome]{ath_genome()}},
 \code{\link[=ensembl_gene]{ensembl_gene()}},
 \code{\link[=ensembl_variants]{ensembl_variants()}},
@@ -75,6 +76,7 @@ Other input:
 \code{\link[=print.marker_genome]{print.marker_genome()}},
 \code{\link[=read_genome_fasta]{read_genome_fasta()}},
 \code{\link[=read_variant_depth]{read_variant_depth()}},
+\code{\link[=read_variant_genotypes]{read_variant_genotypes()}},
 \code{\link[=read_variants_vcf]{read_variants_vcf()}},
 \code{\link[=snp_template]{snp_template()}},
 \code{\link[=write_variants_vcf]{write_variants_vcf()}}

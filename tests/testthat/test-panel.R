@@ -46,7 +46,7 @@ test_that("every target yields a design or its full cause chain, never a drop", 
   panel <- design_panel(dir, chemistries = c("snp", "hrm", "caps"))
 
   expect_s3_class(panel, "marker_panel")
-  expect_true(panel$experimental)
+  expect_false(panel$experimental)
 
   t <- panel$targets
   expect_equal(nrow(t), 2L)
@@ -82,7 +82,6 @@ test_that("every target yields a design or its full cause chain, never a drop", 
   expect_true(any(grepl("<marker_panel> 2 target(s), 1 designed, 1 failed", out, fixed = TRUE)))
   expect_true(any(grepl("footprint_dropout", out, fixed = TRUE)))
   expect_true(any(grepl("Chr2:150 A>C: snp: ", out, fixed = TRUE)))
-  expect_true(any(grepl("experimental", out, fixed = TRUE)))
 })
 
 test_that("no chemistry working aborts naming every target and every cause", {
@@ -207,13 +206,16 @@ test_that("the LD seam collapses a perfect pair only when a threshold is given",
 
   not_applied <- tidymarkers:::panel_ld(targets, h, NULL)
   expect_equal(nrow(not_applied$targets), 2L)
-  expect_identical(not_applied$record, "not_applied")
+  expect_identical(not_applied$record$method, "not_applied")
+  expect_null(not_applied$record$dropped)
 
   pruned <- tidymarkers:::panel_ld(targets, h, 0.8)
   expect_equal(nrow(pruned$targets), 1L)
   expect_equal(pruned$targets$pos, 300L)
+  expect_identical(pruned$record$method, "threshold")
   expect_equal(pruned$record$threshold, 0.8)
   expect_identical(pruned$record$dropped, "Chr1:500 T>G")
+  expect_identical(pruned$record$reason, "ld")
 
   # an explicit linkage table needs no threshold
   table_ld <- tibble::tibble(target1 = "Chr1:300 A>C", target2 = "Chr1:500 T>G")
@@ -227,13 +229,55 @@ test_that("the panel applies LD and writes the record into the artefact", {
 
   both <- design_panel(withr::local_tempdir(), targets = targets, haplotypes = h)
   expect_equal(nrow(both$targets), 2L)
-  expect_identical(both$ld, "not_applied")
-  expect_identical(both$artefact$manifest$plan$ld, "not_applied")
+  expect_identical(both$ld$method, "not_applied")
+  expect_identical(both$artefact$manifest$plan$ld$method, "not_applied")
 
   one <- design_panel(withr::local_tempdir(), targets = targets, haplotypes = h, ld = 0.8)
   expect_equal(nrow(one$targets), 1L)
   expect_identical(one$targets$target, "Chr1:300 A>C")
+  expect_identical(one$artefact$manifest$plan$ld$method, "threshold")
   expect_equal(one$artefact$manifest$plan$ld$threshold, 0.8)
+  expect_identical(one$artefact$manifest$plan$ld$dropped, "Chr1:500 T>G")
+  expect_false(identical(both$artefact$id, one$artefact$id))
+
+  pip <- one$artefact$manifest$plan$panel
+  expect_identical(
+    pip$order,
+    c("gwas", "ld", "haplotypes", "chemistry", "artefact")
+  )
+  expect_identical(pip$gwas$n_signals, 2L)
+  expect_identical(pip$ld$method, "threshold")
+  expect_identical(pip$haplotypes$reference_calls, 1L)
+  expect_identical(pip$chemistry$chosen[["Chr1:300 A>C"]], "snp")
+  expect_identical(pip$one_pot$groups, 1L)
+})
+
+test_that("LD runs before the haplotype contract", {
+  skip_if_no_oligoarrayaux()
+  targets <- ld_targets()
+  # H1 is unphased at Chr1:500, the target ld = 0.8 drops; the same row on a
+  # surviving target must still abort
+  unphased <- tibble::tibble(
+    haplotype = c("H1", "H1", "H1", "H2"),
+    freq = c(0.4, 0.4, 0.4, 0.6),
+    chrom = "Chr1", pos = c(300L, 500L, 500L, 100L),
+    ref = c("A", "T", "T", "C"), alt = c("C", "G", "A", "G")
+  )
+  pruned <- design_panel(
+    withr::local_tempdir(),
+    targets = targets, haplotypes = unphased, ld = 0.8
+  )
+  expect_identical(pruned$targets$target, "Chr1:300 A>C")
+
+  err <- tryCatch(
+    design_panel(
+      withr::local_tempdir(),
+      targets = targets, haplotypes = unphased
+    ),
+    error = function(e) e
+  )
+  expect_s3_class(err, "tidymarkers_haplotype_error")
+  expect_match(conditionMessage(err), "Chr1:500", fixed = TRUE)
 })
 
 test_that("reversing the chemistry costs changes the chosen scheme", {
@@ -276,4 +320,27 @@ test_that("a fixed created time makes the text artefact byte-identical", {
   # excluded by name: solved.rds serialises an igraph pointer and a random id,
   # so a byte comparison would test the serializer, not the design
   expect_true(file.exists(file.path(first$artefact$dir, "solved.rds")))
+})
+
+test_that("the panel is a typed input to pareto, artefact and export", {
+  skip_if_no_oligoarrayaux()
+  dir <- withr::local_tempdir()
+  panel <- design_panel(dir, targets = fixture_targets()[1L, ], created = "2026-01-01T00:00:00Z")
+
+  solved <- as_marker_solved(panel)
+  expect_s3_class(solved, "marker_solved")
+  expect_identical(solved$report, panel$solved$report)
+  expect_identical(attr(solved, "panel"), panel$artefact$manifest$plan$panel)
+
+  front <- marker_pareto(panel)
+  expect_s3_class(front, "tbl_df")
+  expect_true(all(c("label", "cost", "on_front") %in% names(front)))
+
+  export_dir <- withr::local_tempdir()
+  expect_identical(marker_export(panel, dir = export_dir, artefact = FALSE), export_dir)
+  expect_true(all(file.exists(file.path(export_dir, c("markers.csv", "attempts.csv", "primers.csv")))))
+
+  art <- marker_artefact(panel, dir = dir, created = "2026-01-01T00:00:00Z")
+  expect_s3_class(art, "marker_artefact")
+  expect_true(file.exists(file.path(art$dir, "artefact.json")))
 })

@@ -23,13 +23,13 @@
 TRACE_SCHEMA <- "tidymarkers/trace@1"
 
 # the newest version this reader understands, per record kind
-TRACE_FORMATS <- c(trace = 1L, artefact = 1L)
+TRACE_FORMATS <- c(trace = 1L, artefact = 2L)
 
 # the shape of every trace, in order: an artefact manifest's fields plus the two
 # things only a trace carries (`decisions`, `signals`), so a trace has one shape
 # whether it came from an artefact or a solved object
 TRACE_FIELDS <- c(
-  "schema", "created", "package", "platform", "engine_stamp", "inputs", "plan",
+  "schema", "contract", "created", "package", "platform", "engine_stamp", "inputs", "plan",
   "parameters", "overrides", "limitations", "counts", "files", "id",
   "decisions", "signals"
 )
@@ -122,6 +122,9 @@ trace_empty_decisions <- function() {
 trace_from_manifest <- function(manifest, decisions = NULL, signals = NULL) {
   out <- list(
     schema = marker_trace_schema(),
+    contract = manifest$contract %||% list(
+      version = "tidymarkers/contract@1", scenario = "unspecified"
+    ),
     created = manifest$created,
     package = manifest$package,
     platform = manifest$platform,
@@ -156,6 +159,10 @@ trace_from_solved <- function(solved) {
   tg <- solved$plan$targets
   out <- list(
     schema = marker_trace_schema(),
+    contract = list(
+      version = "tidymarkers/contract@1",
+      scenario = solved$scenario %||% "unspecified"
+    ),
     created = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
     package = list(
       name = "tidymarkers",
@@ -167,13 +174,7 @@ trace_from_solved <- function(solved) {
     ),
     engine_stamp = as.list(marker_engine_stamp()),
     inputs = artefact_inputs(solved$plan),
-    plan = list(
-      layers = solved$plan$layers,
-      targets = nrow(tg),
-      schemes_available = solved$schemes,
-      costs = as.list(solved$plan$costs %||% NA),
-      ld = solved$plan$ld %||% "not_applied"
-    ),
+    plan = artefact_plan(solved, tg),
     parameters = purrr::map(knobs, artefact_value),
     overrides = artefact_overrides(knobs, unique(solved$attempts$scheme)),
     limitations = I(as.character(artefact_limitations(solved))),
@@ -326,8 +327,7 @@ marker_trace_migrate <- function(x) {
       i = "Update tidymarkers to read it."
     )
   }
-  if (parts$version < current) {
-    # no such version was ever written; treating it as current would guess
+  if (parts$version < 1L) {
     trace_abort_unknown(x$schema)
   }
   if (parts$kind == "trace") {

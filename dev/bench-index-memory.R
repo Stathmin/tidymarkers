@@ -19,13 +19,21 @@ peak_mb <- function() {
 }
 
 args <- commandArgs(trailingOnly = TRUE)
+json <- NULL
+if ("--json" %in% args) {
+  j <- match("--json", args)
+  json <- args[[j + 1L]]
+  args <- args[-c(j, j + 1L)]
+}
 mode <- args[[1L]]
 fa <- args[[2L]]
 if (identical(mode, "memory")) {
-  Biostrings::readDNAStringSet(fa)
+  g <- Biostrings::readDNAStringSet(fa)
+  bases <- sum(Biostrings::width(g))
 } else if (identical(mode, "shard")) {
   genome <- marker_genome(fa)
   chroms <- if (length(args) > 2L) strsplit(args[[3L]], ",")[[1L]] else names(genome$lengths)
+  bases <- sum(as.numeric(genome$lengths[names(genome$lengths) %in% chroms]))
   dir <- tempfile("bench-index-memory-")
   fs::dir_create(dir)
   index <- genome_index(genome, "bowtie", chroms = chroms, dir = dir)
@@ -33,4 +41,15 @@ if (identical(mode, "memory")) {
 } else {
   stop("mode must be `memory` or `shard`", call. = FALSE)
 }
-cat(sprintf("%s\tpeak_rss_mb=%.1f\tfasta_mb=%.1f\n", mode, peak_mb(), file.size(fa) / 1024^2))
+peak <- peak_mb()
+cat(sprintf("%s\tpeak_rss_mb=%.1f\tfasta_mb=%.1f\n", mode, peak, file.size(fa) / 1024^2))
+if (!is.null(json)) {
+  record <- list(
+    mode = mode, label = fs::path_file(fa), bases = bases,
+    peak_rss_mb = peak, fasta_mb = file.size(fa) / 1024^2,
+    chroms = if (mode == "shard") length(chroms) else NA_integer_
+  )
+  old <- if (fs::file_exists(json)) jsonlite::fromJSON(json, simplifyVector = FALSE) else list()
+  writeLines(jsonlite::toJSON(c(old, list(record)), auto_unbox = TRUE, pretty = TRUE), json)
+}
+

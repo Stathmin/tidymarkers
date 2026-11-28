@@ -139,3 +139,50 @@ test_that("the validator reads the JSON Schema keywords it publishes", {
 
   expect_equal(env$mcp_validate_args("not-an-object", schema)$path, "arguments")
 })
+
+# Five tools a client reaches in the documented J1-J7 paths: thermo, the scheme
+# registry, batch design, screening and the one mutating tool.  These pin the
+# published file to what `tools/list` actually returns, and the structured
+# error to what `tools/call` actually sends.
+.mcp_pinned_tools <- c(
+  "primer_tm", "marker_schemes", "design_markers",
+  "screen_snp_targets", "marker_technology"
+)
+
+test_that("five tools return the published schema from tools/list", {
+  skip_if_not_installed("jsonlite")
+  env <- .mcp_env()
+
+  path <- system.file("mcp", "schema.json", package = "tidymarkers")
+  if (!nzchar(path)) {
+    path <- testthat::test_path("..", "..", "inst", "mcp", "schema.json")
+  }
+  published <- jsonlite::fromJSON(path, simplifyVector = FALSE)$`$defs`$inputSchemas
+  expect_true(all(.mcp_pinned_tools %in% names(published)))
+
+  listed <- env$mcp_dispatch(list(jsonrpc = "2.0", id = 1L, method = "tools/list"))
+  runtime <- listed$result$tools
+  names(runtime) <- vapply(runtime, function(tool) tool$name, character(1))
+
+  render <- function(x) {
+    as.character(jsonlite::toJSON(x, auto_unbox = TRUE, null = "null"))
+  }
+  for (nm in .mcp_pinned_tools) {
+    expect_identical(render(runtime[[nm]]$inputSchema), render(published[[nm]]), info = nm)
+    expect_identical(runtime[[nm]]$inputSchema, env$mcp_tool_specs()[[nm]]$inputSchema, info = nm)
+  }
+})
+
+test_that("five tools reject bad arguments with the four structured fields", {
+  skip_if_not_installed("jsonlite")
+  env <- .mcp_env()
+
+  for (nm in .mcp_pinned_tools) {
+    error <- .mcp_call(env, nm, list(bogus = 1L))$error
+    expect_equal(error$code, -32602L, info = nm)
+    expect_identical(error$data$tool, nm)
+    expect_true(nzchar(error$data$path), info = nm)
+    expect_true(nzchar(error$data$expected), info = nm)
+    expect_true("got" %in% names(error$data), info = nm)
+  }
+})

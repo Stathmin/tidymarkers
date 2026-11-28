@@ -48,9 +48,13 @@ ROCRATE_CONTEXT <- "https://w3id.org/ro/crate/1.1/context"
 #' @keywords internal
 #' @noRd
 rocrate_files <- function(manifest) {
-  files <- unlist(manifest$files %||% list(), use.names = FALSE)
+  # an excluded file is a named record (name + reason), not a sidecar to copy
+  declared <- manifest$files %||% list()
+  declared <- declared[vapply(declared, is.character, logical(1))]
+  files <- unlist(declared, use.names = FALSE)
   files <- as.character(files)
   files <- files[!is.na(files) & nzchar(files)]
+  files <- vapply(files, artefact_safe_name, character(1), USE.NAMES = FALSE)
   unique(c("artefact.json", files))
 }
 
@@ -64,6 +68,38 @@ rocrate_encoding <- function(file) {
     rds = "application/x-r-serialize",
     "application/octet-stream"
   )
+}
+
+#' A crate `@id` resolved inside the crate directory
+#'
+#' A crate is a directory that travels: a `File` entity that resolves outside it
+#' describes a file the crate does not carry, so the import refuses the id
+#' instead of hashing whatever the path happens to name on this machine.
+#' @param dir the crate directory.
+#' @param id the `@id` of a graph entity.
+#' @return the absolute path of the declared file.
+#' @keywords internal
+#' @noRd
+rocrate_member_path <- function(dir, id) {
+  root <- fs::path_abs(dir)
+  path <- fs::path_abs(fs::path(root, id))
+  if (!identical(path, root) && !fs::path_has_parent(path, root)) {
+    abort_msg(
+      "The crate declares {.file {id}}, which is outside {.path {dir}}.",
+      i = "A crate names only the files it carries."
+    )
+  }
+  if (fs::file_exists(path)) {
+    target <- fs::path_real(path)
+    real_root <- fs::path_real(root)
+    if (!identical(target, real_root) && !fs::path_has_parent(target, real_root)) {
+      abort_msg(
+        "The crate declares {.file {id}}, which resolves to {.path {target}} outside {.path {dir}}.",
+        i = "A crate carries files, not links out of itself."
+      )
+    }
+  }
+  path
 }
 
 #' One `File` entity, hashed from the crate's own copy
@@ -140,6 +176,8 @@ rocrate_graph <- function(artefact, dir) {
     "name" = "tidymarkers design artefact",
     "identifier" = m$id,
     "datePublished" = m$created,
+    "version" = m$contract$version %||% NA_character_,
+    "keywords" = c("tidymarkers", paste0("scenario:", m$contract$scenario %||% "unspecified")),
     "conformsTo" = list("@id" = ROCRATE_PROFILE),
     "hasPart" = lapply(files, function(file) list("@id" = file))
   )
@@ -299,7 +337,7 @@ marker_import_rocrate <- function(path) {
     if (is.null(declared) || is.na(id) || startsWith(id, "#") || grepl("^[A-Za-z][A-Za-z0-9+.-]*:", id)) {
       next
     }
-    file <- fs::path(dir, id)
+    file <- rocrate_member_path(dir, id)
     if (!fs::file_exists(file)) {
       abort_msg(
         "The crate declares {.file {id}}, but the file is not in {.path {dir}}.",
