@@ -85,3 +85,8 @@ not move.
   the write, only that the same body contains a refusing call. That limit is
   unchanged and is why `dev/writers.yml` names the declaring caller for each
   registered helper.
+- The scan reads top-level `name <- function` bodies only. A closure defined
+  inside a function is outside it; the one such writer today (`draw()` inside
+  `render_design_search()`) renders PNG frames into `withr::local_tempdir()`
+  and never sees a caller's path. A nested closure that writes a caller's name
+  would need the scanner extended, not a ledger entry.
