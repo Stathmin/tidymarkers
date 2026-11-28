@@ -29,7 +29,12 @@ target_snp <- function(row) {
 #' A design-cache key for one target
 #' @keywords internal
 #' @noRd
-target_key <- function(tg) paste(tg$chrom, tg$pos, tg$ref, tg$alt, sep = "|")
+target_key <- function(tg) {
+  alt2 <- if ("alt2" %in% names(tg)) tg$alt2 else rep(NA_character_, nrow(tg))
+  alt2[is.na(alt2)] <- ""
+  strand <- if ("strand" %in% names(tg)) tg$strand else rep("+", nrow(tg))
+  paste(tg$chrom, tg$pos, tg$ref, tg$alt, alt2, strand, sep = "|")
+}
 
 #' A cache key that also varies with the design knobs
 #' @keywords internal

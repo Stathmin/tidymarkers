@@ -313,6 +313,55 @@ test_that("marker_solve reuses its cache", {
   expect_identical(s1$report$marker[[1L]], s2$report$marker[[1L]])
 })
 
+test_that("a target's design key includes alt2 and strand", {
+  # two rows at one locus can ask for different designs: the allele on the other
+  # strand, or a second ALT.  The de-dup/cache key must not collapse them.
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 40L)))
+  tagged <- function(tag) {
+    structure(list(scheme = "snp", tag = tag), class = c("marker_assay", "marker"))
+  }
+  seed <- function(tg, tags) {
+    cache <- new.env(parent = emptyenv())
+    for (i in seq_len(nrow(tg))) {
+      assign(
+        paste(target_key(tg[i, , drop = FALSE]), "snp", "", sep = "||"),
+        tagged(tags[[i]]),
+        envir = cache
+      )
+    }
+    cache
+  }
+  base <- marker_plan(genome) + marker_tech(schemes = "snp")
+  strands <- base +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G", strand = "-") +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G", strand = "+")
+  tg <- strands$targets
+  solved <- marker_solve(strands, cache = seed(tg, c("minus", "plus")), progress = FALSE)
+  expect_identical(
+    unname(vapply(solved$report$marker, function(m) m$tag, character(1))),
+    c("minus", "plus")
+  )
+  multi <- base +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G", alt2 = "A") +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G")
+  tg <- multi$targets
+  solved <- marker_solve(multi, cache = seed(tg, c("multi", "single")), progress = FALSE)
+  expect_identical(
+    unname(vapply(solved$report$marker, function(m) m$tag, character(1))),
+    c("multi", "single")
+  )
+  # the same row twice is still one design, not two solves
+  twice <- base +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G") +
+    marker_targets(chrom = "Chr1", pos = 20L, ref = "T", alt = "G")
+  tg <- twice$targets
+  solved <- marker_solve(twice, cache = seed(tg, c("b", "b")), progress = FALSE)
+  expect_identical(
+    unname(vapply(solved$report$marker, function(m) m$tag, character(1))),
+    c("b", "b")
+  )
+})
+
 test_that("marker_primers pulls the oligos out of a solved marker", {
   skip_if_no_oligoarrayaux()
   solved <- solved_example()
