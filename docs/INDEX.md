@@ -199,6 +199,9 @@ Other vignettes:
 - [ADR 0045](adr/0045-a-position-is-a-whole-number-before-the-cast.md) — a
   `pos` is checked before `as.integer()`, so a panel row at 250.9 no longer
   scores the target at 250.
+- [ADR 0046](adr/0046-a-design-key-names-every-input-the-design-reads.md) — a
+  design key names `alt2` and `strand`, so two rows at one locus are no longer
+  answered by one design.
 
 ## Operator decisions
 
