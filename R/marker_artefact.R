@@ -788,6 +788,19 @@ declared_path <- function(path) {
   path
 }
 
+# An index is a multi-file write by an external engine: every name it creates is
+# declared before the build, and a linked file is not a finished index (ADR 0034).
+declared_index <- function(prefix, suffixes) {
+  refuse_links(fs::path_dir(prefix), paste0(fs::path_file(prefix), suffixes))
+  invisible(prefix)
+}
+
+# A reader may take a link as its input, but a linked index file is not a build
+# this call made: treat it as absent and let the declared-name guard refuse.
+index_present <- function(path) {
+  fs::file_exists(path) && !nzchar(Sys.readlink(path))
+}
+
 artefact_sidecar <- function(dir, file, empty) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     return(empty())

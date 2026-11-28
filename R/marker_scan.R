@@ -14,6 +14,9 @@
 #  the rest of the pipeline stays unaware.
 # =============================================================================
 
+# the database files BLAST+ creates for a nucleotide FASTA (ADR 0034)
+BLAST_INDEX_SUFFIXES <- c(".ndb", ".nhr", ".nin", ".njs", ".not", ".nsq", ".ntf", ".nto")
+
 #' Is NCBI BLAST+ available (for the indexed genome scan)?
 #'
 #' Looks for `blastn`/`makeblastdb` in `options(tidymarkers.blast)`, a project
@@ -71,7 +74,8 @@ marker_blast_index <- function(genome, path = NULL) {
     # build once: BLAST+ writes <fasta>.nhr/.nin/.nsq beside the FASTA, and a
     # 14.8 GB genome must not be re-indexed on every call.  Delete the index to
     # force a rebuild.
-    if (!file.exists(paste0(fasta, ".nsq"))) {
+    declared_index(fasta, BLAST_INDEX_SUFFIXES)
+    if (!index_present(paste0(fasta, ".nsq"))) {
       with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
     }
   } else {
@@ -80,7 +84,9 @@ marker_blast_index <- function(genome, path = NULL) {
       path <- fs::path(fs::path_temp(), paste0("genome-", genome_signature(genome), ".fa"))
     }
     fs::dir_create(fs::path_dir(path))
-    if (!file.exists(paste0(path, ".nsq"))) {
+    declared_index(path, BLAST_INDEX_SUFFIXES)
+    if (!index_present(paste0(path, ".nsq"))) {
+      declared_path(path)
       Biostrings::writeXStringSet(genome, path)
       with_blast(rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE))
     }

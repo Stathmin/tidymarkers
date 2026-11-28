@@ -104,3 +104,25 @@ test_that("declared_path refuses a link and keeps an ordinary path", {
   plain <- fs::path(dir, "plain.json")
   expect_identical(declared_path(plain), plain)
 })
+
+# A genome index is a set of declared names too (ADR 0034): the build refuses a
+# link at any file it creates, and a linked file is not a finished index.
+test_that("declared_index refuses a linked member and index_present skips it", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "outside.ebwt")
+  writeLines("keep", outside)
+  prefix <- fs::path(dir, "idx")
+  skip_if(
+    !file.symlink(outside, paste0(prefix, ".1.ebwt")),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(
+    declared_index(prefix, c(".1.ebwt", ".2.ebwt")),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+  expect_false(index_present(paste0(prefix, ".1.ebwt")))
+  plain <- paste0(fs::path(dir, "plain"), ".1.ebwt")
+  writeLines("index", plain)
+  expect_true(index_present(plain))
+})

@@ -61,15 +61,17 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
     "The FM index is not used by the design pipeline: specificity_fm() is a read mapper.
      For the design scan use marker_bowtie_index() / specificity_bowtie()."
   ))
-  if (fs::file_exists(paste0(basename, ".files"))) {
+  if (index_present(paste0(basename, ".files"))) {
     cli::cli_alert_info(gettext("Reusing the existing FM-index at {.path {basename}}."))
     return(basename)
   }
+  declared_index(basename, c(".files", ".log"))
   fasta <- if (inherits(genome, "marker_genome")) {
     genome$path
   } else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))
+    declared_path(p)
     gs <- genome
     nm <- names(gs)
     if (is.null(nm)) nm <- rep("", length(gs))

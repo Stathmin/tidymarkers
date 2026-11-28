@@ -108,7 +108,7 @@ bowtie_name_seqs <- function(gs) {
 
 # one index at `basename`, reusing an existing build (the one-off cost)
 bowtie_index_build <- function(genome, basename, threads) {
-  if (fs::file_exists(paste0(basename, ".1.ebwt"))) {
+  if (index_present(paste0(basename, ".1.ebwt"))) {
     cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {basename}}."))
     return(basename)
   }
@@ -117,6 +117,7 @@ bowtie_index_build <- function(genome, basename, threads) {
   } else {
     p <- paste0(basename, ".fa")
     fs::dir_create(fs::path_dir(p))
+    declared_path(p)
     Biostrings::writeXStringSet(bowtie_name_seqs(genome), p)
     p
   }
@@ -126,6 +127,9 @@ bowtie_index_build <- function(genome, basename, threads) {
 # the build half, separated so a per-chromosome shard can index the one-sequence
 # FASTA it just wrote instead of writing the sequence a second time
 bowtie_build_fasta <- function(fasta, basename, threads) {
+  declared_index(basename, c(
+    ".1.ebwt", ".2.ebwt", ".3.ebwt", ".4.ebwt", ".rev.1.ebwt", ".rev.2.ebwt"
+  ))
   cli::cli_alert_info(gettext("Building a bowtie index at {.path {basename}} (one-off)."))
   # bowtie_build reports progress on stdout with no quiet switch
   invisible(utils::capture.output(
@@ -155,7 +159,7 @@ bowtie_index_set <- function(genome, basename, chroms, threads) {
   }
   bases <- rlang::set_names(paste0(basename, "_", chroms), chroms)
   for (chr in chroms) {
-    if (fs::file_exists(paste0(bases[[chr]], ".1.ebwt"))) {
+    if (index_present(paste0(bases[[chr]], ".1.ebwt"))) {
       cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {bases[[chr]]}}."))
       next
     }

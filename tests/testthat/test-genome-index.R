@@ -316,6 +316,69 @@ test_that("a build or chromosome name cannot leave the index directory", {
   )
 })
 
+# ADR 0034: the index build creates its files, so a link at a name it would
+# write is refused before the build, and a linked file is not a finished index.
+test_that("a bowtie build refuses a link at the FASTA and at an index file", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  for (suffix in c(".fa", ".1.ebwt")) {
+    dir <- withr::local_tempdir()
+    outside <- fs::path(withr::local_tempdir(), paste0("outside", suffix))
+    writeLines("keep", outside)
+    base <- fs::path(dir, "idx")
+    skip_if(
+      !file.symlink(outside, paste0(base, suffix)),
+      "this filesystem cannot make a symlink"
+    )
+    expect_error(
+      tidymarkers:::bowtie_index_build(gs, base, 1L),
+      "which is a link",
+      info = suffix
+    )
+    expect_identical(readLines(outside), "keep", info = suffix)
+  }
+})
+
+test_that("a shard FASTA is a declared name", {
+  dir <- withr::local_tempdir()
+  path <- fs::path(dir, "chr1.fa")
+  outside <- fs::path(withr::local_tempdir(), "outside.fa")
+  writeLines("keep", outside)
+  skip_if(
+    !file.symlink(outside, path),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(
+    tidymarkers:::index_write_chrom_fasta(Biostrings::DNAString("ACGT"), "chr1", path),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+})
+
+test_that("the FM and BLAST index caches refuse a linked index file", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  skip_if_not_installed("Rsubread")
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "outside.files")
+  writeLines("keep", outside)
+  base <- fs::path(dir, "fm")
+  skip_if(!file.symlink(outside, paste0(base, ".files")), "no symlinks")
+  expect_error(
+    suppressWarnings(marker_fm_index(gs, basename = base)),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+
+  skip_if_not_installed("rBLAST")
+  skip_if(!has_blast(), "NCBI BLAST+ is not installed")
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "outside.nsq")
+  writeLines("keep", outside)
+  path <- fs::path(dir, "blast.fa")
+  skip_if(!file.symlink(outside, paste0(path, ".nsq")), "no symlinks")
+  expect_error(marker_blast_index(gs, path = path), "which is a link")
+  expect_identical(readLines(outside), "keep")
+})
+
 test_that("the TAIR10 gold set gives the same verdict on memory and bowtie", {
   skip_if_not_installed("Rbowtie")
   fa <- testthat::test_path("fixtures", "tair10", "genome.fa")
