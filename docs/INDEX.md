@@ -301,6 +301,9 @@ Other vignettes:
 - [ADR 0072](adr/0072-a-feature-chromosome-is-one-name.md) — a feature
   chromosome selector is one non-empty name compared with the column, so a
   vector or `NA` cannot recycle into a different row set.
+- [ADR 0073](adr/0073-a-diagnostic-mask-position-is-whole-in-its-spelling.md) —
+  a diagnostic-mask position is judged by its spelling before `as.integer()`,
+  so `10.9` is refused instead of flagging base 10.
 
 ## Operator decisions
 
