@@ -225,3 +225,38 @@ test_that("a negative depth weighs nothing, not less than nothing", {
   expect_equal(v$weight[[4L]], 1 - exp(-1), tolerance = 1e-12)
   expect_true(v$confident[[4L]])
 })
+
+test_that("a genotype's class does not depend on allele order or phase", {
+  v <- variant_confidence(tibble::tibble(
+    chrom = "Chr1", pos = 1:4, depth = 10L, alt_depth = 1L,
+    genotype = c("0/1", "1/0", "0|1", "1|0")
+  ))
+  expect_equal(v$genotype_class, rep("het", 4L))
+  expect_equal(v$weight, rep(v$weight[[1L]], 4L))
+  # the imbalanced het was confident when `1/0` read as "unknown"
+  expect_false(any(v$confident))
+
+  hom <- variant_confidence(tibble::tibble(
+    chrom = "Chr1", pos = 1:4, depth = 10L, alt_depth = 0L,
+    genotype = c("0/0", "1/1", "0/0", "1/1")
+  ))
+  expect_equal(hom$genotype_class, c("hom_ref", "hom_alt", "hom_ref", "hom_alt"))
+
+  bad <- variant_confidence(tibble::tibble(
+    chrom = "Chr1", pos = 1:3, depth = 10L, alt_depth = 1L,
+    genotype = c("0/2", "2/2", "1")
+  ))
+  expect_equal(bad$genotype_class, rep("unknown", 3L))
+})
+
+test_that("read_variant_depth() keeps a 1/0 call as a het", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t1/0:1,9:10"
+  ), vcf)
+  v <- variant_confidence(read_variant_depth(vcf))
+  expect_equal(v$genotype_class, "het")
+  expect_false(v$confident)
+})

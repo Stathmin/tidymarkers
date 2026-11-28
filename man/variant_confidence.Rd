@@ -26,8 +26,10 @@ Adds, to a table of \code{chrom}/\code{pos}/\code{depth} (and optional \code{alt
 \details{
 \itemize{
 \item \code{alt_fraction} = \code{alt_depth / depth} (\code{NA} when either is \code{NA} or \code{depth} is 0);
-\item \code{genotype_class} from GT when present (\code{"0/1"}/\code{"0|1"} -> \code{"het"}, \code{"0/0"} ->
-\code{"hom_ref"}, \code{"1/1"} -> \code{"hom_alt"}, otherwise \code{"unknown"}); when GT is absent,
+\item \code{genotype_class} from GT when present: a biallelic \code{0}/\code{1} call in either
+order and either phase separator (\code{"0/1"}, \code{"1/0"}, \code{"0|1"}, \code{"1|0"} ->
+\code{"het"}, \code{"0/0"} -> \code{"hom_ref"}, \code{"1/1"} -> \code{"hom_alt"}, otherwise
+\code{"unknown"}); when GT is absent,
 derived from \code{alt_fraction} (\verb{< 0.2} hom_ref, \verb{> 0.8} hom_alt, else het);
 \item \code{weight} in \verb{[0, 1]}: the depth term \code{1 - exp(-depth / min_depth)} applies to
 \strong{every} genotype (so the weight rises with depth; the penalty falls).  A

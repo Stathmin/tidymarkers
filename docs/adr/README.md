@@ -51,6 +51,7 @@ the file records the measurement or event that re-tested it).
 | [0038](0038-a-depth-the-writer-refuses-is-not-a-depth-the-reader-reports.md) | A depth the writer refuses is not a depth the reader reports | accepted |
 | [0039](0039-a-negative-depth-carries-no-confidence.md) | A negative depth carries no confidence, not negative confidence | accepted |
 | [0040](0040-a-validator-enforces-the-unit-the-contract-names.md) | A validator enforces the unit the contract names | accepted |
+| [0041](0041-a-genotype-is-its-allele-multiset.md) | A genotype is its allele multiset, not its spelling | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

@@ -184,6 +184,9 @@ Other vignettes:
   the metrics validator enforces the unit the contract names: integer fields
   are whole numbers, and `gpu_util` is a fraction in `[0, 1]`, not a
   percentage.
+- [ADR 0041](adr/0041-a-genotype-is-its-allele-multiset.md) — a biallelic
+  genotype is classified by its allele multiset, so `1/0` and `1|0` get the
+  same `het` class, weight and depth-gate verdict as `0/1`.
 
 ## Operator decisions
 

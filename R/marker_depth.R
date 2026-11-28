@@ -247,8 +247,10 @@ vcf_count <- function(x) {
 #' Adds, to a table of `chrom`/`pos`/`depth` (and optional `alt_depth`/`genotype`):
 #'
 #' - `alt_fraction` = `alt_depth / depth` (`NA` when either is `NA` or `depth` is 0);
-#' - `genotype_class` from GT when present (`"0/1"`/`"0|1"` -> `"het"`, `"0/0"` ->
-#'   `"hom_ref"`, `"1/1"` -> `"hom_alt"`, otherwise `"unknown"`); when GT is absent,
+#' - `genotype_class` from GT when present: a biallelic `0`/`1` call in either
+#'   order and either phase separator (`"0/1"`, `"1/0"`, `"0|1"`, `"1|0"` ->
+#'   `"het"`, `"0/0"` -> `"hom_ref"`, `"1/1"` -> `"hom_alt"`, otherwise
+#'   `"unknown"`); when GT is absent,
 #'   derived from `alt_fraction` (`< 0.2` hom_ref, `> 0.8` hom_alt, else het);
 #' - `weight` in `[0, 1]`: the depth term `1 - exp(-depth / min_depth)` applies to
 #'   **every** genotype (so the weight rises with depth; the penalty falls).  A
@@ -317,10 +319,17 @@ genotype_class <- function(gt, alt_fraction) {
   gt <- as.character(gt)
   frac <- alt_fraction
   out <- rep(NA_character_, length(gt))
-  out[!is.na(gt) & (gt == "0/1" | gt == "0|1")] <- "het"
-  out[!is.na(gt) & gt == "0/0"] <- "hom_ref"
-  out[!is.na(gt) & gt == "1/1"] <- "hom_alt"
-  out[!is.na(gt) & is.na(out)] <- "unknown" # GT present but not one of the four
+  called <- !is.na(gt)
+  out[called] <- "unknown" # GT present but not a biallelic 0/1 call
+  # `1/0` and `1|0` are the same call as `0/1` and `0|1`: the class is the
+  # allele multiset, not the order or the phase separator (ADR 0041).
+  parts <- strsplit(gt[called], "[/|]", perl = TRUE)
+  alleles <- lapply(parts, function(z) suppressWarnings(as.integer(z)))
+  biallelic <- vapply(alleles, function(a) {
+    length(a) == 2L && !anyNA(a) && all(a >= 0L & a <= 1L)
+  }, logical(1))
+  idx <- which(called)[biallelic]
+  out[idx] <- c("hom_ref", "het", "hom_alt")[vapply(alleles[biallelic], sum, integer(1)) + 1L]
 
   absent <- is.na(gt)
   out[absent & !is.na(frac) & frac < 0.2] <- "hom_ref"
