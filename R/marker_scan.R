@@ -323,6 +323,8 @@ build_blast_db <- function(genome, path = NULL) {
 #' @export
 specificity_of <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                            BPPARAM = NULL) {
+  k <- check_scan_radius(k, "k", min = 1L)
+  max_mismatch <- check_scan_radius(max_mismatch, "max_mismatch")
   # a plain list is a genome *set*; `is.object()` keeps the S4 genomes (and a
   # `marker_genome`, itself a classed list) out of this branch
   if (is.list(genome) && !is.object(genome)) {

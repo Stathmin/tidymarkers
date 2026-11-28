@@ -30,6 +30,19 @@ test_that("specificity_bowtie agrees with the two-strand countPattern oracle", {
   expect_equal(res$hits[res$primer == "REPEATED"], 2L)
 })
 
+test_that("a bowtie radius is checked before the engine runs", {
+  skip_if_not_installed("Rbowtie")
+  # the index is never opened: the radius is refused first
+  expect_error(
+    specificity_bowtie("ACGTACGTACGTACGT", "no-index", max_mismatches = 1.9),
+    "non-negative whole number"
+  )
+  expect_error(
+    specificity_bowtie("ACGTACGTACGTACGT", "no-index", max_mismatches = 4L),
+    "at most 3"
+  )
+})
+
 test_that("an absent primer reports zero hits and input order is preserved", {
   skip_if_not_full()
   skip_if_not_installed("Rbowtie")

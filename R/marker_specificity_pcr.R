@@ -78,7 +78,7 @@ in_silico_pcr <- function(f_primer, r_primer, genome, max_mismatch = NULL, BPPAR
   radius <- if (is.null(max_mismatch)) {
     if (is.null(policy)) 0L else policy$max_mismatch
   } else {
-    as.integer(max_mismatch)
+    check_scan_radius(max_mismatch, "max_mismatch")
   }
   # the reverse primer binds the minus strand, so its reverse complement is the
   # plus-strand pattern to search
@@ -229,7 +229,7 @@ in_silico_pcr_pool <- function(pairs, genome, max_mismatch = 0L, scheme = NULL, 
   }
   policy <- if (is.null(scheme)) NULL else specificity_policy(scheme)
   scoring <- policy$mode %||% "pcr"
-  radius <- as.integer(max_mismatch)
+  radius <- check_scan_radius(max_mismatch, "max_mismatch")
   fwd <- vapply(pairs, function(x) x[["F"]], character(1))
   # the reverse primer binds the minus strand, so its reverse complement is the
   # plus-strand pattern to search (as in `in_silico_pcr()`)

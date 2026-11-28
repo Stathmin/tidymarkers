@@ -201,7 +201,7 @@ bowtie_index_set <- function(genome, basename, chroms, threads) {
 #' @export
 specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4L) {
   rlang::check_installed("Rbowtie", reason = gettext("for the bowtie genome scan"))
-  max_mismatches <- as.integer(max_mismatches)
+  max_mismatches <- check_scan_radius(max_mismatches, "max_mismatches")
   if (max_mismatches > 3L) {
     abort_msg("bowtie1 allows at most 3 mismatches (`max_mismatches` is {max_mismatches}).")
   }

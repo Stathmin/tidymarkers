@@ -28,6 +28,28 @@ is_whole_number <- function(x, min = 1L, max = .Machine$integer.max) {
     x >= min && x <= max && x == round(x)
 }
 
+#' Check a whole-number search radius before the cast
+#'
+#' `as.integer()` truncates `1.9` to `1`, so a search silently uses a narrower
+#' radius than the caller named; `-1` and `Inf` reach the engine's own error.
+#' The check runs on the value the caller gave and returns the integer the
+#' engine can use (ADR 0047).
+#' @param x the candidate radius.
+#' @param arg the argument name for the message.
+#' @param min smallest accepted value; `0L` for a mismatch radius, `1L` for a
+#'   seed length.
+#' @return the radius as a single integer.
+#' @keywords internal
+#' @noRd
+check_scan_radius <- function(x, arg, min = 0L) {
+  if (!is_whole_number(x, min = min)) {
+    abort_msg(
+      "`{arg}` must be one {if (min > 0L) \"positive\" else \"non-negative\"} whole number."
+    )
+  }
+  as.integer(x)
+}
+
 #' Which positions are not positive whole numbers?
 #'
 #' The vectorised counterpart of `is_whole_number()` for a coordinate column.

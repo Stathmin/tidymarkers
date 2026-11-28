@@ -15,6 +15,43 @@ test_that("specificity_seed returns zero hits for an absent seed", {
   expect_equal(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)$hits, 0L)
 })
 
+test_that("a search radius is a whole number before the cast", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
+  primer <- "TTTTTTAAACCCGGG"
+  bad <- list(1.9, -1L, Inf, "1", c(0L, 1L))
+  for (x in bad) {
+    expect_error(
+      in_silico_pcr(primer, primer, genome, max_mismatch = x),
+      "non-negative whole number"
+    )
+    expect_error(
+      in_silico_pcr_pool(list(P = list(F = primer, R = primer)), genome, max_mismatch = x),
+      "non-negative whole number"
+    )
+    expect_error(
+      exact_hit_table(c(P = primer), genome, max_mismatch = x),
+      "non-negative whole number"
+    )
+    expect_error(
+      specificity_seed(c(P = primer), genome, k = 9L, max_mismatch = x),
+      "non-negative whole number"
+    )
+    expect_error(
+      specificity_of(c(P = primer), genome, k = 9L, max_mismatch = x),
+      "non-negative whole number"
+    )
+  }
+  for (x in list(2.5, 0L, -1L, Inf)) {
+    expect_error(
+      specificity_seed(c(P = primer), genome, k = x),
+      "positive whole number"
+    )
+  }
+  # the controls still run
+  expect_s3_class(specificity_seed(c(P = primer), genome, k = 9L, max_mismatch = 0L), "tbl_df")
+  expect_s3_class(exact_hit_table(c(P = primer), genome, max_mismatch = 1L), "tbl_df")
+})
+
 test_that("the mismatch scan is invariant to the parallel backend", {
   skip_if_not_installed("BiocParallel")
   genome <- Biostrings::DNAStringSet(c(

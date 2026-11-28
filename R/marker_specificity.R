@@ -104,6 +104,8 @@ seed_scan_cost_warn <- function(bp, n_primers) {
 #' @export
 specificity_seed <- function(primers, genome, k = SEED_K, max_mismatch = SEED_MISMATCH,
                              BPPARAM = NULL) {
+  k <- check_scan_radius(k, "k", min = 1L)
+  max_mismatch <- check_scan_radius(max_mismatch, "max_mismatch")
   seeds <- unname(substr(primers, nchar(primers) - k + 1L, nchar(primers)))
   if (inherits(genome, "marker_genome")) {
     # the seed is the whole query, so an indexed whole-primer scan answers this

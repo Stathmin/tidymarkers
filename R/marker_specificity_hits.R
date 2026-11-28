@@ -181,10 +181,7 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
   if (!is.character(sequences) || !length(sequences)) {
     abort_msg("`sequences` must be a non-empty character vector of oligos.")
   }
-  max_mismatch <- as.integer(max_mismatch)
-  if (is.na(max_mismatch) || max_mismatch < 0L) {
-    abort_msg("`max_mismatch` must be a non-negative integer.")
-  }
+  max_mismatch <- check_scan_radius(max_mismatch, "max_mismatch")
   nm <- names(sequences)
   if (is.null(nm)) {
     nm <- unname(sequences)
