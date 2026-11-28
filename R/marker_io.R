@@ -296,6 +296,29 @@ read_variant_genotypes <- function(path, samples = NULL) {
   out
 }
 
+#' ALT dosage of a biallelic VCF genotype call (internal)
+#'
+#' `0/1` and `1|0` are the same call: the dose is the allele multiset, not the
+#' order or the phase separator (ADR 0041). A call that is not exactly two
+#' alleles of 0 or 1 is `NA`.
+#' @keywords internal
+#' @noRd
+biallelic_gt_dosage <- function(gt) {
+  gt <- as.character(gt)
+  out <- rep(NA_integer_, length(gt))
+  ok <- !is.na(gt) & grepl("[/|]", gt)
+  if (!any(ok)) {
+    return(out)
+  }
+  parts <- strsplit(gt[ok], "[/|]", perl = TRUE)
+  alleles <- lapply(parts, function(z) suppressWarnings(as.integer(z)))
+  good <- vapply(alleles, function(a) {
+    length(a) == 2L && !anyNA(a) && all(a >= 0L & a <= 1L)
+  }, logical(1))
+  out[which(ok)[good]] <- vapply(alleles[good], sum, integer(1))
+  out
+}
+
 #' ALT dosage and depth from one FORMAT field (internal)
 #' @keywords internal
 #' @noRd
@@ -316,14 +339,7 @@ genotype_call <- function(gt, ad) {
   # estimable: `2/2` is not "hom alt", and AD must not answer in its place
   # (ADR 0020).  Only an absent or no-call GT leaves AD to decide.
   no_call <- is.na(gt) || !nzchar(gt) || gt %in% c(".", "./.", ".|.")
-  dosage <- if (no_call) {
-    NA_real_
-  } else {
-    alleles <- strsplit(gt, "[/|]", perl = TRUE)[[1L]]
-    a <- suppressWarnings(as.integer(alleles))
-    a <- a[!is.na(a)]
-    if (length(a) != 2L || any(a < 0L | a > 1L)) NA_real_ else sum(a)
-  }
+  dosage <- if (no_call) NA_real_ else as.numeric(biallelic_gt_dosage(gt))
   if (no_call && !is.na(depth) && depth > 0) {
     dosage <- round(2 * alt_depth / depth)
   }

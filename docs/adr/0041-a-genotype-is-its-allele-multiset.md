@@ -90,3 +90,11 @@ Verified by `tests/testthat/test-informativeness.R`, "a VCF genotype call is
 its allele multiset in either order": four orders give dosage 1, a panel of
 eight lines with four such heterozygotes gives `alt_freq = 0.5` and
 `expected_heterozygosity = 0.5`, and `^informativeness$` has 43 pass, 0 fail.
+
+The rule now lives in one internal helper, `biallelic_gt_dosage()` in
+`R/marker_io.R`. The VCF reader (`genotype_call()`), the depth gate
+(`genotype_class()`) and the informativeness panel (`genotype_dosage()`) all
+call it, so a fourth caller cannot quietly re-introduce the literal lookup.
+Verified by `tests/testthat/test-io.R`, "a biallelic VCF call doses by allele
+multiset": four allele orders and both separators give dose 1, `0/2`, `1/0/1`,
+a bare allele and a no-call give `NA`; `^io$` has 227 pass, 0 fail.

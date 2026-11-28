@@ -323,13 +323,9 @@ genotype_class <- function(gt, alt_fraction) {
   out[called] <- "unknown" # GT present but not a biallelic 0/1 call
   # `1/0` and `1|0` are the same call as `0/1` and `0|1`: the class is the
   # allele multiset, not the order or the phase separator (ADR 0041).
-  parts <- strsplit(gt[called], "[/|]", perl = TRUE)
-  alleles <- lapply(parts, function(z) suppressWarnings(as.integer(z)))
-  biallelic <- vapply(alleles, function(a) {
-    length(a) == 2L && !anyNA(a) && all(a >= 0L & a <= 1L)
-  }, logical(1))
-  idx <- which(called)[biallelic]
-  out[idx] <- c("hom_ref", "het", "hom_alt")[vapply(alleles[biallelic], sum, integer(1)) + 1L]
+  dosage <- biallelic_gt_dosage(gt)
+  has <- !is.na(dosage)
+  out[has] <- c("hom_ref", "het", "hom_alt")[dosage[has] + 1L]
 
   absent <- is.na(gt)
   out[absent & !is.na(frac) & frac < 0.2] <- "hom_ref"

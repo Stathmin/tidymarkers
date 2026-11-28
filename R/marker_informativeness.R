@@ -155,15 +155,7 @@ genotype_dosage <- function(x) {
   map <- c(REF = 0, HET = 1, ALT = 2)
   out <- unname(map[calls])
   # `1/0` and `1|0` are the same biallelic call as `0/1` (ADR 0041).
-  vcf <- !is.na(calls) & is.na(out) & grepl("[/|]", calls)
-  if (any(vcf)) {
-    parts <- strsplit(calls[vcf], "[/|]", perl = TRUE)
-    alleles <- lapply(parts, function(z) suppressWarnings(as.integer(z)))
-    ok <- vapply(alleles, function(a) {
-      length(a) == 2L && !anyNA(a) && all(a >= 0L & a <= 1L)
-    }, logical(1))
-    out[which(vcf)[ok]] <- vapply(alleles[ok], sum, integer(1))
-  }
+  out[is.na(out)] <- biallelic_gt_dosage(calls)[is.na(out)]
   bad <- !is.na(calls) & is.na(out)
   if (any(bad)) {
     abort_msg(

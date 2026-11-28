@@ -960,3 +960,11 @@ test_that("an AD the writer refuses is not a depth the reader reports", {
   expect_equal(at(500L, "genotype"), 1)
   expect_equal(at(500L, "depth"), 10)
 })
+
+test_that("a biallelic VCF call doses by allele multiset", {
+  dose <- tidymarkers:::biallelic_gt_dosage
+  expect_equal(dose(c("0/1", "1/0", "0|1", "1|0")), c(1L, 1L, 1L, 1L))
+  expect_equal(dose(c("0/0", "1/1")), c(0L, 2L))
+  # a third allele, a triploid call, a bare allele and a no-call are not doses
+  expect_equal(dose(c("0/2", "1/0/1", "1", "./.", NA)), rep(NA_integer_, 5))
+})
