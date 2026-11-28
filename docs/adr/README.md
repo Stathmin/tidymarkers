@@ -146,3 +146,4 @@ decision, so each ADR keeps `accepted` with a dated amendment at the end:
 | [0080](0080-the-gate-checks-the-days-run-metrics.md) | The gate checks the day's run metrics | accepted |
 | [0081](0081-a-threshold-is-whole-in-its-spelling-before-the-cast.md) | A threshold is whole in its spelling before the cast | accepted |
 | [0082](0082-a-guard-covers-the-cast-it-names.md) | A guard covers the cast it names, not the whole function | accepted |
+| [0083](0083-an-external-record-is-judged-before-its-cast.md) | An external record is judged before its cast | accepted |

@@ -368,3 +368,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0082](adr/0082-a-guard-covers-the-cast-it-names.md) — a guard covers the
   cast it names, so one checked column no longer blesses its neighbour's cast;
   `offtarget_profile()` judges both hit bounds.
+- [ADR 0083](adr/0083-an-external-record-is-judged-before-its-cast.md) — the
+  Ensembl getters judge `start`/`end`/`strand` from the cached record before
+  the cast, so a fractional record is refused instead of truncated.
