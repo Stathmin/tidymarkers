@@ -509,29 +509,15 @@ read_variants_vcf_vroom <- function(path) {
 #' @keywords internal
 #' @noRd
 vcf_header_names <- function(path) {
-  con <- file(path, "r")
-  on.exit(close(con), add = TRUE)
-  repeat {
-    line <- readLines(con, n = 1L, warn = FALSE)
-    if (!length(line)) {
-      abort_msg("{path} has no '#CHROM' header line.")
-    }
-    if (startsWith(line, "##") || !nzchar(line)) next
-    if (!startsWith(line, "#CHROM")) {
-      abort_msg(
-        "{path}: the first non-'##' line does not start with '#CHROM'."
-      )
-    }
-    nms <- strsplit(sub("^#", "", line), "\t", fixed = TRUE)[[1L]]
-    missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
-    if (length(missing)) {
-      abort_msg(
-        "{path}: the '#CHROM' header is missing column {.val {missing}}.",
-        i = "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
-      )
-    }
-    return(nms)
+  nms <- strsplit(sub("^#", "", vcf_header_line(path)), "\t", fixed = TRUE)[[1L]]
+  missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
+  if (length(missing)) {
+    abort_msg(
+      "{path}: the '#CHROM' header is missing column {.val {missing}}.",
+      i = "A VCF must carry CHROM, POS, REF and ALT for read_variants_vcf()."
+    )
   }
+  nms
 }
 
 #' Canonical VCF reader (`VariantAnnotation::readVcf`)
