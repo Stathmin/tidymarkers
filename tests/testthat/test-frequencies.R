@@ -73,6 +73,19 @@ test_that("an unknown weight counts the variant once, not as an NA load", {
   )
 })
 
+test_that("an unknown weight still costs the dropout it would with weight 1", {
+  seq <- "ACGTACGTACGTACGTTTGGCCAAACCCGGGTTTAAACCCGGGTTTAAACCCGGGTTTAAACCCGGG"
+  tmpl <- list(seq = Biostrings::DNAString(seq))
+  p <- substr(seq, 1L, 20L)
+  zone <- function(w) {
+    tidymarkers:::zone_dropout(
+      p, 1L, 40L, TRUE, 1L, tmpl, 1L, 30L, integer(0), "A", w
+    )
+  }
+  expect_gt(zone(1), 0)
+  expect_equal(zone(NA_real_), zone(1))
+})
+
 test_that("a percent-scale pop_freq is refused on the design path", {
   skip_if_no_oligoarrayaux()
   expect_error(freq_fixture(5), "\\[0, 1\\]")
