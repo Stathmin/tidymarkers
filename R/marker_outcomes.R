@@ -47,6 +47,23 @@ outcome_empty <- function() {
   )
 }
 
+#' The outcome rows of one `outcomes.csv`, with an empty file read as none
+#'
+#' A zero-byte file is what `touch outcomes.csv` leaves behind; `readr` would
+#' parse it as a headerless table with `X1..X7` names, so the readers agree on
+#' the empty outcome table instead of the file having no columns.
+#' @keywords internal
+#' @noRd
+outcome_rows <- function(path) {
+  if (fs::file_size(path) == 0) {
+    return(outcome_empty())
+  }
+  readr::read_csv(
+    path,
+    col_types = outcome_types(), na = c("", "NA"), show_col_types = FALSE
+  )
+}
+
 #' The chemistry a target was designed with, read from the artefact
 #'
 #' `targets.csv` does not carry the scheme; `decisions.csv` does.  The chosen
@@ -188,7 +205,7 @@ marker_record_outcome <- function(artefact,
 
   path <- fs::path(dir, "outcomes.csv")
   refuse_links(dir, "outcomes.csv")
-  if (fs::file_exists(path)) {
+  if (fs::file_exists(path) && fs::file_size(path) > 0) {
     header <- names(utils::read.csv(path, nrows = 1L))
     if (!identical(header, outcome_columns())) {
       abort_msg(
@@ -219,8 +236,8 @@ marker_record_outcome <- function(artefact,
 #' The outcomes recorded for an artefact
 #'
 #' Reads `outcomes.csv` back as a tibble.  An artefact with no recorded
-#' outcome returns the empty table rather than `NULL`, so a caller can append
-#' to it without a special case.
+#' outcome, or a zero-byte `outcomes.csv`, returns the empty table rather than
+#' `NULL`, so a caller can append to it without a special case.
 #'
 #' The rows are deliberately left unaggregated: a success rate computed here
 #' would pool runs that a lab has not agreed are comparable, which is the
@@ -247,7 +264,7 @@ marker_outcomes <- function(artefact) {
   if (!fs::file_exists(path)) {
     return(outcome_empty())
   }
-  readr::read_csv(path, col_types = outcome_types(), na = c("", "NA"))
+  outcome_rows(path)
 }
 
 #' The outcomes recorded across every artefact under a directory
@@ -293,10 +310,7 @@ marker_outcome_corpus <- function(dir) {
   files <- files[fs::path_file(files) == "outcomes.csv"]
 
   parts <- lapply(files, function(path) {
-    tbl <- readr::read_csv(
-      path,
-      col_types = outcome_types(), na = c("", "NA"), show_col_types = FALSE
-    )
+    tbl <- outcome_rows(path)
     adir <- fs::path_dir(path)
     manifest <- tryCatch(artefact_manifest(adir), error = function(e) NULL)
     mid <- if (is.null(manifest)) NA_character_ else manifest$id

@@ -15,8 +15,8 @@ a tibble with \code{id}, \code{recorded}, \code{target}, \code{scheme}, \code{re
 }
 \description{
 Reads \code{outcomes.csv} back as a tibble.  An artefact with no recorded
-outcome returns the empty table rather than \code{NULL}, so a caller can append
-to it without a special case.
+outcome, or a zero-byte \code{outcomes.csv}, returns the empty table rather than
+\code{NULL}, so a caller can append to it without a special case.
 }
 \details{
 The rows are deliberately left unaggregated: a success rate computed here

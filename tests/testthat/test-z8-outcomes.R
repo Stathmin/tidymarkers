@@ -373,6 +373,19 @@ test_that("Z8: a failure without a reason is refused, so is an unknown target", 
   expect_equal(nrow(marker_outcomes(dir)), 0L)
 })
 
+test_that("Z8: a zero-byte outcomes.csv is the empty table, not a parse error", {
+  dir <- outcome_fixture(withr::local_tempdir())
+  fs::file_create(fs::path(dir, "outcomes.csv"))
+
+  expect_silent(out <- marker_outcomes(dir))
+  expect_equal(out, outcome_empty())
+
+  # recording appends to it with the header, rather than refusing the file
+  out <- marker_record_outcome(dir, "works", target = "t1")
+  expect_equal(nrow(out), 1L)
+  expect_identical(names(out), outcome_columns())
+})
+
 test_that("Z8: an outcome is not bound to a manifest edited after it was written", {
   dir <- withr::local_tempdir("outcome-tamper-")
   path <- fs::path(dir, "artefact.json")
@@ -548,6 +561,16 @@ test_that("ZY26: a corpus with no recorded outcome is empty, not an error", {
   expect_equal(nrow(corpus), 0L)
   expect_identical(names(corpus), c("artefact_id", "artefact", outcome_columns()))
 })
+
+test_that("ZY26: a zero-byte outcomes.csv joins the corpus as no rows", {
+  root <- withr::local_tempdir()
+  a <- corpus_fixture(root, "batch-a", "aaaaaaaaaaaaaaaa")
+  fs::file_create(fs::path(a, "outcomes.csv"))
+  corpus <- marker_outcome_corpus(root)
+  expect_equal(nrow(corpus), 0L)
+  expect_identical(names(corpus), c("artefact_id", "artefact", outcome_columns()))
+})
+
 
 test_that("ZY26: a row's recorded id is not relabelled by its directory", {
   root <- withr::local_tempdir()
