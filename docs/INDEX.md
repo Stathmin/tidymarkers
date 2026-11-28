@@ -128,6 +128,9 @@ Other vignettes:
   member a record names (sidecar, outcomes, targets, crate descriptor, copied
   file) is resolved under the record's real root before it is opened; a
   symlink out is a named refusal, not a read of the neighbour's file.
+- [ADR 0026](adr/0026-an-artefacts-id-is-the-hash-of-what-it-stores.md) — an
+  artefact's id is the hash of the JSON it stores and is recomputed on read; a
+  manifest edited after it was written is refused instead of replayed.
 
 ## Operator decisions
 

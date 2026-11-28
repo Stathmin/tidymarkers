@@ -36,6 +36,7 @@ the file records the measurement or event that re-tested it).
 | [0023](0023-a-refusal-that-a-retry-cannot-fix-carries-a-class.md)       | A refusal that a retry cannot fix carries a class                            | accepted |
 | [0024](0024-a-replay-compares-only-the-records-own-verdicts.md)        | A replay compares only the record's own verdicts                            | accepted |
 | [0025](0025-a-record-member-is-resolved-not-only-named.md)             | A record's member is resolved, not only named                               | accepted |
+| [0026](0026-an-artefacts-id-is-the-hash-of-what-it-stores.md)          | An artefact's id is the hash of what it stores                              | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
