@@ -102,3 +102,21 @@ bad_position <- function(x, min = 1L) {
   is.na(x) | is.na(iv) | iv < min |
     (is.numeric(x) & (!is.finite(x) | x != round(x)))
 }
+
+#' Check one coordinate before the read
+#'
+#' `as.integer()` truncates `2.9` to `2`, so a region read silently starts at a
+#' base the caller never named; `NA` and `Inf` reach the engine's own error.
+#' The check runs on the value the caller gave and returns the integer the reader
+#' can use (ADR 0050).
+#' @param x the candidate coordinate.
+#' @param arg the argument name for the message.
+#' @return the coordinate as a single integer.
+#' @keywords internal
+#' @noRd
+check_coord <- function(x, arg) {
+  if (length(x) != 1L || bad_position(x)) {
+    abort_msg("`{arg}` must be one positive whole number; got {format(x)}.")
+  }
+  as.integer(x)
+}

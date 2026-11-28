@@ -60,6 +60,7 @@ the file records the measurement or event that re-tested it).
 | [0047](0047-a-search-radius-is-a-whole-number-before-the-cast.md) | A search radius is a whole number before the cast | accepted |
 | [0048](0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md) | A base-pair threshold is a whole number before the cast | accepted |
 | [0049](0049-a-worker-count-is-a-whole-number-before-the-cast.md) | A worker count is a positive whole number before the cast | accepted |
+| [0050](0050-a-genomic-interval-is-whole-before-the-read.md) | A genomic interval is whole before the read | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

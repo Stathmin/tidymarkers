@@ -11,7 +11,8 @@ genome_seq(genome, chrom, start = 1L, end = genome_length(genome, chrom))
 
 \item{chrom}{sequence name (as returned by \code{\link[=genome_chroms]{genome_chroms()}}).}
 
-\item{start, end}{1-based inclusive coordinates; default to the whole sequence.}
+\item{start, end}{1-based inclusive coordinates; default to the whole sequence.
+Each must be one positive whole number and \code{start} must not be past \code{end}.}
 }
 \value{
 a \code{DNAString} for the requested interval.

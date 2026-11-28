@@ -212,6 +212,10 @@ Other vignettes:
   `threads` or `nthreads` is one positive whole number before the cast, so
   `0.5` no longer becomes 0 workers and `Inf` no longer reaches an engine as
   `NA`.
+- [ADR 0050](adr/0050-a-genomic-interval-is-whole-before-the-read.md) — a
+  `start` or `end` is checked before `as.integer()`, so `2.9` no longer reads
+  from base 2, `NA` no longer reads from base 1 on one backend and fails on the
+  other, and a reversed interval gets the package message.
 
 ## Operator decisions
 

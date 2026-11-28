@@ -512,6 +512,7 @@ genome_length <- function(genome, chrom) {
 #' @param genome a `marker_genome` or a `DNAStringSet`.
 #' @param chrom sequence name (as returned by [genome_chroms()]).
 #' @param start,end 1-based inclusive coordinates; default to the whole sequence.
+#'   Each must be one positive whole number and `start` must not be past `end`.
 #' @return a `DNAString` for the requested interval.
 #' @examples
 #' fa <- withr::local_tempfile(fileext = ".fa")
@@ -520,8 +521,11 @@ genome_length <- function(genome, chrom) {
 #' @family input
 #' @export
 genome_seq <- function(genome, chrom, start = 1L, end = genome_length(genome, chrom)) {
-  start <- as.integer(start)
-  end <- as.integer(end)
+  start <- check_coord(start, "start")
+  end <- check_coord(end, "end")
+  if (start > end) {
+    abort_msg("`start` ({start}) must not be past `end` ({end}).")
+  }
   if (!inherits(genome, "marker_genome")) {
     # the whole sequence needs no copy: `subseq()` of a full range memcpys the
     # chromosome, and a genome-scale scan asks for it once per primer pair

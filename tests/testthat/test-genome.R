@@ -94,6 +94,26 @@ test_that("a BSgenome-backed genome has no FASTA, so the index builders say so (
   expect_identical(marker_blast_index(gs), gs$path)
 })
 
+test_that("genome_seq refuses a coordinate it would have truncated", {
+  skip_if_not_installed("Rsamtools")
+  fa <- make_fa(withr::local_tempfile(fileext = ".fa"))
+  gs <- marker_genome(fa, chrom_map = ATH_CHROM_MAP)
+  mem <- read_genome_fasta(fa, chrom_map = ATH_CHROM_MAP, use_index = FALSE)
+
+  for (g in list(gs, mem)) {
+    # 2.9 used to be read as base 2, so the caller got a span nobody asked for
+    expect_error(genome_seq(g, "Chr1", 2.9, 6L), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", 2L, 6.9), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", 0L, 6L), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", NA, 6L), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", 1L, Inf), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", c(1L, 2L), 6L), "positive whole number")
+    expect_error(genome_seq(g, "Chr1", 6L, 2L), "must not be past")
+    # the same region the caller named still reads
+    expect_equal(as.character(genome_seq(g, "Chr1", 2L, 6L)), "CGTAC")
+  }
+})
+
 test_that("a marker_genome can be backed by a BSgenome (getSeq)", {
   skip_if_not_full()
   skip_if_not_installed_noload("BSgenome.Athaliana.TAIR.TAIR9")
