@@ -377,3 +377,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0085](adr/0085-the-geometry-helpers-judge-their-numbers.md) —
   `primer_interval()`, `as_3p_interval()` and `as_anchor()` judge the numbers
   they are built from, so a fractional length no longer yields a wider primer.
+- [ADR 0086](adr/0086-a-frequency-is-a-proportion-before-it-weighs-anything.md) —
+  a `pop_freq`, a MAF override and a haplotype share are judged as proportions
+  before they weight anything, and an unknown weight counts one variant.

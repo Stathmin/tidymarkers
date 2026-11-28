@@ -168,9 +168,8 @@ check_variant_weights <- function(x, arg = "pop_freq") {
   }
   bad <- bad_proportion(x)
   if (any(bad)) {
-    i <- which(bad)[[1L]]
     abort_msg(
-      "`{arg}` must be one frequency in [0, 1] per variant; row {i} is {format(x[[i]])}."
+      "`{arg}` must be one frequency in [0, 1] per variant; row {which(bad)[[1L]]} is {format(x[bad][[1L]])}."
     )
   }
   w <- suppressWarnings(as.numeric(x))
