@@ -955,11 +955,14 @@ write_variants_vcf <- function(x, path = NULL) {
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
     records
   )
-  if (is.null(path)) {
+  own <- is.null(path)
+  if (own) {
     path <- tempfile(fileext = ".vcf")
-    readr::write_lines(body, path)
+  }
+  refuse_links(dirname(path), basename(path))
+  readr::write_lines(body, path)
+  if (own) {
     return(path)
   }
-  readr::write_lines(body, path)
   invisible(path)
 }

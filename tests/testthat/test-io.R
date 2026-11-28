@@ -52,6 +52,17 @@ test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through V
   expect_match(readLines(f)[1L], "^##fileformat=VCFv4.2$")
 })
 
+test_that("write_variants_vcf refuses to write through a link", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(dir, "outside.vcf")
+  writeLines("keep", outside)
+  link <- fs::path(dir, "out.vcf")
+  skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+  v <- tibble::tibble(chrom = "4", pos = 100L, ref = "A", alt = "G")
+  expect_error(write_variants_vcf(v, link), "which is a link")
+  expect_identical(readLines(outside), "keep")
+})
+
 test_that("write_variants_vcf refuses a row its own readers drop or reinterpret", {
   v <- function(chrom = "4", pos = 100L, ref = "A", alt = "G", depth = NA_real_) {
     tibble::tibble(chrom = chrom, pos = pos, ref = ref, alt = alt, depth = depth)
