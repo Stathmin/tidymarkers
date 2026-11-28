@@ -4840,6 +4840,22 @@ needed` (`if (sum(NA) > 0L)`), `read_variant_genotypes()` сохранял ст�
     - следствие: все писатели семейства используют `refuse_links()`; ADR
       0025, пункт 5.
 
+- [x] **ZV25.7. `marker_export()` создаёт свои файлы, а не пишет по ссылке.**
+    - найдено 2026-11-28: `marker_export()` писал `markers.csv`,
+      `attempts.csv`, `primers.csv` и `solved.rds` до вызова
+      `marker_artefact()` и без `refuse_links()`. Замер: ссылка `markers.csv`
+      на файл вне каталога была пройдена, внешний файл заменён отчётом
+      (`keep` → `label,chrom,…`); ссылка `solved.rds` записывалась до отказа
+      `marker_artefact()`, то есть отказ приходил после порчи.
+    - правка: `R/marker_solve.R` — `refuse_links(dir, c("markers.csv",
+      "attempts.csv", "primers.csv", "solved.rds"))` до первой записи.
+    - проверка: `test-rocrate.R` — «marker_export refuses to write its own
+      members through a link»: по одной ссылке на член, внешний файл не
+      изменён; `dev/test.R "rocrate|plan"` — 275 pass, 0 fail.
+    - блокер: нет.
+    - следствие: у всех писателей каталога одно правило и одно сообщение
+      (ADR 0025, поправка 2026-11-28).
+
 ## ZV26. Id артефакта пересчитывается из записи
 
 Найдено ночной сменой 2026-11-28: `artefact_id()` хешировал манифест в

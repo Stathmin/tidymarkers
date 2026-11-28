@@ -87,3 +87,18 @@ the file the name resolves to is what the reader trusts.
 - A locator that the package derives itself (a cache index, a path passed by
   the caller to `marker_trace_read()`) is still not a record claim and is not
   covered by this rule.
+
+## Amendment (2026-11-28) — the export writer is a writer too
+
+`marker_export()` creates `markers.csv`, `attempts.csv`, `primers.csv` and
+`solved.rds` in `dir` before it calls `marker_artefact()`. It did not call
+`refuse_links()`, so the same tree that the record writer refuses accepted a
+link — and wrote through it. Measured on the branch: a `markers.csv` symlink to
+a file outside `dir` was followed, and the outside file was replaced by the
+report (`keep` → `label,chrom,…`). A `solved.rds` link was also written through
+before `marker_artefact()` refused it, so the refusal came after the damage.
+
+`marker_export()` now calls `refuse_links()` on its four names before the first
+write, the same check and message as the record writer. Test: `test-rocrate.R`,
+"marker_export refuses to write its own members through a link", one symlink
+per member, the outside file unchanged.
