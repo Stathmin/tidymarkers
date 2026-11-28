@@ -37,7 +37,8 @@ pre-amplification's T7 promoter turns into the target RNA); pass \code{strand}
 when that orientation is known, otherwise both are tried and the choice is
 the caller's to validate.}
 
-\item{spacer_lengths}{guide spacer lengths to try (default: 20-23 nt for
+\item{spacer_lengths}{positive whole numbers of nucleotides to try
+(default: 20-23 nt for
 Cas12a, 26-28 nt for Cas13a/\code{"cas13"} around the ~28 nt LwaCas13a spacer,
 and 28-30 nt for Cas13b).}
 

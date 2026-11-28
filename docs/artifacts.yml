@@ -392,7 +392,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: 544fc058a0b631fb16392755042e73f8
+  input_hash: 60e3b697a9f2ff9a9e3f5c0d180dec0b
   output_hash: 5049f1e930692763ee84be5de30db075
   docs: vignettes/markers-crispr-sequencing.Rmd
   code:
@@ -483,7 +483,7 @@ artifacts:
   inputs:
   - R/marker_crispr.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 44f14609edce78d06faa2078894ce716
+  input_hash: 4dca82d1be8a75de2125f43add568ae9
   output_hash: a5ea64e553f82e01b1b7ef383ecd6771
   docs: vignettes/markers-crispr-sequencing.Rmd
   status: verified

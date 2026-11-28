@@ -101,6 +101,11 @@ test_that("a target row needs a chromosome and a positive POS", {
     dummy_plan() + marker_targets(chrom = "Chr1", pos = Inf, ref = "A", alt = "G"),
     "positive integer `pos`.*row 1 is Inf"
   )
+  # a non-number used to reach round() and raise a base R error instead
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = "abc", ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is abc"
+  )
   # a data table goes through the same admission, not only the grammar form
   expect_error(
     dummy_plan() + marker_targets(data = tibble::tibble(

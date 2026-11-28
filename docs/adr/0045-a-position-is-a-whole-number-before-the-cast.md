@@ -85,3 +85,28 @@ normalisers call the same predicate on their raw column.
 - `tests/testthat/test-haplotypes.R`: a haplotype row at 250.9 aborts with
   "positive integer".
 - `Rscript dev/test.R "plan|informativeness|haplotype"` — 314 pass, 0 fail.
+
+## Amendment (2026-11-28): the predicate is type-safe
+
+`bad_position()` combined its fraction test with `&` on a `is.numeric()` guard:
+
+```r
+is.na(x) | is.na(iv) | iv < min |
+  (is.numeric(x) & (!is.finite(x) | x != round(x)))
+```
+
+`&` evaluates both sides, so a character column still reached `round()`. A
+target row with `pos = "abc"` therefore raised base R's "non-numeric argument to
+mathematical function" instead of the message this ADR promises — for every
+caller, not only the new one.
+
+The fraction test is now built only when the column is numeric:
+
+```r
+frac <- if (is.numeric(x)) !is.finite(x) | x != round(x) else rep(FALSE, length(x))
+is.na(x) | is.na(iv) | iv < min | frac
+```
+
+`tests/testthat/test-plan.R` adds `pos = "abc"` and expects "positive integer
+`pos` ... row 1 is abc"; `Rscript dev/test.R "^plan$"` — 189 pass, 0 fail. No
+accepted position changes.

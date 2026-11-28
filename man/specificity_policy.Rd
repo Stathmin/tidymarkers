@@ -10,8 +10,9 @@ specificity_policy(scheme = "pcr", length = NULL, spacer_len = NULL)
 \item{scheme}{a scheme name (\code{"pcr"}, \code{"rpa"}, \code{"crispr"}, \code{"paralog"}) or a
 chemistry alias (\code{"kasp"}, \code{"lamp"}, \code{"cas12a"}, \code{"homeolog"}, ...).}
 
-\item{length}{optional target-site length; when given, the returned object
-carries a named \code{weight} vector with the per-position ladder (5'->3').}
+\item{length}{optional target-site length in nt; when given, the returned
+object carries a named \code{weight} vector with the per-position ladder
+(5'->3').  Must be one positive whole number.}
 
 \item{spacer_len}{spacer (guide) length in nt for \code{"crispr"}; one of the
 published series (\code{16}, \code{20}, \code{23}, \code{28}) sets the mismatch budget and, for

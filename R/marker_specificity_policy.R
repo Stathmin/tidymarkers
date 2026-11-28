@@ -189,8 +189,9 @@ tail_terminal <- function(n_nt) {
 #'
 #' @param scheme a scheme name (`"pcr"`, `"rpa"`, `"crispr"`, `"paralog"`) or a
 #'   chemistry alias (`"kasp"`, `"lamp"`, `"cas12a"`, `"homeolog"`, ...).
-#' @param length optional target-site length; when given, the returned object
-#'   carries a named `weight` vector with the per-position ladder (5'->3').
+#' @param length optional target-site length in nt; when given, the returned
+#'   object carries a named `weight` vector with the per-position ladder
+#'   (5'->3').  Must be one positive whole number.
 #' @param spacer_len spacer (guide) length in nt for `"crispr"`; one of the
 #'   published series (`16`, `20`, `23`, `28`) sets the mismatch budget and, for
 #'   `20`, an intolerant middle window.  An unlisted length keeps the scheme's
@@ -268,7 +269,9 @@ specificity_policy <- function(scheme = "pcr", length = NULL, spacer_len = NULL)
     requires_pam = pol$requires_pam, calibrated = FALSE
   )
   if (!is.null(length)) {
-    pol$weight <- mismatch_weights(as.integer(length), pol$mode, pol$seed_len)
+    pol$weight <- mismatch_weights(
+      check_nucleotide_length(length, "length"), pol$mode, pol$seed_len
+    )
   }
   structure(pol, class = c("specificity_policy", "list"))
 }

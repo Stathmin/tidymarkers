@@ -99,8 +99,10 @@ check_worker_count <- function(x, arg) {
 #' @noRd
 bad_position <- function(x, min = 1L) {
   iv <- suppressWarnings(as.integer(x))
-  is.na(x) | is.na(iv) | iv < min |
-    (is.numeric(x) & (!is.finite(x) | x != round(x)))
+  # `&` is not short-circuiting: a character column must not reach `round()`,
+  # or the promised message is replaced by a base R error (ADR 0045 amendment)
+  frac <- if (is.numeric(x)) !is.finite(x) | x != round(x) else rep(FALSE, length(x))
+  is.na(x) | is.na(iv) | iv < min | frac
 }
 
 #' Check one coordinate before the read
@@ -119,4 +121,27 @@ check_coord <- function(x, arg) {
     abort_msg("`{arg}` must be one positive whole number; got {format(x)}.")
   }
   as.integer(x)
+}
+
+#' Check one or more nucleotide lengths before the design grid
+#'
+#' `as.integer()` truncates `20.9` to `20`, so a guide or spacer is designed
+#' one base shorter than the caller named — a different cut position, not a
+#' cosmetic difference (ADR 0051).  The check runs on the value the caller gave
+#' and returns the integer vector the designer can use.
+#' @param x the candidate lengths in nucleotides.
+#' @param arg the argument name for the message.
+#' @param multi whether a series is accepted; a single length is the default.
+#' @return the lengths as an integer vector, in the caller's order.
+#' @keywords internal
+#' @noRd
+check_nucleotide_length <- function(x, arg, multi = FALSE) {
+  typed <- is.numeric(x) || is.character(x)
+  if (typed && length(x) && (multi || length(x) == 1L) && !any(bad_position(x))) {
+    return(as.integer(x))
+  }
+  if (multi) {
+    abort_msg("`{arg}` must be one or more positive whole numbers of nucleotides; got {format(x)}.")
+  }
+  abort_msg("`{arg}` must be one positive whole number of nucleotides; got {format(x)}.")
 }

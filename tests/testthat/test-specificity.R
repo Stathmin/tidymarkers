@@ -843,3 +843,15 @@ test_that("the CRISPR mismatch evidence ships with the package", {
   # the 20-nt middle window's provenance: the fixed match for "+7 to +9"
   expect_true(any(grepl("+7 to +9", csv$mismatch_position, fixed = TRUE)))
 })
+
+test_that("specificity_policy refuses a target length it would have truncated", {
+  # 20.9 used to become a 20-position weight ladder for an oligo nobody named
+  for (bad in list(20.9, 0L, -1L, NA, Inf, c(20L, 21L), "x")) {
+    expect_error(
+      specificity_policy(length = bad),
+      "positive whole number of nucleotides"
+    )
+  }
+  expect_length(specificity_policy(length = 20L)$weight, 20L)
+  expect_length(specificity_policy(length = "20")$weight, 20L)
+})

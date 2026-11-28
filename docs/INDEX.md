@@ -216,6 +216,10 @@ Other vignettes:
   `start` or `end` is checked before `as.integer()`, so `2.9` no longer reads
   from base 2, `NA` no longer reads from base 1 on one backend and fails on the
   other, and a reversed interval gets the package message.
+- [ADR 0051](adr/0051-a-nucleotide-length-is-whole-before-the-design-grid.md) — a
+  guide spacer or target-site length is one or more positive whole numbers of
+  nucleotides, so `20.9` no longer designs a 20 nt guide or a 20-position
+  weight ladder, and `NA` no longer reaches a base R `if`.
 
 ## Operator decisions
 

@@ -332,7 +332,8 @@ crispr_default_spacer <- function(cas) {
 #'   pre-amplification's T7 promoter turns into the target RNA); pass `strand`
 #'   when that orientation is known, otherwise both are tried and the choice is
 #'   the caller's to validate.
-#' @param spacer_lengths guide spacer lengths to try (default: 20-23 nt for
+#' @param spacer_lengths positive whole numbers of nucleotides to try
+#'   (default: 20-23 nt for
 #'   Cas12a, 26-28 nt for Cas13a/`"cas13"` around the ~28 nt LwaCas13a spacer,
 #'   and 28-30 nt for Cas13b).
 #' @param gc_range accepted guide GC window (default 0.35-0.65).
@@ -385,7 +386,7 @@ design_crispr_marker <- function(genome, snp, flank = 200L,
   strict_spacer <- if (is.null(spacer_lengths)) {
     crispr_default_spacer(cas)
   } else {
-    as.integer(spacer_lengths)
+    check_nucleotide_length(spacer_lengths, "spacer_lengths", multi = TRUE)
   }
   strict_gc <- gc_range %||% c(0.35, 0.65)
   # the relaxation floors (bounded; C8): a guide a little outside the ideal

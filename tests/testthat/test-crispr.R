@@ -132,6 +132,29 @@ test_that("Cas13b warns that its 3' NAN/NNA PFS is not enforced", {
   expect_false("gate_crispr_spacer" %in% m$relaxed)
 })
 
+test_that("design_crispr_marker refuses a spacer length it would have truncated", {
+  W <- bseq(600L, 7L)
+  substr(W, 293L, 296L) <- "TTTA"
+  substr(W, 297L, 316L) <- "ACGTGCTAGCTAGCATGCA"
+  genome <- Biostrings::DNAStringSet(c(Chr1 = W))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "T", alt = "A")
+
+  # 20.9 used to become 20, so the caller got a guide one base shorter
+  for (bad in list(c(20.9, 21.5), 20.5, 0L, -1L, NA, Inf, c(20L, NA))) {
+    expect_error(
+      design_crispr_marker(genome, snp, spacer_lengths = bad),
+      "positive whole numbers of nucleotides"
+    )
+  }
+  # the same whole series still designs a guide of a named length
+  skip_if_no_oligoarrayaux()
+  expect_warning(
+    m <- design_crispr_marker(genome, snp, flank = 200L, cas = "cas12a", spacer_lengths = 20:23),
+    "guide/PAM conservation is not checked"
+  )
+  expect_true(nchar(m$guide) %in% 20:23)
+})
+
 test_that("design_crispr_marker informs and returns NULL when no guide passes", {
   genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("AT", 300L)))
   snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "A", alt = "C")
