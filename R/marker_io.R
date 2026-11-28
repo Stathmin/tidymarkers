@@ -396,11 +396,18 @@ vcf_header_line <- function(path) {
   }
 }
 
+#' The columns of a VCF's `#CHROM` line, split once (internal)
+#' @keywords internal
+#' @noRd
+vcf_header_fields <- function(path) {
+  strsplit(sub("^#", "", vcf_header_line(path)), "\t", fixed = TRUE)[[1L]]
+}
+
 #' The sample names of a VCF, scanned without a line cap (internal)
 #' @keywords internal
 #' @noRd
 vcf_sample_names <- function(path) {
-  nms <- strsplit(sub("^#", "", vcf_header_line(path)), "\t", fixed = TRUE)[[1L]]
+  nms <- vcf_header_fields(path)
   if (length(nms) > 9L) nms[-(1:9)] else character()
 }
 
@@ -509,7 +516,7 @@ read_variants_vcf_vroom <- function(path) {
 #' @keywords internal
 #' @noRd
 vcf_header_names <- function(path) {
-  nms <- strsplit(sub("^#", "", vcf_header_line(path)), "\t", fixed = TRUE)[[1L]]
+  nms <- vcf_header_fields(path)
   missing <- setdiff(c("CHROM", "POS", "REF", "ALT"), nms)
   if (length(missing)) {
     abort_msg(
