@@ -371,3 +371,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0083](adr/0083-an-external-record-is-judged-before-its-cast.md) — the
   Ensembl getters judge `start`/`end`/`strand` from the cached record before
   the cast, so a fractional record is refused instead of truncated.
+- [ADR 0084](adr/0084-annotation-is-asked-about-the-rows-the-caller-named.md) —
+  `annotate_variants()` judges `pos` before `IRanges()` can truncate it and
+  applies the documented `gene` bounds, not only the chromosome.
