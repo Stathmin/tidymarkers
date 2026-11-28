@@ -292,6 +292,15 @@ Other vignettes:
   boundary of a GenBank feature location is a whole positive number before the
   cast, so `100.5..120` is refused by the location, not shortened to
   `100..120`.
+- [ADR 0070](adr/0070-a-selector-is-resolved-outside-the-data-mask.md) — the
+  VCF chromosome selector is resolved before `dplyr::filter()`, so a bare name
+  cannot read the data column and turn the filter into a no-op.
+- [ADR 0071](adr/0071-a-region-bound-is-a-coordinate-before-the-cast.md) — a
+  data-frame/list region bound is judged by its spelling before
+  `as.integer()`, so `10.5` is refused instead of read as 10.
+- [ADR 0072](adr/0072-a-feature-chromosome-is-one-name.md) — a feature
+  chromosome selector is one non-empty name compared with the column, so a
+  vector or `NA` cannot recycle into a different row set.
 
 ## Operator decisions
 
