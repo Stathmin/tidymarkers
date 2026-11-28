@@ -47,6 +47,9 @@ primer_thermo <- function(primer, BPPARAM = NULL) {
 #' @family thermodynamics
 #' @export
 terminal_dg <- function(primer, n = 5L, BPPARAM = NULL) {
+  # `substr()` truncates a fractional `n`: `n = 5.9` annealed a 6-mer and
+  # `n = 0.5` a zero-width mer, and `Inf` reached `substr()` as NA (ADR 0064).
+  n <- check_scan_radius(n, "n", min = 1L)
   s <- as.character(primer)
   mer <- substr(s, nchar(s) - n + 1L, nchar(s))
   mer[nchar(s) < n] <- NA_character_

@@ -270,6 +270,9 @@ Other vignettes:
   `find_palindromes()` names `min_armlength`, `max_looplength` and
   `max_mismatch` with the same bounds as `has_palindrome()`, so the two entry
   points to one Biostrings scan answer a fraction the same way.
+- [ADR 0064](adr/0064-a-terminal-window-is-whole-before-it-is-cut.md) —
+  `terminal_dg()` names `n` before `substr()`, so `n = 5.9` no longer anneals
+  a 6-mer and returns its dG under a 5-mer label.
 
 ## Operator decisions
 

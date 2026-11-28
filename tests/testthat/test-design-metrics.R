@@ -38,3 +38,16 @@ test_that("the thermo maps are invariant to the parallel backend", {
   skip_on_os("windows")
   expect_equal(terminal_dg(c(p, p[3L]), BPPARAM = BiocParallel::MulticoreParam(2L)), s)
 })
+
+test_that("terminal_dg names its terminal window before it is cut", {
+  p <- "ACGTACGTACGTACGTACGT"
+  five <- terminal_dg(p, n = 5L)
+  # `substr()` truncated a fraction, so 5.9 annealed a 6-mer and 0.5 a
+  # zero-width one; `Inf` reached substr() as NA
+  for (bad in list(5.9, 6.9, 0.5, 0L, -1L, Inf, NA, c(5L, 6L), "5")) {
+    expect_error(terminal_dg(p, n = bad), "`n`.*whole number")
+  }
+  expect_equal(terminal_dg(p, n = 6L), terminal_dg(p, n = 6))
+  expect_false(isTRUE(all.equal(five, terminal_dg(p, n = 6L))))
+  expect_true(is.na(terminal_dg("ACGT", n = 5L)))
+})
