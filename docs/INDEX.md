@@ -208,6 +208,10 @@ Other vignettes:
 - [ADR 0048](adr/0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md) — a
   `min_dist`, `min_gap` or `flank` is checked before `as.integer()`, so `5.9`
   no longer lowers a resolvable-gap floor to 5.
+- [ADR 0049](adr/0049-a-worker-count-is-a-whole-number-before-the-cast.md) — a
+  `threads` or `nthreads` is one positive whole number before the cast, so
+  `0.5` no longer becomes 0 workers and `Inf` no longer reaches an engine as
+  `NA`.
 
 ## Operator decisions
 
