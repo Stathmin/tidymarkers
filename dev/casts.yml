@@ -53,10 +53,6 @@ entries:
     reason: "GenomicRanges::start() of the caller's Variants object is whole by construction."
   - symbol: rprimer_assays
     reason: "`start`/`end` are rprimer::designOligos() output, an external engine's integer coordinates."
-  - symbol: ensembl_gene
-    reason: "`start`/`end` come from the Ensembl REST record; the cast canonicalises its integer fields."
-  - symbol: ensembl_variants
-    reason: "`start`/`end` come from the Ensembl REST record; the cast canonicalises its integer fields."
   - symbol: find_palindromes/
     reason: "the nested helper casts `start`/`end` of a Biostrings match, integer by construction."
   - symbol: marker_ingest_literature

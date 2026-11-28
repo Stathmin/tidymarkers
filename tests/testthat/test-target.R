@@ -180,3 +180,35 @@ test_that("the Ensembl cache does not read a hit through a link", {
     fs::file_delete(fs::path(cache, name))
   }
 })
+
+# The Ensembl getters are a trust boundary: a record that is not whole must be
+# refused rather than truncated into another locus (ADR 0083).
+test_that("ensembl_gene refuses a record that is not whole", {
+  cache <- withr::local_tempdir()
+  path <- fs::path(cache, "arabidopsis_thaliana_AT4G00650.json")
+  writeLines(
+    '{"id":"AT4G00650","seq_region_name":"4","start":268901.5,"end":271503,"strand":1,"display_name":"FRI"}',
+    path
+  )
+  expect_error(ensembl_gene("AT4G00650", cache = cache), "start/end")
+  writeLines(
+    '{"id":"AT4G00650","seq_region_name":"4","start":268901,"end":271503.5,"strand":1,"display_name":"FRI"}',
+    path
+  )
+  expect_error(ensembl_gene("AT4G00650", cache = cache), "start/end")
+  # `as.integer(1.5)` is `1`, and the strand decides which side the arms sit on
+  writeLines(
+    '{"id":"AT4G00650","seq_region_name":"4","start":268901,"end":271503,"strand":1.5,"display_name":"FRI"}',
+    path
+  )
+  expect_error(ensembl_gene("AT4G00650", cache = cache), "strand")
+})
+
+test_that("ensembl_variants refuses a start that is not whole", {
+  cache <- withr::local_tempdir()
+  path <- fs::path(cache, "arabidopsis_thaliana_var_4:268901-271503.json")
+  writeLines('[{"id":"v1","seq_region_name":"4","start":268901.9,"alleles":"A/G"}]', path)
+  expect_error(ensembl_variants("Chr4", 268901, 271503, cache = cache), "not a positive whole")
+  writeLines('[{"id":"v1","seq_region_name":"4","start":"268901.9","alleles":"A/G"}]', path)
+  expect_error(ensembl_variants("Chr4", 268901, 271503, cache = cache), "not a positive whole")
+})

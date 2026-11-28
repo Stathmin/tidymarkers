@@ -64,6 +64,21 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
     arg = "record",
     i = gettext("The Ensembl REST schema may have changed.")
   )
+  # The record is a trust boundary, not a schema guarantee: `as.integer()` of
+  # `268901.5` is `268901`, so a changed schema or a proxied response would
+  # move the gene's window without a message (ADR 0045, 0083).
+  if (bad_position(j$start) || bad_position(j$end)) {
+    abort_msg(gettextf(
+      "Ensembl record %s has a start/end that is not a positive whole number (%s, %s).",
+      j$id, encodeString(as.character(j$start)), encodeString(as.character(j$end))
+    ))
+  }
+  if (!is_whole_number(j$strand, min = -1L, max = 1L)) {
+    abort_msg(gettextf(
+      "Ensembl record %s has a strand that is not -1, 0 or 1 (%s).",
+      j$id, format(j$strand)
+    ))
+  }
   tibble::tibble(
     gene_id = j$id, symbol = j$display_name %||% j$id,
     chrom = ath_chrom(j$seq_region_name),
@@ -112,10 +127,20 @@ ensembl_variants <- function(chrom, start, end,
     i = gettext("The Ensembl REST schema may have changed.")
   )
   if (!"consequence_type" %in% names(df)) df$consequence_type <- NA_character_
+  # same trust boundary as `ensembl_gene()`: `"268901.9"` and `268901.9` both
+  # cast to `268901` and would place the variant at another locus (ADR 0083)
+  bad <- bad_position(df$start)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(gettextf(
+      "Ensembl variant %s has a start that is not a positive whole number (%s).",
+      df$id[[i]], encodeString(as.character(df$start[[i]]))
+    ))
+  }
   df |>
     dplyr::transmute(
       id = .data$id, chrom = ath_chrom(.data$seq_region_name),
-      pos = as.integer(.data$start), ref_genome = .data$alleles,
+      pos = as.integer(df$start), ref_genome = .data$alleles,
       consequence = .data$consequence_type
     )
 }
