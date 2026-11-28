@@ -1,6 +1,6 @@
 # 0033 — A cache entry and a rendered file are declared names too
 
-- Status: accepted
+- Status: accepted (amended)
 - Date: 2026-11-28
 - Supersedes: none
 - Builds on: [ADR 0029](0029-an-output-writer-creates-its-files-not-writes-through-a-link.md)
@@ -76,3 +76,28 @@ just wrote — so the call refuses instead of continuing without a cache.
   of a user file". A new writer that skips `declared_path()` is a defect of the
   same family, and the audit question is one grep for the write call, not a
   judgement about who consumes the file.
+
+## Amendment 2026-11-28
+
+The roster was tested again the same day, and it was still short by three
+groups: a set of files created by one build, a derived FASTA read back as a
+cache, and an operator install.
+
+- **An index build** writes a set of names, one of which later marks the build
+  as finished. `bowtie_index_build()`, `index_write_chrom_fasta()`,
+  `marker_fm_index()` and `marker_blast_index()` wrote their FASTA through a
+  link, and a linked `.1.ebwt` / `.nsq` / `.files` was reported as a finished
+  index. Closed by `declared_index()` and `index_present()`; the decision is
+  [ADR 0034](0034-an-index-build-declares-every-file-it-writes.md), ZV41.
+- **`fasta_index()`** decompresses `<x>.gz` into `<x>` and builds `<x>.fai`.
+  A link at `<x>` was accepted as the decompressed copy and read as the FASTA;
+  a link at `<x>.fai` was accepted as a ready index, so random access used a
+  foreign index. Both names are now declared; ZV42.
+- **`marker_install_tools()`** downloads an archive, unpacks a tree and
+  installs `bin`/`share` into `dest`. None of the four names was guarded, so a
+  link redirected the download, the unpack or the build. All four are declared
+  before the download; ZV43.
+
+With these three, the roster sentence above holds again for every writer the
+audit can find: one grep for the write call (`writeXStringSet`, `writeLines`,
+`write_csv`, `file_copy`, `download.file`, `untar`, an engine output argument).
