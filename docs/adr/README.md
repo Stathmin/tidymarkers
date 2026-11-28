@@ -64,6 +64,7 @@ the file records the measurement or event that re-tested it).
 | [0051](0051-a-nucleotide-length-is-whole-before-the-design-grid.md) | A nucleotide length is whole before the design grid | accepted |
 | [0052](0052-a-palindrome-count-is-whole-before-the-scan.md) | A palindrome's counts are whole before `findPalindromes()` | accepted |
 | [0053](0053-a-sample-selector-names-a-row-it-does-not-round.md) | A sample selector names a row, it does not round | accepted |
+| [0054](0054-a-stabilising-mismatch-is-a-whole-distance-inside-the-primer.md) | A stabilising mismatch is a whole distance inside the primer | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

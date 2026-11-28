@@ -227,6 +227,11 @@ Other vignettes:
 - [ADR 0053](adr/0053-a-sample-selector-names-a-row-it-does-not-round.md) —
   `read_variant_depth(sample = )` refuses a fractional index instead of reading
   the VCF row below it.
+- [ADR 0054](adr/0054-a-stabilising-mismatch-is-a-whole-distance-inside-the-primer.md) —
+  `design_as_primers()` checks `lengths` and `stab_ats` before the grid, so
+  `2.9` no longer places the mismatch at 3 and labels it -2, `0.5` no longer
+  replaces the 3'-terminal allele base, and a position past the 5' end no
+  longer prepends a base.
 
 ## Operator decisions
 

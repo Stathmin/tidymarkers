@@ -36,9 +36,11 @@ and reduced conservatively (see Details).}
 primer with the variant as its 3'-terminal block extending downstream, \code{"-"} =
 the mirror-image primer extending upstream.  Both are valid KASP layouts.}
 
-\item{lengths}{AS-primer lengths to try.}
+\item{lengths}{AS-primer lengths in nt to try: one or more positive whole
+numbers.}
 
-\item{stab_ats}{positions (from the 3' end) for the stabilising mismatch;
+\item{stab_ats}{positions (from the 3' end) for the stabilising mismatch,
+as positive whole numbers no larger than the shortest \code{lengths};
 \code{NA} = none.  The decided policy ranks \code{ARMS_EXTRA_MISMATCH_POSITION} first
 and \code{ARMS_EXTRA_MISMATCH_FALLBACK} second (\code{stab_policy} records which row
 carries which); a position outside \code{stab_ats} is never invented.}

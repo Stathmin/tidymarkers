@@ -54,6 +54,21 @@ test_that("stabilising mismatch replaces the intended base but keeps the 3' alle
   expect_equal(substr(p1, L, L), "A")
 })
 
+test_that("a fractional or out-of-primer stabilising mismatch is refused before the grid", {
+  # `substr()` truncated 2.9 to the third base while the row recorded 2.9 and
+  # the policy read `as.integer(2.9)` = 2 (-2); 0.5 replaced the 3'-terminal
+  # allele base; 23 on a 22 nt primer prepended one base instead of replacing
+  # one (ADR 0054).  None of these may reach the grid.
+  common <- list(window = W, v_start = SNP_I, ref = "A", alt = "G", strands = "+")
+  call <- function(...) do.call(design_as_primers, c(common, list(...)))
+  expect_error(call(lengths = 22L, stab_ats = 2.9), "positive whole numbers")
+  expect_error(call(lengths = 22L, stab_ats = 0.5), "positive whole numbers")
+  expect_error(call(lengths = 22L, stab_ats = Inf), "positive whole numbers")
+  expect_error(call(lengths = 22L, stab_ats = 23L), "inside every primer")
+  expect_error(call(lengths = 22.9, stab_ats = NA), "whole numbers of nucleotides")
+  expect_error(call(lengths = Inf, stab_ats = NA), "whole numbers of nucleotides")
+})
+
 test_that("several ALTs are scored conservatively and carry a degenerate code", {
   skip_if_no_oligoarrayaux()
   wm <- Biostrings::DNAString(bseq(300L, 5L))
@@ -68,6 +83,8 @@ test_that("several ALTs are scored conservatively and carry a degenerate code", 
   )
   expect_gt(nrow(multi), 0L)
   expect_s3_class(multi, "primer_candidates")
+  # the primer is the length the row names, so `as_length` is not a lie
+  expect_true(all(nchar(multi$ref_primer) == multi$as_length))
   expect_s3_class(dplyr::filter(multi, .data$as_length == 20L), "primer_candidates")
   # min-on / max-off over the ALTs is never more optimistic than a single ALT
   m <- multi$discrimination[order(multi$as_length)]

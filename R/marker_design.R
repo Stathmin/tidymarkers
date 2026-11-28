@@ -213,8 +213,10 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' design_as_primers(W, 40L, ref = "T", alt = "A", lengths = 20:22)
 #' }
 #' @param window plus-strand template window.
-#' @param lengths AS-primer lengths to try.
-#' @param stab_ats positions (from the 3' end) for the stabilising mismatch;
+#' @param lengths AS-primer lengths in nt to try: one or more positive whole
+#'   numbers.
+#' @param stab_ats positions (from the 3' end) for the stabilising mismatch,
+#'   as positive whole numbers no larger than the shortest `lengths`;
 #'   `NA` = none.  The decided policy ranks `ARMS_EXTRA_MISMATCH_POSITION` first
 #'   and `ARMS_EXTRA_MISMATCH_FALLBACK` second (`stab_policy` records which row
 #'   carries which); a position outside `stab_ats` is never invented.
@@ -264,6 +266,24 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
       "`stab_ats` are distances from the 3' end and must be positive (or NA).",
       i = "Got {paste(unique(stab_ats[stab_ats < 0L]), collapse = ', ')}",
       i = "The signed policy constant means abs(): -3L -> 3L."
+    )
+  }
+  # `substr()` truncates a fractional index and `as.integer()` truncates the
+  # reported `stab_at`, so 2.9 placed the mismatch three bases in and labelled
+  # the row "-2"; a position past the primer's 5' end prepended a base instead
+  # of replacing one (ADR 0054).  Check the caller's value, then cast once.
+  bad_stab <- !is.na(stab_ats) & bad_position(stab_ats, min = 1L)
+  if (any(bad_stab)) {
+    abort_msg(
+      "`stab_ats` are distances from the 3' end and must be positive whole numbers (or NA).",
+      i = "Got {paste(format(stab_ats[bad_stab]), collapse = ', ')}."
+    )
+  }
+  stab_ats <- as.integer(stab_ats)
+  lengths <- check_nucleotide_length(lengths, "lengths", multi = TRUE)
+  if (any(!is.na(stab_ats) & stab_ats > min(lengths))) {
+    abort_msg(
+      "`stab_ats` must name a base inside every primer; the shortest `lengths` is {min(lengths)}."
     )
   }
   # linked variants (substitutions and indels co-segregating with the ALT
@@ -338,8 +358,8 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   # the package's soft mismatch index: a G:T / A:C 3' wobble is the class
   # `specificity_policy()` already marks, and the one a deliberate extra mismatch
   # exists to rescue (Ye 2001's weak terminal class).  The pair is the AS primer's
-  # own 3' base against the REF allele - `make_as_primer()` can run longer than
-  # `as_length`, so the primer's full length is the right index.
+  # own 3' base against the REF allele - the primer keeps its requested length,
+  # so its terminal base is the 3' base the assay reads.
   term_base <- substr(cfgs$ref_primer, nchar(cfgs$ref_primer), nchar(cfgs$ref_primer))
   on <- rep(as.character(ref)[1L], nrow(cfgs))
   # the package's soft mismatch index, by the same four pairs `wobble_mismatch()`
