@@ -65,6 +65,9 @@
   [ADR 0075](../adr/0075-a-fixed-input-position-is-whole-before-the-cast.md)),
   позиция таблицы вариантов панели (ZV104,
   [ADR 0076](../adr/0076-a-panel-variant-table-position-is-whole-in-its-spelling.md)).
+  Следом тот же обход закрыл общий ряд локуса трёх входов дизайна и
+  экспортированный мост в `GRanges` (ZV105,
+  [ADR 0077](../adr/0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md)).
   Следом ZV46: гейт называл `cache_present()` стражем, хотя это проверка
   попадания; словарь сужен до трёх отказывающих вызовов, решение —
   [ADR 0035](../adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md).

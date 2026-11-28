@@ -140,3 +140,4 @@ decision, so each ADR keeps `accepted` with a dated amendment at the end:
   aggregation ladder run; `dplyr` wins at every scale.
 - [0004](0004-mcp-ci-and-cross-project-tooling.md#amendment-2026-11-26-the-schema-is-published-by-operator-decision) —
   `inst/mcp/schema.json` published by operator decision plus a drift test.
+| [0077](0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md) | A locus row and its range bridge are whole in their spelling | accepted |

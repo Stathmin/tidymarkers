@@ -350,3 +350,6 @@ Rscript dev/check-artifacts.R      # stale/orphan gate (exit 1)
 Rscript dev/check-docs.R           # orphans, links, include_graphics, backlinks
 Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a graph)
 ```
+- [ADR 0077](adr/0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md) —
+  the shared locus row and the exported `GRanges` bridge judge `pos` before the
+  cast, so `10.9` and `-5` are refused, not designed or ranged.
