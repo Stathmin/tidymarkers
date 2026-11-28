@@ -95,6 +95,14 @@ metrics_row <- function(run_id, stage, object_id, duration_ms,
 
 # A row is valid when it has exactly the contract's keys and each value is in
 # range.  `object_id` is an id, not text: no spaces, quotes or long ACGT runs.
+# A field the contract calls an integer is one here: `1.5` is not "close
+# enough", and `gpu_util` is a fraction, not a percentage (ADR 0040).
+is_count <- function(x) {
+  length(x) == 1L && !is.na(x) && is.finite(x) && x >= 0 && x == floor(x)
+}
+is_optional_count <- function(x) {
+  is.null(x) || (length(x) == 1L && (is.na(x) || is_count(x)))
+}
 validate_row <- function(row, where = "row") {
   problems <- character()
   keys <- names(row)
@@ -124,7 +132,7 @@ validate_row <- function(row, where = "row") {
     "object_id looks like a nucleotide sequence"
   )
   add(
-    length(row$duration_ms) == 1L && !is.na(row$duration_ms) && row$duration_ms >= 0,
+    is_count(row$duration_ms),
     "duration_ms must be a non-negative integer"
   )
   add(
@@ -132,15 +140,15 @@ validate_row <- function(row, where = "row") {
     paste0("status must be one of ", paste(STATUSES, collapse = ", "))
   )
   add(
-    length(row$retries) == 1L && !is.na(row$retries) && row$retries >= 0,
+    is_count(row$retries),
     "retries must be a non-negative integer"
   )
   add(
-    is.null(row$tokens_in) || (length(row$tokens_in) == 1L && (is.na(row$tokens_in) || row$tokens_in >= 0)),
+    is_optional_count(row$tokens_in),
     "tokens_in must be null or a non-negative integer"
   )
   add(
-    is.null(row$tokens_out) || (length(row$tokens_out) == 1L && (is.na(row$tokens_out) || row$tokens_out >= 0)),
+    is_optional_count(row$tokens_out),
     "tokens_out must be null or a non-negative integer"
   )
   add(
@@ -152,12 +160,12 @@ validate_row <- function(row, where = "row") {
     "cache_hit must be TRUE or FALSE"
   )
   add(
-    length(row$queue_depth) == 1L && !is.na(row$queue_depth) && row$queue_depth >= 0,
+    is_count(row$queue_depth),
     "queue_depth must be a non-negative integer"
   )
   add(
-    is.null(row$gpu_util) || (length(row$gpu_util) == 1L && (is.na(row$gpu_util) || (row$gpu_util >= 0 && row$gpu_util <= 100))),
-    "gpu_util must be null or a percentage in [0, 100]"
+    is.null(row$gpu_util) || (length(row$gpu_util) == 1L && (is.na(row$gpu_util) || (is.finite(row$gpu_util) && row$gpu_util >= 0 && row$gpu_util <= 1))),
+    "gpu_util must be null or a fraction in [0, 1]"
   )
   add(
     length(row$language) == 1L && row$language %in% LANGUAGES,

@@ -94,6 +94,37 @@ test_that("a malformed or unknown journal row is named, not counted or fatal", {
   expect_equal(st$unknown, 1L)
 })
 
+test_that("the validator enforces the unit the contract names", {
+  w <- metrics_writer()
+  row <- w$metrics_row(
+    run_id = "x", stage = "ingest", object_id = "i1",
+    duration_ms = 10, language = "en"
+  )
+  expect_length(w$validate_row(row), 0L)
+
+  # §0.1 of the plan: duration_ms, retries, queue_depth, tokens are integers
+  for (field in c("duration_ms", "retries", "queue_depth", "tokens_in", "tokens_out")) {
+    bad <- row
+    bad[[field]] <- 1.5
+    expect_match(
+      paste(w$validate_row(bad), collapse = " "),
+      paste0(field, " must be .*integer"),
+      info = field
+    )
+  }
+
+  # gpu_util is a fraction in [0, 1], not a percentage
+  ok <- row
+  ok$gpu_util <- 0.75
+  expect_length(w$validate_row(ok), 0L)
+  bad <- row
+  bad$gpu_util <- 100
+  expect_match(
+    paste(w$validate_row(bad), collapse = " "),
+    "gpu_util must be null or a fraction in \\[0, 1\\]"
+  )
+})
+
 test_that("a baseline stage without a p95 does not stop the report", {
   w <- metrics_writer()
   repair_log <- testthat::test_path("..", "..", "docs", "plans", "self-repair-log.md")
