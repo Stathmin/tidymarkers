@@ -6011,3 +6011,32 @@ number». Дефект меняет вердикт `insufficient_sample`/`ok`.
     - следствие: цель на другой строке или с другим набором ALT больше не
       получает дизайн соседней строки; формат ключа не сохраняется на диск,
       поэтому старые артефакты воспроизводятся как раньше.
+
+## ZV70. Радиус поиска — целое число до приведения типа
+
+Шесть путей специфичности сужали радиус поиска через `as.integer()` **до**
+проверки: `in_silico_pcr()`, `in_silico_pcr_pool()`, `exact_hit_table()`,
+`specificity_bowtie()`, `specificity_seed()` и `specificity_of()`. Измерено:
+`max_mismatch = 1.9` молча сканировал радиус 1, то есть продукт в одной
+замене не считался офф-таргетом и вердикт специфичности менялся; `-1` уходил
+в ошибку Biostrings, `Inf` — в `missing value where TRUE/FALSE needed`, `"1"`
+принимался приведением; `k = 2.5` давал 3-нуклеотидный сид, `k = 0` —
+`empty patterns are not supported`.
+
+- [x] **ZV70. `check_scan_radius()` проверяет радиус до `as.integer()`.**
+    - правка: `R/marker_validate.R` — новый `check_scan_radius(x, arg,
+      min = 0L)` на `is_whole_number()`: `max_mismatch` обязан быть
+      неотрицательным целым, `k` — положительным; каждый из шести путей
+      вызывает его на значении вызывающего и получает готовый integer.
+      `specificity_bowtie()` сохраняет отдельное сообщение о лимите 3.
+      Решение —
+      [ADR 0047](docs/adr/0047-a-search-radius-is-a-whole-number-before-the-cast.md).
+    - проверка: `tests/testthat/test-specificity.R` — пять путей отвергают
+      `1.9`, `-1`, `Inf`, `"1"` и вектор с «non-negative whole number»,
+      `k` отвергает `2.5`/`0`/`-1`/`Inf` с «positive whole number», контроли
+      `0L`/`1L` возвращают tibble; `test-bowtie.R` — дробный радиус отвергнут
+      до открытия индекса, `4L` даёт «at most 3»;
+      `specificity|insilico|scan|bowtie` — 494 pass, 0 fail.
+    - блокер: нет; проверки офлайновые, bowtie-тест пропускается без Rbowtie.
+    - следствие: дробный или `Inf`-радиус больше не сужается и не меняет
+      вердикт; принятые целые радиусы считаются как раньше.

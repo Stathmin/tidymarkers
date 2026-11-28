@@ -202,6 +202,9 @@ Other vignettes:
 - [ADR 0046](adr/0046-a-design-key-names-every-input-the-design-reads.md) — a
   design key names `alt2` and `strand`, so two rows at one locus are no longer
   answered by one design.
+- [ADR 0047](adr/0047-a-search-radius-is-a-whole-number-before-the-cast.md) — a
+  `max_mismatch` or `k` is checked before `as.integer()`, so `1.9` no longer
+  scans radius 1 and `Inf` no longer reaches a base R error.
 
 ## Operator decisions
 
