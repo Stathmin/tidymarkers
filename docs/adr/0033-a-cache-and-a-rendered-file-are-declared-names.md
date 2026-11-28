@@ -57,9 +57,15 @@ just wrote — so the call refuses instead of continuing without a cache.
    guards the `.part` file it downloads into; the final move with
    `fs::file_move()` replaces a link at the destination rather than following
    it, so the destination needs no second guard.
-4. **A reader still follows the path it is given.** The guard is on creation
-   only; a cache hit reads through whatever path the caller supplied, as ADR
-   0025 point 5 already says for readers.
+4. **A reader does not take a link at a cache name as a cache hit.** The guard
+   stays on creation for a path the caller supplies (ADR 0025 point 5): a
+   reader follows the record or directory it was handed. A cache entry is
+   different because the package named it, not the caller, and a link there
+   means the file was put by someone else. `cache_present()` answers "a file
+   this package created" (`file_exists()` and no link) and every hit test uses
+   it. When the answer is no, points 1–3 apply: the call declares the name
+   before the request, so a link is refused instead of followed, and a missing
+   file is created.
 
 ## Consequences
 
@@ -87,7 +93,7 @@ cache, and an operator install.
   as finished. `bowtie_index_build()`, `index_write_chrom_fasta()`,
   `marker_fm_index()` and `marker_blast_index()` wrote their FASTA through a
   link, and a linked `.1.ebwt` / `.nsq` / `.files` was reported as a finished
-  index. Closed by `declared_index()` and `index_present()`; the decision is
+  index. Closed by `declared_index()` and `cache_present()`; the decision is
   [ADR 0034](0034-an-index-build-declares-every-file-it-writes.md), ZV41.
 - **`fasta_index()`** decompresses `<x>.gz` into `<x>` and builds `<x>.fai`.
   A link at `<x>` was accepted as the decompressed copy and read as the FASTA;
@@ -101,3 +107,38 @@ cache, and an operator install.
 With these three, the roster sentence above holds again for every writer the
 audit can find: one grep for the write call (`writeXStringSet`, `writeLines`,
 `write_csv`, `file_copy`, `download.file`, `untar`, an engine output argument).
+
+## Amendment 2026-11-28 (a cache hit)
+
+The roster above closed the writers; the hit tests were not audited. Every one
+was `fs::file_exists()`, which follows a link, so a link at a cache name was
+read as the file the package would have downloaded or built:
+
+| name | call | result before the fix |
+| ---- | ---- | --------------------- |
+| `<cache>/arabidopsis_thaliana_<id>.json` | `ensembl_gene()` | the link's JSON was returned as the Ensembl record |
+| `<cache>/…_var_<region>.json` | `ensembl_variants()` | the same |
+| `<cache>/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz` | `ath_genome()` | the linked FASTA was read as the genome |
+| `<cache>/….gtf.gz`, `<cache>/….EnsDb.sqlite` | `marker_ensdb()` | the linked GTF was used to build, or the linked sqlite was opened as the annotation |
+
+Measured 2026-11-28: the Ensembl and FASTA rows were run end to end with a
+valid file behind the link, and each call returned the outside content; the
+EnsDb row has the same shape (`ensDbFromGtf()`, `EnsDb(out)`) and is covered by
+the refusal, which does not need `ensembldb`.
+
+- `cache_present()` is renamed `cache_present()`: it was already the predicate
+  "a file this package created", and the index builders and the caches now call
+  it by that name.
+- Each cache declares its name with `declared_path()` before the request or the
+  build: `ensembl_gene()`/`ensembl_variants()` before the HTTP call,
+  `ath_genome()` before `tair10_download()`, `marker_ensdb()` before
+  `check_installed("ensembldb")`. The declaration turns a link at a hit into
+  the shared refusal; the hit test alone only reports a miss.
+- Tests: `test-target.R`, "the Ensembl cache does not read a hit through a
+  link"; `test-ath-genome-cache.R`, "a link at the cache name is refused, not
+  read as the genome"; `test-annotate.R`, "marker_ensdb refuses a link at
+  either cache name". Each keeps the outside bytes and asserts "which is a
+  link"; before the fix the first two returned the outside content. ZV44.
+
+The roster now covers the read side too: a hit test that asks `file_exists()`
+alone is a defect of the same family.

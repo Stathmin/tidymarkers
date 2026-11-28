@@ -49,7 +49,7 @@ Two properties separate this case from ADR 0033:
    the engine runs. The suffix sets are the engine's documented output:
    six `.ebwt` files for bowtie, eight BLAST database files, `.files`/`.log`
    for the Subread FM index.
-2. **A link is not a finished index.** `index_present(path)` is
+2. **A link is not a finished index.** `cache_present(path)` is
    `file_exists()` **and** no link. The reuse checks use it, so a linked
    `.1.ebwt`, `.nsq` or `.files` does not short-circuit the build; the builder
    then refuses at `declared_index()` with the shared message.
