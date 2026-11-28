@@ -288,6 +288,10 @@ Other vignettes:
   character position is judged by its spelling and `as_variant_row()` checks
   its selector and its chosen row before the cast, so `2801.5` cannot become
   2801.
+- [ADR 0069](adr/0069-a-genbank-location-is-read-whole-or-refused.md) — every
+  boundary of a GenBank feature location is a whole positive number before the
+  cast, so `100.5..120` is refused by the location, not shortened to
+  `100..120`.
 
 ## Operator decisions
 
