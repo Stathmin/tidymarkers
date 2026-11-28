@@ -180,6 +180,10 @@ Other vignettes:
 - [ADR 0039](adr/0039-a-negative-depth-carries-no-confidence.md) — the depth
   term of `variant_confidence()` is floored at zero, so `weight` stays in
   `[0, 1]` and a negative `DP` weighs nothing rather than less than nothing.
+- [ADR 0040](adr/0040-a-validator-enforces-the-unit-the-contract-names.md) —
+  the metrics validator enforces the unit the contract names: integer fields
+  are whole numbers, and `gpu_util` is a fraction in `[0, 1]`, not a
+  percentage.
 
 ## Operator decisions
 
