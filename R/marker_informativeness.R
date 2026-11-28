@@ -51,7 +51,8 @@
 #'   read.
 #' @param genotypes a tidy table with `line`, `pos` and `genotype` (plus
 #'   optional `chrom`, `ref`, `alt` to disambiguate records at the same
-#'   position).  One row per line and variant.
+#'   position).  One row per line and variant; two different calls for one line
+#'   at one target abort instead of one being kept.
 #' @param haplotypes a haplotype table (`haplotype`, `freq`, `chrom`, `pos`,
 #'   `ref`, `alt`, see [haplotype_groups()]).
 #' @param min_lines minimum number of genotyped lines before a genotype panel
@@ -132,8 +133,16 @@ normalise_genotypes <- function(g) {
     alt = col("alt", function(x) toupper(as.character(x))),
     genotype = genotype_dosage(g$genotype)
   )
-  if (anyNA(out$line) || anyNA(out$pos)) {
-    abort_msg("`genotypes` needs a non-missing `line` and `pos` on every row.")
+  lost <- bad_position(g$pos)
+  if (any(lost)) {
+    i <- which(lost)[[1L]]
+    abort_msg(gettextf(
+      "`genotypes` needs a positive whole `pos` on every row; row %d is %s.",
+      i, format(g$pos[[i]])
+    ))
+  }
+  if (anyNA(out$line)) {
+    abort_msg("`genotypes` needs a non-missing `line` on every row.")
   }
   out
 }

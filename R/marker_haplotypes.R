@@ -26,6 +26,7 @@ normalise_haplotypes <- function(haplotypes) {
     haplotypes, c("haplotype", "freq", "chrom", "pos", "ref", "alt"),
     arg = "haplotypes"
   )
+  raw_pos <- tibble::as_tibble(haplotypes)$pos
   h <- tibble::as_tibble(haplotypes) |>
     dplyr::transmute(
       haplotype = as.character(.data$haplotype),
@@ -46,7 +47,7 @@ normalise_haplotypes <- function(haplotypes) {
   if (nrow(bad)) {
     abort_msg("`freq` must be one value in [0, 1] per haplotype.")
   }
-  loci_bad <- is.na(h$chrom) | !nzchar(h$chrom) | is.na(h$pos) | h$pos < 1L
+  loci_bad <- is.na(h$chrom) | !nzchar(h$chrom) | bad_position(raw_pos)
   if (any(loci_bad)) {
     i <- which(loci_bad)[[1L]]
     abort_msg(gettextf(

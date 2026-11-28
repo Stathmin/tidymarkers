@@ -27,3 +27,21 @@ is_whole_number <- function(x, min = 1L, max = .Machine$integer.max) {
   is.numeric(x) && length(x) == 1L && is.finite(x) &&
     x >= min && x <= max && x == round(x)
 }
+
+#' Which positions are not positive whole numbers?
+#'
+#' The vectorised counterpart of `is_whole_number()` for a coordinate column.
+#' `as.integer()` truncates, so a normaliser that casts first can never see a
+#' fraction: `250.9` becomes `250` and matches a target at another locus
+#' (ADR 0045).  A character `"250"` is accepted when it casts exactly; `NA`,
+#' `Inf`, a negative and `250.9` are not.
+#' @param x a coordinate vector.
+#' @param min smallest accepted value.
+#' @return a logical vector, `TRUE` where the value is not a usable position.
+#' @keywords internal
+#' @noRd
+bad_position <- function(x, min = 1L) {
+  iv <- suppressWarnings(as.integer(x))
+  is.na(x) | is.na(iv) | iv < min |
+    (is.numeric(x) & (!is.finite(x) | x != round(x)))
+}

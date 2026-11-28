@@ -151,6 +151,8 @@ test_that("a haplotype row is admitted only with a real frequency and locus", {
   expect_error(do.call(hp, utils::modifyList(ok, list(freq = Inf))), "finite value")
   expect_error(do.call(hp, utils::modifyList(ok, list(freq = -0.1))), "\\[0, 1\\]")
   expect_error(do.call(hp, utils::modifyList(ok, list(pos = 0L))), "positive integer")
+  # `as.integer()` would make 250.9 a locus at 250; the row is refused instead
+  expect_error(do.call(hp, utils::modifyList(ok, list(pos = 250.9))), "positive integer")
   expect_error(do.call(hp, utils::modifyList(ok, list(chrom = ""))), "chromosome")
   expect_error(do.call(hp, utils::modifyList(ok, list(alt = "G?"))), "DNA alleles")
 })

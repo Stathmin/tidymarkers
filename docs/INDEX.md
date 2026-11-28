@@ -196,6 +196,9 @@ Other vignettes:
 - [ADR 0044](adr/0044-a-count-has-one-definition.md) — one
   `is_whole_number()` predicate backs `min_lines`, `max_markers`,
   `spacer_len` and `min_evidence`, so `Inf` reaches each gate's own message.
+- [ADR 0045](adr/0045-a-position-is-a-whole-number-before-the-cast.md) — a
+  `pos` is checked before `as.integer()`, so a panel row at 250.9 no longer
+  scores the target at 250.
 
 ## Operator decisions
 

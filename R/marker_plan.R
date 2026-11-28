@@ -121,10 +121,29 @@ empty_targets <- function() {
   )
 }
 
-#' Refuse a target row that cannot name a locus
+#' Refuse a target POS that is not a positive integer
 #'
-#' A missing chromosome or a POS that is not a positive integer would reach the
-#' designer as `NA`/`0` and produce a verdict about a place that does not exist.
+#' Runs on the value the caller gave, before any cast: `as.integer(250.9)` is
+#' `250`, so a check that ran afterwards scored a locus nobody named (ADR 0045).
+#' @keywords internal
+#' @noRd
+check_target_pos <- function(pos) {
+  bad <- bad_position(pos)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(gettextf(
+      "Every target needs a positive integer `pos`; row %d is %s.",
+      i, format(pos[[i]])
+    ))
+  }
+  invisible(pos)
+}
+
+#' Refuse a target row whose chromosome or alleles cannot name a locus
+#'
+#' A missing chromosome, or an allele that is not DNA, would reach the designer
+#' as `NA` and produce a verdict about a place that does not exist.  The POS is
+#' checked earlier, on the value the caller gave (see `check_target_pos()`).
 #' @keywords internal
 #' @noRd
 check_target_loci <- function(x) {
@@ -132,14 +151,6 @@ check_target_loci <- function(x) {
   if (any(bad_chrom)) {
     abort_msg(gettextf(
       "A target has no chromosome name (row %d).", which(bad_chrom)[[1L]]
-    ))
-  }
-  bad_pos <- is.na(x$pos) | x$pos < 1L
-  if (any(bad_pos)) {
-    i <- which(bad_pos)[[1L]]
-    abort_msg(gettextf(
-      "Every target needs a positive integer `pos`; row %d is %s.",
-      i, format(x$pos[[i]])
     ))
   }
   dna <- function(v) !is.na(v) & nzchar(v) & grepl("^[ACGTN]+$", v)
@@ -176,6 +187,7 @@ normalise_targets <- function(x) {
   x <- tibble::as_tibble(x)
   need_cols(x, c("chrom", "pos", "ref", "alt"), arg = "targets")
   x$chrom <- as.character(x$chrom)
+  check_target_pos(x$pos)
   x$pos <- as.integer(x$pos)
   x$ref <- toupper(as.character(x$ref))
   x$alt <- toupper(as.character(x$alt))
@@ -205,6 +217,7 @@ target_rows <- function(chrom, pos, ref, alt, alt2 = NULL, data, type, label,
   if (is.null(chrom) || is.null(pos) || is.null(ref) || is.null(alt)) {
     abort_msg("Give `chrom`, `pos`, `ref`, `alt`, or a `data` table.")
   }
+  check_target_pos(pos)
   out <- tibble::tibble(
     chrom = as.character(chrom), pos = as.integer(pos),
     ref = toupper(as.character(ref)), alt = toupper(as.character(alt))

@@ -18,7 +18,8 @@ read.}
 
 \item{genotypes}{a tidy table with \code{line}, \code{pos} and \code{genotype} (plus
 optional \code{chrom}, \code{ref}, \code{alt} to disambiguate records at the same
-position).  One row per line and variant.}
+position).  One row per line and variant; two different calls for one line
+at one target abort instead of one being kept.}
 
 \item{haplotypes}{a haplotype table (\code{haplotype}, \code{freq}, \code{chrom}, \code{pos},
 \code{ref}, \code{alt}, see \code{\link[=haplotype_groups]{haplotype_groups()}}).}

@@ -167,6 +167,18 @@ test_that("a sample-size threshold is a whole number, not a truncated one", {
   )
 })
 
+test_that("a panel position is a whole number, not a truncated lookup", {
+  panel <- tibble::tibble(
+    line = paste0("L", 1:8), pos = 250.9, ref = "A", alt = "G",
+    genotype = c(2, 2, 2, 2, 0, 0, 0, 0)
+  )
+  # 250.9 used to be cast to 250 and scored against the target at 250
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel),
+    "positive whole `pos`.*row 1 is 250.9"
+  )
+})
+
 test_that("a line with two different calls at one target is refused, not ordered", {
   panel <- tibble::tibble(
     line = c("L1", "L1", "L2", "L3", "L4", "L5"),

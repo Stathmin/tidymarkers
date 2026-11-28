@@ -92,12 +92,27 @@ test_that("a target row needs a chromosome and a positive POS", {
       marker_targets(chrom = NA_character_, pos = 4L, ref = "A", alt = "G"),
     "no chromosome name"
   )
+  # a fraction used to be truncated to a locus nobody named
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = 250.9, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is 250.9"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(chrom = "Chr1", pos = Inf, ref = "A", alt = "G"),
+    "positive integer `pos`.*row 1 is Inf"
+  )
   # a data table goes through the same admission, not only the grammar form
   expect_error(
     dummy_plan() + marker_targets(data = tibble::tibble(
       chrom = "Chr1", pos = -1L, ref = "A", alt = "G"
     )),
     "positive integer `pos`"
+  )
+  expect_error(
+    dummy_plan() + marker_targets(data = tibble::tibble(
+      chrom = "Chr1", pos = 250.9, ref = "A", alt = "G"
+    )),
+    "positive integer `pos`.*row 1 is 250.9"
   )
 })
 
