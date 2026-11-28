@@ -6450,3 +6450,25 @@ ADR 0056 срабатывает, но `safe_candidates()` оборачивает
       `screen` — 23 pass, 0 fail.
     - блокер: нет; проверка идёт до `genome_seq()` и любой сборки сетки.
     - следствие: `hotzone = 0` сохраняет смысл «ни одного чужого варианта».
+
+## ZV87. Скан палиндромов: счётчики — целые, как у быстрого собрата
+
+`find_palindromes()` — экспортированная таблица попаданий, которую
+`has_palindrome()` документирует как медленного собрата, — не получила проверку
+трёх счётчиков из ADR 0052: `max_mismatch = 1.9` давал тот же ответ, что `1L`,
+`min_armlength = 4.9` строил 4-базовое плечо, `max_looplength = 2.9` — 2-базовую
+петлю, `min_armlength = 0` падал сообщением Biostrings «'min.armlength' must be
+>= 2», а `max_mismatch = Inf` — «missing value where TRUE/FALSE needed».
+Измерено на `c(hit = "ACGTACGT", none = "AACCGG")` до правки.
+
+- [x] **ZV87. `find_palindromes()` проверяет те же три счётчика до скана.**
+    - правка: `check_scan_radius()` для `min_armlength` (min = 1),
+      `max_looplength` (min = 0) и `max_mismatch` (min = 0) в начале функции —
+      те же границы, что у `has_palindrome()` (ADR 0063).
+    - проверка: `tests/testthat/test-palindromes.R` — новый тест отвергает
+      `max_mismatch` `1.9`/`-1`/`NA`/`Inf`/вектор/`"0"`, `min_armlength`
+      `0`/`4.5` и `max_looplength` `2.5` по имени; целый вызов даёт те же
+      1/0 попаданий; `palindromes|design-metrics` — 88 pass, 0 fail.
+    - блокер: нет; проверка идёт до `Biostrings::findPalindromes()`.
+    - следствие: `min_armlength = 1L` по-прежнему доходит до собственной
+      границы Biostrings `>= 2` — это граница движка, а не правило счётчика.

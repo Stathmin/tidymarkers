@@ -73,6 +73,7 @@ the file records the measurement or event that re-tested it).
 | [0060](0060-a-target-window-names-its-whole-locus.md) | A target window names its whole locus before the cut | accepted |
 | [0061](0061-a-target-pick-names-its-whole-tuning-counts.md) | A target pick names its whole tuning counts before the scan | accepted |
 | [0062](0062-a-target-screen-names-its-whole-window-and-budget.md) | A target screen names its whole window and budget before the grid | accepted |
+| [0063](0063-a-palindrome-scan-names-the-same-counts-as-its-fast-sibling.md) | A palindrome scan names the same counts as its fast sibling | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

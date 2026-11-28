@@ -123,3 +123,17 @@ test_that("has_palindrome refuses a count it would have handed to findPalindrome
     has_palindrome(c("ACGTTCGT", "AAAACCCC"), max_mismatch = 1)
   )
 })
+
+test_that("find_palindromes names the same three counts as has_palindrome", {
+  seq <- c(hit = "ACGTACGT", none = "AACCGG")
+  # a fraction was truncated by Biostrings into a shorter arm/loop or a
+  # narrower mismatch budget; zero and Inf raised messages that name no argument
+  for (bad in list(1.9, -1L, NA, Inf, c(0L, 1L), "0")) {
+    expect_error(find_palindromes(seq, max_mismatch = bad), "`max_mismatch`.*whole number")
+  }
+  expect_error(find_palindromes(seq, min_armlength = 0L), "`min_armlength`.*whole number")
+  expect_error(find_palindromes(seq, min_armlength = 4.5), "`min_armlength`.*whole number")
+  expect_error(find_palindromes(seq, max_looplength = 2.5), "`max_looplength`.*whole number")
+  whole <- find_palindromes(seq)
+  expect_equal(vapply(whole, nrow, integer(1)), c(hit = 1L, none = 0L))
+})

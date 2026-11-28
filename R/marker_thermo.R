@@ -291,6 +291,12 @@ has_repeat <- function(seq, units = 2:4, min_copies = 3L) {
 #' @family QC
 #' @export
 find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L) {
+  # The same three counts `has_palindrome()` names (ADR 0052), checked here
+  # too: Biostrings truncates `4.9` to a 4 nt arm and raises its own message
+  # (or none) for `0` and `Inf` (ADR 0063).
+  min_armlength <- check_scan_radius(min_armlength, "min_armlength", min = 1L)
+  max_looplength <- check_scan_radius(max_looplength, "max_looplength", min = 0L)
+  max_mismatch <- check_scan_radius(max_mismatch, "max_mismatch")
   nm <- names(seq)
   hits <- purrr::map(as.character(seq), function(s) {
     h <- Biostrings::findPalindromes(Biostrings::DNAString(s),

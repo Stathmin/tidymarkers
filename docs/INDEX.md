@@ -266,6 +266,10 @@ Other vignettes:
   `screen_snp_targets()` names `lengths`, `clean_3p` and `hotzone` before the
   placement grid, so a fraction no longer shifts the window into a `start`/`end`
   error and `hotzone = 7.9` no longer tolerates one variant fewer.
+- [ADR 0063](adr/0063-a-palindrome-scan-names-the-same-counts-as-its-fast-sibling.md) —
+  `find_palindromes()` names `min_armlength`, `max_looplength` and
+  `max_mismatch` with the same bounds as `has_palindrome()`, so the two entry
+  points to one Biostrings scan answer a fraction the same way.
 
 ## Operator decisions
 
