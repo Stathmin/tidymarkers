@@ -45,6 +45,7 @@ the file records the measurement or event that re-tested it).
 | [0032](0032-the-corpus-exclusion-check-reads-the-resolved-directory.md) | The corpus-exclusion check reads the resolved directory                     | accepted |
 | [0033](0033-a-cache-and-a-rendered-file-are-declared-names.md) | A cache entry and a rendered file are declared names too | accepted (amended) |
 | [0034](0034-an-index-build-declares-every-file-it-writes.md) | A genome index declares every file its build writes | accepted |
+| [0035](0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md) | A guard refuses a name; a hit test only reports one | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
