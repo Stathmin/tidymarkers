@@ -5255,7 +5255,7 @@ id записи не пересчитывался из её собственно
       `ensembl_variants()`; `R/marker_core.R` — `.part` в
       `tair10_download()`; `R/marker_annotate.R` — GTF и EnsDb sqlite в
       `marker_ensdb()`; `R/marker_search_anim.R` — GIF в `assemble_gif()`.
-      Решение — [ADR 0033](../docs/adr/0033-a-cache-and-a-rendered-file-are-declared-names.md).
+      Решение — [ADR 0033](docs/adr/0033-a-cache-and-a-rendered-file-are-declared-names.md).
     - проверка: `test-target.R` — «the Ensembl cache refuses to write through a
       link» (оба эндпоинта, HTTP замокан, внешний файл не создан);
       `test-output.R` — «declared_path refuses a link and keeps an ordinary
@@ -5391,7 +5391,7 @@ ZV39 у GenBank: ссылка не доказывает, что файл соз�
       объявляющего вызывающего или приватный temp-каталог; запись, которая
       перестала быть исключением, — stale и тоже падает. Шаг `2b2` в
       `dev/check.R`. Решение — поправка к
-      [ADR 0033](../docs/adr/0033-a-cache-and-a-rendered-file-are-declared-names.md).
+      [ADR 0033](docs/adr/0033-a-cache-and-a-rendered-file-are-declared-names.md).
     - проверка: `Rscript dev/check-writers.R` — «24 writer(s), 17 guard in
       place, 7 registered with a reason; self-test passed»; `--self-test`
       прогоняет через чекер одно незащищённое и одно защищённое синтетическое
