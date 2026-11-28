@@ -411,6 +411,32 @@ test_that("fasta_index refuses an invalid base before writing the plain copy", {
   expect_false(file.exists(sub("\\.gz$", "", gz)))
 })
 
+test_that("fasta_index refuses a link at the plain copy or the .fai", {
+  skip_if_not_installed("Rsamtools")
+  dir <- withr::local_tempdir()
+  gz <- fs::path(dir, "in.fa.gz")
+  con <- gzfile(gz, "wt")
+  writeLines(c(">Chr1", "ACGTACGT"), con)
+  close(con)
+  outside <- fs::path(dir, "outside.txt")
+  writeLines("keep", outside)
+
+  # a link where the decompressed copy would go is not a cache
+  plain <- fs::path(dir, "in.fa")
+  skip_if(!file.symlink(outside, plain), "this filesystem cannot make a symlink")
+  expect_error(fasta_index(gz), "which is a link", class = "rlang_error")
+  expect_equal(readLines(outside), "keep")
+  file.remove(plain)
+
+  # a link where the .fai would go is not a ready index
+  fasta_index(gz)
+  fai <- paste0(plain, ".fai")
+  expect_true(file.remove(fai))
+  skip_if(!file.symlink(outside, fai), "this filesystem cannot make a symlink")
+  expect_error(fasta_index(gz), "which is a link", class = "rlang_error")
+  expect_equal(readLines(outside), "keep")
+})
+
 test_that("a FASTA with one name twice is refused on both backends", {
   fa <- withr::local_tempfile(fileext = ".fa")
   writeLines(c(">Chr1", "ACGTACGTAC", ">Chr1", "TTTTGGGGCC"), fa)

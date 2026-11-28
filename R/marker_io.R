@@ -541,7 +541,14 @@ read_variants_vcf_va <- function(path, chrom = NULL, start = NULL, end = NULL) {
 fasta_index <- function(path) {
   rlang::check_installed("Rsamtools", reason = gettext("for indexed FASTA random access"))
   path <- reader_path(path, "FASTA")
-  plain <- if (grepl("\\.gz$", path)) sub("\\.gz$", "", path) else path
+  plain <- if (grepl("\\.gz$", path)) {
+    out <- sub("\\.gz$", "", path)
+    # the decompressed copy is ours: a link is not a cached copy (ADR 0033)
+    declared_path(out)
+    out
+  } else {
+    path
+  }
   if (!fs::file_exists(plain)) {
     cli::cli_alert_info(gettext("Decompressing {.file {fs::path_file(path)}} for indexing (one-off)."))
     # A dropped base would be baked into the index, not just one read (ADR 0022)
@@ -549,6 +556,8 @@ fasta_index <- function(path) {
     Biostrings::writeXStringSet(plain_seqs, plain)
   }
   fai <- paste0(plain, ".fai")
+  # the .fai is this function's product too; a link is not a ready index
+  declared_path(fai)
   if (!fs::file_exists(fai)) Rsamtools::indexFa(plain)
   plain
 }
