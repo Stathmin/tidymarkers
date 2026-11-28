@@ -220,6 +220,10 @@ Other vignettes:
   guide spacer or target-site length is one or more positive whole numbers of
   nucleotides, so `20.9` no longer designs a 20 nt guide or a 20-position
   weight ladder, and `NA` no longer reaches a base R `if`.
+- [ADR 0052](adr/0052-a-palindrome-count-is-whole-before-the-scan.md) — the arm
+  length, loop length and mismatch budget of `has_palindrome()` are whole
+  before `findPalindromes()`, so `max_mismatch = 1.9` no longer loosens the
+  answer and `NA` no longer raises Biostrings' message.
 
 ## Operator decisions
 

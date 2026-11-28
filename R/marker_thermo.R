@@ -313,9 +313,12 @@ find_palindromes <- function(seq, min_armlength = 4L, max_looplength = 6L, max_m
 #' test.  Wildcard matching needs `max_mismatch = 0`; a degenerate oligo asked
 #' for mismatches is still screened by `findPalindromes()`, symbol-exactly.
 #' @param seq character vector of DNA sequences.
-#' @param min_armlength minimum arm length of a palindromic hit.
-#' @param max_looplength maximum loop (spacer) length.
-#' @param max_mismatch mismatches allowed in the arms.
+#' @param min_armlength minimum arm length of a palindromic hit, in nt (one
+#'   positive whole number).
+#' @param max_looplength maximum loop (spacer) length, in nt (one non-negative
+#'   whole number).
+#' @param max_mismatch mismatches allowed in the arms (one non-negative whole
+#'   number).
 #' @return a logical vector, one per input sequence.
 #' @examples
 #' has_palindrome(c("ACGTACGT", "AACCGG"))
@@ -327,17 +330,14 @@ has_palindrome <- function(seq, min_armlength = 4L, max_looplength = 6L, max_mis
   # `findPalindromes()` plus a tibble per sequence cost ~1.2 ms (measured); the
   # question is only "does any arm pair exist".  For a plain-ACGT oligo that is
   # a few vectorised substring comparisons (~60 us); an IUPAC one is the same
-  # scan on 4-bit base masks.  Mismatch tolerance, or a non-default argument,
-  # still takes the Biostrings path, so the fast path cannot change an answer
-  # it does not cover.
+  # scan on 4-bit base masks.  A mismatch tolerance still takes the
+  # Biostrings path, so the fast path cannot change an answer it does not
+  # cover.
   seq <- as.character(seq)
-  fast <- is.numeric(max_mismatch) && identical(as.integer(max_mismatch), 0L) &&
-    is.numeric(min_armlength) && length(min_armlength) == 1L &&
-    is.finite(min_armlength) && min_armlength >= 2 &&
-    min_armlength == floor(min_armlength) &&
-    is.numeric(max_looplength) && length(max_looplength) == 1L &&
-    is.finite(max_looplength) && max_looplength >= 0 &&
-    max_looplength == floor(max_looplength)
+  max_mismatch <- check_scan_radius(max_mismatch, "max_mismatch")
+  min_armlength <- check_scan_radius(min_armlength, "min_armlength", min = 1L)
+  max_looplength <- check_scan_radius(max_looplength, "max_looplength", min = 0L)
+  fast <- identical(max_mismatch, 0L) && min_armlength >= 2L
   # unname(): the old `map_int(...) > 0L` dropped names because a comparison
   # strips attributes; callers must not start seeing names on this vector
   unname(vapply(seq, function(s) {

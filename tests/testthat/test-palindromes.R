@@ -106,3 +106,20 @@ test_that("find_palindromes returns a tidy hit table per input", {
   # every reported view is inside the sequence
   expect_true(all(h[["bad"]]$end <= 16L))
 })
+
+test_that("has_palindrome refuses a count it would have handed to findPalindromes", {
+  # 1.9 used to reach Biostrings as max.mismatch and raise its own error
+  for (bad in list(1.9, -1L, NA, Inf, c(0L, 1L), "0")) {
+    expect_error(has_palindrome("ACGTACGT", max_mismatch = bad), "whole number")
+  }
+  expect_error(has_palindrome("ACGTACGT", min_armlength = 0L), "whole number")
+  expect_error(has_palindrome("ACGTACGT", min_armlength = 4.5), "whole number")
+  expect_error(has_palindrome("ACGTACGT", max_looplength = 2.5), "whole number")
+  # the accepted whole counts answer exactly as before
+  expect_true(has_palindrome("ACGTACGT"))
+  expect_false(has_palindrome("ACGTTGCA"))
+  expect_equal(
+    has_palindrome(c("ACGTTCGT", "AAAACCCC"), max_mismatch = 1L),
+    has_palindrome(c("ACGTTCGT", "AAAACCCC"), max_mismatch = 1)
+  )
+})

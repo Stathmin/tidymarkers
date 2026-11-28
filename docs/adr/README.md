@@ -62,6 +62,7 @@ the file records the measurement or event that re-tested it).
 | [0049](0049-a-worker-count-is-a-whole-number-before-the-cast.md) | A worker count is a positive whole number before the cast | accepted |
 | [0050](0050-a-genomic-interval-is-whole-before-the-read.md) | A genomic interval is whole before the read | accepted |
 | [0051](0051-a-nucleotide-length-is-whole-before-the-design-grid.md) | A nucleotide length is whole before the design grid | accepted |
+| [0052](0052-a-palindrome-count-is-whole-before-the-scan.md) | A palindrome's counts are whole before `findPalindromes()` | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

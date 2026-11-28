@@ -9,11 +9,14 @@ has_palindrome(seq, min_armlength = 4L, max_looplength = 6L, max_mismatch = 0L)
 \arguments{
 \item{seq}{character vector of DNA sequences.}
 
-\item{min_armlength}{minimum arm length of a palindromic hit.}
+\item{min_armlength}{minimum arm length of a palindromic hit, in nt (one
+positive whole number).}
 
-\item{max_looplength}{maximum loop (spacer) length.}
+\item{max_looplength}{maximum loop (spacer) length, in nt (one non-negative
+whole number).}
 
-\item{max_mismatch}{mismatches allowed in the arms.}
+\item{max_mismatch}{mismatches allowed in the arms (one non-negative whole
+number).}
 }
 \value{
 a logical vector, one per input sequence.
