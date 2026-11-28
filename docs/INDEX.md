@@ -144,6 +144,10 @@ Other vignettes:
   create and refuse to write through a link, the same rule and message as the
   record writers (ADR 0025 point 5), so an output set is never written outside
   its directory.
+- [ADR 0030](adr/0030-a-derived-path-component-is-a-declared-name.md) —
+  every path component a writer derives is a declared name: the outcomes
+  handover refuses a link at `crates` or at a crate's pseudonym before the first
+  crate exists, not only at the files inside it.
 
 ## Operator decisions
 

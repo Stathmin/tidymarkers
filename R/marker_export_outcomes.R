@@ -200,6 +200,10 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   refuse_links(fs::path_dir(identity_path), fs::path_file(identity_path))
 
   fs::dir_create(dir)
+  # `crates` and each pseudonym are paths this function derives under `dir`:
+  # a link at either sends a crate outside it (ADR 0030)
+  refuse_links(dir, "crates")
+  refuse_links(fs::path(dir, "crates"), pseudonyms)
   for (i in seq_along(sites)) {
     rel <- sites[[i]]
     adir <- fs::path(root, rel)

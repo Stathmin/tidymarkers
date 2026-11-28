@@ -127,6 +127,40 @@ test_that("the handover refuses to write its identity map through a link", {
   expect_false(fs::dir_exists(fs::path(dir, "crates")))
 })
 
+test_that("the handover refuses to write its crates through a link", {
+  fx <- outcomes_corpus_fixture()
+
+  # a link at the crates directory itself sends every later crate outside `dir`
+  dir <- fs::path(withr::local_tempdir(), "out")
+  fs::dir_create(dir)
+  outside <- withr::local_tempdir()
+  skip_if_not(
+    file.symlink(outside, fs::path(dir, "crates")),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(
+    marker_export_outcomes(fx$corpus, dir, trustee = "lab-a"),
+    "which is a link"
+  )
+  expect_length(fs::dir_ls(outside), 0L)
+  expect_false(fs::file_exists(paste0(dir, "-identity.csv")))
+
+  # a link at one crate's pseudonym sends that crate outside `dir` too
+  dir <- fs::path(withr::local_tempdir(), "out")
+  fs::dir_create(fs::path(dir, "crates"))
+  outside <- withr::local_tempdir()
+  pseudonym <- paste0("site-", substr(hash_object("lab-abatch-a"), 1L, 8L))
+  skip_if_not(
+    file.symlink(outside, fs::path(dir, "crates", pseudonym)),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(
+    marker_export_outcomes(fx$corpus, dir, trustee = "lab-a"),
+    "which is a link"
+  )
+  expect_length(fs::dir_ls(outside), 0L)
+})
+
 test_that("the pseudonym is reproducible from the salt alone", {
   fx <- outcomes_corpus_fixture()
   expected <- paste0("site-", substr(hash_object("lab-abatch-a"), 1L, 8L))
