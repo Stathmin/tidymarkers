@@ -3705,9 +3705,10 @@ dir)` пишет crate-профиль поверх существующих че
 - **Policy as data:** decision schema читается из тех же констант, что
   исполняется; graph не может drift от кода (`marker_decision_schema()`).
 - **Commons licensing:** MIT, без weaponized license additions. Внешние
-  dependencies должны проверяться CI на forbidden licenses — **этой проверки в
-  CI сегодня нет** (в `.github/workflows/` такого шага нет); это дефект
-  инварианта, а не выполненное обещание.
+  dependencies проверяются на forbidden licenses: `dev/check-licenses.R`
+  (`--self-test` и прогон по установленному набору) вызывается из `dev/check.R`
+  и шагом CI в `.github/workflows/R-CMD-check.yaml`; неизвестная лицензия —
+  падение, не молчание (закрыто `ZY28`).
 - **Attribution:** каждый rule в коде связан с конкретным extract'ом из
   конкретного source; test не может claim extract, который не читает
   (`test-science-ledger.R`).
