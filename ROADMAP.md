@@ -6111,7 +6111,7 @@ ZV70 и ZV71: число пересекает границу пакета ран
 - [x] **ZV73. `pair_screen` проверяется до `if` и до `as.integer()`.**
     - правка: `assemble_kasp_assay()` проверяет `is_whole_number(min = 0L)` и
       приводит значение один раз в начале тела; `min()` получает уже целое.
-      Правило — [ADR 0044](docs/adr/0044-one-whole-number-predicate-for-counts.md).
+      Правило — [ADR 0044](docs/adr/0044-a-count-has-one-definition.md).
     - проверка: `tests/testthat/test-selection.R` — `2.5`, `-1L`, `Inf`, `"3"`
       и вектор отвергнуты с «non-negative whole number»; `^selection$` —
       265 pass, 0 fail.
