@@ -355,6 +355,21 @@ test_that("migrating a trace@1 is identity and idempotent", {
   expect_identical(marker_trace_migrate(marker_trace_migrate(plain)), tr)
 })
 
+test_that("a second write replaces solved.rds instead of another design's", {
+  dir <- withr::local_tempdir("rewritten-artefact-")
+  solved <- trace_fixture_solve()
+  first <- marker_artefact(solved, dir = dir, scenario = "J1")
+  second <- marker_artefact(
+    suppressWarnings(marker_solve(solved$plan, min_disc = 0.9, progress = FALSE)),
+    dir = dir,
+    scenario = "J2"
+  )
+
+  expect_false(identical(first$id, second$id))
+  # the manifest is the new design; a replay must re-solve the same one
+  expect_identical(readRDS(fs::path(dir, "solved.rds"))$knobs$min_disc, 0.9)
+})
+
 test_that("an unknown or newer schema aborts and names the version", {
   err <- tryCatch(marker_trace_migrate(list(schema = "nope@1")), error = identity)
   expect_s3_class(err, "error")

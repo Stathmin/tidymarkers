@@ -701,9 +701,10 @@ marker_artefact <- function(solved, dir = tempdir(), created = NULL,
     jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA),
     fs::path(dir, "artefact.json")
   )
-  if (!fs::file_exists(fs::path(dir, "solved.rds"))) {
-    saveRDS(solved, fs::path(dir, "solved.rds"))
-  }
+  # The record names one design. Keeping an older solved.rds while the manifest
+  # is rewritten would make a replay re-solve the design the manifest no longer
+  # describes.
+  saveRDS(solved, fs::path(dir, "solved.rds"))
   structure(
     list(
       id = manifest$id, dir = as.character(dir), manifest = manifest,
