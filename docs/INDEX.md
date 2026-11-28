@@ -139,6 +139,11 @@ Other vignettes:
   reinterpret (symbolic/absent allele, POS outside the integer range, a tab in
   a field, a non-ACGTN allele, a non-representable depth), so a written VCF
   reads back as written.
+- [ADR 0029](adr/0029-an-output-writer-creates-its-files-not-writes-through-a-link.md)
+  — `write_marker_results()` and `export_primers()` declare every file they
+  create and refuse to write through a link, the same rule and message as the
+  record writers (ADR 0025 point 5), so an output set is never written outside
+  its directory.
 
 ## Operator decisions
 

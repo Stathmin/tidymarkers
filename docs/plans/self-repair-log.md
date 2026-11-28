@@ -66,4 +66,4 @@ The 2026-11-27 rows are markdown-only, so that day's report shows `repair: 0`
 rows. `ZV14` is closed: `dev/repair.R` now emits the matching
 `stage = "repair"` row for every line it writes. A line written by hand still
 has no duration, so it is counted from the log and never as `0 ms`.
-| 2026-11-28 03:52 | write_marker_results()/export_primers() wrote their six CSV names through a symlink, replacing a file outside dir | logic | declare every name each writer creates and call refuse_links() before the first write, the same check and message as the record writers (ADR 0029) | test-output.R: one link per name refused, outside file unchanged; dev/test.R output 25 pass, 0 fail | pending | 1 | fixed | hygiene pass |
+| 2026-11-28 03:52 | write_marker_results()/export_primers() wrote their six CSV names through a symlink, replacing a file outside dir | logic | declare every name each writer creates and call refuse_links() before the first write, the same check and message as the record writers (ADR 0029) | test-output.R: one link per name refused, outside file unchanged; dev/test.R output 25 pass, 0 fail | b844a8c | 1 | fixed | hygiene pass |
