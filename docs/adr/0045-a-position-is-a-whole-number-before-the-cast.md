@@ -145,3 +145,25 @@ The helper now refuses `2.9`, `Inf`, `NA` and `"abc"` with
 before. Verification: `tests/testthat/test-masking.R` refuses the four values
 and keeps the range case; `Rscript dev/test.R "^masking$|^io$"` — 243 pass,
 0 fail, 3 skip.
+
+## Amendment (2026-11-28): the VCF writer applies the same rule to text
+
+`write_variants_vcf()` cast `x$pos` with `as.integer()` and then compared the
+cast with the input only when `is.numeric()`:
+
+```r
+pos <- suppressWarnings(as.integer(x$pos))
+bad_pos <- is.na(pos) | pos < 1L | (is.numeric(x$pos) & pos != x$pos)
+```
+
+A character column therefore slipped through: a row with `pos = "250.9"` was
+written as `POS 250` and `depth = "30.9"` as `DP=30`, and the file read back
+as a different locus and a different depth with no message. Numeric fractions
+were already refused because `250 != 250.9`; text was the hole.
+
+Both columns now go through `bad_position()` on the value as given (position
+`min = 1L`, depth `min = 0L`, `NA` depth still allowed) before the cast, so
+character spellings are judged like numeric ones (ADR 0068). The refusals keep
+their existing messages and row numbers. Verification:
+`tests/testthat/test-io.R` refuses `pos = "100.5"`, `pos = "1e3"` and
+`depth = "30.9"`; `Rscript dev/test.R "^io$"` — 235 pass, 0 fail, 3 skip.
