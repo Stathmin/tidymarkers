@@ -333,6 +333,16 @@ test_that("an artefact reader refuses a manifest edited after it was written", {
   expect_match(conditionMessage(err), "does not match its own manifest", fixed = TRUE)
 })
 
+test_that("an artefact with no id is refused by name, not with an empty message", {
+  dir <- withr::local_tempdir("idless-artefact-")
+  writeLines('{"schema": "tidymarkers/artefact@2"}', fs::path(dir, "artefact.json"))
+
+  err <- tryCatch(marker_artefact_read(dir), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "names no id to check", fixed = TRUE)
+  expect_false(grepl("manifest: \\.$", conditionMessage(err)))
+})
+
 test_that("migrating a trace@1 is identity and idempotent", {
   tr <- marker_trace_from_artefact(new_artefact())
 

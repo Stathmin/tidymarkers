@@ -935,9 +935,16 @@ artefact_verify_id <- function(manifest, path) {
     return(invisible(NULL))
   }
   expected <- artefact_id(manifest)
-  if (!identical(manifest$id, expected)) {
+  stored <- manifest$id
+  if (!is.character(stored) || length(stored) != 1L || is.na(stored)) {
     abort_msg(
-      "The id in {.path {path}} does not match its own manifest: {.val {manifest$id}}.",
+      "The record in {.path {path}} names no id to check.",
+      i = "A manifest truncated after it was written hashes to {.val {expected}}."
+    )
+  }
+  if (!identical(stored, expected)) {
+    abort_msg(
+      "The id in {.path {path}} does not match its own manifest: {.val {stored}}.",
       i = "The manifest hashes to {.val {expected}}; it was edited after it was written."
     )
   }
