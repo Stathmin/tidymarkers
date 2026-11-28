@@ -284,6 +284,10 @@ Other vignettes:
 - [ADR 0067](adr/0067-a-frame-rate-is-positive-and-a-hold-is-whole.md) — an
   `fps` is one positive finite number and `hold` one non-negative whole count
   before the GIF is stitched, so `0` no longer gives `-delay Inf`.
+- [ADR 0068](adr/0068-a-position-column-is-whole-in-its-spelling.md) — a
+  character position is judged by its spelling and `as_variant_row()` checks
+  its selector and its chosen row before the cast, so `2801.5` cannot become
+  2801.
 
 ## Operator decisions
 
