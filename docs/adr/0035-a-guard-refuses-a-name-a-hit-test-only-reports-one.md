@@ -51,6 +51,29 @@ the fix changes no production write.
    cache entry is ours" (ADR 0033, ZV44) and is still used by readers. The
    decision is about what the gate accepts as a guard, not about the helper.
 
+## Second hole: the call form is not the rule
+
+The same audit found the write pattern accepted one spelling per primitive:
+`readr::write_csv` but not a bare `write_csv`. In a package the imports are
+attached, so the bare call is the natural form and `writeLines()` was the only
+primitive matched without a prefix. A top-level writer written as
+
+```r
+function(path) write_csv(x, path)
+```
+
+escaped the scanner entirely — not because it was justified, but because the
+regex named the namespace. Measured on the branch: the old pattern returns no
+match for that body (`grepl()` is `FALSE`); the widened pattern returns
+`write_csv`.
+
+Decision: the namespace prefix is optional in `write_pattern`
+(`(?:[A-Za-z0-9._]+::)?`), while the primitive names stay the documented list.
+The self-test carries the bare imported call next to the namespaced one, so the
+two spellings are checked as equal. No current writer relied on the hole: all
+24 bodies already used one of the matched spellings, which is why the count did
+not move.
+
 ## Consequences
 
 - A new writer that tests a cache and writes passes the gate only after it

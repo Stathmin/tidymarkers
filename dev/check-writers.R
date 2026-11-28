@@ -35,14 +35,16 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
   quit(status = 0L)
 }
 
-# The primitives that create a file.  `writeLines()` on a string is also a hit
+# The primitives that create a file.  The call form is not part of the rule: a
+# package that imports `write_csv()` may call it bare, so the namespace prefix
+# is optional (ADR 0035, second hole).  `writeLines()` on a string is also a hit
 # when the string is a script another function emits; a ledger entry says so.
 write_pattern <- paste0(
-  "(", paste(c(
-    "readr::write_csv", "readr::write_lines", "readr::write_file",
-    "writeLines", "saveRDS", "save", "ggplot2::ggsave", "xml2::write_xml",
-    "utils::download.file", "fs::file_copy", "fs::file_move", "file.copy",
-    "file.rename", "writeBin", "utils::write.csv", "utils::write.table"
+  "(?<![A-Za-z0-9._])(?:[A-Za-z0-9._]+::)?(",
+  paste(c(
+    "write_csv", "write_lines", "write_file", "writeLines", "saveRDS", "save",
+    "ggsave", "write_xml", "download.file", "file_copy", "file_move", "file.copy",
+    "file.rename", "writeBin", "write.csv", "write.table"
   ), collapse = "|"), ")\\s*\\("
 )
 # A guard refuses a name; it does not merely report one. `cache_present()` is a
@@ -117,6 +119,7 @@ check_writers <- function(registry, hits) {
 self_test <- function() {
   bodies <- c(
     undeclared = "function(path) writeLines(\"x\", path)",
+    imported = "function(path) write_csv(x, path)",
     cached = "function(path) { if (cache_present(path)) return(path); writeLines(\"x\", path) }",
     declared = "function(dir) { refuse_links(dir, \"a.csv\"); readr::write_csv(x, dir) }"
   )
@@ -124,7 +127,7 @@ self_test <- function() {
   empty <- check_writers(list(), hits)
   expected <- paste0(
     "undeclared writer (guard it, or add to dev/writers.yml): ",
-    c("cached", "undeclared")
+    c("cached", "imported", "undeclared")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded writer was not caught")
@@ -132,6 +135,7 @@ self_test <- function() {
   ok <- check_writers(
     list(
       list(symbol = "undeclared", reason = "self-test"),
+      list(symbol = "imported", reason = "self-test"),
       list(symbol = "cached", reason = "self-test")
     ),
     hits
