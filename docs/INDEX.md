@@ -245,6 +245,11 @@ Other vignettes:
   `design_lamp_marker()` checks `arm_lengths` and `outer_lengths` at the
   entry, so a fraction is refused by name instead of being swallowed by
   `safe_candidates()` and reported as "No LAMP primer set passed".
+- [ADR 0058](adr/0058-a-repeat-scan-names-whole-units-and-copies.md) —
+  `repeat_regex()` checks `units` and `min_copies` before it builds the
+  back-reference, so `find_repeats(min_copies = 2.9)` no longer accepts a
+  2-copy repeat, `0.5` no longer reaches a stringi interval error, and
+  `design_ssr_marker()` refuses a fractional repeat by name.
 
 ## Operator decisions
 

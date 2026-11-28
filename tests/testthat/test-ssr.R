@@ -126,6 +126,25 @@ test_that("a duplicated locus dooms the design through the hard flank-uniqueness
   )
 })
 
+test_that("a repeat scan names whole units and copies", {
+  # `as.integer()` truncated both counts: units = 2.9 scanned unit 2, and
+  # min_copies = 2.9 accepted a 2-copy repeat; 0.5 reached a stringi interval
+  # error instead of a package message (ADR 0057)
+  expect_error(find_repeats("ACACAC", units = 2.9), "positive whole numbers of nucleotides")
+  expect_error(find_repeats("ACACAC", min_copies = 2.9), "positive whole number")
+  expect_error(find_repeats("ACACAC", min_copies = 0.5), "positive whole number")
+  expect_error(has_repeat("ACAC", min_copies = c(2L, 3L)), "positive whole number")
+  expect_error(has_repeat("ACAC", min_copies = Inf), "positive whole number")
+  # whole values keep the repeat call
+  expect_identical(find_repeats("ACACAC", min_copies = 3L), list("AC"))
+  expect_true(has_repeat("ACAC", min_copies = 2L))
+  expect_false(has_repeat("ACAC", min_copies = 3L))
+  genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(300L, 7L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 150L, ref = "A", alt = "G")
+  expect_error(design_ssr_marker(genome, snp, units = 2.9), "positive whole numbers of nucleotides")
+  expect_error(design_ssr_marker(genome, snp, min_copies = 2.9), "positive whole number")
+})
+
 test_that("ssr DAG obeys the contract", {
   expect_dag_invariants("ssr")
 })

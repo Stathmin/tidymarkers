@@ -114,6 +114,11 @@ gc_frac <- function(seq) {
 #' @keywords internal
 #' @noRd
 repeat_regex <- function(unit, min_copies = 3L) {
+  # `as.integer()` truncated both counts: `units = 2.9` scanned unit 2 and
+  # `min_copies = 2.9` accepted a 2-copy repeat (ADR 0058).  Check the caller's
+  # values before the cast that builds the quantifier.
+  unit <- check_nucleotide_length(unit, "units", multi = TRUE)
+  min_copies <- check_scan_radius(min_copies, "min_copies", min = 1L)
   # sprintf, not glue: this is called once per sequence per unit on the candidate
   # grid, and glue's data masking dominated the design profile
   sprintf("([ACGT]{%d})\\1{%d,}", as.integer(unit), as.integer(min_copies) - 1L)
@@ -230,8 +235,8 @@ serial_backend <- function(BPPARAM) {
 #' homopolymers.  Returns, for each input, the repeated units of length `units`
 #' occurring at least `min_copies` times in tandem.
 #' @param seq character vector of DNA sequences.
-#' @param units repeat-unit lengths to test.
-#' @param min_copies tandem copies required for a hit.
+#' @param units repeat-unit lengths to test, as positive whole numbers.
+#' @param min_copies tandem copies required for a hit, as one positive whole number.
 #' @return a list, one character vector per input, of the repeated units (unique,
 #'   possibly empty).
 #' @examples
@@ -249,8 +254,8 @@ find_repeats <- function(seq, units = 2:4, min_copies = 3L) {
 
 #' Does a sequence contain an SSR? (see [find_repeats()])
 #' @param seq character vector of DNA sequences.
-#' @param units repeat-unit lengths to test.
-#' @param min_copies tandem copies required for a hit.
+#' @param units repeat-unit lengths to test, as positive whole numbers.
+#' @param min_copies tandem copies required for a hit, as one positive whole number.
 #' @return a logical vector, one per input sequence.
 #' @examples
 #' has_repeat(c("ACACACAC", "ACGT"))

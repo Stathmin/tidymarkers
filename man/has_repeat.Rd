@@ -9,9 +9,9 @@ has_repeat(seq, units = 2:4, min_copies = 3L)
 \arguments{
 \item{seq}{character vector of DNA sequences.}
 
-\item{units}{repeat-unit lengths to test.}
+\item{units}{repeat-unit lengths to test, as positive whole numbers.}
 
-\item{min_copies}{tandem copies required for a hit.}
+\item{min_copies}{tandem copies required for a hit, as one positive whole number.}
 }
 \value{
 a logical vector, one per input sequence.

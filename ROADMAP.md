@@ -6340,3 +6340,28 @@ ADR 0056 срабатывает, но `safe_candidates()` оборачивает
     - блокер: нет; проверка идёт до любой Tm-работы.
     - следствие: дробные, нулевые, `Inf`, векторные и нечисловые длины
       отвергаются по имени; целые значения дают те же наборы и ту же лестницу.
+
+## ZV82. Повтор: единицы и копии — целые до сборки шаблона
+
+`repeat_regex()` в `R/marker_thermo.R` строил обратную ссылку через
+`as.integer(unit)` и `as.integer(min_copies) - 1L`, поэтому дробь усекалась до
+сканирования. Измерено на ветке до правки: `find_repeats("ACACAC", min_copies = 2.9)`
+молча возвращал 2-копийный повтор, `min_copies = 1.9` принимал его же,
+`min_copies = 0.5` падал сырой ошибкой stringi `U_REGEX_BAD_INTERVAL`,
+`units = 2.9` сканировал единицу 2, а `design_ssr_marker(..., units = 2.9)`
+возвращал маркер целочисленного вызова.
+
+- [x] **ZV82. `repeat_regex()` проверяет `units` и `min_copies` до шаблона.**
+    - правка: `check_nucleotide_length(unit, "units", multi = TRUE)` и
+      `check_scan_radius(min_copies, "min_copies", min = 1L)` в начале
+      `repeat_regex()` (ADR 0058); общий построитель покрывает `find_repeats()`,
+      `has_repeat()`, `has_run()`, `ssr_span_at()`/`design_ssr_marker()`,
+      `repeat_spans()` и `marker_screen()`.
+    - проверка: `tests/testthat/test-ssr.R` — новый тест отвергает `units = 2.9`,
+      `min_copies = 2.9`, `min_copies = 0.5`, вектор и `Inf`, целые вызовы дают
+      те же попадания, `design_ssr_marker()` отказывает по имени;
+      `ssr|thermo|palindromes` — 167 pass, 0 fail.
+    - блокер: нет; проверка идёт до сборки шаблона и любой Tm-работы.
+    - следствие: `find_repeats(units = integer(0))` теперь отказывает, а
+      `has_repeat()` сохраняет ранний `FALSE` для пустого набора — это
+      записанное различие, а не регрессия.

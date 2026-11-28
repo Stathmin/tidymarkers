@@ -124,8 +124,8 @@ KASP_GATE_HARD_LABEL_SSR <- c(
 #' whose midpoint is closest.
 #' @param seq the template (plus strand).
 #' @param anchor template coordinate of the locus anchor.
-#' @param units repeat-unit lengths to search for.
-#' @param min_copies tandem copies required for a repeat call.
+#' @param units repeat-unit lengths to search for, as positive whole numbers.
+#' @param min_copies tandem copies required for a repeat call, as one positive whole number.
 #' @return a one-row tibble (`start`, `end`, `unit`, `copies`) in template
 #'   coordinates, or `NULL`.
 #' @keywords internal
@@ -178,8 +178,8 @@ ssr_span_at <- function(seq, anchor, units = 2:4, min_copies = KASP_SSR_LIMITS$m
 #' @param flank template half-width.
 #' @param min_product,max_product the accepted amplicon window (SSR size marker).
 #' @param lengths primer lengths to try.
-#' @param units repeat-unit lengths to search for.
-#' @param min_copies tandem copies required for a repeat call.
+#' @param units repeat-unit lengths to search for, as positive whole numbers.
+#' @param min_copies tandem copies required for a repeat call, as one positive whole number.
 #' @param tm_range,gc_range accepted primer windows.
 #' @param ... passed to [in_silico_pcr()] (e.g. `BPPARAM`).
 #' @return a `marker_ssr` list (`snp`, `primers`, `amplicon`, `repeat`,

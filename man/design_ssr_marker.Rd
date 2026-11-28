@@ -30,9 +30,9 @@ window searched for the repeat.}
 
 \item{lengths}{primer lengths to try.}
 
-\item{units}{repeat-unit lengths to search for.}
+\item{units}{repeat-unit lengths to search for, as positive whole numbers.}
 
-\item{min_copies}{tandem copies required for a repeat call.}
+\item{min_copies}{tandem copies required for a repeat call, as one positive whole number.}
 
 \item{tm_range, gc_range}{accepted primer windows.}
 
