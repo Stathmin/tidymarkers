@@ -328,3 +328,14 @@ version, is the thing to re-open.
 - [`docs/user-api-surface.md`](../user-api-surface.md) — the export and class
   inventory the parity gate reads.
 - [`ROADMAP.md`](../../ROADMAP.md) — `ZT T8`, `T10`, §ZV (ZV9, ZV10).
+
+## Amendment 2026-11-28 — the row count is a snapshot, not a gate
+
+The Blocker above records gate 6 as passing `dev/metrics.R --check 2026-11-28`
+with 29 rows. Later the same night two repair rows were added (ZV56, ZV57), so
+the same command now prints 32 rows and the report is regenerated. The count
+was never part of the gate: gate 6 is a validator exit status and a report
+whose §5 says `not_run` with its reason, not a fixed number of rows. The
+sentence stays as the dated measurement it was; a reader comparing it with the
+current file should expect the repair log to grow and should read the exit
+status, not the count.
