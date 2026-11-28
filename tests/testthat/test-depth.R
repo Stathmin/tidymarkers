@@ -209,3 +209,19 @@ test_that("a confidence threshold is a real number in its range", {
   expect_error(variant_confidence(d, min_weight = "high"), "\\[0, 1\\]")
   expect_equal(nrow(variant_confidence(d, min_weight = 1)), 1L)
 })
+
+test_that("a negative depth weighs nothing, not less than nothing", {
+  # a DP below zero is not evidence; the depth term must not leave [0, 1]
+  d <- tibble::tibble(
+    chrom = c("Chr1", "Chr1", "Chr1", "Chr1"),
+    pos = 1:4,
+    depth = c(-5, -5, 0, 3),
+    genotype = c("0/0", "0/1", "0/0", "0/0")
+  )
+  v <- variant_confidence(d)
+  expect_true(all(v$weight >= 0 & v$weight <= 1))
+  expect_equal(v$weight[1:3], c(0, 0, 0))
+  expect_false(any(v$confident[1:3]))
+  expect_equal(v$weight[[4L]], 1 - exp(-1), tolerance = 1e-12)
+  expect_true(v$confident[[4L]])
+})

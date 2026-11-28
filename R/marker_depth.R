@@ -270,7 +270,9 @@ variant_confidence <- function(depth, min_depth = 3L, min_weight = 0.5) {
   alt_fraction <- ifelse(is.na(d) | is.na(ad) | d == 0, NA_real_, ad / d)
   genotype_class <- genotype_class(gt, alt_fraction)
 
-  depth_weight <- 1 - exp(-d / min_depth)
+  # A negative DP is not evidence of anything; without the floor the depth term
+  # is negative and `weight` leaves its documented [0, 1] (ADR 0039).
+  depth_weight <- pmax(0, 1 - exp(-d / min_depth))
   balance <- pmax(0, 1 - abs(alt_fraction - 0.5) / 0.5)
   balance[is.na(balance)] <- 1 # no alt_fraction -> no balance penalty
   weight <- depth_weight * ifelse(genotype_class == "het", balance, 1)

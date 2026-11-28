@@ -49,6 +49,7 @@ the file records the measurement or event that re-tested it).
 | [0036](0036-a-nested-closure-is-a-writer-of-its-own.md) | A nested closure is a writer of its own | accepted |
 | [0037](0037-the-write-vocabulary-names-every-primitive.md) | The write vocabulary names every primitive that creates a file | accepted |
 | [0038](0038-a-depth-the-writer-refuses-is-not-a-depth-the-reader-reports.md) | A depth the writer refuses is not a depth the reader reports | accepted |
+| [0039](0039-a-negative-depth-carries-no-confidence.md) | A negative depth carries no confidence, not negative confidence | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
