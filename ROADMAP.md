@@ -7140,12 +7140,15 @@ status, целые длительности), но его не звал ни о�
       вес «один вариант»; `variant_load_in()` и `zone_dropout()` держат тот же
       фолбэк; `apply_maf()` судит `pos` и колонку `maf` до join;
       `normalise_hap_freq()` отказывает `NA`/нефинитной/вне-домена доле до
-      поиска по имени (ADR 0086).
+      поиска по имени; `check_proportion()` держит то же правило для порога
+      `min_alt_freq` в `marker_attach_haplotypes()` и
+      `marker_population_checks()` (ADR 0086).
     - проверка: `Rscript dev/test.R 'alignment|frequencies'` — 74 pass / 0 fail
       (четыре новых отказа и равенство нагрузки при `NA`-весе);
       `Rscript dev/test.R
       'selection|chunk|haplotypes|panel|lax|informativeness|plots'` —
-      959 pass / 0 fail.
+      959 pass / 0 fail; `Rscript dev/test.R 'haplotypes'` — 50 pass / 0 fail
+      (четыре отказа порога); `dev/check.R --quick --no-render` — зелёный.
     - блокер: нет.
     - следствие: таблица в процентах и отрицательная доля останавливают прогон
       с номером строки, дробная позиция MAF-таблицы — тоже; неизвестный вес

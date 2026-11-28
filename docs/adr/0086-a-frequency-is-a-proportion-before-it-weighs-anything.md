@@ -62,6 +62,11 @@ same absence.
    before the name lookup. A haplotype *absent from the table* still carries
    share `0`, as documented; an unparseable share for a named haplotype no
    longer disappears into that same `0`.
+5. `check_proportion()` applies the scalar form of the rule to a *floor*:
+   `marker_attach_haplotypes(min_alt_freq = )` and
+   `marker_population_checks(min_alt_freq = )` refuse `-1`, `5` and `NA`.
+   Measured before: `-1` made the population row always pass, `5` always fail,
+   and `NA` reached base R's `if` with a message naming no argument.
 
 ## Rejected alternatives
 
@@ -93,3 +98,6 @@ same absence.
 four new refusals and the `NA`-weight load equality.
 `Rscript dev/test.R 'selection|chunk|haplotypes|panel|lax|informativeness|plots'`
 — 959 pass, 0 fail: no design path passes a value outside the domain.
+`Rscript dev/test.R 'haplotypes'` — 50 pass, 0 fail, including the four floor
+refusals and the floor still deciding the population row.
+`Rscript dev/check.R --quick --no-render` — all checks passed.
