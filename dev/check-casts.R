@@ -10,7 +10,10 @@
 #
 #  This gate makes the roster checked, not remembered: a top-level function in
 #  R/ that casts a position-like expression with `as.integer()` must call a
-#  guard first, or be registered in `dev/casts.yml` with a reason.  The scan is
+#  guard *for that expression* first, or be registered in `dev/casts.yml` with
+#  a reason.  A guard for `pos` does not bless a later `as.integer(start)`:
+#  the unit-wide test it replaced let one checked argument hide an unchecked
+#  neighbour (ZV110).  The scan is
 #  deliberately narrow: only expressions that name `pos`, `POS`, `start`, `end`,
 #  `offset`, `positions`, `pos_raw` or `stab_at` are position-like, and only the
 #  guards below count.  A cast on an internal integer object still needs an
@@ -156,14 +159,14 @@ scan_calls <- function(expr, found = list()) {
   }
   name <- call_name(expr)
   if (!is.na(name) && name %in% guard_primitive) {
-    found <- c(found, list(list(kind = "guard", name = name)))
+    found <- c(found, list(guard_call(expr, name)))
   }
   position_cast <- identical(name, "as.integer") && length(expr) == 2L &&
     mentions_position(expr[[2L]])
   threshold_cast <- name %in% c("as.integer", "as.numeric", "as.double") &&
     length(expr) == 2L && directly_names_threshold(expr[[2L]])
   if (position_cast || threshold_cast) {
-    found <- c(found, list(list(kind = "cast", name = name)))
+    found <- c(found, list(list(kind = "cast", name = name, arg = deparse_text(expr[[2L]]))))
   }
   if (identical(name, "function")) {
     return(found)
@@ -172,17 +175,54 @@ scan_calls <- function(expr, found = list()) {
   found
 }
 
+deparse_text <- function(e) paste(deparse(e), collapse = "")
+
+# One guard call: the expressions it judges and the labels it names them by.
+# `check_base_pairs(min_gap, "min_gap")` judges `min_gap` twice: as a value and
+# as the name in its message, so both spellings cover a later cast.
+guard_call <- function(expr, name) {
+  args <- as.list(expr)[-1L]
+  labels <- vapply(
+    args,
+    function(a) if (is.character(a) && length(a) == 1L && !is.na(a)) a else NA_character_,
+    character(1)
+  )
+  list(
+    kind = "guard", name = name,
+    args = vapply(args, deparse_text, character(1)),
+    labels = labels[!is.na(labels)]
+  )
+}
+
+# TRUE when one guard judged the expression a cast reads.  The guard's
+# expression must match the cast's text (the same value), its message label
+# must name it, or the cast must index a vector the guard judged whole
+# (`d$POS[idx]` after `bad_position(d$POS)`).
+guard_covers <- function(guard, cast_arg) {
+  if (identical(guard$kind, "cast")) {
+    return(FALSE)
+  }
+  any(guard$args == cast_arg) ||
+    any(guard$labels == cast_arg) ||
+    any(startsWith(cast_arg, paste0(guard$args, "[")))
+}
+
 scan_casts <- function(bodies) {
   out <- list()
   for (symbol in names(bodies)) {
     calls <- scan_calls(bodies[[symbol]])
     kinds <- vapply(calls, `[[`, character(1), "kind")
     if (!"cast" %in% kinds) next
-    first_cast <- min(which(kinds == "cast"))
-    out[[symbol]] <- list(
-      casts = sum(kinds == "cast"),
-      guarded = "guard" %in% kinds[seq_len(first_cast - 1L)]
+    cast_at <- which(kinds == "cast")
+    guarded <- vapply(
+      cast_at,
+      function(i) {
+        before <- calls[seq_len(i - 1L)]
+        any(vapply(before, guard_covers, logical(1), cast_arg = calls[[i]]$arg))
+      },
+      logical(1)
     )
+    out[[symbol]] <- list(casts = length(cast_at), guarded = all(guarded))
   }
   out
 }
@@ -227,6 +267,8 @@ self_test <- function() {
     fractional = "function(x) as.integer(x$pos + 0.5)",
     guarded = "function(x) { bad_position(x$pos); as.integer(x$pos) }",
     guarded_interval = "function(x) { bad_position(x$end); as.integer(x$end) }",
+    guarded_index = "function(x) { bad_position(x$POS); as.integer(x$POS[idx]) }",
+    cross_guard = "function(x) { bad_position(x$pos); as.integer(x$start) }",
     late = "function(x) { as.integer(x$pos); check_target_pos(x$pos) }",
     integer_internal = "function(x) as.integer(x$n)",
     labelled = "function(x) as.integer(x$count)",
@@ -242,19 +284,26 @@ self_test <- function() {
   empty <- check_casts(list(), hits)
   expected <- paste0(
     "unguarded position/threshold cast (guard it, or add to dev/casts.yml): ",
-    c("fractional", "late", "threshold", "unguarded", "unguarded_interval")
+    c("cross_guard", "fractional", "late", "threshold", "unguarded", "unguarded_interval")
   )
   if (!identical(sort(empty), sort(expected))) {
-    stop("self-test: an unguarded position cast was not caught")
+    stop(sprintf(
+      "self-test: an unguarded position cast was not caught (got: %s)",
+      paste(sort(empty), collapse = ", ")
+    ))
   }
   if (any(c("integer_internal", "labelled", "strings", "thermophilic") %in% names(hits))) {
     stop("self-test: a non-position/non-threshold cast was reported")
+  }
+  if (!isTRUE(hits[["guarded_index"]]$guarded)) {
+    stop("self-test: a guard on the indexed vector did not cover its cast")
   }
   if (!isTRUE(hits[["threshold_guarded"]]$guarded)) {
     stop("self-test: a guarded threshold cast was reported as unguarded")
   }
   ok <- check_casts(
     list(
+      list(symbol = "cross_guard", reason = "self-test"),
       list(symbol = "unguarded", reason = "self-test"),
       list(symbol = "unguarded_interval", reason = "self-test"),
       list(symbol = "fractional", reason = "self-test"),

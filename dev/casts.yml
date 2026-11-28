@@ -63,3 +63,5 @@ entries:
     reason: "`ingest_check_criteria()` refuses both thresholds at the top of the function, before this cast (ADR 0081)."
   - symbol: has_palindrome/
     reason: "the enclosing `has_palindrome()` checks all three counts before the nested scan (ADR 0052, 0063)."
+  - symbol: as_variant_row
+    reason: "the selector is judged before the filter, and the matched row's raw `pos` is judged again before the cast; a fractional row can only ever reach that abort, never a returned position (ADR 0018, 0082)."
