@@ -119,14 +119,16 @@ reprex_preserve <- function(preserve) {
 
 reprex_path <- function(path) {
   if (is.null(path)) {
-    return(tempfile("tidymarkers-reprex", fileext = ".R"))
+    path <- tempfile("tidymarkers-reprex", fileext = ".R")
+  } else {
+    if (!is.character(path) || length(path) != 1L || is.na(path)) {
+      abort_msg("`path` must be one non-missing file path or `NULL`.")
+    }
+    if (!dir.exists(dirname(path))) {
+      abort_msg("Cannot write {.path {path}}: {.path {dirname(path)}} does not exist.")
+    }
   }
-  if (!is.character(path) || length(path) != 1L || is.na(path)) {
-    abort_msg("`path` must be one non-missing file path or `NULL`.")
-  }
-  if (!dir.exists(dirname(path))) {
-    abort_msg("Cannot write {.path {path}}: {.path {dirname(path)}} does not exist.")
-  }
+  refuse_links(dirname(path), basename(path))
   path
 }
 

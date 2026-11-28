@@ -163,3 +163,16 @@ test_that("a marker_genome is anonymised through its FASTA path", {
   bs <- structure(list(path = NULL), class = "marker_genome")
   expect_error(reprex_write(bs), "no file to read")
 })
+
+test_that("marker_reprex() refuses to write through a link", {
+  dir <- withr::local_tempdir()
+  outside <- file.path(dir, "outside.R")
+  writeLines("keep", outside)
+  link <- file.path(dir, "reprex.R")
+  skip_if(!file.symlink(outside, link), "symlinks are not supported")
+  expect_error(
+    reprex_write("ACGTACGTACGTACGTACGT", link),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+})
