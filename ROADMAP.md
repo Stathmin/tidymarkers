@@ -6161,8 +6161,9 @@ ZV70 и ZV71: число пересекает границу пакета ран
   отвергается там, где контракт называет скаляр.**
     - правка: `R/marker_validate.R` — новый
       `check_nucleotide_length(x, arg, multi = FALSE)` на `bad_position()`;
-      `design_crispr_marker()` вызывает его для `spacer_lengths` с
-      `multi = TRUE`, `specificity_policy()` — для `length` как скаляра.
+      `design_crispr_marker()` и `design_rpa_marker()` вызывают его для
+      `spacer_lengths` и `primer_len` с `multi = TRUE`,
+      `specificity_policy()` — для `length` как скаляра.
       Решение —
       [ADR 0051](docs/adr/0051-a-nucleotide-length-is-whole-before-the-design-grid.md).
     - проверка: `tests/testthat/test-crispr.R` — `c(20.9, 21.5)`, `20.5`, `0`,
@@ -6170,6 +6171,8 @@ ZV70 и ZV71: число пересекает границу пакета ран
       nucleotides», `20:23` по-прежнему даёт гид названной длины;
       `test-specificity.R` — `20.9`, `0`, `-1`, `NA`, `Inf`, `c(20, 21)`,
       `"x"` отвергнуты, `20L` и `"20"` дают лестницу из 20 позиций;
+      `test-rpa.R` — `c(30.9, 31.5)`, `30.5`, `0`, `-1`, `NA`, `Inf`,
+      `c(30, NA)` как `primer_len` отвергнуты;
       `^crispr$` — 152 pass, 0 fail; `^specificity$` — 324 pass, 0 fail,
       2 skip.
     - блокер: нет; проверка идёт до сетки и движка.

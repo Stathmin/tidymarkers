@@ -16,6 +16,7 @@ with `as.integer()` before looking at it:
 | entry | cast |
 |---|---|
 | `design_crispr_marker(spacer_lengths = )` | `as.integer(spacer_lengths)` before the candidate grid |
+| `design_rpa_marker(primer_len = )` | `as.integer(primer_len)` before the length ladder |
 | `specificity_policy(length = )` | `as.integer(length)` before `mismatch_weights()` |
 
 Measured on the branch before the fix, on the `test-crispr.R` fixture:
@@ -48,8 +49,8 @@ admits one or more positive whole numbers of nucleotides through
 `bad_position()`, and returns the integer vector. A series is accepted only
 when the caller's entry takes a series:
 
-- `design_crispr_marker(spacer_lengths = )` — `multi = TRUE`, the candidate
-  series;
+- `design_crispr_marker(spacer_lengths = )` and
+  `design_rpa_marker(primer_len = )` — `multi = TRUE`, the candidate series;
 - `specificity_policy(length = )` — one target-site length.
 
 An accepted whole length behaves exactly as before; no grid, guide or weight
@@ -83,6 +84,9 @@ ladder changes for it.
   it would have truncated": `c(20.9, 21.5)`, `20.5`, `0`, `-1`, `NA`, `Inf` and
   `c(20, NA)` are refused with "positive whole numbers of nucleotides";
   `20:23` still designs a guide of a named length.
+- `tests/testthat/test-rpa.R`, "design_rpa_marker refuses a primer length it
+  would have truncated": `c(30.9, 31.5)`, `30.5`, `0`, `-1`, `NA`, `Inf` and
+  `c(30, NA)` are refused; `Rscript dev/test.R "^rpa$"` — 94 pass, 0 fail.
 - `tests/testthat/test-specificity.R`, "specificity_policy refuses a target
   length it would have truncated": `20.9`, `0`, `-1`, `NA`, `Inf`, `c(20, 21)`
   and `"x"` are refused; `20L` and `"20"` still give a 20-position ladder.

@@ -506,7 +506,8 @@ rpa_variant_gate <- function(under, pos, fwd_end = NA_real_, rev_start = NA_real
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
-#' @param primer_len primer lengths to try (RPA wants long primers, not a Tm).
+#' @param primer_len primer lengths in nt to try, one or more positive whole
+#'   numbers (RPA wants long primers, not a Tm).
 #' @param min_product,max_product the accepted amplicon window.
 #' @param design_probe also design an exo probe covering the variant?  When
 #'   `TRUE` the primers flank the variant and the probe carries the allele.
@@ -549,7 +550,7 @@ design_rpa_marker <- function(genome, snp, flank = 200L,
   }
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
-  strict_len <- as.integer(primer_len)
+  strict_len <- check_nucleotide_length(primer_len, "primer_len", multi = TRUE)
   # the ladder: relax the soft gates LEAST grave first (C6), one rung at a time,
   # never below the floors above.  The variant placement (`gate_rpa_variant`) and
   # the structure/dimers (`gate_rpa_structure`) are hard - no pair is returned

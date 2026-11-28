@@ -26,7 +26,8 @@ design_rpa_marker(
 
 \item{flank}{template half-width.}
 
-\item{primer_len}{primer lengths to try (RPA wants long primers, not a Tm).}
+\item{primer_len}{primer lengths in nt to try, one or more positive whole
+numbers (RPA wants long primers, not a Tm).}
 
 \item{min_product, max_product}{the accepted amplicon window.}
 

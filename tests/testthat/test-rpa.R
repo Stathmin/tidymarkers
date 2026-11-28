@@ -145,3 +145,12 @@ test_that("scheme_def_rpa describes the chemistry's gates, tiers and stage", {
 })
 
 test_that("the rpa DAG obeys the contract", expect_dag_invariants("rpa"))
+
+test_that("design_rpa_marker refuses a primer length it would have truncated", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(600L, 7L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 300L, ref = "T", alt = "A")
+  # 30.9 used to become a 30 nt primer, a length the caller never named
+  for (bad in list(c(30.9, 31.5), 30.5, 0L, -1L, NA, Inf, c(30L, NA))) {
+    expect_error(design_rpa_marker(genome, snp, primer_len = bad), "positive whole numbers of nucleotides")
+  }
+})
