@@ -1,0 +1,54 @@
+# Writer ledger.
+#
+# ADR 0029 and its amendments (0030-0034) say: a function that creates a file
+# declares the name first, so a link at it is refused instead of followed.
+# `Rscript dev/check-writers.R` fails on a top-level function in R/ that calls a
+# write primitive without `refuse_links()` / `declared_path()` /
+# `declared_index()` in the same body, unless it is registered here with a
+# reason. A registered symbol that no longer writes unguarded fails as stale.
+#
+# Register a helper only when the name is declared by its caller (a helper that
+# cannot know the directory) or the write never leaves a private tempdir. The
+# reason names the declaring function, so the roster stays auditable.
+
+entries:
+    - symbol: decision_solve
+      reason: >-
+          Writes the layout request to `tempfile()` in the session temp directory;
+          the name is random and is never a path a caller supplies, so no link can
+          be planted at it. The reply comes back on a pipe.
+
+    - symbol: outcomes_attach
+      reason: >-
+          Writes `ro-crate-metadata.json` inside a crate that
+          `marker_export_rocrate()` created and declared, and
+          `marker_export_outcomes()` guards `outcomes.csv` before calling it. The
+          helper never sees a caller's undeclared directory.
+
+    - symbol: patent_st26_doc
+      reason: >-
+          Writes the docx body into `output` after `marker_patent_export()` has
+          declared that exact name (ST.26 and docx share one name, ZV33).
+
+    - symbol: marker_reprex
+      reason: >-
+          Writes the script after `reprex_path()` declares the name: the helper
+          owns both branches (`NULL` makes a `tempfile()`, otherwise the caller's
+          path is checked), so the guard is one call away from the write.
+
+    - symbol: reprex_from_table
+      reason: >-
+          False positive: the body builds script text that *contains*
+          `writeLines()`, so the scanner sees a write in a string. The reprox
+          itself is written by `marker_reprex()`.
+
+    - symbol: render_design_search
+      reason: >-
+          Writes the per-step PNGs into `withr::local_tempdir()`; the only name
+          that survives, the GIF, is declared by `assemble_gif()` before
+          ImageMagick runs (ZV40).
+
+    - symbol: fold_amplicon
+      reason: >-
+          Writes `fold.fa` into `withr::local_tempdir()` so `hybrid-ss-min` reads
+          it; the directory is private to the call and removed on exit.
