@@ -6040,3 +6040,32 @@ number». Дефект меняет вердикт `insufficient_sample`/`ok`.
     - блокер: нет; проверки офлайновые, bowtie-тест пропускается без Rbowtie.
     - следствие: дробный или `Inf`-радиус больше не сужается и не меняет
       вердикт; принятые целые радиусы считаются как раньше.
+
+## ZV71. Порог в парах оснований — целое число до приведения типа
+
+Три пути дизайна приводили порог вызывающего через `as.integer()` **до**
+проверки. Измерено на ветке до правки: `as.integer(50.9)` — 50,
+`as.integer(5.9)` — 5, `as.integer(100.9)` — 100. `design_sanger_marker()`
+читал `min_dist` двумя правилами в одном вызове: запас отбора брал
+усечённые 50, а `sanger_seq_primers()` сравнивал те же 50.9 с той же
+границей, поэтому кандидат на 50.5 проходил отбор и падал в отчёте;
+`design_indel_size_marker(min_gap = 5.9)` опускал пол `gate_indel_size_gap`
+до 5 и принимал индел, который вызывающий назвал неразрешимым;
+`snp_template(flank = 100.9)` молча сужал окно до 100 п.н. для всех схем.
+
+- [x] **ZV71. `check_base_pairs()` проверяет порог до `as.integer()`.**
+    - правка: `R/marker_validate.R` — новый `check_base_pairs(x, arg)` на
+      `is_whole_number(min = 1L)`; `design_sanger_marker()` проверяет
+      `min_dist` до построения сетки, `design_indel_size_marker()` —
+      `min_gap` до чтения аллелей, `snp_template()` — `flank` до окна.
+      Решение —
+      [ADR 0048](docs/adr/0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md).
+    - проверка: `tests/testthat/test-sanger.R` — `min_dist = 50.9` и
+      `flank = 100.5` отвергнуты с «positive whole number of base pairs»;
+      `test-indel-size.R` — `min_gap = 5.9` и `flank = 250.5`; `test-genome.R`
+      — `snp_template(flank = 10.9)` отвергнут, `10L` даёт окно 21 п.н.;
+      `sanger|indel-size|^genome$` — 243 pass, 0 fail, 1 skip.
+    - блокер: нет; проверки офлайновые, движок не нужен.
+    - следствие: дробный, нулевой, отрицательный, `Inf` или векторный порог
+      отвергается сообщением пакета до любой работы с сеткой; принятые целые
+      пороги считаются как раньше, ни один принятый дизайн не меняется.

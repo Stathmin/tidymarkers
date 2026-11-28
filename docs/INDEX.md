@@ -205,6 +205,9 @@ Other vignettes:
 - [ADR 0047](adr/0047-a-search-radius-is-a-whole-number-before-the-cast.md) — a
   `max_mismatch` or `k` is checked before `as.integer()`, so `1.9` no longer
   scans radius 1 and `Inf` no longer reaches a base R error.
+- [ADR 0048](adr/0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md) — a
+  `min_dist`, `min_gap` or `flank` is checked before `as.integer()`, so `5.9`
+  no longer lowers a resolvable-gap floor to 5.
 
 ## Operator decisions
 

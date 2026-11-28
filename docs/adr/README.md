@@ -58,6 +58,7 @@ the file records the measurement or event that re-tested it).
 | [0045](0045-a-position-is-a-whole-number-before-the-cast.md) | A position is a whole number before the cast | accepted |
 | [0046](0046-a-design-key-names-every-input-the-design-reads.md) | A design key names every input the design reads | accepted |
 | [0047](0047-a-search-radius-is-a-whole-number-before-the-cast.md) | A search radius is a whole number before the cast | accepted |
+| [0048](0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md) | A base-pair threshold is a whole number before the cast | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
