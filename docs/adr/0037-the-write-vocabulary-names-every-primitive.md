@@ -81,8 +81,9 @@ the two new bodies exist only in the self-test. The audit recipe is widened to
 - A new primitive still has to be added by hand, but the omission now shows up
   as a test failure when someone removes one, and the audit recipe (enumerate
   calls by name, diff against the list) is repeatable.
-- The scan remains a source heuristic: it proves the unit contains a refusing
-  call, not that the refusal runs before the write. A unit that builds an index
+- The scan remains a source heuristic: it proves a guard call appears before
+  the first write in body order, not that the refusal runs on every path. A unit
+  that builds an index
   through an engine (`Rbowtie::bowtie_build`, `Rsubread::buildindex`) is
   covered only because `declared_index()` sits in the same unit.
 - The three ledger entries are about directories, not files: if one of those

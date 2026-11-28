@@ -90,8 +90,8 @@ collect_units <- function(expr, prefix, out) {
   out
 }
 
-# Write and guard calls in one unit, not descending into a nested definition:
-# that definition is its own unit and needs its own guard.
+# Write and guard calls in one unit, in body order, not descending into a
+# nested definition: that definition is its own unit and needs its own guard.
 calls_in <- function(expr) {
   found <- character()
   walk <- function(e) {
@@ -109,7 +109,7 @@ calls_in <- function(expr) {
     invisible(NULL)
   }
   walk(expr)
-  unique(found)
+  found
 }
 
 # Function units in R/, from the parse tree so a call in a comment or a string
@@ -124,16 +124,19 @@ r_functions <- function(files = list.files("R", "\\.R$", full.names = TRUE)) {
   out
 }
 
-# Every write call in a unit, and whether that same unit declares a name first.
+# Every write call in a unit, and whether a guard call comes before the first
+# one.  Position is body order, not execution order: a guard in an untaken
+# branch still counts, which is why this stays a heuristic (ADR 0037).
 scan_writers <- function(bodies) {
   out <- list()
   for (symbol in names(bodies)) {
     calls <- calls_in(bodies[[symbol]])
     writes <- intersect(calls, write_primitive)
     if (!length(writes)) next
+    guards <- which(calls %in% guard_primitive)
     out[[symbol]] <- list(
-      writes = sort(writes),
-      guarded = any(guard_primitive %in% calls)
+      writes = sort(unique(writes)),
+      guarded = length(guards) > 0L && min(guards) < min(which(calls %in% write_primitive))
     )
   }
   out
@@ -180,7 +183,8 @@ self_test <- function() {
     strings = "function(x) paste0(\"writeLines(\", x, \")\")",
     sequences = "function(p) Biostrings::writeXStringSet(x, p)",
     archive = "function(d, a) utils::untar(a, exdir = d)",
-    zipped = "function(d, a) utils::unzip(a, exdir = d)"
+    zipped = "function(d, a) utils::unzip(a, exdir = d)",
+    late = "function(p) { writeLines(\"x\", p); refuse_links(p, \"a.csv\") }"
   )
   exprs <- Map(
     function(name, text) parse(text = paste0(name, " <- ", text))[[1L]],
@@ -192,7 +196,7 @@ self_test <- function() {
   empty <- check_writers(list(), hits)
   expected <- paste0(
     "undeclared writer (guard it, or add to dev/writers.yml): ",
-    c("archive", "cached", "imported", "laundered/f", "sequences", "undeclared", "zipped")
+    c("archive", "cached", "imported", "late", "laundered/f", "sequences", "undeclared", "zipped")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded writer was not caught")
@@ -208,7 +212,8 @@ self_test <- function() {
       list(symbol = "laundered/f", reason = "self-test"),
       list(symbol = "sequences", reason = "self-test"),
       list(symbol = "archive", reason = "self-test"),
-      list(symbol = "zipped", reason = "self-test")
+      list(symbol = "zipped", reason = "self-test"),
+      list(symbol = "late", reason = "self-test")
     ),
     hits
   )
