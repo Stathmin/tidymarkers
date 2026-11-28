@@ -391,6 +391,12 @@ parse_location <- function(location) {
   }
 
   parts <- strsplit(loc, ",", fixed = TRUE)[[1]]
+  coord <- function(txt) {
+    if (bad_position(txt, min = 1L)) {
+      abort_msg(gettextf("GenBank location `%s` is not a whole range.", location))
+    }
+    as.integer(txt)
+  }
   starts <- integer(0)
   ends <- integer(0)
   part_strands <- character(0)
@@ -404,28 +410,22 @@ parse_location <- function(location) {
     }
     p <- gsub("[<>]", "", trimws(p))
     if (grepl("\\^", p)) {
-      left <- suppressWarnings(as.integer(sub("\\^.*$", "", p)))
-      if (!is.na(left)) {
-        starts <- c(starts, left)
-        ends <- c(ends, left)
-        part_strands <- c(part_strands, part_strand)
-      }
+      left <- coord(sub("\\^.*$", "", p))
+      starts <- c(starts, left)
+      ends <- c(ends, left)
+      part_strands <- c(part_strands, part_strand)
     } else if (grepl("\\.\\.", p)) {
       bounds <- strsplit(p, "..", fixed = TRUE)[[1]]
-      s <- suppressWarnings(as.integer(bounds[1]))
-      e <- suppressWarnings(as.integer(bounds[2]))
-      if (!is.na(s)) {
-        starts <- c(starts, s)
-        ends <- c(ends, e)
-        part_strands <- c(part_strands, part_strand)
-      }
+      s <- coord(bounds[1])
+      e <- coord(bounds[2])
+      starts <- c(starts, s)
+      ends <- c(ends, e)
+      part_strands <- c(part_strands, part_strand)
     } else {
-      v <- suppressWarnings(as.integer(p))
-      if (!is.na(v)) {
-        starts <- c(starts, v)
-        ends <- c(ends, v)
-        part_strands <- c(part_strands, part_strand)
-      }
+      v <- coord(p)
+      starts <- c(starts, v)
+      ends <- c(ends, v)
+      part_strands <- c(part_strands, part_strand)
     }
   }
 

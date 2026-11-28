@@ -644,6 +644,21 @@ test_that("read_genbank keeps a nested complement inside join as mixed strand", 
   expect_equal(cds$strand, "*")
 })
 
+test_that("read_genbank refuses a location that is not a whole range", {
+  gb <- withr::local_tempfile(fileext = ".gbk")
+  unlink(paste0(gb, ".gbidx"))
+  writeLines(c(
+    "LOCUS       TESTLOCUS         60 bp    DNA     linear   UNK 01-JAN-2026",
+    "FEATURES             Location/Qualifiers",
+    "     source          1..60",
+    "     CDS             100.5..120",
+    "ORIGIN",
+    "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+    "//"
+  ), gb)
+  expect_error(read_genbank(gb), "100\\.5.*not a whole range")
+})
+
 test_that("read_genbank folds a wrapped qualifier value into one feature", {
   gb <- withr::local_tempfile(fileext = ".gbk")
   unlink(paste0(gb, ".gbidx"))
