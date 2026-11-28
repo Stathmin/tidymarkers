@@ -87,6 +87,29 @@ test_that("any marker can carry population haplotypes and report ALT frequency",
   expect_equal(ch$status[ch$name == "ALT freq"], "ok")
 })
 
+test_that("a frequency floor is a proportion (ADR 0086)", {
+  snp <- tibble::tibble(chrom = "Chr1", pos = 305L, ref = "C", alt = "T")
+  h <- tibble::tibble(
+    haplotype = c("H1", "H2"),
+    freq = c(0.6, 0.4), chrom = "Chr1", pos = 305L,
+    ref = "C", alt = c("T", "C")
+  )
+  marker <- list(snp = snp)
+  expect_error(
+    marker_attach_haplotypes(marker, h, snp, min_alt_freq = 5),
+    "\\[0, 1\\]"
+  )
+  expect_error(
+    marker_attach_haplotypes(marker, h, snp, min_alt_freq = NA_real_),
+    "\\[0, 1\\]"
+  )
+  m <- marker_attach_haplotypes(marker, h, snp)
+  expect_error(marker_population_checks(m, min_alt_freq = -1), "\\[0, 1\\]")
+  expect_error(marker_population_checks(m, min_alt_freq = NA_real_), "\\[0, 1\\]")
+  # the marker's own floor is the default and still decides the row
+  expect_equal(marker_population_checks(m, min_alt_freq = 0.7)$status[1L], "broken")
+})
+
 test_that("assemble_kasp_assay accepts haplotypes and reports the hits", {
   skip_if_no_oligoarrayaux()
   m <- hap_fixture()

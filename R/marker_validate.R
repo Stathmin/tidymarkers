@@ -177,6 +177,23 @@ check_variant_weights <- function(x, arg = "pop_freq") {
   w
 }
 
+#' Check one proportion argument
+#'
+#' A frequency floor is a proportion like a frequency is: `min_alt_freq = -1`
+#' made the population check always pass, `5` made it always fail, and `NA`
+#' reached base R's `if` with a message naming no argument (ADR 0086).
+#' @param x the candidate proportion.
+#' @param arg the argument name for the message.
+#' @return the proportion as a single number.
+#' @keywords internal
+#' @noRd
+check_proportion <- function(x, arg) {
+  if (length(x) != 1L || is.na(x) || bad_proportion(x)) {
+    abort_msg("`{arg}` must be one proportion in [0, 1]; got {format(x)}.")
+  }
+  as.numeric(x)
+}
+
 #' Check one coordinate before the read
 #'
 #' `as.integer()` truncates `2.9` to `2`, so a region read silently starts at a

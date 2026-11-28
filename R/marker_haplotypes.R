@@ -396,6 +396,7 @@ haplotype_hits <- function(haplotypes, snp, as_start, as_end, alt_hap = characte
 #' @export
 marker_attach_haplotypes <- function(marker, haplotypes, snp = marker$snp,
                                      min_alt_freq = 0.01) {
+  min_alt_freq <- check_proportion(min_alt_freq, "min_alt_freq")
   if (is.null(snp) || !nrow(snp)) {
     abort_msg("The marker has no `snp` row to anchor haplotypes.")
   }
@@ -531,7 +532,11 @@ marker_population_checks <- function(marker, min_alt_freq = NULL) {
   if (is.null(pop) || !nrow(pop)) {
     return(tibble::tibble())
   }
-  thr <- min_alt_freq %||% pop$min_alt_freq[1L] %||% 0.01
+  thr <- if (is.null(min_alt_freq)) {
+    pop$min_alt_freq[1L] %||% 0.01
+  } else {
+    check_proportion(min_alt_freq, "min_alt_freq")
+  }
   out <- tibble::tibble(
     level = "site",
     name = c("ALT freq", "haplotypes", "ALT haplotypes"),
