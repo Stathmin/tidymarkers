@@ -6,6 +6,13 @@ test_that("mask_positions blanks the requested bases and ignores out-of-range", 
   expect_equal(as.character(mask_positions("ACGT", c(0L, 99L))), "ACGT") # ignored
 })
 
+test_that("mask_positions refuses a position that is not a whole number", {
+  expect_error(mask_positions("ACGTACGT", 2.9), "whole numbers")
+  expect_error(mask_positions("ACGTACGT", Inf), "whole numbers")
+  expect_error(mask_positions("ACGTACGT", NA_real_), "whole numbers")
+  expect_error(mask_positions("ACGTACGT", "abc"), "whole numbers")
+})
+
 test_that("max_footprint_variants enforces N-masking as a hard constraint", {
   withr::local_envvar(LANGUAGE = "en")
   skip_if_no_oligoarrayaux()

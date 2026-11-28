@@ -599,6 +599,10 @@ fasta_index <- function(path) {
 #' @export
 mask_positions <- function(seq, positions) {
   s <- Biostrings::DNAString(as.character(seq))
+  # any whole number is a position; out-of-range stays ignored, as documented
+  if (any(bad_position(positions, min = -.Machine$integer.max))) {
+    abort_msg("`positions` must be whole numbers.")
+  }
   positions <- as.integer(positions)
   positions <- positions[!is.na(positions) & positions >= 1L & positions <= length(s)]
   if (!length(positions)) {
