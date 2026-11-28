@@ -1,0 +1,37 @@
+entries:
+  - symbol: arms_stab_policy
+    reason: "`stab_at` is a 3'-end count from the design configuration, not a genomic coordinate."
+  - symbol: artefact_decisions/
+    reason: "`tg` is a normalised target row."
+  - symbol: normalise_haplotypes
+    reason: "the raw `pos` column is kept in `raw_pos` and judged by `bad_position()` before any use; the cast only canonicalises it."
+  - symbol: linked_template_sig
+    reason: "`positions` comes from the validated haplotype table."
+  - symbol: normalise_genotypes
+    reason: "`bad_position(g$pos)` aborts before `out` is returned; no refused value is used."
+  - symbol: read_variants_vcf_vroom
+    reason: "vroom reads POS with type `i`, so a non-integer spelling is NA and read_variants_vcf() refuses it."
+  - symbol: lamp_variant_gate
+    reason: "`pos` is the anchor of an assay built from a validated variant."
+  - symbol: panel_haplotype_contract
+    reason: "marker_design_panel() validates `variants` through panel_variants() before the contract."
+  - symbol: patent_locus
+    reason: "`marker$snp` was built from a normalised target row."
+  - symbol: patent_template_offset
+    reason: "`marker$snp` was built from a normalised target row."
+  - symbol: oligo_letters
+    reason: "`bases$pos` is the layout index of an oligo, not a genomic coordinate."
+  - symbol: region_targets
+    reason: "`v` is region_variants(plan), built from the validated plan table."
+  - symbol: region_signals/
+    reason: "`ok` is the per-target report table, built from validated targets."
+  - symbol: reprex_shift_variants
+    reason: "`pos` is a validated target anchor; the cast shifts it into window coordinates."
+  - symbol: rpa_variant_gate
+    reason: "`pos` is the assay's variant anchor."
+  - symbol: target_snp
+    reason: "`row` is a normalised target row (normalise_targets())."
+  - symbol: hit_profile/
+    reason: "`pos` is a validated footprint coordinate carried by the enclosing profile."
+  - symbol: normalise_locus_strand
+    reason: "`snp` was built by target_snp() from a normalised target row."

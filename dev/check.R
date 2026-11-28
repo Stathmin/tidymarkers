@@ -199,6 +199,17 @@ step("writer roster", function() {
   ok("every writer declares its names, or is registered with a reason")
 })
 
+# 2b3. position-cast roster --------------------------------------------------
+step("position casts", function() {
+  # every `as.integer()` on a position-like expression is guarded or justified
+  # (ADR 0068 and its siblings); dev/casts.yml holds the internal casts
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-casts.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-casts.R failed (status ", status, ")")
+  }
+  ok("every position cast is guarded, or registered with a reason")
+})
+
 # 2c. licence invariant ------------------------------------------------------
 step("licences", function() {
   # FOSS-only: a declared dependency whose licence is not permissive must fail
