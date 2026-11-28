@@ -188,6 +188,17 @@ step("hand-roll registry", function() {
   ok("every hand-rolled sequence primitive is registered or replaced")
 })
 
+# 2b2. writer roster ---------------------------------------------------------
+step("writer roster", function() {
+  # every function that creates a file declares its names first (ADR 0029,
+  # and its amendments 0030-0034); dev/writers.yml holds the justified helpers
+  status <- system2(file.path(R.home("bin"), "Rscript"), "dev/check-writers.R")
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/check-writers.R failed (status ", status, ")")
+  }
+  ok("every writer declares its names, or is registered with a reason")
+})
+
 # 2c. licence invariant ------------------------------------------------------
 step("licences", function() {
   # FOSS-only: a declared dependency whose licence is not permissive must fail
