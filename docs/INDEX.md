@@ -164,6 +164,10 @@ Other vignettes:
   index is a declared set of names too: the bowtie, BLAST and FM builders refuse
   a link at any file the engine creates, and a linked `.1.ebwt`/`.nsq`/`.files`
   is not counted as a finished index.
+- [ADR 0035](adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md) —
+  the writer gate's guard list names only calls that refuse a name; a cache hit
+  test reports and is not a guard, and the write scanner matches the imported
+  call form as well as the namespaced one.
 
 ## Operator decisions
 
