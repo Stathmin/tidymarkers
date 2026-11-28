@@ -75,6 +75,9 @@ test_that("write_variants_vcf refuses a row its own readers drop or reinterpret"
   expect_error(write_variants_vcf(v(pos = 0L)), "positive integer")
   expect_error(write_variants_vcf(v(pos = 3e9)), "positive integer")
   expect_error(write_variants_vcf(v(pos = 100.5)), "positive integer")
+  # a character column is judged by its spelling, not by what as.integer() makes
+  expect_error(write_variants_vcf(v(pos = "100.5")), "positive integer")
+  expect_error(write_variants_vcf(v(pos = "1e3")), "positive integer")
   # a tab or line break becomes another column instead of staying in the field
   expect_error(write_variants_vcf(v(ref = "A\tB")), "tab or line break")
   expect_error(write_variants_vcf(v(chrom = "4\n1")), "tab or line break")
@@ -83,6 +86,7 @@ test_that("write_variants_vcf refuses a row its own readers drop or reinterpret"
   # DP=NA is what `as.integer(1e10)` writes, with a warning; refuse instead
   expect_error(write_variants_vcf(v(depth = 1e10)), "non-negative integer")
   expect_error(write_variants_vcf(v(depth = -1)), "non-negative integer")
+  expect_error(write_variants_vcf(v(depth = "30.9")), "non-negative integer")
 })
 
 test_that("write_variants_vcf writes one record per ALT, as it reads back", {

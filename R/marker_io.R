@@ -958,8 +958,7 @@ write_variants_vcf <- function(x, path = NULL) {
       i = "The readers fold every other character to `N`, so the file would name a different base."
     )
   }
-  pos <- suppressWarnings(as.integer(x$pos))
-  bad_pos <- is.na(pos) | pos < 1L | (is.numeric(x$pos) & pos != x$pos)
+  bad_pos <- bad_position(x$pos)
   if (any(bad_pos)) {
     abort_msg(
       gettextf(
@@ -968,9 +967,8 @@ write_variants_vcf <- function(x, path = NULL) {
       )
     )
   }
-  dep <- suppressWarnings(as.integer(x$depth))
-  bad_depth <- !is.na(x$depth) &
-    (is.na(dep) | dep < 0L | (is.numeric(x$depth) & dep != x$depth))
+  pos <- as.integer(x$pos)
+  bad_depth <- !is.na(x$depth) & bad_position(x$depth, min = 0L)
   if (any(bad_depth)) {
     abort_msg(
       gettextf(
@@ -979,6 +977,7 @@ write_variants_vcf <- function(x, path = NULL) {
       )
     )
   }
+  dep <- as.integer(x$depth)
   records <- paste(
     as.character(x$chrom), pos, ".", toupper(x$ref),
     toupper(x$alt), ".", ".",
