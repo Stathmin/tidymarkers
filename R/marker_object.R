@@ -164,14 +164,19 @@ variant_type <- function(ref, alt) {
 design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, ...) {
   need_cols(loci, c("chrom", "pos", "ref", "alt"), arg = "loci")
   one <- function(ch, pos, ref, alt, cores) {
-    # the same canonical row `design_markers()` designs; only `ref`/`alt` are read
-    snp <- locus_row(tibble::tibble(chrom = ch, pos = pos, ref = ref, alt = alt))
-    type <- variant_type(snp$ref, snp$alt)
+    # `locus_row()` judges the position, so a bad row becomes an error verdict
+    # below instead of aborting the whole batch (ZV105).
+    snp <- NULL
     # one schema for every verdict, so the doomed/ok/error rows cannot drift
     row <- function(strand = NA_character_, amplicon = NA_integer_, discrimination = NA_real_,
                     n_fail = NA_integer_, verdict = "fail", note = NA_character_) {
+      chrom_v <- if (is.null(snp)) as.character(ch) else snp$chrom
+      pos_v <- if (is.null(snp)) NA_integer_ else snp$pos
+      ref_v <- if (is.null(snp)) as.character(ref) else snp$ref
+      alt_v <- if (is.null(snp)) as.character(alt) else snp$alt
       tibble::tibble(
-        chrom = snp$chrom, pos = snp$pos, ref = snp$ref, alt = snp$alt, type = type,
+        chrom = chrom_v, pos = pos_v, ref = ref_v, alt = alt_v,
+        type = variant_type(ref_v, alt_v),
         strand = strand, amplicon = amplicon, discrimination = discrimination,
         n_fail = n_fail, verdict = verdict, note = note
       )
@@ -183,6 +188,7 @@ design_kasp_markers <- function(genome, loci, variants = loci, BPPARAM = NULL, .
     res <- withCallingHandlers(
       tryCatch(
         {
+          snp <- locus_row(tibble::tibble(chrom = ch, pos = pos, ref = ref, alt = alt))
           a <- rlang::exec(assemble_kasp_assay, genome, snp, variants = variants, !!!dots)
           if (is_kasp_doomed(a)) {
             list(row = row(note = a$reason), marker = NULL)

@@ -109,6 +109,14 @@ design_markers <- function(genome, loci, scheme = "snp", ..., context = NULL) {
 #' @keywords internal
 #' @noRd
 locus_row <- function(loc) {
+  bad <- bad_position(loc$pos)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(gettextf(
+      "`loc` needs a positive whole `pos`; got %s.",
+      encodeString(as.character(loc$pos[[i]]))
+    ))
+  }
   tibble::tibble(
     chrom = as.character(loc$chrom), pos = as.integer(loc$pos),
     ref = as.character(loc$ref), alt = as.character(loc$alt),

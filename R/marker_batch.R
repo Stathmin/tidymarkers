@@ -142,7 +142,8 @@ design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL,
     # `design_markers()` is this table minus the objects and the diagnostics
     return(tibble::tibble(
       chrom = as.character(out$chrom),
-      pos = as.integer(out$pos),
+      # a bad row is reported as NA, never truncated to a plausible neighbour
+      pos = as.integer(ifelse(bad_position(out$pos), NA, out$pos)),
       ref = as.character(out$ref),
       alt = as.character(out$alt),
       scheme = out$scheme,

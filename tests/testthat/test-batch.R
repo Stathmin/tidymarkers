@@ -286,3 +286,12 @@ test_that("as_marker_solved refuses an object it cannot continue", {
   solved <- structure(list(report = tibble::tibble()), class = "marker_solved")
   expect_identical(as_marker_solved(solved), solved)
 })
+
+test_that("a locus row refuses a position that is not whole", {
+  ok <- tibble::tibble(chrom = "Chr1", pos = 10L, ref = "A", alt = "G")
+  expect_identical(locus_row(ok)$pos, 10L)
+  fractional <- tibble::tibble(chrom = "Chr1", pos = 10.9, ref = "A", alt = "G")
+  expect_error(locus_row(fractional), "positive whole")
+  negative <- tibble::tibble(chrom = "Chr1", pos = -5, ref = "A", alt = "G")
+  expect_error(locus_row(negative), "positive whole")
+})
