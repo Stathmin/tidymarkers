@@ -137,11 +137,12 @@ ensembl_variants <- function(chrom, start, end,
 #' @family input
 #' @export
 snp_template <- function(genome, chrom, pos, flank = 150L) {
+  flank <- check_base_pairs(flank, "flank")
   # a target nearer an end than `flank` gets the window it has: asking for
   # coordinates past the sequence raises, and a clipped window is still a window
   len <- genome_length(genome, chrom)
-  lo <- max(1L, as.integer(pos) - as.integer(flank))
-  hi <- min(len, as.integer(pos) + as.integer(flank))
+  lo <- max(1L, as.integer(pos) - flank)
+  hi <- min(len, as.integer(pos) + flank)
   seq <- get_region(genome, chrom, lo, hi)
   seq <- Biostrings::DNAString(as.character(seq))
   list(seq = seq, snp_i = as.integer(pos) - lo + 1L)

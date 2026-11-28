@@ -55,6 +55,13 @@ test_that("design helpers accept a marker_genome (no whole genome in RAM)", {
   expect_equal(nrow(hint), 2L)
 })
 
+test_that("snp_template refuses a fractional flank before the window is cast", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(100L, 1L)))
+  # as.integer(10.9) is 10: the window would be one base narrower
+  expect_error(snp_template(genome, "Chr1", 20L, flank = 10.9), "positive whole number of base pairs")
+  expect_equal(length(snp_template(genome, "Chr1", 20L, flank = 10L)$seq), 21L)
+})
+
 test_that("in_silico_pcr works through an indexed marker_genome", {
   skip_if_not_installed("Rsamtools")
   fa <- withr::local_tempfile(fileext = ".fa")

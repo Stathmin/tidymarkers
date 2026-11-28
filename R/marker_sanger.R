@@ -508,6 +508,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
                                  lengths = 18:25, tm_range = KASP_SANGER_LIMITS$tm,
                                  gc_range = KASP_SANGER_LIMITS$gc,
                                  check_unique = TRUE, population = NULL, ..., engines = NULL) {
+  min_dist <- check_base_pairs(min_dist, "min_dist")
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   si <- tmpl$snp_i
   amp_pad <- KASP_SANGER_FLOOR$amplicon
@@ -527,7 +528,7 @@ design_sanger_marker <- function(genome, snp, flank = 500L,
   grid <- grid |>
     dplyr::filter(dplyr::between(.data$product, min_product - amp_pad, max_product + amp_pad)) |>
     dplyr::mutate(
-      m_dist = pmin(si - .data$end_f, .data$start_r - si) - as.integer(min_dist),
+      m_dist = pmin(si - .data$end_f, .data$start_r - si) - min_dist,
       m_amplicon = pmin(.data$product - min_product, max_product - .data$product),
       m_tm = pmin(
         .data$tm_f - tm_range[1L], tm_range[2L] - .data$tm_f,

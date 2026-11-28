@@ -142,6 +142,7 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
                                      lengths = 18:25,
                                      tm_range = KASP_INDEL_SIZE_LIMITS$tm,
                                      gc_range = KASP_LIMITS$gc, ..., engines = NULL) {
+  min_gap <- check_base_pairs(min_gap, "min_gap")
   ref <- as.character(snp$ref)[1L]
   alt <- as.character(snp$alt)[1L]
   if (nchar(ref) == nchar(alt)) {
@@ -151,8 +152,8 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
   delta <- nchar(alt) - nchar(ref)
   # the resolvable-gap gate is soft, but its floor is bounded: below a capillary
   # difference there is no marker, so fail here rather than search
-  gap_floor <- -(as.integer(min_gap) - KASP_INDEL_SIZE_LIMITS$capillary_gap)
-  if (abs(delta) - as.integer(min_gap) < gap_floor) {
+  gap_floor <- -(min_gap - KASP_INDEL_SIZE_LIMITS$capillary_gap)
+  if (abs(delta) - min_gap < gap_floor) {
     cli::cli_inform(gettext("The REF/ALT size difference is below `min_gap`; use capillary/PAGE or a longer indel."))
     return(NULL)
   }
@@ -176,7 +177,7 @@ design_indel_size_marker <- function(genome, snp, flank = 250L,
   grid <- grid |>
     dplyr::filter(dplyr::between(.data$product, bar[1L] - amp_pad, bar[2L] + amp_pad)) |>
     dplyr::mutate(
-      m_gap = as.numeric(abs(delta) - as.integer(min_gap)),
+      m_gap = as.numeric(abs(delta) - min_gap),
       m_amplicon = pmin(.data$product - bar[1L], bar[2L] - .data$product),
       m_tm = pmin(
         .data$tm_f - tm_range[1L], tm_range[2L] - .data$tm_f,

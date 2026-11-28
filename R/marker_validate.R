@@ -50,6 +50,23 @@ check_scan_radius <- function(x, arg, min = 0L) {
   as.integer(x)
 }
 
+#' Check a base-pair threshold before the cast
+#'
+#' `as.integer()` truncates `5.9` to `5`, so a design gate silently accepts a
+#' winner its caller's threshold rejects (ADR 0048).  The check runs on the
+#' value the caller gave and returns the integer the designer can use.
+#' @param x the candidate number of base pairs.
+#' @param arg the argument name for the message.
+#' @return the threshold as a single integer.
+#' @keywords internal
+#' @noRd
+check_base_pairs <- function(x, arg) {
+  if (!is_whole_number(x, min = 1L)) {
+    abort_msg("`{arg}` must be one positive whole number of base pairs.")
+  }
+  as.integer(x)
+}
+
 #' Which positions are not positive whole numbers?
 #'
 #' The vectorised counterpart of `is_whole_number()` for a coordinate column.

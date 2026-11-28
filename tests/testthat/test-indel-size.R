@@ -55,6 +55,20 @@ test_that("a sub-resolvable size difference is declined with a message", {
   expect_message(design_indel_size_marker(genome, snp, min_gap = 5L), "min_gap")
 })
 
+test_that("a fractional min_gap is refused before it is truncated", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(400L, 5L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = "A", alt = "ATTTTTT")
+  # as.integer(5.9) is 5: the resolvable floor would move without a word
+  expect_error(
+    design_indel_size_marker(genome, snp, min_gap = 5.9),
+    "positive whole number of base pairs"
+  )
+  expect_error(
+    design_indel_size_marker(genome, snp, flank = 250.5),
+    "positive whole number of base pairs"
+  )
+})
+
 test_that("the resolvable-gap gate is evaluated and relaxes to the capillary floor (C7)", {
   skip_if_no_oligoarrayaux()
   W <- bseq(300L, 8L)

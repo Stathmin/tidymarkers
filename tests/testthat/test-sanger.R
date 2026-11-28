@@ -52,6 +52,20 @@ test_that("design_sanger_marker returns a unique amplicon with the variant insid
   expect_true(all(c("PCR_F", "PCR_R", "read_F", "read_R") %in% names(oligos)))
 })
 
+test_that("a fractional base-pair threshold is refused before it is truncated", {
+  genome <- Biostrings::DNAStringSet(c(Chr1 = bseq(400L, 2L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = "A", alt = "G")
+  # as.integer(50.9) is 50: the read-start bar would move without a word
+  expect_error(
+    design_sanger_marker(genome, snp, min_dist = 50.9),
+    "positive whole number of base pairs"
+  )
+  expect_error(
+    design_sanger_marker(genome, snp, flank = 100.5),
+    "positive whole number of base pairs"
+  )
+})
+
 test_that("print summarises the marker and its sequencing primers", {
   m <- structure(
     list(
