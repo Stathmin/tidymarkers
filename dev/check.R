@@ -10,7 +10,9 @@
 #   2a. prose is free of filler phrases and comment antipatterns (see
 #       dev/prose-tics.R; the contrastive "X, not Y" style is never gated)
 #   2b. every hand-rolled sequence primitive is registered with a reason
-#   2d. the MCP contract is consistent (dev/check-mcp-parity.R)
+#   2b3. every position cast is guarded or registered with a reason (dev/check-casts.R)
+#   2b4. the current day's run metrics match the row contract (dev/metrics.R)
+#   2e. the MCP contract is consistent (dev/check-mcp-parity.R)
 #   2e. the exported surface is consistent (dev/check-user-api.R)
 #   3b. each registered replacement becomes a `supersedes` edge in the graph
 #    3. every criterion is falsifiable; docs/INDEX.md and the artifact manifest
