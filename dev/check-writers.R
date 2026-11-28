@@ -18,10 +18,11 @@
 #    - an unguarded write has no ledger entry        (new undeclared writer)
 #    - a ledger entry no longer has a write          (stale justification)
 #    - an entry has no reason
-#  Passes `--self-test`: the checker is run against one unguarded and one
-#  guarded synthetic body, so a scanner that stopped matching is caught.
+#  Passes a built-in self-test on every run: the checker is run against
+#  synthetic guarded and unguarded bodies, so a scanner that stopped matching
+#  is caught.
 #
-#  Run:  Rscript dev/check-writers.R [--self-test]
+#  Run:  Rscript dev/check-writers.R
 # =============================================================================
 
 root <- local({
@@ -225,7 +226,6 @@ self_test <- function() {
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
-args <- commandArgs(trailingOnly = TRUE)
 self_test()
 bodies <- r_functions()
 hits <- scan_writers(bodies)
