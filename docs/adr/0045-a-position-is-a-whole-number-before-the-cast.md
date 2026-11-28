@@ -129,3 +129,19 @@ column passes.
 Verification: `tests/testthat/test-annotate.R` refuses `2801.5`, `-1` and `abc`
 and reads `2801`/`2900` unchanged; `Rscript dev/test.R annotate` — 10 pass,
 0 fail, 5 skip.
+
+## Amendment (2026-11-28): the mask helper applies the same rule
+
+`mask_positions()` cast its `positions` vector with `as.integer()` before the
+range filter, so `2.9` masked base 2 and `"abc"` raised base R's
+"NAs introduced by coercion" warning instead of a message. Its documented
+contract keeps positions outside the sequence ignored, so this is not
+`check_scan_radius()` (negative and zero stay silently ignored); the rule is
+only "whole in its spelling", which `bad_position(positions,
+min = -.Machine$integer.max)` answers.
+
+The helper now refuses `2.9`, `Inf`, `NA` and `"abc"` with
+`` `positions` must be whole numbers. `` and keeps `c(0L, 99L)` ignored as
+before. Verification: `tests/testthat/test-masking.R` refuses the four values
+and keeps the range case; `Rscript dev/test.R "^masking$|^io$"` — 243 pass,
+0 fail, 3 skip.
