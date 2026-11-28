@@ -53,6 +53,13 @@
 screen_snp_targets <- function(variants, genome, lengths = 20:27, strands = c("+", "-"),
                                clean_3p = 5L, hotzone = 8L, linked = NULL,
                                limits = KASP_LIMITS) {
+  # `lengths`, `clean_3p` and `hotzone` reach IRanges arithmetic and a
+  # comparison: a fraction shifted the window and was refused later as
+  # `start`/`end`, and `hotzone = 7.9` silently tolerated only 7 variants
+  # (ADR 0062).  Validate the caller's value before the grid exists.
+  lengths <- check_nucleotide_length(lengths, "lengths", multi = TRUE)
+  clean_3p <- check_scan_radius(clean_3p, "clean_3p", min = 1L)
+  hotzone <- check_scan_radius(hotzone, "hotzone", min = 0L)
   v <- tibble::as_tibble(variants)
   need_cols(v, c("chrom", "pos"), arg = "variants")
   chroms <- unique(v$chrom)

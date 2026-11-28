@@ -72,6 +72,7 @@ the file records the measurement or event that re-tested it).
 | [0059](0059-an-as-primer-anchor-is-whole-before-the-window.md) | An AS-primer anchor and linked offset are whole before the window | accepted |
 | [0060](0060-a-target-window-names-its-whole-locus.md) | A target window names its whole locus before the cut | accepted |
 | [0061](0061-a-target-pick-names-its-whole-tuning-counts.md) | A target pick names its whole tuning counts before the scan | accepted |
+| [0062](0062-a-target-screen-names-its-whole-window-and-budget.md) | A target screen names its whole window and budget before the grid | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

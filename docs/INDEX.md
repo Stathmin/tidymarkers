@@ -262,6 +262,10 @@ Other vignettes:
   `pick_target_snp()` names `clean_3p`, `specificity_candidates` and
   `max_tries` before the ranking scan, so a fraction no longer truncates a
   guard band or reaches dplyr`s own "`n` must be a round number".
+- [ADR 0062](adr/0062-a-target-screen-names-its-whole-window-and-budget.md) —
+  `screen_snp_targets()` names `lengths`, `clean_3p` and `hotzone` before the
+  placement grid, so a fraction no longer shifts the window into a `start`/`end`
+  error and `hotzone = 7.9` no longer tolerates one variant fewer.
 
 ## Operator decisions
 

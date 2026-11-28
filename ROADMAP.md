@@ -6429,3 +6429,24 @@ ADR 0056 срабатывает, но `safe_candidates()` оборачивает
     - блокер: нет; проверка идёт до чтения строк вариантов и любого скана.
     - следствие: `specificity_candidates = 0` сохраняет документированный
       пропуск seed-скана.
+
+## ZV86. Скрин цели: окно и бюджет — целые до сетки
+
+`screen_snp_targets()` — дешёвый скрин, который идёт до `pick_target_snp()`, —
+отдавал `lengths` и `clean_3p` в арифметику окна, а `hotzone` в сравнение без
+проверки: `lengths = 20.9` и `clean_3p = 4.9` сдвигали `lo` и падали в
+`genome_seq()` сообщением про `start`/`end`, а `hotzone = 7.9` молча допускал
+на один вариант меньше (`hot <= 7.9` — это `hot <= 7`). Измерено на коммиченной
+фикстуре `example_region` до правки.
+
+- [x] **ZV86. `screen_snp_targets()` проверяет длины, окно и hotzone до сетки.**
+    - правка: `check_nucleotide_length(lengths, "lengths", multi = TRUE)`,
+      `check_scan_radius(clean_3p, "clean_3p", min = 1L)` и
+      `check_scan_radius(hotzone, "hotzone", min = 0L)` в начале функции
+      (ADR 0062).
+    - проверка: `tests/testthat/test-screen.R` — новый тест отвергает
+      `lengths = 20.9`/`c(20L, Inf)`, `clean_3p = 4.9`/`0.5`,
+      `hotzone = 7.9`/`-1` по имени; целый вызов возвращает одну строку;
+      `screen` — 23 pass, 0 fail.
+    - блокер: нет; проверка идёт до `genome_seq()` и любой сборки сетки.
+    - следствие: `hotzone = 0` сохраняет смысл «ни одного чужого варианта».

@@ -79,3 +79,18 @@ test_that("a multi-allelic site is promising when one degenerate primer covers i
   expect_gt(sc$n_ok, 0L)
   expect_equal(sc$verdict, "promising")
 })
+
+test_that("the screen refuses a fractional placement before the window is read", {
+  genome <- clean_genome(seed = 3L)
+  s <- as.character(genome[["Chr1"]])
+  vt <- tibble::tibble(chrom = "Chr1", pos = 200L, ref = substr(s, 200L, 200L), alt = "A")
+  # fractional lengths/clean_3p used to shift the window and abort as `start`/`end`
+  expect_error(screen_snp_targets(vt, genome, lengths = 20.9), "whole numbers of nucleotides")
+  expect_error(screen_snp_targets(vt, genome, lengths = c(20L, Inf)), "whole numbers of nucleotides")
+  expect_error(screen_snp_targets(vt, genome, clean_3p = 4.9), "`clean_3p`.*whole number")
+  expect_error(screen_snp_targets(vt, genome, clean_3p = 0.5), "`clean_3p`.*whole number")
+  # a fractional hotzone silently tolerated one variant fewer
+  expect_error(screen_snp_targets(vt, genome, hotzone = 7.9), "`hotzone`.*whole number")
+  expect_error(screen_snp_targets(vt, genome, hotzone = -1), "`hotzone`.*whole number")
+  expect_equal(nrow(screen_snp_targets(vt, genome, lengths = 20L, clean_3p = 5L, hotzone = 8L)), 1L)
+})
