@@ -124,3 +124,21 @@ test_that("exactly one panel is required", {
     "one of"
   )
 })
+
+test_that("a VCF genotype call is its allele multiset in either order", {
+  dose <- tidymarkers:::genotype_dosage
+  expect_equal(dose(c("0/1", "1/0", "0|1", "1|0")), c(1, 1, 1, 1))
+  expect_equal(dose(c("0/0", "1/1", "1|1")), c(0, 2, 2))
+  expect_error(dose("0/2"), "biallelic 0/1 VCF call")
+  expect_error(dose("1/0/1"), "biallelic 0/1 VCF call")
+
+  panel <- tibble::tibble(
+    line = paste0("L", 1:8),
+    chrom = "Chr1", pos = 250L, ref = "A", alt = "G",
+    genotype = c("0/1", "1/0", "0|1", "1|0", "1/1", "0/0", "1/1", "0/0")
+  )
+  r <- marker_informativeness(informativeness_target(), genotypes = panel)
+  expect_equal(r$n_lines, 8L)
+  expect_equal(r$alt_freq, 0.5)
+  expect_equal(r$expected_heterozygosity, 0.5)
+})

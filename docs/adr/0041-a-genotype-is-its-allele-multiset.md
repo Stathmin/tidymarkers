@@ -75,3 +75,18 @@ answer (ADR 0020). The reader is unchanged.
   het": the same input through a VCF gives `"het"` and `confident = FALSE`.
 - Before the fix the first test produced `"unknown"` and `confident = TRUE`
   for the `1/0` row; `Rscript dev/test.R "^depth$"` — 53 pass, 0 fail.
+
+## Amendment 2026-11-28 — the dosage reader follows the same rule
+
+`genotype_dosage()` in `R/marker_informativeness.R`, the reader behind
+`marker_informativeness(genotypes = )`, had the same literal lookup (`0/0`,
+`0/1`, `1/1` and the `|` spellings) and aborted on `1/0` and `1|0`. A VCF
+panel therefore could not reach the informativeness calculation without
+rewriting its `GT` column.
+
+It now parses a biallelic call by the same multiset rule. `REF`/`HET`/`ALT`
+and numeric dosages keep their meaning; `0/2` and `1/0/1` still abort.
+Verified by `tests/testthat/test-informativeness.R`, "a VCF genotype call is
+its allele multiset in either order": four orders give dosage 1, a panel of
+eight lines with four such heterozygotes gives `alt_freq = 0.5` and
+`expected_heterozygosity = 0.5`, and `^informativeness$` has 43 pass, 0 fail.
