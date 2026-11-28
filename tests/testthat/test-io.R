@@ -143,6 +143,36 @@ test_that("a VCF header past 1000 lines is still found", {
   expect_equal(g$genotype, 1)
 })
 
+test_that("read_variant_depth reports only counts the writer accepts (ADR 0038)", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:-5,10:-5",
+    "1\t200\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:6,4.5:10.5",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:1,1:1e10",
+    "1\t400\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:6,4:10",
+    "1\t500\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:0,0:0"
+  ), vcf)
+  d <- suppressMessages(read_variant_depth(vcf))
+
+  # a negative, fractional or overflowing count is not a depth (ADR 0038)
+  expect_equal(d$depth, c(NA, NA, NA, 10, 0))
+  expect_equal(d$alt_depth, c(NA, NA, 1, 4, 0))
+  expect_silent(write_variants_vcf(d[, c("chrom", "pos", "ref", "alt", "depth")]))
+
+  sites <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "1\t100\t.\tA\tG\t.\t.\tDP=-5",
+    "1\t200\t.\tA\tG\t.\t.\tDP=7"
+  ), sites)
+  s <- suppressMessages(read_variant_depth(sites))
+  expect_equal(s$depth, c(NA, 7))
+})
+
 test_that("read_variants_vcf keeps SNP, InDel and multiallelic records", {
   skip_if_not_installed("vroom")
   vcf <- withr::local_tempfile(fileext = ".vcf")

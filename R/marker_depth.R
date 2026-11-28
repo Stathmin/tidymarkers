@@ -40,7 +40,10 @@ check_depth_pos <- function(pos, chrom) {
 #' `""`, `NA`) is dropped and counted, and the kept `ref`/`alt` are normalised with
 #' [normalise_allele()] (ADR 0018).  When the VCF has no sample columns, the
 #' reader falls back to `INFO/DP` and leaves `alt_depth`/`genotype` as `NA`.
-#' Missing values stay `NA`; an absent DP/AD/GT never errors.
+#' Missing values stay `NA`; an absent DP/AD/GT never errors.  A `DP` or `AD`
+#' component that is negative, fractional or outside the integer range is not a
+#' count, so it is reported as `NA` too: that is the domain
+#' [write_variants_vcf()] admits (ADR 0038).
 #' @param path VCF path; plain (`vcf`) or bgzipped (`vcf.gz`) are both read by
 #'   `vroom`.
 #' @param sample which sample column to read: an index (default `1L`, the first)
@@ -141,6 +144,12 @@ depth_from_samples <- function(d, sample_col) {
     if (is.na(a[[1L]]) || k + 1L > length(a)) {
       return(NA_character_)
     }
+    # one AD field, one admission rule: if either of its two counts is not a
+    # count, the ALT depth it names is not evidence (ADR 0038)
+    counts <- vcf_count(a[seq_len(min(2L, length(a)))])
+    if (length(counts) < 2L || anyNA(counts) || sum(counts) > .Machine$integer.max) {
+      return(NA_character_)
+    }
     a[[k + 1L]]
   }, character(1))
 
@@ -149,8 +158,8 @@ depth_from_samples <- function(d, sample_col) {
     pos = as.integer(d$POS[idx]),
     ref = d$REF[idx],
     alt = unlist(alts, use.names = FALSE),
-    depth = as.numeric(depth),
-    alt_depth = as.numeric(alt_depth),
+    depth = vcf_count(depth),
+    alt_depth = vcf_count(alt_depth),
     genotype = genotype
   ) |>
     depth_admit_alleles()
@@ -190,7 +199,7 @@ read_variant_depth_sites <- function(path, nms) {
     pos = as.integer(d$POS[idx]),
     ref = d$REF[idx],
     alt = unlist(alts, use.names = FALSE),
-    depth = as.numeric(info_dp(d$INFO[idx])),
+    depth = vcf_count(info_dp(d$INFO[idx])),
     alt_depth = NA_real_,
     genotype = NA_character_
   ) |>
@@ -216,6 +225,21 @@ info_dp <- function(info) {
 clean_vcf_value <- function(x) {
   x[!is.na(x) & x %in% c(".", "")] <- NA_character_
   x
+}
+
+#' A VCF count the writer accepts, or `NA` (ADR 0038)
+#'
+#' `DP` and the components of `AD` are VCF `Integer` read counts.  A negative,
+#' fractional or overflowing value is not a count: `write_variants_vcf()` refuses
+#' it, so the readers report it as absent rather than as a depth.
+#' @keywords internal
+#' @noRd
+vcf_count <- function(x) {
+  v <- suppressWarnings(as.numeric(x))
+  ok <- !is.na(v) & is.finite(v) & v >= 0 & v == floor(v) &
+    v <= .Machine$integer.max
+  v[!ok] <- NA_real_
+  v
 }
 
 #' Turn DP/AD/GT into a confidence weight

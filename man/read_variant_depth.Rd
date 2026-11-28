@@ -27,7 +27,10 @@ normalised with \code{ath_chrom()}.  Alleles are admitted by the same rule as
 \code{""}, \code{NA}) is dropped and counted, and the kept \code{ref}/\code{alt} are normalised with
 \code{\link[=normalise_allele]{normalise_allele()}} (ADR 0018).  When the VCF has no sample columns, the
 reader falls back to \code{INFO/DP} and leaves \code{alt_depth}/\code{genotype} as \code{NA}.
-Missing values stay \code{NA}; an absent DP/AD/GT never errors.
+Missing values stay \code{NA}; an absent DP/AD/GT never errors.  A \code{DP} or \code{AD}
+component that is negative, fractional or outside the integer range is not a
+count, so it is reported as \code{NA} too: that is the domain
+\code{\link[=write_variants_vcf]{write_variants_vcf()}} admits (ADR 0038).
 }
 \examples{
 vcf <- withr::local_tempfile(fileext = ".vcf")
