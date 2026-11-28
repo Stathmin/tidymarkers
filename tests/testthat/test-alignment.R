@@ -112,6 +112,44 @@ test_that("haplotype frequencies may be given as a table", {
   expect_true(all(unique(hp3$haplotypes$freq) %in% tab$freq))
 })
 
+test_that("a MAF override is a proportion at a whole position (ADR 0086)", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  v <- sat2_hp$variants
+  target <- v[!duplicated(v[, c("pos", "ref", "alt")]), ][1L, ]
+  # a percent-scale MAF, and a fractional position, are refused rather than
+  # joined as a weight, or silently matching nothing
+  expect_error(
+    haplotypes_from_alignment(
+      read_transcripts(sat2_path),
+      chrom = "SAT2",
+      maf = tibble::tibble(pos = target$pos, ref = target$ref, alt = target$alt, maf = 5)
+    ),
+    "\\[0, 1\\]"
+  )
+  expect_error(
+    haplotypes_from_alignment(
+      read_transcripts(sat2_path),
+      chrom = "SAT2",
+      maf = tibble::tibble(pos = target$pos + 0.5, ref = target$ref, alt = target$alt, maf = 0.02)
+    ),
+    "whole `pos`"
+  )
+})
+
+test_that("a haplotype share must be a proportion, not an NA turned into 0", {
+  skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
+  nms <- names(read_transcripts(sat2_path))
+  expect_error(
+    haplotypes_from_alignment(read_transcripts(sat2_path), chrom = "SAT2", freq = c(1.5, rep(0, length(nms) - 1L))),
+    "\\[0, 1\\]"
+  )
+  tab <- tibble::tibble(haplotype = nms, freq = c(NA, rep(1 / (length(nms) - 1L), length(nms) - 1L)))
+  expect_error(
+    haplotypes_from_alignment(read_transcripts(sat2_path), chrom = "SAT2", freq = tab),
+    "finite proportion"
+  )
+})
+
 test_that("plot_alignment returns a ggplot", {
   skip_if(is.null(sat2_hp), "bundled SAT2 FASTA not found")
   skip_if_not_installed("ggplot2")

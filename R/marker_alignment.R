@@ -195,6 +195,17 @@ normalise_hap_freq <- function(freq, nms) {
   }
   if (is.data.frame(freq)) {
     need_cols(freq, c("haplotype", "freq"), arg = "freq")
+  }
+  raw <- if (is.data.frame(freq)) freq$freq else freq
+  # an unparseable share used to become 0 below, removing that haplotype from
+  # the population without a word (ADR 0086); a *missing row* is still an
+  # absence and keeps its documented 0
+  if (any(is.na(raw) | bad_proportion(raw))) {
+    abort_msg(
+      "`freq` must be one finite proportion in [0, 1] for every haplotype it names."
+    )
+  }
+  if (is.data.frame(freq)) {
     v <- stats::setNames(as.numeric(freq$freq), as.character(freq$haplotype))
     out <- v[nms]
     out[is.na(out)] <- 0
@@ -241,7 +252,20 @@ apply_maf <- function(v, maf = NULL) {
     abort_msg("A `maf` table needs `pos`, `ref`, `alt` and `maf`/`freq`.")
   }
   m <- m[, c(intersect("chrom", names(m)), "pos", "ref", "alt", fcol)]
+  # a fractional `pos` matched no variant, so the override was silently lost;
+  # a percent or negative `maf` was joined as if it were a frequency (ADR 0086)
+  if (any(bad_position(m$pos))) {
+    abort_msg("A `maf` table needs a positive whole `pos` on every row.")
+  }
+  bad <- bad_proportion(m[[fcol]])
+  if (any(bad)) {
+    abort_msg(
+      "A `maf` table needs one frequency in [0, 1] per row; row {which(bad)[[1L]]} is {format(m[[fcol]][bad][[1L]])}."
+    )
+  }
   names(m)[names(m) == fcol] <- "maf"
+  m$pos <- as.integer(m$pos)
+  m$maf <- suppressWarnings(as.numeric(m$maf))
   by <- intersect(c("chrom", "pos", "ref", "alt"), names(m))
   v <- dplyr::left_join(v, m, by = by, suffix = c("", "_maf"))
   v$pop_freq <- dplyr::coalesce(v$maf, v$pop_freq)

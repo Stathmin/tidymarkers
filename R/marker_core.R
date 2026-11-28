@@ -857,6 +857,9 @@ variant_load_in <- function(interval, vpos, vweight = NULL, exclude = NA_integer
     return(0)
   }
   w <- if (is.null(vweight)) rep(1, length(vpos)) else as.numeric(vweight)
+  # an unknown weight counts the variant once, like an absent weight: `sum()`
+  # over an NA returned NA and the load stopped answering (ADR 0086)
+  w[is.na(w)] <- 1
   w <- w[keep]
   # one site = one position: collapse the ALT rows sharing a position
   site <- tapply(w, v, sum)
@@ -954,6 +957,9 @@ zone_dropout <- function(primer, start, end, forward, n_var, tmpl, off, vpos, vb
     return(0)
   }
   w <- if (is.null(vweight)) rep(1, length(idx)) else vweight[idx]
+  # an unknown frequency still weighs the variant once; a dropped NA left the
+  # zone with no cost at all (ADR 0086)
+  w[is.na(w)] <- 1
   primer_dropout(
     primer, as.character(Biostrings::subseq(tmpl$seq, i1, i2)),
     forward, vpos[idx] - start + 1L, valt[idx], w

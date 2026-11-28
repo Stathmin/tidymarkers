@@ -8,6 +8,10 @@
 #  the package message, and `min_evidence = Inf` was accepted as a count.  The
 #  predicate below is the one definition (ADR 0044); a caller keeps its own
 #  message and does its own `as.integer()` afterwards.
+#
+#  A position and a proportion are judged the same way - by the value the caller
+#  gave, before any cast - and live here too: `bad_position()` (ADR 0045) and
+#  `bad_proportion()` (ADR 0086, with `check_variant_weights()`).
 # =============================================================================
 
 #' Is a value a single whole number inside a range?
@@ -115,6 +119,63 @@ bad_position <- function(x, min = 1L) {
     rep(TRUE, length(x))
   }
   is.na(x) | is.na(iv) | iv < min | frac
+}
+
+#' Which values are not proportions?
+#'
+#' An allele frequency or a haplotype share is a proportion: one finite number
+#' in `[0, 1]`.  A table in percent (`5`), a negative share and a spelling that
+#' does not cast (`"5%"`) are not frequencies, yet the weight readers accepted
+#' them and they changed the scores: `variant_load_in()` summed `5` for one
+#' variant, a negative weight made a variant *better* than a clean site, and the
+#' haplotype reader turned an unparseable share into `0`, silently removing that
+#' haplotype from the population (ADR 0086).  The vectorised predicate is the one
+#' definition; a caller keeps its own message.
+#'
+#' `NA` answers `FALSE`: a missing value is an absence, which each reader
+#' resolves in its own documented way (a variant weight counts `1`, a haplotype
+#' share is refused).  `NaN` is not a spelling of a frequency and answers `TRUE`,
+#' like a factor, logical or complex column, whose `as.numeric()` would be a
+#' code, a `0/1` or a lost imaginary part.
+#' @param x a frequency vector.
+#' @return a logical vector, `TRUE` where a present value is not a proportion.
+#' @keywords internal
+#' @noRd
+bad_proportion <- function(x) {
+  n <- length(x)
+  if (is.factor(x) || is.logical(x) || is.complex(x) || is.list(x)) {
+    return(rep(TRUE, n))
+  }
+  v <- if (is.character(x)) suppressWarnings(as.numeric(x)) else as.numeric(x)
+  misspelled <- is.na(v) & !is.na(x)
+  is.nan(x) | (!is.na(x) & (misspelled | !is.finite(v) | v < 0 | v > 1))
+}
+
+#' Check per-variant frequency weights
+#'
+#' `pop_freq` weights every variant's load and expected dropout, so a value
+#' outside `[0, 1]` is refused before it scores anything; a missing weight is
+#' the documented "count the variant once" fallback of
+#' `variant_load_in()`, not a zero cost (ADR 0086).
+#' @param x the weight column, or `NULL` when the table carries none.
+#' @param arg the column name for the message.
+#' @return the weights as a numeric vector with `NA` replaced by `1`, or `NULL`.
+#' @keywords internal
+#' @noRd
+check_variant_weights <- function(x, arg = "pop_freq") {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  bad <- bad_proportion(x)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(
+      "`{arg}` must be one frequency in [0, 1] per variant; row {i} is {format(x[[i]])}."
+    )
+  }
+  w <- suppressWarnings(as.numeric(x))
+  w[is.na(w)] <- 1
+  w
 }
 
 #' Check one coordinate before the read

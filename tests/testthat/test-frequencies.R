@@ -47,3 +47,33 @@ test_that("the footprint cost scales with the population frequency", {
   expect_false(inherits(common$assay, "marker_doomed")) # a single mid-body variant is still tolerable
   expect_lt(rare$assay$assay$as_foot_dropout[1L], common$assay$assay$as_foot_dropout[1L])
 })
+
+# A weight is a proportion before it scores anything (ADR 0086).
+
+test_that("a frequency outside [0, 1] is refused, not used as a weight", {
+  expect_error(
+    tidymarkers:::check_variant_weights(c(0.5, 5)),
+    "\\[0, 1\\]"
+  )
+  expect_error(
+    tidymarkers:::check_variant_weights(c(0.5, -0.2)),
+    "\\[0, 1\\]"
+  )
+  expect_error(tidymarkers:::check_variant_weights("5%"), "\\[0, 1\\]")
+  expect_equal(tidymarkers:::check_variant_weights(c(0.5, NA)), c(0.5, 1))
+  expect_null(tidymarkers:::check_variant_weights(NULL))
+})
+
+test_that("an unknown weight counts the variant once, not as an NA load", {
+  vpos <- c(10L, 20L, 30L)
+  iv <- IRanges::IRanges(5, 40)
+  expect_equal(
+    tidymarkers:::variant_load_in(iv, vpos, c(0.5, NA, 1)),
+    tidymarkers:::variant_load_in(iv, vpos, c(0.5, 1, 1))
+  )
+})
+
+test_that("a percent-scale pop_freq is refused on the design path", {
+  skip_if_no_oligoarrayaux()
+  expect_error(freq_fixture(5), "\\[0, 1\\]")
+})

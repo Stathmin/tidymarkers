@@ -70,9 +70,10 @@ marker_snp_alts <- function(snp) {
 #' @noRd
 marker_variant_alleles <- function(variants, snp, seq, off) {
   vpos <- if (is.null(variants)) NULL else variants$pos[variants$chrom == snp$chrom]
-  # optional per-variant weights (population allele frequency); absent -> all 1
+  # optional per-variant weights (population allele frequency); absent -> all 1,
+  # a missing value -> the same whole-variant weight, never a zero cost (ADR 0086)
   vweight <- if (!is.null(variants) && "pop_freq" %in% names(variants)) {
-    variants$pop_freq[variants$chrom == snp$chrom]
+    check_variant_weights(variants$pop_freq[variants$chrom == snp$chrom])
   } else {
     NULL
   }
