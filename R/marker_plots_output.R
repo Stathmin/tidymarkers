@@ -79,6 +79,14 @@ write_marker_results <- function(assay, gene, dir = tempdir()) {
     fs::path(dir, "marker_primer_qc.csv"),
     fs::path(dir, "marker_dimer_dg.csv")
   )
+  written <- c(
+    "marker_design.csv", "marker_primer_qc.csv", "marker_dimer_dg.csv",
+    glue::glue("{base}_{c('idt', 'lgc', 'tidy')}.csv")
+  )
+  if (!is.null(assay$blast)) {
+    written <- c(written, "marker_blast_hits.csv")
+  }
+  refuse_links(dir, written)
   readr::write_csv(design, paths[1L])
   readr::write_csv(qc, paths[2L])
   readr::write_csv(assay$complementarity, paths[3L])
@@ -179,6 +187,7 @@ export_primers <- function(assay, gene, dir = tempdir()) {
   fs::dir_create(dir)
   tbl <- marker_primer_table(assay, gene)
   base <- safe_name_part(glue::glue("marker_{gene$symbol}_{assay$snp$chrom}_{assay$snp$pos}"))
+  refuse_links(dir, glue::glue("{base}_{c('idt', 'lgc', 'tidy')}.csv"))
 
   tbl |>
     dplyr::transmute(

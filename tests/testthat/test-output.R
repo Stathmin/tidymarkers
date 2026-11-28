@@ -1,12 +1,12 @@
 # Consolidated results writer: a few grouped files, order formats as subsets.
 
-test_that("write_marker_results writes grouped files and order subsets", {
+output_fixture <- function() {
   p <- c(
     AS_ref = "TGACTGCAAGTCCGATCAGTA",
     AS_alt = "TGACTGCAAGTCCGATCAGTT",
     COM = "GCTTAGCCATGGTCAATGCTA"
   )
-  assay <- list(
+  list(
     snp = tibble::tibble(chrom = "Chr4", pos = 269090L, ref = "G", alt = "A"),
     strand = "+",
     assay = tibble::tibble(
@@ -30,6 +30,10 @@ test_that("write_marker_results writes grouped files and order subsets", {
     ),
     blast = NULL
   )
+}
+
+test_that("write_marker_results writes grouped files and order subsets", {
+  assay <- output_fixture()
   dir <- withr::local_tempdir(pattern = "res")
   paths <- write_marker_results(assay, list(symbol = "FRI"), dir = dir)
   for (f in c(
@@ -53,4 +57,36 @@ test_that("write_marker_results writes grouped files and order subsets", {
   escaped <- write_marker_results(assay, list(symbol = "../../escape"), dir = dir)
   expect_true(all(startsWith(normalizePath(escaped), normalizePath(dir))))
   expect_false(file.exists(file.path(dirname(dir), "escape_Chr4_269090_tidy.csv")))
+})
+
+test_that("the output writers refuse to write through a link", {
+  assay <- output_fixture()
+  gene <- list(symbol = "FRI")
+  members <- c(
+    "marker_design.csv", "marker_primer_qc.csv", "marker_dimer_dg.csv",
+    "marker_FRI_Chr4_269090_tidy.csv", "marker_FRI_Chr4_269090_idt.csv",
+    "marker_FRI_Chr4_269090_lgc.csv"
+  )
+  for (member in members) {
+    dir <- withr::local_tempdir()
+    outside <- fs::path(withr::local_tempdir(), member)
+    writeLines("keep", outside)
+    skip_if_not(
+      file.symlink(outside, fs::path(dir, member)),
+      "this filesystem cannot make a symlink"
+    )
+    expect_error(write_marker_results(assay, gene, dir = dir), "which is a link", info = member)
+    expect_identical(readLines(outside), "keep", info = member)
+  }
+
+  # export_primers() is exported on its own, so it guards its own three names
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "marker_FRI_Chr4_269090_idt.csv")
+  writeLines("keep", outside)
+  skip_if_not(
+    file.symlink(outside, fs::path(dir, "marker_FRI_Chr4_269090_idt.csv")),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(export_primers(assay, gene, dir = dir), "which is a link")
+  expect_identical(readLines(outside), "keep")
 })

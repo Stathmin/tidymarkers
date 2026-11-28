@@ -39,6 +39,7 @@ the file records the measurement or event that re-tested it).
 | [0026](0026-an-artefacts-id-is-the-hash-of-what-it-stores.md)          | An artefact's id is the hash of what it stores                              | accepted |
 | [0027](0027-a-record-directory-holds-one-design.md)                    | A record directory holds one design                                          | accepted |
 | [0028](0028-a-vcf-writer-emits-only-records-its-readers-admit.md)      | A VCF writer emits only records its readers admit                            | accepted |
+| [0029](0029-an-output-writer-creates-its-files-not-writes-through-a-link.md) | An output writer creates its files, not writes through a link          | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
