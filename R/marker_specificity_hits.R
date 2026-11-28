@@ -360,9 +360,15 @@ offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed
       "`hits$strand` must be {.val {c('+', '-')}}; got {.val {unique(strand[bad_strand])}}."
     )
   }
-  start <- hits$start
-  if (!is.numeric(start) || anyNA(start) || any(start < 1) || any(start != floor(start))) {
+  # `hits$start` was checked by hand, but `hits$end` was cast straight to
+  # integer: a hit ending at 31.5 was read as a 21 bp alignment at 31 and
+  # graded a perfect match.  Both bounds are judged by spelling before the
+  # cast, like every other position (ADR 0082).
+  if (any(bad_position(hits$start))) {
     abort_msg("`hits$start` must be a positive integer.")
+  }
+  if (any(bad_position(hits$end))) {
+    abort_msg("`hits$end` must be a positive integer.")
   }
   missing_primers <- setdiff(unique(primer_name), names(primers))
   if (length(missing_primers)) {

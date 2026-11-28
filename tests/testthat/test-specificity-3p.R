@@ -103,6 +103,21 @@ test_that("offtarget_profile rejects an unknown primer and a width mismatch", {
   )
 })
 
+test_that("offtarget_profile refuses a hit bound that is not whole", {
+  hits <- exact_hit_table(c(AS = p), g)
+  hits$end <- hits$end + 0.5
+  expect_error(
+    offtarget_profile(hits, c(AS = p), g),
+    "hits\\$end"
+  )
+  hits <- exact_hit_table(c(AS = p), g)
+  hits$start <- hits$start + 0.5
+  expect_error(
+    offtarget_profile(hits, c(AS = p), g),
+    "hits\\$start"
+  )
+})
+
 test_that("an inner miss is tolerated, a 3'-terminal one never is", {
   hits <- exact_hit_table(c(AS = p), g, max_mismatch = 1L)
   for (scheme in c("pcr", "paralog")) {
