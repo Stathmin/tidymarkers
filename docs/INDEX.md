@@ -273,6 +273,10 @@ Other vignettes:
 - [ADR 0064](adr/0064-a-terminal-window-is-whole-before-it-is-cut.md) —
   `terminal_dg()` names `n` before `substr()`, so `n = 5.9` no longer anneals
   a 6-mer and returns its dG under a 5-mer label.
+- [ADR 0065](adr/0065-two-pool-limits-are-whole-base-pair-counts.md) —
+  `primer_set_compatibility()` names `min_cross_run` and `max_selfcomp` as
+  whole bp counts, so `min_cross_run = 6.5` no longer lets a 6 bp cross dimer
+  pass a threshold the caller set above 6.
 
 ## Operator decisions
 

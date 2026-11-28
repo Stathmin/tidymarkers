@@ -73,3 +73,15 @@ test_that("tube_compatibility forwards its reaction conditions", {
   expect_true(all(hot$dg > cold$dg)) # 65 C duplexes are weaker than at 37 C
   expect_equal(hot$pass, cold$pass)
 })
+
+test_that("primer_set_compatibility names its two base-pair limits", {
+  p <- c(AS1 = "GAAGGTGACCAAGTTCATGCT", AS2 = "GAAGGTCGGAGTCAACGGATT")
+  # 6.5 used to let a 6 bp cross run pass; Inf/NA/vector made the verdict fail
+  # or error without naming the argument
+  for (bad in list(6.5, -1L, NA, Inf, c(6L, 7L), "6")) {
+    expect_error(primer_set_compatibility(p, min_cross_run = bad), "`min_cross_run`")
+    expect_error(primer_set_compatibility(p, max_selfcomp = bad), "`max_selfcomp`")
+  }
+  whole <- primer_set_compatibility(p)
+  expect_equal(primer_set_compatibility(p, min_cross_run = 6, max_selfcomp = 5), whole)
+})

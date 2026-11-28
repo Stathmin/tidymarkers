@@ -75,6 +75,7 @@ the file records the measurement or event that re-tested it).
 | [0062](0062-a-target-screen-names-its-whole-window-and-budget.md) | A target screen names its whole window and budget before the grid | accepted |
 | [0063](0063-a-palindrome-scan-names-the-same-counts-as-its-fast-sibling.md) | A palindrome scan names the same counts as its fast sibling | accepted |
 | [0064](0064-a-terminal-window-is-whole-before-it-is-cut.md) | A terminal window is whole before it is cut | accepted |
+| [0065](0065-two-pool-limits-are-whole-base-pair-counts.md) | Two pool limits are whole base-pair counts before the verdict | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

@@ -39,6 +39,11 @@
 #' @export
 primer_set_compatibility <- function(primers, min_cross_run = 6L, max_selfcomp = 5L,
                                      conditions = NULL) {
+  # Both are base-pair counts compared raw: `min_cross_run = 6.5` let a 6 bp run
+  # pass while the caller named a threshold above 6, and `Inf`/`NA` made every
+  # row fail or error without naming the argument (ADR 0065).
+  min_cross_run <- check_scan_radius(min_cross_run, "min_cross_run", min = 0L)
+  max_selfcomp <- check_scan_radius(max_selfcomp, "max_selfcomp", min = 0L)
   primers <- unlist(primers, use.names = TRUE)
   if (is.null(names(primers)) || any(!nzchar(names(primers)))) {
     names(primers) <- paste0("p", seq_along(primers))
