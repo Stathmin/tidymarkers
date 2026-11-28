@@ -55,6 +55,15 @@ test_that("a repair row is appended with its measured duration", {
   expect_equal(rows$duration_ms[[1L]], 30 * 60 * 1000)
   expect_identical(rows$status[[1L]], "ok")
   expect_identical(rows$object_id[[1L]], "an_example_blocker___with_a_pipe")
+
+  # the reader must count the written row: the escaped pipe is text, not a
+  # column break (ZV63)
+  env <- new.env(parent = globalenv())
+  sys.source(testthat::test_path("..", "..", "dev", "metrics.R"), envir = env)
+  st <- env$repair_stats(log)
+  expect_equal(st$rows, 2L)
+  expect_equal(st$fixed, 2L)
+  expect_equal(st$malformed, 0L)
 })
 
 test_that("a repair row without an end time writes nothing", {
