@@ -273,7 +273,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: 61ffd8322e71d14e1e9d5ccfa4c64701
+  input_hash: b5c3468a996aac7fe672d2e6e7dd9946
   output_hash: 86646668dcd815668f824e894125eeca
   docs: vignettes/markers-gel.Rmd
   code:
@@ -409,7 +409,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: 3f6b6ac2877635ec054a683cd320527f
+  input_hash: a4c55cf2d455c7a69cbf0a19f1998dfd
   output_hash: 2172856fd46932ce7680733397fa3a77
   docs: vignettes/markers-crispr-sequencing.Rmd
   code:
@@ -558,7 +558,7 @@ artifacts:
   inputs:
   - R/marker_indel_size.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: 379f764e1349500a01ec47c95a0bddfe
+  input_hash: 9a2e18e1c9b175c704fe47de4c29f3df
   output_hash: a7aabc46a26ff3cff2f52e4509e776b5
   docs: vignettes/markers-gel.Rmd
   status: verified
@@ -648,7 +648,7 @@ artifacts:
   inputs:
   - R/marker_sanger.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: e7312fa4c04cfb360596a86b327955fa
+  input_hash: aa147826f1e05b75be7bddf2a9cb3507
   output_hash: a5d03a4a537903e51aa04932670258ed
   docs: vignettes/markers-crispr-sequencing.Rmd
   status: verified
