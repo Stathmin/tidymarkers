@@ -89,10 +89,13 @@ genbank_index <- function(path) {
   size <- as.numeric(info$size)
   mtime <- as.numeric(info$mtime)
 
-  cached <- if (fs::file_exists(idx_path)) {
+  cached <- if (fs::file_exists(idx_path) && !nzchar(Sys.readlink(idx_path))) {
     tryCatch(readRDS(idx_path), error = function(e) NULL)
   } else {
     NULL
+  }
+  if (!is.list(cached)) {
+    cached <- NULL
   }
 
   if (!is.null(cached) && isTRUE(cached$source_size == size) && isTRUE(cached$source_mtime == mtime)) {
@@ -107,8 +110,15 @@ genbank_index <- function(path) {
     features = parsed$features,
     origin_offset = parsed$origin_offset
   )
-  # a read-only directory must not fail the read: fall back to the parsed result
-  tryCatch(saveRDS(idx, idx_path), error = function(e) NULL)
+  # a read-only directory must not fail the read: fall back to the parsed result;
+  # a link at the cache name is also declined, so the cache never writes outside
+  tryCatch(
+    {
+      refuse_links(dirname(idx_path), basename(idx_path))
+      saveRDS(idx, idx_path)
+    },
+    error = function(e) NULL
+  )
 
   list(features = parsed$features, file_reads = parsed$file_reads)
 }

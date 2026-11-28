@@ -548,6 +548,27 @@ test_that("read_genbank parses features, caches an index and reuses it", {
   expect_equal(nrow(w), 5L)
 })
 
+test_that("read_genbank declines to cache through a link", {
+  dir <- withr::local_tempdir()
+  gb <- file.path(dir, "test.gbk")
+  writeLines(c(
+    "LOCUS       TESTLOCUS         60 bp    DNA     linear   UNK 01-JAN-2026",
+    "FEATURES             Location/Qualifiers",
+    "     source          1..60",
+    "ORIGIN",
+    "        1 acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt acgtacgtac gtacgtacgt",
+    "//"
+  ), gb)
+  outside <- file.path(dir, "outside.rds")
+  saveRDS("keep", outside)
+  skip_if(!file.symlink(outside, paste0(gb, ".gbidx")), "symlinks are not supported")
+
+  x <- read_genbank(gb)
+  expect_equal(nrow(x), 1L)
+  expect_true(attr(x, "file_reads") >= 1L)
+  expect_identical(readRDS(outside), "keep")
+})
+
 test_that("read_genbank keeps a nested complement inside join as mixed strand", {
   gb <- withr::local_tempfile(fileext = ".gbk")
   unlink(paste0(gb, ".gbidx"))
