@@ -237,6 +237,15 @@ test_that("a region expands only to its in-block variants and sweeps them", {
     tidymarkers:::normalise_region(list(chrom = "", start = 1L, end = 10L)),
     "valid 1-based"
   )
+  # a fractional bound is not a coordinate: as.integer() used to shift it
+  expect_error(
+    tidymarkers:::normalise_region(list(chrom = "Chr1", start = 10.5, end = 20L)),
+    "whole"
+  )
+  expect_error(
+    tidymarkers:::normalise_region(list(chrom = "Chr1", start = 10L, end = "20.5")),
+    "whole"
+  )
 })
 
 test_that("a solved region carries a haplotype -> signal table inside the block", {

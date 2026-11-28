@@ -34,6 +34,13 @@ normalise_region <- function(region) {
     if (nrow(x) != 1L) {
       abort_msg("`region` must name exactly one interval.")
     }
+    # `as.integer(10.5)` is 10: a fractional bound would silently move the
+    # region, so judge the spelling before the cast (ADR 0045/0068).
+    if (bad_position(x$start) || bad_position(x$end)) {
+      abort_msg(
+        "`region` needs whole positive `start`/`end`; got {format(x$start)} and {format(x$end)}."
+      )
+    }
     out <- tibble::tibble(
       chrom = as.character(x$chrom),
       start = as.integer(x$start),
