@@ -26,3 +26,13 @@ test_that("bad_position refuses a spelling that is not a whole number", {
   expect_true(all(bad_position(c(250.9, 0L, -1L, NA_real_, Inf))))
   expect_true(all(bad_position(c("abc", NA_character_))))
 })
+
+test_that("bad_position refuses a type it cannot judge by spelling", {
+  # `as.integer()` would return codes, 0/1, or the first element, not the
+  # coordinate the caller meant (ADR 0045 amendment).
+  expect_true(all(bad_position(factor(c("250", "999")))))
+  expect_true(all(bad_position(c(TRUE, FALSE))))
+  expect_true(all(bad_position(1 + 1i)))
+  expect_true(all(bad_position(list(250L))))
+  expect_false(any(bad_position(integer(0))))
+})

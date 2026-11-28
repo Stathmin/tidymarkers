@@ -108,7 +108,11 @@ bad_position <- function(x, min = 1L) {
   } else if (is.character(x)) {
     !grepl("^ *[+-]?[0-9]+ *$", x)
   } else {
-    rep(FALSE, length(x))
+    # A factor, a logical, a complex or a list is not a spelling of a
+    # position: `as.integer()` returns a factor code, a coerced 0/1 or a
+    # truncated first element, so the unit is refused rather than guessed
+    # (ADR 0045 amendment).
+    rep(TRUE, length(x))
   }
   is.na(x) | is.na(iv) | iv < min | frac
 }
