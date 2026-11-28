@@ -46,6 +46,9 @@ no error.
 3. The validator's message names the unit it enforces. A message that says
    "integer" is evidence of an integer check; if the check admits a fraction,
    the message and the check have drifted, and the gate is wrong.
+4. A field the contract calls a number is a **finite** number. `jsonlite` reads
+   `1e400` as `Inf`, and `Inf >= 0` is true, so a non-finite `cost_usd`
+   entered the report and made the stage cost `Inf`.
 
 ## Alternatives rejected
 
@@ -61,7 +64,7 @@ no error.
 ## Consequences
 
 - `--check` refuses a row whose duration, retries, token counts or queue depth
-  is fractional, and a GPU load outside `0`–`1`.
+  is fractional, a GPU load outside `0`–`1`, and a non-finite `cost_usd`.
 - Every row in `data/metrics/*.jsonl` (all `gpu_util` are `null`) still
   validates; no report number moves.
 - The writer is unchanged; `as_int()` remains the single coercion at the
@@ -75,5 +78,7 @@ no error.
 - A raw JSONL with `duration_ms = 1.5` and `gpu_util = 100` gives
   `dev/metrics.R --check` two problems and exit 1; before the fix it reported
   `ok`.
-- `Rscript dev/test.R "^metrics-repair$"` — 20 pass, 0 fail;
+- `Rscript dev/test.R "^metrics-repair$"` — 21 pass, 0 fail;
   `Rscript dev/metrics.R --check 2026-11-28` — 36 rows, exit 0.
+- A JSONL row with `"cost_usd": 1e400` is refused with "cost_usd must be null
+  or a finite non-negative number" (d66c807).
