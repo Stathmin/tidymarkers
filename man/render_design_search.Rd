@@ -23,9 +23,10 @@ render_design_search(
 
 \item{path}{output GIF path.}
 
-\item{fps}{frames per second.}
+\item{fps}{frames per second, one positive finite number.}
 
-\item{hold}{how many extra frames to hold the chosen AS/COM/final frames.}
+\item{hold}{how many extra frames to hold the chosen AS/COM/final frames,
+one non-negative whole number.}
 
 \item{cores}{cores for drawing frames, one positive whole number; \code{1} is serial.}
 }

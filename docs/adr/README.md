@@ -77,6 +77,7 @@ the file records the measurement or event that re-tested it).
 | [0064](0064-a-terminal-window-is-whole-before-it-is-cut.md) | A terminal window is whole before it is cut | accepted |
 | [0065](0065-two-pool-limits-are-whole-base-pair-counts.md) | Two pool limits are whole base-pair counts before the verdict | accepted |
 | [0066](0066-an-off-target-seed-length-is-whole-before-it-becomes-an-index.md) | An off-target seed length is whole before it becomes an index | accepted |
+| [0067](0067-a-frame-rate-is-positive-and-a-hold-is-whole.md) | A frame rate is positive and finite, a hold is a whole count | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

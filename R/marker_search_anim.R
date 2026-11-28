@@ -264,8 +264,9 @@ plot_design_search_step <- function(frames, step) {
 #' @param variants variant table.
 #' @param snp target variant (one row).
 #' @param path output GIF path.
-#' @param fps frames per second.
-#' @param hold how many extra frames to hold the chosen AS/COM/final frames.
+#' @param fps frames per second, one positive finite number.
+#' @param hold how many extra frames to hold the chosen AS/COM/final frames,
+#'   one non-negative whole number.
 #' @param cores cores for drawing frames, one positive whole number; `1` is serial.
 #' @return the GIF path (invisibly).
 #' @examples
@@ -284,6 +285,10 @@ render_design_search <- function(assay, variants, snp,
                                  fps = 4L, hold = 3L,
                                  cores = getOption("tidymarkers.cores", 1L)) {
   cores <- check_worker_count(cores, "cores")
+  hold <- check_scan_radius(hold, "hold", min = 0L)
+  if (!is.numeric(fps) || length(fps) != 1L || !is.finite(fps) || fps <= 0) {
+    abort_msg("`fps` must be one positive finite number.")
+  }
   rlang::check_installed("ggplot2")
   frames <- design_search_frames(assay, variants, snp)
   n <- nrow(frames$notes)

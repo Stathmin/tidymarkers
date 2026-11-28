@@ -84,3 +84,20 @@ test_that("render_design_search() names the cores count before any frame", {
     )
   }
 })
+
+test_that("render_design_search() names a bad frame rate and hold before any frame", {
+  for (bad in list(0, -1, Inf, NA_real_, c(2, 4), "4")) {
+    expect_error(
+      render_design_search(NULL, NULL, NULL, fps = bad),
+      "`fps` must be one positive finite number",
+      fixed = TRUE
+    )
+  }
+  for (bad in list(2.9, -1, Inf, c(1, 2), "2")) {
+    expect_error(
+      render_design_search(NULL, NULL, NULL, hold = bad),
+      "whole number",
+      fixed = TRUE
+    )
+  }
+})

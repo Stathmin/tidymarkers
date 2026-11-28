@@ -281,6 +281,9 @@ Other vignettes:
   `offtarget_profile()` names `seed_len` before `mismatch_weights()`, so `Inf`
   no longer seeds the whole primer and `-1` no longer grows the weight vector
   past the oligo.
+- [ADR 0067](adr/0067-a-frame-rate-is-positive-and-a-hold-is-whole.md) — an
+  `fps` is one positive finite number and `hold` one non-negative whole count
+  before the GIF is stitched, so `0` no longer gives `-delay Inf`.
 
 ## Operator decisions
 
