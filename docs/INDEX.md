@@ -362,3 +362,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0080](adr/0080-the-gate-checks-the-days-run-metrics.md) — the internal
   gate validates the current day's run metrics, so a row with a prose id fails
   on the day it lands instead of a later manual report.
+- [ADR 0081](adr/0081-a-threshold-is-whole-in-its-spelling-before-the-cast.md) —
+  a base-pair/copy threshold is judged whole before the cast, and the cast gate
+  sees a direct `min_*`/`max_*` cast too.

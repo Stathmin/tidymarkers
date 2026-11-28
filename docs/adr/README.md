@@ -144,3 +144,4 @@ decision, so each ADR keeps `accepted` with a dated amendment at the end:
 | [0078](0078-a-plotted-feature-interval-is-whole-in-its-spelling.md) | A plotted feature interval is whole in its spelling | accepted |
 | [0079](0079-the-cast-gate-judges-an-interval-too.md) | The cast gate judges an interval, not only a point | accepted |
 | [0080](0080-the-gate-checks-the-days-run-metrics.md) | The gate checks the day's run metrics | accepted |
+| [0081](0081-a-threshold-is-whole-in-its-spelling-before-the-cast.md) | A threshold is whole in its spelling before the cast | accepted |
