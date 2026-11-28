@@ -89,7 +89,7 @@ genbank_index <- function(path) {
   size <- as.numeric(info$size)
   mtime <- as.numeric(info$mtime)
 
-  cached <- if (fs::file_exists(idx_path) && !nzchar(Sys.readlink(idx_path))) {
+  cached <- if (cache_present(idx_path)) {
     tryCatch(readRDS(idx_path), error = function(e) NULL)
   } else {
     NULL
