@@ -254,6 +254,15 @@ panel_variants <- function(variants) {
   if (is.character(variants) && length(variants) == 1L && !is.na(variants)) {
     return(read_variants_vcf(variants))
   }
+  if (!is.data.frame(variants)) {
+    abort_msg("`variants` must be a variants table or one VCF path.")
+  }
+  need_cols(variants, c("chrom", "pos", "ref", "alt"), arg = "variants")
+  # a key built by truncating a position matches a variant the table does not
+  # carry: 20.9 used to answer for 20 in the haplotype contract (ADR 0076)
+  if (any(bad_position(variants$pos))) {
+    abort_msg("`variants` needs a positive whole `pos` on every row.")
+  }
   variants
 }
 

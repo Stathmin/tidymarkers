@@ -344,3 +344,12 @@ test_that("the panel is a typed input to pareto, artefact and export", {
   expect_s3_class(art, "marker_artefact")
   expect_true(file.exists(file.path(art$dir, "artefact.json")))
 })
+
+test_that("a panel variant table position is whole in its spelling (ADR 0076)", {
+  bad <- tibble::tibble(chrom = "Chr1", pos = 100.9, ref = "C", alt = "A")
+  expect_error(tidymarkers:::panel_variants(bad), "positive whole `pos`")
+  bad$pos <- "100.9"
+  expect_error(tidymarkers:::panel_variants(bad), "positive whole `pos`")
+  ok <- tibble::tibble(chrom = "Chr1", pos = 100L, ref = "C", alt = "A")
+  expect_identical(tidymarkers:::panel_variants(ok), ok)
+})
