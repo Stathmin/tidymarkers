@@ -25,9 +25,11 @@ design_common_primers(
 
 \item{strand}{assay orientation.}
 
-\item{lengths}{candidate primer lengths.}
+\item{lengths}{candidate primer lengths in nt: one or more positive whole
+numbers.}
 
-\item{gaps}{distance from the anchor to the common primer.}
+\item{gaps}{distance from the anchor to the common primer, as one or more
+positive whole numbers of nucleotides.}
 
 \item{target_tm}{preferred common-primer Tm.}
 

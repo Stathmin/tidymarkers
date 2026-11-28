@@ -65,6 +65,7 @@ the file records the measurement or event that re-tested it).
 | [0052](0052-a-palindrome-count-is-whole-before-the-scan.md) | A palindrome's counts are whole before `findPalindromes()` | accepted |
 | [0053](0053-a-sample-selector-names-a-row-it-does-not-round.md) | A sample selector names a row, it does not round | accepted |
 | [0054](0054-a-stabilising-mismatch-is-a-whole-distance-inside-the-primer.md) | A stabilising mismatch is a whole distance inside the primer | accepted |
+| [0055](0055-a-common-primer-search-names-whole-lengths-gaps-and-anchor.md) | A common-primer search names whole lengths, gaps and anchor | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

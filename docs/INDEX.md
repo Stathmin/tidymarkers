@@ -232,6 +232,10 @@ Other vignettes:
   `2.9` no longer places the mismatch at 3 and labels it -2, `0.5` no longer
   replaces the 3'-terminal allele base, and a position past the 5' end no
   longer prepends a base.
+- [ADR 0055](adr/0055-a-common-primer-search-names-whole-lengths-gaps-and-anchor.md) —
+  `design_common_primers()` checks `snp_i`, `lengths` and `gaps` before the
+  grid, so `lengths = 20.9` no longer records `len` 20.9 for a 20 nt primer
+  and `snp_i = 80.9` no longer reports start 100.9.
 
 ## Operator decisions
 

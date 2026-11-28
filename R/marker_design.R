@@ -22,8 +22,10 @@
 #' @param window plus-strand template window (from [snp_template()]).
 #' @param snp_i template coordinate of the variant anchor.
 #' @param strand assay orientation.
-#' @param lengths candidate primer lengths.
-#' @param gaps distance from the anchor to the common primer.
+#' @param lengths candidate primer lengths in nt: one or more positive whole
+#'   numbers.
+#' @param gaps distance from the anchor to the common primer, as one or more
+#'   positive whole numbers of nucleotides.
 #' @param target_tm preferred common-primer Tm.
 #' @param min_gc,max_gc GC bounds.
 #' @param tm_range accepted Tm window (C).
@@ -44,6 +46,12 @@ design_common_primers <- function(window, snp_i, strand = "+", lengths = 18:25,
                                   min_gc = 0.40, max_gc = 0.60,
                                   tm_range = c(57, 64), n = 5L, conditions = NULL) {
   wlen <- length(window)
+  # `substring()` and the reported `start`/`end`/`len` truncate a fraction, so
+  # 20.9 named a 20 nt primer and a 123.9 end (ADR 0055).  Check the caller's
+  # values, then cast once.
+  snp_i <- check_coord(snp_i, "snp_i")
+  lengths <- check_nucleotide_length(lengths, "lengths", multi = TRUE)
+  gaps <- check_nucleotide_length(gaps, "gaps", multi = TRUE)
   plus <- identical(strand, "+")
   grid <- tidyr::crossing(L = lengths, gap = gaps)
 
