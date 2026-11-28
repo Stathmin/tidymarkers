@@ -70,3 +70,31 @@ values refused, `4L` stored as `4L`); `test-specificity.R` covers
 `marker_bowtie_index()`. The focused run
 `Rscript dev/test.R "genome-index|^specificity$|^bowtie$|^fm$"` finished with
 `FAIL 0 | WARN 0 | SKIP 10 | PASS 427`.
+
+## Amendment (2026-11-28) — three more `cores` paths reach an engine
+
+The first sweep named the four entry points above. A second read of `cores=`
+found three more exported paths where the count crossed into a backend before
+any check:
+
+| path | before the amendment |
+|---|---|
+| `pcr_efficiency(cores=)` | `processors = max(1L, as.integer(cores))` |
+| `assemble_kasp_assay(cores=)` and `assemble_primer_assay(cores=)` | `marker_bpparam()` did `n <- max(1L, as.integer(cores))` |
+| `render_design_search(cores=)` | `ncores <- min(as.integer(cores), length(uniq))` |
+
+Measured on R 4.6.1: `cores = 1.9` ran one worker, `Inf` became `NA` and
+reached DECIPHER / the plot pool as a missing value, and `c(1, 2)` was
+silently resolved by `max()` or `min()` instead of being refused.
+
+`marker_bpparam()` is the single place `cores` becomes a `BPPARAM`, so the
+check sits there rather than in each constructor; `pcr_efficiency()` and
+`render_design_search()` each call `check_worker_count(cores, "cores")` on
+their own value before any engine, plot or frame work. The accepted values
+behave exactly as before, and no exported signature changes.
+
+Verification: `test-marker-assemble.R` refuses `1.5`, `0`, `Inf`, `c(1, 2)`
+and `"2"` at both constructors; `test-thermo.R` at `pcr_efficiency()` and
+keeps `cores = 1L` reaching the engine check; `test-search-anim.R` at
+`render_design_search()` before the first frame. `dev/test.R
+"marker-assemble|^thermo$|search-anim"` — 83 pass, 0 fail.

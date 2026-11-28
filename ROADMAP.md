@@ -6537,3 +6537,27 @@ sentinel «взять seed политики».
     - блокер: нет; проверка идёт до `mismatch_weights()`.
     - следствие: внутренний `mismatch_weights()` не проверяется — это
       не граница доверия, экспортированный вход проверен.
+
+## ZV91. Счётчик воркеров доходит до движка целым
+
+Найдено ночной сменой 2026-11-28 вторым проходом по семейству ZV55–ZV90:
+`cores =` был проверен у четырёх индексов (ADR 0049), но не у трёх
+экспортированных путей, которые передают его в движок или пул отрисовки.
+`pcr_efficiency()` делал `processors = max(1L, as.integer(cores))`,
+`assemble_kasp_assay()`/`assemble_primer_assay()` — то же внутри
+`marker_bpparam()`, а `render_design_search()` — `min(as.integer(cores),
+length(uniq))`. Измерено: `1.9` даёт одного воркера, `Inf` — `NA` и ошибку
+движка без имени аргумента, `c(1, 2)` разрешается через `max()`/`min()`.
+
+- [x] **ZV91. Все пути `cores =` проверяют счётчик до движка.**
+    - правка: `check_worker_count(cores, "cores")` в `marker_bpparam()`,
+      `pcr_efficiency()` и `render_design_search()`; возвращённое целое идёт
+      дальше (ADR 0049, amendment).
+    - проверка: `test-marker-assemble.R` — оба конструктора отвергают `1.5`,
+      `0`, `Inf`, вектор и `"2"`; `test-thermo.R` — `pcr_efficiency()` и
+      контроль `1L`; `test-search-anim.R` — `render_design_search()` до первого
+      кадра; `dev/test.R "marker-assemble|^thermo$|search-anim"` — 83 pass,
+      0 fail.
+    - блокер: нет.
+    - следствие: дробь, бесконечность и вектор больше не меняют число
+      воркеров молча; сообщение называет `cores`.

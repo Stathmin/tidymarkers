@@ -74,3 +74,13 @@ test_that("assemble_gif refuses to write through a link", {
   expect_error(assemble_gif(character(), link), "which is a link")
   expect_identical(readLines(outside), "keep")
 })
+
+test_that("render_design_search() names the cores count before any frame", {
+  for (bad in list(1.5, 0, Inf, c(1, 2), "2")) {
+    expect_error(
+      render_design_search(NULL, NULL, NULL, cores = bad),
+      "positive whole number of workers",
+      fixed = TRUE
+    )
+  }
+})

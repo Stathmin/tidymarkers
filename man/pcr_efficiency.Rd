@@ -25,9 +25,9 @@ the binding site (as in \code{?DECIPHER::CalculateEfficiencyPCR}).}
 
 \item{ions}{monovalent + divalent salt (M).}
 
-\item{cores}{processors for the vectorised DECIPHER call (default
-\code{getOption("tidymarkers.cores", 1L)}; the many OligoArrayAux subprocesses are
-the hot spot, so >1 helps a lot, and 1 keeps CRAN happy).}
+\item{cores}{processors for the vectorised DECIPHER call, one positive whole
+number (default \code{getOption("tidymarkers.cores", 1L)}; the many OligoArrayAux
+subprocesses are the hot spot, so >1 helps a lot, and 1 keeps CRAN happy).}
 }
 \value{
 a numeric vector of efficiencies (0-1), one per primer/target pair.

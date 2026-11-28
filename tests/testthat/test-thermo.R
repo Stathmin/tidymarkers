@@ -103,3 +103,15 @@ test_that("amplicon_fold_check() is unknown past max_length and empty input erro
   expect_error(amplicon_fold_check(c("ACGT", "")), "sequence")
   expect_error(amplicon_fold_check(character(0)), "sequence")
 })
+
+test_that("pcr_efficiency() names the cores count before the engine", {
+  for (bad in list(1.5, 0, -1, Inf, c(1, 2), "2")) {
+    expect_error(
+      pcr_efficiency("ACGT", "ACGT", cores = bad),
+      "positive whole number of workers",
+      fixed = TRUE
+    )
+  }
+  local_mocked_bindings(has_oligoarrayaux = function() FALSE, .package = "tidymarkers")
+  expect_error(pcr_efficiency("ACGT", "ACGT", cores = 1L), "OligoArrayAux", fixed = TRUE)
+})

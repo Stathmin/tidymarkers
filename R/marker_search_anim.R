@@ -266,7 +266,7 @@ plot_design_search_step <- function(frames, step) {
 #' @param path output GIF path.
 #' @param fps frames per second.
 #' @param hold how many extra frames to hold the chosen AS/COM/final frames.
-#' @param cores cores for drawing frames; `1` is serial.
+#' @param cores cores for drawing frames, one positive whole number; `1` is serial.
 #' @return the GIF path (invisibly).
 #' @examples
 #' \dontrun{
@@ -283,6 +283,7 @@ render_design_search <- function(assay, variants, snp,
                                  path = fs::path(tempdir(), "design_search.gif"),
                                  fps = 4L, hold = 3L,
                                  cores = getOption("tidymarkers.cores", 1L)) {
+  cores <- check_worker_count(cores, "cores")
   rlang::check_installed("ggplot2")
   frames <- design_search_frames(assay, variants, snp)
   n <- nrow(frames$notes)
@@ -307,7 +308,7 @@ render_design_search <- function(assay, variants, snp,
     )
     NULL
   }
-  ncores <- min(as.integer(cores), length(uniq))
+  ncores <- min(cores, length(uniq))
   if (ncores > 1L) {
     # fork on Unix, a worker pool elsewhere (macOS/CRAN-friendly); frames are
     # independent, so all that is shared is the (serialisable) draw closure

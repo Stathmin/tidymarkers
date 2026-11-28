@@ -41,3 +41,20 @@ test_that("fixed primers without the PCR engine report discrimination unknown, n
   # verdict-ordering rule itself is covered in test-kasp-checks.R
   expect_false(identical(evaluation_verdict(out), "usable"))
 })
+
+test_that("both assembly entry points name a bad cores count before any engine", {
+  f <- snp_fixture()
+  primers <- c(AS_ref = "ACGT", AS_alt = "ACGT", COM = "ACGT")
+  for (bad in list(1.5, 0, Inf, c(1, 2), "2")) {
+    expect_error(
+      assemble_kasp_assay(f$genome, f$snp, flank = 150L, cores = bad),
+      "positive whole number of workers",
+      fixed = TRUE
+    )
+    expect_error(
+      assemble_primer_assay(f$genome, f$snp, primers, flank = 150L, cores = bad),
+      "positive whole number of workers",
+      fixed = TRUE
+    )
+  }
+})

@@ -603,7 +603,7 @@ with_unafloddat <- function(path, code) {
 #' @keywords internal
 #' @noRd
 marker_bpparam <- function(cores = getOption("tidymarkers.cores", 1L)) {
-  n <- max(1L, as.integer(cores))
+  n <- check_worker_count(cores, "cores")
   if (n <= 1L) {
     return(NULL)
   }
@@ -977,9 +977,9 @@ amplicon_fold_row <- function(seq, kind, conditions, min_single_stranded, max_le
 #' @param temp annealing temperature (C).
 #' @param P primer concentration (M).
 #' @param ions monovalent + divalent salt (M).
-#' @param cores processors for the vectorised DECIPHER call (default
-#'   `getOption("tidymarkers.cores", 1L)`; the many OligoArrayAux subprocesses are
-#'   the hot spot, so >1 helps a lot, and 1 keeps CRAN happy).
+#' @param cores processors for the vectorised DECIPHER call, one positive whole
+#'   number (default `getOption("tidymarkers.cores", 1L)`; the many OligoArrayAux
+#'   subprocesses are the hot spot, so >1 helps a lot, and 1 keeps CRAN happy).
 #' @return a numeric vector of efficiencies (0-1), one per primer/target pair.
 #' @examples
 #' \dontrun{
@@ -990,6 +990,7 @@ amplicon_fold_row <- function(seq, kind, conditions, min_single_stranded, max_le
 pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
                            P = PCR_EFF$P, ions = PCR_EFF$ions,
                            cores = getOption("tidymarkers.cores", 1L)) {
+  cores <- check_worker_count(cores, "cores")
   rlang::check_installed("DECIPHER")
   if (!has_oligoarrayaux()) {
     abort_msg("OligoArrayAux ('hybrid-min') is required for PCR efficiencies.",
@@ -1002,6 +1003,6 @@ pcr_efficiency <- function(primers, targets, temp = PCR_EFF$temp,
     primer = Biostrings::DNAStringSet(primers),
     target = Biostrings::DNAStringSet(targets),
     temp = temp, P = P, ions = ions, taqEfficiency = TRUE,
-    processors = max(1L, as.integer(cores))
+    processors = cores
   )))
 }

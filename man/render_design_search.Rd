@@ -27,7 +27,7 @@ render_design_search(
 
 \item{hold}{how many extra frames to hold the chosen AS/COM/final frames.}
 
-\item{cores}{cores for drawing frames; \code{1} is serial.}
+\item{cores}{cores for drawing frames, one positive whole number; \code{1} is serial.}
 }
 \value{
 the GIF path (invisibly).
