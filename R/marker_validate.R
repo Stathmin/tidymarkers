@@ -148,8 +148,7 @@ check_coord <- function(x, arg) {
 #' @keywords internal
 #' @noRd
 check_nucleotide_length <- function(x, arg, multi = FALSE) {
-  typed <- is.numeric(x) || is.character(x)
-  if (typed && length(x) && (multi || length(x) == 1L) && !any(bad_position(x))) {
+  if (length(x) && (multi || length(x) == 1L) && !any(bad_position(x))) {
     return(as.integer(x))
   }
   if (multi) {
