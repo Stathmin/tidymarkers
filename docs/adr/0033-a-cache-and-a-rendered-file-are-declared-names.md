@@ -142,3 +142,29 @@ the refusal, which does not need `ensembldb`.
 
 The roster now covers the read side too: a hit test that asks `file_exists()`
 alone is a defect of the same family.
+
+## Amendment 2026-11-28 (the roster is a checked ledger)
+
+The roster was closed by hand, one audit at a time: ZV29, ZV33–ZV44. A rule
+enforced by memory fails the first time nobody rereads it, so the audit is now a
+gate.
+
+- `dev/check-writers.R` parses every top-level function in `R/` and fails when a
+  body calls a write primitive (`write_csv`, `write_lines`, `writeLines`,
+  `saveRDS`, `save`, `ggsave`, `write_xml`, `download.file`, `file_copy`,
+  `file_move`, `file.copy`, `file.rename`, `writeBin`, `write.csv`,
+  `write.table`) without `refuse_links()`, `declared_path()`,
+  `declared_index()` or `cache_present()` in the same body.
+- `dev/writers.yml` is the ledger of the exceptions, each with a reason that
+  names the declaring caller or the private temp directory. A registered symbol
+  that stops writing unguarded is stale and fails too, so the ledger cannot
+  quietly outlive its excuse.
+- The scan is a heuristic over source text, not a proof: `reprex_from_table()`
+  is registered because it builds script text that contains `writeLines()`, not
+  because it writes. The gate's own `--self-test` runs one unguarded and one
+  guarded synthetic body through the checker, so a scanner that stopped
+  matching fails instead of passing.
+- Step `2b2` in `dev/check.R`. Measured 2026-11-28: 24 writer bodies, 17 declare
+  their names inline, 7 are registered (three write into `withr::local_tempdir()`,
+  two are helpers whose caller declares the name, one is the script-text false
+  positive, one is `fold_amplicon()`'s private FASTA). ZV45.
