@@ -290,16 +290,19 @@ baseline delta for every stage and route.
 
 ## Blocker
 
-Status stays `proposed` because gate 5 (the release dry run) and gate 6 (the
-2026-11-28 daily report) have not been run since this ADR was written. Gate 5
-needs `dev/check.R --full`, which runs `R CMD check --as-cran`; the 2026-11-28
-night shift may not run the full suite. Gate 6's report
-`data/metrics/metrics-2026-11-28.md` is not written yet, though the day's JSONL
-passes `dev/metrics.R --check 2026-11-28` (29 rows). Gates 1–4 are green:
+Status stays `proposed` because gate 5 (the release dry run) has not been run
+since this ADR was written. Gate 5 needs `dev/check.R --full`, which runs
+`R CMD check --as-cran`; the 2026-11-28 night shift may not run the full suite.
+Gate 6 was run on 2026-11-28: the day's JSONL passes
+`dev/metrics.R --check 2026-11-28` (29 rows) and `--report` writes
+`data/metrics/metrics-2026-11-28.md`. Its §5 comparison cells are `not_run`
+with n = 0 and the reason "no current rows", because no J1–J7 route ran that
+day; the day's rows are all `stage = "repair"`. That is the named-`not_run`
+form gate 6 allows, not a green p95 or cost claim. Gates 1–4 are green:
 `test-scenario-j6.R` passes, `dev/check-mcp-parity.R` prints `ok mcp-parity`,
 and `dev/check-user-api.R` prints `ok user-api` at 213 exports / 52 S3 methods.
-The ADR becomes `accepted` in the commit that runs the dry run and writes the
-report; until then `proposed` names a specific unmet gate, per plan §8.
+The ADR becomes `accepted` in the commit that runs the dry run; until then
+`proposed` names a specific unmet gate, per plan §8.
 
 ## Revisit trigger
 
