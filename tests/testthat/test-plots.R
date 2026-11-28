@@ -276,6 +276,17 @@ test_that("the feature row draws annotation, or notes its absence", {
   # a gene record (start/end/strand/symbol) works the same way
   gene <- list(symbol = "FRI", start = m$snp$pos - 30L, end = m$snp$pos + 30L, strand = "-")
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp, features = gene), "patchwork")
+  # a fractional or negative bound is not rounded into a neighbour (ADR 0078)
+  bad <- tibble::tibble(start = m$snp$pos - 40.5, end = m$snp$pos + 40L, name = "GENE")
+  expect_error(
+    plot_primers(m$assay, m$variants, m$snp, features = bad),
+    "whole positive"
+  )
+  bad <- tibble::tibble(start = -5L, end = m$snp$pos + 40L, name = "GENE")
+  expect_error(
+    plot_primers(m$assay, m$variants, m$snp, features = bad),
+    "whole positive"
+  )
 })
 
 test_that("the variant landscape draws a bare target without an `id` column", {
