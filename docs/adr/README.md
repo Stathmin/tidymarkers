@@ -84,6 +84,8 @@ the file records the measurement or event that re-tested it).
 | [0071](0071-a-region-bound-is-a-coordinate-before-the-cast.md) | A region bound is a coordinate before the cast | accepted |
 | [0072](0072-a-feature-chromosome-is-one-name.md) | A feature chromosome is one name | accepted |
 | [0073](0073-a-diagnostic-mask-position-is-whole-in-its-spelling.md) | A diagnostic mask position is whole in its spelling | accepted |
+| [0074](0074-a-gt-allele-index-is-whole-in-its-spelling.md) | A GT allele index is whole in its spelling | accepted |
+| [0075](0075-a-fixed-input-position-is-whole-before-the-cast.md) | A fixed-input position is whole before the cast | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

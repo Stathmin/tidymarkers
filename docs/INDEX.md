@@ -304,6 +304,12 @@ Other vignettes:
 - [ADR 0073](adr/0073-a-diagnostic-mask-position-is-whole-in-its-spelling.md) —
   a diagnostic-mask position is judged by its spelling before `as.integer()`,
   so `10.9` is refused instead of flagging base 10.
+- [ADR 0074](adr/0074-a-gt-allele-index-is-whole-in-its-spelling.md) — a GT
+  allele token must be digits before the cast, so `1.5/1` is an absent call,
+  not a hom-alt genotype.
+- [ADR 0075](adr/0075-a-fixed-input-position-is-whole-before-the-cast.md) — a
+  fixed SNP and a chunk table check `pos` by its spelling before
+  `as.integer()`, so `10.9` and `-5` are refused, not shifted.
 
 ## Operator decisions
 
