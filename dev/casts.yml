@@ -59,3 +59,7 @@ entries:
     reason: "`start`/`end` come from the Ensembl REST record; the cast canonicalises its integer fields."
   - symbol: find_palindromes/
     reason: "the nested helper casts `start`/`end` of a Biostrings match, integer by construction."
+  - symbol: marker_ingest_literature
+    reason: "`ingest_check_criteria()` refuses both thresholds at the top of the function, before this cast (ADR 0081)."
+  - symbol: has_palindrome/
+    reason: "the enclosing `has_palindrome()` checks all three counts before the nested scan (ADR 0052, 0063)."

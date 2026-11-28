@@ -16,6 +16,13 @@
 #  guards below count.  A cast on an internal integer object still needs an
 #  entry, so the ledger says why it cannot receive a fraction.
 #
+#  A base-pair or copy *threshold* is the same question: `as.numeric()` let
+#  `min_band_gap = 20.9` narrow the arms floor and `NA` reach a base R `if`
+#  with a message naming no argument (ADR 0081).  A direct cast of an argument
+#  named `min_*`/`max_*` is therefore a cast of the same kind; a threshold
+#  merely mentioned inside a comparison casts the comparison's logical result,
+#  not the threshold, and is not reported.
+#
 #  Fails when:
 #    - an unguarded cast has no ledger entry        (new unguarded cast)
 #    - a ledger entry no longer has a cast          (stale justification)
@@ -43,10 +50,15 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
 # internal interval is registered, not exempted.
 position_name <- c("pos", "POS", "pos_raw", "positions", "stab_at", "start", "end")
 
+# A count of base pairs or copies carries the same whole-in-its-spelling rule
+# when it gates a design (ADR 0081).
+threshold_name <- "^(min|max)_"
+
 # A guard refuses or normalises a position; it does not merely report one.
 guard_primitive <- c(
   "bad_position", "check_target_pos", "check_depth_pos", "check_coord",
-  "check_scan_radius", "check_nucleotide_length", "is_whole_number"
+  "check_scan_radius", "check_nucleotide_length", "is_whole_number",
+  "check_base_pairs", "check_worker_count"
 )
 
 # The called name without a namespace prefix, or NA for a computed head.
@@ -113,6 +125,29 @@ mentions_position <- function(e) {
   FALSE
 }
 
+# TRUE when the expression *is* a threshold name (or a `$`/`[[` of one).
+# A threshold nested inside a comparison is not a cast of the threshold: the
+# value cast there is the comparison's logical result.
+directly_names_threshold <- function(e) {
+  if (is.name(e)) {
+    return(grepl(threshold_name, as.character(e)))
+  }
+  if (!is.call(e)) {
+    return(FALSE)
+  }
+  head <- call_name(e)
+  if (head %in% c("$", "[[") && length(e) >= 3L) {
+    tag <- tryCatch(e[[3L]], error = function(err) NULL)
+    if (is.name(tag)) {
+      return(grepl(threshold_name, as.character(tag)))
+    }
+    if (is.character(tag)) {
+      return(any(grepl(threshold_name, tag)))
+    }
+  }
+  FALSE
+}
+
 # Cast and guard calls in one unit, in body order, not descending into a
 # nested definition: that definition is its own unit and needs its own guard.
 scan_calls <- function(expr, found = list()) {
@@ -123,7 +158,11 @@ scan_calls <- function(expr, found = list()) {
   if (!is.na(name) && name %in% guard_primitive) {
     found <- c(found, list(list(kind = "guard", name = name)))
   }
-  if (identical(name, "as.integer") && length(expr) == 2L && mentions_position(expr[[2L]])) {
+  position_cast <- identical(name, "as.integer") && length(expr) == 2L &&
+    mentions_position(expr[[2L]])
+  threshold_cast <- name %in% c("as.integer", "as.numeric", "as.double") &&
+    length(expr) == 2L && directly_names_threshold(expr[[2L]])
+  if (position_cast || threshold_cast) {
     found <- c(found, list(list(kind = "cast", name = name)))
   }
   if (identical(name, "function")) {
@@ -165,7 +204,7 @@ check_casts <- function(registry, hits) {
   if (length(unregistered)) {
     problems <- c(
       problems,
-      paste0("unguarded position cast (guard it, or add to dev/casts.yml): ", unregistered)
+      paste0("unguarded position/threshold cast (guard it, or add to dev/casts.yml): ", unregistered)
     )
   }
   stale <- setdiff(symbols, unguarded)
@@ -181,6 +220,9 @@ check_casts <- function(registry, hits) {
 self_test <- function() {
   bodies <- c(
     unguarded = "function(x) as.integer(x$pos)",
+    threshold = "function(x) as.numeric(x$min_gap)",
+    threshold_guarded = "function(x) { check_base_pairs(x$min_gap, \"min_gap\"); as.numeric(x$min_gap) }",
+    thermophilic = "function(x) as.numeric(x$as_tm)",
     unguarded_interval = "function(x) as.integer(x$start)",
     fractional = "function(x) as.integer(x$pos + 0.5)",
     guarded = "function(x) { bad_position(x$pos); as.integer(x$pos) }",
@@ -199,21 +241,25 @@ self_test <- function() {
   hits <- scan_casts(units)
   empty <- check_casts(list(), hits)
   expected <- paste0(
-    "unguarded position cast (guard it, or add to dev/casts.yml): ",
-    c("fractional", "late", "unguarded", "unguarded_interval")
+    "unguarded position/threshold cast (guard it, or add to dev/casts.yml): ",
+    c("fractional", "late", "threshold", "unguarded", "unguarded_interval")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded position cast was not caught")
   }
-  if (any(c("integer_internal", "labelled", "strings") %in% names(hits))) {
-    stop("self-test: a non-position cast was reported")
+  if (any(c("integer_internal", "labelled", "strings", "thermophilic") %in% names(hits))) {
+    stop("self-test: a non-position/non-threshold cast was reported")
+  }
+  if (!isTRUE(hits[["threshold_guarded"]]$guarded)) {
+    stop("self-test: a guarded threshold cast was reported as unguarded")
   }
   ok <- check_casts(
     list(
       list(symbol = "unguarded", reason = "self-test"),
       list(symbol = "unguarded_interval", reason = "self-test"),
       list(symbol = "fractional", reason = "self-test"),
-      list(symbol = "late", reason = "self-test")
+      list(symbol = "late", reason = "self-test"),
+      list(symbol = "threshold", reason = "self-test")
     ),
     hits
   )
@@ -246,7 +292,7 @@ if (length(problems)) {
   quit(status = 1L)
 }
 cat(
-  "  ok   ", length(hits), " position cast(s), ",
+  "  ok   ", length(hits), " position/threshold cast(s), ",
   sum(vapply(hits, `[[`, logical(1), "guarded")), " guarded in place, ",
   length(registry), " registered with a reason; self-test passed\n",
   sep = ""
