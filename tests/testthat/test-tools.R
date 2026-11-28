@@ -77,6 +77,25 @@ test_that("marker_install_tools() drops the session memo", {
   expect_length(ls(tidymarkers:::.marker_state$memo, all.names = TRUE), 0L)
 })
 
+test_that("marker_install_tools refuses a link where the download and install go", {
+  dest <- withr::local_tempdir()
+  outside <- fs::path(dest, "outside.txt")
+  writeLines("keep", outside)
+  for (member in c(
+    "oligoarrayaux-3.8.1.tar.gz", "oligoarrayaux-3.8.1", "bin", "share"
+  )) {
+    link <- fs::path(dest, member)
+    skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+    expect_error(
+      tidymarkers::marker_install_tools(dest, ask = FALSE, force = TRUE),
+      "which is a link",
+      class = "rlang_error"
+    )
+    expect_equal(readLines(outside), "keep")
+    file.remove(link)
+  }
+})
+
 test_that("a missing OligoArrayAux is reported once per session, not per oligo", {
   # a 100-marker design asks oligo_dg() thousands of times; the machine's
   # missing tool is one fact, so the hint is told once

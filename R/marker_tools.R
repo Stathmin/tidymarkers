@@ -275,6 +275,16 @@ marker_install_tools <- function(dest = fs::path(marker_cache_dir(), "tools"),
     cli::cli_alert_info(gettext("Cancelled; nothing was downloaded."))
     return(invisible(dest))
   }
+  # the archive, the unpacked tree and the two install trees are ours: a link
+  # at any of them would send the download or the install outside (ADR 0033)
+  refuse_links(
+    dest,
+    c(
+      glue::glue("oligoarrayaux-{version}.tar.gz"),
+      glue::glue("oligoarrayaux-{version}"),
+      "bin", "share"
+    )
+  )
   make <- if (.Platform$OS.type == "windows") Sys.which("make") else Sys.which("make")
   if (!nzchar(make)) {
     abort_msg(
