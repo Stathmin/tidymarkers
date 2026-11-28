@@ -251,15 +251,30 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
       i, encodeString(as.character(variants$pos[[i]]))
     ))
   }
-  load_namespace_quietly("VariantAnnotation", reason = "for structured annotation")
-  txdb <- txdb %||% marker_txdb()
+  # The documentation promises a locus filter, and a locus has bounds: the
+  # model is only asked about the rows the caller kept (ADR 0084).
+  if (!is.null(gene) && !is.null(gene$chrom)) {
+    variants <- dplyr::filter(variants, .data$chrom == ath_chrom(gene$chrom))
+  }
+  if (!is.null(gene) && (!is.null(gene$start) || !is.null(gene$end))) {
+    if (
+      (!is.null(gene$start) && bad_position(gene$start)) ||
+        (!is.null(gene$end) && bad_position(gene$end))
+    ) {
+      abort_msg("`gene$start`/`gene$end` must be positive whole numbers.")
+    }
+    lo <- gene$start %||% 1L
+    hi <- gene$end %||% Inf
+    variants <- dplyr::filter(
+      variants, .data$pos >= lo, .data$pos <= hi
+    )
+  }
   if (nrow(variants) == 0L) {
     return(variants)
   }
 
-  if (!is.null(gene) && !is.null(gene$chrom)) {
-    variants <- dplyr::filter(variants, .data$chrom == ath_chrom(gene$chrom))
-  }
+  load_namespace_quietly("VariantAnnotation", reason = "for structured annotation")
+  txdb <- txdb %||% marker_txdb()
 
   refs <- purrr::map_chr(variants$ref_genome, 1L)
   alts <- purrr::map_chr(variants$ref_genome, 2L)

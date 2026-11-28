@@ -180,3 +180,18 @@ test_that("annotate_variants refuses a pos that is not whole", {
   v$pos <- "269745.5"
   expect_error(annotate_variants(v), "not a positive whole number")
 })
+
+# The documented `gene` filter is a locus, not a chromosome: a row outside its
+# bounds must not reach the annotation model at all.
+test_that("annotate_variants keeps only the rows the gene bounds name", {
+  v <- tibble::tibble(
+    id = c("a", "b"), chrom = "Chr4", pos = c(100L, 269745L),
+    ref_genome = list(c("G", "A"), c("G", "A")), consequence = NA_character_
+  )
+  out <- annotate_variants(v, gene = list(chrom = "Chr4", start = 1L, end = 50L))
+  expect_equal(nrow(out), 0L) # returned before the model would be loaded
+  expect_error(
+    annotate_variants(v, gene = list(chrom = "Chr4", start = 269000.5)),
+    "positive whole numbers"
+  )
+})
