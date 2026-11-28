@@ -75,6 +75,10 @@
   Следом гейт приведений расширен на `start`/`end`: класс ZV106 был невидим
   сканеру, потому что интервал не считался позицией (ZV107,
   [ADR 0079](../adr/0079-the-cast-gate-judges-an-interval-too.md)).
+  Следом гейт перестал доверять метрикам на слово: `dev/metrics.R --check`
+  проверяет строки текущего дня как шаг `dev/check.R`, после трёх repair-строк
+  с прозой в `object_id` (ZV108,
+  [ADR 0080](../adr/0080-the-gate-checks-the-days-run-metrics.md)).
   Следом ZV46: гейт называл `cache_present()` стражем, хотя это проверка
   попадания; словарь сужен до трёх отказывающих вызовов, решение —
   [ADR 0035](../adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md).
