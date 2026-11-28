@@ -254,6 +254,10 @@ Other vignettes:
   `design_as_primers()` checks `v_start`, `variant_offset` and a `linked`
   offset before it builds the template, so a fraction is refused by name
   instead of truncating into a different molecule.
+- [ADR 0060](adr/0060-a-target-window-names-its-whole-locus.md) —
+  `snp_template()` names `pos` before it cuts the window, and
+  `strand_gc_hint()` names `pos` and `flank`, so every single-locus designer
+  refuses a fraction instead of building for a different SNP.
 
 ## Operator decisions
 

@@ -127,7 +127,7 @@ ensembl_variants <- function(chrom, start, end,
 #' otherwise bloat anything we serialise (e.g. the saved assay).
 #' @param genome DNAStringSet.
 #' @param chrom chromosome name.
-#' @param pos variant position.
+#' @param pos variant position, as one positive whole number.
 #' @param flank window half-width (bp).
 #' @return a list with `seq` (the window as a standalone `DNAString`) and
 #'   `snp_i` (the variant's coordinate within it).
@@ -138,6 +138,10 @@ ensembl_variants <- function(chrom, start, end,
 #' @export
 snp_template <- function(genome, chrom, pos, flank = 150L) {
   flank <- check_base_pairs(flank, "flank")
+  # `as.integer(pos)` truncated a fractional locus, so the window (and every
+  # designer using it) was built for a different SNP than the table named
+  # (ADR 0060).  Name the coordinate before the window is cut.
+  pos <- check_coord(pos, "pos")
   # a target nearer an end than `flank` gets the window it has: asking for
   # coordinates past the sequence raises, and a clipped window is still a window
   len <- genome_length(genome, chrom)
@@ -154,8 +158,8 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
 #' +/-`flank` bases sit closest to 45%.  Returned here as a diagnostic.
 #' @param genome DNAStringSet.
 #' @param chrom chromosome name.
-#' @param pos variant position.
-#' @param flank bases to look at on each side.
+#' @param pos variant position, as one positive whole number.
+#' @param flank bases to look at on each side, as a positive whole number.
 #' @return a tibble with `side` (`upstream`/`downstream`), `gc` and
 #'   `distance_to_45`.
 #' @examples
@@ -164,6 +168,10 @@ snp_template <- function(genome, chrom, pos, flank = 150L) {
 #' @family design
 #' @export
 strand_gc_hint <- function(genome, chrom, pos, flank = 25L) {
+  # a fractional coordinate reached `get_region()` and was reported as `start`
+  # or `end`, not as the argument the caller named (ADR 0060)
+  pos <- check_coord(pos, "pos")
+  flank <- check_base_pairs(flank, "flank")
   up <- as.character(get_region(genome, chrom, max(1L, pos - flank), pos - 1L))
   dn <- as.character(get_region(genome, chrom, pos + 1L, pos + flank))
   tibble::tibble(side = c("upstream", "downstream"), gc = c(gc_frac(up), gc_frac(dn))) |>

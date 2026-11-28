@@ -11,9 +11,9 @@ strand_gc_hint(genome, chrom, pos, flank = 25L)
 
 \item{chrom}{chromosome name.}
 
-\item{pos}{variant position.}
+\item{pos}{variant position, as one positive whole number.}
 
-\item{flank}{bases to look at on each side.}
+\item{flank}{bases to look at on each side, as a positive whole number.}
 }
 \value{
 a tibble with \code{side} (\code{upstream}/\code{downstream}), \code{gc} and

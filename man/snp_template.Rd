@@ -11,7 +11,7 @@ snp_template(genome, chrom, pos, flank = 150L)
 
 \item{chrom}{chromosome name.}
 
-\item{pos}{variant position.}
+\item{pos}{variant position, as one positive whole number.}
 
 \item{flank}{window half-width (bp).}
 }
