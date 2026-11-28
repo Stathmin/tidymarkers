@@ -167,3 +167,29 @@ character spellings are judged like numeric ones (ADR 0068). The refusals keep
 their existing messages and row numbers. Verification:
 `tests/testthat/test-io.R` refuses `pos = "100.5"`, `pos = "1e3"` and
 `depth = "30.9"`; `Rscript dev/test.R "^io$"` — 235 pass, 0 fail, 3 skip.
+
+## Amendment (2026-11-28): a type with no spelling is refused, not guessed
+
+`bad_position()` ended its type dispatch with a fall-through that said "not
+bad" for anything that was not numeric or character:
+
+```r
+frac <- if (is.numeric(x)) !is.finite(x) | x != round(x)
+        else if (is.character(x)) !grepl("^ *[+-]?[0-9]+ *$", x)
+        else rep(FALSE, length(x))
+```
+
+So a factor column passed, and `as.integer()` turned it into its codes; a
+logical passed and became 0/1; a complex passed and lost its imaginary part; a
+list passed and became its first element. Measured before the fix:
+`bad_position(factor(c("250", "999")))` → `FALSE FALSE`,
+`bad_position(c(TRUE, FALSE))` → `FALSE TRUE`, `bad_position(1 + 1i)` →
+`FALSE`, `bad_position(list(1))` → `FALSE`. Every one of those reaches a cast
+that writes a coordinate the caller never supplied — the same class as ZV1.
+
+The fall-through now refuses (`rep(TRUE, length(x))`), so only a numeric or a
+character value can be judged by spelling. All 27 call sites pass coordinate
+columns, so no caller loses a legitimate input. Verification:
+`tests/testthat/test-validate.R` covers factor, logical, complex, list, and
+still accepts `integer(0)`; `Rscript dev/test.R "^validate$"` — 25 pass, 0 fail;
+`Rscript dev/test.R "^io$"` — 247 pass, 0 fail, 3 skip.
