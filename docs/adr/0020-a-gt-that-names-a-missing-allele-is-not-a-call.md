@@ -95,3 +95,27 @@ if (no_call && !is.na(depth) && depth > 0) {
   `./.:6,4` give `1`; all five keep `depth = 10`. Before the change the first
   two returned `1` (probe `/tmp/opencode/probe_gt.R`).
 - `Rscript dev/test.R "^io$"` — 163 pass, 0 fail.
+
+## Amendment (2026-11-28) — a negative allele index is not a dosage
+
+The decision above said "an allele the record does not have". The code checked
+only the upper bound (`any(a > 1L)`), so a malformed `GT` whose allele is a
+negative integer was summed and returned as a *negative* dosage:
+
+| record | GT | AD | dosage before |
+| --- | --- | --- | --- |
+| biallelic | `-1/0` | `6,4` | `-1` |
+| biallelic | `-1/-1` | `6,4` | `-2` |
+
+No allele index below zero exists, so the same rule applies: a genotype whose
+alleles are not both `0` or `1` is `NA`, and `AD` still does not answer for it
+because the call is present. One bound, not two:
+
+```r
+if (length(a) != 2L || any(a < 0L | a > 1L)) NA_real_ else sum(a)
+```
+
+`marker_informativeness()` therefore never sums a negative dosage. Verified in
+`tests/testthat/test-io.R` ("a GT naming a missing allele is NA, not a guess
+from AD"): `-1/0:6,4` and `-1/-1:6,4` are `NA`, `depth = 10`;
+`Rscript dev/test.R "^io$"` — 213 pass, 0 fail.

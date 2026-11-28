@@ -319,7 +319,7 @@ genotype_call <- function(gt, ad) {
     alleles <- strsplit(gt, "[/|]", perl = TRUE)[[1L]]
     a <- suppressWarnings(as.integer(alleles))
     a <- a[!is.na(a)]
-    if (length(a) != 2L || any(a > 1L)) NA_real_ else sum(a)
+    if (length(a) != 2L || any(a < 0L | a > 1L)) NA_real_ else sum(a)
   }
   if (no_call && !is.na(depth) && depth > 0) {
     dosage <- round(2 * alt_depth / depth)

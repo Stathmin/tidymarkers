@@ -705,7 +705,10 @@ test_that("a GT naming a missing allele is NA, not a guess from AD", {
     "1\t700\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:6,4",
     # an absent call is not an invalid one: AD still decides it
     "1\t800\t.\tA\tG\t.\t.\t.\tGT:AD\t.:6,4",
-    "1\t900\t.\tA\tG\t.\t.\t.\tGT:AD\t./.:6,4"
+    "1\t900\t.\tA\tG\t.\t.\t.\tGT:AD\t./.:6,4",
+    # a negative allele index names nothing either; it is not a dosage of -1
+    "1\t1000\t.\tA\tG\t.\t.\t.\tGT:AD\t-1/0:6,4",
+    "1\t1100\t.\tA\tG\t.\t.\t.\tGT:AD\t-1/-1:6,4"
   ), vcf)
   g <- read_variant_genotypes(vcf)
   at <- function(pos) g$genotype[g$pos == pos][[1L]]
@@ -715,8 +718,11 @@ test_that("a GT naming a missing allele is NA, not a guess from AD", {
   expect_equal(at(800L), 1)
   # a no-call is not an invalid call: AD still fills it, as it always did
   expect_equal(at(900L), 1)
+  # an allele index outside 0/1 is not estimable, and is not a negative dosage
+  expect_true(is.na(at(1000L)))
+  expect_true(is.na(at(1100L)))
   # the read is dropped from the dosage, not from the depth
-  expect_equal(g$depth, rep(10, 5))
+  expect_equal(g$depth, rep(10, 7))
 })
 
 test_that("genotypes feed marker_informativeness", {
