@@ -89,4 +89,4 @@ valid <- length(counts) == 2L && all(is.finite(counts)) &&
   first returned dosage `4` (probe `/tmp/opencode/probe_gt.R`).
 - `write_variants_vcf()` refuses each of the four depths by the documented
   message, so the reader and the writer now name the same admissible set.
-- `Rscript dev/test.R "^io$"` — 214 pass, 0 fail.
+- `Rscript dev/test.R "^io$"` — 220 pass, 0 fail.

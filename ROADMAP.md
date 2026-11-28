@@ -5696,3 +5696,19 @@ ADR 0006 (панель как оркестратор) висел `proposed` с 2
     - блокер: нет; тест офлайновый.
     - следствие: `weight` всегда в `[0, 1]`; сырой `DP` читатель не
       переписывает. Решение — [ADR 0039](docs/adr/0039-a-negative-depth-carries-no-confidence.md).
+
+## ZV58. «Lossless» называет читателя, который возвращает глубину
+
+`write_variants_vcf()` обещал lossless round trip для `chrom`/`pos`/`ref`/`alt`
+и `depth`, но `read_variants_vcf()` возвращает только четыре аллельные
+колонки: `depth` пишется в `INFO/DP` и читается `read_variant_depth()`, как и
+делает тест `write_variants_vcf round-trips SNP, InDel and multi-allelic
+through VCF`. Документация теперь называет оба читателя, чтобы пример не
+обещал колонку, которой нет.
+
+- [x] **ZV58. Роскошь `depth` — через `read_variant_depth()`.**
+    - правка: roxygen `write_variants_vcf()` и `man/write_variants_vcf.Rd`
+      (только этот файл перегенерирован).
+    - проверка: существующий round-trip тест уже сравнивает `depth` из
+      `read_variant_depth()`; поведение не меняется.
+    - блокер: нет.

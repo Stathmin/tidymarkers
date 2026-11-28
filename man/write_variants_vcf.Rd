@@ -17,9 +17,11 @@ the path written (invisibly when \code{path} is given).
 \description{
 Writes exactly the four columns \code{\link[=read_variants_vcf]{read_variants_vcf()}} consumes, one record per
 ALT allele (a multi-allelic site is written once per allele, as it reads back)
-and \code{depth} as \code{INFO/DP} when the column is present.  The round trip is
-lossless for \code{chrom} (via \code{ath_chrom()} on read), \code{pos}, \code{ref}, \code{alt} and
-\code{depth}; other columns (e.g. \code{pop_freq}) are not written.
+and \code{depth} as \code{INFO/DP} when the column is present.  \code{\link[=read_variants_vcf]{read_variants_vcf()}}
+returns the four allele columns losslessly (\code{chrom} via \code{ath_chrom()} on
+read); \code{depth} is not one of them and reads back through
+\code{\link[=read_variant_depth]{read_variant_depth()}}, as in the round-trip test.  Other columns (e.g.
+\code{pop_freq}) are not written.
 }
 \details{
 A row is checked against the same admission rule the readers apply (ADR

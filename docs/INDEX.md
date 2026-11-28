@@ -174,6 +174,12 @@ Other vignettes:
 - [ADR 0037](adr/0037-the-write-vocabulary-names-every-primitive.md) — the write
   vocabulary names every primitive that creates a file: `writeXStringSet()` is
   a writer, and the self-test proves the list cannot silently shrink.
+- [ADR 0038](adr/0038-a-depth-the-writer-refuses-is-not-a-depth-the-reader-reports.md) —
+  the `AD` fallback admits only non-negative whole counts within integer range;
+  a depth the writer refuses is `NA`, not a dosage outside `0`/`1`/`2`/`NA`.
+- [ADR 0039](adr/0039-a-negative-depth-carries-no-confidence.md) — the depth
+  term of `variant_confidence()` is floored at zero, so `weight` stays in
+  `[0, 1]` and a negative `DP` weighs nothing rather than less than nothing.
 
 ## Operator decisions
 
