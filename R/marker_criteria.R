@@ -189,7 +189,6 @@ criterion_evidence_from_flag <- function(calibrated) {
 }
 
 
-
 # A whole number without the trailing `.0` a threshold never needs.
 criterion_num <- function(x) {
   if (length(x) != 1L || is.na(x)) {

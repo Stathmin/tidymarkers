@@ -1,7 +1,13 @@
 # A self-repair row is only useful if its duration is measured (ZV14).  The
 # helper writes the journal row and the repair metric from one start/end pair.
 
-repair_script <- function() testthat::test_path("..", "..", "dev", "repair.R")
+repair_script <- function() {
+  path <- testthat::test_path("..", "..", "dev", "repair.R")
+  # dev/ is repo tooling and is not part of the built package, so R CMD check
+  # has no copy; only a dev checkout can exercise the script.
+  testthat::skip_if_not(file.exists(path), "dev/repair.R is not shipped in the built package")
+  path
+}
 
 repair_run <- function(args) {
   quoted <- vapply(args, shQuote, character(1))

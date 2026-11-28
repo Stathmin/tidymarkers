@@ -220,10 +220,12 @@ marker_solve <- function(plan, ..., cache = NULL, all = FALSE, progress = intera
 
   report <- tibble::tibble(
     label = tg$label, chrom = tg$chrom, pos = tg$pos, ref = tg$ref, alt = tg$alt, type = tg$type,
-    scheme = purrr::map_chr(recs, "scheme"),
-    cost = purrr::map_dbl(recs, "cost"),
-    ok = purrr::map_lgl(recs, "ok"),
-    tried = purrr::map_chr(recs, "tried"),
+    # recs is named by target key, and map_* carries those names; a report
+    # column is data, not a named vector, so drop them here once.
+    scheme = unname(purrr::map_chr(recs, "scheme")),
+    cost = unname(purrr::map_dbl(recs, "cost")),
+    ok = unname(purrr::map_lgl(recs, "ok")),
+    tried = unname(purrr::map_chr(recs, "tried")),
     marker = purrr::map(recs, "marker")
   )
   # a region's answer is only a statement about haplotypes inside its phased

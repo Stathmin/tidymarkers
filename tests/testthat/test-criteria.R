@@ -352,6 +352,7 @@ test_that("the criterion constructor refuses a table missing a documented column
 })
 
 test_that("a criteria table carries the limits it rendered and feeds them back", {
+  skip_if_no_oligoarrayaux()
   crit <- marker_criteria()
   expect_s3_class(crit, "criteria")
   expect_identical(as_limits(crit), KASP_LIMITS)

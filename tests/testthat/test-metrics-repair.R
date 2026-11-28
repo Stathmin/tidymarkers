@@ -4,6 +4,9 @@
 
 metrics_writer <- function() {
   path <- testthat::test_path("..", "..", "dev", "metrics.R")
+  # dev/ is repo tooling and is not part of the built package, so R CMD check
+  # has no copy; only a dev checkout can exercise the script.
+  testthat::skip_if_not(file.exists(path), "dev/metrics.R is not shipped in the built package")
   env <- new.env(parent = globalenv())
   sys.source(path, envir = env)
   env

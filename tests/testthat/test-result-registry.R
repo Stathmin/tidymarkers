@@ -19,6 +19,7 @@ test_that("plot() is the only plot S3 method and lookup walks the class vector",
 })
 
 test_that("result objects carry marker as their last class", {
+  skip_if_no_oligoarrayaux()
   f <- snp_fixture()
   a <- suppressWarnings(design_asq_marker(f$genome, f$snp, cores = 1L))
   expect_identical(class(a)[1L], "marker_assay")
