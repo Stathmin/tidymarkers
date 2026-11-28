@@ -353,3 +353,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0077](adr/0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md) —
   the shared locus row and the exported `GRanges` bridge judge `pos` before the
   cast, so `10.9` and `-5` are refused, not designed or ranged.
+- [ADR 0078](adr/0078-a-plotted-feature-interval-is-whole-in-its-spelling.md) —
+  the feature table behind a plotted annotation judges `start`/`end` before the
+  cast, so `10.9` and `-5` are refused, not drawn a base off.

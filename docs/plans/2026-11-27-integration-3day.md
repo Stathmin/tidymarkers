@@ -68,6 +68,10 @@
   Следом тот же обход закрыл общий ряд локуса трёх входов дизайна и
   экспортированный мост в `GRanges` (ZV105,
   [ADR 0077](../adr/0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md)).
+  Тот же обход за пределами гейта позиций нашёл границы таблицы `features`,
+  которые рисует аннотацию: `normalise_features()` приводил `start`/`end` без
+  проверки (ZV106,
+  [ADR 0078](../adr/0078-a-plotted-feature-interval-is-whole-in-its-spelling.md)).
   Следом ZV46: гейт называл `cache_present()` стражем, хотя это проверка
   попадания; словарь сужен до трёх отказывающих вызовов, решение —
   [ADR 0035](../adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md).
