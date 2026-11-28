@@ -131,6 +131,9 @@ Other vignettes:
 - [ADR 0026](adr/0026-an-artefacts-id-is-the-hash-of-what-it-stores.md) — an
   artefact's id is the hash of the JSON it stores and is recomputed on read; a
   manifest edited after it was written is refused instead of replayed.
+- [ADR 0027](adr/0027-a-record-directory-holds-one-design.md) — writing a
+  design into a directory replaces the whole record, including `solved.rds`,
+  so a rewritten manifest never replays the design it replaced.
 
 ## Operator decisions
 
