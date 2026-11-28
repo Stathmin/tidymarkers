@@ -76,6 +76,7 @@ the file records the measurement or event that re-tested it).
 | [0063](0063-a-palindrome-scan-names-the-same-counts-as-its-fast-sibling.md) | A palindrome scan names the same counts as its fast sibling | accepted |
 | [0064](0064-a-terminal-window-is-whole-before-it-is-cut.md) | A terminal window is whole before it is cut | accepted |
 | [0065](0065-two-pool-limits-are-whole-base-pair-counts.md) | Two pool limits are whole base-pair counts before the verdict | accepted |
+| [0066](0066-an-off-target-seed-length-is-whole-before-it-becomes-an-index.md) | An off-target seed length is whole before it becomes an index | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

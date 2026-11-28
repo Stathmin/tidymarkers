@@ -324,6 +324,11 @@ exact_hit_table <- function(sequences, genome, max_mismatch = 0L, BPPARAM = NULL
 #' @family specificity
 #' @export
 offtarget_profile <- function(hits, primers = NULL, genome, scheme = "pcr", seed_len = NA_integer_) {
+  # `seed_len` reaches `mismatch_weights()` as a raw index: `Inf` seeded every
+  # position (penalty 1 -> 3 on an inner mismatch), `-1` grew the weight vector
+  # past the primer, and a fraction was truncated silently (ADR 0066).  `NA` is
+  # the documented "use the policy's seed" sentinel.
+  seed_len <- if (isTRUE(is.na(seed_len))) NA_integer_ else check_scan_radius(seed_len, "seed_len", min = 1L)
   need_cols(hits, c("primer", "chrom", "start", "end", "strand"), arg = "hits")
   if (is.null(primers)) {
     if (!"sequence" %in% names(hits)) {

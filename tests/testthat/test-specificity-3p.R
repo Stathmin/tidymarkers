@@ -145,3 +145,20 @@ test_that("exact_hit_table with no hits keeps the full column contract", {
   expect_equal(nrow(none), 0L)
   expect_equal(names(none), hit_cols)
 })
+
+test_that("offtarget_profile names its seed length before the weights", {
+  hits <- exact_hit_table(c(AS = p), g, max_mismatch = 1L)
+  # Inf seeded the whole primer, -1 grew the weight vector past the oligo and a
+  # fraction was truncated; NA is the documented policy sentinel
+  for (bad in list(0.5, 20.9, Inf, -1L, c(5L, 6L), "5")) {
+    expect_error(offtarget_profile(hits, c(AS = p), g, seed_len = bad), "`seed_len`")
+  }
+  expect_equal(
+    offtarget_profile(hits, c(AS = p), g, seed_len = 5L),
+    offtarget_profile(hits, c(AS = p), g, seed_len = 5)
+  )
+  expect_equal(
+    offtarget_profile(hits, c(AS = p), g),
+    offtarget_profile(hits, c(AS = p), g, seed_len = NA_integer_)
+  )
+})

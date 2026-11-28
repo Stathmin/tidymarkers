@@ -277,6 +277,10 @@ Other vignettes:
   `primer_set_compatibility()` names `min_cross_run` and `max_selfcomp` as
   whole bp counts, so `min_cross_run = 6.5` no longer lets a 6 bp cross dimer
   pass a threshold the caller set above 6.
+- [ADR 0066](adr/0066-an-off-target-seed-length-is-whole-before-it-becomes-an-index.md) —
+  `offtarget_profile()` names `seed_len` before `mismatch_weights()`, so `Inf`
+  no longer seeds the whole primer and `-1` no longer grows the weight vector
+  past the oligo.
 
 ## Operator decisions
 
