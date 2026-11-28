@@ -258,6 +258,10 @@ Other vignettes:
   `snp_template()` names `pos` before it cuts the window, and
   `strand_gc_hint()` names `pos` and `flank`, so every single-locus designer
   refuses a fraction instead of building for a different SNP.
+- [ADR 0061](adr/0061-a-target-pick-names-its-whole-tuning-counts.md) —
+  `pick_target_snp()` names `clean_3p`, `specificity_candidates` and
+  `max_tries` before the ranking scan, so a fraction no longer truncates a
+  guard band or reaches dplyr`s own "`n` must be a round number".
 
 ## Operator decisions
 

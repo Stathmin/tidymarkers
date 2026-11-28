@@ -254,12 +254,14 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #' @param gene one-row gene record.
 #' @param variant_id force a specific variant by id.
 #' @param clean_3p number of flanking bases of the AS primer that should be free
-#'   of *other* variants.  Because the AS primer may be placed on either strand,
+#'   of *other* variants, as one positive whole number of nucleotides.  Because
+#'   the AS primer may be placed on either strand,
 #'   the "clean" count is the best (smallest) of the two orientations: the chosen
 #'   variant just has to be clean in *at least one* direction.
 #' @param specificity_candidates how many top-ranked loci to check for 3'-seed
 #'   specificity.  The seed scan is genome-wide, so only this many of the best
-#'   candidates (by the other criteria) are checked; set `0` to skip it.  Loci
+#'   candidates (by the other criteria) are checked, as one non-negative whole
+#'   number; set `0` to skip it.  Loci
 #'   outside the shortlist keep `seed_hits = NA`, which sorts last (an unscreened
 #'   row can never outrank a screened one) but means *not screened*, not *not
 #'   specific*.
@@ -270,7 +272,8 @@ seed_seq <- function(genome, chrom, pos, ref_len, strand, k = SEED_K) {
 #'   (`marker_design_at()`) and the first *designable* one is returned - "doomed"
 #'   depends on the marker type, so a KASP-doomed locus may still make a CAPS or
 #'   ARMS marker.  `NULL` keeps the plain best-by-criteria pick.
-#' @param max_tries how many ranked candidates to try when `scheme` is given.
+#' @param max_tries how many ranked candidates to try when `scheme` is given,
+#'   as one positive whole number.
 #' @return a one-row tibble for the chosen variant (`id`, `chrom`, `pos`,
 #'   `consequence`, `ref`, `alt`, `ref_len`, `transition`, `n_3p`, `seed_hits`);
 #'   with `scheme`, the designed marker is attached as the `"marker"` attribute.
@@ -315,6 +318,15 @@ pick_target_snp <- function(variants, genome, gene, variant_id = NULL, clean_3p 
     )
   }
   if (!is.null(variant_id)) variants <- dplyr::filter(variants, .data$id == variant_id)
+  # IRanges cast `clean_3p` and `as.integer()` cast `max_tries`; a fractional
+  # `specificity_candidates` reached dplyr's own "`n` must be a round number"
+  # (ADR 0061).  Name the tuning counts before the scan.
+  clean_3p <- check_nucleotide_length(clean_3p, "clean_3p")
+  specificity_candidates <- check_scan_radius(
+    specificity_candidates, "specificity_candidates",
+    min = 0L
+  )
+  max_tries <- check_scan_radius(max_tries, "max_tries", min = 1L)
 
   # REF length comes from the VCF (its first allele); the reference bases are
   # then read from the genome, which is the truth we design against.

@@ -6408,3 +6408,24 @@ ADR 0056 срабатывает, но `safe_candidates()` оборачивает
     - блокер: нет; проверка идёт до `get_region()` и любой сборки окна.
     - следствие: все дизайнеры на `snp_template()` наследуют отказ и не
       нуждаются в своей копии проверки.
+
+## ZV85. Выбор цели: счётчики — целые до ранжирования
+
+`pick_target_snp()` отдавал `clean_3p` в `IRanges`, а `max_tries` и
+`specificity_candidates` в `slice_head()` без проверки: `clean_3p = 2.9` строил
+двухбазовую полосу (как `2L`), `max_tries = 0.5` всё равно делал одну попытку
+(`as.integer(0.5)` — 0, затем `max(1L, 0)`), а `specificity_candidates = 1.9`
+доходил до сырой ошибки dplyr «`n` must be a round number». Измерено на дешёвой
+фикстуре из `test-target.R` до правки.
+
+- [x] **ZV85. `pick_target_snp()` проверяет три счётчика до скана.**
+    - правка: `check_nucleotide_length(clean_3p, "clean_3p")`,
+      `check_scan_radius(specificity_candidates, ..., min = 0L)` и
+      `check_scan_radius(max_tries, ..., min = 1L)` после блока контрактов
+      (ADR 0061); `@param` называет целые значения.
+    - проверка: `tests/testthat/test-target.R` — новый тест отвергает
+      `clean_3p = 2.9`, `specificity_candidates = 1.9`, `max_tries = 0.5`/`Inf`
+      по имени; целый вызов возвращает ту же цель; `target` — 43 pass, 0 fail.
+    - блокер: нет; проверка идёт до чтения строк вариантов и любого скана.
+    - следствие: `specificity_candidates = 0` сохраняет документированный
+      пропуск seed-скана.

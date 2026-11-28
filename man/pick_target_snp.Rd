@@ -26,13 +26,15 @@ pick_target_snp(
 \item{variant_id}{force a specific variant by id.}
 
 \item{clean_3p}{number of flanking bases of the AS primer that should be free
-of \emph{other} variants.  Because the AS primer may be placed on either strand,
+of \emph{other} variants, as one positive whole number of nucleotides.  Because
+the AS primer may be placed on either strand,
 the "clean" count is the best (smallest) of the two orientations: the chosen
 variant just has to be clean in \emph{at least one} direction.}
 
 \item{specificity_candidates}{how many top-ranked loci to check for 3'-seed
 specificity.  The seed scan is genome-wide, so only this many of the best
-candidates (by the other criteria) are checked; set \code{0} to skip it.  Loci
+candidates (by the other criteria) are checked, as one non-negative whole
+number; set \code{0} to skip it.  Loci
 outside the shortlist keep \code{seed_hits = NA}, which sorts last (an unscreened
 row can never outrank a screened one) but means \emph{not screened}, not \emph{not
 specific}.}
@@ -46,7 +48,8 @@ given, ranked candidates are designed one by one with that scheme's engine
 depends on the marker type, so a KASP-doomed locus may still make a CAPS or
 ARMS marker.  \code{NULL} keeps the plain best-by-criteria pick.}
 
-\item{max_tries}{how many ranked candidates to try when \code{scheme} is given.}
+\item{max_tries}{how many ranked candidates to try when \code{scheme} is given,
+as one positive whole number.}
 }
 \value{
 a one-row tibble for the chosen variant (\code{id}, \code{chrom}, \code{pos},

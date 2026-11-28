@@ -31,6 +31,37 @@ test_that("pick_target_snp with a scheme warns and returns the best when none de
   expect_equal(pick_target_snp(variants, genome, gene)$id, "v")
 })
 
+test_that("the target pick names its whole tuning counts before the scan", {
+  seq <- strrep("ACGT", 20L)
+  genome <- Biostrings::DNAStringSet(c(Chr1 = seq))
+  gene <- list(chrom = "Chr1", symbol = "X", start = 1L, end = nchar(seq), strand = 1L)
+  variants <- tibble::tibble(
+    id = "v", chrom = "Chr1", pos = 20L,
+    ref_genome = list(c("T", "A")), consequence = "missense_variant"
+  )
+  # IRanges cast `clean_3p` and `as.integer()` cast `max_tries`, so 2.9 built
+  # the 2-base guard and 0.5 still ran one attempt; a fractional
+  # `specificity_candidates` reached dplyr's own "`n` must be a round number"
+  # (ADR 0061)
+  expect_error(
+    pick_target_snp(variants, genome, gene, specificity_candidates = 0L, clean_3p = 2.9),
+    "`clean_3p` must be one positive whole number of nucleotides"
+  )
+  expect_error(
+    pick_target_snp(variants, genome, gene, specificity_candidates = 1.9),
+    "`specificity_candidates` must be one non-negative whole number"
+  )
+  expect_error(
+    pick_target_snp(variants, genome, gene, specificity_candidates = 0L, max_tries = 0.5),
+    "`max_tries` must be one positive whole number"
+  )
+  expect_error(
+    pick_target_snp(variants, genome, gene, specificity_candidates = 0L, max_tries = Inf),
+    "`max_tries` must be one positive whole number"
+  )
+  expect_equal(pick_target_snp(variants, genome, gene)$id, "v")
+})
+
 test_that("design_auto_marker walks the chemistries and returns the first that works", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
