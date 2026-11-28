@@ -93,7 +93,7 @@ jobs:
                           cpus: 4,
                       }
         steps: &steps
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: r-lib/actions/setup-r@v2
               with:
@@ -223,7 +223,7 @@ jobs:
             # may still take the artifact with it; this is best-effort.
             - name: Upload check results on failure
               if: failure() || cancelled()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v6
               with:
                   name: check-failure-${{ matrix.config.os }}-${{ matrix.config.r }}
                   path: |
@@ -253,7 +253,7 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 120
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: r-lib/actions/setup-r@v2
               with:
@@ -294,7 +294,7 @@ jobs:
             GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
             TIDYMARKERS_BENCH_HOST: github-ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: r-lib/actions/setup-r@v2
               with:
@@ -308,7 +308,7 @@ jobs:
             - name: Measure the runner class
               run: Rscript dev/bench.R --update
 
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v6
               with:
                   name: bench-baseline-github-ubuntu-latest
                   path: dev/bench-baseline.csv
