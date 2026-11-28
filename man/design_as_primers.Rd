@@ -26,7 +26,8 @@ design_as_primers(
 \arguments{
 \item{window}{plus-strand template window.}
 
-\item{v_start}{plus-strand start of the variant block (a single base for a SNP).}
+\item{v_start}{plus-strand start of the variant block, as one whole position
+within \code{window} (a single base for a SNP).}
 
 \item{ref, alt}{the alleles as ACGT strings of equal length.  \code{alt} may hold
 more than one allele: a multi-allelic site is then scored against every ALT
@@ -47,8 +48,8 @@ carries which); a position outside \code{stab_ats} is never invented.}
 
 \item{temp, P, ions}{as in \code{\link[=pcr_efficiency]{pcr_efficiency()}}.}
 
-\item{linked}{optional two-column table (\code{offset} 1-based within \code{window},
-\code{alt}) of co-segregating substitutions to bake into the ALT haplotype and
+\item{linked}{optional two-column table (\code{offset} a 1-based whole position
+within \code{window}, \code{alt}) of co-segregating substitutions to bake into the ALT haplotype and
 ALT primer (makes it mismatch REF twice).}
 
 \item{gc_range, tm_range}{optional accepted windows; configurations outside
@@ -63,7 +64,7 @@ historical 50 mM Na / 37 C buffer).  Only the buffer fields of \code{conditions}
 enter the nearest-neighbour Tm.}
 
 \item{variant_offset}{bases between the variant block and the primer's 3'
-terminus: \code{0} puts the block at the terminal base (KASP), \code{1} one base
+terminus, as one non-negative whole number: \code{0} puts the block at the terminal base (KASP), \code{1} one base
 inside it (ASQ's penultimate placement).}
 }
 \value{

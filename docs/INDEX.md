@@ -250,6 +250,10 @@ Other vignettes:
   back-reference, so `find_repeats(min_copies = 2.9)` no longer accepts a
   2-copy repeat, `0.5` no longer reaches a stringi interval error, and
   `design_ssr_marker()` refuses a fractional repeat by name.
+- [ADR 0059](adr/0059-an-as-primer-anchor-is-whole-before-the-window.md) —
+  `design_as_primers()` checks `v_start`, `variant_offset` and a `linked`
+  offset before it builds the template, so a fraction is refused by name
+  instead of truncating into a different molecule.
 
 ## Operator decisions
 

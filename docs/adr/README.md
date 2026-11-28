@@ -69,6 +69,7 @@ the file records the measurement or event that re-tested it).
 | [0056](0056-the-shared-primer-grid-names-whole-lengths.md) | The shared primer grid names whole lengths | accepted |
 | [0057](0057-a-lamp-length-is-checked-before-the-swallowed-grid.md) | A LAMP length is checked before the swallowed grid | accepted |
 | [0058](0058-a-repeat-scan-names-whole-units-and-copies.md) | A repeat scan names whole units and copies | accepted |
+| [0059](0059-an-as-primer-anchor-is-whole-before-the-window.md) | An AS-primer anchor and linked offset are whole before the window | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

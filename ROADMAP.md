@@ -6365,3 +6365,27 @@ ADR 0056 срабатывает, но `safe_candidates()` оборачивает
     - следствие: `find_repeats(units = integer(0))` теперь отказывает, а
       `has_repeat()` сохраняет ранний `FALSE` для пустого набора — это
       записанное различие, а не регрессия.
+
+## ZV83. AS-праймер: якорь и связанный сдвиг — целые до окна
+
+`design_as_primers()` передавал `v_start` и `variant_offset` прямо в `IRanges`,
+а `linked$offset` приводил через `as.integer()` после подстановки. `IRanges`
+усекает дробный старт, поэтому запрошенный `100.9` строил праймер для 100, а
+`variant_offset = 1.9` сдвигал ALT-блок при якоре на 1 — отчётная геометрия и
+молекула расходились. Плохой `linked$offset` (`0.5`, `NA`, `201`) доходил до
+сырых ошибок Biostrings/IRanges. Измерено на ветке до правки: `v_start = 100.9`
+и `variant_offset = 1.9` не падали вовсе, `Inf` падал в сравнении `IRanges`.
+
+- [x] **ZV83. `design_as_primers()` проверяет геометрию до сборки шаблона.**
+    - правка: `check_coord(v_start, "v_start")`,
+      `check_scan_radius(variant_offset, "variant_offset", min = 0L)` и общая
+      проверка `bad_position(linked$offset, min = 1L)` с границей
+      `length(window)` в начале `design_as_primers()` (ADR 0059); `@param`
+      называет целые значения.
+    - проверка: `tests/testthat/test-as-primer.R` — новый тест отвергает
+      `v_start = 30.9`, `variant_offset = 1.9`/`Inf`, `linked$offset` из
+      `20.9`/`NA`/`0`/`77` и называет диапазон окна; `as-primer` — 44 pass,
+      0 fail.
+    - блокер: нет; проверка идёт до `IRanges`, `Biostrings` и любой Tm-работы.
+    - следствие: `linked` с нулём строк по-прежнему не меняет шаблон —
+      проверять нечего.

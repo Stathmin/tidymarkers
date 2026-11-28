@@ -208,7 +208,8 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #' as the IUPAC consensus over every ALT (the physical degenerate oligo, for
 #' display and ordering).
 #'
-#' @param v_start plus-strand start of the variant block (a single base for a SNP).
+#' @param v_start plus-strand start of the variant block, as one whole position
+#'   within `window` (a single base for a SNP).
 #' @param ref,alt the alleles as ACGT strings of equal length.  `alt` may hold
 #'   more than one allele: a multi-allelic site is then scored against every ALT
 #'   and reduced conservatively (see Details).
@@ -228,8 +229,8 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #'   `NA` = none.  The decided policy ranks `ARMS_EXTRA_MISMATCH_POSITION` first
 #'   and `ARMS_EXTRA_MISMATCH_FALLBACK` second (`stab_policy` records which row
 #'   carries which); a position outside `stab_ats` is never invented.
-#' @param linked optional two-column table (`offset` 1-based within `window`,
-#'   `alt`) of co-segregating substitutions to bake into the ALT haplotype and
+#' @param linked optional two-column table (`offset` a 1-based whole position
+#'   within `window`, `alt`) of co-segregating substitutions to bake into the ALT haplotype and
 #'   ALT primer (makes it mismatch REF twice).
 #' @param gc_range,tm_range optional accepted windows; configurations outside
 #'   them are dropped **before** the DECIPHER batch (the caller would filter them
@@ -241,7 +242,7 @@ make_as_primer <- function(window, anchor, length, allele, strand = "+",
 #'   historical 50 mM Na / 37 C buffer).  Only the buffer fields of `conditions`
 #'   enter the nearest-neighbour Tm.
 #' @param variant_offset bases between the variant block and the primer's 3'
-#'   terminus: `0` puts the block at the terminal base (KASP), `1` one base
+#'   terminus, as one non-negative whole number: `0` puts the block at the terminal base (KASP), `1` one base
 #'   inside it (ASQ's penultimate placement).
 #' @return a tibble, one row per primer configuration, with `strand`,
 #'   `as_length`, `stab_at`, `stab_base`, `ref_primer`, `alt_primer`,
@@ -262,6 +263,23 @@ design_as_primers <- function(window, v_start, ref, alt, strands = c("+", "-"),
   }
   if (any(nchar(alts) != ref_len)) {
     abort_msg("every `alt` allele must be as long as `ref`")
+  }
+  # IRanges truncates a fractional anchor and `as.integer()` truncates the
+  # reported coordinates, so 30.9 built the primer for 30, and 1.9 moved the
+  # ALT block while the anchor stayed at 1, so the reported geometry and the
+  # molecule disagreed.  A bad `linked$offset` fell through to Biostrings' own
+  # "off-limits" error (ADR 0059).  Name the caller's value, then cast once.
+  v_start <- check_coord(v_start, "v_start")
+  variant_offset <- check_scan_radius(variant_offset, "variant_offset", min = 0L)
+  if (!is.null(linked) && nrow(linked) > 0L) {
+    off <- suppressWarnings(as.integer(linked$offset))
+    bad <- bad_position(linked$offset, min = 1L) | (!is.na(off) & off > length(window))
+    if (any(bad)) {
+      abort_msg(
+        "`linked$offset` must name whole positions inside `window` (1..{length(window)}).",
+        i = "Got {paste(format(linked$offset[bad]), collapse = ', ')}."
+      )
+    }
   }
   # `stab_ats` are DISTANCES from the 3' end (positive), which is what
   # `make_as_primer()` computes with: `i <- length - stab_at + 1`.  The decided

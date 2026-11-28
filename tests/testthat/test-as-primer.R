@@ -69,6 +69,25 @@ test_that("a fractional or out-of-primer stabilising mismatch is refused before 
   expect_error(call(lengths = Inf, stab_ats = NA), "whole numbers of nucleotides")
 })
 
+test_that("the AS-primer geometry names whole positions before the window", {
+  # IRanges truncated a fractional v_start and variant_offset: 30.9 built the
+  # primer for 30, and 1.9 moved the ALT block while the anchor stayed at 1, so
+  # the reported geometry and the molecule disagreed; a bad linked offset
+  # reached Biostrings' own "off-limits" error (ADR 0059)
+  call <- function(...) design_as_primers(W, SNP_I, ref = "A", alt = "G", strands = "+", ...)
+  expect_error(
+    design_as_primers(W, 30.9, ref = "A", alt = "G", strands = "+"),
+    "`v_start` must be one positive whole number"
+  )
+  expect_error(call(variant_offset = 1.9), "`variant_offset` must be one non-negative whole number")
+  expect_error(call(variant_offset = Inf), "one non-negative whole number")
+  linked <- function(offset) tibble::tibble(offset = offset, alt = "C")
+  expect_error(call(linked = linked(20.9)), "`linked\\$offset` must name whole positions")
+  expect_error(call(linked = linked(NA)), "whole positions")
+  expect_error(call(linked = linked(0L)), "whole positions")
+  expect_error(call(linked = linked(77L)), "inside `window`")
+})
+
 test_that("several ALTs are scored conservatively and carry a degenerate code", {
   skip_if_no_oligoarrayaux()
   wm <- Biostrings::DNAString(bseq(300L, 5L))
