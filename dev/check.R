@@ -210,6 +210,20 @@ step("position casts", function() {
   ok("every position cast is guarded, or registered with a reason")
 })
 
+# 2b4. run metrics -----------------------------------------------------------
+step("run metrics", function() {
+  # a row of today's run metrics is data the report trusts; `--check` defaults
+  # to today, and an earlier day is repaired by its own commit (ADR 0080)
+  status <- system2(
+    file.path(R.home("bin"), "Rscript"),
+    c("dev/metrics.R", "--check")
+  )
+  if (!identical(as.integer(status), 0L)) {
+    stop("dev/metrics.R --check failed (status ", status, ")")
+  }
+  ok("today's run metrics satisfy the row contract")
+})
+
 # 2c. licence invariant ------------------------------------------------------
 step("licences", function() {
   # FOSS-only: a declared dependency whose licence is not permissive must fail

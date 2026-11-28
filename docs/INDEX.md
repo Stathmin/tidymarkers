@@ -359,3 +359,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0079](adr/0079-the-cast-gate-judges-an-interval-too.md) — the cast gate
   judges `start`/`end` like `pos`, so an unguarded interval cast fails the
   check instead of waiting for an audit.
+- [ADR 0080](adr/0080-the-gate-checks-the-days-run-metrics.md) — the internal
+  gate validates the current day's run metrics, so a row with a prose id fails
+  on the day it lands instead of a later manual report.
