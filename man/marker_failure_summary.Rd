@@ -46,6 +46,7 @@ Other plan:
 \code{\link[=marker_export_rocrate]{marker_export_rocrate()}},
 \code{\link[=marker_failure_registry]{marker_failure_registry()}},
 \code{\link[=marker_import_rocrate]{marker_import_rocrate()}},
+\code{\link[=marker_locus_crate]{marker_locus_crate()}},
 \code{\link[=marker_outcome_corpus]{marker_outcome_corpus()}},
 \code{\link[=marker_outcomes]{marker_outcomes()}},
 \code{\link[=marker_plan]{marker_plan()}},

@@ -1,0 +1,3 @@
+haplotype,freq,chrom,pos,ref,alt
+H1,0.4,Gm01,300,A,G
+H2,0.6,Gm01,100,C,G

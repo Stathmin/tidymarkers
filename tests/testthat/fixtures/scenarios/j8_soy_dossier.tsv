@@ -1,0 +1,3 @@
+locus	gene	source	source_version	retrieved_at	confidence	pathway	citation	doi
+soy_oc_locus	Glyma.01G000100	Merovingen	2026-11	2026-11-28	0.80	oil biosynthesis	Meng 2026	10.0000/example.soy.2026
+soy_oc_locus	Glyma.01G000200	Merovingen	2026-11	2026-11-28	0.65	seed composition	Meng 2026	10.0000/example.soy.2026

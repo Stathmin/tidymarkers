@@ -163,6 +163,11 @@ artefact_inputs <- function(plan) {
       bytes = NA_integer_
     )
   }
+  for (p in plan$provenance %||% list()) {
+    if (is.list(p)) {
+      out[[length(out) + 1L]] <- p
+    }
+  }
   out
 }
 

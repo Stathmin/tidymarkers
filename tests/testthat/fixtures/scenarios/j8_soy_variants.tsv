@@ -1,0 +1,3 @@
+locus	chrom	pos	ref	alt	population	maf	ld_r2
+soy_oc_locus	Gm01	100	C	G	soybean_panel	0.45	1
+soy_oc_locus	Gm01	300	A	G	soybean_panel	0.40	1

@@ -1,0 +1,2 @@
+locus	chrom	pos	ref	alt	population	genome_build	gwas_run	p	beta	se	maf
+soy_oc_locus	Gm01	300	A	G	soybean_panel	Wm82.a4.v1	GWAS-2026-11	1e-8	0.18	0.03	0.40

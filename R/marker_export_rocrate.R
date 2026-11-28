@@ -154,12 +154,13 @@ rocrate_input_entity <- function(input, i) {
 #' The JSON-LD graph of one artefact
 #' @param artefact a `marker_artefact`.
 #' @param dir the crate directory the sidecars were copied into.
+#' @param extra crate sidecars carrying crate-level records beyond the artefact.
 #' @return the graph as a list, `@context` included.
 #' @keywords internal
 #' @noRd
-rocrate_graph <- function(artefact, dir) {
+rocrate_graph <- function(artefact, dir, extra = character()) {
   m <- artefact$manifest
-  files <- rocrate_files(m)
+  files <- unique(c(rocrate_files(m), extra))
   inputs <- lapply(seq_along(m$inputs %||% list()), function(i) rocrate_input_entity(m$inputs[[i]], i))
   input_ids <- lapply(seq_along(inputs), function(i) list("@id" = paste0("#input-", i)))
 
@@ -239,6 +240,9 @@ rocrate_graph <- function(artefact, dir) {
 #' @param artefact a `marker_artefact` (see [marker_artefact()]).
 #' @param dir the crate directory to write; it is created, and must not be the
 #'   artefact's own directory.
+#' @param extra crate sidecars written beside the artefact but outside its
+#'   manifest, for example the crate-level record.  They are copied from the
+#'   artefact directory and described as crate files.
 #' @return the crate directory, as a length-one character vector.
 #' @examples
 #' genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
@@ -252,9 +256,20 @@ rocrate_graph <- function(artefact, dir) {
 #' list.files(crate)
 #' @family plan
 #' @export
-marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
+marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate"),
+                                  extra = character()) {
   if (!inherits(artefact, "marker_artefact")) {
     abort_msg("`artefact` must be a marker_artefact (see marker_artefact()).")
+  }
+  if (!is.character(extra) || anyNA(extra)) {
+    abort_msg("`extra` must be a character vector of crate file names.")
+  }
+  extra <- unique(extra)
+  reserved <- c("artefact.json", "ro-crate-metadata.json")
+  bad <- extra %in% reserved | !nzchar(extra) |
+    grepl("[/\\\\]", extra) | extra %in% c(".", "..")
+  if (any(bad)) {
+    abort_msg("Unsafe or reserved `extra` crate file: {.val {extra[which(bad)[[1L]]]}}.")
   }
   src <- artefact_dir(artefact)
   if (identical(fs::path_abs(dir), fs::path_abs(src))) {
@@ -262,7 +277,8 @@ marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
   }
   fs::dir_create(dir)
   files <- rocrate_files(artefact$manifest)
-  for (file in files) {
+  extra <- setdiff(extra, files)
+  for (file in c(files, extra)) {
     from <- fs::path(src, file)
     if (!fs::file_exists(from)) {
       abort_msg(
@@ -272,7 +288,7 @@ marker_export_rocrate <- function(artefact, dir = tempfile("roc-crate")) {
     }
     fs::file_copy(from, fs::path(dir, file), overwrite = TRUE)
   }
-  graph <- rocrate_graph(artefact, dir)
+  graph <- rocrate_graph(artefact, dir, extra)
   writeLines(
     jsonlite::toJSON(
       graph,

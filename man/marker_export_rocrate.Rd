@@ -4,13 +4,21 @@
 \alias{marker_export_rocrate}
 \title{Write an artefact as an RO-Crate}
 \usage{
-marker_export_rocrate(artefact, dir = tempfile("roc-crate"))
+marker_export_rocrate(
+  artefact,
+  dir = tempfile("roc-crate"),
+  extra = character()
+)
 }
 \arguments{
 \item{artefact}{a \code{marker_artefact} (see \code{\link[=marker_artefact]{marker_artefact()}}).}
 
 \item{dir}{the crate directory to write; it is created, and must not be the
 artefact's own directory.}
+
+\item{extra}{crate sidecars written beside the artefact but outside its
+manifest, for example the crate-level record.  They are copied from the
+artefact directory and described as crate files.}
 }
 \value{
 the crate directory, as a length-one character vector.
@@ -47,6 +55,7 @@ Other plan:
 \code{\link[=marker_failure_registry]{marker_failure_registry()}},
 \code{\link[=marker_failure_summary]{marker_failure_summary()}},
 \code{\link[=marker_import_rocrate]{marker_import_rocrate()}},
+\code{\link[=marker_locus_crate]{marker_locus_crate()}},
 \code{\link[=marker_outcome_corpus]{marker_outcome_corpus()}},
 \code{\link[=marker_outcomes]{marker_outcomes()}},
 \code{\link[=marker_plan]{marker_plan()}},
