@@ -155,7 +155,10 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   if (!is.character(dir) || length(dir) != 1L || is.na(dir) || !nzchar(dir)) {
     abort_msg("`dir` must be one directory path.")
   }
-  if (identical(fs::path_abs(dir), root) || fs::path_has_parent(fs::path_abs(dir), root)) {
+  # normalise once: `paste0(dir, "-identity.csv")` beside the directory is only
+  # beside it while `dir` has no trailing separator
+  dir <- fs::path_abs(dir)
+  if (identical(dir, root) || fs::path_has_parent(dir, root)) {
     abort_msg(
       "`dir` must sit outside the scanned corpus root.",
       i = "An export inside it would be read back as more corpus on the next scan."

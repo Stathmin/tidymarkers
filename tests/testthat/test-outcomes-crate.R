@@ -109,6 +109,16 @@ test_that("the identity map stays outside the crate and maps back", {
   }
 })
 
+test_that("a trailing slash does not put the identity map inside the handover", {
+  fx <- outcomes_corpus_fixture()
+  dir <- paste0(withr::local_tempdir(), "/out/")
+  map <- marker_export_outcomes(fx$corpus, dir, trustee = "lab-a")
+  # the map is a sibling of the directory, so it cannot travel with the crates
+  expect_true(fs::file_exists(paste0(fs::path_abs(dir), "-identity.csv")))
+  expect_false(fs::file_exists(fs::path(dir, "-identity.csv")))
+  expect_length(fs::dir_ls(fs::path(dir, "crates")), nrow(map))
+})
+
 test_that("the handover refuses to write its identity map through a link", {
   fx <- outcomes_corpus_fixture()
   dir <- paste0(withr::local_tempdir(), "/out")

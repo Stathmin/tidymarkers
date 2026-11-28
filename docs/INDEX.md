@@ -148,6 +148,10 @@ Other vignettes:
   every path component a writer derives is a declared name: the outcomes
   handover refuses a link at `crates` or at a crate's pseudonym before the first
   crate exists, not only at the files inside it.
+- [ADR 0031](adr/0031-a-named-root-is-normalised-before-a-sibling-is-derived.md)
+  — the handover normalises `dir` before deriving `<dir>-identity.csv` from it;
+  a trailing separator used to move the identity map inside the handover, where
+  it would travel with the pseudonymised crates.
 
 ## Operator decisions
 
