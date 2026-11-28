@@ -58,3 +58,18 @@ test_that("both assembly entry points name a bad cores count before any engine",
     )
   }
 })
+
+test_that("a fixed SNP position is whole in its spelling (ADR 0075)", {
+  f <- snp_fixture()
+  bad <- f$snp
+  bad$pos <- bad$pos + 0.5
+  expect_error(
+    assemble_primer_assay(f$genome, bad, c(AS_ref = "ACGT", AS_alt = "ACGT", COM = "ACGT")),
+    "positive whole-number position"
+  )
+  bad$pos <- -5
+  expect_error(
+    assemble_primer_assay(f$genome, bad, c(AS_ref = "ACGT", AS_alt = "ACGT", COM = "ACGT")),
+    "positive whole-number position"
+  )
+})

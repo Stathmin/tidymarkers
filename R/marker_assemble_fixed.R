@@ -28,6 +28,11 @@ normalise_fixed_snp <- function(snp) {
     abort_msg("`snp` must be a one-row table (or list) with `chrom`, `pos`, `ref`, `alt`.")
   }
   need_cols(snp, c("chrom", "pos", "ref", "alt"), arg = "snp")
+  # a fixed SNP names one base: 10.9 used to become 10 and -5 passed, so the
+  # assay could be built on a locus the caller never named (ADR 0075)
+  if (bad_position(snp$pos[[1L]])) {
+    abort_msg("`snp` needs a non-missing chromosome and a positive whole-number position.")
+  }
   out <- tibble::tibble(
     chrom = as.character(snp$chrom[[1L]]),
     pos = as.integer(snp$pos[[1L]]),

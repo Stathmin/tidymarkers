@@ -109,6 +109,10 @@ marker_chunk_new <- function(reference, variants, haplotypes, alignment, chrom) 
 #' @noRd
 as_variant_table <- function(x, chrom = "chunk") {
   x <- tibble::as_tibble(x)
+  # a variant row names a base, not a number to truncate (ADR 0075)
+  if (any(bad_position(x$pos))) {
+    abort_msg("A chunk table needs a positive whole `pos` on every row.")
+  }
   out <- tibble::tibble(
     chrom = if ("chrom" %in% names(x)) as.character(x$chrom) else chrom,
     pos = as.integer(x$pos), ref = as.character(x$ref), alt = as.character(x$alt),

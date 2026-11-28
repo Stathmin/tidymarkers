@@ -184,3 +184,17 @@ test_that("chunk_weight applies MAF-style weights", {
   got <- chunk_variants(ch2)
   expect_equal(got$pop_freq[got$pos == t1$pos & got$alt == t1$alt][[1L]], 0.02)
 })
+
+test_that("a chunk table position is whole in its spelling (ADR 0075)", {
+  ref <- paste(rep("A", 30), collapse = "")
+  expect_error(
+    marker_chunk(data.frame(pos = 10.9, ref = "A", alt = "T"), reference = ref),
+    "positive whole `pos`"
+  )
+  expect_error(
+    marker_chunk(data.frame(pos = -5, ref = "A", alt = "T"), reference = ref),
+    "positive whole `pos`"
+  )
+  ch <- marker_chunk(data.frame(pos = c(10L, 20L), ref = "A", alt = c("T", "G")), reference = ref)
+  expect_identical(ch$variants$pos, c(10L, 20L))
+})
