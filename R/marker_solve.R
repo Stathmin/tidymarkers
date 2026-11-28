@@ -332,6 +332,9 @@ marker_export <- function(solved, dir = tempdir(), artefact = TRUE) {
     abort_msg("`solved` must be a marker_solved (see marker_solve()).")
   }
   fs::dir_create(dir)
+  # the same rule as marker_artefact() (ADR 0025 p.5): create the files, never
+  # write through a link that would put them outside the directory
+  refuse_links(dir, c("markers.csv", "attempts.csv", "primers.csv", "solved.rds"))
   readr::write_csv(
     solved$report[setdiff(names(solved$report), "marker")], fs::path(dir, "markers.csv")
   )

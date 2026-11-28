@@ -85,6 +85,21 @@ test_that("a manifest path cannot escape the artefact directory", {
   expect_error(marker_artefact_read(dst), "unsafe file path")
 })
 
+test_that("marker_export refuses to write its own members through a link", {
+  fixture <- rocrate_fixture()
+  for (name in c("markers.csv", "attempts.csv", "primers.csv", "solved.rds")) {
+    dir <- withr::local_tempdir()
+    outside <- fs::path(withr::local_tempdir(), name)
+    writeLines("keep", outside)
+    skip_if_not(
+      file.symlink(outside, fs::path(dir, name)),
+      "this filesystem cannot make a symlink"
+    )
+    expect_error(marker_export(fixture$solved, dir = dir), "which is a link", info = name)
+    expect_identical(readLines(outside), "keep", info = name)
+  }
+})
+
 test_that("the artefact writer refuses to write through a link", {
   fixture <- rocrate_fixture()
   dir <- withr::local_tempdir()
