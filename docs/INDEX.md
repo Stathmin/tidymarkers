@@ -241,6 +241,10 @@ Other vignettes:
   `design_hrm_marker(lengths = 20.9)` no longer records `product` 86.9 for a
   20 nt pair, and every designer that passes its `lengths` through the grid
   inherits the refusal.
+- [ADR 0057](adr/0057-a-lamp-length-is-checked-before-the-swallowed-grid.md) —
+  `design_lamp_marker()` checks `arm_lengths` and `outer_lengths` at the
+  entry, so a fraction is refused by name instead of being swallowed by
+  `safe_candidates()` and reported as "No LAMP primer set passed".
 
 ## Operator decisions
 

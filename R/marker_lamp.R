@@ -593,10 +593,12 @@ lamp_variant_gate <- function(fip, alt, pos) {
 #' @param genome a `marker_genome` or `DNAStringSet`.
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
-#' @param arm_lengths inner (FIP/BIP) arm lengths to try; each inner primer is a
-#'   two-arm fusion, so this yields 40-48 nt inner primers by default (the
-#'   published inner window is 45-49 nt), and widens only with `flank`.
-#' @param outer_lengths F3/B3 outer primer lengths to try (21-24 nt by default).
+#' @param arm_lengths inner (FIP/BIP) arm lengths to try, as positive whole
+#'   numbers of nucleotides; each inner primer is a two-arm fusion, so this
+#'   yields 40-48 nt inner primers by default (the published inner window is
+#'   45-49 nt), and widens only with `flank`.
+#' @param outer_lengths F3/B3 outer primer lengths to try, as positive whole
+#'   numbers of nucleotides (21-24 nt by default).
 #' @param outer_tm accepted F3/B3 Tm window (C).
 #' @param inner_tm accepted inner binding-arm Tm window (C).
 #' @param gc_range accepted GC fraction window (both arm classes).
@@ -626,6 +628,11 @@ design_lamp_marker <- function(genome, snp, flank = 150L, arm_lengths = 20:24,
                                gc_range = KASP_LIMITS$gc,
                                min_product = 120L, max_product = 300L,
                                loop_primers = TRUE, engines = NULL) {
+  # `safe_candidates()` turns every error from the shared grid into an empty
+  # set, so a fractional length surfaced only as "no LAMP set passed" (ADR
+  # 0057).  Check the caller's values here, where the names are theirs.
+  arm_lengths <- check_nucleotide_length(arm_lengths, "arm_lengths", multi = TRUE)
+  outer_lengths <- check_nucleotide_length(outer_lengths, "outer_lengths", multi = TRUE)
   tmpl <- snp_template(genome, snp$chrom, snp$pos, flank)
   q <- tmpl$snp_i
   target_tm <- mean(inner_tm)

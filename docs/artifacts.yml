@@ -358,7 +358,7 @@ artifacts:
   - R/marker_criteria.R
   - R/marker_schemes.R
   - R/marker_scheme_registry.R
-  input_hash: ecf347e32d974ef7ad5ad049eda0386d
+  input_hash: f10215e318e0f208c653148b2c1c486e
   output_hash: 516fee6ea44e8639c591103a04190589
   docs: vignettes/markers-isothermal.Rmd
   code:
@@ -573,7 +573,7 @@ artifacts:
   inputs:
   - R/marker_lamp.R
   - inst/extdata/sat2_transcripts.fa
-  input_hash: b497ec9ba38dc5c4917feb9d780e1ffa
+  input_hash: b479c694fd5826de53cde56bab57f86f
   output_hash: 7e348f49173bdc0d47e09d636ebd244f
   docs: vignettes/markers-isothermal.Rmd
   status: verified

@@ -41,9 +41,10 @@ primers form — the same class as ZV78 (`design_as_primers()`) and ZV79
 whole by construction or that come from an exported designer's `lengths`
 argument (`design_hrm_marker()`, `design_sanger_marker()`,
 `design_castpcr_*()`, `design_dpcr_marker()`, the snapshot and primer-pair
-designers). `design_lamp_marker()` reaches the same grid for its
-`outer_lengths`, while its `arm_lengths` are used in direct arithmetic before
-that grid.
+designers). `design_lamp_marker()` reaches the same grid for both its
+`outer_lengths` and its `arm_lengths` (the latter through `lamp_arm_sites()`
+→ `safe_candidates()`), but `safe_candidates()` turns the grid's refusal into
+an empty set, which is why ADR 0057 also checks both at that entry.
 
 ## Decision
 
@@ -77,9 +78,9 @@ every such designer except `design_lamp_marker()`'s `outer_lengths`.
   the package message before any primer is built.
 - Whole values keep the same candidates; `len`, `end` and every product
   computed from `end` now match the molecule.
-- `design_lamp_marker()`'s `arm_lengths` is not covered by this guard; it
-  does not reach `primer_candidates()` and needs its own check if that path
-  is found to lie.
+- `design_lamp_marker()`'s `arm_lengths` and `outer_lengths` reach this grid,
+  but `safe_candidates()` swallows the refusal; ADR 0057 checks both names at
+  the entry so the caller sees the message.
 
 ## Verification
 

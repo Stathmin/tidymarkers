@@ -34,6 +34,21 @@ test_that("design_lamp_marker returns a 4-primer LAMP set with the variant at FI
   expect_output(print(m), "FIP:")
 })
 
+test_that("a fractional LAMP arm or outer length is refused, not read as no set", {
+  skip_if_no_oligoarrayaux()
+  f <- snp_fixture()
+  # safe_candidates() swallows the grid's error, so 20.9 used to end at "No
+  # LAMP primer set passed" (ADR 0057); the guard now names the caller's value
+  expect_error(
+    design_lamp_marker(f$genome, f$snp, flank = 150L, arm_lengths = 20.9),
+    "positive whole numbers of nucleotides"
+  )
+  expect_error(
+    design_lamp_marker(f$genome, f$snp, flank = 150L, outer_lengths = 21.9),
+    "positive whole numbers of nucleotides"
+  )
+})
+
 test_that("LAMP cross-dimer dG is evaluated at the LAMP temperature, not 37 C (Z3)", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()

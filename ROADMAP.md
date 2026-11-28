@@ -6315,3 +6315,28 @@ seed 1, `snp_i = 80`): `lengths = 20.9` при `gaps = 20:40` давал кол�
     - следствие: дробные, нулевые, `Inf`, векторные и нечисловые длины
       отвергаются; `len`, `end` и все произведения, посчитанные из `end`,
       совпадают с молекулой.
+
+## ZV81. Длины LAMP проверяются до «проглоченной» сетки
+
+`design_lamp_marker()` передаёт `arm_lengths` и `outer_lengths` в общую сетку
+`primer_candidates()` через `lamp_arm_sites()` и `safe_candidates()`. Проверка
+ADR 0056 срабатывает, но `safe_candidates()` оборачивает сетку в
+`tryCatch(..., error = function(e) NULL)`: любой отказ превращается в пустой
+набор. Измерено на ветке до правки (`snp_fixture()`, `flank = 150L`):
+`arm_lengths = 20.9` и `outer_lengths = 21.9` не сообщали о дробной длине, а
+возвращали «No LAMP primer set passed …» — ложный вывод о локусе вместо
+отказа по аргументу. ADR 0056 ошибочно предполагал, что отказ сетки доходит
+до вызывающего при LAMP.
+
+- [x] **ZV81. `design_lamp_marker()` проверяет обе длины на входе.**
+    - правка: `check_nucleotide_length(arm_lengths, "arm_lengths", multi = TRUE)`
+      и `check_nucleotide_length(outer_lengths, "outer_lengths", multi = TRUE)`
+      до построения шаблона; сообщение называет аргумент вызывающего.
+      `safe_candidates()` сохраняет свой контракт пустого набора — это
+      отдельное решение, записанное в ADR 0057.
+    - проверка: `tests/testthat/test-lamp.R` — новый тест отвергает
+      `arm_lengths = 20.9` и `outer_lengths = 21.9` сообщением «positive whole
+      numbers of nucleotides»; `lamp|primer-pairs|hrm` — 693 pass, 0 fail.
+    - блокер: нет; проверка идёт до любой Tm-работы.
+    - следствие: дробные, нулевые, `Inf`, векторные и нечисловые длины
+      отвергаются по имени; целые значения дают те же наборы и ту же лестницу.
