@@ -149,3 +149,4 @@ decision, so each ADR keeps `accepted` with a dated amendment at the end:
 | [0083](0083-an-external-record-is-judged-before-its-cast.md) | An external record is judged before its cast | accepted |
 | [0084](0084-annotation-is-asked-about-the-rows-the-caller-named.md) | Annotation is asked about the rows and bases the caller named | accepted |
 | [0085](0085-the-geometry-helpers-judge-their-numbers.md) | The geometry helpers judge the numbers they are built from | accepted |
+| [0086](0086-a-frequency-is-a-proportion-before-it-weighs-anything.md) | A frequency weighs nothing until it is a proportion | accepted |
