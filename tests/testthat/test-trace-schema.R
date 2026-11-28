@@ -190,6 +190,17 @@ test_that("a trace survives a write and a read unchanged", {
   expect_identical(back$id, tr$id)
 })
 
+test_that("marker_trace_write() refuses to write through a link", {
+  tr <- marker_trace_from_artefact(new_artefact())
+  dir <- withr::local_tempdir()
+  outside <- fs::path(dir, "outside.rds")
+  saveRDS("keep", outside)
+  link <- fs::path(dir, "trace.rds")
+  skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+  expect_error(marker_trace_write(tr, link), "which is a link")
+  expect_identical(readRDS(outside), "keep")
+})
+
 # --- migration ---------------------------------------------------------------
 
 test_that("a legacy artefact@1 record keeps every field it had", {

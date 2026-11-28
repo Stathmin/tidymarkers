@@ -394,6 +394,7 @@ marker_trace_write <- function(trace, path) {
   if (!fs::dir_exists(dir)) {
     abort_msg("No directory at {.path {dir}}; create it before writing a trace.")
   }
+  refuse_links(dir, fs::path_file(path))
   saveRDS(trace, path)
   invisible(path)
 }
