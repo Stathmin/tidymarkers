@@ -186,6 +186,27 @@ genotypes_for_target <- function(panel, t) {
     keep <- keep & (is.na(panel$alt) | panel$alt == t$alt)
   }
   d <- panel[keep, , drop = FALSE]
+  # One line carries one call at one target. Two different calls are not a
+  # duplicate to collapse: keeping the first would make the answer the file
+  # order (ADR 0043). A missing call beside a present one is that line's call.
+  d <- d[order(is.na(d$genotype)), , drop = FALSE]
+  called <- !is.na(d$genotype)
+  conflict <- vapply(
+    split(d$genotype[called], d$line[called]),
+    function(g) length(unique(g)) > 1L,
+    logical(1)
+  )
+  if (any(conflict)) {
+    line <- names(conflict)[conflict][[1L]]
+    doses <- sort(unique(d$genotype[called & d$line == line]))
+    abort_msg(
+      glue::glue(
+        "Line '{line}' has conflicting genotype calls at {t$chrom}:{t$pos} ",
+        "(dosages {paste(doses, collapse = ', ')})."
+      ),
+      i = "A panel carries one call per line and target."
+    )
+  }
   d[!duplicated(d$line), , drop = FALSE]
 }
 

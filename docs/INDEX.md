@@ -190,6 +190,9 @@ Other vignettes:
 - [ADR 0042](adr/0042-a-threshold-is-a-count-not-a-number-to-truncate.md) — a
   sample-size threshold is validated as a whole number before the cast, so
   `min_lines = 4.9` no longer passes a four-line panel.
+- [ADR 0043](adr/0043-a-panel-gives-one-call-per-line-and-target.md) — a panel
+  carries one call per line and target; two different calls are refused
+  instead of resolved by file order.
 
 ## Operator decisions
 

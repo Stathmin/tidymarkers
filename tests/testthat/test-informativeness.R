@@ -166,3 +166,47 @@ test_that("a sample-size threshold is a whole number, not a truncated one", {
     "insufficient_sample"
   )
 })
+
+test_that("a line with two different calls at one target is refused, not ordered", {
+  panel <- tibble::tibble(
+    line = c("L1", "L1", "L2", "L3", "L4", "L5"),
+    chrom = "Chr1", pos = 250L, ref = "A", alt = "G",
+    genotype = c(2, 0, 0, 0, 0, 0)
+  )
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel),
+    "conflicting genotype calls"
+  )
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel[c(2, 1, 3:6), ]),
+    "Line 'L1' has conflicting genotype calls at Chr1:250 \\(dosages 0, 2\\)"
+  )
+})
+
+test_that("the same call twice is one line, with or without a missing row", {
+  twice <- tibble::tibble(
+    line = c("L1", "L1", "L2", "L3", "L4"),
+    chrom = "Chr1", pos = 250L, ref = "A", alt = "G",
+    genotype = c(2, 2, 0, 0, 0)
+  )
+  r <- marker_informativeness(informativeness_target(), genotypes = twice)
+  expect_equal(r$n_lines, 4L)
+  expect_equal(r$alt_freq, 0.25)
+
+  with_na <- tibble::tibble(
+    line = c("L1", NA, "L1", "L2", "L3", "L4"),
+    chrom = "Chr1", pos = 250L, ref = "A", alt = "G",
+    genotype = c(NA, 2, 2, 0, 0, 0)
+  )
+  # the missing call is not a second call for L1; the present one is its call
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = with_na),
+    "non-missing `line`"
+  )
+  with_na <- with_na[-2, ]
+  a <- marker_informativeness(informativeness_target(), genotypes = with_na)
+  b <- marker_informativeness(informativeness_target(), genotypes = with_na[c(2, 1, 3:5), ])
+  expect_equal(a$n_lines, 4L)
+  expect_equal(a$alt_freq, b$alt_freq)
+  expect_equal(a$pic, b$pic)
+})
