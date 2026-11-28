@@ -50,6 +50,14 @@
   `dev/check-writers.R` (шаг `2b2` в `dev/check.R`) разбирает тела функций в
   `R/` и требует объявления имён в том же теле записи, а
   `dev/writers.yml` обосновывает семь исключений и падает на устаревшем.
+  Ночная смена 2026-11-28 (вторая) закрыла остаток семьи «позиция целая до
+  приведения»: `bad_position()` судила символьную колонку только через
+  `as.integer()` и усекала `"250.9"` (ZV94, [ADR 0068](../adr/0068-a-position-column-is-whole-in-its-spelling.md));
+  локация GenBank усекалась тем же приведением (ZV95,
+  [ADR 0069](../adr/0069-a-genbank-location-is-read-whole-or-refused.md));
+  `mask_positions()` (ZV96) и `write_variants_vcf()` (ZV97) проверяют
+  целостность до приведения, включая символьные записи (ADR 0045,
+  amendments).
   Следом ZV46: гейт называл `cache_present()` стражем, хотя это проверка
   попадания; словарь сужен до трёх отказывающих вызовов, решение —
   [ADR 0035](../adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md).
