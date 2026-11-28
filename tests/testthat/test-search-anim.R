@@ -62,3 +62,15 @@ test_that("plot_design_search_step draws a panel for the first and last step", {
   expect_s3_class(plot_design_search_step(fr, 1L), "ggplot")
   expect_s3_class(plot_design_search_step(fr, nrow(fr$notes)), "ggplot")
 })
+
+# The GIF name is declared before any frame is stitched: a link at it must not
+# become the animation's target (ADR 0033).
+test_that("assemble_gif refuses to write through a link", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(dir, "outside.gif")
+  writeLines("keep", outside)
+  link <- fs::path(dir, "anim.gif")
+  skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+  expect_error(assemble_gif(character(), link), "which is a link")
+  expect_identical(readLines(outside), "keep")
+})

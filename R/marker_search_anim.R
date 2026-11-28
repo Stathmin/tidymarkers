@@ -353,6 +353,7 @@ image_tool <- function() {
 #' @keywords internal
 #' @noRd
 assemble_gif <- function(pngs, path, delay_cs = 25L) {
+  path <- declared_path(path)
   tool <- image_tool()
   if (is.null(tool)) {
     abort_msg(
