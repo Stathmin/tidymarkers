@@ -57,6 +57,21 @@ test_that("reading a registry that does not exist yields zero rows and writes no
   expect_false(fs::file_exists(registry))
 })
 
+test_that("approval refuses to write the registry through a link", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(dir, "outside.csv")
+  readr::write_lines("keep", outside)
+  registry <- fs::path(dir, "registry.csv")
+  skip_if(!file.symlink(outside, registry), "symlinks are not supported")
+  q <- marker_ingest_literature(zy4_corpus(), min_confidence = 0.5)
+
+  expect_error(
+    marker_ingest_approve(q, "lit-001", registry = registry),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+})
+
 test_that("approval is the only write path, it appends one stamped record", {
   registry <- fs::path(withr::local_tempdir(), "deep", "nested", "registry.csv")
   q <- marker_ingest_literature(zy4_corpus(), min_confidence = 0.5)

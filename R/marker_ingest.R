@@ -318,6 +318,7 @@ ingest_write_registry <- function(rows, registry) {
   if (!fs::dir_exists(dir)) {
     fs::dir_create(dir, recurse = TRUE)
   }
+  refuse_links(dir, fs::path_file(registry))
   if (fs::file_exists(registry)) {
     header <- names(utils::read.csv(registry, nrows = 1L))
     if (!identical(header, names(rows))) {
