@@ -138,6 +138,7 @@ decision_render <- function(graph, style = decision_style(), out = NULL) {
   if (is.null(out)) {
     return(invisible(svg))
   }
+  refuse_links(dirname(out), basename(out))
   dir.create(dirname(out), recursive = TRUE, showWarnings = FALSE)
   writeLines(svg, out, useBytes = TRUE)
   invisible(out)

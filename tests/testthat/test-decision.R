@@ -544,3 +544,16 @@ test_that("the printed label of every family id is unchanged (no figure drift)",
     }
   }
 })
+
+test_that("decision_render() refuses to write through a link", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(dir, "outside.svg")
+  writeLines("keep", outside)
+  link <- fs::path(dir, "figure.svg")
+  skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+  expect_error(
+    suppressMessages(decision_render(marker_decision_graph(scheme = "snp"), out = link)),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+})
