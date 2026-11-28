@@ -81,10 +81,16 @@ marker_informativeness <- function(targets, genotypes = NULL, haplotypes = NULL,
   if (is.null(genotypes) && is.null(haplotypes)) {
     abort_msg("Give `genotypes` (line calls) or `haplotypes` (a frequency model).")
   }
-  min_lines <- as.integer(min_lines)[1L]
-  if (is.na(min_lines) || min_lines < 1L) {
-    abort_msg("`min_lines` must be a positive whole number.")
+  # A threshold is a count, not a number to truncate: `as.integer(4.9)` is 4 and
+  # would pass a panel the caller asked to reject (ADR 0042).
+  if (
+    !is.numeric(min_lines) || length(min_lines) != 1L || !is.finite(min_lines) ||
+      min_lines < 1 || min_lines > .Machine$integer.max ||
+      min_lines != round(min_lines)
+  ) {
+    abort_msg("`min_lines` must be a single positive whole number.")
   }
+  min_lines <- as.integer(min_lines)
 
   tg <- informativeness_targets(targets)
   if (!nrow(tg)) {

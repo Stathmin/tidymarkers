@@ -187,6 +187,9 @@ Other vignettes:
 - [ADR 0041](adr/0041-a-genotype-is-its-allele-multiset.md) — a biallelic
   genotype is classified by its allele multiset, so `1/0` and `1|0` get the
   same `het` class, weight and depth-gate verdict as `0/1`.
+- [ADR 0042](adr/0042-a-threshold-is-a-count-not-a-number-to-truncate.md) — a
+  sample-size threshold is validated as a whole number before the cast, so
+  `min_lines = 4.9` no longer passes a four-line panel.
 
 ## Operator decisions
 

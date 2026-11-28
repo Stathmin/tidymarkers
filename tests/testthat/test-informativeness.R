@@ -142,3 +142,27 @@ test_that("a VCF genotype call is its allele multiset in either order", {
   expect_equal(r$alt_freq, 0.5)
   expect_equal(r$expected_heterozygosity, 0.5)
 })
+
+test_that("a sample-size threshold is a whole number, not a truncated one", {
+  panel <- informativeness_panel(c(2, 0, 0, 0))
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel, min_lines = 4.9),
+    "positive whole number"
+  )
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel, min_lines = "4"),
+    "positive whole number"
+  )
+  expect_error(
+    marker_informativeness(informativeness_target(), genotypes = panel, min_lines = Inf),
+    "positive whole number"
+  )
+  expect_equal(
+    marker_informativeness(informativeness_target(), genotypes = panel, min_lines = 4L)$status,
+    "ok"
+  )
+  expect_equal(
+    marker_informativeness(informativeness_target(), genotypes = panel, min_lines = 5L)$status,
+    "insufficient_sample"
+  )
+})
