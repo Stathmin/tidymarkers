@@ -13,7 +13,7 @@
 [`user-api-graph.dot`](user-api-graph.dot). Проверка —
 `Rscript dev/check-user-api.R`.
 
-Отрисовка графа (214 узлов, 941 ребро): `dot -Tsvg docs/user-api-graph.dot
+Отрисовка графа (215 узлов, 953 ребра): `dot -Tsvg docs/user-api-graph.dot
 -o user-api-graph.svg`; для плотной раскладки читаемее `sfdp -Tsvg
 docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — производный,
 руками не правится: единственный генератор — `Rscript dev/check-user-api.R
@@ -23,14 +23,14 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 
 | Что | Число |
 |---|---|
-| Экспортов в `NAMESPACE` | **213** |
+| Экспортов в `NAMESPACE` | **214** |
 | S3-методов (включая `+.marker_plan`) | **52** |
-| Всего записей в CSV | **265** |
-| Пользовательских (`user_facing = TRUE`) | **143** |
+| Всего записей в CSV | **266** |
+| Пользовательских (`user_facing = TRUE`) | **144** |
 | Служебных (`user_facing = FALSE`) | **122** |
-| Типизированных рёбер в графе | **941** |
+| Типизированных рёбер в графе | **953** |
 | Точек входа (нет типизированных входов) | **63** |
-| Листьев (нет типизированных потребителей) | **120** |
+| Листьев (нет типизированных потребителей) | **121** |
 | Изолятов (ни входа, ни выхода по классам) | **27** |
 
 Типизированное ребро `A → B` означает: `output_class(A)` совпадает с одним из
@@ -118,6 +118,7 @@ docs/user-api-graph.dot -o user-api-graph.svg`. Файл `.dot` — произв
 | `marker_attach_haplotypes()` | да | marker, haplotypes | snp, min_alt_freq | `marker + haplotypes` → `marker` | Attach known population haplotypes to any designed marker |
 | `marker_context()` | да | — | variants, haplotypes, depth, min_depth, min_weight | `variants + haplotypes + depth` → `context` | Add variant / haplotype context to a plan |
 | `marker_design_panel()` | да | genome, chemistries | variants, haplotypes, targets, region, ld, costs, created, dir | `genome + variants + haplotypes + targets + costs + character` → `panel` | Design a marker panel from variants, haplotypes and chemistries |
+| `marker_locus_crate()` | да | gwas, dossier, genome | variants, haplotypes, chemistries, index, maf_min, ld_min, dir, created | `gwas + dossier + genome + population` → `crate` | GWAS loci + enrichment dossier → marker crate + RO-Crate |
 | `marker_run_context()` | да | — | genome, variants, population, haplotypes, conditions, engines, options | `genome + variants + haplotypes` → `context` | A marker run context |
 | `marker_targets()` | да | — | data, chrom, pos, ref, alt, alt2, type, label … +1 | `variants` → `targets` | Add target loci to a plan |
 | `pick_target_snp()` | да | variants, genome, gene | variant_id, clean_3p, specificity_candidates, BPPARAM, scheme, max_tries | `variants + genome + gene` → `variant` | Choose a designable target variant from a variant table |

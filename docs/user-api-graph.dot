@@ -70,6 +70,7 @@ digraph user_api {
     "marker_attach_haplotypes" [label="marker_attach_haplotypes", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "marker_context" [label="marker_context", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "marker_design_panel" [label="marker_design_panel", shape=box, style="filled", fillcolor="#d9f2d9"];
+    "marker_locus_crate" [label="marker_locus_crate", shape=box, style="filled", fillcolor="#d9f2d9"];
     "marker_run_context" [label="marker_run_context", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "marker_targets" [label="marker_targets", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
     "pick_target_snp" [label="pick_target_snp", shape=ellipse, style="filled", fillcolor="#d9f2d9"];
@@ -261,6 +262,7 @@ digraph user_api {
   "annotate_variants" -> "marker_as_granges" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
+  "annotate_variants" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "marker_targets" [color="#c8c8c8", penwidth=0.6];
   "annotate_variants" -> "pick_target_snp" [color="#c8c8c8", penwidth=0.6];
@@ -407,6 +409,7 @@ digraph user_api {
   "ath_genome" -> "marker_bowtie_index" [color="#c8c8c8", penwidth=0.6];
   "ath_genome" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "ath_genome" -> "marker_fm_index" [color="#c8c8c8", penwidth=0.6];
+  "ath_genome" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "ath_genome" -> "marker_plan" [color="#c8c8c8", penwidth=0.6];
   "ath_genome" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "ath_genome" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -674,6 +677,7 @@ digraph user_api {
   "ensembl_variants" -> "marker_as_granges" [color="#c8c8c8", penwidth=0.6];
   "ensembl_variants" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "ensembl_variants" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
+  "ensembl_variants" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "ensembl_variants" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "ensembl_variants" -> "marker_targets" [color="#c8c8c8", penwidth=0.6];
   "ensembl_variants" -> "pick_target_snp" [color="#222222", penwidth=2.2];
@@ -724,6 +728,7 @@ digraph user_api {
   "genome_index" -> "marker_bowtie_index" [color="#c8c8c8", penwidth=0.6];
   "genome_index" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "genome_index" -> "marker_fm_index" [color="#c8c8c8", penwidth=0.6];
+  "genome_index" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "genome_index" -> "marker_plan" [color="#c8c8c8", penwidth=0.6];
   "genome_index" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "genome_index" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -765,6 +770,7 @@ digraph user_api {
   "haplotypes_from_alignment" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "haplotypes_from_alignment" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "haplotypes_from_alignment" -> "marker_informativeness" [color="#c8c8c8", penwidth=0.6];
+  "haplotypes_from_alignment" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "haplotypes_from_alignment" -> "marker_pareto" [color="#c8c8c8", penwidth=0.6];
   "haplotypes_from_alignment" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "in_silico_pcr" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -839,6 +845,7 @@ digraph user_api {
   "marker_bsgenome" -> "marker_bowtie_index" [color="#c8c8c8", penwidth=0.6];
   "marker_bsgenome" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "marker_bsgenome" -> "marker_fm_index" [color="#c8c8c8", penwidth=0.6];
+  "marker_bsgenome" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "marker_bsgenome" -> "marker_plan" [color="#c8c8c8", penwidth=0.6];
   "marker_bsgenome" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "marker_bsgenome" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -881,6 +888,7 @@ digraph user_api {
   "marker_example" -> "marker_as_granges" [color="#c8c8c8", penwidth=0.6];
   "marker_example" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "marker_example" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
+  "marker_example" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "marker_example" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "marker_example" -> "marker_targets" [color="#c8c8c8", penwidth=0.6];
   "marker_example" -> "pick_target_snp" [color="#c8c8c8", penwidth=0.6];
@@ -908,6 +916,7 @@ digraph user_api {
   "marker_from_granges" -> "marker_as_granges" [color="#c8c8c8", penwidth=0.6];
   "marker_from_granges" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "marker_from_granges" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
+  "marker_from_granges" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "marker_from_granges" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "marker_from_granges" -> "marker_targets" [color="#c8c8c8", penwidth=0.6];
   "marker_from_granges" -> "pick_target_snp" [color="#c8c8c8", penwidth=0.6];
@@ -953,6 +962,7 @@ digraph user_api {
   "marker_genome" -> "marker_bowtie_index" [color="#c8c8c8", penwidth=0.6];
   "marker_genome" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "marker_genome" -> "marker_fm_index" [color="#c8c8c8", penwidth=0.6];
+  "marker_genome" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "marker_genome" -> "marker_plan" [color="#c8c8c8", penwidth=0.6];
   "marker_genome" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "marker_genome" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -1099,6 +1109,7 @@ digraph user_api {
   "read_genome_fasta" -> "marker_bowtie_index" [color="#c8c8c8", penwidth=0.6];
   "read_genome_fasta" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "read_genome_fasta" -> "marker_fm_index" [color="#c8c8c8", penwidth=0.6];
+  "read_genome_fasta" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "read_genome_fasta" -> "marker_plan" [color="#c8c8c8", penwidth=0.6];
   "read_genome_fasta" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "read_genome_fasta" -> "offtarget_profile" [color="#c8c8c8", penwidth=0.6];
@@ -1119,6 +1130,7 @@ digraph user_api {
   "read_transcripts" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "read_transcripts" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
   "read_transcripts" -> "marker_informativeness" [color="#c8c8c8", penwidth=0.6];
+  "read_transcripts" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "read_transcripts" -> "marker_pareto" [color="#c8c8c8", penwidth=0.6];
   "read_transcripts" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "read_variant_depth" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
@@ -1135,6 +1147,7 @@ digraph user_api {
   "read_variants_vcf" -> "marker_as_granges" [color="#c8c8c8", penwidth=0.6];
   "read_variants_vcf" -> "marker_context" [color="#c8c8c8", penwidth=0.6];
   "read_variants_vcf" -> "marker_design_panel" [color="#c8c8c8", penwidth=0.6];
+  "read_variants_vcf" -> "marker_locus_crate" [color="#c8c8c8", penwidth=0.6];
   "read_variants_vcf" -> "marker_run_context" [color="#c8c8c8", penwidth=0.6];
   "read_variants_vcf" -> "marker_targets" [color="#c8c8c8", penwidth=0.6];
   "read_variants_vcf" -> "pick_target_snp" [color="#c8c8c8", penwidth=0.6];

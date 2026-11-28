@@ -126,6 +126,7 @@ marker_ingest_approve,export,ingest,FALSE,queue;record_id,registry;reviewer,queu
 marker_ingest_literature,export,ingest,FALSE,path,min_evidence;min_confidence;provenance_required,path,queue,queue,TRUE,FALSE,очередь литературы
 marker_ingest_registry,export,ingest,FALSE,,registry,none,registry,registry,TRUE,TRUE,реестр литературы
 marker_install_tools,export,service,FALSE,,dest;version;ask;force,none,path,path,TRUE,TRUE,сборка OligoArrayAux
+marker_locus_crate,export,design,TRUE,gwas;dossier;genome,variants;haplotypes;chemistries;index;maf_min;ld_min;dir;created;...,gwas;dossier;genome;variants;haplotypes;character,crate directory,files,FALSE,TRUE,GWAS loci + dossier -> panel artefact + RO-Crate
 marker_one_pot,export,assembly,TRUE,assays,matrix;max_markers,marker;matrix,marker_one_pot,one_pot,FALSE,TRUE,группировка в мультиплекс
 marker_outcome_corpus,export,artefact,TRUE,dir,,path,corpus,corpus,TRUE,FALSE,исходы по каталогу
 marker_outcomes,export,artefact,TRUE,artefact,,artefact,tibble,outcomes,FALSE,TRUE,исходы артефакта

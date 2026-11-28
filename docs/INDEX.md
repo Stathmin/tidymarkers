@@ -104,6 +104,9 @@ Other vignettes:
 - [ADR 0018](adr/0018-one-allele-and-position-rule-for-three-vcf-readers.md) —
   all three VCF readers admit the same alleles and refuse the same positions,
   so a depth table and a variant table join on one key.
+- [ADR 0019](adr/0019-marker-crate-contract.md) — a marker crate joins GWAS
+  loci, the Merovingen dossier, candidate selection, designed assays,
+  specificity and multiplex into one deterministic RO-Crate.
 
 ## Operator decisions
 
