@@ -150,6 +150,10 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
                                 com_tm_target = COM_TM_TARGET,
                                 com_tm_range = NULL, com_gaps = 18:80,
                                 as_lengths = KASP_AS_LENGTHS, engines = NULL) {
+  if (!is_whole_number(pair_screen, min = 0L)) {
+    abort_msg("`pair_screen` must be one non-negative whole number.")
+  }
+  pair_screen <- as.integer(pair_screen)
   call <- sys.call()
   if (contracts_enabled()) contract_assay_input(genome, snp, call)
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
@@ -353,7 +357,7 @@ assemble_kasp_assay <- function(genome, snp, variants = NULL, flank = 150L,
   # Those cost a genome/PCR pass, so only the leading `pair_screen` pairings are
   # screened; the first clean one wins (the ranked winner is kept when none is).
   if (!is.null(genome) && pair_screen > 1L && nrow(assays) > 1L) {
-    n_screen <- min(as.integer(pair_screen), nrow(assays))
+    n_screen <- min(pair_screen, nrow(assays))
     # The screen costs one genome pass per pairing (its COM primer, and the two
     # alleles of its virtual PCR); `pair_screen` pairings therefore cost
     # `pair_screen` passes of the same radius.  Each pass is per primer, not per

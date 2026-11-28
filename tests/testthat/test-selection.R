@@ -123,6 +123,16 @@ test_that("the dropout gate tolerates benign footprint variants (dropout <= tol)
   expect_false(g$data$gate_com_footprint[2])
 })
 
+test_that("a fractional pair_screen is refused before any design work", {
+  f <- snp_fixture()
+  for (x in list(2.5, -1L, Inf, "3", c(1L, 3L))) {
+    expect_error(
+      assemble_kasp_assay(f$genome, f$snp, pair_screen = x, cores = 1L),
+      "non-negative whole number"
+    )
+  }
+})
+
 test_that("the pair screen swaps a top pairing with an off-target duplicate for a clean sibling", {
   skip_if_no_oligoarrayaux()
   f <- snp_fixture()
