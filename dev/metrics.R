@@ -290,7 +290,10 @@ repair_stats <- function(log_path = file.path(root_dir(), "docs", "plans", "self
   }
   lines <- readLines(log_path, warn = FALSE)
   rows <- grep("^\\| [0-9]", lines, value = TRUE)
-  cells <- strsplit(rows, "|", fixed = TRUE)
+  # `dev/repair.R` escapes a pipe inside a cell as `\|` for the markdown
+  # table; splitting on every pipe turned six well-formed rows into
+  # "malformed" and dropped them from the status counts.
+  cells <- strsplit(rows, "(?<!\\\\)\\|", perl = TRUE)
   # the header has nine cells and a leading empty one; a short row would put
   # `next task` where the status belongs, so it is named and left out, not
   # silently counted as an unknown status or allowed to crash the report.

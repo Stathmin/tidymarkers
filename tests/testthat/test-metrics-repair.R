@@ -84,12 +84,14 @@ test_that("a malformed or unknown journal row is named, not counted or fatal", {
     "| ---------- | ------- | ----- | ------ | ------ | ------ | ------- | ------ | --------- |",
     "| 2026-01-01 00:00 | b | logic | a | fixed: x | abc | 1 | fixed | next |",
     "| 2026-01-01 00:01 | a short row |",
-    "| 2026-01-01 00:02 | b | logic | a | fixed: x | abc | 1 | fixedd | next |"
+    "| 2026-01-01 00:02 | b | logic | a | fixed: x | abc | 1 | fixedd | next |",
+    # an escaped pipe is markdown, not a column break (six real rows did this)
+    "| 2026-01-01 00:03 | b | logic | `a \\| b` | fixed: x | abc | 1 | fixed | next |"
   ), log)
 
   st <- w$repair_stats(log)
-  expect_equal(st$rows, 3L)
-  expect_equal(st$fixed, 1L)
+  expect_equal(st$rows, 4L)
+  expect_equal(st$fixed, 2L)
   expect_equal(st$malformed, 1L)
   expect_equal(st$unknown, 1L)
 })
