@@ -167,3 +167,16 @@ test_that("marker_features() refuses a chromosome selector that is not one name"
   expect_error(marker_features(gff, chrom = c("Chr4", "Chr1")), "one chromosome name")
   expect_error(marker_features(gff, chrom = ""), "one chromosome name")
 })
+
+# `IRanges()` truncates a fractional start without a warning, so the base that
+# gets annotated is the one the guard refuses, not the one the table names.
+test_that("annotate_variants refuses a pos that is not whole", {
+  v <- tibble::tibble(
+    id = "fri", chrom = "Chr4", pos = 269745.5,
+    ref_genome = list(c("G", "A")), consequence = NA_character_
+  )
+  # refused before the annotation model is loaded, so no TxDb is needed here
+  expect_error(annotate_variants(v), "not a positive whole number")
+  v$pos <- "269745.5"
+  expect_error(annotate_variants(v), "not a positive whole number")
+})

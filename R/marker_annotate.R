@@ -240,6 +240,17 @@ txdb_seqname_map <- function(chrom, txdb) {
 #' @family annotation
 #' @export
 annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NULL) {
+  # `IRanges::IRanges(269745.5, width = 1)` is `269745-269745` with no warning,
+  # so a fractional row would be annotated at a base the table does not name
+  # (ADR 0045, 0084). Judge before the TxDb load: the refusal needs no model.
+  bad <- bad_position(variants$pos)
+  if (any(bad)) {
+    i <- which(bad)[[1L]]
+    abort_msg(gettextf(
+      "Variant %d has a `pos` that is not a positive whole number (%s).",
+      i, encodeString(as.character(variants$pos[[i]]))
+    ))
+  }
   load_namespace_quietly("VariantAnnotation", reason = "for structured annotation")
   txdb <- txdb %||% marker_txdb()
   if (nrow(variants) == 0L) {
@@ -254,7 +265,7 @@ annotate_variants <- function(variants, txdb = NULL, seqsource = NULL, gene = NU
   alts <- purrr::map_chr(variants$ref_genome, 2L)
   gr <- GenomicRanges::GRanges(
     txdb_seqname_map(variants$chrom, txdb),
-    IRanges::IRanges(variants$pos, width = nchar(refs)),
+    IRanges::IRanges(as.integer(variants$pos), width = nchar(refs)),
     ref = refs, alt = alts
   )
 
