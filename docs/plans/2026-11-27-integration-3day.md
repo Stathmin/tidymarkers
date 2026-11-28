@@ -10,6 +10,9 @@
   `export_primers()`) и карта идентичности выгрузки (`marker_export_outcomes()`)
   писали по существующей ссылке, хотя все писатели записей её уже отвергали;
   закрыты ZV29 и ZV29.1, решение — [ADR 0029](../adr/0029-an-output-writer-creates-its-files-not-writes-through-a-link.md).
+  Та же смена закрыла ZV30: передача исходов (`marker_export_outcomes()`)
+  следовала ссылке на производном компоненте пути (`crates/`, псевдоним) и
+  писала оба крата вне `dir`; решение — [ADR 0030](../adr/0030-a-derived-path-component-is-a-declared-name.md).
   Релизный гейт
   `dev/check.R --full` в ночную смену 2026-11-27 не прогонялся (R CMD check,
   ~7 мин); ZV12 ждёт CI-раннер. Дни 1–3 закрыты своими гейтами; см. §8.
