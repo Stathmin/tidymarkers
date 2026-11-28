@@ -1,6 +1,6 @@
 # 0006 — The panel pipeline is an orchestrator with falsifiable seams
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-26
 - Supersedes: none
 
@@ -181,3 +181,12 @@ chunking and the `solved.rds` replay format become worth a new decision.
 - [`tests/testthat/test-panel.R`](../../tests/testthat/test-panel.R) — the existing gate.
 - [`tests/testthat/fixtures/panel/`](../../tests/testthat/fixtures/panel) — the fixture.
 - [`ROADMAP.md`](../../ROADMAP.md) — ZY1, ZY2, ZT T4-T5.
+
+## Evidence at acceptance (2026-11-28)
+
+`Rscript dev/test.R panel` ran the panel, panel-artefact and panel-LD suites:
+376 assertions, 0 failures, 0 skips
+(`dev/logs/test-filter-panel-20261128-065434.log`). That covers gates 1–6 as
+written: target accounting, LD applied and not applied, phasing aborts, scheme
+choice under reversed costs, contract membership of every check id, and the
+byte-identical text set under a fixed `SOURCE_DATE_EPOCH`.

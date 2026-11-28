@@ -16,7 +16,7 @@ the file records the measurement or event that re-tested it).
 | [0003](0003-duckdb-deferred.md)                                        | DuckDB/`duckplyr` is deferred until an aggregation is measured              | accepted (amended) |
 | [0004](0004-mcp-ci-and-cross-project-tooling.md)                       | The MCP server stays one R file; no Python client, no published JSON Schema | accepted (amended) |
 | [0005](0005-index-backed-genome-access.md)                             | Genome access is an index-backed strategy with declared capabilities       | accepted |
-| [0006](0006-panel-pipeline.md)                                         | The panel pipeline is an orchestrator with falsifiable seams                | proposed |
+| [0006](0006-panel-pipeline.md)                                         | The panel pipeline is an orchestrator with falsifiable seams                | accepted |
 | [0007](0007-module-seams-and-mcp-contract.md)                          | Module seams (contracts, registries, splits) and the MCP runtime contract   | proposed |
 | [0008](0008-user-scenarios-as-contract.md)                             | User scenarios J1–J7 are the executable contract                            | accepted |
 | [0009](0009-panel-orchestrator-contract.md)                            | The panel orchestrator: GWAS, LD, haplotypes, chemistry, artefact           | accepted |
