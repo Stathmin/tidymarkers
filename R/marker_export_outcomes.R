@@ -203,6 +203,16 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
   refuse_links(fs::path_dir(identity_path), fs::path_file(identity_path))
 
   fs::dir_create(dir)
+  # the spelling of `dir` is outside the root; a link at `dir` can still reach
+  # into it, and the next scan would read the handover back as corpus
+  real_dir <- fs::path_real(dir)
+  real_root <- fs::path_real(root)
+  if (identical(real_dir, real_root) || fs::path_has_parent(real_dir, real_root)) {
+    abort_msg(
+      "`dir` must sit outside the scanned corpus root.",
+      i = "An export inside it would be read back as more corpus on the next scan."
+    )
+  }
   # `crates` and each pseudonym are paths this function derives under `dir`:
   # a link at either sends a crate outside it (ADR 0030)
   refuse_links(dir, "crates")

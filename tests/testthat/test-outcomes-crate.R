@@ -192,6 +192,20 @@ test_that("a corpus row cannot name a directory outside the scanned root", {
   )
 })
 
+test_that("a handover linked into the corpus is refused", {
+  fx <- outcomes_corpus_fixture()
+  link <- fs::path(withr::local_tempdir(), "out")
+  target <- fs::path(fx$root, "handover")
+  fs::dir_create(target)
+  # the spelling of `dir` is outside the root; its target is not
+  file.symlink(target, link)
+  expect_error(
+    marker_export_outcomes(fx$corpus, link, trustee = "lab-a"),
+    "outside the scanned corpus root"
+  )
+  expect_false(fs::dir_exists(fs::path(target, "crates")))
+})
+
 test_that("a corpus without a scanned root or an export inside it is refused", {
   fx <- outcomes_corpus_fixture()
   hand_built <- tibble::tibble(artefact = "x", artefact_id = "y")

@@ -152,6 +152,10 @@ Other vignettes:
   — the handover normalises `dir` before deriving `<dir>-identity.csv` from it;
   a trailing separator used to move the identity map inside the handover, where
   it would travel with the pseudonymised crates.
+- [ADR 0032](adr/0032-the-corpus-exclusion-check-reads-the-resolved-directory.md)
+  — the handover decides "outside the scanned corpus root" on `fs::path_real()`
+  after creating `dir`, so a link at `dir` whose target is inside the corpus is
+  refused instead of writing crates the next scan reads back.
 
 ## Operator decisions
 
