@@ -303,9 +303,15 @@ genotype_call <- function(gt, ad) {
   ref_depth <- alt_depth <- NA_real_
   if (!is.na(ad) && nzchar(ad) && ad != ".") {
     d <- suppressWarnings(as.numeric(strsplit(ad, ",", fixed = TRUE)[[1L]]))
-    if (length(d) >= 2L && all(is.finite(d[1:2]))) {
-      ref_depth <- d[[1L]]
-      alt_depth <- d[[2L]]
+    counts <- if (length(d) >= 2L) d[1:2] else numeric()
+    # AD is Number=R Integer (VCF spec): a negative, fractional or overflowing
+    # value is not a read count, and the writer refuses such a depth (ADR 0038).
+    valid <- length(counts) == 2L && all(is.finite(counts)) &&
+      all(counts >= 0 & counts == floor(counts) & counts <= .Machine$integer.max) &&
+      sum(counts) <= .Machine$integer.max
+    if (valid) {
+      ref_depth <- counts[[1L]]
+      alt_depth <- counts[[2L]]
     }
   }
   depth <- if (is.na(ref_depth)) NA_real_ else ref_depth + alt_depth

@@ -903,3 +903,30 @@ test_that("a VCF with no #CHROM line is refused by name, not read as empty", {
     class = "rlang_error"
   )
 })
+
+test_that("an AD the writer refuses is not a depth the reader reports", {
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    # AD is Number=R Integer: negative, fractional and overflowing counts are
+    # not read counts, and write_variants_vcf() refuses them (ADR 0038)
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:-5,10",
+    "1\t200\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:5,-10",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD\t0/1:6,4.5",
+    "1\t400\t.\tA\tG\t.\t.\t.\tGT:AD\t.:1e10,1e10",
+    "1\t500\t.\tA\tG\t.\t.\t.\tGT:AD\t.:6,4"
+  ), vcf)
+  g <- read_variant_genotypes(vcf)
+  at <- function(pos, col) g[[col]][g$pos == pos][[1L]]
+  expect_true(all(is.na(g$depth[1:4])))
+  # a valid GT is still a call; only its depth annotation is unusable
+  expect_equal(at(100L, "genotype"), 1)
+  expect_equal(at(200L, "genotype"), 1)
+  expect_equal(at(300L, "genotype"), 1)
+  # a no-call with an unusable AD has no estimate at all
+  expect_true(is.na(at(400L, "genotype")))
+  # the control row is unchanged
+  expect_equal(at(500L, "genotype"), 1)
+  expect_equal(at(500L, "depth"), 10)
+})
