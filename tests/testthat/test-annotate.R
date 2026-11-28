@@ -153,3 +153,17 @@ test_that("marker_features() refuses a coordinate that is not a positive whole n
   expect_identical(out$start, 2801L)
   expect_identical(out$end, 2900L)
 })
+
+test_that("marker_features() refuses a chromosome selector that is not one name", {
+  gff <- withr::local_tempfile(fileext = ".gff3")
+  writeLines(
+    c(
+      "##gff-version 3",
+      paste("Chr4", "tidymarkers", "gene", "2801", "2900", ".", "+", ".", "ID=AT4G05320", sep = "\t")
+    ),
+    gff
+  )
+  expect_error(marker_features(gff, chrom = NA), "one chromosome name")
+  expect_error(marker_features(gff, chrom = c("Chr4", "Chr1")), "one chromosome name")
+  expect_error(marker_features(gff, chrom = ""), "one chromosome name")
+})

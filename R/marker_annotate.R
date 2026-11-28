@@ -346,7 +346,7 @@ gff_attribute <- function(attributes) {
 #' the genome's names.  Gzip is detected from the `.gz` suffix.
 #'
 #' @param path NCBI feature table or GFF3 path (optionally gzipped).
-#' @param chrom optional chromosome to keep (applied after `chrom_map`).
+#' @param chrom optional chromosome name to keep (applied after `chrom_map`).
 #' @param feature feature type to keep; `"gene"` by default.  `NULL` keeps every
 #'   type the file carries (NCBI class or GFF3 type).
 #' @param chrom_map optional named character vector translating file sequence
@@ -438,6 +438,9 @@ marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NU
     out$chrom <- dplyr::coalesce(unname(chrom_map[out$chrom]), out$chrom)
   }
   if (!is.null(chrom)) {
+    if (length(chrom) != 1L || is.na(chrom) || !nzchar(chrom)) {
+      abort_msg("`chrom` must be one chromosome name.")
+    }
     out <- out[!is.na(out$chrom) & out$chrom == as.character(chrom), , drop = FALSE]
   }
   out

@@ -9,7 +9,7 @@ marker_features(path, chrom = NULL, feature = "gene", chrom_map = NULL)
 \arguments{
 \item{path}{NCBI feature table or GFF3 path (optionally gzipped).}
 
-\item{chrom}{optional chromosome to keep (applied after \code{chrom_map}).}
+\item{chrom}{optional chromosome name to keep (applied after \code{chrom_map}).}
 
 \item{feature}{feature type to keep; \code{"gene"} by default.  \code{NULL} keeps every
 type the file carries (NCBI class or GFF3 type).}
