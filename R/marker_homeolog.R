@@ -32,23 +32,33 @@ normalise_diagnostic_positions <- function(x) {
   } else if (is.data.frame(x)) {
     need_cols(x, c("chrom", "pos"), arg = "diagnostic_positions")
     chrom <- as.character(x$chrom)
-    pos <- as.integer(x$pos)
+    pos_raw <- x$pos
   } else if (is.list(x) && all(c("chrom", "pos") %in% names(x))) {
     chrom <- as.character(x$chrom)
-    pos <- as.integer(x$pos)
+    pos_raw <- x$pos
   } else if (is.list(x) && !is.null(names(x))) {
     chrom <- rep(names(x), lengths(x))
-    pos <- as.integer(unlist(x, use.names = FALSE))
+    pos_raw <- unlist(x, use.names = FALSE)
   } else {
     abort_msg(
       "`diagnostic_positions` must be NULL, a data frame / list with `chrom` and `pos`,",
       "a GRanges, or a named list `chrom -> positions`."
     )
   }
+  if (!inherits(x, "GRanges")) {
+    # a mask names a base, not a number to truncate: 10.9 used to become 10
+    # and claimed a diagnostic position the caller never named (ADR 0073)
+    if (any(bad_position(pos_raw))) {
+      abort_msg(
+        "`diagnostic_positions` needs a non-NA chromosome and a positive whole-number position in every row."
+      )
+    }
+    pos <- as.integer(pos_raw)
+  }
   out <- tibble::tibble(chrom = ath_chrom(chrom), pos = pos)
   if (anyNA(out$chrom) || anyNA(out$pos) || any(out$pos < 1L)) {
     abort_msg(
-      "`diagnostic_positions` needs a non-NA chromosome and a positive integer position in every row."
+      "`diagnostic_positions` needs a non-NA chromosome and a positive whole-number position in every row."
     )
   }
   out

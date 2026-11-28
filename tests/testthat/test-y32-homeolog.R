@@ -270,3 +270,15 @@ test_that("Y3.1: the data artifact fills both axes for every assay", {
   expect_true(all(!is.na(p$hex_3p) & p$hex_3p %in% c("A", "C", "G", "T")))
   expect_true(all(!is.na(p$common_3p) & p$common_3p %in% c("A", "C", "G", "T")))
 })
+
+test_that("Y3.1: a diagnostic mask position is whole in its spelling", {
+  mask <- tidymarkers:::normalise_diagnostic_positions
+  expect_error(mask(data.frame(chrom = "Chr1", pos = 10.9)), "whole-number position")
+  expect_error(mask(list(chrom = "Chr1", pos = 10.9)), "whole-number position")
+  expect_error(mask(list(Chr1 = c(10.9, 20))), "whole-number position")
+  expect_error(mask(data.frame(chrom = "Chr1", pos = "10.9")), "whole-number position")
+  expect_identical(
+    mask(data.frame(chrom = "Chr1", pos = c(10L, 20L)))$pos,
+    c(10L, 20L)
+  )
+})
