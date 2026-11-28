@@ -2,10 +2,10 @@
 #
 # ADR 0029 and its amendments (0030-0034) say: a function that creates a file
 # declares the name first, so a link at it is refused instead of followed.
-# `Rscript dev/check-writers.R` fails on a top-level function in R/ that calls a
-# write primitive without `refuse_links()` / `declared_path()` /
-# `declared_index()` in the same body, unless it is registered here with a
-# reason. A registered symbol that no longer writes unguarded fails as stale.
+# `Rscript dev/check-writers.R` fails on a function in R/ that calls a write
+# primitive without `refuse_links()` / `declared_path()` / `declared_index()`
+# in the same function, unless it is registered here with a reason. A nested
+# closure is its own entry, named `outer/inner` (ADR 0036). A registered symbol that no longer writes unguarded fails as stale.
 #
 # Register a helper only when the name is declared by its caller (a helper that
 # cannot know the directory) or the write never leaves a private tempdir. The
@@ -36,19 +36,23 @@ entries:
           owns both branches (`NULL` makes a `tempfile()`, otherwise the caller's
           path is checked), so the guard is one call away from the write.
 
-    - symbol: reprex_from_table
+    - symbol: render_design_search/draw
       reason: >-
-          False positive: the body builds script text that *contains*
-          `writeLines()`, so the scanner sees a write in a string. The reprox
-          itself is written by `marker_reprex()`.
-
-    - symbol: render_design_search
-      reason: >-
-          Writes the per-step PNGs into `withr::local_tempdir()`; the only name
-          that survives, the GIF, is declared by `assemble_gif()` before
-          ImageMagick runs (ZV40).
+          The closure writes the per-step PNGs into `withr::local_tempdir()`;
+          the only name that survives, the GIF, is declared by
+          `assemble_gif()` before ImageMagick runs (ZV40).
 
     - symbol: fold_amplicon
       reason: >-
           Writes `fold.fa` into `withr::local_tempdir()` so `hybrid-ss-min` reads
           it; the directory is private to the call and removed on exit.
+
+    - symbol: bowtie_primer_hits
+      reason: >-
+          Writes `reads.fa` into `withr::local_tempdir()` for bowtie to read;
+          the index basename is the caller's and is only read here.
+
+    - symbol: specificity_fm
+      reason: >-
+          Writes `reads.fa` into `withr::local_tempdir()` for `Rsubread::align()`
+          to read; the index basename is the caller's and is only read here.

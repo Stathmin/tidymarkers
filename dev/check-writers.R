@@ -37,50 +37,102 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
 
 # The primitives that create a file.  The call form is not part of the rule: a
 # package that imports `write_csv()` may call it bare, so the namespace prefix
-# is optional (ADR 0035, second hole).  `writeLines()` on a string is also a hit
-# when the string is a script another function emits; a ledger entry says so.
-write_pattern <- paste0(
-  "(?<![A-Za-z0-9._])(?:[A-Za-z0-9._]+::)?(",
-  paste(c(
-    "write_csv", "write_lines", "write_file", "writeLines", "saveRDS", "save",
-    "ggsave", "write_xml", "download.file", "file_copy", "file_move", "file.copy",
-    "file.rename", "writeBin", "write.csv", "write.table"
-  ), collapse = "|"), ")\\s*\\("
+# is optional (ADR 0035, second hole).  The rule applies to a *call*; a body
+# that only builds the text `writeLines(` writes nothing (ADR 0036).
+write_primitive <- c(
+  "write_csv", "write_lines", "write_file", "writeLines", "saveRDS", "save",
+  "ggsave", "write_xml", "download.file", "file_copy", "file_move", "file.copy",
+  "file.rename", "writeBin", "write.csv", "write.table", "writeXStringSet"
 )
 # A guard refuses a name; it does not merely report one. `cache_present()` is a
 # hit test (ZV44), so a body that asks it and then writes is still undeclared
 # (ADR 0035).
-guard_pattern <- paste0(
-  "refuse_links\\(|declared_path\\(|declared_index\\("
-)
+guard_primitive <- c("refuse_links", "declared_path", "declared_index")
 
-# Top-level `name <- function(...)` bodies in R/.  Parsed, not grepped, so a
-# helper named in a comment does not count.
+# The called name without a namespace prefix, or NA for a computed head.
+call_name <- function(call) {
+  if (!is.call(call)) {
+    return(NA_character_)
+  }
+  head <- tryCatch(call[[1L]], error = function(e) NULL)
+  if (is.name(head)) {
+    return(as.character(head))
+  }
+  if (is.call(head)) {
+    op <- tryCatch(as.character(head[[1L]]), error = function(e) "")
+    if (op %in% c("::", ":::")) {
+      return(as.character(tryCatch(head[[3L]], error = function(e) "")))
+    }
+  }
+  NA_character_
+}
+
+# Every function definition in a parsed file, named by its assignment path:
+# `outer` for a top-level one, `outer/inner` for a closure inside it (ADR 0036).
+# A closure passed as an argument is `<anonymous>` under its enclosing unit.
+collect_units <- function(expr, prefix, out) {
+  if (!is.call(expr)) {
+    return(out)
+  }
+  head <- call_name(expr)
+  if (identical(head, "function")) {
+    unit <- if (nzchar(prefix)) prefix else "<anonymous>"
+    while (!is.null(out[[unit]])) unit <- paste0(unit, "#", length(out) + 1L)
+    out[[unit]] <- expr[[3L]]
+    return(collect_units(expr[[3L]], paste0(unit, "/"), out))
+  }
+  if (head %in% c("<-", "=") && length(expr) == 3L && identical(call_name(expr[[3L]]), "function")) {
+    name <- if (is.name(expr[[2L]])) as.character(expr[[2L]]) else "<anonymous>"
+    return(collect_units(expr[[3L]], paste0(prefix, name), out))
+  }
+  for (i in seq_along(expr)) out <- collect_units(expr[[i]], prefix, out)
+  out
+}
+
+# Write and guard calls in one unit, not descending into a nested definition:
+# that definition is its own unit and needs its own guard.
+calls_in <- function(expr) {
+  found <- character()
+  walk <- function(e) {
+    if (!is.call(e)) {
+      return(invisible(NULL))
+    }
+    name <- call_name(e)
+    if (!is.na(name) && name %in% c(write_primitive, guard_primitive)) {
+      found <<- c(found, name)
+    }
+    if (identical(name, "function")) {
+      return(invisible(NULL))
+    }
+    for (i in seq_along(e)) walk(e[[i]])
+    invisible(NULL)
+  }
+  walk(expr)
+  unique(found)
+}
+
+# Function units in R/, from the parse tree so a call in a comment or a string
+# does not count.
 r_functions <- function(files = list.files("R", "\\.R$", full.names = TRUE)) {
   out <- list()
   for (file in files) {
     exprs <- tryCatch(parse(file), error = function(e) NULL)
     if (is.null(exprs)) next
-    for (expr in as.list(exprs)) {
-      if (!is.call(expr) || length(expr) < 3L) next
-      if (!is.name(expr[[2]]) || !is.call(expr[[3]])) next
-      if (!identical(expr[[3]][[1]], as.name("function"))) next
-      out[[as.character(expr[[2]])]] <- paste(deparse(expr[[3]][[3]]), collapse = "\n")
-    }
+    for (expr in as.list(exprs)) out <- collect_units(expr, "", out)
   }
   out
 }
 
-# Every write call, and whether the same body declares a name first.
+# Every write call in a unit, and whether that same unit declares a name first.
 scan_writers <- function(bodies) {
   out <- list()
   for (symbol in names(bodies)) {
-    body <- bodies[[symbol]]
-    found <- regmatches(body, gregexpr(write_pattern, body, perl = TRUE))[[1L]]
-    if (!length(found)) next
+    calls <- calls_in(bodies[[symbol]])
+    writes <- intersect(calls, write_primitive)
+    if (!length(writes)) next
     out[[symbol]] <- list(
-      writes = sort(unique(sub("\\s*\\($", "", found))),
-      guarded = grepl(guard_pattern, body, perl = TRUE)
+      writes = sort(writes),
+      guarded = any(guard_primitive %in% calls)
     )
   }
   out
@@ -121,22 +173,37 @@ self_test <- function() {
     undeclared = "function(path) writeLines(\"x\", path)",
     imported = "function(path) write_csv(x, path)",
     cached = "function(path) { if (cache_present(path)) return(path); writeLines(\"x\", path) }",
-    declared = "function(dir) { refuse_links(dir, \"a.csv\"); readr::write_csv(x, dir) }"
+    declared = "function(dir) { refuse_links(dir, \"a.csv\"); readr::write_csv(x, dir) }",
+    laundered = "function(d) { f <- function(p) writeLines(\"x\", p); refuse_links(d, \"a.csv\"); f(d) }",
+    nested_declared = "function(d) { f <- function(p) { refuse_links(p, \"a.csv\"); writeLines(\"x\", p) }; f(d) }",
+    strings = "function(x) paste0(\"writeLines(\", x, \")\")",
+    sequences = "function(p) Biostrings::writeXStringSet(x, p)"
   )
-  hits <- scan_writers(bodies)
+  exprs <- Map(
+    function(name, text) parse(text = paste0(name, " <- ", text))[[1L]],
+    names(bodies), bodies
+  )
+  units <- list()
+  for (expr in exprs) units <- collect_units(expr, "", units)
+  hits <- scan_writers(units)
   empty <- check_writers(list(), hits)
   expected <- paste0(
     "undeclared writer (guard it, or add to dev/writers.yml): ",
-    c("cached", "imported", "undeclared")
+    c("cached", "imported", "laundered/f", "sequences", "undeclared")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded writer was not caught")
+  }
+  if ("strings" %in% names(hits)) {
+    stop("self-test: a call built as text was reported as a writer")
   }
   ok <- check_writers(
     list(
       list(symbol = "undeclared", reason = "self-test"),
       list(symbol = "imported", reason = "self-test"),
-      list(symbol = "cached", reason = "self-test")
+      list(symbol = "cached", reason = "self-test"),
+      list(symbol = "laundered/f", reason = "self-test"),
+      list(symbol = "sequences", reason = "self-test")
     ),
     hits
   )

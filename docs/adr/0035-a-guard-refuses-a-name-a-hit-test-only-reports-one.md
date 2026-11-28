@@ -1,6 +1,6 @@
 # 0035 — A guard refuses a name; a hit test only reports one
 
-- Status: accepted
+- Status: accepted (amended)
 - Date: 2026-11-28
 - Supersedes: none
 - Builds on: [ADR 0029](0029-an-output-writer-creates-its-files-not-writes-through-a-link.md)
@@ -85,8 +85,18 @@ not move.
   the write, only that the same body contains a refusing call. That limit is
   unchanged and is why `dev/writers.yml` names the declaring caller for each
   registered helper.
-- The scan reads top-level `name <- function` bodies only. A closure defined
-  inside a function is outside it; the one such writer today (`draw()` inside
-  `render_design_search()`) renders PNG frames into `withr::local_tempdir()`
-  and never sees a caller's path. A nested closure that writes a caller's name
-  would need the scanner extended, not a ledger entry.
+- The scan reads every function definition, not only a top-level one: a closure
+  inside a function is its own writer with its own guard (ADR 0036). The early
+  text scan flattened nested bodies, so an outer guard covered a nested write;
+  that hole is closed and is measured in ADR 0036.
+
+## Amendment 2026-11-28 — the nested-closure limit was stated wrongly
+
+The consequences above originally said a closure defined inside a function was
+"outside" the scan. Measured, the deparsed outer body contained the nested
+definition, so the nested write was scanned as part of the outer function and
+any guard in the outer text covered it. A second artifact came from the same
+text match: a body that only built the string `writeLines(` counted as a
+writer. ADR 0036 replaces the text scan with a walk over function units and
+matches calls. Nothing in this decision changes: a guard is still a refusing
+call, and a hit test is still not a guard.

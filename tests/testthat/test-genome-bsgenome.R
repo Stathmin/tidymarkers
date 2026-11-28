@@ -81,3 +81,24 @@ test_that("a same-name, same-length BSgenome does not reuse another genome's FAS
   fa <- Rsamtools::scanFa(Rsamtools::FaFile(path2), gr)[[1L]]
   expect_identical(as.character(fa), "A")
 })
+
+test_that("a link at the materialised FASTA is not a cache hit", {
+  skip_if_not_installed("BSgenome.Athaliana.TAIR.TAIR9")
+  skip_if_not_installed("BSgenome")
+  skip_if_not_installed("Biostrings")
+  bs <- BSgenome.Athaliana.TAIR.TAIR9::BSgenome.Athaliana.TAIR.TAIR9
+  path <- fs::path(
+    fs::path_temp(),
+    paste0("genome-", tidymarkers:::bsgenome_fasta_key(bs), ".fa")
+  )
+  # the earlier tests may have materialised this genome already
+  if (fs::file_exists(path) && !nzchar(Sys.readlink(path))) {
+    fs::file_delete(path)
+  }
+  outside <- fs::path(withr::local_tempdir(), "outside.fa")
+  writeLines("keep", outside)
+  skip_if(!file.symlink(outside, path), "this filesystem cannot make a symlink")
+  withr::defer(unlink(path))
+  expect_error(genome_fasta_path(bs, "marker_blast_index"), "which is a link")
+  expect_identical(readLines(outside), "keep")
+})

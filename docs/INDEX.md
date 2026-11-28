@@ -168,6 +168,12 @@ Other vignettes:
   the writer gate's guard list names only calls that refuse a name; a cache hit
   test reports and is not a guard, and the write scanner matches the imported
   call form as well as the namespaced one.
+- [ADR 0036](adr/0036-a-nested-closure-is-a-writer-of-its-own.md) — a closure
+  inside a function is its own writer: the guard must be in the closure that
+  writes, and a primitive built as text is not a write.
+- [ADR 0037](adr/0037-the-write-vocabulary-names-every-primitive.md) — the write
+  vocabulary names every primitive that creates a file: `writeXStringSet()` is
+  a writer, and the self-test proves the list cannot silently shrink.
 
 ## Operator decisions
 

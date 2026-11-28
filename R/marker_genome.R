@@ -405,7 +405,9 @@ genome_fasta_path <- function(genome, call) {
   # `getSeq()` names the DNAStringSet, so the FASTA carries the genome's names
   if (inherits(genome, "BSgenome")) {
     path <- fs::path(fs::path_temp(), paste0("genome-", bsgenome_fasta_key(genome), ".fa"))
-    if (!file.exists(path)) {
+    # the name is content-keyed, and a link at it is not a cache hit (ADR 0033)
+    if (!cache_present(path)) {
+      declared_path(path)
       Biostrings::writeXStringSet(BSgenome::getSeq(genome), path)
     }
     return(path)
