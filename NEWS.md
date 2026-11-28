@@ -23,6 +23,11 @@
   больше не решается порядком строк: `marker_informativeness()` отвергает
   такую панель и называет линию, цель и дозы. Одинаковый вызов дважды и `NA`
   рядом с вызовом по-прежнему считаются одной линией. ZV66, ADR 0043.
+- `marker_one_pot(max_markers = Inf)` падал базовым `missing value where
+  TRUE/FALSE needed`, а `marker_ingest_literature(min_evidence = Inf)`
+  принимал `Inf` и записывал критерий как `NA`. Оба теперь дают сообщение
+  пакета, как `min_lines` и `spacer_len`: у счётчика одно определение
+  (`is_whole_number()`). ZV67, ADR 0044.
 - Та же ошибка была в `genotype_dosage()`: `marker_informativeness(genotypes =)`
   отвергал `1/0` и `1|0` вместо дозы 1. Теперь доза — сумма аллелей
   биаллельного вызова; `0/2` и `1/0/1` по-прежнему дают ошибку. ZV64.1.

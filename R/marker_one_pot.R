@@ -160,10 +160,7 @@ one_pot_compatible <- function(assays, matrix = one_pot_matrix(), require = "all
 marker_one_pot <- function(assays, matrix = one_pot_matrix(), max_markers = 4L) {
   one_pot_check_assays(assays)
   one_pot_check_matrix(matrix)
-  if (
-    !is.numeric(max_markers) || length(max_markers) != 1L || is.na(max_markers) ||
-      max_markers < 1 || max_markers %% 1 != 0
-  ) {
+  if (!is_whole_number(max_markers)) {
     abort_msg("`max_markers` must be one positive whole number, not {.val {max_markers}}.")
   }
   # a group cannot hold more assays than exist, and the cap keeps the integer cast safe

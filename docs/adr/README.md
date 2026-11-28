@@ -54,6 +54,7 @@ the file records the measurement or event that re-tested it).
 | [0041](0041-a-genotype-is-its-allele-multiset.md) | A genotype is its allele multiset, not its spelling | accepted |
 | [0042](0042-a-threshold-is-a-count-not-a-number-to-truncate.md) | A threshold is a count, not a number to truncate | accepted |
 | [0043](0043-a-panel-gives-one-call-per-line-and-target.md) | A panel gives one call per line and target | accepted |
+| [0044](0044-a-count-has-one-definition.md) | A count has one definition | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

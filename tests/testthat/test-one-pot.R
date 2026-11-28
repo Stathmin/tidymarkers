@@ -155,6 +155,8 @@ test_that("bad input aborts and says what is wrong", {
   expect_error(one_pot_compatible(assays, require = "most"), "all")
   expect_error(marker_one_pot(assays, max_markers = 0L), "positive")
   expect_error(marker_one_pot(assays, max_markers = 2.5), "whole number")
+  # Inf used to leave the condition at NA and raise base R's message instead
+  expect_error(marker_one_pot(assays, max_markers = Inf), "positive whole number")
   expect_error(marker_one_pot(assays, matrix = one_pot_matrix()[0, ]), "no rules")
 })
 

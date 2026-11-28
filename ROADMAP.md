@@ -5927,3 +5927,30 @@ number». Дефект меняет вердикт `insufficient_sample`/`ok`.
     - блокер: нет; тест офлайновый.
     - следствие: принятая панель больше не зависит от порядка строк; конфликт
       вызовов виден вызывающему, а не превращается в «monomorphic».
+
+## ZV67. У счётчика одно определение
+
+После ZV65/ZV66 та же смена сверила остальные пороги-счётчики: правило
+«одно целое число в диапазоне» было выписано вручную в четырёх местах
+(`max_markers`, `spacer_len`, `min_lines`, `min_evidence`) и разошлось.
+`marker_one_pot(max_markers = Inf)` оставлял условие в `NA` и падал базовым
+`missing value where TRUE/FALSE needed` вместо сообщения пакета, а
+`marker_ingest_literature(min_evidence = Inf)` проходил проверку (`Inf >= 0`
+истинно, `Inf != round(Inf)` ложно) и записывал `criteria$min_evidence = NA`:
+порог, которого никто не достиг, читался как «порога нет».
+
+- [x] **ZV67. Один предикат `is_whole_number()` на все счётчики.**
+    - правка: новый `R/marker_validate.R` — `is_whole_number(x, min = 1L,
+      max = .Machine$integer.max)`; `NA`, `NaN`, `Inf`, строка, логическое и
+      вектор дают `FALSE`, поэтому каждый гейт доходит до своего сообщения.
+      Четыре гейта используют предикат, сохраняя формулировку и свой
+      `as.integer()`. Решение —
+      [ADR 0044](docs/adr/0044-a-count-has-one-definition.md).
+    - проверка: новый `tests/testthat/test-validate.R` — таблица истинности
+      предиката; `test-one-pot.R` — `max_markers = Inf` даёт «positive whole
+      number»; `test-ingest.R` — `min_evidence = Inf` даёт «min_evidence»;
+      `validate|one-pot|ingest|specificity|informativeness` — 557 pass,
+      0 fail, 2 skip (crisprVerse и внешний кросс-чек, оба прежние).
+    - блокер: нет; всё офлайновое.
+    - следствие: у счётчика одно определение; `Inf` больше не читается как
+      «без верхней границы».

@@ -219,10 +219,7 @@ specificity_policy <- function(scheme = "pcr", length = NULL, spacer_len = NULL)
     abort_msg("`scheme` must be a single scheme name.")
   }
   if (!is.null(spacer_len)) {
-    n <- if (is.numeric(spacer_len)) spacer_len else NA_real_
-    whole <- length(n) == 1L && is.finite(n) && n >= 1 &&
-      n <= .Machine$integer.max && n == round(n)
-    if (!whole) {
+    if (!is_whole_number(spacer_len)) {
       abort_msg(
         "`spacer_len` must be a single positive whole number of nucleotides."
       )

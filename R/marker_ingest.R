@@ -70,10 +70,7 @@ ingest_rows <- function(record_id, doi, metric, value, evidence, confidence, not
 #' @keywords internal
 #' @noRd
 ingest_check_criteria <- function(min_evidence, min_confidence, provenance_required) {
-  if (
-    !is.numeric(min_evidence) || length(min_evidence) != 1L || is.na(min_evidence) ||
-      min_evidence < 0 || min_evidence != round(min_evidence)
-  ) {
+  if (!is_whole_number(min_evidence, min = 0L)) {
     abort_msg("`min_evidence` must be one non-negative whole number.")
   }
   if (

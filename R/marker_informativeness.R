@@ -83,11 +83,7 @@ marker_informativeness <- function(targets, genotypes = NULL, haplotypes = NULL,
   }
   # A threshold is a count, not a number to truncate: `as.integer(4.9)` is 4 and
   # would pass a panel the caller asked to reject (ADR 0042).
-  if (
-    !is.numeric(min_lines) || length(min_lines) != 1L || !is.finite(min_lines) ||
-      min_lines < 1 || min_lines > .Machine$integer.max ||
-      min_lines != round(min_lines)
-  ) {
+  if (!is_whole_number(min_lines)) {
     abort_msg("`min_lines` must be a single positive whole number.")
   }
   min_lines <- as.integer(min_lines)

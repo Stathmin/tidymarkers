@@ -193,6 +193,9 @@ Other vignettes:
 - [ADR 0043](adr/0043-a-panel-gives-one-call-per-line-and-target.md) — a panel
   carries one call per line and target; two different calls are refused
   instead of resolved by file order.
+- [ADR 0044](adr/0044-a-count-has-one-definition.md) — one
+  `is_whole_number()` predicate backs `min_lines`, `max_markers`,
+  `spacer_len` and `min_evidence`, so `Inf` reaches each gate's own message.
 
 ## Operator decisions
 

@@ -212,5 +212,7 @@ test_that("a bad source path or threshold is an error, not an empty queue", {
   expect_error(marker_ingest_literature(txt), "must end in .csv or .json")
   expect_error(marker_ingest_literature(zy4_corpus(), min_confidence = 2), "min_confidence")
   expect_error(marker_ingest_literature(zy4_corpus(), min_evidence = -1), "min_evidence")
+  # a count of Inf is refused by the criterion, not accepted as "no bar"
+  expect_error(marker_ingest_literature(zy4_corpus(), min_evidence = Inf), "min_evidence")
   expect_error(marker_ingest_literature(zy4_corpus(), provenance_required = NA), "provenance_required")
 })
