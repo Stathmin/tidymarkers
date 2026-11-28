@@ -330,7 +330,15 @@ biallelic_gt_dosage <- function(gt) {
     return(out)
   }
   parts <- strsplit(gt[ok], "[/|]", perl = TRUE)
-  alleles <- lapply(parts, function(z) suppressWarnings(as.integer(z)))
+  alleles <- lapply(parts, function(z) {
+    # an allele index is a whole number in its own spelling: `as.integer("0.9")`
+    # is 0 and `"1.5"` is 1, so a bad call would become a confident genotype
+    # (ADR 0074)
+    if (any(!grepl("^[0-9]+$", z))) {
+      return(rep(NA_integer_, length(z)))
+    }
+    suppressWarnings(as.integer(z))
+  })
   good <- vapply(alleles, function(a) {
     length(a) == 2L && !anyNA(a) && all(a >= 0L & a <= 1L)
   }, logical(1))

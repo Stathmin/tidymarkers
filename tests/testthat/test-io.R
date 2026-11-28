@@ -1033,3 +1033,23 @@ test_that("a biallelic VCF call doses by allele multiset", {
   # a third allele, a triploid call, a bare allele and a no-call are not doses
   expect_equal(dose(c("0/2", "1/0/1", "1", "./.", NA)), rep(NA_integer_, 5))
 })
+
+test_that("a GT allele index is whole in its spelling (ADR 0074)", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0.9/1:5,5:10",
+    "1\t200\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t1.5/1:5,5:10",
+    "1\t300\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t1e0/1:5,5:10",
+    "1\t400\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t-1/0:5,5:10",
+    "1\t500\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/1:5,5:10",
+    "1\t600\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t1/1:0,10:10"
+  ), vcf)
+  g <- suppressMessages(read_variant_genotypes(vcf))
+  # a fractional or exponent token names no allele this record has: the call is
+  # absent, not rounded to 0/1 or 1/1
+  expect_equal(g$genotype, c(NA, NA, NA, NA, 1, 2))
+  expect_equal(g$depth, rep(10, 6))
+})
