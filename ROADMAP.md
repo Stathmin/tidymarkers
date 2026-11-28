@@ -6713,8 +6713,8 @@ length(uniq))`. Измерено: `1.9` даёт одного воркера, `I
       до `dplyr::filter()` и сравнивает колонку с обычным значением; `chrom`
       обязан быть одним непустым не-`NA` именем; `start`/`end` проходят
       `check_coord()` (ADR 0050), `start > end` отвергается. Оба backend
-      используют один пост-фильтр; `ScanVcfParam(which=)` остаётся
-      предфильтром только при всех трёх селекторах (ADR 0070).
+      используют один пост-фильтр; `ScanVcfParam(which=)` работает
+      как предфильтр только при всех трёх селекторах (ADR 0070).
     - проверка: `test-io.R` — «filters by chromosome alone» (Chr2 даёт одну
       строку, Chr9 — ноль, `NA` отвергается) и «refuses a window bound that is
       not a position» (`NA`, `20.5`, `"abc"`, инвертированное окно);
@@ -6737,7 +6737,7 @@ data.frame/list до проверки. Замер: `start = 10.5` читался
     - правка: `normalise_region()` проверяет `bad_position(x$start)` и
       `bad_position(x$end)` до `as.integer()` и называет оба значения;
       ветка `GRanges` не меняется, финальная проверка хромосомы и
-      `start <= end` остаётся (ADR 0071).
+      `start <= end` сохраняется (ADR 0071).
     - проверка: `test-plan.R` отвергает `start = 10.5` и `end = "20.5"`,
       целый регион и пустая хромосома — прежние; `dev/test.R '^plan$'` —
       191 pass, 0 fail.
