@@ -97,13 +97,13 @@ read_variant_depth <- function(path, sample = 1L) {
 #' @noRd
 resolve_depth_sample <- function(sample, sample_names) {
   if (is.numeric(sample)) {
-    i <- as.integer(sample)
-    if (length(i) != 1L || is.na(i) || i < 1L || i > length(sample_names)) {
+    # 2.9 used to become sample 2; a row of the VCF is named, not rounded
+    if (!is_whole_number(sample) || sample > length(sample_names)) {
       abort_msg(
         "`sample` must be a sample index (1..N) or a column name in the VCF."
       )
     }
-    return(sample_names[[i]])
+    return(sample_names[[as.integer(sample)]])
   }
   s <- as.character(sample)
   if (length(s) != 1L || is.na(s) || !s %in% sample_names) {

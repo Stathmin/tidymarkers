@@ -224,6 +224,9 @@ Other vignettes:
   length, loop length and mismatch budget of `has_palindrome()` are whole
   before `findPalindromes()`, so `max_mismatch = 1.9` no longer loosens the
   answer and `NA` no longer raises Biostrings' message.
+- [ADR 0053](adr/0053-a-sample-selector-names-a-row-it-does-not-round.md) —
+  `read_variant_depth(sample = )` refuses a fractional index instead of reading
+  the VCF row below it.
 
 ## Operator decisions
 

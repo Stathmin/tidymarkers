@@ -260,3 +260,19 @@ test_that("read_variant_depth() keeps a 1/0 call as a het", {
   expect_equal(v$genotype_class, "het")
   expect_false(v$confident)
 })
+
+test_that("read_variant_depth refuses a sample index it would have truncated", {
+  skip_if_not_installed("vroom")
+  two <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1\tS2",
+    "1\t100\t.\tA\tG\t.\t.\t.\tGT:AD:DP\t0/0:10,0:10\t0/1:4,6:20"
+  ), two)
+  # 1.9 used to read S1 (the cast to 1), so the caller got another sample
+  for (bad in list(1.9, 2.5, 0L, -1L, Inf, c(1L, 2L))) {
+    expect_error(read_variant_depth(two, sample = bad), "sample index", class = "rlang_error")
+  }
+  expect_equal(read_variant_depth(two, sample = 2L)$depth, 20)
+  expect_equal(read_variant_depth(two, sample = "S2")$depth, 20)
+})
