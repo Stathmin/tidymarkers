@@ -780,6 +780,14 @@ refuse_links <- function(dir, names) {
   invisible(NULL)
 }
 
+# A cache file and a rendered file are declared names like any other: the call
+# creates them, it does not write through a link a caller left at the name
+# (ADR 0029, ADR 0033).
+declared_path <- function(path) {
+  refuse_links(fs::path_dir(path), fs::path_file(path))
+  path
+}
+
 artefact_sidecar <- function(dir, file, empty) {
   if (!is.character(file) || length(file) != 1L || is.na(file) || !nzchar(file)) {
     return(empty())

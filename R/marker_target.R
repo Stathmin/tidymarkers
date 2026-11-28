@@ -53,7 +53,7 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
       httr2::req_url_path_append("lookup", "id", gene_id) |>
       httr2::req_url_query(expand = 1) |>
       ensembl_perform()
-    readr::write_lines(httr2::resp_body_string(resp), path)
+    readr::write_lines(httr2::resp_body_string(resp), declared_path(path))
   }
   j <- jsonlite::fromJSON(readr::read_file(path), simplifyDataFrame = FALSE)
   need_cols(
@@ -98,7 +98,7 @@ ensembl_variants <- function(chrom, start, end,
       httr2::req_url_path_append("overlap", "region", species, region) |>
       httr2::req_url_query(feature = "variation") |>
       ensembl_perform()
-    readr::write_lines(httr2::resp_body_string(resp), path)
+    readr::write_lines(httr2::resp_body_string(resp), declared_path(path))
   }
   df <- jsonlite::fromJSON(readr::read_file(path)) |> tibble::as_tibble()
   need_cols(

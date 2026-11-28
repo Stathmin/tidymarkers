@@ -98,3 +98,29 @@ test_that("ensembl_transient retries the statuses Ensembl refuses a client with"
   expect_false(ensembl_transient(httr2::response(404L)))
   expect_false(ensembl_transient(httr2::response(400L)))
 })
+
+# A cache file is written by the call, so a link at the cache name is refused
+# rather than followed: before the fix the response replaced the outside file.
+test_that("the Ensembl cache refuses to write through a link", {
+  httr2::local_mocked_responses(function(req) {
+    httr2::response(200L, body = charToRaw("{}"))
+  })
+  cache <- withr::local_tempdir()
+  calls <- list(
+    "arabidopsis_thaliana_AT4G00650.json" = function() {
+      ensembl_gene("AT4G00650", cache = cache)
+    },
+    "arabidopsis_thaliana_var_4:268901-271503.json" = function() {
+      ensembl_variants("Chr4", 268901, 271503, cache = cache)
+    }
+  )
+  for (name in names(calls)) {
+    outside <- fs::path(withr::local_tempdir(), name)
+    skip_if(
+      !file.symlink(outside, fs::path(cache, name)),
+      "this filesystem cannot make a symlink"
+    )
+    expect_error(calls[[name]](), "which is a link", info = name)
+    expect_false(fs::file_exists(outside), info = name)
+  }
+})
