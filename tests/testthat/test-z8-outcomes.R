@@ -373,6 +373,39 @@ test_that("Z8: a failure without a reason is refused, so is an unknown target", 
   expect_equal(nrow(marker_outcomes(dir)), 0L)
 })
 
+test_that("Z8: an outcome is not bound to a manifest edited after it was written", {
+  dir <- withr::local_tempdir("outcome-tamper-")
+  path <- fs::path(dir, "artefact.json")
+  writeLines(
+    jsonlite::toJSON(
+      list(schema = "tidymarkers/artefact@2", files = list(targets = "targets.csv")),
+      auto_unbox = TRUE, null = "null", na = "null", digits = NA
+    ),
+    path
+  )
+  stored <- jsonlite::fromJSON(path, simplifyVector = FALSE)
+  stored$id <- tidymarkers:::artefact_id(stored)
+  writeLines(
+    jsonlite::toJSON(stored, auto_unbox = TRUE, null = "null", na = "null", digits = NA),
+    path
+  )
+  readr::write_csv(tibble::tibble(target = "t1"), fs::path(dir, "targets.csv"))
+
+  out <- marker_record_outcome(dir, "works", target = "t1")
+  expect_identical(out$id[[1L]], stored$id)
+
+  # the observation lane reads the manifest through the verifier too
+  stored$contract <- list(version = "tidymarkers/contract@1", scenario = "J2")
+  writeLines(
+    jsonlite::toJSON(stored, auto_unbox = TRUE, null = "null", na = "null", digits = NA),
+    path
+  )
+  err <- tryCatch(marker_record_outcome(dir, "works", target = "t1"), error = identity)
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "does not match its own manifest", fixed = TRUE)
+  expect_equal(nrow(marker_outcomes(dir)), 1L)
+})
+
 # =============================================================================
 #  Z8.2  --  the operator panel's per-assay label, joined to the gate verdicts
 # =============================================================================
