@@ -45,9 +45,10 @@ normalise_features <- function(features, span, chrom = NULL) {
   }
   # `as.integer(10.5)` is 10: a fractional feature bound would move the
   # annotation, so judge the spelling before the cast (ADR 0078).
-  if (bad_position(features$start) || bad_position(features$end)) {
+  bad <- bad_position(features$start) | bad_position(features$end)
+  if (any(bad)) {
     abort_msg(
-      "`features` needs whole positive `start`/`end`; got {format(features$start)} and {format(features$end)}."
+      "`features` needs a positive whole `start`/`end` on every row."
     )
   }
   feat <- tibble::tibble(

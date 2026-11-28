@@ -277,15 +277,19 @@ test_that("the feature row draws annotation, or notes its absence", {
   gene <- list(symbol = "FRI", start = m$snp$pos - 30L, end = m$snp$pos + 30L, strand = "-")
   expect_s3_class(plot_primers(m$assay, m$variants, m$snp, features = gene), "patchwork")
   # a fractional or negative bound is not rounded into a neighbour (ADR 0078)
-  bad <- tibble::tibble(start = m$snp$pos - 40.5, end = m$snp$pos + 40L, name = "GENE")
+  bad <- tibble::tibble(
+    start = c(m$snp$pos - 40L, m$snp$pos - 10.5),
+    end = m$snp$pos + 40L,
+    name = c("GENE", "GENE2")
+  )
   expect_error(
     plot_primers(m$assay, m$variants, m$snp, features = bad),
-    "whole positive"
+    "positive whole"
   )
   bad <- tibble::tibble(start = -5L, end = m$snp$pos + 40L, name = "GENE")
   expect_error(
     plot_primers(m$assay, m$variants, m$snp, features = bad),
-    "whole positive"
+    "positive whole"
   )
 })
 
