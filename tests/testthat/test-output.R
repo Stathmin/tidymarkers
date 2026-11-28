@@ -90,3 +90,17 @@ test_that("the output writers refuse to write through a link", {
   expect_error(export_primers(assay, gene, dir = dir), "which is a link")
   expect_identical(readLines(outside), "keep")
 })
+
+# A cache and a rendered file are declared names too (ADR 0033): the guard the
+# writers share refuses a link and returns an ordinary spelling unchanged.
+test_that("declared_path refuses a link and keeps an ordinary path", {
+  dir <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "outside.json")
+  writeLines("keep", outside)
+  link <- fs::path(dir, "cache.json")
+  skip_if(!file.symlink(outside, link), "this filesystem cannot make a symlink")
+  expect_error(declared_path(link), "which is a link")
+  expect_identical(readLines(outside), "keep")
+  plain <- fs::path(dir, "plain.json")
+  expect_identical(declared_path(plain), plain)
+})

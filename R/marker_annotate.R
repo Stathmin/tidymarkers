@@ -124,14 +124,14 @@ marker_ensdb <- function(gtf = NULL, cache = marker_cache_dir(), release = 63L) 
         "arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.{release}.gtf.gz"
       )
       cli::cli_alert_info(gettext("Downloading the Ensembl Plants GTF into {.path {cache}}."))
-      utils::download.file(url, gtf, mode = "wb", quiet = TRUE)
+      utils::download.file(url, declared_path(gtf), mode = "wb", quiet = TRUE)
     }
   }
   out <- fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite")
   if (!fs::file_exists(out)) {
     cli::cli_alert_info(gettext("Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."))
     ensembldb::ensDbFromGtf(
-      gtf = as.character(gtf), outfile = as.character(out),
+      gtf = as.character(gtf), outfile = as.character(declared_path(out)),
       organism = "Arabidopsis_thaliana",
       genomeVersion = "TAIR10", version = release
     )

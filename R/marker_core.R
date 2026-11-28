@@ -1082,7 +1082,7 @@ tair10_download <- function(fa, release) {
   tmp <- paste0(fa, ".part")
   on.exit(unlink(tmp), add = TRUE)
   cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {dirname(fa)}} ..."))
-  status <- utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
+  status <- utils::download.file(url, declared_path(tmp), mode = "wb", quiet = TRUE)
   if (!identical(status, 0L) || !fs::file_exists(tmp) || fs::file_size(tmp) == 0L) {
     abort_msg("ath_genome(): downloading TAIR10 from Ensembl Plants failed.")
   }
