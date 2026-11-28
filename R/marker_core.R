@@ -688,6 +688,17 @@ get_region <- function(genome, chrom, start, end) genome_seq(genome, chrom, star
 #' @export
 primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "COM")) {
   role <- match.arg(role)
+  # `IRanges(81.5, 100.5)` is `80-100` and reports width 21 for a 20 nt primer,
+  # so a fractional input silently changes the geometry (ADR 0085).
+  if (!is_whole_number(snp_pos)) {
+    abort_msg("`snp_pos` must be one positive whole number; got {format(snp_pos)}.")
+  }
+  if (!is_whole_number(length)) {
+    abort_msg("`length` must be one positive whole number; got {format(length)}.")
+  }
+  if (!is_whole_number(gap, min = 0L)) {
+    abort_msg("`gap` must be one whole number of base pairs; got {format(gap)}.")
+  }
   if (identical(role, "AS")) {
     if (identical(strand, "+")) {
       IRanges::IRanges(snp_pos - length + 1L, snp_pos)
@@ -717,6 +728,13 @@ primer_interval <- function(snp_pos, strand, length, gap = 0L, role = c("AS", "C
 #' @family geometry
 #' @export
 as_3p_interval <- function(snp_pos, strand, window = 5L) {
+  # the same silent truncation as `primer_interval()` (ADR 0085)
+  if (!is_whole_number(snp_pos)) {
+    abort_msg("`snp_pos` must be one positive whole number; got {format(snp_pos)}.")
+  }
+  if (!is_whole_number(window)) {
+    abort_msg("`window` must be one positive whole number; got {format(window)}.")
+  }
   if (identical(strand, "+")) {
     IRanges::IRanges(snp_pos - window + 1L, snp_pos - 1L)
   } else {
@@ -754,6 +772,17 @@ as_3p_interval <- function(snp_pos, strand, window = 5L) {
 #' @family geometry
 #' @export
 as_anchor <- function(v_start, ref_len, strand, variant_offset = 0L) {
+  # an anchor is the 3'-terminal coordinate of the primer, so it is judged like
+  # one: a fractional anchor truncates in every interval built from it (ADR 0085)
+  if (!is_whole_number(v_start)) {
+    abort_msg("`v_start` must be one positive whole number; got {format(v_start)}.")
+  }
+  if (!is_whole_number(ref_len)) {
+    abort_msg("`ref_len` must be one positive whole number; got {format(ref_len)}.")
+  }
+  if (!is_whole_number(variant_offset, min = 0L)) {
+    abort_msg("`variant_offset` must be one whole number of bases; got {format(variant_offset)}.")
+  }
   if (identical(strand, "+")) {
     v_start + ref_len - 1L + variant_offset
   } else {

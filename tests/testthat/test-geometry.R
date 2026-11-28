@@ -59,3 +59,19 @@ test_that("strand_gc_hint reports the GC of each flank", {
     h$distance_to_45[h$side == "downstream"]
   )
 })
+
+# `IRanges(81.5, 100.5)` is `80-100`, width 21, for a 20 nt primer: the helpers
+# judge their numbers instead of letting the constructor truncate them.
+test_that("the geometry helpers refuse a number that is not whole", {
+  expect_error(primer_interval(1000.5, "+", 20L), "snp_pos")
+  expect_error(primer_interval(1000L, "+", 20.5), "length")
+  expect_error(primer_interval(1000L, "+", 20L, gap = 3.5, role = "COM"), "gap")
+  expect_error(as_3p_interval(1000.5, "+"), "snp_pos")
+  expect_error(as_3p_interval(1000L, "+", 5.5), "window")
+  expect_error(as_anchor(1000.5, 1L, "+"), "v_start")
+  expect_error(as_anchor(1000L, 1.5, "+"), "ref_len")
+  expect_error(as_anchor(1000L, 1L, "+", variant_offset = 1.5), "variant_offset")
+  # whole doubles and the zero offsets still pass
+  expect_equal(IRanges::width(primer_interval(1000, "+", 20)), 20L)
+  expect_equal(as_anchor(1000, 1, "+", variant_offset = 0), 1000)
+})
