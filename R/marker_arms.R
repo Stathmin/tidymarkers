@@ -214,7 +214,10 @@ design_arms_marker <- function(genome, snp, flank = 300L, min_band_gap = 20L, ..
     return(NULL)
   }
   limits <- arms_limits()
-  limits$band_gap <- as.numeric(min_band_gap)
+  # A band gap is a base-pair threshold like `min_dist`/`flank`: `as.numeric()`
+  # let 20.9 narrow the 20 bp floor and `NA` fail with a base R message that
+  # named no argument (ADR 0048, 0081).
+  limits$band_gap <- check_base_pairs(min_band_gap, "min_band_gap")
   floors <- KASP_GATE_FLOOR_ARMS
   floors[["gate_arms_bands"]] <- KASP_ARMS_GAP_FLOOR - limits$band_gap
   # Z7.1: the position is decided as a positive distance from the 3' end.  A

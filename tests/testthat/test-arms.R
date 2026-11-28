@@ -35,6 +35,18 @@ test_that("design_arms_marker declines non-substitution alleles", {
   expect_true("family_single_base" %in% marker_criteria(scheme = "arms")$id)
 })
 
+test_that("design_arms_marker refuses a band gap that is not whole base pairs", {
+  withr::local_envvar(LANGUAGE = "en")
+  genome <- Biostrings::DNAStringSet(c(Chr1 = strrep("ACGT", 200L)))
+  snp <- tibble::tibble(chrom = "Chr1", pos = 400L, ref = "A", alt = "G")
+  for (g in list(20.9, 0, -1, NA_real_, Inf, c(20, 30), "20")) {
+    expect_error(
+      design_arms_marker(genome, snp, min_band_gap = g),
+      "positive whole number of base pairs"
+    )
+  }
+})
+
 test_that("plot_arms_gel draws the AA / AB / BB readout", {
   marker <- structure(
     list(
