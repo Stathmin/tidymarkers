@@ -22,7 +22,9 @@
   ZV33: релизный экспорт ST.26/docx (`marker_patent_export()`) писал `output`
   по существующей ссылке и заменял внешний файл — теперь имя объявлено до
   `dir_create()`; развивает ADR 0029. ZV34: то же для писателя трассы
-  (`marker_trace_write()`), объявление до `saveRDS()`.
+  (`marker_trace_write()`), объявление до `saveRDS()`. ZV35: то же для
+  `decision_render(out=)`, объявление до `dir.create()`. Остаток семейства —
+  `marker_reprex()` (`marker_reprex.R`), открыт.
   Релизный гейт
   `dev/check.R --full` в ночную смену 2026-11-27 не прогонялся (R CMD check,
   ~7 мин); ZV12 ждёт CI-раннер. Дни 1–3 закрыты своими гейтами; см. §8.
