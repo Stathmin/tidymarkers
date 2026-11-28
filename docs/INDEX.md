@@ -365,3 +365,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0081](adr/0081-a-threshold-is-whole-in-its-spelling-before-the-cast.md) —
   a base-pair/copy threshold is judged whole before the cast, and the cast gate
   sees a direct `min_*`/`max_*` cast too.
+- [ADR 0082](adr/0082-a-guard-covers-the-cast-it-names.md) — a guard covers the
+  cast it names, so one checked column no longer blesses its neighbour's cast;
+  `offtarget_profile()` judges both hit bounds.
