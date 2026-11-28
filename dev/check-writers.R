@@ -42,7 +42,8 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
 write_primitive <- c(
   "write_csv", "write_lines", "write_file", "writeLines", "saveRDS", "save",
   "ggsave", "write_xml", "download.file", "file_copy", "file_move", "file.copy",
-  "file.rename", "writeBin", "write.csv", "write.table", "writeXStringSet"
+  "file.rename", "writeBin", "write.csv", "write.table", "writeXStringSet",
+  "untar", "unzip", "tar", "zip"
 )
 # A guard refuses a name; it does not merely report one. `cache_present()` is a
 # hit test (ZV44), so a body that asks it and then writes is still undeclared
@@ -177,7 +178,9 @@ self_test <- function() {
     laundered = "function(d) { f <- function(p) writeLines(\"x\", p); refuse_links(d, \"a.csv\"); f(d) }",
     nested_declared = "function(d) { f <- function(p) { refuse_links(p, \"a.csv\"); writeLines(\"x\", p) }; f(d) }",
     strings = "function(x) paste0(\"writeLines(\", x, \")\")",
-    sequences = "function(p) Biostrings::writeXStringSet(x, p)"
+    sequences = "function(p) Biostrings::writeXStringSet(x, p)",
+    archive = "function(d, a) utils::untar(a, exdir = d)",
+    zipped = "function(d, a) utils::unzip(a, exdir = d)"
   )
   exprs <- Map(
     function(name, text) parse(text = paste0(name, " <- ", text))[[1L]],
@@ -189,7 +192,7 @@ self_test <- function() {
   empty <- check_writers(list(), hits)
   expected <- paste0(
     "undeclared writer (guard it, or add to dev/writers.yml): ",
-    c("cached", "imported", "laundered/f", "sequences", "undeclared")
+    c("archive", "cached", "imported", "laundered/f", "sequences", "undeclared", "zipped")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded writer was not caught")
@@ -203,7 +206,9 @@ self_test <- function() {
       list(symbol = "imported", reason = "self-test"),
       list(symbol = "cached", reason = "self-test"),
       list(symbol = "laundered/f", reason = "self-test"),
-      list(symbol = "sequences", reason = "self-test")
+      list(symbol = "sequences", reason = "self-test"),
+      list(symbol = "archive", reason = "self-test"),
+      list(symbol = "zipped", reason = "self-test")
     ),
     hits
   )

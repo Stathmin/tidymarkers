@@ -5586,3 +5586,27 @@ ADR 0006 (панель как оркестратор) висел `proposed` с 2
     - следствие: `proposed` в этом дереве числится у ADR 0011 (названный
       блокер), 0012 (доктрина без измеримого гейта) и 0007 (гейт 1 требует
       полного `dev/check.R`).
+
+## ZV53. Архивный распаковщик — тоже писатель
+
+Аудит словаря ZV48 перечислял вызовы по шаблону
+`write|save|dump|export|upload|knit|create|copy|move|rename|download|fetch`.
+Шаблон не видит `untar`/`unzip`/`tar`/`zip`: распаковка создаёт каждый файл
+архива, а упаковка — архив. Ни одного из четырёх имён не было в
+`write_primitive`, поэтому тело, распаковывающее архив вызывающего без
+`refuse_links()`, проходило гейт как «не писатель».
+
+- [x] **ZV53. `untar`/`unzip`/`tar`/`zip` входят в словарь записи.**
+    - правка: `dev/check-writers.R` — четыре имени добавлены в
+      `write_primitive`; self-test получает тела
+      `utils::untar(a, exdir = d)` и `utils::unzip(a, exdir = d)`, которые
+      обязаны быть пойманы. Поправка к
+      [ADR 0037](docs/adr/0037-the-write-vocabulary-names-every-primitive.md).
+    - проверка: до правки self-test не видел ни одного из двух тел (имена вне
+      словаря); после — `Rscript dev/check-writers.R` печатает
+      «31 writer(s), 23 guard in place, 8 registered with a reason;
+      self-test passed». Живой скан не изменился: единственная распаковка
+      `marker_install_tools()` уже объявляет архив, дерево, `bin` и `share`.
+    - блокер: нет; скан — эвристика по вызовам в теле функции.
+    - следствие: новая распаковка во временный каталог требует записи в
+      `dev/writers.yml`, а распаковка пути вызывающего — `refuse_links()`.

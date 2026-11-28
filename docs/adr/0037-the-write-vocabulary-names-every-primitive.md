@@ -58,6 +58,24 @@ been.
   `fs::path_temp()` at a sequence-keyed name; the other two write under
   `withr::local_tempdir()`. None receives a caller's directory.
 
+## Amendment (2026-11-28, night shift)
+
+The audit recipe above enumerated names matching
+`write|save|dump|export|upload|knit|create|copy|move|rename|download|fetch`.
+That pattern cannot see an archive extractor: `utils::untar()` and
+`utils::unzip()` create every file in the archive, and `tar()`/`zip()` create
+an archive. None was in `write_primitive`, so a unit that unpacked a caller's
+archive without `refuse_links()` would have passed the gate. `R/marker_tools.R`
+already guards its extraction (`marker_install_tools()` declares the archive,
+the tree, `bin` and `share`), so no live writer was unguarded; the gate could
+not have caught a new one.
+
+The four names are added, and the self-test gains
+`utils::untar(a, exdir = d)` and `utils::unzip(a, exdir = d)` bodies that must
+be reported. Live scan stays `31 writer(s), 23 guard in place, 8 registered`;
+the two new bodies exist only in the self-test. The audit recipe is widened to
+`untar|unzip|tar|zip` as well, so the next completeness check can see them.
+
 ## Consequences
 
 - A new primitive still has to be added by hand, but the omission now shows up
