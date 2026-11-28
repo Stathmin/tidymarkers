@@ -1024,6 +1024,9 @@ marker_cache_dir <- function() {
 ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
   fs::dir_create(cache)
   fa <- fs::path(cache, "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz")
+  # a link at the cache name is not a hit: reading it would make a stranger's
+  # FASTA this package's genome (ADR 0033)
+  declared_path(fa)
   need <- c(paste0("Chr", 1:5), "ChrM", "ChrC")
   parse <- function() {
     g <- read_fasta_strict(fa, function() Biostrings::readDNAStringSet(fa))
@@ -1039,7 +1042,7 @@ ath_genome <- function(cache = marker_cache_dir(), release = 63L) {
     g
   }
   read_cache <- function() tryCatch(parse(), error = function(e) e)
-  if (!fs::file_exists(fa)) {
+  if (!cache_present(fa)) {
     tair10_download(fa, release)
   }
   g <- read_cache()
@@ -1080,6 +1083,9 @@ tair10_download <- function(fa, release) {
     "Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz"
   ), release)
   tmp <- paste0(fa, ".part")
+  # the cache name itself is declared before the transfer: a link at it is not
+  # a cache hit, and the move must not land on the link's target (ADR 0033)
+  declared_path(fa)
   on.exit(unlink(tmp), add = TRUE)
   cli::cli_alert_info(gettext("Downloading TAIR10 genome (~35 MB) from Ensembl Plants into {.path {dirname(fa)}} ..."))
   status <- utils::download.file(url, declared_path(tmp), mode = "wb", quiet = TRUE)

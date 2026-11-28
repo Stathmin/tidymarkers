@@ -795,9 +795,10 @@ declared_index <- function(prefix, suffixes) {
   invisible(prefix)
 }
 
-# A reader may take a link as its input, but a linked index file is not a build
-# this call made: treat it as absent and let the declared-name guard refuse.
-index_present <- function(path) {
+# A cache hit is a file this package created: a link at the name is not one
+# (ADR 0033).  An index build treats the linked name as absent and lets the
+# declared-name guard refuse; a cache reader must not read through it either.
+cache_present <- function(path) {
   fs::file_exists(path) && !nzchar(Sys.readlink(path))
 }
 

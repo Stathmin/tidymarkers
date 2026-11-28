@@ -114,24 +114,29 @@ marker_bsgenome <- function(package = "BSgenome.Athaliana.TAIR.TAIR9") {
 #' @family annotation
 #' @export
 marker_ensdb <- function(gtf = NULL, cache = marker_cache_dir(), release = 63L) {
-  rlang::check_installed("ensembldb", reason = gettext("for an EnsDb gene model"))
   fs::dir_create(cache)
   if (is.null(gtf)) {
     gtf <- fs::path(cache, glue::glue("Arabidopsis_thaliana.TAIR10.{release}.gtf.gz"))
-    if (!fs::file_exists(gtf)) {
+    # a cache name is declared before use: a link is not a cache hit, and the
+    # download must not land on its target (ADR 0033)
+    declared_path(gtf)
+    if (!cache_present(gtf)) {
       url <- glue::glue(
         "https://ftp.ebi.ac.uk/ensemblgenomes/pub/plants/release-{release}/gtf/",
         "arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.{release}.gtf.gz"
       )
       cli::cli_alert_info(gettext("Downloading the Ensembl Plants GTF into {.path {cache}}."))
-      utils::download.file(url, declared_path(gtf), mode = "wb", quiet = TRUE)
+      utils::download.file(url, gtf, mode = "wb", quiet = TRUE)
     }
   }
   out <- fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite")
-  if (!fs::file_exists(out)) {
+  # the built model is a cache too: a linked name is refused, not read (ADR 0033)
+  declared_path(out)
+  rlang::check_installed("ensembldb", reason = gettext("for an EnsDb gene model"))
+  if (!cache_present(out)) {
     cli::cli_alert_info(gettext("Building the EnsDb (one-off) from {.file {fs::path_file(gtf)}}."))
     ensembldb::ensDbFromGtf(
-      gtf = as.character(gtf), outfile = as.character(declared_path(out)),
+      gtf = as.character(gtf), outfile = as.character(out),
       organism = "Arabidopsis_thaliana",
       genomeVersion = "TAIR10", version = release
     )

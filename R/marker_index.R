@@ -351,7 +351,7 @@ index_build <- function(index) {
 }
 
 index_build_bowtie_shard <- function(genome, row, threads) {
-  if (index_present(paste0(row$path, ".1.ebwt"))) {
+  if (cache_present(paste0(row$path, ".1.ebwt"))) {
     return(row$path)
   }
   if (is.na(row$chrom)) {
@@ -366,7 +366,7 @@ index_build_bowtie_shard <- function(genome, row, threads) {
 }
 
 index_build_blast_shard <- function(genome, row) {
-  if (index_present(paste0(row$path, ".nsq"))) {
+  if (cache_present(paste0(row$path, ".nsq"))) {
     return(row$path)
   }
   if (is.na(row$chrom) && inherits(genome, "marker_genome") && !is.null(genome$path)) {
@@ -391,7 +391,7 @@ index_build_blast_shard <- function(genome, row) {
 }
 
 index_build_fm_shard <- function(genome, row) {
-  if (index_present(paste0(row$path, ".files"))) {
+  if (cache_present(paste0(row$path, ".files"))) {
     return(row$path)
   }
   marker_fm_index(genome, basename = row$path)

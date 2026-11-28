@@ -69,3 +69,21 @@ test_that("a cache with a base outside the alphabet is refused, not refetched", 
     "outside the DNA/IUPAC alphabet"
   )
 })
+
+test_that("a link at the cache name is refused, not read as the genome", {
+  cache <- withr::local_tempdir()
+  outside <- withr::local_tempfile(fileext = ".fa.gz")
+  tair10_fake(outside)
+  before <- readBin(outside, "raw", file.size(outside))
+  skip_if(
+    !file.symlink(outside, tair10_cache_path(cache)),
+    "this filesystem cannot make a symlink"
+  )
+  local_mocked_bindings(
+    tair10_download = function(...) stop("a link must not trigger a download"),
+    .package = "tidymarkers"
+  )
+
+  expect_error(ath_genome(cache = cache), "which is a link")
+  expect_equal(readBin(outside, "raw", file.size(outside)), before)
+})

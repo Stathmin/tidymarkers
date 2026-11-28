@@ -111,3 +111,25 @@ test_that("marker_ensdb builds an EnsDb from a GTF", {
   expect_equal(res$status, 0L, info = res$stderr)
   expect_match(res$stdout, "GENES 1")
 })
+
+# the cache names are refused before the engine is even looked for, so this
+# runs without `ensembldb` installed
+test_that("marker_ensdb refuses a link at either cache name", {
+  cache <- withr::local_tempdir()
+  outside <- fs::path(withr::local_tempdir(), "foreign")
+  writeLines("foreign", outside)
+  skip_if(
+    !file.symlink(outside, fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite")),
+    "this filesystem cannot make a symlink"
+  )
+  gtf <- withr::local_tempfile(fileext = ".gtf")
+  writeLines("foreign", gtf)
+  expect_error(marker_ensdb(gtf = gtf, cache = cache), "which is a link")
+
+  fs::file_delete(fs::path(cache, "Arabidopsis_thaliana.EnsDb.sqlite"))
+  skip_if(
+    !file.symlink(outside, fs::path(cache, "Arabidopsis_thaliana.TAIR10.63.gtf.gz")),
+    "this filesystem cannot make a symlink"
+  )
+  expect_error(marker_ensdb(cache = cache), "which is a link")
+})

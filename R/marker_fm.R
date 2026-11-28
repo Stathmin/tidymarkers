@@ -61,7 +61,7 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
     "The FM index is not used by the design pipeline: specificity_fm() is a read mapper.
      For the design scan use marker_bowtie_index() / specificity_bowtie()."
   ))
-  if (index_present(paste0(basename, ".files"))) {
+  if (cache_present(paste0(basename, ".files"))) {
     cli::cli_alert_info(gettext("Reusing the existing FM-index at {.path {basename}}."))
     return(basename)
   }

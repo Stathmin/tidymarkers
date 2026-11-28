@@ -48,12 +48,15 @@ ensembl_gene <- function(gene_id, species = "arabidopsis_thaliana",
                          cache = marker_cache_dir()) {
   fs::dir_create(cache)
   path <- fs::path(cache, glue::glue("{species}_{gene_id}.json"))
-  if (!fs::file_exists(path)) {
+  if (!cache_present(path)) {
+    # the name is declared before the request: a link is not a cache hit, and
+    # the download must not land on its target (ADR 0033)
+    declared_path(path)
     resp <- httr2::request("https://rest.ensembl.org") |>
       httr2::req_url_path_append("lookup", "id", gene_id) |>
       httr2::req_url_query(expand = 1) |>
       ensembl_perform()
-    readr::write_lines(httr2::resp_body_string(resp), declared_path(path))
+    readr::write_lines(httr2::resp_body_string(resp), path)
   }
   j <- jsonlite::fromJSON(readr::read_file(path), simplifyDataFrame = FALSE)
   need_cols(
@@ -93,12 +96,14 @@ ensembl_variants <- function(chrom, start, end,
   fs::dir_create(cache)
   region <- glue::glue("{sub('^Chr', '', chrom)}:{start}-{end}")
   path <- fs::path(cache, glue::glue("{species}_var_{region}.json"))
-  if (!fs::file_exists(path)) {
+  if (!cache_present(path)) {
+    # same rule as the gene cache: declare before the request (ADR 0033)
+    declared_path(path)
     resp <- httr2::request("https://rest.ensembl.org") |>
       httr2::req_url_path_append("overlap", "region", species, region) |>
       httr2::req_url_query(feature = "variation") |>
       ensembl_perform()
-    readr::write_lines(httr2::resp_body_string(resp), declared_path(path))
+    readr::write_lines(httr2::resp_body_string(resp), path)
   }
   df <- jsonlite::fromJSON(readr::read_file(path)) |> tibble::as_tibble()
   need_cols(

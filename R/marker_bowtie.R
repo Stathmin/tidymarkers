@@ -108,7 +108,7 @@ bowtie_name_seqs <- function(gs) {
 
 # one index at `basename`, reusing an existing build (the one-off cost)
 bowtie_index_build <- function(genome, basename, threads) {
-  if (index_present(paste0(basename, ".1.ebwt"))) {
+  if (cache_present(paste0(basename, ".1.ebwt"))) {
     cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {basename}}."))
     return(basename)
   }
@@ -159,7 +159,7 @@ bowtie_index_set <- function(genome, basename, chroms, threads) {
   }
   bases <- rlang::set_names(paste0(basename, "_", chroms), chroms)
   for (chr in chroms) {
-    if (index_present(paste0(bases[[chr]], ".1.ebwt"))) {
+    if (cache_present(paste0(bases[[chr]], ".1.ebwt"))) {
       cli::cli_alert_info(gettext("Reusing the existing bowtie index at {.path {bases[[chr]]}}."))
       next
     }

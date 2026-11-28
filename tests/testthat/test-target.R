@@ -124,3 +124,28 @@ test_that("the Ensembl cache refuses to write through a link", {
     expect_false(fs::file_exists(outside), info = name)
   }
 })
+
+# The read side of the same rule: a linked name is not a cache hit, so a valid
+# file behind the link is refused rather than parsed as the Ensembl response.
+test_that("the Ensembl cache does not read a hit through a link", {
+  cache <- withr::local_tempdir()
+  hits <- list(
+    "arabidopsis_thaliana_AT4G00650.json" = function() {
+      ensembl_gene("AT4G00650", cache = cache)
+    },
+    "arabidopsis_thaliana_var_4:268901-271503.json" = function() {
+      ensembl_variants("Chr4", 268901, 271503, cache = cache)
+    }
+  )
+  for (name in names(hits)) {
+    outside <- fs::path(withr::local_tempdir(), name)
+    writeLines('{"id": "foreign"}', outside)
+    skip_if(
+      !file.symlink(outside, fs::path(cache, name)),
+      "this filesystem cannot make a symlink"
+    )
+    expect_error(hits[[name]](), "which is a link", info = name)
+    expect_equal(readLines(outside), '{"id": "foreign"}', info = name)
+    fs::file_delete(fs::path(cache, name))
+  }
+})

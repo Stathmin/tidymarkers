@@ -75,7 +75,7 @@ marker_blast_index <- function(genome, path = NULL) {
     # 14.8 GB genome must not be re-indexed on every call.  Delete the index to
     # force a rebuild.
     declared_index(fasta, BLAST_INDEX_SUFFIXES)
-    if (!index_present(paste0(fasta, ".nsq"))) {
+    if (!cache_present(paste0(fasta, ".nsq"))) {
       with_blast(rBLAST::makeblastdb(fasta, dbtype = "nucl", verbose = FALSE))
     }
   } else {
@@ -85,7 +85,7 @@ marker_blast_index <- function(genome, path = NULL) {
     }
     fs::dir_create(fs::path_dir(path))
     declared_index(path, BLAST_INDEX_SUFFIXES)
-    if (!index_present(paste0(path, ".nsq"))) {
+    if (!cache_present(paste0(path, ".nsq"))) {
       declared_path(path)
       Biostrings::writeXStringSet(genome, path)
       with_blast(rBLAST::makeblastdb(path, dbtype = "nucl", verbose = FALSE))
