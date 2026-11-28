@@ -233,13 +233,14 @@ read_variant_genotypes <- function(path, samples = NULL) {
         n_sym <- n_sym + 1L
         next
       }
-      pos <- suppressWarnings(as.integer(f[[2L]]))
-      if (is.na(pos) || pos < 1L) {
+      pos_raw <- f[[2L]]
+      if (bad_position(pos_raw)) {
         abort_msg(gettextf(
           "VCF record %d has a POS outside the positive integer range.",
           n_rec
         ))
       }
+      pos <- as.integer(pos_raw)
       fmt <- strsplit(f[[9L]], ":", fixed = TRUE)[[1L]]
       gi <- match("GT", fmt)
       ai <- match("AD", fmt)
@@ -405,6 +406,9 @@ as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
     x <- x[as.character(x$chrom) == ath_chrom(chrom), , drop = FALSE]
   }
   if (!is.null(pos)) {
+    if (any(bad_position(pos))) {
+      abort_msg("`pos` must be one or more positive whole numbers; got {format(pos)}.")
+    }
     x <- x[as.integer(x$pos) %in% as.integer(pos), , drop = FALSE]
   }
   if (nrow(x) != 1L) {
@@ -416,8 +420,8 @@ as_variant_row <- function(x, id = NULL, chrom = NULL, pos = NULL) {
   if (is.na(x$chrom[[1L]]) || !nzchar(x$chrom[[1L]])) {
     abort_msg("The variant row needs a chromosome name.")
   }
-  pos_raw <- suppressWarnings(as.integer(x$pos[[1L]]))
-  if (is.na(pos_raw) || pos_raw < 1L) {
+  pos_raw <- x$pos[[1L]]
+  if (bad_position(pos_raw)) {
     abort_msg("The variant row needs a positive integer `pos`.")
   }
   alleles <- c(x$ref[[1L]], x$alt[[1L]])

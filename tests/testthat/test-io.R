@@ -788,6 +788,13 @@ test_that("as_variant_row gives exactly one typed row", {
   expect_error(as_variant_row(two), "exactly one variant")
   expect_error(as_variant_row(two, pos = 99L), "exactly one variant")
 
+  # a selector names a locus; 10.9 used to match the row at 10 (ADR 0068)
+  expect_error(as_variant_row(two, pos = 10.9), "whole number")
+  expect_error(as_variant_row(two, pos = Inf), "whole number")
+  # and the chosen row is admitted before the cast, not after it
+  fraction <- tibble::tibble(chrom = "Chr1", pos = 250.9, ref = "A", alt = "G")
+  expect_error(as_variant_row(fraction), "positive integer `pos`")
+
   # the selected row is admitted before ath_chrom() can turn "" into "ChrNA"
   bad <- tibble::tibble(chrom = "", pos = 10L, ref = "A", alt = "G")
   expect_error(as_variant_row(bad), "chromosome name")
@@ -822,6 +829,15 @@ test_that("a VCF POS outside integer range is refused by every reader", {
     "record 1 has a POS outside the positive integer range"
   )
   expect_error(read_variant_depth(path), "positive integer range")
+
+  # a fractional POS is malformed too: as.integer() used to make it 2801
+  # (ADR 0068); the same spelling rule answers on the raw column
+  writeLines(c(
+    "##fileformat=VCFv4.2",
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1",
+    "Chr1\t2801.5\t.\tA\tC\t.\t.\t.\tGT\t0/1"
+  ), path)
+  expect_error(read_variant_genotypes(path), "positive integer range")
 })
 
 test_that("a VCF record with no chromosome is refused", {

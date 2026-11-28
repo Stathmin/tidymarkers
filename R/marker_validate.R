@@ -100,8 +100,16 @@ check_worker_count <- function(x, arg) {
 bad_position <- function(x, min = 1L) {
   iv <- suppressWarnings(as.integer(x))
   # `&` is not short-circuiting: a character column must not reach `round()`,
-  # or the promised message is replaced by a base R error (ADR 0045 amendment)
-  frac <- if (is.numeric(x)) !is.finite(x) | x != round(x) else rep(FALSE, length(x))
+  # or the promised message is replaced by a base R error (ADR 0045 amendment).
+  # A character column is judged by its spelling: as.integer("250.9") is 250
+  # and as.integer("1e3") is 1000, so only the text can refuse them (ADR 0068).
+  frac <- if (is.numeric(x)) {
+    !is.finite(x) | x != round(x)
+  } else if (is.character(x)) {
+    !grepl("^ *[+-]?[0-9]+ *$", x)
+  } else {
+    rep(FALSE, length(x))
+  }
   is.na(x) | is.na(iv) | iv < min | frac
 }
 
