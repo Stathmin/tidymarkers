@@ -196,6 +196,9 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
     }, character(1), USE.NAMES = FALSE)
   )
 
+  identity_path <- paste0(dir, "-identity.csv")
+  refuse_links(fs::path_dir(identity_path), fs::path_file(identity_path))
+
   fs::dir_create(dir)
   for (i in seq_along(sites)) {
     rel <- sites[[i]]
@@ -220,6 +223,6 @@ marker_export_outcomes <- function(corpus, dir, trustee = NULL) {
     outcomes_attach(crate, corpus[corpus$artefact == rel, , drop = FALSE])
   }
 
-  readr::write_csv(map, paste0(dir, "-identity.csv"))
+  readr::write_csv(map, identity_path)
   invisible(map)
 }

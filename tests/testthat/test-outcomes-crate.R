@@ -109,6 +109,24 @@ test_that("the identity map stays outside the crate and maps back", {
   }
 })
 
+test_that("the handover refuses to write its identity map through a link", {
+  fx <- outcomes_corpus_fixture()
+  dir <- paste0(withr::local_tempdir(), "/out")
+  outside <- fs::path(withr::local_tempdir(), "identity.csv")
+  writeLines("keep", outside)
+  skip_if_not(
+    file.symlink(outside, paste0(dir, "-identity.csv")),
+    "this filesystem cannot make a symlink"
+  )
+
+  expect_error(
+    marker_export_outcomes(fx$corpus, dir, trustee = "lab-a"),
+    "which is a link"
+  )
+  expect_identical(readLines(outside), "keep")
+  expect_false(fs::dir_exists(fs::path(dir, "crates")))
+})
+
 test_that("the pseudonym is reproducible from the salt alone", {
   fx <- outcomes_corpus_fixture()
   expected <- paste0("site-", substr(hash_object("lab-abatch-a"), 1L, 8L))

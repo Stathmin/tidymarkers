@@ -32,6 +32,13 @@ Measured 2026-11-28 on the branch, one link per call, an outside file holding
 | `marker_design.csv` | `write_marker_results()` | wrote the design table over the outside file; `keep` lost |
 | `marker_FRI_Chr4_269090_tidy.csv` | `write_marker_results()` | wrote the order table over the outside file; `keep` lost |
 
+The outcomes handover has the same shape one level up: `marker_export_outcomes()`
+writes one crate per artefact and then the identity map *beside* the export
+(`<dir>-identity.csv`, deliberately outside every crate). That name was derived,
+not declared, so no guard saw it: a link at `<dir>-identity.csv` was followed
+after every crate had already been written, and the map replaced the outside
+file.
+
 `safe_name_part()` already keeps the *name* inside `dir`; it says nothing about
 an existing link at that name. The output writers therefore disagreed with the
 record writers on the same question, as the VCF family did before ADR 0028.
@@ -50,6 +57,10 @@ record writers on the same question, as the VCF family did before ADR 0028.
 3. **A conditional output is guarded when it is written.** `marker_blast_hits.csv`
    is only declared when `assay$blast` is not `NULL`, so a link at a name the
    call would not write is not refused.
+4. **A file beside the directory is still a declared name.**
+   `marker_export_outcomes()` computes `<dir>-identity.csv` before anything is
+   created, guards it, and only then writes the crates; the guard covers a name
+   derived from the destination, not only a name inside it.
 
 ## Consequences
 
@@ -59,7 +70,10 @@ record writers on the same question, as the VCF family did before ADR 0028.
   direct `export_primers()` path; before the fix the outside file lost `keep`.
 - The writer is all-or-nothing for its own name set: the guard runs before
   `marker_design.csv`, so a link at an order sheet does not leave three files of
-  a half-written result set behind.
+  a half-written result set behind. The handover is the same: a link at
+  `<dir>-identity.csv` refuses before the first crate exists. Test:
+  `test-outcomes-crate.R`, "the handover refuses to write its identity map
+  through a link".
 - The rule now names no writer by file: it is "all names before the first
   write", the same sentence ADR 0025 uses for records and ADR 0028 uses for a
   VCF row.
