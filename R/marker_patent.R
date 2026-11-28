@@ -97,6 +97,7 @@ marker_patent_export <- function(assay_or_solved, format = c("st26", "docx"), ou
     )
   }
   output <- fs::path(output)
+  refuse_links(fs::path_dir(output), fs::path_file(output))
   fs::dir_create(fs::path_dir(output))
   markers <- patent_markers(assay_or_solved)
 

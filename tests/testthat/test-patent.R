@@ -177,6 +177,24 @@ test_that("marker_patent_export() refuses input it cannot list", {
   expect_error(marker_patent_export(patent_plus, format = "pdf"), "st26")
 })
 
+test_that("marker_patent_export() refuses to write through a link", {
+  dir <- tempfile("patent-link-")
+  dir.create(dir)
+  outside <- fs::path(dir, "outside.txt")
+  writeLines("keep", outside)
+  for (fmt in c("st26", "docx")) {
+    out <- if (identical(fmt, "st26")) {
+      fs::path(dir, "listing.xml")
+    } else {
+      fs::path(dir, "draft.docx")
+    }
+    skip_if(!file.symlink(outside, out), "this filesystem cannot make a symlink")
+    expect_error(marker_patent_export(patent_plus, fmt, out), "which is a link", info = fmt)
+    expect_identical(readLines(outside), "keep")
+    unlink(out)
+  }
+})
+
 test_that("export warns once when the ST.26 XSD is not cached", {
   skip_if(fs::file_exists(patent_schema_path()), "the ST.26 XSD is cached")
   warnings <- testthat::capture_warnings(
