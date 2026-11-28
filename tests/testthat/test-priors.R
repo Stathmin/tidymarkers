@@ -46,6 +46,24 @@ test_that("outcomes become per-scheme counts, never a probability", {
   expect_error(marker_priors(tibble::tibble(x = 1)), "marker_outcomes")
 })
 
+test_that("a result outside the writer's scale is refused, not dropped from the tally", {
+  o <- tibble::tibble(
+    id = c("a1", "a1"),
+    target = c("Chr1:10 A>C", "Chr1:20 A>C"),
+    scheme = c("snp", "snp"),
+    result = c("works", "passed"),
+    notes = NA_character_,
+    calibrated = FALSE
+  )
+  expect_error(marker_priors(o), "must be 'works', 'fails' or 'unknown'")
+  # the writer's own value still tallies, so the guard is not a blanket refusal
+  o$result[[2L]] <- "unknown"
+  p <- marker_priors(o)
+  expect_equal(unname(p$works), 1L)
+  expect_equal(unname(p$unknown), 1L)
+})
+
+
 test_that("a prior reorders attempts without changing the verdict", {
   genome <- read_genome_fasta(system.file("extdata", "example_region.fa", package = "tidymarkers"))
   loci <- utils::read.csv(

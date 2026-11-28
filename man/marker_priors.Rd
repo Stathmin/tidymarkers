@@ -23,7 +23,8 @@ With \code{outcomes}, it answers a different question instead: how often each
 chemistry worked or failed in the laboratory.  The counts are ordinal
 evidence, not a success probability, and \code{calibrated} stays \code{FALSE}; the
 solver only uses them to try a working chemistry earlier, never to change a
-verdict.
+verdict.  A \code{result} the writer refuses is an error here rather than a row
+silently left out of the tally.
 }
 \examples{
 marker_priors()

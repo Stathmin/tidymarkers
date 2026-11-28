@@ -21,7 +21,8 @@
 #' chemistry worked or failed in the laboratory.  The counts are ordinal
 #' evidence, not a success probability, and `calibrated` stays `FALSE`; the
 #' solver only uses them to try a working chemistry earlier, never to change a
-#' verdict.
+#' verdict.  A `result` the writer refuses is an error here rather than a row
+#' silently left out of the tally.
 #' @param outcomes a table from [marker_outcomes()] or
 #'   [marker_outcome_corpus()], or `NULL` for the threshold provenance.
 #' @return `NULL`: tibble with `parameter`, `value` and `source`.  Outcomes:
@@ -80,6 +81,12 @@ prior_counts <- function(outcomes) {
     ), class = c("priors", "tbl_df", "tbl", "data.frame")))
   }
   schemes <- sort(unique(o$scheme))
+  bad <- o$result[is.na(o$result) | !(o$result %in% c("works", "fails", "unknown"))]
+  if (length(bad)) {
+    abort_msg(
+      "`result` must be 'works', 'fails' or 'unknown'; got {paste(utils::head(unique(bad), 10L), collapse = ', ')}."
+    )
+  }
   structure(tibble::tibble(
     scheme = schemes,
     works = unname(vapply(schemes, function(s) sum(o$scheme == s & o$result == "works"), integer(1))),
