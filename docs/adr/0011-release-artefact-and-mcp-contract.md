@@ -65,7 +65,7 @@ A release is not “`R CMD check` is green”. It is all of:
 
 ```sh
 Rscript dev/check.R                 # local gate, including docs/artifacts
-Rscript dev/check-user-api.R        # 207 exports / 48 S3 / CSV / DOT
+Rscript dev/check-user-api.R        # 213 exports / 52 S3 / CSV / DOT
 Rscript dev/check-mcp-parity.R      # tools / schema / handlers / inventory
 Rscript dev/test.R --full           # the full suite
 Rscript dev/check.R --full          # adds R CMD check --as-cran
@@ -287,6 +287,19 @@ baseline delta for every stage and route.
 - **Store prompts or error text in the metrics.** Rejected: the contract is
   numbers only; content in a metrics file is a privacy and size problem, and
   the validator rejects it.
+
+## Blocker
+
+Status stays `proposed` because gate 5 (the release dry run) and gate 6 (the
+2026-11-28 daily report) have not been run since this ADR was written. Gate 5
+needs `dev/check.R --full`, which runs `R CMD check --as-cran`; the 2026-11-28
+night shift may not run the full suite. Gate 6's report
+`data/metrics/metrics-2026-11-28.md` is not written yet, though the day's JSONL
+passes `dev/metrics.R --check 2026-11-28` (29 rows). Gates 1–4 are green:
+`test-scenario-j6.R` passes, `dev/check-mcp-parity.R` prints `ok mcp-parity`,
+and `dev/check-user-api.R` prints `ok user-api` at 213 exports / 52 S3 methods.
+The ADR becomes `accepted` in the commit that runs the dry run and writes the
+report; until then `proposed` names a specific unmet gate, per plan §8.
 
 ## Revisit trigger
 

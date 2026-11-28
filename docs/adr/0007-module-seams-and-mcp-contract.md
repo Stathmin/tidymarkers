@@ -182,8 +182,9 @@ tool's input.
 
 1. `Rscript dev/check.R` is green: roxygen/`man/` sync, styler, lintr, criterion
    fixtures, docs/artifacts, examples and spelling.
-2. Export count does not grow: `NAMESPACE` has at most 205 `export` lines. The
-   registries and the splits add no user-facing function.
+2. Export count does not grow: `NAMESPACE` has at most 213 `export` lines (205
+   at acceptance; the amendment below records the raise). The registries and
+   the splits add no user-facing function.
 3. No file under `R/` exceeds 1,200 lines. The check is a new step in
    `dev/check.R` (a `wc -l` over `R/*.R`), so the limit is enforced by the gate,
    not by review.
@@ -264,3 +265,14 @@ and the timeout contract if `Rbowtie`/`rBLAST` start exposing their processes.
 - [`dev/check.R`](../../dev/check.R) — the gate this ADR extends.
 - [`po/README.md`](../../po/README.md) — the gettext cycle.
 - [`ROADMAP.md`](../../ROADMAP.md) — ZY12, ZX2, ZT T6-T10 and T12.
+
+## Amendment 2026-11-28 — the export budget is an absolute number, and it moved
+
+Gate 2 said "at most 205 `export` lines". The tree now has 213. That is not a
+regression: `ZV16` raised the prose count to 213/52 after the 2026-11-27
+inventory, and every export added between 205 and 213 came from a closed `ZV`
+item with its own justification. The gate stays absolute — an export nobody
+approved still fails it — but the number is raised here rather than silently
+read as stale. The counts of record are the `<!-- api-counts: ... -->` marker in
+`ROADMAP.md` and `dev/check-user-api.R`, which recomputes them from `NAMESPACE`;
+a reader who needs today's number reads that marker, not this paragraph.
