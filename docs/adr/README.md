@@ -82,6 +82,7 @@ the file records the measurement or event that re-tested it).
 | [0069](0069-a-genbank-location-is-read-whole-or-refused.md) | A GenBank location is read whole or refused | accepted |
 | [0070](0070-a-selector-is-resolved-outside-the-data-mask.md) | A selector is resolved outside the data mask | accepted |
 | [0071](0071-a-region-bound-is-a-coordinate-before-the-cast.md) | A region bound is a coordinate before the cast | accepted |
+| [0072](0072-a-feature-chromosome-is-one-name.md) | A feature chromosome is one name | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
