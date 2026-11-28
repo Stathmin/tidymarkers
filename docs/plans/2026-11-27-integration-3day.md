@@ -62,7 +62,9 @@
   входа: позиция диагностической маски (ZV101, [ADR 0073](../adr/0073-a-diagnostic-mask-position-is-whole-in-its-spelling.md)),
   токен аллеля GT (ZV102, [ADR 0074](../adr/0074-a-gt-allele-index-is-whole-in-its-spelling.md)),
   позиция фиксированного SNP и таблицы чанка (ZV103,
-  [ADR 0075](../adr/0075-a-fixed-input-position-is-whole-before-the-cast.md)).
+  [ADR 0075](../adr/0075-a-fixed-input-position-is-whole-before-the-cast.md)),
+  позиция таблицы вариантов панели (ZV104,
+  [ADR 0076](../adr/0076-a-panel-variant-table-position-is-whole-in-its-spelling.md)).
   Следом ZV46: гейт называл `cache_present()` стражем, хотя это проверка
   попадания; словарь сужен до трёх отказывающих вызовов, решение —
   [ADR 0035](../adr/0035-a-guard-refuses-a-name-a-hit-test-only-reports-one.md).

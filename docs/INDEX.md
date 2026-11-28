@@ -310,6 +310,9 @@ Other vignettes:
 - [ADR 0075](adr/0075-a-fixed-input-position-is-whole-before-the-cast.md) — a
   fixed SNP and a chunk table check `pos` by its spelling before
   `as.integer()`, so `10.9` and `-5` are refused, not shifted.
+- [ADR 0076](adr/0076-a-panel-variant-table-position-is-whole-in-its-spelling.md) —
+  a panel variant table is checked at its seam, so `20.9` cannot answer for the
+  haplotype variant at 20.
 
 ## Operator decisions
 

@@ -86,6 +86,7 @@ the file records the measurement or event that re-tested it).
 | [0073](0073-a-diagnostic-mask-position-is-whole-in-its-spelling.md) | A diagnostic mask position is whole in its spelling | accepted |
 | [0074](0074-a-gt-allele-index-is-whole-in-its-spelling.md) | A GT allele index is whole in its spelling | accepted |
 | [0075](0075-a-fixed-input-position-is-whole-before-the-cast.md) | A fixed-input position is whole before the cast | accepted |
+| [0076](0076-a-panel-variant-table-position-is-whole-in-its-spelling.md) | A panel variant table position is whole in its spelling | accepted |
 
 ## Triage of the 2026-11-26 tool list
 
