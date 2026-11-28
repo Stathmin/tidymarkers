@@ -21,6 +21,13 @@ and \code{depth} as \code{INFO/DP} when the column is present.  The round trip i
 lossless for \code{chrom} (via \code{ath_chrom()} on read), \code{pos}, \code{ref}, \code{alt} and
 \code{depth}; other columns (e.g. \code{pop_freq}) are not written.
 }
+\details{
+A row is checked against the same admission rule the readers apply (ADR
+0028): a symbolic or absent allele, a tab or line break in a field, an allele
+outside \code{ACGTN}, a \code{pos} outside the positive integer range and a non-missing
+\code{depth} outside the non-negative integer range are refused by record number.
+Alleles are upper-cased, so a lowercase table reads back as written.
+}
 \examples{
 v <- tibble::tibble(chrom = "4", pos = 10L, ref = "A", alt = "G", depth = 30L)
 f <- write_variants_vcf(v)

@@ -52,6 +52,49 @@ test_that("write_variants_vcf round-trips SNP, InDel and multi-allelic through V
   expect_match(readLines(f)[1L], "^##fileformat=VCFv4.2$")
 })
 
+test_that("write_variants_vcf refuses a row its own readers drop or reinterpret", {
+  v <- function(chrom = "4", pos = 100L, ref = "A", alt = "G", depth = NA_real_) {
+    tibble::tibble(chrom = chrom, pos = pos, ref = ref, alt = alt, depth = depth)
+  }
+  # a reader drops these with a counter, so a written row would vanish on read
+  expect_error(write_variants_vcf(v(alt = "")), "symbolic or absent")
+  expect_error(write_variants_vcf(v(alt = "<DEL>")), "symbolic or absent")
+  expect_error(write_variants_vcf(v(ref = "*")), "symbolic or absent")
+  # the readers refuse the whole file on POS outside the integer range
+  expect_error(write_variants_vcf(v(pos = 0L)), "positive integer")
+  expect_error(write_variants_vcf(v(pos = 3e9)), "positive integer")
+  expect_error(write_variants_vcf(v(pos = 100.5)), "positive integer")
+  # a tab or line break becomes another column instead of staying in the field
+  expect_error(write_variants_vcf(v(ref = "A\tB")), "tab or line break")
+  expect_error(write_variants_vcf(v(chrom = "4\n1")), "tab or line break")
+  # the readers normalise these to `N`; the file would name a different allele
+  expect_error(write_variants_vcf(v(ref = "R")), "outside ACGTN")
+  # DP=NA is what `as.integer(1e10)` writes, with a warning; refuse instead
+  expect_error(write_variants_vcf(v(depth = 1e10)), "non-negative integer")
+  expect_error(write_variants_vcf(v(depth = -1)), "non-negative integer")
+})
+
+test_that("write_variants_vcf writes one record per ALT, as it reads back", {
+  skip_if_not_installed("vroom")
+  f <- withr::local_tempfile(fileext = ".vcf")
+  expect_invisible(write_variants_vcf(
+    tibble::tibble(chrom = "4", pos = 100L, ref = "A", alt = "G,T"), f
+  ))
+  got <- read_variants_vcf(f)
+  expect_equal(got$alt, c("G", "T"))
+})
+
+test_that("write_variants_vcf writes lowercase alleles as the readers read them", {
+  skip_if_not_installed("vroom")
+  f <- withr::local_tempfile(fileext = ".vcf")
+  expect_invisible(write_variants_vcf(
+    tibble::tibble(chrom = "4", pos = 100L, ref = "a", alt = "g"), f
+  ))
+  got <- read_variants_vcf(f)
+  expect_equal(got$ref, "A")
+  expect_equal(got$alt, "G")
+})
+
 # Input readers: VCF (SNP/MNP/InDel/multiallelic) and arbitrary FASTA.
 
 test_that("a reader names a path that is not one existing file", {

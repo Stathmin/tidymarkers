@@ -41,9 +41,10 @@ reads back as a different variant. The tab case is the worst: `alt = "G"` became
    - `POS` outside the positive integer range;
    - a non-missing `depth` outside the non-negative integer range (that is
      what `as.integer(1e10)` turns into `DP=NA`).
-2. **One allele per row.** A comma ALT is refused rather than written: the
-   readers expand a multi-allelic record into one row per ALT, so a compressed
-   row could not read back as one row.
+2. **A multi-allelic ALT is expanded, as documented.** `separate_longer_delim()`
+   splits `alt` on `,` before the checks, so a row with `G,T` writes two records
+   — the same shape `read_variants_vcf()` returns — and the allele checks run on
+   one allele at a time.
 3. **Canonical case on write.** Alleles are upper-cased (`toupper()`), so a
    lowercase table writes the same file the readers return; this is
    normalisation, not a silent reinterpretation of a base.
@@ -55,9 +56,8 @@ reads back as a different variant. The tab case is the worst: `alt = "G"` became
   changes an allele. Test: `test-io.R`, "write_variants_vcf refuses a row its
   own readers drop or reinterpret".
 - `write_variants_vcf()` now refuses rows it used to write. No caller in the
-  package writes an empty, symbolic, lowercase-alias or multi-allelic ALT, so
-  no existing design changes; a caller that did was writing a file its own
-  readers would not return.
+  package writes an empty or symbolic allele, so no existing design changes; a
+  caller that did was writing a file its own readers would not return.
 - The writers outside this family (`marker_artefact()` sidecars, RO-Crate) are
   unchanged: their admission rules are the record rules of ADR 0015/0025, not
   the VCF allele rule.

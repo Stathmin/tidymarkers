@@ -860,6 +860,12 @@ marker_from_granges <- function(x) {
 #' and `depth` as `INFO/DP` when the column is present.  The round trip is
 #' lossless for `chrom` (via `ath_chrom()` on read), `pos`, `ref`, `alt` and
 #' `depth`; other columns (e.g. `pop_freq`) are not written.
+#'
+#' A row is checked against the same admission rule the readers apply (ADR
+#' 0028): a symbolic or absent allele, a tab or line break in a field, an allele
+#' outside `ACGTN`, a `pos` outside the positive integer range and a non-missing
+#' `depth` outside the non-negative integer range are refused by record number.
+#' Alleles are upper-cased, so a lowercase table reads back as written.
 #' @param x a variants tibble (`chrom`, `pos`, `ref`, `alt`, optional `depth`).
 #' @param path output VCF path; `NULL` writes a temporary file you own.
 #' @return the path written (invisibly when `path` is given).
@@ -873,14 +879,73 @@ write_variants_vcf <- function(x, path = NULL) {
   need_cols(x, c("chrom", "pos", "ref", "alt"))
   x <- tibble::as_tibble(x)
   if (!"depth" %in% names(x)) x$depth <- NA_real_
+  # a multi-allelic ALT is written once per allele, as it reads back
+  x <- tidyr::separate_longer_delim(x, "alt", delim = ",")
   if (any(is.na(x$chrom) | is.na(x$pos) | is.na(x$ref) | is.na(x$alt))) {
     abort_msg("`x` must have no `NA` in `chrom`/`pos`/`ref`/`alt`.")
   }
+  # One admission rule with the readers (ADR 0018, 0028): a row they would
+  # drop or reinterpret is refused here, before a file the writer cannot read.
+  absent <- vcf_symbolic_allele(x$ref) | vcf_symbolic_allele(x$alt)
+  if (any(absent)) {
+    first <- which(absent)[[1L]]
+    abort_msg(
+      gettextf(
+        "Variant %d has a symbolic or absent allele (%s / %s); the VCF readers drop it.",
+        first, encodeString(x$ref[[first]]), encodeString(x$alt[[first]])
+      ),
+      i = "A VCF written here must read back with read_variants_vcf()."
+    )
+  }
+  broken <- !nzchar(x$chrom) |
+    grepl("[\t\r\n]", x$chrom) | grepl("[\t\r\n]", x$ref) | grepl("[\t\r\n]", x$alt)
+  if (any(broken)) {
+    abort_msg(
+      gettextf(
+        "Variant %d has a chromosome or allele with a tab or line break.",
+        which(broken)[[1L]]
+      ),
+      i = "A VCF record is tab-separated; such a field would become another column."
+    )
+  }
+  bad_base <- !grepl("^[ACGTN]+$", toupper(x$ref), perl = TRUE) |
+    !grepl("^[ACGTN]+$", toupper(x$alt), perl = TRUE)
+  if (any(bad_base)) {
+    first <- which(bad_base)[[1L]]
+    abort_msg(
+      gettextf(
+        "Variant %d has an allele outside ACGTN (%s / %s).",
+        first, encodeString(x$ref[[first]]), encodeString(x$alt[[first]])
+      ),
+      i = "The readers fold every other character to `N`, so the file would name a different base."
+    )
+  }
+  pos <- suppressWarnings(as.integer(x$pos))
+  bad_pos <- is.na(pos) | pos < 1L | (is.numeric(x$pos) & pos != x$pos)
+  if (any(bad_pos)) {
+    abort_msg(
+      gettextf(
+        "Variant %d has a POS outside the positive integer range (%s).",
+        which(bad_pos)[[1L]], encodeString(as.character(x$pos[[which(bad_pos)[[1L]]]]))
+      )
+    )
+  }
+  dep <- suppressWarnings(as.integer(x$depth))
+  bad_depth <- !is.na(x$depth) &
+    (is.na(dep) | dep < 0L | (is.numeric(x$depth) & dep != x$depth))
+  if (any(bad_depth)) {
+    abort_msg(
+      gettextf(
+        "Variant %d has a depth outside the non-negative integer range (%s).",
+        which(bad_depth)[[1L]], encodeString(as.character(x$depth[[which(bad_depth)[[1L]]]]))
+      )
+    )
+  }
   records <- paste(
-    as.character(x$chrom), as.integer(x$pos), ".", as.character(x$ref),
-    as.character(x$alt), ".", ".",
-    vapply(x$depth, function(d) {
-      if (is.na(d)) "." else paste0("DP=", as.integer(d))
+    as.character(x$chrom), pos, ".", toupper(x$ref),
+    toupper(x$alt), ".", ".",
+    vapply(dep, function(d) {
+      if (is.na(d)) "." else paste0("DP=", d)
     }, character(1)),
     sep = "\t"
   )
