@@ -421,6 +421,11 @@ marker_features <- function(path, chrom = NULL, feature = "gene", chrom_map = NU
     name_v <- gff_attribute(d[[9L]])
   }
 
+  bad <- bad_position(start_v) | bad_position(end_v)
+  if (any(bad)) {
+    abort_msg("`path` has a start/end that is not a positive whole number (row {which(bad)[1L]}).")
+  }
+
   out <- tibble::tibble(
     chrom = as.character(chrom_v),
     start = as.integer(start_v),

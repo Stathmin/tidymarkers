@@ -133,3 +133,23 @@ test_that("marker_ensdb refuses a link at either cache name", {
   )
   expect_error(marker_ensdb(cache = cache), "which is a link")
 })
+
+test_that("marker_features() refuses a coordinate that is not a positive whole number", {
+  gff <- withr::local_tempfile(fileext = ".gff3")
+  write_gff <- function(start) {
+    writeLines(
+      c(
+        "##gff-version 3",
+        paste("Chr4", "tidymarkers", "gene", start, "2900", ".", "+", ".", "ID=AT4G05320", sep = "\t")
+      ),
+      gff
+    )
+    gff
+  }
+  expect_error(marker_features(write_gff("2801.5")), "positive whole number")
+  expect_error(marker_features(write_gff("-1")), "positive whole number")
+  expect_error(marker_features(write_gff("abc")), "positive whole number")
+  out <- marker_features(write_gff("2801"))
+  expect_identical(out$start, 2801L)
+  expect_identical(out$end, 2900L)
+})

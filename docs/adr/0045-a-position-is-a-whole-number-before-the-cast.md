@@ -110,3 +110,22 @@ is.na(x) | is.na(iv) | iv < min | frac
 `tests/testthat/test-plan.R` adds `pos = "abc"` and expects "positive integer
 `pos` ... row 1 is abc"; `Rscript dev/test.R "^plan$"` — 189 pass, 0 fail. No
 accepted position changes.
+
+## Amendment (2026-11-28): the annotation reader applies the same rule
+
+`marker_features()` — the exported reader behind [marker_genome()] windows —
+built its table with `start = as.integer(start_v)` and `end = as.integer(end_v)`
+on both the NCBI feature-table and the GFF3 branch. A file coordinate of
+`2801.5` was read as `2801`, `abc` became `NA` with a base R warning, and `-1`
+passed as a start. A feature window could therefore move by a base or lose its
+bounds without the reader saying so.
+
+The reader now runs `bad_position(start_v) | bad_position(end_v)` on the raw
+columns before the cast and aborts with
+`` `path` has a start/end that is not a positive whole number (row N). ``
+The accepted forms are unchanged: `"2801"` casts exactly and a whole number
+column passes.
+
+Verification: `tests/testthat/test-annotate.R` refuses `2801.5`, `-1` and `abc`
+and reads `2801`/`2900` unchanged; `Rscript dev/test.R annotate` — 10 pass,
+0 fail, 5 skip.
