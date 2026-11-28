@@ -3,8 +3,8 @@
 - Status: accepted
 - Date: 2026-11-28
 - Supersedes: none
-- Builds on: [ADR 0047](0047-a-scan-radius-is-whole-before-the-engine.md)
-  (a scan radius is whole before the engine)
+- Builds on: [ADR 0047](0047-a-search-radius-is-a-whole-number-before-the-cast.md)
+  (a search radius is a whole number before the cast)
 
 ## Context
 
