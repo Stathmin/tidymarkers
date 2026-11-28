@@ -5343,3 +5343,32 @@ ZV29–ZV42.
     - блокер: нет; тест не ходит в сеть — отказ стоит до `download.file()`.
     - следствие: у семейства больше нет известной точки, где файл создаётся по
       ссылке. Правило — ADR 0033, развивает ADR 0029.
+
+## ZV44. Кэш читается только как файл, созданный пакетом
+
+Писатели кэша объявляли имена с ZV40, ZV42 и ZV43, но читатель проверял
+готовность через `fs::file_exists()`: `ensembl_gene()`/`ensembl_variants()`,
+`ath_genome()` и `marker_ensdb()` принимали ссылку на имя кэша за скачанный
+JSON, FASTA или собранный EnsDb и читали внешний файл. Это тот же класс, что
+ZV39 у GenBank: ссылка не доказывает, что файл создал пакет.
+
+- [x] **ZV44. Ссылка на имени кэша — не попадание в кэш.**
+    - правка: `R/marker_artefact.R` — `index_present()` переименован в
+      `cache_present()` (файл есть и это не ссылка), это единственная проверка
+      попадания; `R/marker_target.R` — оба кэша объявляют имя `declared_path()`
+      до запроса; `R/marker_core.R` — `ath_genome()` объявляет FASTA до
+      `tair10_download()`; `R/marker_annotate.R` — `marker_ensdb()` объявляет
+      GTF и sqlite до `check_installed()`, поэтому отказ проверяется без
+      `ensembldb`.
+    - проверка: `test-target.R` — «the Ensembl cache does not read a hit through
+      a link» (валидный JSON за ссылкой, оба эндпоинта); `test-ath-genome-cache.R`
+      — «a link at the cache name is refused, not read as the genome» (gzip
+      FASTA за ссылкой); `test-annotate.R` — «marker_ensdb refuses a link at
+      either cache name». До правки вызовы проходили; после — «which is a link»,
+      внешний файл сохраняет исходные байты. `target|annotate|ath-genome|output`
+      — 80 pass / 0 fail; `genome-index|fm|scan|specificity|io` — 31592 pass /
+      0 fail.
+    - блокер: нет; отказ стоит до сети и до `ensembldb`, тесты офлайновые.
+    - следствие: кэш — объявленное имя и на чтении: попадание возможно только в
+      файл, который создал пакет. Правило — ADR 0033 (поправка 2026-11-28),
+      развивает ADR 0029.
