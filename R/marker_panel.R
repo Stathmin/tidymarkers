@@ -474,6 +474,28 @@ panel_haplotype_contract <- function(haplotypes, targets, variants = NULL) {
   h
 }
 
+#' Per-haplotype ALT carrier dosage at every target
+#'
+#' A haplotype with no row at a target carries the reference allele there, so
+#' the dosage is one carrier indicator per haplotype (`0`/`1`) rather than a
+#' genotype count.  This is the dosage rule ADR 0009 named for the LD stage, and
+#' the crate selection reads the same matrix.
+#' @keywords internal
+#' @noRd
+panel_dosage <- function(targets, haplotypes) {
+  hap <- unique(haplotypes$haplotype)
+  dosage <- vapply(seq_len(nrow(targets)), function(i) {
+    t <- targets[i, , drop = FALSE]
+    allowed <- c(t$alt, if ("alt2" %in% names(t)) t$alt2[!is.na(t$alt2)] else character(0))
+    carriers <- unique(haplotypes$haplotype[
+      haplotypes$chrom == t$chrom & haplotypes$pos == t$pos &
+        haplotypes$alt %in% allowed
+    ])
+    as.numeric(hap %in% carriers)
+  }, numeric(length(hap)))
+  matrix(dosage, nrow = length(hap))
+}
+
 #' The opt-in LD step: collapse targets linked at or above a threshold
 #'
 #' `ld = NULL` records `list(method = "not_applied")`.  A numeric threshold
@@ -507,17 +529,7 @@ panel_ld <- function(targets, haplotypes = NULL, ld = NULL) {
       abort_msg("A numeric `ld` threshold needs `haplotypes` to compute r2.")
     }
     if (nrow(targets) > 1L) {
-      hap <- unique(haplotypes$haplotype)
-      dosage <- vapply(seq_len(nrow(targets)), function(i) {
-        t <- targets[i, , drop = FALSE]
-        allowed <- c(t$alt, if ("alt2" %in% names(t)) t$alt2[!is.na(t$alt2)] else character(0))
-        carriers <- unique(haplotypes$haplotype[
-          haplotypes$chrom == t$chrom & haplotypes$pos == t$pos &
-            haplotypes$alt %in% allowed
-        ])
-        as.numeric(hap %in% carriers)
-      }, numeric(length(hap)))
-      dosage <- matrix(dosage, nrow = length(hap))
+      dosage <- panel_dosage(targets, haplotypes)
       r2 <- suppressWarnings(stats::cor(dosage)^2)
       for (j in seq_len(nrow(targets))) {
         linked <- which(keep & seq_len(nrow(targets)) < j)
