@@ -140,10 +140,11 @@ design_marker_batch <- function(genome, loci, design = NULL, BPPARAM = NULL,
   out$result <- lapply(rows, function(r) r$result[[1L]])
   if (identical(keep, "summary")) {
     # `design_markers()` is this table minus the objects and the diagnostics
+    # a bad row is reported as NA, never truncated to a plausible neighbour
+    pos <- ifelse(bad_position(out$pos), NA_integer_, as.integer(out$pos))
     return(tibble::tibble(
       chrom = as.character(out$chrom),
-      # a bad row is reported as NA, never truncated to a plausible neighbour
-      pos = as.integer(ifelse(bad_position(out$pos), NA, out$pos)),
+      pos = pos,
       ref = as.character(out$ref),
       alt = as.character(out$alt),
       scheme = out$scheme,
