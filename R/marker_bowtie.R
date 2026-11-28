@@ -76,6 +76,7 @@ has_bowtie <- function() {
 #' @export
 marker_bowtie_index <- function(genome, basename = fs::path(fs::path_temp(), "marker_bowtie"),
                                 threads = 4L, chroms = NULL) {
+  threads <- check_worker_count(threads, "threads")
   # the genome check comes first, so without Rbowtie a BSgenome genome still says so
   src <- genome_fasta_source(genome, "marker_bowtie_index")
   genome <- src$genome
@@ -200,6 +201,7 @@ bowtie_index_set <- function(genome, basename, chroms, threads) {
 #' @family specificity
 #' @export
 specificity_bowtie <- function(primers, index, max_mismatches = 0L, nthreads = 4L) {
+  nthreads <- check_worker_count(nthreads, "nthreads")
   rlang::check_installed("Rbowtie", reason = gettext("for the bowtie genome scan"))
   max_mismatches <- check_scan_radius(max_mismatches, "max_mismatches")
   if (max_mismatches > 3L) {

@@ -15,6 +15,21 @@ test_that("specificity_seed returns zero hits for an absent seed", {
   expect_equal(specificity_seed(primers, genome, k = 9L, max_mismatch = 0L)$hits, 0L)
 })
 
+test_that("a worker count is a positive whole number before the cast", {
+  primer <- "TTTTTTAAACCCGGG"
+  bad <- list(0.5, 0L, -1L, Inf, "4", c(4L, 8L))
+  for (x in bad) {
+    expect_error(
+      specificity_bowtie(c(P = primer), "idx", nthreads = x),
+      "positive whole number of workers"
+    )
+    expect_error(
+      specificity_fm(c(P = primer), "idx", nthreads = x),
+      "positive whole number of workers"
+    )
+  }
+})
+
 test_that("a search radius is a whole number before the cast", {
   genome <- Biostrings::DNAStringSet(c(chr1 = "AAACCCGGGTTTAAACCCGGGTTT"))
   primer <- "TTTTTTAAACCCGGG"

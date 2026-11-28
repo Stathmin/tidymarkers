@@ -123,6 +123,7 @@ marker_fm_index <- function(genome, basename = fs::path(fs::path_temp(), "marker
 #' @family specificity
 #' @export
 specificity_fm <- function(primers, index, max_mismatches = FM_MISMATCH, nthreads = 1L) {
+  nthreads <- check_worker_count(nthreads, "nthreads")
   rlang::check_installed("Rsubread", reason = gettext("for the FM-index genome scan"))
   rlang::check_installed("Rsamtools", reason = gettext("to read the alignments"))
   index <- as.character(index) # Rsubread wants a plain string

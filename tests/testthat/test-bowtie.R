@@ -9,6 +9,16 @@ oracle_hits <- function(primer, genome) {
   }, integer(1)))
 }
 
+test_that("a bowtie build worker count is a positive whole number", {
+  genome <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  for (x in list(0.5, 0L, -1L, Inf, "4", c(4L, 8L))) {
+    expect_error(
+      marker_bowtie_index(genome, threads = x),
+      "positive whole number of workers"
+    )
+  }
+})
+
 test_that("specificity_bowtie agrees with the two-strand countPattern oracle", {
   skip_if_not_full()
   skip_if_not_installed("Rbowtie")

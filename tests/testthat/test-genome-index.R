@@ -32,6 +32,14 @@ test_that("genome_index declares the capability matrix per strategy", {
   expect_error(genome_index("not a genome", "memory"), "DNAStringSet")
 })
 
+test_that("a worker count is a positive whole number before the cast", {
+  gs <- Biostrings::DNAStringSet(c(chr1 = "ACGTACGTACGTACGTACGT"))
+  for (x in list(0.5, 0L, -1L, Inf, "4", c(4L, 8L))) {
+    expect_error(genome_index(gs, "memory", threads = x), "positive whole number of workers")
+  }
+  expect_identical(genome_index(gs, "memory", threads = 4L)$threads, 4L)
+})
+
 test_that("memory and bowtie index give the same verdict on a small fixture", {
   skip_if_not_installed("Rbowtie")
   withr::local_seed(7)

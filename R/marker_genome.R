@@ -166,6 +166,7 @@ GENOME_INDEX_CAPABILITIES <- list(
 #' @export
 genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm"),
                          chroms = NULL, dir = NULL, threads = 1L, build = NULL) {
+  threads <- check_worker_count(threads, "threads")
   strategy <- match.arg(strategy)
   build <- check_genome_build(build)
   if (is.list(genome) && !is.object(genome)) {
@@ -200,7 +201,7 @@ genome_index <- function(genome, strategy = c("memory", "bowtie", "blast", "fm")
     list(
       genome = genome, strategy = strategy,
       capabilities = GENOME_INDEX_CAPABILITIES[[strategy]],
-      chroms = chroms, dir = dir, threads = as.integer(threads),
+      chroms = chroms, dir = dir, threads = threads,
       build = index_genome_build(genome),
       manifest = index_shards(genome, strategy, chroms, dir)
     ),

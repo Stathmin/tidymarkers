@@ -67,6 +67,24 @@ check_base_pairs <- function(x, arg) {
   as.integer(x)
 }
 
+#' Check a worker count before the cast
+#'
+#' `as.integer(0.5)` is `0` and `as.integer(Inf)` is `NA`, so a truncated worker
+#' count stalls an external build or reaches it as a missing value (ADR 0049).
+#' The check runs on the value the caller gave and returns the integer the
+#' engine can use.
+#' @param x the candidate number of workers.
+#' @param arg the argument name for the message.
+#' @return the count as a single integer.
+#' @keywords internal
+#' @noRd
+check_worker_count <- function(x, arg) {
+  if (!is_whole_number(x, min = 1L)) {
+    abort_msg("`{arg}` must be one positive whole number of workers.")
+  }
+  as.integer(x)
+}
+
 #' Which positions are not positive whole numbers?
 #'
 #' The vectorised counterpart of `is_whole_number()` for a coordinate column.
