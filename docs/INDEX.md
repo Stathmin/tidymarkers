@@ -374,3 +374,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0084](adr/0084-annotation-is-asked-about-the-rows-the-caller-named.md) —
   `annotate_variants()` judges `pos` before `IRanges()` can truncate it and
   applies the documented `gene` bounds, not only the chromosome.
+- [ADR 0085](adr/0085-the-geometry-helpers-judge-their-numbers.md) —
+  `primer_interval()`, `as_3p_interval()` and `as_anchor()` judge the numbers
+  they are built from, so a fractional length no longer yields a wider primer.
