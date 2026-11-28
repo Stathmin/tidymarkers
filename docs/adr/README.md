@@ -66,6 +66,7 @@ the file records the measurement or event that re-tested it).
 | [0053](0053-a-sample-selector-names-a-row-it-does-not-round.md) | A sample selector names a row, it does not round | accepted |
 | [0054](0054-a-stabilising-mismatch-is-a-whole-distance-inside-the-primer.md) | A stabilising mismatch is a whole distance inside the primer | accepted |
 | [0055](0055-a-common-primer-search-names-whole-lengths-gaps-and-anchor.md) | A common-primer search names whole lengths, gaps and anchor | accepted |
+| [0056](0056-the-shared-primer-grid-names-whole-lengths.md) | The shared primer grid names whole lengths | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

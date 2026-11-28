@@ -301,7 +301,7 @@ hrm_flanking_pair <- function(seq, lo, hi, lengths, min_product, max_product,
 #' @param snp one-row target (`chrom`, `pos`, `ref`, `alt`).
 #' @param flank template half-width.
 #' @param min_product,max_product the accepted amplicon window (HRM wants short).
-#' @param lengths primer lengths to try.
+#' @param lengths primer lengths to try, as positive whole numbers.
 #' @param tm_range,gc_range accepted primer windows.
 #' @return a `marker_hrm` list (`scheme`, `snp`, `primers`, `amplicon`,
 #'   `selection`), or `NULL` (with a message) when no flanking pair passes the

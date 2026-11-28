@@ -39,6 +39,21 @@ test_that("design_hrm_marker returns a short flanking pair with the variant insi
   expect_true(inherits(plot(m), c("patchwork", "ggplot")))
 })
 
+test_that("a fractional primer length is refused before the primer grid", {
+  skip_if_no_oligoarrayaux()
+  f <- hrm_fixture()
+  # 20.9 used to build a 20 nt primer while the pair reported product 86.9 and
+  # end 200.9 (ADR 0056)
+  expect_error(
+    design_hrm_marker(f$genome, f$snp, flank = 150L, lengths = 20.9),
+    "positive whole numbers of nucleotides"
+  )
+  expect_error(
+    design_hrm_marker(f$genome, f$snp, flank = 150L, lengths = c(20L, Inf)),
+    "positive whole numbers of nucleotides"
+  )
+})
+
 test_that("the amplicon gate is hard and the Tm balance is the ladder's only rung", {
   # the swap the audit asked for: HRM's core requirement (the short amplicon) is
   # the HARD gate, the Tm balance the soft one

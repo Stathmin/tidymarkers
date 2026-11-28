@@ -24,7 +24,7 @@ design_hrm_marker(
 
 \item{min_product, max_product}{the accepted amplicon window (HRM wants short).}
 
-\item{lengths}{primer lengths to try.}
+\item{lengths}{primer lengths to try, as positive whole numbers.}
 
 \item{tm_range, gc_range}{accepted primer windows.}
 }

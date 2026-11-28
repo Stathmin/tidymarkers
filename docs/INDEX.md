@@ -236,6 +236,11 @@ Other vignettes:
   `design_common_primers()` checks `snp_i`, `lengths` and `gaps` before the
   grid, so `lengths = 20.9` no longer records `len` 20.9 for a 20 nt primer
   and `snp_i = 80.9` no longer reports start 100.9.
+- [ADR 0056](adr/0056-the-shared-primer-grid-names-whole-lengths.md) —
+  `primer_candidates()` checks `lengths` before the grid, so
+  `design_hrm_marker(lengths = 20.9)` no longer records `product` 86.9 for a
+  20 nt pair, and every designer that passes its `lengths` through the grid
+  inherits the refusal.
 
 ## Operator decisions
 

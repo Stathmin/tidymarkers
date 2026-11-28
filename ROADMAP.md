@@ -6287,3 +6287,31 @@ seed 1, `snp_i = 80`): `lengths = 20.9` при `gaps = 20:40` давал кол�
     - следствие: дробные, нулевые, `Inf`, векторные и нечисловые значения
       отвергаются; `design_arms_marker()` наследует проверку через `com_gaps`
       без второй копии.
+
+## ZV80. Общая сетка праймеров — целые длины
+
+`design_hrm_marker()` принимает `lengths` и передаёт его в
+`hrm_flanking_pair()`, где обе стороны строятся внутренней сеткой
+`primer_candidates()`. Сетка брала значение как есть:
+`tidyr::crossing(start = starts, len = lengths)`, затем
+`stringr::str_sub(s, start, start + len - 1L)` и `end` из той же суммы.
+`str_sub()` обрезает дробный конец, а строка сохраняет дробь. Измерено на
+ветке до правки (`snp_fixture()`, 600 п.н., seed 2, SNP в позиции 300,
+`flank = 150L`): `lengths = 20.9` давал праймеры по 20 п.н., но пара
+сообщала `product 86.9` и `end 200.9`; целое `lengths = 20L` даёт те же
+праймеры с `product 86` и `end 199`.
+
+- [x] **ZV80. `primer_candidates()` проверяет `lengths` до сетки.**
+    - правка: `check_nucleotide_length(lengths, "lengths", multi = TRUE)` в
+      начале `primer_candidates()` (ADR 0056); экспортированные дизайнеры,
+      передающие свои `lengths` в эту сетку, наследуют отказ без копии
+      проверки. `design_lamp_marker()`'s `outer_lengths` покрыт, `arm_lengths`
+      идёт другим путём и в объём правки не входит.
+    - проверка: `tests/testthat/test-hrm.R` — новый тест отвергает
+      `lengths = 20.9` и `c(20L, Inf)`, целый вызов по-прежнему даёт
+      `product 86`, `end 199`; `hrm|sanger|castpcr|dpcr|primer-pairs|snapshot|arms|lamp|taqman|rpa`
+      — 2008 pass, 0 fail, 5 skip.
+    - блокер: нет; проверка идёт до построения сетки.
+    - следствие: дробные, нулевые, `Inf`, векторные и нечисловые длины
+      отвергаются; `len`, `end` и все произведения, посчитанные из `end`,
+      совпадают с молекулой.

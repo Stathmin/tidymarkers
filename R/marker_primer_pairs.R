@@ -17,7 +17,7 @@
 #' reverse primer's `start` is still left of its `end`.
 #' @param seq the template (plus strand).
 #' @param starts 1-based plus-strand start positions to try.
-#' @param lengths primer lengths to try.
+#' @param lengths primer lengths to try, as positive whole numbers.
 #' @param strand `"+"` (primer equals the plus strand) or `"-"` (reverse
 #'   complement).
 #' @param tm_range,gc_range accepted windows.
@@ -32,6 +32,11 @@ primer_candidates <- function(seq, starts, lengths, strand = c("+", "-"), tm_ran
   strand <- match.arg(strand)
   s <- as.character(seq)
   n <- nchar(s)
+  # `stringr::str_sub()` truncates a fractional end, so 20.9 built a 20 nt
+  # primer while the row reported `len` 20.9 and a 200.9 `end` (ADR 0056).
+  # The callers are internal, but the exported designers pass their `lengths`
+  # straight through.
+  lengths <- check_nucleotide_length(lengths, "lengths", multi = TRUE)
   d <- tidyr::crossing(start = starts, len = lengths) |>
     dplyr::filter(.data$start >= 1L, .data$start + .data$len - 1L <= n) |>
     dplyr::mutate(
