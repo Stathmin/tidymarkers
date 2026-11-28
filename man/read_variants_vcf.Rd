@@ -18,7 +18,9 @@ read_variants_vcf(
 random-access index on very large files).}
 
 \item{chrom, start, end}{optional region filter (chromosome is normalised with
-\code{ath_chrom()}, so \code{"4"} and \code{"Chr4"} both work).}
+\code{ath_chrom()}, so \code{"4"} and \code{"Chr4"} both work).  A selector is checked
+before the read: one non-empty chromosome name, whole positive \code{start}/\code{end},
+and \code{start <= end}.}
 
 \item{backend}{\code{"vroom"} (default) streams the four columns we need and is
 best for large files; \code{"VariantAnnotation"} parses with the Bioconductor

@@ -270,6 +270,36 @@ test_that("read_variants_vcf filters by region", {
   expect_setequal(read_variants_vcf(vcf, chrom = "Chr1", start = 20L, end = 60L)$pos, 50L)
 })
 
+test_that("read_variants_vcf filters by chromosome alone", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "1\t10\t.\tA\tG\t.\t.\t.",
+    "2\t20\t.\tA\tC\t.\t.\t."
+  ), vcf)
+  # the `chrom` argument once resolved to the data column inside dplyr::filter(),
+  # so any name matched itself and the selector did nothing
+  expect_equal(read_variants_vcf(vcf, chrom = "Chr2")$pos, 20L)
+  expect_equal(nrow(read_variants_vcf(vcf, chrom = "Chr9")), 0L)
+  expect_error(read_variants_vcf(vcf, chrom = NA), "chrom")
+})
+
+test_that("read_variants_vcf refuses a window bound that is not a position", {
+  skip_if_not_installed("vroom")
+  vcf <- withr::local_tempfile(fileext = ".vcf")
+  writeLines(c(
+    "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
+    "1\t10\t.\tA\tG\t.\t.\t.",
+    "1\t50\t.\tA\tC\t.\t.\t."
+  ), vcf)
+  expect_error(read_variants_vcf(vcf, start = NA), "start")
+  expect_error(read_variants_vcf(vcf, start = 20.5), "start")
+  expect_error(read_variants_vcf(vcf, end = "abc"), "end")
+  expect_error(read_variants_vcf(vcf, start = 60L, end = 20L), "start")
+  expect_equal(read_variants_vcf(vcf, start = 20L)$pos, 50L)
+})
+
 test_that("normalise_allele folds IUPAC codes and case to ACGTN", {
   expect_equal(normalise_allele(c("a", "g")), c("A", "G"))
   expect_equal(normalise_allele(c("R", "y", "N")), c("N", "N", "N"))

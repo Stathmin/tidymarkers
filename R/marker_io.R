@@ -85,7 +85,9 @@ inform_absent_alleles <- function(n) {
 #'   `vroom`, so no external decompression is needed (pair with `tabix` for a
 #'   random-access index on very large files).
 #' @param chrom,start,end optional region filter (chromosome is normalised with
-#'   `ath_chrom()`, so `"4"` and `"Chr4"` both work).
+#'   `ath_chrom()`, so `"4"` and `"Chr4"` both work).  A selector is checked
+#'   before the read: one non-empty chromosome name, whole positive `start`/`end`,
+#'   and `start <= end`.
 #' @param backend `"vroom"` (default) streams the four columns we need and is
 #'   best for large files; `"VariantAnnotation"` parses with the Bioconductor
 #'   canonical reader (`readVcf`) and is the safer choice for complex records
@@ -112,6 +114,22 @@ inform_absent_alleles <- function(n) {
 read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
                               backend = c("vroom", "VariantAnnotation")) {
   backend <- match.arg(backend)
+  # Resolve the selector before the file: `ath_chrom(chrom)` inside
+  # `dplyr::filter()` reads `chrom` as the data column, so any name matched
+  # itself and the filter did nothing (ADR 0070).
+  if (!is.null(chrom)) {
+    if (length(chrom) != 1L || is.na(chrom) || !nzchar(chrom)) {
+      abort_msg("`chrom` must be one chromosome name.")
+    }
+    chrom_key <- ath_chrom(as.character(chrom))
+  } else {
+    chrom_key <- NULL
+  }
+  if (!is.null(start)) start <- check_coord(start, "start")
+  if (!is.null(end)) end <- check_coord(end, "end")
+  if (!is.null(start) && !is.null(end) && start > end) {
+    abort_msg("`start` must not be greater than `end`.")
+  }
   path <- reader_path(path, "VCF")
 
   v <- switch(backend,
@@ -127,7 +145,7 @@ read_variants_vcf <- function(path, chrom = NULL, start = NULL, end = NULL,
     ))
   }
 
-  if (!is.null(chrom)) v <- dplyr::filter(v, .data$chrom == ath_chrom(chrom))
+  if (!is.null(chrom_key)) v <- dplyr::filter(v, .data$chrom == chrom_key)
   if (!is.null(start)) v <- dplyr::filter(v, .data$pos >= start)
   if (!is.null(end)) v <- dplyr::filter(v, .data$pos <= end)
 
