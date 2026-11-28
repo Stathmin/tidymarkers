@@ -5833,7 +5833,7 @@ row(s) left out» — ложное обвинение формата вмест�
     - правка: `dev/metrics.R` — `strsplit(rows, "(?<!\\\\)\\|", perl = TRUE)`;
       ячейка сохраняет `\|` как текст, статус читается с той же позиции.
     - проверка: `tests/testthat/test-metrics-repair.R` — строка с `` `a \| b` ``
-      считается `fixed`, `malformed` остаётся один (короткая строка);
+      считается `fixed`, `malformed` по-прежнему 1 (короткая строка);
       `repair_stats()` на живом журнале: 52 строки, `fixed` 50, `bypassed` 1,
       `quarantined` 1, `malformed` 0 (до правки — 44 / 6); `^metrics-repair$` —
       20 pass, 0 fail.
