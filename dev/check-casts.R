@@ -37,10 +37,11 @@ if (!requireNamespace("yaml", quietly = TRUE)) {
   quit(status = 0L)
 }
 
-# The names a position can be spelled with.  `start`/`end` are deliberately
-# left out: a range is built from a position that its unit already judged, and
-# flagging every interval cast buried the reads that come straight from a file.
-position_name <- c("pos", "POS", "pos_raw", "positions", "stab_at")
+# The names a position can be spelled with.  `start`/`end` are included: an
+# interval bound comes from a file or a caller's table exactly like `pos`
+# (ZV106), and the earlier exclusion hid `normalise_features()`.  A cast on an
+# internal interval is registered, not exempted.
+position_name <- c("pos", "POS", "pos_raw", "positions", "stab_at", "start", "end")
 
 # A guard refuses or normalises a position; it does not merely report one.
 guard_primitive <- c(
@@ -180,8 +181,10 @@ check_casts <- function(registry, hits) {
 self_test <- function() {
   bodies <- c(
     unguarded = "function(x) as.integer(x$pos)",
+    unguarded_interval = "function(x) as.integer(x$start)",
     fractional = "function(x) as.integer(x$pos + 0.5)",
     guarded = "function(x) { bad_position(x$pos); as.integer(x$pos) }",
+    guarded_interval = "function(x) { bad_position(x$end); as.integer(x$end) }",
     late = "function(x) { as.integer(x$pos); check_target_pos(x$pos) }",
     integer_internal = "function(x) as.integer(x$n)",
     labelled = "function(x) as.integer(x$count)",
@@ -197,7 +200,7 @@ self_test <- function() {
   empty <- check_casts(list(), hits)
   expected <- paste0(
     "unguarded position cast (guard it, or add to dev/casts.yml): ",
-    c("fractional", "late", "unguarded")
+    c("fractional", "late", "unguarded", "unguarded_interval")
   )
   if (!identical(sort(empty), sort(expected))) {
     stop("self-test: an unguarded position cast was not caught")
@@ -208,6 +211,7 @@ self_test <- function() {
   ok <- check_casts(
     list(
       list(symbol = "unguarded", reason = "self-test"),
+      list(symbol = "unguarded_interval", reason = "self-test"),
       list(symbol = "fractional", reason = "self-test"),
       list(symbol = "late", reason = "self-test")
     ),

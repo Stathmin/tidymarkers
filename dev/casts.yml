@@ -35,3 +35,27 @@ entries:
     reason: "`pos` is a validated footprint coordinate carried by the enclosing profile."
   - symbol: normalise_locus_strand
     reason: "`snp` was built by target_snp() from a normalised target row."
+  - symbol: build_features_tibble/
+    reason: "`loc` comes from parse_location(), which refuses a fractional bound before this cast (ADR 0069)."
+  - symbol: normalise_diagnostic_positions
+    reason: "the `start`/`end` cast is the GRanges branch; the table branches judge `pos` first (ADR 0073)."
+  - symbol: read_variants_vcf_va
+    reason: "`start`/`end` are checked by check_coord() in read_variants_vcf() before this backend (ADR 0070)."
+  - symbol: marker_from_granges
+    reason: "GenomicRanges::start() of the caller's GRanges is whole by construction (ADR 0077)."
+  - symbol: spec_row
+    reason: "`start`/`end` are a designer's primer geometry, computed from an integer interval."
+  - symbol: map_amplicon
+    reason: "`start`/`end` are interval fields of a designed assay, built from validated targets."
+  - symbol: normalise_region
+    reason: "the cast is the GRanges branch; the data-frame branch judges both bounds first (ADR 0071)."
+  - symbol: reprex_input
+    reason: "GenomicRanges::start() of the caller's Variants object is whole by construction."
+  - symbol: rprimer_assays
+    reason: "`start`/`end` are rprimer::designOligos() output, an external engine's integer coordinates."
+  - symbol: ensembl_gene
+    reason: "`start`/`end` come from the Ensembl REST record; the cast canonicalises its integer fields."
+  - symbol: ensembl_variants
+    reason: "`start`/`end` come from the Ensembl REST record; the cast canonicalises its integer fields."
+  - symbol: find_palindromes/
+    reason: "the nested helper casts `start`/`end` of a Biostrings match, integer by construction."

@@ -356,3 +356,6 @@ Rscript dev/graphify-health.R --check   # code-graph invariants (skips without a
 - [ADR 0078](adr/0078-a-plotted-feature-interval-is-whole-in-its-spelling.md) —
   the feature table behind a plotted annotation judges `start`/`end` before the
   cast, so `10.9` and `-5` are refused, not drawn a base off.
+- [ADR 0079](adr/0079-the-cast-gate-judges-an-interval-too.md) — the cast gate
+  judges `start`/`end` like `pos`, so an unguarded interval cast fails the
+  check instead of waiting for an audit.

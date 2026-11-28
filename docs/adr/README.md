@@ -142,3 +142,4 @@ decision, so each ADR keeps `accepted` with a dated amendment at the end:
   `inst/mcp/schema.json` published by operator decision plus a drift test.
 | [0077](0077-a-locus-row-and-its-range-bridge-are-whole-in-their-spelling.md) | A locus row and its range bridge are whole in their spelling | accepted |
 | [0078](0078-a-plotted-feature-interval-is-whole-in-its-spelling.md) | A plotted feature interval is whole in its spelling | accepted |
+| [0079](0079-the-cast-gate-judges-an-interval-too.md) | The cast gate judges an interval, not only a point | accepted |
