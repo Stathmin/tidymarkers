@@ -156,6 +156,10 @@ Other vignettes:
   — the handover decides "outside the scanned corpus root" on `fs::path_real()`
   after creating `dir`, so a link at `dir` whose target is inside the corpus is
   refused instead of writing crates the next scan reads back.
+- [ADR 0033](adr/0033-a-cache-and-a-rendered-file-are-declared-names.md) — a
+  cache entry and a rendered medium are declared names too: `ensembl_gene()`,
+  `ensembl_variants()`, `tair10_download()`, `marker_ensdb()` and
+  `assemble_gif()` refuse a link at the name they are about to write.
 
 ## Operator decisions
 

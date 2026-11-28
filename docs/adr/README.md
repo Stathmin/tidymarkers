@@ -43,6 +43,7 @@ the file records the measurement or event that re-tested it).
 | [0030](0030-a-derived-path-component-is-a-declared-name.md)             | A derived path component is a declared name                                 | accepted |
 | [0031](0031-a-named-root-is-normalised-before-a-sibling-is-derived.md)  | A named root is normalised before a sibling is derived from it              | accepted |
 | [0032](0032-the-corpus-exclusion-check-reads-the-resolved-directory.md) | The corpus-exclusion check reads the resolved directory                     | accepted |
+| [0033](0033-a-cache-and-a-rendered-file-are-declared-names.md) | A cache entry and a rendered file are declared names too | accepted |
 
 ## Triage of the 2026-11-26 tool list
 

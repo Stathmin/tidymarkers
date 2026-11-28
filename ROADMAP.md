@@ -5238,3 +5238,32 @@ id записи не пересчитывался из её собственно
     - блокер: нет.
     - следствие: кэш — объявленное имя, но его отказ не ломает чтение:
       путь чтения не прерывается ради кэша, и внешний файл не трогается.
+
+## ZV40. Кэш и картинка объявляют свои имена
+
+Продолжение ZV29–ZV39: реестр «писателей пользовательских файлов» был закрыт,
+но файл кэша и отрендеренная картинка — такие же объявленные имена. Найдено
+ночной сменой 2026-11-28 при аудите всех вызовов записи (`write_lines`,
+`download.file`, `saveRDS`, `write_csv`, `ggsave`). Замер до правки: висячая
+ссылка на `<cache>/arabidopsis_thaliana_AT4G00650.json`, `ensembl_gene()`
+заменял внешний файл телом ответа (119 байт JSON) и завершался успехом.
+
+- [x] **ZV40. Писатели кэша и картинки зовут `declared_path()` до первой
+  записи.**
+    - правка: `R/marker_artefact.R` — `declared_path()` (обёртка над
+      `refuse_links()`); `R/marker_target.R` — кэш `ensembl_gene()` и
+      `ensembl_variants()`; `R/marker_core.R` — `.part` в
+      `tair10_download()`; `R/marker_annotate.R` — GTF и EnsDb sqlite в
+      `marker_ensdb()`; `R/marker_search_anim.R` — GIF в `assemble_gif()`.
+      Решение — [ADR 0033](../docs/adr/0033-a-cache-and-a-rendered-file-are-declared-names.md).
+    - проверка: `test-target.R` — «the Ensembl cache refuses to write through a
+      link» (оба эндпоинта, HTTP замокан, внешний файл не создан);
+      `test-output.R` — «declared_path refuses a link and keeps an ordinary
+      path»; `test-search-anim.R` — «assemble_gif refuses to write through a
+      link»; `dev/test.R '^target$'` 34 pass, `'output|annotate'` 31 pass,
+      `search-anim` 14 pass, 0 fail.
+    - блокер: нет; сквозной замер `download.file`/`ensDbFromGtf`/ImageMagick
+      отложен — нужен сетевой прогон, `ensembldb` и движок.
+    - следствие: кэш больше не цель записи через ссылку: вызов отказывает тем
+      же сообщением, что писатели записей, и внешний файл остаётся нетронутым.
+      Чтение по-прежнему идёт по пути вызывающего (попадание в кэш).
