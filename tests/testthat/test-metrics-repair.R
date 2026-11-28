@@ -115,6 +115,15 @@ test_that("the validator enforces the unit the contract names", {
     )
   }
 
+  # a cost in USD is a finite number: jsonlite reads 1e400 as Inf, and Inf
+  # passed `>= 0` and then made the stage cost Inf in the report
+  bad <- row
+  bad$cost_usd <- Inf
+  expect_match(
+    paste(w$validate_row(bad), collapse = " "),
+    "cost_usd must be null or a finite non-negative number"
+  )
+
   # gpu_util is a fraction in [0, 1], not a percentage
   ok <- row
   ok$gpu_util <- 0.75

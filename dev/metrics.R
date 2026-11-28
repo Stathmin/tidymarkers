@@ -152,8 +152,8 @@ validate_row <- function(row, where = "row") {
     "tokens_out must be null or a non-negative integer"
   )
   add(
-    is.null(row$cost_usd) || (length(row$cost_usd) == 1L && (is.na(row$cost_usd) || row$cost_usd >= 0)),
-    "cost_usd must be null or a non-negative number"
+    is.null(row$cost_usd) || (length(row$cost_usd) == 1L && (is.na(row$cost_usd) || (is.finite(row$cost_usd) && row$cost_usd >= 0))),
+    "cost_usd must be null or a finite non-negative number"
   )
   add(
     is.logical(row$cache_hit) && length(row$cache_hit) == 1L && !is.na(row$cache_hit),
