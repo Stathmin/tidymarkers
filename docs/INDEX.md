@@ -134,6 +134,11 @@ Other vignettes:
 - [ADR 0027](adr/0027-a-record-directory-holds-one-design.md) — writing a
   design into a directory replaces the whole record, including `solved.rds`,
   so a rewritten manifest never replays the design it replaced.
+- [ADR 0028](adr/0028-a-vcf-writer-emits-only-records-its-readers-admit.md) —
+  `write_variants_vcf()` refuses a row its three readers would drop or
+  reinterpret (symbolic/absent allele, POS outside the integer range, a tab in
+  a field, a non-ACGTN allele, a non-representable depth), so a written VCF
+  reads back as written.
 
 ## Operator decisions
 
