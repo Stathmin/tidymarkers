@@ -5267,3 +5267,36 @@ id записи не пересчитывался из её собственно
     - следствие: кэш больше не цель записи через ссылку: вызов отказывает тем
       же сообщением, что писатели записей, и внешний файл не меняется.
       Чтение по-прежнему идёт по пути вызывающего (попадание в кэш).
+
+## ZV41. Индекс объявляет все файлы, которые создаёт сборка
+
+Продолжение ZV29–ZV40: одиночный писатель был закрыт, но индекс генома — это
+набор файлов, которые создаёт внешний движок (`bowtie-build`, `makeblastdb`,
+`Rsubread::buildindex`), и один из них служит маркером «сборка готова». Замер
+2026-11-28 до правки, по одной ссылке на вызов, внешний файл с `keep`: ссылка на
+`<base>.fa` у `bowtie_index_build()` заменяла внешний файл FASTA; ссылка на
+`<base>.1.ebwt` проходила `file_exists()` и чужой файл объявлялся готовым
+индексом («Reusing…»); `<path>.fa` у `index_write_chrom_fasta()` заменял
+внешний файл; `<base>.fa` у `marker_fm_index()` заменял внешний файл, после чего
+`buildindex()` работал по нему; ссылка на `<path>.nsq` у `marker_blast_index()`
+возвращала чужую базу как индекс генома.
+
+- [x] **ZV41. Сборка индекса отказывает ссылке на любом своём имени и не
+  считает ссылку готовым индексом.**
+    - правка: `R/marker_artefact.R` — `declared_index()` (обёртка над
+      `refuse_links()` для набора суффиксов) и `index_present()`
+      (`file_exists()` без ссылки); `R/marker_bowtie.R` — `bowtie_build_fasta()`
+      объявляет шесть `.ebwt`, `bowtie_index_build()` и `bowtie_index_set()`
+      проверяют готовность через `index_present()`, FASTA — через
+      `declared_path()`; `R/marker_index.R` — `index_write_chrom_fasta()` и три
+      проверки шарда; `R/marker_scan.R` — восемь файлов BLAST и FASTA;
+      `R/marker_fm.R` — `.files`/`.log` и FASTA. ADR 0034.
+    - проверка: `test-genome-index.R` — «a bowtie build refuses a link at the
+      FASTA and at an index file», «a shard FASTA is a declared name», «the FM
+      and BLAST index caches refuse a linked index file»; `test-output.R` —
+      `declared_index()`/`index_present()`; до правки замер давал пять
+      успешных записей/чтений через ссылку, после — пять отказов и `keep` во
+      внешнем файле.
+    - блокер: нет; отказ стоит до движка, поэтому тесты не требуют Rbowtie.
+    - следствие: индекс — объявленный набор имён, как запись и кэш; ссылка не
+      становится ни целью записи, ни «готовым» индексом. Правило — ADR 0034.

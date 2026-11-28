@@ -160,6 +160,10 @@ Other vignettes:
   cache entry and a rendered medium are declared names too: `ensembl_gene()`,
   `ensembl_variants()`, `tair10_download()`, `marker_ensdb()` and
   `assemble_gif()` refuse a link at the name they are about to write.
+- [ADR 0034](adr/0034-an-index-build-declares-every-file-it-writes.md) — a genome
+  index is a declared set of names too: the bowtie, BLAST and FM builders refuse
+  a link at any file the engine creates, and a linked `.1.ebwt`/`.nsq`/`.files`
+  is not counted as a finished index.
 
 ## Operator decisions
 
