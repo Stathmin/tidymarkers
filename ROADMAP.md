@@ -6057,14 +6057,18 @@ number». Дефект меняет вердикт `insufficient_sample`/`ok`.
     - правка: `R/marker_validate.R` — новый `check_base_pairs(x, arg)` на
       `is_whole_number(min = 1L)`; `design_sanger_marker()` проверяет
       `min_dist` до построения сетки, `design_indel_size_marker()` —
-      `min_gap` до чтения аллелей, `snp_template()` — `flank` до окна.
+      `min_gap` до чтения аллелей, `snp_template()` — `flank` до окна,
+      `assemble_primer_assay()` — `flank` до расширения под ампликон.
       Решение —
       [ADR 0048](docs/adr/0048-a-base-pair-threshold-is-a-whole-number-before-the-cast.md).
     - проверка: `tests/testthat/test-sanger.R` — `min_dist = 50.9` и
       `flank = 100.5` отвергнуты с «positive whole number of base pairs»;
       `test-indel-size.R` — `min_gap = 5.9` и `flank = 250.5`; `test-genome.R`
       — `snp_template(flank = 10.9)` отвергнут, `10L` даёт окно 21 п.н.;
-      `sanger|indel-size|^genome$` — 243 pass, 0 fail, 1 skip.
+      `test-marker-assemble.R` — `assemble_primer_assay(flank = 150.5)`
+      отвергнут до поиска праймеров;
+      `sanger|indel-size|^genome$` — 243 pass, 0 fail, 1 skip;
+      `^marker-assemble$` — 8 pass, 0 fail.
     - блокер: нет; проверки офлайновые, движок не нужен.
     - следствие: дробный, нулевой, отрицательный, `Inf` или векторный порог
       отвергается сообщением пакета до любой работы с сеткой; принятые целые

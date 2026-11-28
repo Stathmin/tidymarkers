@@ -11,13 +11,15 @@
 ## Context
 
 Three design paths cast a caller-supplied number of base pairs with
-`as.integer()` before any check:
+`as.integer()` before any check, and a fourth does the same before passing it
+to `snp_template()`:
 
 | path | cast before the check | what moves |
 |---|---|---|
 | `design_sanger_marker()` | `min_dist` in the `m_dist` margin | 50.9 becomes 50, while `sanger_seq_primers()` compares the raw 50.9 against the same read-start bar |
 | `design_indel_size_marker()` | `min_gap` in the gap floor and in `m_gap` | 5.9 becomes 5: the resolvable gap floor drops below the bar the caller named |
 | `snp_template()` | `flank` on both window ends | 100.9 becomes a 100 bp half-window |
+| `assemble_primer_assay()` | `flank` before `snp_template()` widens it | 150.9 becomes 150, and the template the assay locates its primers in is 0.9 bp narrower |
 
 Measured on the branch before the fix:
 
@@ -53,6 +55,8 @@ check_base_pairs <- function(x, arg) {
 - `design_indel_size_marker()` checks `min_gap` before it reads the alleles.
 - `snp_template()` checks `flank` before computing the window; every designer
   that reaches the template through it is covered by the same call.
+- `assemble_primer_assay()` checks `flank` before widening it for the amplicon,
+  so the fixed-primer constructor reaches `snp_template()` with a whole value.
 
 The gate returns the integer, so no path keeps a second cast.
 
@@ -83,4 +87,7 @@ The gate returns the integer, so no path keeps a second cast.
   with the same phrase.
 - `tests/testthat/test-genome.R`: `snp_template(flank = 10.9)` aborts, `10L`
   still returns a 21 bp window.
-- `Rscript dev/test.R "sanger|indel-size|^genome$"` — 243 pass, 0 fail, 1 skip.
+- `tests/testthat/test-marker-assemble.R`: `assemble_primer_assay(flank =
+  150.5)` aborts before the template is built.
+- `Rscript dev/test.R "sanger|indel-size|^genome$"` — 243 pass, 0 fail, 1 skip;
+  `Rscript dev/test.R "^marker-assemble$"` — 8 pass, 0 fail.

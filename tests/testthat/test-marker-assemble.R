@@ -3,6 +3,18 @@
 # discrimination used to be computed unconditionally, so a missing `hybrid-min`
 # killed the exported entry point before its own unknown path could run.
 
+test_that("a fractional flank is refused before the template window", {
+  f <- snp_fixture()
+  expect_error(
+    assemble_primer_assay(
+      f$genome, f$snp,
+      c(AS_ref = "ACGT", AS_alt = "ACGT", COM = "ACGT"),
+      flank = 150.5
+    ),
+    "positive whole number of base pairs"
+  )
+})
+
 test_that("fixed primers without the PCR engine report discrimination unknown, not an error", {
   f <- snp_fixture()
   len <- 20L

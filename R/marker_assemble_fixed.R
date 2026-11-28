@@ -156,6 +156,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
                                   cores = getOption("tidymarkers.cores", 1L),
                                   BPPARAM = NULL,
                                   diagnostic_positions = NULL, engines = NULL) {
+  flank <- check_base_pairs(flank, "flank")
   if (is.null(BPPARAM)) BPPARAM <- marker_bpparam(cores)
   mask <- normalise_diagnostic_positions(diagnostic_positions)
   conditions <- scheme_conditions(scheme)
@@ -234,7 +235,7 @@ assemble_primer_assay <- function(genome, snp, primers, variants = NULL,
 
   # --- template (symmetric, so `design_window()` reads the right flank) -------
   needed <- max(abs(c(as_start, as_end, com_start, com_end) - snp$pos)) + 10L
-  half <- max(as.integer(flank), as.integer(needed))
+  half <- max(flank, as.integer(needed))
   if (snp$pos - half < 1L) {
     abort_msg("The amplicon runs off the start of {snp$chrom}; cannot build a template around {snp$pos}.")
   }
