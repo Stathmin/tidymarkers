@@ -1,6 +1,6 @@
 # 0005 — Genome access is an index-backed strategy, not an in-memory object
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-26
 - Supersedes: none
 
@@ -197,3 +197,14 @@ revisit if a second consumer needs a capability not in the matrix, or if
 - [`R/marker_assemble.R`](../../R/marker_assemble.R) — the `scan` labels in an assay.
 - [`R/marker_thermo.R`](../../R/marker_thermo.R) — `bp_lapply()` and `marker_bpparam()`.
 - [`ROADMAP.md`](../../ROADMAP.md) — D1-D3, ZX1-ZX3, ZT T1-T3 and T11.
+
+## Evidence at acceptance (2026-11-28)
+
+Gates 1, 3, 4 and 5 are covered by `tests/testthat/test-genome-index.R`, which
+ran 145 assertions with 0 failures and 1 skip in 1m 04s
+(`dev/logs/test-filter-genome-20261128-065105.log`); the TAIR10 gold set gives
+the same verdict on the memory and bowtie strategies. Gate 2 is
+`Rscript dev/bench.R --gate`, which printed
+`bench-gate: ok (every case within 2x of dev/bench-baseline.csv)` with peak RSS
+689.6 MB. The budget is measured on the recorded host, so a different machine
+reports `not_run` rather than a number it cannot compare.
